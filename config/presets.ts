@@ -40,7 +40,7 @@ const presets: PresetConfig[] = [
         customCss: require.resolve("../src/css/index.scss"),
       },
       gtag: {
-        trackingID: "G-5LFTNYK9JK",
+        trackingID: process.env.GTAG as string ?? "",
       },
     } satisfies Options,
   ],
