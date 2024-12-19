@@ -1,5 +1,4 @@
 <!-- Header -->
-
 <div align="center">
     <img src="static/img/logo.svg" width="500" href="https://signalwire.com" />
     <h1>SignalWire Docs</h1>
