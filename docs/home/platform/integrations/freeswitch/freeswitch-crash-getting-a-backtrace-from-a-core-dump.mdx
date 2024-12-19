@@ -1,0 +1,79 @@
+---
+title: Backtracing From a Core Dump
+slug: /platform/integrations/freeswitch/freeswitch-crash-getting-a-backtrace-from-a-core-dump
+x-custom:
+  tags:
+    - product:freeswitch
+  ported_from_readme: true
+---
+
+
+The first command you need is to install some needed tools for gdb to do the backtracing, curl to upload the backtrace log, and debug symbols for FreeSWITCH. You may need to install other debug symbols if you have any custom libraries in use.
+
+`apt-get install gdb curl freeswitch-all-dbg libfreeswitch1-dbg`
+
+​​​​​​​If you already have a core dump, the next few commands would be applicable to future dumps. Set the core pattern to give the dump file a more meaningful name:
+
+```\# show core.\<PID>, usually enough for savvy admin
+sysctl -w kernel.core_pattern=/tmp/core.%p 
+
+# or 
+
+# add more meaning to the core dump filename
+sysctl -w kernel.core_pattern=/tmp/core.%e.%p.%h.%t 
+
+# set unlimited file size for larger call volumes
+ulimit -c unlimited 
+
+# check your pattern 
+sysctl -a | grep pattern
+```
+
+​​​​​​​  
+A crashed FreeSWITCH should already have produced a core dump. But if you'd like to induce a crash to test that your above commands are working:
+
+`​​​​​​​fs_cli -x 'fsctl crash'`
+
+​​​​​​​If you have a running FreeSWITCH that has not crashed but has stuck calls or frozen ESL commands, you can generate a core dump using gcore. This will briefly disrupt call processing in production.
+
+`gcore $(pidof freeswitch)`
+
+​​​​​​​Load the FreeSWITCH binary and core file into gdb:
+
+```
+​​​​​​​cd /tmp 
+gdb /usr/bin/freeswitch /tmp/core.<PID>
+```
+
+​​​​​​​Issue some gdb commands to gather the backtrace:
+
+```text
+set logging file /tmp/backtrace.log
+set logging on 
+set pagination off 
+bt 
+bt full 
+info threads
+thread apply all bt full
+quit
+```
+
+Inspect the backtrace. If you are seeing “??” in the backtrace, this means debugging symbols are not installed or you're not using the right path to the FreeSWITCH binary:
+
+```​​​​​​​49 LWP 10968 0x00007f473a78baed in ?? ()
+48 LWP 10577 0x00007f473a78baed in ?? ()
+```
+
+​​​​​​​You will need to install the debug symbols:
+
+`​​​​​​​apt-get install freeswitch-all-dbg libfreeswitch1-dbg`
+
+​​​​​​​Continue re-backtracing and inspecting the trace to ensure all the "??"s are gone. A successful trace looks like this, without any “??” in the log:
+
+```​​​​​​​49 Thread 0x7f4688e73700 (LWP 10968) 0x00007f473a78baed in poll () at ../sysdeps/unix/syscall-template.S:81
+48 Thread 0x7f471c64a700 (LWP 10577) 0x00007f473a78baed in poll () at ../sysdeps/unix/syscall-template.S:81
+```
+
+​​​​​​​Finally, upload the resulting backtrace.log to a paste bin, and use this to share with your dev team or if you have FreeSWITCH Advantage, to share with our team. 
+
+`​​​​​​​curl -d private=1 --data-urlencode text@/tmp/backtrace.log https://pastebin.freeswitch.org/api/create`

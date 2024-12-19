@@ -1,0 +1,747 @@
+---
+title: "WebRTC"
+sidebar_position: 5
+---
+
+The WebRTC namespace includes functions that give you access to the input and output media devices available on the user's machine. For example, you can use these functions to request permission and get access to the media stream from a webcam, from a microphone, or from a screen sharing.
+
+## Functions
+
+### checkCameraPermissions
+
+▸ `Const` **checkCameraPermissions**(): `Promise<null | boolean>`
+
+Asynchronously returns whether we have permissions to access the camera.
+
+#### Returns
+
+`Promise<null | boolean>`
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.checkCameraPermissions();
+// true
+```
+
+---
+
+### checkMicrophonePermissions
+
+▸ `Const` **checkMicrophonePermissions**(): `Promise<null | boolean>`
+
+Asynchronously returns whether we have permissions to access the microphone.
+
+#### Returns
+
+`Promise<null | boolean>`
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.checkMicrophonePermissions();
+// true
+```
+
+---
+
+### checkPermissions
+
+▸ `Const` **checkPermissions**(`name?`): `Promise<null | boolean>`
+
+Asynchronously returns whether we have permissions to access the specified resource. Some common parameter values for `name` are `"camera"`,
+`"microphone"`, and `"speaker"`. In those cases, prefer the dedicated methods
+[checkCameraPermissions](#checkcamerapermissions), [checkMicrophonePermissions](#checkmicrophonepermissions), and [checkSpeakerPermissions](#checkspeakerpermissions).
+
+#### Parameters
+
+| Name    | Type                   | Description           |
+|:--------|:-----------------------|:----------------------|
+| `name?` | `DevicePermissionName` | Name of the resource. |
+
+#### Returns
+
+`Promise<null | boolean>`
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.checkPermissions("camera");
+// true: we have permission for using the camera
+```
+
+---
+
+### checkSpeakerPermissions
+
+▸ `Const` **checkSpeakerPermissions**(): `Promise<null | boolean>`
+
+Asynchronously returns whether we have permissions to access the speakers.
+
+#### Returns
+
+`Promise<null | boolean>`
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.checkSpeakerPermissions();
+// true
+```
+
+---
+
+### createCameraDeviceWatcher
+
+▸ `Const` **createCameraDeviceWatcher**(): `Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+Asynchronously returns an event emitter that notifies changes in all camera devices. This is equivalent to calling
+`createDeviceWatcher({ targets: ['camera'] })`, so refer to
+[createDeviceWatcher](#createdevicewatcher) for additional information about the returned event emitter.
+
+#### Returns
+
+`Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+---
+
+### createDeviceWatcher
+
+▸ `Const` **createDeviceWatcher**(`options?`): `Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+Asynchronously returns an event emitter that notifies changes in the devices. The possible events are:
+
+- "added": A device has been added.
+- "removed": A device has been removed.
+- "updated": A device has been updated.
+- "changed": Any of the previous events occurred.
+
+In all cases, your event handler gets as parameter an object `e` with the following keys:
+
+- `e.changes`: The changed devices. For "added", "removed", and "updated"
+  event handlers, you only get the object associated to the respective event
+  (i.e., only a list of added devices, removed devices, or updated devices).
+  For "changed" event handlers, you get all three lists.
+- `e.devices`: The new list of devices.
+
+For device-specific helpers, see [createCameraDeviceWatcher](#createcameradevicewatcher), [createMicrophoneDeviceWatcher](#createmicrophonedevicewatcher), and [createSpeakerDeviceWatcher](#createspeakerdevicewatcher).
+
+#### Parameters
+
+| Name      | Type                         | Description                                                                                                                                                                                                                                                               |
+|:----------|:-----------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `options` | `CreateDeviceWatcherOptions` | If null, the event emitter is associated to all devices for which we have permission. Otherwise, you can pass an object `{targets: string}`, where the value for key targets is a list of categories. Allowed categories are `"camera"`, `"microphone"`, and `"speaker"`. |
+
+#### Returns
+
+`Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+#### Examples
+
+Creating an event listener on the "changed" event and printing the received parameter after both connecting and disconnecting external headphones:
+
+```javascript
+await SignalWire.WebRTC.getUserMedia({ audio: true, video: false });
+h = await SignalWire.WebRTC.createDeviceWatcher();
+h.on("changed", (c) => console.log(c));
+```
+
+Getting notified just for changes about audio input and output devices, ignoring the camera:
+
+```javascript
+h = await SignalWire.WebRTC.createDeviceWatcher({
+  targets: ["microphone", "speaker"],
+});
+h.on("changed", (c) => console.log(c));
+```
+
+---
+
+### createMicrophoneAnalyzer
+
+▸ `Const` **createMicrophoneAnalyzer**(`options`): `Promise<MicrophoneAnalyzer>`
+
+Initializes a microphone analyzer. You can use a MicrophoneAnalyzer to track the input audio volume.
+
+To stop the analyzer, please call the `destroy()` method on the object returned by this method.
+
+The returned object emits the following events:
+
+- `volumeChanged`: Instantaneous volume from 0 to 100.
+- `destroyed`: The object has been destroyed. You get a parameter
+  describing the reason, which can be `null` (if you called `destroy()`),
+  `"error"` (in case of errors), or `"disconnected"` (if the device was
+  disconnected).
+
+#### Parameters
+
+| Name      | Type                                                 | Description                                                                                                                                                                                                                     |
+|:----------|:-----------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `options` | `string` \| `MediaStream` \| `MediaTrackConstraints` | Either the id of the device to analyze, or [MediaStreamConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints), or a [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream). |
+
+#### Returns
+
+`Promise<MicrophoneAnalyzer>`
+
+Asynchronously returns a MicrophoneAnalyzer.
+
+#### Example
+
+```js
+const micAnalyzer = await createMicrophoneAnalyzer("device-id");
+
+micAnalyzer.on("volumeChanged", (vol) => {
+  console.log("Volume: ", vol);
+});
+micAnalyzer.on("destroyed", (reason) => {
+  console.log("Microphone analyzer destroyed", reason);
+});
+
+micAnalyzer.destroy();
+```
+
+---
+
+### createMicrophoneDeviceWatcher
+
+▸ `Const` **createMicrophoneDeviceWatcher**(): `Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+Asynchronously returns an event emitter that notifies changes in all microphone devices. This is equivalent to calling
+`createDeviceWatcher({ targets: ['microphone'] })`, so refer to
+[createDeviceWatcher](#createdevicewatcher) for additional information about the returned event emitter.
+
+#### Returns
+
+`Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+---
+
+### createSpeakerDeviceWatcher
+
+▸ `Const` **createSpeakerDeviceWatcher**(): `Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+Asynchronously returns an event emitter that notifies changes in all speaker devices. This is equivalent to calling
+`createDeviceWatcher({ targets: ['speaker'] })`, so refer to
+[createDeviceWatcher](#createdevicewatcher) for additional information about the returned event emitter.
+
+#### Returns
+
+`Promise<EventEmitter<DeviceWatcherEvents, any>>`
+
+---
+
+### enumerateDevices
+
+▸ `Const` **enumerateDevices**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+Enumerates the media input and output devices available on this device.
+
+> 📘
+> Depending on the browser, some information (such as the `label` and
+> `deviceId` attributes) could be hidden until permission is granted, for
+> example by calling [getUserMedia](#getusermedia).
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.enumerateDevices();
+// [
+//   {
+//     "deviceId": "Rug5Bk...4TMhY=",
+//     "kind": "videoinput",
+//     "label": "HD FaceTime Camera",
+//     "groupId": "EEX/N2...AjrOs="
+//   },
+//   ...
+// ]
+```
+
+---
+
+### getCameraDevices
+
+▸ `Const` **getCameraDevices**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+Returns an array of camera devices that can be accessed on this device (for which we have permissions).
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getCameraDevices();
+// [
+//   {
+//     "deviceId": "Rug5Bk...4TMhY=",
+//     "kind": "videoinput",
+//     "label": "HD FaceTime Camera",
+//     "groupId": "Su/dzw...ccfnY="
+//   }
+// ]
+```
+
+---
+
+### getCameraDevicesWithPermissions
+
+▸ `Const` **getCameraDevicesWithPermissions**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+> ⚠️ Deprecated.
+> Use [getCameraDevices](#getcameradevices) for better cross browser compatibility.
+
+After prompting the user for permission, returns an array of camera devices.
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getCameraDevicesWithPermissions();
+// [
+//   {
+//     "deviceId": "Rug5Bk...4TMhY=",
+//     "kind": "videoinput",
+//     "label": "HD FaceTime Camera",
+//     "groupId": "Su/dzw...ccfnY="
+//   }
+// ]
+```
+
+---
+
+### getDevices
+
+▸ `Const` **getDevices**(`name?`, `fullList?`): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+Enumerates the media input and output devices available on this machine. If
+`name` is provided, only the devices of the specified kind are returned.
+Possible values of the `name` parameters are `"camera"`, `"microphone"`, and
+`"speaker"`, which respectively correspond to functions
+[getCameraDevices](#getcameradevices), [getMicrophoneDevices](#getmicrophonedevices), and [getSpeakerDevices](#getspeakerdevices).
+
+#### Parameters
+
+| Name       | Type                   | Default value | Description                                                                                                                                              |
+|:-----------|:-----------------------|:--------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name?`    | `DevicePermissionName` | `undefined`   | Filter for this device category.                                                                                                                         |
+| `fullList` | `boolean`              | `false`       | Default to false. Set to true to retrieve the raw list as returned by the browser, which might include multiple, duplicate deviceIds for the same group. |
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getDevices("camera", true);
+// [
+//   {
+//     "deviceId": "3c4f97...",
+//     "kind": "videoinput",
+//     "label": "HD Camera",
+//     "groupId": "828fec..."
+//   }
+// ]
+```
+
+---
+
+### getDevicesWithPermissions
+
+▸ `Const` **getDevicesWithPermissions**(`kind?`, `fullList?`): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+> ⚠️ Deprecated.
+> Use [getDevices](#getdevices) for better cross browser compatibility.
+
+After prompting the user for permission, returns an array of media input and output devices available on this machine. If `kind` is not null, only the devices of the specified kind are returned. Possible values of the `kind` parameters are `"camera"`, `"microphone"`, and `"speaker"`, which respectively correspond to functions [getCameraDevicesWithPermissions](#getcameradeviceswithpermissions), [getMicrophoneDevicesWithPermissions](#getmicrophonedeviceswithpermissions), and [getSpeakerDevicesWithPermissions](#getspeakerdeviceswithpermissions).
+
+#### Parameters
+
+| Name       | Type                   | Default value | Description                                                                                                                                                                                                                                      |
+|:-----------|:-----------------------|:--------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kind?`    | `DevicePermissionName` | `undefined`   | Filter for this device category.                                                                                                                                                                                                                 |
+| `fullList` | `boolean`              | `false`       | By default, only devices for which we have been granted permissions are returned. To obtain a list of devices regardless of the permissions, pass `fullList=true`. Note however that some values such as `name` and `deviceId` could be omitted. |
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getDevicesWithPermissions("camera");
+// [
+//   {
+//     "deviceId": "Rug5Bk...4TMhY=",
+//     "kind": "videoinput",
+//     "label": "HD FaceTime Camera",
+//     "groupId": "Su/dzw...ccfnY="
+//   }
+// ]
+```
+
+---
+
+### getDisplayMedia
+
+▸ `Const` **getDisplayMedia**(`constraints?`): `Promise<MediaStream>` - See [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) for more details.
+
+Prompts the user to share the screen and asynchronously returns a [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) object associated with a display or part of it.
+
+#### Parameters
+
+| Name           | Type                     | Description                                                                                                                                                                                                                                |
+|:---------------|:-------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `constraints?` | `MediaStreamConstraints` | An optional [MediaStreamConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints) object specifying requirements for the returned [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream). |
+
+#### Returns
+
+`Promise<MediaStream>` - See [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getDisplayMedia(); // MediaStream {id: "HCXy...", active: true, ...}
+```
+
+---
+
+### getMicrophoneDevices
+
+▸ `Const` **getMicrophoneDevices**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+Returns an array of microphone devices that can be accessed on this device (for which we have permissions).
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getMicrophoneDevices();
+// [
+//   {
+//     "deviceId": "ADciLf...NYgF8=",
+//     "kind": "audioinput",
+//     "label": "Internal Microphone",
+//     "groupId": "rgZgKM...NW1hU="
+//   }
+// ]
+```
+
+---
+
+### getMicrophoneDevicesWithPermissions
+
+▸ `Const` **getMicrophoneDevicesWithPermissions**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+> ⚠️ Deprecated.
+> Use [getMicrophoneDevices](#getmicrophonedevices) for better cross browser compatibility.
+
+After prompting the user for permission, returns an array of microphone devices.
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getMicrophoneDevicesWithPermissions();
+// [
+//   {
+//     "deviceId": "ADciLf...NYgF8=",
+//     "kind": "audioinput",
+//     "label": "Internal Microphone",
+//     "groupId": "rgZgKM...NW1hU="
+//   }
+// ]
+```
+
+---
+
+### getSpeakerDevices
+
+▸ `Const` **getSpeakerDevices**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+Returns an array of speaker devices that can be accessed on this device (for which we have permissions).
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getSpeakerDevices();
+// [
+//   {
+//     "deviceId": "ADciLf...NYgF8=",
+//     "kind": "audiooutput",
+//     "label": "External Speaker",
+//     "groupId": "rgZgKM...NW1hU="
+//   }
+// ]
+```
+
+---
+
+### getSpeakerDevicesWithPermissions
+
+▸ `Const` **getSpeakerDevicesWithPermissions**(): `Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+> ⚠️ Deprecated.
+> Use [getSpeakerDevices](#getspeakerdevices) for better cross browser compatibility.
+
+After prompting the user for permission, returns an array of speaker devices.
+
+#### Returns
+
+`Promise<MediaDeviceInfo[]>` - See [MediaDeviceInfo](https://developer.mozilla.org/en-US/docs/Web/API/mediadeviceinfo) for more details.
+
+#### Example
+
+```javascript
+await SignalWire.WebRTC.getSpeakerDevicesWithPermissions();
+// [
+//   {
+//     "deviceId": "ADciLf...NYgF8=",
+//     "kind": "audiooutput",
+//     "label": "External Speaker",
+//     "groupId": "rgZgKM...NW1hU="
+//   }
+// ]
+```
+
+---
+
+### getSupportedConstraints
+
+▸ `Const` **getSupportedConstraints**(): `MediaTrackSupportedConstraints`
+
+Returns a dictionary whose fields specify the constrainable properties the user agent understands.
+
+#### Returns
+
+`MediaTrackSupportedConstraints`
+
+#### Example
+
+```javascript
+SignalWire.WebRTC.getSupportedConstraints();
+// {
+//   "aspectRatio": true,
+//   "autoGainControl": true,
+//   "brightness": true,
+//   "channelCount": true,
+//   "colorTemperature": true,
+//   ...
+// }
+```
+
+---
+
+### getUserMedia
+
+▸ `Const` **getUserMedia**(`constraints?`): `Promise<MediaStream>` - See [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) for more details.
+
+Prompts the user to share one or more media devices and asynchronously returns an associated [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) object.
+
+For more information, see [`MediaDevices.getUserMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
+
+#### Parameters
+
+| Name          | Type                     | Description                                                                                                                                                                                                                                |
+|:--------------|:-------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `constraints` | `MediaStreamConstraints` | An optional [MediaStreamConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints) object specifying requirements for the returned [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream). |
+
+#### Returns
+
+`Promise<MediaStream>` - See [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) for more details.
+
+#### Examples
+
+To only request audio media:
+
+```javascript
+await SignalWire.WebRTC.getUserMedia({ audio: true, video: false });
+// MediaStream {id: "HCXy...", active: true, ...}
+```
+
+To request both audio and video, specifying constraints for the video:
+
+```javascript
+const constraints = {
+  audio: true,
+  video: {
+    width: { min: 1024, ideal: 1280, max: 1920 },
+    height: { min: 576, ideal: 720, max: 1080 },
+  },
+};
+await SignalWire.WebRTC.getUserMedia(constraints);
+// MediaStream {id: "EDVk...", active: true, ...}
+```
+
+---
+
+### requestPermissions
+
+▸ `Const` **requestPermissions**(`constraints`): `Promise<void>`
+
+Prompts the user to grant permissions for the devices matching the specified set of constraints.
+
+#### Parameters
+
+| Name          | Type                     | Description                                                                                                                                                                                                                                |
+|:--------------|:-------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `constraints` | `MediaStreamConstraints` | An optional [MediaStreamConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamConstraints) object specifying requirements for the returned [MediaStream](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream). |
+
+#### Returns
+
+`Promise<void>`
+
+#### Examples
+
+To only request audio permissions:
+
+```javascript
+await SignalWire.WebRTC.requestPermissions({ audio: true, video: false });
+```
+
+To request permissions for both audio and video, specifying constraints for the video:
+
+```javascript
+const constraints = {
+  audio: true,
+  video: {
+    width: { min: 1024, ideal: 1280, max: 1920 },
+    height: { min: 576, ideal: 720, max: 1080 },
+  },
+};
+await SignalWire.WebRTC.requestPermissions(constraints);
+```
+
+---
+
+### setMediaElementSinkId
+
+▸ `Const` **setMediaElementSinkId**(`el`, `deviceId`): `Promise<undefined>`
+
+Assigns the specified audio output device to the specified HTMLMediaElement. The device with id `deviceId` must be an audio output device. Asynchronously returns whether the operation had success.
+
+> 📘
+> Some browsers do not support output device selection. You can check by
+> calling [`supportsMediaOutput`](#supportsmediaoutput).
+
+#### Parameters
+
+| Name       | Type                         | Description                    |
+|:-----------|:-----------------------------|:-------------------------------|
+| `el`       | `null` \| `HTMLMediaElement` | Target element.                |
+| `deviceId` | `string`                     | Id of the audio output device. |
+
+#### Returns
+
+`Promise<undefined>`
+
+#### Example
+
+```javascript
+const el = document.querySelector("video");
+const outDevices = await SignalWire.WebRTC.getSpeakerDevicesWithPermissions();
+await SignalWire.WebRTC.setMediaElementSinkId(el, outDevices[0].deviceId);
+// true
+```
+
+---
+
+### stopStream
+
+▸ `Const` **stopStream**(`stream?`): `void`
+
+Stops all tracks in a specified stream and fires the `ended` event for each.
+
+#### Parameters
+
+| Name      | Type                                                                          |
+|:----------|:------------------------------------------------------------------------------|
+| `stream?` | [`MediaStream`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) |
+
+#### Returns
+
+`void`
+
+---
+
+### stopTrack
+
+▸ `Const` **stopTrack**(`track`): `void`
+
+Stops a specified track. This method is similar to [`MediaStreamTrack.stop()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack/stop) but this method also fires the `ended` event.
+
+#### Parameters
+
+| Name    | Type                                                                                    |
+|:--------|:----------------------------------------------------------------------------------------|
+| `track` | [`MediaStreamTrack`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) |
+
+#### Returns
+
+`void`
+
+---
+
+### supportsGetDisplayMedia
+
+▸ `Const` **supportsGetDisplayMedia**(): `boolean`
+
+Returns whether the current environment supports [`getDisplayMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia).
+
+#### Returns
+
+`boolean`
+
+---
+
+### supportsGetUserMedia
+
+▸ `Const` **supportsGetUserMedia**(): `boolean`
+
+Returns whether the current environment supports [`getUserMedia`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
+
+#### Returns
+
+`boolean`
+
+---
+
+### supportsMediaDevices
+
+▸ `Const` **supportsMediaDevices**(): `boolean`
+
+Returns whether the current environment supports the media devices API.
+
+#### Returns
+
+`boolean`
+
+---
+
+### supportsMediaOutput
+
+▸ `Const` **supportsMediaOutput**(): `boolean`
+
+Returns whether the current environment supports the selection of a media output device.
+
+#### Returns
+
+`boolean`

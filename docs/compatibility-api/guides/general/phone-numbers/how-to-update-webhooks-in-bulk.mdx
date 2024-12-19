@@ -1,0 +1,343 @@
+---
+title: Update Webhooks in Bulk
+description: Use Python or Node.js to Update Webhooks on Bulk Amount of Numbers
+slug: /compatibility-api/guides/general/phone-numbers/how-to-update-webhooks-in-bulk
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags:
+    - product:numbers
+    - language:python
+    - language:nodejs
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Overview
+--------
+
+If you have a lot of phone numbers, it could be tedious to change the webhook for message or call handling for all of them one by one. You can use this script (or one like it in another SDK) in order to change the webhook for all of the numbers at one time! 
+
+This code will list all of the numbers on your account and compare them to the list of numbers whose webhooks you want to update. For all the numbers that also exist in your CSV, the webhook will be updated sequentially. 
+
+
+<details>
+  <summary>Full code example: Update Webhooks in Bulk</summary>
+
+<Tabs>
+
+<TabItem value="python" label="Python">
+
+```python
+from signalwire.rest import Client as signalwire_client
+import csv
+import requests
+from requests.auth import HTTPBasicAuth
+
+SpaceURL = 'YourSpace.signalwire.com'
+ProjectID = "Some-Alphanumeric-String"
+AuthToken = 'Some-Alphanumeric-String'
+WebhookPath = 'https://example.com/message_handler'
+PathToCSV = 'Path-To-CSV-On-Your-Computer'
+
+client = signalwire_client(ProjectID, AuthToken, signalwire_space_url=SpaceURL)
+
+incoming_phone_numbers = client.incoming_phone_numbers.list()
+print("Total Numbers -- " + str(len(incoming_phone_numbers)))
+
+
+results = []
+
+with open(PathToCSV, 'r', encoding='utf-8-sig') as csvfile:
+   reader = csv.reader(csvfile)
+   for row in reader:
+       if "+" not in row[0]:
+           results.append("+" + row[0])
+       else:
+           results.append(row[0])
+print(results)
+
+for record in incoming_phone_numbers:
+   if record.phone_number in results:
+       print("update number -- " + record.phone_number)
+       response = requests.put('https://' + SpaceURL + '/api/relay/rest/phone_numbers/' + record.sid,
+                               params={'call_handler': 'laml_webhooks',
+                                       'message_request_url': WebhookPath}
+                               , auth=HTTPBasicAuth(ProjectID, AuthToken))
+       print(response)
+```
+
+</TabItem>
+
+<TabItem value="node" label="Node">
+
+```js
+const { RestClient } = require('@signalwire/compatibility-api');
+const fs = require('fs');
+const csv = require('@fast-csv/parse');
+const fetch = require('node-fetch');
+
+// TODO: Update with your own credentials
+const spaceURL = 'YOURSPACENAME.signalwire.com'
+const projectID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX"
+const authToken = 'PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+const authenticationString = projectID + ":" + authToken;
+const webhookPath = 'https://example.com/message_handler'
+const pathToCSV = 'webhooks.csv'
+
+const client = RestClient(
+                        projectID, 
+                        authToken, 
+                        { signalwireSpaceUrl: spaceURL });
+
+client.incomingPhoneNumbers
+    .list()
+    .then(numbersList => {
+        console.log("Total Numbers: " + numbersList.length)
+        
+        numbersList.forEach((number) => {
+
+            csv.parseFile(pathToCSV)
+                .on('error', error => console.error(error))
+                .on('data', row => {
+                    let csvNumber = row[0];
+
+                    // Correct number format from CSV if necessary
+                    if (csvNumber.indexOf('+') == -1) {
+                        csvNumber = "+" + csvNumber;
+                    }
+
+                    if (number.phoneNumber == csvNumber) {
+                        console.log("Update Number: " + csvNumber)
+                    
+                        const url = "https://" + spaceURL + "/api/relay/rest/phone_numbers/" + number.sid;
+                    
+                        const options = {
+                                            method: 'PUT',
+                                            headers: {
+                                                Accept: 'application/json',
+                                                'Content-Type': 'application/json',
+                                                Authorization: 'Basic ' + new Buffer.from(authenticationString).toString('base64')
+                                            },
+                                            body: JSON.stringify({
+                                                message_handler: 'laml_webhooks',
+                                                message_request_url: webhookPath
+                                            })
+                                        };
+
+                        fetch(url, options)
+                            .then(res => res.json())
+                            .then(json => console.log(json))
+                            .catch(err => console.error('error:' + err));
+
+                    }
+                })
+        });
+    })
+    .catch(err => console.error('error:' + err))
+```
+
+</TabItem>
+
+</Tabs>
+
+</details>
+
+Python
+------
+
+### What do I need to run the code?
+
+For this code to work you must have the following installed: 
+
+- [SignalWire Python SDK](https://docs.signalwire.com/reference/compatibility-sdks/v3/#compatibility-rest-api-client-libraries-and-sdks-python)
+- [Requests](https://realpython.com/python-requests/)
+
+### How to Run Snippet?
+
+If you copy the code and save it to a file named `bulkUpdateWebhooks.py`, for example, to run it you will need to run:
+
+- MacOS/Linux - `python3 bulkUpdateWebhooks.py`
+- Windows - `py bulkUpdateWebhooks.py` 
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+```python
+from signalwire.rest import Client as signalwire_client
+import csv
+import requests
+from requests.auth import HTTPBasicAuth
+```
+
+#### Prepare variables and instantiate the SignalWire Client
+
+`ProjectID`- Your project ID is an alphanumeric string that tells the SignalWire SDK where to find your project. You can find this in an easily copyable format by going to your  
+SignalWire Portal and clicking the API tab on the left hand side.  
+
+`AuthToken` - Your Auth Token is an alphanumeric string that helps to authenticate your HTTP requests to SignalWire. You can create this (if you haven’t already) or copy this in an easily copyable format by going to your SignalWire Portal and clicking the API tab. If you have not created an API token, press the blue new button. If you have, click show and copy the string. 
+
+`SpaceURL` - Your Space URL is the domain of your Space, i.e. example.signalwire.com. This can also be found in an easily copyable format within the API tab in your SignalWire Space. 
+
+CSV File - You will need to replace this with the actual path to your CSV file on your account. The easiest way is usually to keep it in the same file as the script. 
+
+Webhook - You will need to replace the webhook with the path to your webhook so that it can be updated correctly. 
+
+```python
+# define your variables here so they don't need to be hardcoded
+SpaceURL = 'YourSpace.signalwire.com'
+ProjectID = "Some-Alphanumeric-String"
+AuthToken = 'Some-Alphanumeric-String'
+WebhookPath = 'https://example.com/message_handler'
+PathToCSV = 'Path-To-CSV-On-Your-Computer'
+
+# Replace project ID, auth token, and Space URL
+client = signalwire_client(ProjectID, AuthToken, signalwire_space_url=SpaceURL)
+```
+
+#### Get account and CSV numbers
+
+```python
+# List and print all numbers on account
+incoming_phone_numbers = client.incoming_phone_numbers.list()
+print("Total Numbers -- " + str(len(incoming_phone_numbers)))
+
+# create empty array to store numbers that need webhooks updated
+results = []
+
+# Open CSV file with numbers whose webhooks you want to update, replace with file path and file
+with open(PathToCSV, 'r', encoding='utf-8-sig') as csvfile:
+   reader = csv.reader(csvfile)
+   # Change to E164 format if it's not already in that format
+   for row in reader:
+       if "+" not in row[0]:
+           results.append("+" + row[0])
+       else:
+           results.append(row[0])
+print(results)
+```
+
+#### Update the webhook for the numbers in the CSV file
+
+```python
+# Loop through all account numbers, if number exists in Results array, print to console and update webhook
+for record in incoming_phone_numbers:
+   if record.phone_number in results:
+       print("update number -- " + record.phone_number)
+       response = requests.put('https://' + SpaceURL + '/api/relay/rest/phone_numbers/' + record.sid,
+                               params={'call_handler': 'laml_webhooks',
+                                       'message_request_url': WebhookPath}
+                               , auth=HTTPBasicAuth(ProjectID, AuthToken))
+       print(response)
+```
+
+Node.js
+-------
+
+### What do I need to run this code?
+
+We will need the following libraries (click their names to get instructions on how to install them):
+
+- [SignalWire REST Client](https://www.npmjs.com/package/@signalwire/compatibility-api)
+- [fs](https://nodejs.org/api/fs.html) - there is no need to install this module, as it is part of the Node.js Core
+- [fast-csv/parse](https://www.npmjs.com/package/@fast-csv/parse)
+- [node-fetch](https://www.npmjs.com/package/node-fetch)
+
+### How to Run Snippet?
+
+If you save this code snippet in a file called `bulkUpdateWebhooks.js`, for example, you then need to run:  
+`node bulkUpdateWebhooks.js`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+```javascript
+const { RestClient } = require('@signalwire/compatibility-api');
+const fs = require('fs');
+const csv = require('@fast-csv/parse');
+const fetch = require('node-fetch');
+```
+
+#### Prepare variables and instantiate the SignalWire Client
+
+```javascript
+// TODO: Update with your own credentials
+const spaceURL = 'YOURSPACENAME.signalwire.com'
+const projectID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX"
+const authToken = 'PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+const authenticationString = projectID + ":" + authToken;
+const webhookPath = 'https://example.com/message_handler'
+const pathToCSV = 'webhooks.csv'
+
+const client = RestClient(
+                        projectID, 
+                        authToken, 
+                        { signalwireSpaceUrl: spaceURL });
+```
+
+#### Update the numbers in the CSV file with the selected WebHook
+
+Here we start by getting the list of numbers in the chosen project, and then for each of those numbers we check if the number exists in any of the rows of the CSV file. If it does, we make a request to the [Update a Phone Number](/rest/signalwire-rest/endpoints/space/update-phone-number) endpoint and print the response.
+
+```javascript
+client.incomingPhoneNumbers
+    .list()
+    .then(numbersList => {
+        console.log("Total Numbers: " + numbersList.length)
+        
+        numbersList.forEach((number) => {
+
+            csv.parseFile(pathToCSV)
+                .on('error', error => console.error(error))
+                .on('data', row => {
+                    let csvNumber = row[0];
+
+                    // Correct number format from CSV if necessary
+                    if (csvNumber.indexOf('+') == -1) {
+                        csvNumber = "+" + csvNumber;
+                    }
+
+                    if (number.phoneNumber == csvNumber) {
+                        console.log("Update Number: " + csvNumber)
+                    
+                        const url = "https://" + spaceURL + "/api/relay/rest/phone_numbers/" + number.sid;
+                    
+                        const options = {
+                                            method: 'PUT',
+                                            headers: {
+                                                Accept: 'application/json',
+                                                'Content-Type': 'application/json',
+                                                Authorization: 'Basic ' + new Buffer.from(authenticationString).toString('base64')
+                                            },
+                                            body: JSON.stringify({
+                                                message_handler: 'laml_webhooks',
+                                                message_request_url: webhookPath
+                                            })
+                                        };
+
+                        fetch(url, options)
+                            .then(res => res.json())
+                            .then(json => console.log(json))
+                            .catch(err => console.error('error:' + err));
+
+                    }
+                })
+        });
+    })
+    .catch(err => console.error('error:' + err))
+```
+
+Wrap Up
+-------
+
+This script uses both the REST API and Relay REST API n order to query all numbers in your project, compare with a CSV containing the numbers you want to update, and then update all webhooks for those numbers with your intended webhook. You can expand on it by adding specific webhooks for each number in the CSV, and updating the webhook based on that instead of the webhook string!
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Slack](https://signalwire.community/) or create a Support ticket if you need guidance!

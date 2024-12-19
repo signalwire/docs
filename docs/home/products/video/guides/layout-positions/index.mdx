@@ -1,0 +1,138 @@
+---
+title: Using Layout Positions
+slug: /video/guides/layout-positions
+x-custom:
+  ported_from_readme: true
+sidebar_custom_props:
+  platform: javascript
+---
+
+# Using Layout Positions
+
+SignalWire Video APIs provide a powerful layout system that you can use in your calls. Let's see how it works.
+
+<figure>
+  <img
+    src={require("./b3cf3b4-Screenshot_2022-04-04_at_15.34.35.webP").default}
+    alt="A screenshot of a 5 by 5 grid layout in a SignalWire video room."
+    title="Screenshot 2022-04-04 at 15.34.35.webP"
+    width="80%"
+    height="auto"
+    loading="lazy"
+  />
+  <figcaption>
+    <p>A 5x5 grid layout. Using the SDK you can assign a manual position to each member: in this example, the member in the second position (<i>standard-2</i>) has been moved to the center of the video (<i>standard-13</i>).</p>
+  </figcaption>
+</figure>
+
+This guide assumes that you have a video already set up in a web page. Follow [First steps with Video](/video/getting-started/video-first-steps) if you need help getting started.
+
+If you want to test this, check out our example in [CodeSandbox](https://codesandbox.io/s/positions-for-layouts-vsy5v9).
+
+## Listing and setting layouts
+
+First, make sure your token or video conference has the permissions to list and set layouts. These are called, respectively, `room.list_available_layouts` and `room.set_layout`.
+
+Using the SDK, you can list available layouts using `await roomSession.getLayouts()`. For example:
+
+```js
+await room.getLayouts()
+// returns:
+{
+  "layouts": [
+    "5x5", "2x1", "1x1", "grid-responsive", "highlight-1-responsive", // ...
+  ]
+}
+```
+
+You can check out a graphical representation of all the different layouts [here](/video/guides/layouts).
+
+If you want to change the current layout, call `setLayout`:
+
+```js
+await room.setLayout({ name: "5x5" });
+```
+
+If you want to change layout as part of a playback or screen share, you can use the dedicated method to do it atomically. For example:
+
+```js
+await roomSession.startScreenShare({
+  audio: true,
+  video: true,
+  layout: "screen-share",
+});
+```
+
+## Controlling positions
+
+Within any given layout you can have three classes of positions:
+
+- `standard-N`: a generic position.
+- `reserved-N`: a reserved position in the layout. This is usually occupied by a member with higher importance (e.g., a screen share, or the member who is talking).
+- `off-canvas`: the members in this position will not be shown in the canvas.
+
+Standard and reserved positions are numbered: you can have `standard-1`, `standard-2`, `reserved-1`, `reserved-2`, and so on. The number of available positions depends on the current layout (some layouts may not have reserved positions at all!).
+
+Moreover, there is an additional keyword that you can use in most places as a position: `auto`. When you set a member in `auto` position, you are asking SignalWire to choose the best position for you.
+
+You have several ways of controlling the position of the members in the layout.
+
+#### Set a position for multiple members
+
+If you want to control the position of multiple members with an atomic call, you can use the `setPositions` method. For example:
+
+```js
+await roomSession.setPositions({
+  positions: {
+    "1bf4d4fb-a3e4-4d46-80a8-3ebfdceb2a60": "reserved-1",
+    "e0c5be44-d6c7-438f-8cda-f859a1a0b1e7": "auto",
+  },
+});
+```
+
+#### Set a position for a specific member
+
+Similar to the above, you can set a position for a single member:
+
+```js
+await roomSession.setMemberPosition({
+  memberId: "1bf4d4fb-a3e4-4d46-80a8-3ebfdceb2a60",
+  position: "off-canvas",
+});
+```
+
+#### Set positions while changing layout
+
+You may want to change layout _and_ assign new positions to the members in a call. You can do that by specifying an additional parameter for `setLayout`:
+
+```js
+await room.setLayout({
+  name: "5x5",
+  positions: {
+    "1bf4d4fb-a3e4-4d46-80a8-3ebfdceb2a60": "reserved-1",
+    "e0c5be44-d6c7-438f-8cda-f859a1a0b1e7": "auto",
+  },
+});
+```
+
+#### Set positions while starting a screen share or playback
+
+You may decide to reassign member positions atomically when starting a screen share or playback. You can do it by specifying an additional parameter for `startScreenShare` or `play`, for example:
+
+```js
+await roomSession.startScreenShare({
+  audio: true,
+  video: true,
+  layout: "screen-share", // specifying a layout is optional
+  positions: {
+    self: "reserved-1",
+    "e0c5be44-d6c7-438f-8cda-f859a1a0b1e7": "auto",
+  },
+});
+```
+
+Note the special keyword `"self"`: this is used to indicate the member which will be created for the screen share (or the playback). Since we don't have an id yet, we can refer to it with `"self"`.
+
+## Wrap up
+
+You can use layouts to control how the members should be displayed, and positions to get more control on the actual location of the members. [Sign up now](https://signalwire.com/signups/new) to start using the SDK in your own application!

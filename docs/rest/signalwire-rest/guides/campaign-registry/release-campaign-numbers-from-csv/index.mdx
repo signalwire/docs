@@ -1,0 +1,199 @@
+---
+title: Delete all assigned phone numbers
+slug: /rest/signalwire-rest/guides/campaign-registry/release-campaign-numbers-from-csv
+# old slug: /messaging/guides/general/release-campaign-numbers-from-csv
+sidebar_position: 9
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags:
+    - language:python
+    - product:messaging
+description: Use our REST APIs to easily remove specific phone number assignments from a campaign
+sidebar_custom_props:
+    platform: python
+---
+
+# Delete all assigned phone numbers
+
+## Overview
+
+This snippet will show how you can easily use our [Delete Phone Number Assignments Endpoint](/rest/signalwire-rest/endpoints/space/delete-number-assignment) to remove specific phone number assignments from a campaign. This frees up the numbers to be used in any other campaigns or for use cases other than 10DLC messaging. You only need a CSV with numbers to remove in order to get started!
+
+We will use Python to accomplish this, but check out our handy **Try It** feature in our docs by replacing the variables here with your own and running it in the browser. You can then easily copy the generated code in cURL or your favorite language!
+
+<figure>
+  <img className="img-800" src={require("./6d1b4f7-a5d9dec-Screen_Shot_2022-03-14_at_2.24.18_PM.webP").default} alt="A screenshot of the 'Try It' docs feature. Buttons at the top of the graphical UI allow the user to select their language from Shell, Node, Ruby, PHP, and Python. The Authentication section accepts text input for the Project ID and API Token. The URL shows the current base URL. The Space name, which is the subdomain appearing before '.signalwire.com' in the URL, is circled in red. Beneath this, a code window shows a sample request in CURL. A red button reads 'Try It!' " />
+</figure>
+
+
+<details>
+  <summary>Full code example: How to Delete Numbers from Campaign Based on CSV</summary>
+
+```python
+from requests.auth import HTTPBasicAuth
+import requests
+import csv
+
+SpaceURL = '.signalwire.com'
+projectID = ""
+authToken = ""
+campaignID = ""
+host = f"https://{SpaceURL}"
+results = []
+
+with open("Numbers.csv", 'r', encoding='utf-8-sig') as csvfile:
+    reader = csv.reader(csvfile)
+    next(reader, None)
+
+    for row in reader:
+        if "+" not in row[0]:
+            results.append("+" + row[0])
+        else:
+            results.append(row[0])
+
+url = f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignID}/numbers?page_size=1000"
+payload = {}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload, auth=HTTPBasicAuth(projectID, authToken)).json()
+campaignNumbers = response['data']
+
+while "next" in response['links'].keys():
+    response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+    campaignNumbers.extend(response['data'])
+
+for number in campaignNumbers:
+    tn = number['phone_number']['number']
+    assignmentSID = number['id']
+    if tn in results:
+
+        try:
+            url = f"https://{SpaceURL}/api/relay/rest/registry/beta/numbers/{assignmentSID}"
+            payload = {}
+            headers = {}
+            response = requests.request("DELETE", url, headers=headers, data=payload,
+                                        auth=HTTPBasicAuth(projectID, authToken))
+            if response.ok:
+                print(f"{tn} successfully deleted")
+            else:
+                print(f"{response.status_code} {response.text}. {tn} not deleted.")
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+```
+
+</details>
+
+Required Resources
+------------------
+
+The API requires that you authenticate yourself using your Project ID, API Token, and Space URL. If you do not know where to find these values, check out our guide [here](/platform/dashboard/getting-started/navigating-your-space#api)!
+
+You will need a campaign SID of the campaign containing the numbers you want to remove. Your campaign SIDs can be found in your portal under **Messaging Campaigns** -> **Campaigns** or by [listing campaigns using our endpoint](/rest/signalwire-rest/endpoints/space/list-campaigns).
+
+<figure>
+  <img className="img-800" src={require("./77a7104-Screen_Shot_2022-06-21_at_12.45.04_PM.webP").default} alt="A screenshot of a Campaign within the Messaging Campaigns page of a SignalWire Space. The campaign SID is shown as a long alphanumeric string under the campaign title." />
+</figure>
+
+You will also need a CSV containing numbers to delete in the first column. You can name the column headers anything you want but if the number is not in the first column, you will need to adjust the code. 
+
+```text Numbers.csv
+Numbers
++1xxxyyyzzzz
++1aaabbbcccc
+```
+
+How to Run the Snippet
+----------------------
+
+If you copy the code and save it to a file named `deleteNumbers.py`, for example, to run it you will need to run:
+
+MacOS/Linux - `python3 deleteNumbers.py`  
+Windows - `py deleteNumbers.py`
+
+Step by Step Code Walkthrough
+-----------------------------
+
+The first step is always to import the required libraries and assign values to all of the variables we'll need to use later. In this case, we will need to define our authentication variables and campaign SID. 
+
+```python
+from requests.auth import HTTPBasicAuth
+import requests
+import csv
+
+# assign auth variables to be used later
+SpaceURL = '.signalwire.com'
+projectID = ""
+authToken = ""
+campaignID = ""
+host = f"https://{SpaceURL}"
+results = []
+```
+
+Next, we will read in the CSV of numbers and change the format to E164 if necessary. We will store all of these numbers in the `results` array to be used later in the code. If you don't have a header row, you can comment out line 4 in which we skip the first row.  
+
+```python
+# read in CSV of numbers to delete
+with open("Numbers.csv", 'r', encoding='utf-8-sig') as csvfile:
+    reader = csv.reader(csvfile)
+    next(reader, None)
+
+    for row in reader:
+        if "+" not in row[0]:
+            results.append("+" + row[0])
+        else:
+            results.append(row[0])
+```
+
+To remove number assignments, we need to use the assignment ID of the number rather than the number itself. In order to get this ID, we are going to use the [List Campaign Numbers endpoint](/rest/signalwire-rest/endpoints/space/list-number-assignments) itself to get all the extra data about the numbers needed.
+
+```python
+# List All Campaign Numbers
+url = f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignID}/numbers?page_size=1000"
+payload = {}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload, auth=HTTPBasicAuth(projectID, authToken)).json()
+campaignNumbers = response['data']
+
+while "next" in response['links'].keys():
+    response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+    campaignNumbers.extend(response['data'])
+```
+
+Great! Now that we have a list of all of our numbers in the campaign, we will iterate through it and release numbers that are also in the results array. If the number is deleted, we will print the success to the console. If not, we will log the error to the console so we know why it failed (i.e. wasn't found on the campaign, wasn't the right format, etc). 
+
+```python
+# loop through numbers and call delete number function on each if tn in results
+for number in campaignNumbers:
+    tn = number['phone_number']['number']
+    assignmentSID = number['id']
+    if tn in results:
+
+        try:
+            url = f"https://{SpaceURL}/api/relay/rest/registry/beta/numbers/{assignmentSID}"
+            payload = {}
+            headers = {}
+            response = requests.request("DELETE", url, headers=headers, data=payload,
+                                        auth=HTTPBasicAuth(projectID, authToken))
+            if response.ok:
+                print(f"{tn} successfully deleted")
+            else:
+                print(f"{response.status_code} {response.text}. {tn} not deleted.")
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+```
+
+Wrap up
+-------
+
+Keeping your brands/campaigns clean and up to date is very important to stay in compliance with all of the latest 10DLC requirements that The Campaign Registry has dictated. This script will let you remove numbers from your campaign quickly so that you don't have to go through them all one by one.
+
+Sign Up Here
+------------
+
+If you would like to test this example out, you can [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Slack](https://signalwire.community/) or create a Support ticket from your SignalWire Space if you need guidance!

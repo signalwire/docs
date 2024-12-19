@@ -1,0 +1,228 @@
+---
+title: IVR with Voicemails Forwarded to Email - Node.js
+slug: /compatibility-api/guides/voice/nodejs/ivr-with-voicemail-to-email
+x-custom:
+  ported_from_readme: true
+  tags:
+    - language:nodejs
+    - sdk:compatibility
+    - product:voice
+---
+
+## Overview
+
+This advanced example builds an application that implements a simple phone tree IVR with a few interesting features, including:
+
+- Parallel dialing to multiple phone numbers
+- Recording a voicemail and using a dynamic greeting
+- Transcribing voicemail and sending both the text and the recording via email
+
+## What do you need to run this code?
+
+Check out the full code on our Github Repository [here](https://github.com/signalwire/signalwire-guides/tree/master/code/node_ivr).
+
+You will need the [SignalWire Node.JS SDK](https://docs.signalwire.com/topics/laml-api/#laml-rest-api-client-libraries-and-sdks-nodejs), and your SignalWire Credentials. 
+Find these by logging into your SignalWire Space and navigating to the API tab. 
+For more information, read our guide to
+[Navigating your SignalWire Space](/platform/dashboard/getting-started/navigating-your-space).
+
+The application also uses the [Express](https://expressjs.com/en/starter/installing.html) web framework and 
+[Mailgun](https://www.mailgun.com/) to send the emails, and you will need an API key from that service. 
+You could also use any other email API.
+
+## Running the application
+
+### Setup Your Environment File
+
+1. Copy from example.env
+2. Save new file called .env
+3. Fill in the fields with your own values
+
+```
+PRIMARY_SALES=+15557788999
+SECONDARY_SALES=+15554433222
+RECRUITERS_GROUP=+15556677888,+15559998877
+ACCOUNTING_GROUP=+15554455777
+JOBS_EMAIL=jobs@yourdomain.com
+ACCOUNT_EMAIL=accounts@yourdomain.com
+
+EMAIL_FROM=me@samples.mailgun.org
+MAILGUN_DOMAIN=your-Mailgun-domain
+MAILGUN_API_KEY=your-Mailgun-api-key
+```
+
+### Build and run via Docker
+
+It is simpler to run the application via Docker, by first building the image with `docker build -t nodeivr .` followed by `docker run -it --rm -p 3000:3000 --name nodeivr --env-file .env nodeivr`.
+
+### Build and Run locally
+
+If you are running the application locally, first load the `.env` file with `set -o allexport; source .env; set +o allexport`, then run `npm install` followed by `npm start`.
+
+:::info You may need to use a SSH tunnel for testing this code if running on your local machine. – we recommend [ngrok](https://ngrok.com/). You can learn more about how to use ngrok [here](/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok).
+
+When you configure a SignalWire number to test, you should add `/entry` to the end of the URL you input, such as `https://yourname.ngrok.io/entry`.
+
+Otherwise, simply head to `http://localhost:3000`
+
+:::
+
+## Step by Step Code Walkthrough
+
+In the [Github Repo](https://github.com/signalwire/signalwire-guides/tree/master/code/node_ivr) there are 6 files. We are mainly concerned with the `env.example` which we will use to set up our `.env` file, and `index.js` where the application lives.
+
+### Entry
+
+The core of the application is the `entry` route, where we ask for the user's choice via DTMF.
+
+```js
+app.post("/entry", (req, res, next) => {
+  var response = new RestClient.LaML.VoiceResponse();
+  gather = response.gather({ timeout: 5, numDigits: 1, action: formatUrl("mainmenu") });
+  gather.say("Hello! Press 1 for sales, 2 for recruiting or 4 for accounting.");
+
+  respondAndLog(res, response);
+});
+```
+
+The SignalWire cXML APIs require that code is translated into XML, so here is the XML version of what the code above does!
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+ <Gather timeout="5" numDigits="1" action="/mainmenu">
+   <Say>Hello! Press 1 for sales, 2 for recruiting or 4 for accounting.</Say>
+ </Gather>
+</Response>
+```
+
+### MainMenu
+
+Based on what number the user inputs, we then redirect to the correct action in the `mainmenu` handler. Whether the user dials sales, recruiting, or accounting, you can see below that we dial every member of the group at the same time. When one person picks up, the rest of the calls will be terminated.
+
+```js
+app.post("/mainmenu", (req, res, next) => {
+  console.log(req.body);
+  var response = new RestClient.LaML.VoiceResponse();
+
+  switch (req.body.Digits) {
+    case "2":
+      dial = response.dial({
+        timeout: 20,
+        action: formatUrl("voicemail", "?Email=" + JOBS_EMAIL + "&Message=Recruiting"),
+      });
+      var recruiters = RECRUITERS_GROUP.split(",");
+      recruiters.forEach(function (item) {
+        dial.number(item);
+      });
+      break;
+    case "4":
+      dial = response.dial({
+        timeout: 20,
+        action: formatUrl("voicemail", "?Email=" + ACCOUNT_EMAIL + "&Message=Accounting"),
+      });
+      dial.number(ACCOUNTING_GROUP);
+      break;
+    default:
+      dial = response.dial({ timeout: 20, action: formatUrl("primarysalesdial") });
+      dial.number(PRIMARY_SALES);
+  }
+
+  respondAndLog(res, response);
+});
+```
+
+For example, if the caller enters `2`, this is the XML that is returned. Multiple `<Number>` entries are dialed at the same time, the first one to pick up hangs up the other.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial timeout="20" action="/voicemail?Email=jobs@yourdomain.com&amp;Message=Recruiting">
+    <Number>+15556677888</Number>
+    <Number>+15559998877</Number>
+  </Dial>
+</Response>
+```
+
+### Action parameters
+
+What is very important here is the `action` parameter in each dial. The `voicemail` URL is what will be triggered when a call ends, and we will need to check if the call had actually connected to the intended department or not. If not, we will send them to voicemail. Note that we also pass the department name via query string so the greeting is dynamic.
+
+```js
+app.post("/voicemail", (req, res, next) => {
+  var response = new RestClient.LaML.VoiceResponse();
+  if (req.body.DialCallStatus != "completed") {
+    // it means the call was not answered
+    response.say(
+      "Our " +
+        req.query.Message +
+        " department is currently unavailable. Please leave a message after the beep."
+    );
+    action = formatUrl("voicemailhandler", "?Email=" + req.query.Email);
+    response.record({ transcribe: true, transcribeCallback: action, action: action });
+  }
+  respondAndLog(res, response);
+});
+```
+
+generating the following XML:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+ <Say>Our Accounting department is currently unavailable. Please leave a message after the beep.</Say>
+ <Record transcribe="true" transcribeCallback="/voicemailhandler?Email=accounts@yourdomain.com" action="/voicemailhandler?Email=accounts@yourdomain.com"/>
+</Response>
+```
+
+In the above, we set a `transcribeCallback` for the `<Record>` action. This allows our callback to receive both the recording file URL and the transcription text.
+
+Handling the transcription is made a bit tricky by the fact that it is asynchronous, so the handler gets called twice, once for the recording URL and once for the transcription. We get around that by temporarily saving the recording in a hash in memory. In a production environment, this should be replaced by a database.
+
+### Sending our transcription to email with Mailgun
+
+When the second request comes with the transcription, we use Mailgun to send an email containing the recording file and the recording transcription.
+
+```js
+app.post("/voicemailhandler", (req, res, next) => {
+  if (req.body.TranscriptionText) {
+    console.log(
+      "Got transcription, send email " +
+        req.query.Email +
+        RECORDING_DB[req.body.CallSid] +
+        req.body.TranscriptionText
+    );
+    emailTranscription(
+      req.query.Email,
+      RECORDING_DB[req.body.CallSid],
+      req.body.TranscriptionText,
+      req.body.From
+    );
+    // avoid leaking memomry
+    delete RECORDING_DB[req.body.CallSid];
+  } else if (req.body.RecordingUrl) {
+    console.log("stash recording for later");
+    RECORDING_DB[req.body.CallSid] = req.body.RecordingUrl;
+  }
+
+  var response = new RestClient.LaML.VoiceResponse();
+  respondAndLog(res, response);
+});
+```
+
+## Wrap Up
+
+This guide takes look into how the SignalWire API can be used to handle parallel dialing as well as recording and transcribing voicemail. Then sending those voice mail transcriptions and recordings with the help of MailGun!
+
+### Resources
+
+[Github](https://github.com/signalwire/signalwire-guides/tree/master/code/node_ivr)  
+[SignalWire Node.JS SDK](https://docs.signalwire.com/topics/laml-api/#laml-rest-api-client-libraries-and-sdks-nodejs)  
+[Express](https://expressjs.com/en/starter/installing.html)  
+[Mailgun](https://www.mailgun.com/)
+
+## Sign Up Here
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Slack](http://signalwire.community/) or create a Support ticket if you need guidance!

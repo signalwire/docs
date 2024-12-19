@@ -1,0 +1,72 @@
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "b08dacad-2f6c-4de1-93d6-cc732e0c69c5", token: "PT16d2254f1cf1be0766881a2043afe8ef9e2fc8e8f739750b" })
+
+const voiceClient = client.voice;
+
+// Setup a voice client to listen for incoming calls
+await voiceClient.listen({
+  topics: ['office'],
+  onCallReceived: async (call) => {
+    // Answer the call
+    call.answer();
+
+    await call.playTTS({
+      text: "Thank you for calling SignalWire! Please listen closely to the options in order to direct your call.",
+    });
+
+    await handlePromptTTS(call);
+  }
+})
+
+async function handlePromptTTS(call) {
+  await call.promptTTS({
+    
+    text: "Press 1 to talk to sales, Press 2 to talk to Support, Press 3 to talk to a Customer Representative",
+    digits: {
+      max: 1,
+      digitTimeout: 5,
+    },
+    listen: {
+      onEnded: async (prompt) => {
+        const digits = prompt.digits;
+
+        if (digits === "1") {
+          await connectCall(call, "sales", "+1XXXXXXXXXX");
+        }
+
+        else if (digits === "2") {
+          await connectCall(call, "support", "+1YYYYYYYYY");
+        }
+
+        else if (digits === "3") {
+          await connectCall(call, "a customer representative", "+1ZZZZZZZZZZ");
+        }
+        else {
+          await call.playTTS({
+            text: "Invalid option. Please try again.",
+          });
+
+          handlePromptTTS(call);
+        }
+      }
+    }
+  });
+}
+
+async function connectCall(call, destination, toNumber) {
+  await call.playTTS({
+    text: `Connecting you to ${destination}`,
+  });
+
+  let peer = await call.connectPhone({
+    from: call.from,
+    to: toNumber,
+    timeout: 30
+  });
+
+  await peer.disconnected();
+  call.hangup();
+}
+```

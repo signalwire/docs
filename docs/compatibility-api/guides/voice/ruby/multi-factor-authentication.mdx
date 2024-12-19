@@ -1,0 +1,154 @@
+---
+title: Multi Factor Authentication for Voice - Ruby
+description: Multi-factor authentication (MFA) is used to authenticate users of
+  an application through the use of a secret token that is sent to them over SMS
+  text or a voice call. It is commonly used for logging in to secure systems,
+  but it is also gaining popularity as an one-time password (OTP) mechanism to
+  authorize transactions or to sign documents and contracts.
+slug: /compatibility-api/guides/voice/ruby/multi-factor-authentication
+x-custom:
+  ported_from_readme: true
+  tags:
+    - product:messaging
+    - product:voice
+    - language:ruby
+    - sdk:compatibility
+---
+
+
+## Overview
+
+Multi-factor authentication (MFA) is used to authenticate users of an application through the use of a secret token that is sent to them over SMS text or a voice call. It is commonly used for logging in to secure systems, but it is also gaining popularity as a one-time password (OTP) mechanism to authorize transactions or to sign documents and contracts.
+
+SignalWire's [Multi-Factor Authentication](/rest/signalwire-rest/endpoints/space/request-mfa-sms) provides a simple and secure flow to request and verify tokens via REST HTTP calls. This application implements a simple flow to showcase how the API operates in a Ruby environment.
+
+<br/>
+
+What do I Need to Run this Code?
+--------------------------------
+
+You can view the full code on our GitHub [HERE](https://github.com/signalwire/guides/tree/main/Voice/Multi-Factor%20Authentication%20in%20Ruby)
+
+The [SignalWire Ruby SDK](/compatibility-api/sdks) will need to be installed.
+
+Your SignalWire credentials (**API Token**, **Space URL**, and **Project ID**) can all be found in an easily copyable format within the **API** tab of your SignalWire portal. For more information on navigating your Space check out this [guide](/platform/dashboard/getting-started/navigating-your-space).
+
+Lastly, you will need to install some additional Ruby packages:
+
+- [Sinatra](https://github.com/sinatra/sinatra) for quickly creating web applications in Ruby
+- [Dotenv](https://github.com/bkeepers/dotenv) for managing our environment variables
+
+<br/>
+
+How to Run the Application
+--------------------------
+
+### Build using Docker
+
+ build the container using `docker build . -t mfaruby` then run the application with `docker run -it --rm -p 4567:4567 --name mfaruby --env-file .env mfaruby`.
+
+### Build Natively
+
+If you are running the application with Ruby on your computer, set up the `.env` file and then run `bundle install` followed by `bundle exec ruby app.rb`.
+
+<br/>
+
+Step by Step Code Walkthrough
+-----------------------------
+
+### Set up your .env file
+
+1. Copy from example.env and fill in your values
+2. Save new file called .env
+
+Your file should look something like this.
+
+```text
+SIGNALWIRE_PROJECT_KEY=yourproject
+SIGNALWIRE_TOKEN=yourtoken
+SIGNALWIRE_SPACE=YOURSPACE.signalwire.com
+```
+
+### Walk through app.rb
+
+Our application is going to be heavily based off of the Ruby translation of the SignalWire Multi-Factor Authentication API so we must begin by [requesting a token via phone call](https://docs.signalwire.com/topics/relay-rest/#resources-multi-factor-authentication-request-a-mfa-token-via-phone-call). Notice how the base of the request for a MFA token can be seen in the Ruby snippet below. 
+
+```ruby
+def make_request(action, payload)
+  uri = URI.parse("https://#{ENV['SIGNALWIRE_SPACE']}/api/relay/rest/mfa#{action}")
+
+  request = Net::HTTP::Post.new(uri)
+  request.basic_auth(ENV['SIGNALWIRE_PROJECT_KEY'], ENV['SIGNALWIRE_TOKEN'])
+  request.set_form_data(payload)
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", verify_mode: OpenSSL::SSL::VERIFY_NONE) do |http|
+    http.request(request)
+  end
+  
+  if response.code.to_i < 400
+    return JSON.parse(response.body)
+  else
+    return { "success" => false }
+  end
+end
+```
+
+<br/>
+
+Next, we must verify that the token was entered correctly. For this, we will look at the SignalWire MFA API for [verifying a token](https://docs.signalwire.com/topics/relay-rest/#resources-multi-factor-authentication-verify-a-token). To make this request with the ruby definition below, we simple change the `mfa#{action}` to `verify` and send the token 
+
+The next step in our code will be to perform these two API calls under the same branch so that we can request and verify the same authentication code.
+
+From the `make_request` definition declared above, we can see the application requesting a token from the `post` request beginning on line 8 of the snippet below. 
+
+Next, we see the modification of the `make_request` function for verification of the token. Notice how the API is still sending a `post` request but the URI is appended with `/verify` and our payload is the `token` rather than the `to` number being sent with the API.
+
+```ruby
+get '/' do
+  erb :index
+end
+
+post '/' do
+  if params[:phone]
+    # request the token
+    payload = {
+      "to" => params[:phone]
+    }
+    result = make_request("/#{params[:mode]}", payload)
+    @verify = result["id"]
+  elsif params[:verify]
+    # request verification of the token
+    payload = {
+      "token" => params[:code]
+    }
+    result = make_request("/#{params[:verify]}/verify", payload)
+
+    @success = result["success"]
+    @verify = params[:verify]
+  end
+
+  erb :index
+end
+```
+
+<br/>
+
+Wrap Up
+-------
+
+Multi-factor authentication adds security to your application by requesting a user to be verified via voice or via text message which sounds like exhausting work if you have to sit on your phone all day and manually send each one of your customers a token. 
+
+The One Time Password flows (OTP) from SignalWire's MFA API allows you to easily automate this process and beef up your security systems with just a few lines of Ruby code.
+
+### Required Resources:
+
+- [Github Repo](https://github.com/signalwire/guides/tree/main/Voice/Multi-Factor%20Authentication%20in%20Ruby)
+- [SignalWire Ruby SDK](/compatibility-api/sdks)
+- [Sinatra](https://github.com/sinatra/sinatra)
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Slack](https://signalwire.community/) or create a Support ticket if you need guidance!

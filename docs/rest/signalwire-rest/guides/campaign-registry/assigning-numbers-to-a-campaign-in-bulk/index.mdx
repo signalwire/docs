@@ -1,0 +1,172 @@
+---
+title: Assign numbers to a campaign in bulk
+sidebar_label: Assign numbers in bulk
+slug: /rest/signalwire-rest/guides/campaign-registry/assign-numbers-to-a-campaign-in-bulk
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags:
+    - product:messaging
+    - language:python
+description: Assign numbers to your campaign all in one go
+sidebar_custom_props:
+    platform: python
+---
+
+# Assign numbers to a campaign in bulk
+
+## Overview
+
+This script will let you assign numbers to your campaign all in one go requiring only some simple Python, our Campaign Registry APIs, and a CSV of your numbers! If you need help getting a CSV of the numbers you want to add, you could try [listing your account numbers to csv](/compatibility-api/guides/general/phone-numbers/list-numbers-to-csv) or [purchasing new numbers in bulk](/compatibility-api/guides/general/phone-numbers/how-to-purchase-numbers-in-bulk). 
+
+<details>
+  <summary>Full code example: Assigning Numbers to a Campaign in Bulk</summary>
+
+```python
+import requests
+from requests.auth import HTTPBasicAuth
+import csv
+
+# define your variables here to reuse throughout code
+SpaceURL = '.signalwire.com'
+projectID = ""
+authToken = ""
+campaignSID = ""
+PathToCSV = 'UnregisteredNumbers.csv'
+results = []
+
+# Open CSV file with unregistered numbers
+with open(PathToCSV, 'r', encoding='utf-8-sig') as csvfile:
+    reader = csv.reader(csvfile)
+    next(reader, None)
+    # Change to E164 format if it's not already in that format
+    for row in reader:
+        if "+" not in row[0]:
+            results.append("+" + row[0])
+        else:
+            results.append(row[0])
+
+for result in results:
+    try:
+        response = requests.post(f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignSID}/orders",
+                                 json={"phone_numbers": [result]},
+                                 headers={
+                                     "Accept": "application/json",
+                                     "Content-Type": "application/json"},
+                                 auth=HTTPBasicAuth(projectID, authToken))
+        if response.ok:
+            print(f"{result} added to campaign")
+        else:
+            print(f"{response.status_code} {response.text}. {result} not added to campaign.")
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+```
+
+</details>
+
+Required Resources
+------------------
+
+This script does not require any additional packages except for those native to Python! 
+However, you will need the `campaignSID` of the campaign that will contain the numbers you are assigning. 
+You can find your campaign SID by going to the Messaging Campaigns section of your SignalWire Space and clicking the specific campaign whose numbers you need. 
+The SID is the long alphanumeric string at the top as shown here:
+
+<figure>
+  <img className="img-800" src={require("./34f4a27-Screen_Shot_2022-06-08_at_6.10.17_PM.webP").default} alt="A screenshot of a Campaign page within the Messaging Campaigns page of a SignalWire Space. The Campaign SID is a long string of numbers and letters beneath the Campaign name." />
+</figure>
+
+** How to get API Credentials **
+
+The API also requires that you authenticate yourself using your Project ID, API Token, and Space URL. If you do not know where to find these values, check out our guide to [Navigating your SignalWire Space](/platform/dashboard/getting-started/navigating-your-space#api)!
+
+How to Run the Snippet
+----------------------
+
+If you copy the code and save it to a file named `assignNumbers.py`, for example, to run it you will need to run:
+
+MacOS/Linux - `python3 assignNumbers.py`  
+Windows - `py assignNumbers.py`
+
+Step by Step Code Walkthrough
+-----------------------------
+
+This snippet essentially consists of only three parts - we import our required libraries and define our variables, we read in our CSV, and we rotate through each number in the CSV making an HTTP request to assign it to our campaign. That's all there is to it! 
+
+### Import Required Libraries and Define Variables
+
+Here we will import csv, requests, and HTTPBasicAuth from requests. These tools make it easier to manage our CSV file and make HTTP requests to SignalWire. Make sure that `PathToCSV` is correct for both your OS and your file structure! If your `UnregisteredNumbers.csv` file is in a different folder, you will need to adjust the value given to make sure that you point to the correct path. 
+
+```python
+import requests
+from requests.auth import HTTPBasicAuth
+import csv
+
+# define your variables here to reuse throughout code
+SpaceURL = '.signalwire.com'
+projectID = ""
+authToken = ""
+campaignSID = ""
+PathToCSV = 'UnregisteredNumbers.csv'
+results = []
+```
+
+### Open CSV File with Numbers to Register
+
+In this step, we will use `csv` to open our file containing the numbers to be registered. We will use `next(reader, None)` to skip the header, but if your CSV doesn't have a header, you can comment this line out! We will check each number to make sure that it is in E164 format and then add it to our `results` list. 
+
+```python
+# Open CSV file with unregistered numbers
+with open(PathToCSV, 'r', encoding='utf-8-sig') as csvfile:
+    reader = csv.reader(csvfile)
+    # skip column header 
+    next(reader, None)
+    # Change to E164 format if it's not already in that format
+    for row in reader:
+        if "+" not in row[0]:
+            results.append("+" + row[0])
+        else:
+            results.append(row[0])
+```
+
+### Assign Numbers to Campaign
+
+Now that we have that all done, we can just loop through our `results` list and use the [assign phone number to campaign endpoint](/rest/signalwire-rest/endpoints/space/create-order) to assign each to the campaign. If the HTTP request is successful, we will print that `+1xxxyyyzzzz added to the campaign`. If not, we will print that the number wasn't added and include the status code/reason why.
+
+```python
+for result in results:
+    try:
+        response = requests.post(f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignSID}/orders",
+                                 json={"phone_numbers": [result]},
+                                 headers={
+                                     "Accept": "application/json",
+                                     "Content-Type": "application/json"},
+                                 auth=HTTPBasicAuth(projectID, authToken))
+        if response.ok:
+            print(f"{result} added to campaign")
+        else:
+            print(f"{response.status_code} {response.text}. {result} not added to campaign.")
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+```
+
+Wrap up
+-------
+
+By utilizing SignalWire's [Campaign Registry APIs](/messaging/get-started/campaign-registry), you can easily build a system that automates all of your campaign management in any of your favorite languages! 
+
+Resources
+---------
+
+- [Create a Phone Number Assignment API Endpoint](/rest/signalwire-rest/endpoints/space/create-order)
+- [List Numbers to CSV](/compatibility-api/guides/general/phone-numbers/list-numbers-to-csv)
+- [Purchase Numbers in Bulk](/compatibility-api/guides/general/phone-numbers/how-to-purchase-numbers-in-bulk)
+
+Sign Up Here
+------------
+
+If you would like to test this example out, you can [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Slack](https://signalwire.community/) or create a Support ticket from your SignalWire Space if you need guidance!

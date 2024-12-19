@@ -1,0 +1,107 @@
+---
+title: RELAY Realtime SDK 3.8.0
+authors: [rsowalkd]
+tags: [sdk, release]
+date: 2023-03-22T00:01
+---
+
+We are happy to announce **Realtime-API SDK 3.8.0**.
+
+
+Upgrading is straightforward with our release process, which adheres to [Semantic Versioning](https://semver.org/).
+Minor versions are guaranteed to not have breaking changes, so you can upgrade with confidence.
+
+![SignalWire Release Card](./_img/img.png)
+
+
+{/* truncate */}
+
+Version 3.8 of the RELAY Realtime SDK is out now and introduces a new feature for Video: Interactive Live Streaming.
+Here are the highlights.
+
+## Interactive Live Streaming
+
+Interactive Live Streaming is a Video product that provides a flexible middle ground between RTMP
+streaming and a Video conference. RTMP streaming allows a user to stream their audio and video to a passive audience,
+while a video conference allows all users to transmit and receive audio and video.
+Interactive Live Streaming allows users to experience either state or switch between them in one Video room depending on their role.
+
+## Join a Video Room as a `member` or `audience`
+To join a Video Room with `member` abilities to send and receive audio and video or `audience` permissions
+to only receive audio and video, you must generate a Room Token with the appropriate parameters.
+
+### From a Node server
+```js
+try {
+  let token = await axios.post(
+    apiurl + "/room_tokens",
+    {
+      user_name: user_name,
+      room_name: room_name,
+      join_as: "audience",
+    },
+    { auth }
+  );
+  console.log(token.data.token);
+
+  return res.json({ token: token.data.token });
+} catch (e) {
+  console.log(e);
+  return res.sendStatus(500);
+}
+```
+
+### With cURL
+
+```shell
+curl -L -X POST "https://$SPACE_URL/api/video/room_tokens" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' \
+  -u "$PROJECT_ID:$API_TOKEN" \
+  --data-raw '{
+    "room_name": "my_room",
+    "user_name": "John Smith",
+    "join_as": "audience"
+  }'
+```
+
+## Promote Audience or Demote Members
+To change the interactivity mode of a participant, the methods `promote()` and `demote()`
+have been added to the `RoomSession` object. [bc56cc4](https://github.com/signalwire/signalwire-js/commit/bc56cc42497220d43085adea8f3834fbce60444b)
+
+`promote` requires the audience participant's ID, and you may choose to set specific Video Room permissions.
+
+```js
+await roomSession.promote({
+  memberId: "de550c0c-3fac-4efd-b06f-b5b8614b8966",
+  mediaAllowed: "all",
+  permissions: [
+    "room.self.audio_mute",
+    "room.self.audio_unmute",
+    "room.self.video_mute",
+    "room.self.video_unmute",
+    "room.list_available_layouts",
+  ],
+});
+```
+
+Optional parameters on `promote` include `meta`, `joinAudioMuted` and `joinVideoMuted`.
+[bc56cc4](https://github.com/signalwire/signalwire-js/commit/bc56cc42497220d43085adea8f3834fbce60444b)
+
+See the [`promote` technical reference](https://developer.signalwire.com/sdks/reference/realtime-sdk/video/video-roomsession#promote)
+for a full list of parameters.
+
+`demote` removes the participant's ability to send audio and video.
+[Technical reference](https://developer.signalwire.com/sdks/reference/realtime-sdk/video/video-roomsession#demote)
+
+```js
+await roomSession.demote({
+  memberId: "de550c0c-3fac-4efd-b06f-b5b8614b8966",
+  mediaAllowed: "all",
+});
+```
+
+## Audience Count Event
+The `room.audience_count` event is available on the `RoomSession` object to track the audience count.
+It is triggered periodically as audience participants join and leave the room session.
+[fb83b89](https://github.com/signalwire/signalwire-js/commit/fb83b89b71ff5679027940e160cc16a90249675f)

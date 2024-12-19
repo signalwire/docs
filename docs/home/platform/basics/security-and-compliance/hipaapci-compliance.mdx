@@ -1,0 +1,128 @@
+---
+slug: /platform/basics/security-and-compliance/hipaapci-compliance
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  hideInGuideShowcase: true
+---
+
+# HIPAA/PCI Compliance on SignalWire
+
+## Overview
+
+As a telecommunication technology company in the modern age, SignalWire knows how critical it is to protect customer privacy and comply with best practices for secure data transmissions. That is why the SignalWire platform is designed to be HIPAA compliant and satisfy all PII and data privacy regulations the framework mandates. SignalWire APIs and WebRTC communications services are all encrypted by default via HTTPS, TLS, and/or SRTP/DTLS.
+
+## Access Control
+
+When you [invite a new user to your SignalWire Space](/platform/dashboard/guides/user-management), the admin can specify the projects that they should be allowed to view limiting accessibility to resource logs to only those who have been granted permission. The API also requires each request to be authenticated with a Space URL, Project ID, and most importantly, an API Token.
+
+We highly recommend that each application that programmatically accesses SignalWire uses their own API tokens so that you can easily see when these tokens have been used and remove them when/if necessary. Additionally, take care to make sure only those who NEED access to a project have it.
+
+:::info The Principle of Least Privilege
+
+[The principle of least privilege (POLP)](https://www.techtarget.com/searchsecurity/definition/principle-of-least-privilege-POLP) is a concept in computer security that limits users' access rights to only what are strictly required to do their jobs. Implementing this is a huge help in HIPAA and PCI compliance both, as well as a solid business practice.
+
+:::
+
+## HIPAA
+
+[HIPAA](https://www.hhs.gov/hipaa/for-professionals/index.html) (The Health Insurance Portability and Accountability Act) applies to covered entities and business associates as defined below:
+
+> Individuals, organizations, and agencies that meet the definition of a [covered entity](https://www.hhs.gov/hipaa/for-professionals/covered-entities/index.html) under  
+> HIPAA must comply with the Rules' requirements to protect the privacy and security of health  
+> information and must provide individuals with certain rights with respect to their health information.
+>
+> If a covered entity engages a [business associate](https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/business-associates/index.html) to help it carry out its health care activities and  
+> functions, the covered entity must have a written business associate contract or other arrangements  
+> with the business associate that establishes specifically what the business associate has been  
+> engaged to do and requires the business associate to comply with the Rules’ requirements to protect  
+> the privacy and security of protected health information.
+
+:::info SignalWire is a Business Associate
+
+If you need a BAA signed for HIPAA compliance, reach out to sales@signalwire.com to get started.
+
+:::
+
+SignalWire is HIPAA compliant by design from the ground up. 
+No PII (Personally Identifiable Information), private resource logs, or other records are publicly accessible - you must have specific access granted by a Space Admin to see logs in the portal and you must have API credentials to use the API. 
+PII and PHI (Personal Health Information) that may be contained in resources can also be deleted from the logs (message bodies, fax media, message media, etc). 
+Recordings must be manually enabled and they can be deleted from the Space altogether or paused during the collection of sensitive data.
+
+## PCI
+
+PCI Compliance comes from the Payment Card Industry Data Security Standard (PCI DSS) and applies  
+to all entities that store, process, and/or transmit cardholder data. Similar to HIPAA, it aims to protect  
+the end-users information from abuse and theft.
+
+The SignalWire platform is PCI compliant as we use 3rd parties to collect and store all PCI-sensitive information. Additionally, we implement access control, restrict access to cardholder metadata, protect stored cardholder metadata, and encrypt the transmission of cardholder metadata across open, public networks.
+
+The extremely popular online payment processor [Stripe](https://stripe.com/) has published an **excellent** guide on PCI compliance. To learn how to make sure your business is practicing best practices for PCI compliance as well, review it [here](https://stripe.com/guides/pci-compliance).
+
+## Examples
+
+To further restrict access to sensitive data, you can delete resources from SignalWire via the API or in the Dashboard. Here are some examples of how to do this.
+
+- [Redact Messages for HIPAA Compliancy](/compatibility-api/guides/messaging/general/how-to-redact-messages-for-hippa-compliancy)
+
+<details>
+  <summary>Full code example: Delete and Redact Message Media</summary>
+
+```python
+# import the SignalWire API
+from signalwire.rest import Client as signalwire_client
+
+client = signalwire_client("project id", "api token" , signalwire_space_url = "space url")
+
+# sets lists for our message sid's and media sid's
+msgsids = []
+mdasids = []
+msgsidsuniq = []
+
+
+
+# gets a list of all messages, here you could add arguments such as to, from, datesent, or status
+messages = client.messages.list()
+
+# for each message retrieved from 'messages' we will append the sid to the msgsids list
+for record in messages:
+    msgsids.append(record.sid)
+
+# for each sid retrieved we will get a list of media sids associated with that message
+for msg in msgsids:
+    media = client.messages(msg).media.list()
+
+    # for each media sid we will retrieve the parent sid and delete the related media (this allows us to handle messages with multiple media instances
+    for med in media:
+
+        # checks the parent(message) sid of each media sid and adds it to a list
+        if med.parent_sid not in msgsidsuniq:
+            msgsidsuniq.append(med.parent_sid)
+
+        # deletes the media from the message
+        client.messages((med.parent_sid)) \
+            .media(med.sid)\
+            .delete()
+
+        # prints the media sid deleted
+        print(med.sid + " deleted")
+
+# takes unique message sid's from media deletion and updates the body to be blank or 'redacted'
+for msgsid in msgsidsuniq:
+
+    # using .update() allows you to track that the message was sent and redacted later
+    # using .delete() would hide the message entirely from your message logs
+    message = client.messages(msgsid).update(body='')
+
+    # prints message sid over-write
+    print(msgsid + " over-write")
+```
+</details>
+
+You can also secure the callbacks for inbound faxes to further protect your application.
+
+- [How to Secure Callbacks for Inbound Fax](/fax/getting-started/securing-callback-for-inbound-fax-with-cxml)
+
+## Conclusion
+
+Following privacy regulations is a crucial part of integrating modern communications technology with your applications, especially if the data you are passing is PCI, medical, or legal. This protects both your customers and your company from unintended repercussions of insecurely transmitting data.

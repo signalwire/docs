@@ -1,0 +1,472 @@
+---
+title: Using Chat to Send SMS and Make Calls
+slug: /chat/guides/using-chat-to-send-sms-and-make-calls
+description: Learn how to use the SignalWire Chat API to send SMS and make calls.
+x-custom:
+  tags:
+    - product:chat
+    - product:voice
+    - product:messaging
+    - language:javascript
+    - language:nodejs
+    - sdk:relaybrowser3
+    - sdk:relayrealtime3
+    - sdk:relayrealtime4
+sidebar_custom_props:
+  platform: javascript
+---
+
+import LangSwitchMessage from "@site/docs/_common/languageSwitcher.mdx";
+
+<LangSwitchMessage />
+
+In this guide, we will explore a simple IVR chat application that offers the
+user an option to send an SMS message or make a voice call directly from the
+browser by making use of our Browser SDK and our RELAY Realtime Server SDK.
+
+<figure>
+  <img
+    className="img-800"
+    src={require("./f3db920-chat.webP").default}
+    alt="A screenshot of a chat application titled '1009'. Each message is from 'user100'. The first message reads 'start'. The second message reads 'press 1 to send a message. press 2 to make a call.' The third message reads '1'. The fourth message reads 'You selected Message. Enter the from, to and content parameter using the below format. (ex. +1xxxx, +1xxxxxx, 'Hello world')'. Beneath those messages, there is a text box and button labeled 'Send'."
+  />
+  <figcaption>The final application.</figcaption>
+</figure>
+
+## Required Resources
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+- [Full source code repository](https://github.com/signalwire/guides/tree/main/Chat/Using%20chat%20to%20send%20messages%20and%20make%20voice%20calls)
+- [SignalWire Chat API](/rest/signalwire-rest/endpoints/chat/chat-tokens-create)
+- [SignalWire Javascript Browser SDK](/sdks/reference/browser-sdk/00-browser-sdk-reference.mdx)
+- [SignalWire RELAY Realtime SDK](/sdks/reference/realtime-sdk/relay-v3)
+
+</LangItem>
+<LangItem value="relayv4">
+
+- [Full source code repository](https://github.com/signalwire/guides/tree/main/Chat/Using%20chat%20to%20send%20messages%20and%20make%20voice%20calls%20Relay%20v4)
+- [SignalWire Chat API](/rest/signalwire-rest/endpoints/chat/chat-tokens-create)
+- [SignalWire Javascript Browser SDK](/sdks/reference/browser-sdk/00-browser-sdk-reference.mdx)
+- [SignalWire RELAY Realtime SDK](/sdks/reference/realtime-sdk/relay-v4)
+
+</LangItem>
+</Language>
+
+The API also requires that you authenticate yourself using your Project ID, API
+Token, and Space URL. If you do not know where to find these values, check out
+our guide to [Navigating your SignalWire Space](/platform/dashboard/getting-started/navigating-your-space#api).
+
+## How to Run the Application
+
+The web chat application is built using [Express](https://expressjs.com).
+Express is a minimal and flexible Node.js web application framework that
+provides a robust set of features for web applications and mobile applications.
+To run this application, you must run the Express server locally with the
+following steps:
+
+<Language groupId="relay_version">
+  <LangItem value="relayv3">
+    - Clone the project from the
+    [repo](https://github.com/signalwire/guides/tree/main/Chat/Using%20chat%20to%20send%20messages%20and%20make%20voice%20calls).
+  </LangItem>
+  <LangItem value="relayv4">
+    - Clone the project from the
+    [repo](https://github.com/signalwire/guides/tree/main/Chat/Using%20chat%20to%20send%20messages%20and%20make%20voice%20calls%20Relay%20v4).
+  </LangItem>
+</Language>
+- Run `npm install`. - In the project folder there is a `.env.example` file which you can use
+to create your `.env` file and replace the content with necessary credentials like we mentioned
+in the prerequisite section. - Start the server from your terminal with `node index.js` (or
+`nodemon index.js` if you have [nodemon](https://www.npmjs.com/package/nodemon) installed).
+
+## Code Walkthrough
+
+This Guide is divided into two sections: the **Frontend** and the **Backend**.
+The Frontend includes all of the UI-related sections and the Javascript block of
+code needed for the chat application to work. The Backend section includes the
+code to generate the chat token and endpoints that the frontend will call to
+initiate phone calls and send messages.
+
+### The Frontend
+
+Using the SignalWire Javascript SDK, you can easily integrate chat features into
+any web application. it only takes a few minutes to set up a basic example.
+
+:::info Please Note
+
+This project is built on the code from the _**[Simple Chat Demo](/chat/getting-started/get-started-with-a-simple-chat-demo)**_.
+You should be familiar with the Chat features discussed in that guide before going through this guide.
+
+:::
+
+#### Import the SDK
+
+To build your own chat application, you first need to include the SDK in your HTML.
+
+```html
+<!-- Import SignalWire library -->
+<script src="https://cdn.signalwire.com/@signalwire/js@3.8.0"></script>
+```
+
+Then you can interact with the SDK using the global variable `SignalWire`. We'll
+mainly be interested in the `SignalWire.Chat.Client` class for this guide, but
+if you'd like to explore this API, feel free to browse the [SDK documentation](sdks/reference/browser-sdk/00-browser-sdk-reference.mdx).
+
+#### Getting a Chat Token
+
+Tokens are provided to the client by your own custom server. Your server
+determines whether the user is actually authorized to access the chat and, if
+they are, asks SignalWire to emit a token. In the **Backend** section, we will
+see how to write such a server. For now, we will get a token from our local
+backend server with a POST request to the `/get_chat_token` endpoint which we
+will create later.
+
+```javascript
+const reply = await axios.post("/get_chat_token", {
+  member_id: member,
+  channel: channel,
+});
+
+const token = reply.data.token;
+```
+
+The above endpoint takes `member_id` which is the name of the user joining the
+chat. The `member_id` is used to identify the user while using the chat
+application and is displayed on all Chat messages from the user. The `channel`
+parameter is to identify the Chat channel the user is joining so they can send
+new messages and see previous messages in the channel.
+
+#### Initialize the Chat IVR
+
+Once in the chat channel, the user can type `start` to initialize the IVR and
+display a menu to send an SMS message or make a voice call.
+
+```javascript
+if (message.toLowerCase() === "start") {
+  await chatClient.publish({
+    channel: channel,
+    content: message,
+  });
+  const introMessage = `
+            Enter 1 to send an SMS message
+            Enter 2 to make a Voice call
+      `;
+  await chatClient.publish({
+    channel: channel,
+    content: introMessage,
+  });
+}
+```
+
+If the user types **1**, the following snippet prompts for the user input needed
+to send the message.
+
+```javascript
+if (message === "1") {
+  await chatClient.publish({
+    channel: channel,
+    content: message,
+  });
+  selectionType = message;
+
+  const messageSelection = `
+              \tYou selected Message\n
+              Enter the from, to and content parameter using the below format\n
+              (ex. +1aaabbbcccc,+1xxxyyyzzzz,"Hello world")
+        `;
+  await chatClient.publish({
+    channel: channel,
+    content: messageSelection,
+  });
+}
+```
+
+If the user types **2**, the following snippet prompts for the user input needed to initiate a phone call.
+
+```javascript
+if (message === "2") {
+  selectionType = message;
+
+  await chatClient.publish({
+    channel: channel,
+    content: message,
+  });
+
+  const voiceSelection = `
+            \tYou selected a voice call\n
+             Enter the from, to, content parameter using the below format\n
+             (ex. +1aaabbbcccc,+1xxxyyyzzzz, "Welcome!")
+        `;
+  await chatClient.publish({
+    channel: channel,
+    content: voiceSelection,
+  });
+}
+```
+
+:::caution Parameter Input
+
+The data input value for each selection must be comma separated. For example,
+Messaging uses `from,to,message` while Voice uses `from,to`. In this demo, using
+the improper format will throw an error.
+
+:::
+
+To process the data being sent, this snippet of code checks the selection type
+and then breaks the values into parameters to be passed to our server-side code.
+
+```javascript
+if (selectionType === "1") {
+  let data = message.trim().split(",");
+  let from = data[0].trim();
+  let to = data[1].trim();
+  let content = data[2].trim();
+
+  await chatClient.publish({
+    channel: channel,
+    content: message,
+  });
+
+  sendSWMessage(from, to, content, channel, chatClient);
+}
+```
+
+A Voice selection works the same way in the snippet below. Note that we are also
+passing the chat channel and client to these functions so that we can send a
+confirmation message to the user via the chat IVR.
+
+```javascript
+if (selectionType === "2") {
+  let data = message.trim().split(",");
+  let from = data[0].trim();
+  let to = data[1].trim();
+  let content = data[2].trim();
+
+  await chatClient.publish({
+    channel: channel,
+    content: message,
+  });
+
+  makeCall(from, to, content, channel, chatClient);
+}
+```
+
+In the [full code](https://github.com/signalwire/guides/blob/main/Chat/Using%20chat%20to%20send%20messages%20and%20make%20voice%20calls/frontend/app.js), you will find the functions `sendSWMessage` and `makeCall` which take the necessary parameters to send a message and make a voice call and call the backend.
+
+### The Backend
+
+The backend section consists of the endpoint needed to generate a chat token and
+the two endpoints to make calls and send SMS messages using the [SignalWire RELAY Realtime SDK](/sdks/reference/realtime-sdk/relay-v4).
+
+#### Import the SDK
+
+First, we must import the necessary libraries and frameworks:
+
+- [Axios](https://www.npmjs.com/package/axios)
+- [Express](https://expressjs.com/)
+- [SignalWire RELAY Realtime SDK](/sdks/reference/realtime-sdk)
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+```javascript
+require("dotenv").config();
+
+const auth = {
+  username: process.env.PROJECT_ID,
+  password: process.env.API_TOKEN,
+};
+
+const apiUrl = `https://${process.env.SPACE_URL}`;
+
+const axios = require("axios");
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const { Voice, Messaging } = require("@signalwire/realtime-api");
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+```javascript
+import "dotenv/config";
+import axios from "axios";
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: process.env.PROJECT_ID,
+  token: process.env.API_TOKEN,
+  topics: ["user"],
+});
+
+const apiUrl = `https://${process.env.SPACE_URL}`;
+```
+
+</LangItem>
+</Language>
+
+#### Chat Token Endpoint
+
+Below is a snippet used by our backend code to generate the Chat Token. For more
+information on this endpoint, see our [technical reference](/rest/signalwire-rest/endpoints/chat/chat-tokens-create).
+
+```javascript
+app.post("/get_chat_token", async function (req, res) {
+  const { member_id, channel } = req.body;
+  const channelsPerms = {};
+
+  channelsPerms[c] = { read: true, write: true };
+
+  const reply = await axios.post(
+    apiUrl + "/api/chat/tokens",
+    {
+      ttl: 50,
+      channels: channelsPerms,
+      member_id,
+      state: {},
+    },
+    { auth }
+  );
+
+  res.json({
+    token: reply.data.token,
+  });
+});
+```
+
+#### Voice Call Endpoint
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+This second endpoint initiates a phone call using the `dialPhone` method from
+the Realtime API Voice Client. The user's input is read over the voice call
+using text-to-speech technology and then the call is ended using the `hangup`
+method. for more information on the `Call` object, see the [Voice technical reference](sdks/reference/realtime-sdk/relay-v3/voice/voice-call.mdx).
+
+```javascript
+// Endpoint to make the phone call
+app.post("/make_call", async function (req, res) {
+  try {
+    const { from, to, content } = req.body;
+    const call = await client.dialPhone({
+      from: from,
+      to: to,
+      content: content,
+    });
+
+    let playback = await call.playTTS({ text: content });
+
+    await playback.ended();
+
+    await call.hangup();
+
+    return res.json({ data: "Call initiated successfully" });
+  } catch (exception) {
+    console.log(exception);
+    console.log("Call not answered");
+  }
+});
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+This second endpoint initiates a phone call using the `dialPhone` method from
+the Realtime API Voice Client. The user's input is read over the voice call
+using text-to-speech technology and then the call is ended using the `hangup`
+method. for more information on the `Call` object, see the [Voice technical reference](sdks/reference/realtime-sdk/relay-v4/voice/voice-call.mdx).
+
+```javascript
+// Endpoint to make the phone call
+app.post("/make_call", async function (req, res) {
+  try {
+    const { from, to } = req.body;
+    const call = await voiceClient.dialPhone({
+      from: from,
+      to: to,
+    });
+    await call.playTTS({ text: content }).onEnded();
+    await call.hangup();
+    return res.json({ data: "Call initiated successfully" });
+  } catch (exception) {
+    console.log(exception);
+    console.log("Call not answered");
+  }
+});
+```
+
+</LangItem>
+</Language>
+
+#### Messaging Endpoint
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+The last endpoint sends a message using the `send` method from the Realtime API
+Messaging Client. For more information on the `Messaging` client, you can visit
+the [Messaging technical reference](sdks/reference/realtime-sdk/relay-v3/messaging/messaging-client.mdx).
+
+```javascript
+// Endpoint to send the message
+app.post("/send_message", async function (req, res) {
+  try {
+    const { from, to, content } = req.body;
+    const message = await messageClient.send({
+      from: from,
+      to: to,
+      body: content,
+      context: "user",
+    });
+    return res.json({ data: message });
+  } catch (e) {
+    return res.json({ data: e.message });
+  }
+});
+```
+
+</LangItem >
+<LangItem value="relayv4">
+
+The last endpoint sends a message using the `send` method from the Realtime API
+Messaging Client. For more information on the `Messaging` client, you can visit
+the [Messaging technical reference](sdks/reference/realtime-sdk/relay-v4/messaging/messaging-client.mdx).
+
+```javascript
+// Endpoint to send the message
+app.post("/send_message", async function (req, res) {
+  try {
+    const { from, to, content } = req.body;
+    const message = await messageClient.send({
+      from: from,
+      to: to,
+      body: content,
+      topic: "user",
+    });
+    return res.json({ data: message });
+  } catch (e) {
+    return res.json({ data: e.message });
+  }
+});
+```
+
+</LangItem >
+</Language>
+
+## Wrap up
+
+With this simple chat UI and three endpoints, we have built a simple IVR chat
+application that takes selections from users to either place a call or send an
+SMS message. The application of this demo is very flexible according to your
+needs. It could be incorporated into a portal to direct simple inquiries to the
+message system and more complex inquiries to the voice system. You might
+hard-code a recipient phone number so customers can send an SMS or voice call to
+use your service. The implementation is up to you, but the tools you need are
+laid out for you here.

@@ -1,0 +1,66 @@
+---
+title: Locally Test Webhooks with Ngrok
+slug: /platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok
+x-custom:
+  ported_from_readme: true
+---
+
+
+SignalWire offers cXML applications as a way to host very simple code without the use of a server. However, what if you want to use more complex code or integrate with other applications/databases? In that case, you would need to write a script using the SignalWire SDK, host it on a server, and use that as the webhook for handling calls or messages.
+
+If you're new to webhooks with SignalWire, check out our [handy article](/platform/phone-numbers/guides/how-to-configure-your-webhook) about the different types of webhooks and how to use them!
+
+Why use ngrok for local testing?
+--------------------------------
+
+SignalWire requires that your webhooks be publicly accessible for them to be used with our services. This can make testing in local environments difficult because most computers have some routers/firewalls preventing this from taking place without [NAT](https://www.comptia.org/content/guides/what-is-network-address-translation#:~:text=NAT%20stands%20for%20network%20address,as%20do%20most%20home%20routers.) (Network address translation). 
+
+One tool that makes local testing easy is [ngrok](https://ngrok.com/download), a service that provides an HTTPS URL that tunnels requests to your web application running locally on a port. 
+
+How to Use ngrok
+----------------
+
+Once you have ngrok installed, you can run a command like `ngrok http 5000` depending on the port that you want to use. Under the forwarding tab, you will see a ngrok URL that points to your localhost on the port you specified. You can use this URL to give SignalWire access to your web application as long as the ngrok window is running. However, keep an eye on the time as the free version will expire!
+
+<figure>
+  <img className="img-800" src={require("./2a3a742-ngrok.webP").default} alt="A screenshot of the ngrok text interface in a console. The tunnel session details are shown, including the forwarding URL." />
+</figure>
+
+The next step is to tell ngrok **where** on your local host to look. Web frameworks such as Flask, Django, Sinatra, Express, Ruby on Rails, and many more will have a way to designate a path for incoming HTTP requests,  such as the line `@app.route("/message", methods=["POST"])` in the code snippet below. 
+
+This code snippet accepts transcription status callbacks and sends a message containing the call data and transcription. To use this script as a webhook, you would run the script and ngrok both on port 5000. 
+
+```python
+from flask import Flask, request
+from signalwire.rest import Client as signalwire_client
+
+app = Flask(__name__)
+
+
+@app.route("/message", methods=["POST"])
+def message():
+    # accept incoming parameters and store them. Feel free to add any extra parameters that you would like to print to
+    # to console or add to your message. This example will show CallSID, from number, and transcription text.
+    call_sid = request.form.get('CallSid')
+    transcription_text = request.form.get('TranscriptionText')
+    from_number = request.form.get('From')
+
+    # create a client object connected to our account & project
+    client = signalwire_client("ProjectID", "Auth Token", signalwire_space_url = 'example-space.signalwire.com')
+
+    # create a text message and send ourselves the text
+    m = client.messages.create(
+        body='You have received a voicemail from the number ' + from_number +
+             '. The voicemail transcription is as follows: "' + transcription_text +
+             '" and the Call SID is ' + call_sid,
+        from_='+14701111111',
+        to='+12148888888'
+    )
+    return transcription_text
+
+
+if __name__ == "__main__":
+    app.run()
+```
+
+For the transcription status callback url, you would combine the route `/message` with the ngrok url. The resulting webhook url would be something like `https://33ec02748ba6.ngrok.io/message`.

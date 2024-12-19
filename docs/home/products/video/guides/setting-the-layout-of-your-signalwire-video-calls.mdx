@@ -1,0 +1,126 @@
+---
+title: Setting the Video Call Layout
+description: Learn how to set the layout of your SignalWire video calls.
+slug: /video/guides/setting-the-layout-of-your-signalwire-video-calls
+x-custom:
+  ported_from_readme: true
+sidebar_custom_props:
+  platform: javascript
+---
+
+
+SignalWire Video API allows you to host real-time video calls and conferences on your website. In this guide, we'll learn to set layouts during video calls.
+
+SignalWire video calls are composited at SignalWire servers so that everyone gets the same video feed. This means that **layout changes are reflected instantly in each participant’s video stream**. Each participant sees the same video layout once the layout switch occurs.
+
+Requesting the necessary permission
+-----------------------------------
+
+Changing layouts is a privilege you must explicitly request when asking the SignalWire Video REST API for an access token. The endpoint to request access tokens is described in the [SignalWire Video API reference guide](/rest/signalwire-rest/endpoints/video/create-room-token).
+
+In particular, you need to specify `room.list_available_layouts` and `room.set_layout` permissions when requesting the token. Ideally, this should happen on the server-side after you verify that the user requesting the access token actually has the privilege to change your video call's layout. In the Node.js/Express.js example below, we are indiscriminately handing out the permissions to anyone who requests a token. This is only to keep the code simple and does not reflect real-world usage.
+
+```javascript
+app.post("/get_token", async (req, res) => {
+  let { user_name } = req.body;
+  console.log("Received name", user_name);
+  try {
+    let token = await axios.post(
+      apiurl + "/room_tokens",
+      {
+        user_name,
+        room_name: ROOMNAME,
+        permissions: ["room.set_layout", "room.list_available_layouts"]
+      },
+      { auth }
+    );
+    console.log(token.data.token);
+    return res.json({ token: token.data.token });
+  } catch (e) {
+    console.log(e);
+    return res.sendStatus(500);
+  }
+});
+```
+```shell CURL
+curl --request POST \
+     --url https://demo.signalwire.com/api/video/room_tokens \
+     --header 'Accept: application/json' \
+     --header 'Authorization: Basic bmV2ZXIgZ29ubmEgZ2l2ZTp5b3UgdXA=' \
+     --header 'Content-Type: application/json' \
+     --data '
+{
+     "permissions": [
+          "room.set_layout"
+     ],
+     "room_name": "example_room",
+     "user_name": "example_user"
+}
+'
+```
+
+Changing Layout with the Video JS SDK
+-------------------------------------
+
+To join a room, you first want to instantiate a room session with the access token acquired in the previous section.
+
+```javascript
+const roomSession = new SignalWire.Video.RoomSession({
+  token: '<Your JWT with room.set_layout permission>',
+  rootElement: document.getElementById('myRoot'), // an html element to display the video
+  audio: true,
+  video: true,
+})
+
+try {
+  await roomSession.join()
+} catch (error) {
+  console.error('Error', error)
+}
+```
+
+The roomSession object exposes methods for getting and setting layouts. 
+
+### The `RoomSession.getLayouts()` Method
+
+To know what layouts the video feed supports, use the `Room.getLayoutList()` method. This needs to be supported from the server by specifying a `room.list_available_layouts` permission when requesting token.
+
+```javascript
+roomSession.getLayouts().then(list => console.log(list.layouts));
+
+/*
+	Outputs an array like:
+  [
+      "8x8",
+      "2x1",
+      "1x1",
+      ...
+  ]
+*/
+```
+
+### The `RoomSession.setLayout()` Method
+
+To set the video call's layout to one of the layouts from the layout's list, use the `Room.setLayout()` method.
+
+```javascript
+roomSession.setLayout({name: "10x10"}).then(output => console.log(output));
+```
+
+If calling the `.setLayout()` method throws an `insufficient permission` error, then the access token you are using to instantiate the Room object wasn't given the `room.set_layout` permission. Learn more about the access tokens permission list [in the docs](/rest/signalwire-rest/overview/permissions).
+
+Demo
+----
+
+You can try using and tinkering with the sample program below on [CodeSandbox](https://codesandbox.io/s/affectionate-tharp-rucj7).
+
+This demo was built in the [Simple Video Demo](/video/getting-started/simple-video-demo). If you're having trouble understanding this demo, get started over there before adding layout in this guide.
+
+Key Points
+----------
+
+1. Each participant of the video call sees the same video stream, so layout changes are reflected uniformly across all participants.
+2. Only the users with `room.list_available_layouts` can see the list of available layouts for the room.
+3. Only the users with the `room.set_layout` permission can change the video feed’s layout. This permission needs to be requested when requesting the room’s access token.
+4. You can get the list of supported layouts using `Room.getLayouts()` method.
+5. You can change the video call's layout using `Room.setLayout({name: "<layout-name>"})`.

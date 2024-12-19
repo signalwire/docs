@@ -1,0 +1,85 @@
+---
+title: FreeSWITCH Memory Address and Memory Pool Sanitizer
+slug: /platform/integrations/freeswitch/freeswitch-memory-address-and-memory-pool-sanitizer
+x-custom:
+  ported_from_readme: true
+  tags:
+    - product:freeswitch
+---
+
+
+Customers who are subscribed to FreeSWITCH Advantage may request access to an alternate repository that contains special FreeSWITCH packages with memory address and pool sanitation built-in. These special packages may help flush out otherwise difficult-to-find memory corruption issues, more commonly discovered while using advanced ESL techniques. Contact your sales manager for access inquiries. You will not be able to access this repository without proper permission.
+
+Once you've been provided access rights, you may want to backup your config directory and check it's backed up before purging your original FreeSWITCH:
+
+```
+cp -r /etc/freeswitch ~/
+ls ~/
+```
+
+Check to see if you have any custom script or sound directories you may want to backup. You can derive a list of FreeSWITCH directories you may consider backing up with the following output, in addition to other custom directories outside of the FreeSWITCH vanilla preview.
+
+`find / -name *freeswitch* -type d`
+
+Then, purge all the currently installed FS packages so we can start again. Be sure to remove extraneous packages and clean out your package cache:
+
+```
+apt-get purge *freeswitch*
+apt-get autoremove
+apt-get autoclean
+```
+
+​​​​​​​Check to make sure you don't have any remaining FS packages left over, and re-purge if you do. You may need to manually remove some packages.
+
+`dpgk l | grep freeswitch`  
+​​​​​​​  
+Purge any remaining packages:
+
+```
+​​​​​​​apt-get purge libfreeswitch1 freeswitch-systemd
+apt-get autoremove
+apt-get autoclean
+```
+
+​​​​​​​  
+Once the system is clean, proceed with fsa-asan-repo installation:
+
+```shell
+read -p "FSA username: " USERNAME \
+&& read -p "FSA password: " PASSWORD \
+&& echo "deb https://$USERNAME:$PASSWORD@fsa.freeswitch.com/repo/deb/fsa-asan `lsb_release -sc` unstable" > /etc/apt/sources.list.d/freeswitch.list \
+&& echo "deb-src https://$USERNAME:$PASSWORD@fsa.freeswitch.com/repo/deb/fsa-asan `lsb_release -sc` unstable" >> /etc/apt/sources.list.d/freeswitch.list \
+&& wget --http-user=$USERNAME --http-password=$PASSWORD -O - https://fsa.freeswitch.com/repo/deb/fsa/pubkey.gpg | apt-key add - \
+&& apt-get install -q -y -f apt-transport-https wget software-properties-common \
+&& echo "machine fsa.freeswitch.com login $USERNAME password $PASSWORD" > /etc/apt/auth.conf \
+&& apt-get update \
+&& apt-get install -y freeswitch-all \
+&& systemctl start freeswitch \
+&& fs_cli
+```
+
+If needed, restore the backed up configs:
+
+​​​​​​​`rm -rf /etc/freeswitch && cp -r ~/freeswitch /etc`
+
+​​​​​​​You'll recognize you're using the special packages upon exiting fs_cli with dots (...) and you'll notice an output similar to this:
+
+```
+​​​​​​​freeswitch@deb9> ...
+
+=================================================================
+==9802==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 1212 byte(s) in 28 object(s) allocated from:
+    #0 0x7fed465a3d28 in malloc (/usr/lib/x86_64-linux-gnu/libasan.so.3+0xc1d28)
+    #1 0x7fed462c2cae in wcsdup (/usr/lib/x86_64-linux-gnu/libedit.so.2+0x18cae)
+
+Direct leak of 32 byte(s) in 1 object(s) allocated from:
+    #0 0x7fed465a3d28 in malloc (/usr/lib/x86_64-linux-gnu/libasan.so.3+0xc1d28)
+    #1 0x7fed462ba252  (/usr/lib/x86_64-linux-gnu/libedit.so.2+0x10252)
+
+SUMMARY: AddressSanitizer: 1244 byte(s) leaked in 29 allocation(s).
+```
+
+​​​​​​​  
+At this point, if FreeSWITCH crashes, a backtrace (retrieved from a core dump) should contain more useful information related to memory issues.

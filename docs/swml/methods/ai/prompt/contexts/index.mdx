@@ -1,0 +1,149 @@
+---
+sidebar_label: prompt.contexts
+sidebar_position: 1
+slug: /swml/methods/ai/prompt/contexts
+title: prompt.contexts
+---
+
+An object that defines the context steps for the AI. The contexts are used to define the flow of the conversation.
+Every context object requires a `default` key, which is the default context that's used at the beginning of the conversation.
+Additionally, more contexts can be defined as any other key in the object.
+
+| Name                                                     | Type     | Default | Description                                                             |
+|:---------------------------------------------------------|:---------|:--------|:------------------------------------------------------------------------|
+| `contexts`<span className="optional-arg">Optional</span> | `object` | -       | An object that accepts the [`context parameters`](#context-parameters). |
+
+
+## context Parameters
+
+| Name                                                          | Type     | Default | Description                                                                                                                                                                                                                                                                                                             |
+|:--------------------------------------------------------------|:---------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `default`<span className="required-arg">Required</span>       | `object` | -       | The default context to use at the beginning of the conversation. This object accepts the [`steps object`](./steps/index.mdx).                                                                                                                                                                                           |
+| `[key: string]`<span className="optional-arg">Optional</span> | `object` | -       | An additional context steps to define the flow of the conversation. This is a key that is user-defined and can be any string.<br/> Additional context can be swapped to from the `default` context or any other user-defined context.<br/> The value is an object that accepts the [`steps object`](./steps/index.mdx). |
+
+
+## Example
+
+In the below example, we have three contexts: `default`, `starwars`, and `startrek`.
+The `default` context is the starting context for the conversation, and figuring out what the user wants to talk about.
+The `starwars` and `startrek` contexts are additional contexts that can be swapped to from the `default` context.
+Each AI context will have a unique voice and specialized in a specific topic.
+Both the `starwars` and `startrek` contexts have a `question` step that will ask the user what they want to talk about,
+or if the user wishes to change experts.
+
+This allows the AI to have a more in-depth conversation with the user and provide a more personalized experience.
+
+
+```yaml andJson
+sections:
+  main:
+    - ai:
+        hints:
+          - StarWars
+          - StarTrek
+        languages:
+          - name: Ryan-English
+            voice: elevenlabs.patrick
+            code: en-US
+          - name: Luke-English
+            voice: elevenlabs.fin
+            code: en-US
+          - name: Spock-English
+            voice: elevenlabs.charlie
+            code: en-US
+        prompt:
+          text: Help the user transfer to the Star Wars or Star Trek expert.
+          contexts:
+            default:
+              steps:
+                - name: start
+                  text: |+
+                    Your name is Ryan. You are a receptionist. Your only purpose is to change the context to starwars or startrek.
+                  step_criteria: |+
+                    Introduce yourself as Ryan.
+                    Ask the user if he would like to talk to a star wars or star trek expert until they provide an adequate answer.
+                - name: transfer
+                  text: You will now successfully transfer the user to the Star Wars or Star Trek expert.
+                  step_criteria: If the user has chosen a valid context, transfer them to the appropriate expert.
+                  valid_contexts:
+                    - starwars
+                    - startrek
+            starwars:
+              steps:
+                - name: start
+                  text: |+
+                    The user has been transferred to the Star Wars expert.
+                    Until told otherwise, your name is Luke. Change the language to Luke-English.
+                    Your current goal is to get the user to tell you their name.
+                    Unless told otherwise, refer to the user as 'Padawan {users_name}'.
+                  step_criteria: |+
+                    Introduce yourself as Luke, the Star Wars expert.
+                    The user must tell you their name if they only say one word assume that is their name.
+                - name: question
+                  text: |+
+                    Your goal is to get the user to choose one of the following options.
+                    - Jedi Order (advance to jedi_order step)
+                    - The ways of the Force (advance to force step)
+                    - Talk to the star trek expert. (change context to startrek)
+                  step_criteria: +|
+                    The user must provide a valid answer to continue.
+                    Refer to the user as 'Padawan {users_name}' for the rest of the conversation.
+                  valid_steps:
+                    - jedi_order
+                    - force
+                  valid_contexts:
+                    - startrek
+                - name: jedi_order
+                  text: |+
+                    Limit the topic to the Jedi Order.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+                - name: force
+                  text: |+
+                    Limit the topic to the force.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+            startrek:
+              steps:
+                - name: start
+                  text: |+
+                    The user has been transferred to the Star Trek expert.
+                    Until told otherwise, your name is Spok. Change the language to Spok-English.
+                    Your current goal is to get the user to tell you their name.
+                    Unless told otherwise, refer to the user as 'Ensign {users_name}'.
+                  step_criteria: |+
+                    Introduce yourself as Spok, the Star Trek expert.
+                    The user must tell you their name if they only say one word assume that is their name.
+                - name: question
+                  text: |+
+                    Your goal is to get the user to choose one of the following options.
+                    - Vulcan Culture (advance to vulcan_culture step)
+                    - Federation (advance to federation step)
+                    - Talk to the star wars expert. (change context to starwars)
+                  step_criteria: +|
+                    The user must provide a valid answer to continue.
+                    Refer to the user as 'Ensign {users_name}' for the rest of the conversation.
+                  valid_steps:
+                    - vulcan_culture
+                    - federation
+                  valid_contexts:
+                    - starwars
+                - name: vulcan_culture
+                  text: |+
+                    Limit the topic to Vulcan Culture.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+                - name: federation
+                  text: |+
+                    Limit the topic to the Federation of Planets.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+```

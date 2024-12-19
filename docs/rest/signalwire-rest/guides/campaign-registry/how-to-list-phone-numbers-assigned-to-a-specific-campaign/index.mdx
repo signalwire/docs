@@ -1,0 +1,841 @@
+---
+title: List phone numbers assigned to a campaign
+sidebar_label: List assigned phone numbers
+slug: /rest/signalwire-rest/guides/campaign-registry/list-phone-numbers-assigned-to-a-specific-campaign
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags: 
+    - language:python
+    - language:nodejs
+    - language:ruby
+    - product:messaging
+description: Keep track of what phone numbers belong to each campaign
+---
+
+# List phone numbers assigned to a campaign
+
+## Overview
+
+If you have a lot of campaigns, it's important to keep track of what phone numbers belong to each campaign. You can always compare this list to your account numbers to get an accurate idea of which numbers are registered and which aren't! To list all of your account numbers, check out [this guide](/compatibility-api/guides/general/phone-numbers/list-numbers-to-csv)!
+
+<details>
+  <summary>Full code example: List Phone Numbers from Campaign</summary>
+
+<Tabs>
+
+<TabItem value="python" label="Python">
+
+```python
+import pandas as pd
+import requests
+from requests.auth import HTTPBasicAuth
+
+
+# assign client variables
+SpaceURL = 'example.signalwire.com'
+projectID = ""
+authToken = ""
+campaignID = ""
+host = f"https://{SpaceURL}"
+
+
+# define URL for API Endpoint
+url = f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignID}/numbers?page_size=1000"
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload, auth=HTTPBasicAuth(projectID, authToken)).json()
+campaignNumbers = response['data']
+
+while "next" in response['links'].keys():
+     response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+     campaignNumbers.extend(response['data'])
+      
+print(f"There are {len(campaignNumbers)} total numbers in campaign {campaignID}.")
+
+# Sets up an empty array
+d = []
+
+# loop through numbers
+for number in campaignNumbers:
+      d.append(number['phone_number']['number'])
+df = pd.DataFrame(d, columns=(['Phone Number']))
+
+print(df)
+# Exports dataframe to csv, index=False turns off the indexing for each row
+df.to_csv('CompanyNumbers.csv', index=False, encoding='utf-8')
+```
+
+</TabItem>
+
+<TabItem value="node" label="Node">
+
+```js
+import dfd from "danfojs";
+import fs from "fs";
+import fetch from "node-fetch";
+
+// TODO: Update with your own credentials
+const spaceURL = 'YOURSPACE.signalwire.com';
+const projectID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+const authToken = "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const campaignID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+
+const host = "https://" + spaceURL;
+const authenticationString = projectID + ":" + authToken;
+
+var allData = [] 
+
+async function getData(url) {
+    const options = {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Basic ' + new Buffer.from(authenticationString).toString('base64')
+        }
+    };
+
+    const response = await fetch(url, options).then(res => res.json())
+
+    response.data.forEach((record) => {
+        allData.push(record);
+    })
+
+    if (response.links.next) {
+        let newURL = host + response.links.next;
+        return await getData(newURL)
+    }
+}
+
+let url = "https://" + spaceURL + "/api/relay/rest/registry/beta/campaigns/" + campaignID + "/numbers?page_size=1000";
+await getData(url)
+
+console.log("There are", allData.length, "total numbers in campaign", campaignID + ".")
+
+let numbers = [];
+
+allData.forEach((record) => {
+    numbers.push([record.phone_number.number]);
+})
+
+let finalData = new dfd.DataFrame(numbers, {
+    columns: ["Phone Number"],
+    config: {
+        tableDisplayConfig: {
+            columns: [
+                { width: 1 },
+                { width: 14 }
+            ],
+        },
+    },
+});
+
+finalData.print();
+fs.writeFileSync("CampaignNumbers.csv", dfd.toCSV(finalData));
+```
+
+</TabItem>
+
+<TabItem value="ruby" label="Ruby">
+
+```ruby
+# load all gems from our gemfile
+require 'dotenv/load'
+require 'json'
+require 'HTTParty'
+require 'csv'
+
+#set authentication variables for http basic auth
+auth = {:username=> ENV['projectID'], :password => ENV['token']}
+host = ENV['spaceURL']
+
+#the campaign ID you would like to search
+campaignID = ''
+
+#the file will be written to a CSV file named based on your campaign ID
+writePath = campaignID+".csv"
+
+#empty array for our numbers
+assignedNumbers = []
+
+#the URL we will make our get request to
+url = host+'/api/relay/rest/registry/beta/campaigns/'+campaignID+'/numbers'
+
+#create a get request to our URL, using our authentication
+response = HTTParty.get(url,:basic_auth=>auth)
+
+#Parse the response as JSON, and add each phone number to our array
+jsonResponse = JSON.parse(response.body)
+jsonResponse['data'].each do |x| assignedNumbers.push(x['phone_number']['number']) end
+
+# Check for next page and repeat the process until we have exhausted all pages
+while jsonResponse['links']['next'] != nil
+    response = HTTParty.get(host+jsonResponse['links']['next'],:basic_auth=>auth)
+    jsonResponse = JSON.parse(response.body)
+    jsonResponse['data'].each {|x| assignedNumbers.push(x['phone_number']['number'])}
+end
+
+#Print the total numbers in a campaign
+puts "This campaign has: "+assignedNumbers.length.to_s+" phone numbers assigned"
+
+#Write our assignedNumbers array to a CSV
+CSV.open(writePath, 'w') do |csv|
+    csv << assignedNumbers
+end
+```
+
+</TabItem>
+
+<TabItem value="java" label="Java">
+
+```java
+import com.google.gson.Gson;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class ListCampaignNumbers {
+
+    // HOST BASE CONSTANT
+    static String HOST = "https://<space-name>.signalwire.com";
+
+    // ENTER YOUR CAMPAIGN ID HERE
+    static String CAMPAIGN_ID = "<ENTER-CAMPAIGN-ID-HERE>";
+
+    // API TOKE TO YOUR SPACE
+    static String API_TOKEN = "<API-TOKEN-HERE>";
+
+    // PROJECT ID FOR YOUR SPACE
+    static String PROJECT_ID = "<PROJECT-ID-HERE>";
+
+    static ArrayList<String[]> dataLines = new ArrayList<>();
+
+    // Helper methods to load and perform request to the campaign endpoint
+    static JsonNode loadCampaignNumbers(String url) {
+
+        try {
+            // Perform the request to the endpoint
+            HttpResponse<JsonNode> response = Unirest.get(url)
+                    .basicAuth(PROJECT_ID, API_TOKEN)
+                    .header("accept", "application/json")
+                    .asJson();
+
+            if (response.getStatus() == 200) {
+                return response.getBody();
+            } else {
+                return null;
+            }
+        } catch (UnirestException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static void main(String[] args) {
+
+        try {
+
+            ArrayList<Item> lists = new ArrayList<>();
+
+            dataLines.add(new String[]{"date_created", "phone_number", "name", "state"});
+
+            Gson gson = new Gson();
+
+            String url = String.format("%s/api/relay/rest/registry/beta/campaigns/%s/numbers", HOST, CAMPAIGN_ID);
+
+            JsonNode response = loadCampaignNumbers(url);
+
+            assert response != null;
+
+            Result dataResponse = gson.fromJson(response.toString(), Result.class);
+
+            dataResponse.data.forEach(item -> {
+                lists.add(item);
+            });
+
+            // for pagination, if the next key from the links is not null
+            // perform another request to get the response of the data in the next page
+            if (dataResponse.links.next != null) {
+                String nextUrl = HOST + dataResponse.links.next;
+
+                JsonNode nextRequest = loadCampaignNumbers(nextUrl);
+
+                Result nextResponse = gson.fromJson(nextRequest.toString(), Result.class);
+
+                nextResponse.data.forEach(item -> {
+                    lists.add(item);
+                });
+
+            }
+
+            lists.forEach(item -> {
+                dataLines.add(new String[]{item.created_at, item.phone_number.number, item.phone_number.name, item.state});
+            });
+
+            createAndPopulateCSV();
+
+            System.out.printf("There are %d total numbers in campaign %s", lists.size(), CAMPAIGN_ID);
+
+        }catch (Exception exception){
+            exception.printStackTrace();
+        }
+
+    }
+
+    public static class Result {
+        public Links links;
+        public List<Item> data;
+
+        public Result(Links links, List<Item> data) {
+            this.links = links;
+            this.data = data;
+        }
+    }
+
+    public static class Links {
+        public String self;
+        public String first;
+        public String next;
+        public String prev;
+
+        public Links(String self, String first, String next, String prev) {
+            this.self = self;
+            this.first = first;
+            this.next = next;
+            this.prev = prev;
+        }
+    }
+
+    public static class Item {
+        public String id;
+        public Phone phone_number;
+        public String state;
+        public String campaign_id;
+        public String created_at;
+        public String updated_at;
+
+        public Item(String id, Phone phone_number, String state, String campaign_id, String created_at, String updated_at) {
+            this.id = id;
+            this.phone_number = phone_number;
+            this.state = state;
+            this.campaign_id = campaign_id;
+            this.created_at = created_at;
+            this.updated_at = updated_at;
+        }
+    }
+
+    public static class Phone {
+        public String number;
+        public String name;
+        public String id;
+
+        public Phone(String number, String name, String id) {
+            this.number = number;
+            this.name = name;
+            this.id = id;
+        }
+    }
+
+    public static String convertToCsv(String[] data) {
+        return Stream.of(data)
+                .map(ListCampaignNumbers::escapeSpecialCharacters)
+                .collect(Collectors.joining(","));
+    }
+
+    public static void createAndPopulateCSV() throws IOException {
+
+        // Auto-generate the name of the file
+        String filename = "message_result" + System.currentTimeMillis();
+
+        // Get the absolute path to the folder you would like to create in the project directory
+        File file = new File(Paths.get("csv").toAbsolutePath().toUri());
+
+        // if file doesn't exist. create a new folder
+        if (!file.exists()) {
+            boolean isFolder = file.mkdir();
+            if (isFolder) {
+                System.out.println("New folder created!");
+            } else {
+                System.out.println("Couldn\'t create folder");
+            }
+        }
+
+        // create new csv file with the autogenerated name
+        File csvOutputFile = new File(Paths.get("csv").toAbsolutePath() + "\\" + filename);
+        try (PrintWriter printWriter = new PrintWriter(csvOutputFile)) {
+            dataLines.stream()
+                    .map(ListCampaignNumbers::convertToCsv)
+                    .forEach(printWriter::println); // Write item into the CSV file
+            System.out.println("Write operation done successfully!");
+        }
+
+    }
+
+
+    public static String escapeSpecialCharacters(String data) {
+
+        if (data != null){
+            String escapeData = data.replace("\\R", " ");
+            if (data.contains(",") || data.contains("\"")) {
+                data = data.replace("\"", "\"\"");
+                escapeData = "\"" + data + "\"";
+            }
+            return escapeData;
+        }
+        return "null column";
+    }
+
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+</details>
+
+You will need your API credentials as well as the campaign ID that you would like to pull information on. You can [find your API credentials](/platform/dashboard/getting-started/navigating-your-space#api) in the API tab of your SignalWire Space! 
+
+You can find your campaign ID by going to the Messaging Campaigns section of your SignalWire Space and clicking the specific campaign whose numbers you need. The ID is the long alphanumeric string at the top as shown here: 
+
+<figure>
+  <img className="img-800" src={require("./d5a0e5c-Screen_Shot_2022-02-14_at_1.09.45_PM.webP").default} alt="A screenshot of a Messaging Campaign in a SignalWire Space. The Campaign ID is shown beneath the campaign title as a long string of numbers and letters." />
+</figure>
+
+Python
+------
+
+### What do I need to run this code?
+
+For the following code to work, you will need to have pandas and requests installed. 
+
+Read about the different ways to install pandas [here](https://pandas.pydata.org/docs/getting_started/install.html).
+
+Read about requests and how to install using pip [here](https://pypi.org/project/requests/).
+
+### How to Run Snippet?
+
+If you copy the code and save it to a file named `listCampaignNumbers.py`, for example, to run it you will need to run:
+
+- MacOS/Linux - `python3 listCampaignNumbers.py`
+- Windows - `py listCampaignNumbers.py` 
+
+### Code Walkthrough
+
+#### Load necessary libraries and set up SignalWire client variables
+
+This application is very simple! We will first define our `SpaceURL`, `projectID`, `authToken`, and `campaignID` variables to be used throughout the code. 
+
+```python
+import pandas as pd
+import requests
+from requests.auth import HTTPBasicAuth
+
+# assign client variables
+SpaceURL = 'example.signalwire.com'
+projectID = ""
+authToken = ""
+campaignID = ""
+host = f"https://{SpaceURL}"
+```
+
+#### Get the list of numbers
+
+Next, we need to define our URL for the API endpoint and create an HTTP request to it using the [Python requests library](https://pypi.org/project/requests/). However, this URL will only return 1000 results at a time. If you have less than 1000 results, then you have nothing to worry about! However, we will use the while loop in the next section to take care of campaigns with more than 1000 numbers. We will paginate through the API results and continually add the results to `campaignNumbers`.
+
+```python
+# define URL for API Endpoint
+url = f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignID}/numbers?page_size=1000"
+payload={}
+headers = {}
+
+response = requests.request("GET", url, headers=headers, data=payload, auth=HTTPBasicAuth(projectID, authToken)).json()
+campaignNumbers = response['data']
+
+while "next" in response['links'].keys():
+     response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+     campaignNumbers.extend(response['data'])
+print(f"There are {len(campaignNumbers)} total numbers in campaign {campaignID}.")
+```
+
+#### Create a DataFrame, print it, and export to CSV
+
+Lastly, we will append each phone number to our `d` list and export to CSV using the [Pandas library](https://pandas.pydata.org/)!
+
+```python
+# Sets up an empty array
+d = []
+
+# loop through numbers
+for number in campaignNumbers:
+      d.append(number['phone_number']['number'])
+df = pd.DataFrame(d, columns=(['Phone Number']))
+
+print(df)
+# Exports dataframe to csv, index=False turns off the indexing for each row
+df.to_csv('CompanyNumbers.csv', index=False, encoding='utf-8')
+```
+
+Node.js
+-------
+
+### What do I need to run this code?
+
+We will need the following libraries (click their names to get instructions on how to install them):
+
+- [Danfo.js](https://www.npmjs.com/package/danfojs)
+- [fs](https://nodejs.org/api/fs.html) - there is no need to install this module, as it is part of the Node.js Core
+- [node-fetch](https://www.npmjs.com/package/node-fetch)
+
+### How to Run Snippet?
+
+If you save this code snippet in a file called `listCampaignNumbers.js`, for example, you then need to run:  
+`node listCampaignNumbers.js`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+```javascript
+import dfd from "danfojs";
+import fs from "fs";
+import fetch from "node-fetch";
+```
+
+#### Prepare your SignalWire client variables
+
+In order for us to connect to SignalWire later on in the code we first need to make sure we update `spaceURL`, `projectID`, `authToken`, and `campaignID`.
+
+```javascript
+// TODO: Update with your own credentials
+const spaceURL = 'YOURSPACE.signalwire.com';
+const projectID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+const authToken = "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+const campaignID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+
+const host = "https://" + spaceURL;
+const authenticationString = projectID + ":" + authToken;
+```
+
+#### Prepare function to get the data
+
+Here we prepare the `getData`function, taking pagination into account. 
+
+```javascript
+var allData = [];
+
+async function getData(url) {
+    const options = {
+        method: 'GET',
+        headers: {
+            'Authorization': 'Basic ' + new Buffer.from(authenticationString).toString('base64')
+        }
+    };
+
+    const response = await fetch(url, options).then(res => res.json())
+
+    response.data.forEach((record) => {
+        allData.push(record);
+    })
+
+    if (response.links.next) {
+        let newURL = host + response.links.next;
+        return await getData(newURL);
+    }
+}
+```
+
+#### Get the list of numbers associated with the campaign
+
+In this step we connect to the [List all Phone Number Assignments endpoint](/rest/signalwire-rest/endpoints/space/list-number-assignments) and add each number to the `numbers` array.
+
+```javascript
+let url = "https://" + spaceURL + "/api/relay/rest/registry/beta/campaigns/" + campaignID + "/numbers?page_size=1000";
+await getData(url)
+
+console.log("There are", allData.length, "total numbers in campaign", campaignID + ".")
+
+let numbers = [];
+
+allData.forEach((record) => {
+    numbers.push([record.phone_number.number]);
+})
+```
+
+#### Create DataFrame, print it, and export to CSV
+
+Here we create the `finalData` DataFrame from the `numbers` array we created in the previous step. It then makes printing the results to the terminal as well as exporting to CSV very easy.  
+
+```javascript
+let finalData = new dfd.DataFrame(numbers, {
+    columns: ["Phone Number"],
+    config: {
+        tableDisplayConfig: {
+            columns: [
+                { width: 1 },
+                { width: 14 }
+            ],
+        },
+    },
+});
+
+finalData.print();
+fs.writeFileSync("CampaignNumbers.csv", dfd.toCSV(finalData));
+```
+
+Ruby
+----
+
+### What do I need to run this code?
+
+This snippet uses two gems [`HTTParty`](https://github.com/jnunemaker/httparty) and [`Dotenv`](https://github.com/bkeepers/dotenv).
+
+Additionally this snippet requires `CSV` and `JSON` which are part of the ruby standard gems
+
+### How to Run Snippet?
+
+1. Configure your SignalWire credentials in your .env file
+2. assign the target campaign ID to the `campaignID` variable
+3. run app.rb
+
+### Code Walkthrough
+
+#### Set-up
+
+First we will require all of our gems, and use our SignalWire credentials to create `auth` and `host` variables.  
+Next we will set `campaignID` to the campaign we wish to retrieve numbers from.  
+Finally, set the `writePath` and establish an empty array to hold all of our numbers.
+
+```ruby
+# load all gems from our gemfile
+require 'dotenv/load'
+require 'json'
+require 'HTTParty'
+require 'csv'
+
+#set authentication variables for http basic auth
+auth = {:username=> ENV['projectID'], :password => ENV['token']}
+host = ENV['spaceURL']
+
+#the campaign ID you would like to search
+campaignID = ''
+
+#the file will be written to a CSV file named based on your campaign ID
+writePath = campaignID+".csv"
+
+#empty array for our numbers
+assignedNumbers = []
+```
+
+#### Making requests and pagination
+
+Now we can actually make our initial request by setting our `url` to use our `host` and `campaignID` variables to the `/numbers` endpoint. Then make a request using `url` and our `auth`, and parse the response as JSON.
+
+Finally we will check for additional pages and loop through any additional pages to ensure we gather all data available.
+
+```ruby
+#the URL we will make our get request to
+url = host+'/api/relay/rest/registry/beta/campaigns/'+campaignID+'/numbers'
+
+#create a get request to our URL, using our authentication
+response = HTTParty.get(url,:basic_auth=>auth)
+
+
+#Parse the response as JSON, and add each phone number to our array
+jsonResponse = JSON.parse(response.body)
+jsonResponse['data'].each {|x| assignedNumbers.push(x['phone_number']['number'])}
+
+
+# Check for next page and repeat the process until we have exhausted all pages
+while jsonResponse['links']['next'] != nil
+    response = HTTParty.get(host+jsonResponse['links']['next'],:basic_auth=>auth)
+    jsonResponse = JSON.parse(response.body)
+    jsonResponse['data'].each {|x| assignedNumbers.push(x['phone_number']['number'])}
+end
+```
+
+#### Writing the data
+
+Finally we can print out some information about our campaign, such as the amount of phone number assigned, and write the data we have collected to a CSV using our `writePath`.
+
+```ruby
+#Print the total numbers in a campaign
+puts "This campaign has: "+assignedNumbers.length.to_s+" phone numbers assigned"
+
+#Write our assignedNumbers array to a CSV
+CSV.open(writePath, 'w') do |csv|
+    csv << assignedNumbers
+end
+```
+
+Java
+----
+
+### What do I need to run this code?
+
+We will need the following libraries (click their names to get instructions on how to install them):
+
+- Java Environment 
+- [A Maven project using JetBrain](https://www.jetbrains.com/help/idea/delegate-build-and-run-actions-to-maven.html)
+- [Gson](https://github.com/google/gson)
+- [Unirest](https://github.com/Kong/unirest-java#installing)
+
+### How to Run Snippet?
+
+If you have this code snippet in a file called `ListCampaignNumber.java`, for example, you then need to run: `javac ListCampaignNumber.java` and then run `java ListCampaignNumber.java`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+```java
+import com.google.gson.Gson;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+```
+
+#### Prepare your SignalWire client variables
+
+In order for us to connect to SignalWire later on in the code we first need to make sure we update `spaceURL`, `projectID`, `apiToken`, and `campaignID`.
+
+```java
+    static String HOST = "https://<space-name>.signalwire.com";
+    static String CAMPAIGN_ID = "<ENTER-CAMPAIGN-ID-HERE>";
+    static String API_TOKEN = "<API-TOKEN-HERE>";
+    static String PROJECT_ID = "<PROJECT-ID-HERE>";
+    static ArrayList<String[]> dataLines = new ArrayList<>();
+```
+
+#### Prepare function to get the data
+
+Here we prepare the `loadCampaignNumbers` function.
+
+```java
+static JsonNode loadCampaignNumbers(String url) {
+        try {
+            // Perform the request to the endpoint
+            HttpResponse<JsonNode> response = Unirest.get(url)
+                    .basicAuth(PROJECT_ID, API_TOKEN)
+                    .header("accept", "application/json")
+                    .asJson();
+
+            if (response.getStatus() == 200) {
+                return response.getBody();
+            } else {
+                return null;
+            }
+        } catch (UnirestException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+```
+
+#### Get the list of numbers associated with the campaign
+
+In this step we connect to the [List all Phone Number Assignments](/rest/signalwire-rest/endpoints/space/list-number-assignments) endpoint and add each number to the `lists` array.
+
+```java
+       ArrayList<Item> lists = new ArrayList<>();
+
+            dataLines.add(new String[]{"date_created", "phone_number", "name", "state"});
+
+            Gson gson = new Gson();
+
+            String url = String.format("%s/api/relay/rest/registry/beta/campaigns/%s/numbers", HOST, CAMPAIGN_ID);
+
+            JsonNode response = loadCampaignNumbers(url);
+
+            assert response != null;
+
+            Result dataResponse = gson.fromJson(response.toString(), Result.class);
+
+            dataResponse.data.forEach(item -> {
+                lists.add(item);
+            });
+
+            // for pagination, if the next key from the links is not null
+            // perform another request to get the response of the data in the next page
+            if (dataResponse.links.next != null) {
+                String nextUrl = HOST + dataResponse.links.next;
+
+                JsonNode nextRequest = loadCampaignNumbers(nextUrl);
+
+                Result nextResponse = gson.fromJson(nextRequest.toString(), Result.class);
+
+                nextResponse.data.forEach(item -> {
+                    lists.add(item);
+                });
+
+            }
+
+            lists.forEach(item -> {
+                dataLines.add(new String[]{item.created_at, item.phone_number.number, item.phone_number.name, item.state});
+            });
+
+            createAndPopulateCSV();
+
+            System.out.printf("There are %d total numbers in campaign %s", lists.size(), CAMPAIGN_ID);
+```
+
+#### Writing the data to a CSV file
+
+Finally we can print out some information about our campaign, such as the amount of phone number assigned, and write the data we have collected to a CSV using our function `createAndPopulateCSV`
+
+```java
+ public static void createAndPopulateCSV() throws IOException {
+
+        // Auto-generate the name of the file
+        String filename = "message_result" + System.currentTimeMillis();
+
+        // Get the absolute path to the folder you would like to create in the project directory
+        File file = new File(Paths.get("csv").toAbsolutePath().toUri());
+
+        // if file doesn't exist. create a new folder
+        if (!file.exists()) {
+            boolean isFolder = file.mkdir();
+            if (isFolder) {
+                System.out.println("New folder created!");
+            } else {
+                System.out.println("Couldn\'t create folder");
+            }
+        }
+
+        // create new csv file with the autogenerated name
+        File csvOutputFile = new File(Paths.get("csv").toAbsolutePath() + "\\" + filename);
+        try (PrintWriter printWriter = new PrintWriter(csvOutputFile)) {
+            dataLines.stream()
+                    .map(ListCampaignNumbers::convertToCsv)
+                    .forEach(printWriter::println); // Write item into the CSV file
+            System.out.println("Write operation done successfully!");
+        }
+
+    }
+```
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Slack](https://join.slack.com/t/signalwire-community/shared_invite/zt-sjagsni8-AYKmOMhP_1sVMvz9Ya_r0Q) or create a Support ticket if you need guidance!

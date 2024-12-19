@@ -1,0 +1,167 @@
+---
+title: Messaging XML
+excerpt: ""
+slug: /compatibility-api/cxml/messaging
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+SignalWire cXML is a set of actions defined in an XML document that you can use to tell SignalWire what to do when you receive an incoming SMS or MMS message.
+
+## Overview
+
+When an SMS or MMS message is sent to one of your SignalWire phone numbers, SignalWire looks up the SignalWire cXML document from the URL you configured, and reads the instructions you provided to determine what to do.
+
+SignalWire cXML allows you to dynamically control what happens, responding with specific instructions based on the caller, time of day, incoming message, and much more.
+
+:::info
+
+Not sending SMS or MMS? SignalWire cXML allows you to control calls as well. Check out [Voice XML](../voice/index.mdx) for more details.
+
+:::
+
+## Request For XML
+
+SignalWire makes an HTTP request to your configured endpoint just like a regular web form submission (POST) or page load (GET). Including contextual information about the message in the request to your endpoint, allows you to respond dynamically and fluidly to the message to meet the needs of your application.
+
+You can configure the endpoint URL and HTTP Method in your phone number settings panel on your SignalWire Dashboard, or via the REST API.
+
+## Request Parameters
+
+SignalWire sends the following parameters, as either URL query parameters or POST parameters, to your endpoint when it receives a message:
+
+| Parameter                                                                                     | Description                                                                                                                                                                                     |
+| :-------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MessageSid <span className="optional-arg">string</span>                                       | A unique identifier for the message. May be used to later retrieve this message from the REST API.                                                                                              |
+| AccountSid <span className="optional-arg">string</span>                                       | The unique ID of the Account this message is associated with.                                                                                                                                   |
+| From <span className="optional-arg">string</span>                                             | The phone number that sent this message, in E.164 format.                                                                                                                                       |
+| To <span className="optional-arg">string</span>                                               | The phone number of the message recipient, in E.164 format.                                                                                                                                     |
+| Body <span className="optional-arg">string</span>                                             | The text body of the message.                                                                                                                                                                   |
+| NumMedia <span className="optional-arg">integer</span>                                        | The number of media items associated with the message.                                                                                                                                          |
+| MediaUrl`{X}` <span className="optional-arg">string<br />only if media present</span>         | The URL to the media received in the message. URLs are publicly available but unguessable. Each media entry has its own entry, where X is a zero-based index of the media. Example: `MediaUrl0` |
+| MediaContentType`{X}` <span className="optional-arg">string<br />only if media present</span> | The content-type of the media stored at `MediaUrl{X}`, where X is a zero-based index of the media. Example: `MediaContentType0`                                                                 |
+
+## Responding to SignalWire
+
+An example SignalWire cXML document that sends two messages back to the sender when a message is received:
+
+<Tabs groupId="cxml-api">
+
+<TabItem value="xml" label="XML">
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Message>Hello from SignalWire!</Message>
+    <Message>Thanks for your message.</Message>
+</Response>
+```
+
+</TabItem>
+<TabItem value="javascript" label="JavaScript">
+
+```javascript
+const { RestClient } = require("@signalwire/compatibility-api");
+const response = new RestClient.LaML.MessagingResponse();
+
+response.message("Hello from SignalWire!");
+response.message("Thanks for your message.");
+console.log(response.toString());
+```
+
+</TabItem>
+<TabItem value="csharp" label="C#">
+
+```csharp
+using Twilio.TwiML;
+using System;
+
+
+class Example
+{
+    static void Main()
+    {
+        var response = new MessagingResponse();
+        response.Message("Hello from SignalWire!");
+        response.Message("Thanks for your message.")
+
+        Console.WriteLine(response.ToString());;
+    }
+}
+```
+
+</TabItem>
+<TabItem value="python" label="Python">
+
+```python
+from twilio.twiml.messaging_response import Message, MessagingResponse
+
+response = MessagingResponse()
+response.message('Hello from SignalWire!')
+response.message('Thanks for your message.')
+
+print(response)
+```
+
+</TabItem>
+<TabItem value="ruby" label="Ruby">
+
+```ruby
+require 'signalwire/sdk'
+
+response = Signalwire::Sdk::MessagingResponse.new do |response|
+  response.message(body: 'Hello from SignalWire!')
+  response.message(body: 'Thanks for your message.')
+end
+
+puts response.to_s
+```
+
+</TabItem>
+</Tabs>
+
+When a message comes into one of your SignalWire phone numbers, SignalWire makes an HTTP request to the URL endpoint you configured for that number. Your response to that request instructs SignalWire on what to do next.
+
+Responses to the HTTP request are in **SignalWire cXML**. SignalWire starts at the top of SignalWire cXML document and executes your XML commands in order, from top to bottom.
+
+:::info
+
+SignalWire cXML verbs and their attributes are case-sensitive, so using `<message>` instead of `<Message>` will result in an error.
+
+:::
+
+## Status Callbacks
+
+SignalWire can send your application callbacks at various lifecycle stages of your message. Status callbacks do not allow you to change the application execution directly, so callbacks do not have to respond with SignalWire cXML, but they allow your application to get updates as a message is happening.
+
+You should respond to any callbacks with a `200 OK` or `204 No Content`, otherwise, you will see failures in your application log on SignalWire.
+
+## MIME Types
+
+The following are the MIME types supported by SignalWire:
+
+|              Type |                                             |
+| ----------------: | ------------------------------------------- |
+|       `audio/mp4` | mpeg layer 4 audio                          |
+|      `audio/mpeg` | mpeg layer 3 audio                          |
+|     `audio/mpeg3` | mpeg layer 3 audio                          |
+|       `audio/ogg` | ogg audio                                   |
+|    `audio/vorbis` | audio compression format                    |
+|   `audio/vnd.wav` | wav format audio                            |
+|       `audio/ac3` | codec format audio                          |
+|       `audio/amr` | codec format audio                          |
+|      `audio/midi` | musical instrument digital interface format |
+|      `image/jpeg` | jpeg format image                           |
+|       `image/gif` | graphics interchange format                 |
+|       `image/png` | portable network graphics format            |
+|       `image/bmp` | bitmap image format                         |
+|      `text/plain` | text file format                            |
+|   `text/calendar` | text file format                            |
+|      `text/vcard` | text file format                            |
+|    `text/x-vcard` | text file format                            |
+|      `video/mpeg` | mpeg video format                           |
+|       `video/mp4` | mpeg layer 4 video format                   |
+| `video/quicktime` | quicktime video                             |
+|      `video/h264` | video compression format                    |
+|       `video/3gp` | media container format                      |

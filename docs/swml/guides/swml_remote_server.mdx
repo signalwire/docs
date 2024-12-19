@@ -1,0 +1,155 @@
+---
+slug: /swml/guides/remote_server
+title: Handling Incoming Calls from Code
+x-custom:
+  tags:
+    - sdk:swml
+    - language:nodejs
+    - product:voice
+description: Use Node.js and Express.js to dynamically create SWML scripts to handle calls based on incoming call information. 
+sidebar_custom_props:
+  platform: javascript
+
+---
+
+# Handling SWML From Code
+
+In [Making and Receiving Phone Calls](/voice/getting-started/making-and-receiving-phone-calls) we
+learned how to use SWML Scripts to handle incoming calls serverlessly.
+
+Handling calls from code gives us more flexibility. Instead of serving a
+static SWML Script, we can use a custom web server to decide the content of the YAML/JSON
+depending on the incoming call.
+
+In this guide, we will show how to recreate the same setup so you can leverage your preferred programming language to create SWML dynamically.
+
+## **Setting up the environment**
+
+If your preferred language allows you to write YAML/JSON (it probably does), then all you really need is to use your preferred library to spin up a web server:
+
+```shell
+npm install express
+```
+
+## **Serving SWML**
+
+We'd like to set up an endpoint (our own "dynamic" SWML Script) which emits a valid SWML document, like this one:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say:Hello from SignalWire!'
+```
+
+We prefer YAML for its readability, so we're going to use it instead of JSON in this example. The YAML will be sent back to the client as a response to their request. Let's see how to set up a web server to serve valid SWML.
+
+### Setting up a web server
+
+How you set up the web server is mostly specific to the language and framework
+of your choosing. A basic skeleton might be the following:
+
+```javascript title="index.js"
+const express = require("express");
+const bodyParser = require("body-parser");
+
+const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.post("/start", async (req, res) => {
+  let instructions = `
+    sections:
+      main:
+        - play:
+            url: 'say:Hello from SignalWire!'
+    `;
+
+  res.send(instructions);
+});
+
+app.listen(3000);
+```
+
+Try running the application, which will listen on port 3000:
+
+```bash
+node index.js
+```
+
+Since you are likely behind a NAT, to test this application on your local machine you need a public IP address that SignalWire can reach. We suggest using [ngrok](https://ngrok.com/): refer to our [guide on ngrok](/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok) for more information.
+
+In short, while the application is up and listening on port 3000, run ngrok from a new terminal like this:
+
+```bash
+ngrok http 3000
+```
+
+You'll get a public random URL (such as `https://983f-93-41-16-193.ngrok.io/`) that you can use to access your local application.
+
+### Configuring the number
+
+Now that the code is ready and the HTTP endpoint is reachable from the web, we need to configure our SignalWire number to access it.
+
+If you don't have a phone number yet, make sure to [buy one](/platform/phone-numbers/getting-started/buying-a-phone-number). You
+will need at least one number to receive calls.
+
+Then, open the settings for the number. Under "Voice Settings", choose to
+handle messages using "a SWML Script". Set "Handle calls using" to "a SWML Script", then check the "Use External URL for SWML Script handler?" checkbox. Finally, paste the public ngrok URL which connects to your application, making sure to add `/start` at the end.
+
+Try calling the phone number: SignalWire will ask your server for the instructions to run and say "Hello from SignalWire!", but you can make SignalWire say/do whatever you like.
+
+### Accessing call information from the server
+
+SignalWire will send certain information to your server in the POST request every time it is requesting a SWML script.
+
+This gives your server a chance to customize the SWML script it sends based on the call information or the supplied parameters.
+
+#### Case 1: SWML is being requested to service a phone call
+
+In cases when you have configured a number to automatically invoke a SWML script (as we have done above),
+a `Call` JSON object will be passed.
+
+#### Case 2: SWML is being executed from another SWML script
+
+You can [`execute`] or [`transfer`] the control flow out of one SWML to another. In such case, in addition to the `Call` object,
+extra context from the calling SWML is sent to the new SWML being invoked.
+
+This includes the variables that were set in the executing SWML script (`vars`), and the
+parameters deliberately passed to the new SWML (`params`).
+
+```javascript title="index.js"
+const express = require("express");
+const bodyParser = require("body-parser");
+
+const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.post("/start", async (req, res) => {
+  const { call } = req.body;
+  console.log(call.from);
+  let instructions = `
+    sections:
+      main:
+        - play:
+            url: 'say:Hello from SignalWire!'
+    `;
+
+  res.send(instructions);
+});
+
+app.listen(3000);
+```
+
+## **Conclusion**
+
+We have shown how to handle incoming calls from code, by emitting SWML instructions that say something on a call, but it can do so much more! For more advanced applications, you'll want to check out [SWML's Technical Reference](/swml).
+
+[`execute`]: ../methods/execute.mdx
+[`transfer`]: ../methods/transfer.mdx
+[`request`]: ../methods/request.mdx
+[`answer`]: ../methods/answer.mdx
+[`play`]: ../methods/play.mdx
+[`accept`]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept

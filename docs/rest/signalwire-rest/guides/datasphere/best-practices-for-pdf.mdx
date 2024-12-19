@@ -1,0 +1,154 @@
+---
+title: Optimize PDF Ingestion and Pre-Processing
+description: Learn how to optimize PDF ingestion and pre-processing for Datasphere on SignalWire.
+sidebar_label: Optimize PDF Ingestion and Pre-Processing
+slug: /rest/signalwire-rest/guides/datasphere/pdf-ingestion-best-practices
+---
+
+# **Optimize PDF ingestion and pre-processing**
+
+SignalWire's **Datasphere API** enables rapid data retrieval and seamless integration of communication systems.
+In this guide, we'll explore advanced methods for optimizing **PDF ingestion** and **pre-processing** for use with **Datasphere**,
+focusing on best practices to enhance vectorization and document retrieval.
+
+This guide targets developers and technical teams looking to build efficient solutions using SignalWire's
+**Datasphere APIs**.
+
+## **Prerequisites**
+
+To use this guide, you'll need the following prerequisites:
+
+- A SignalWire account and Space
+- One or more PDF text documents on a server, or otherwise accessible to the API by URL
+- The [jq](https://jqlang.github.io/jq/) command-line tool is strongly recommended for readable JSON responses.
+Install with `brew install jq` on MacOS, `winget install jqlang.jq` on Windows, or by following the [installation instructions](https://jqlang.github.io/jq/download/).
+
+In the following examples:
+
+- `<project_id>` is a placeholder for your actual Project ID.
+- `<token>` is a placeholder for your authentication token.
+- `<space_name>` is a placeholder for your Space name.
+
+Replace these placeholders with your actual details.
+
+---
+
+## **Choose a chunking strategy**
+
+Choosing the right chunking strategy directly impacts retrieval performance and response accuracy.
+The **Datasphere API** offers multiple chunking methods that suit different types of content.
+Let's explore the most effective chunking techniques:
+
+### Sentence-based chunking
+- **Definition**: Breaks content at sentence boundaries to preserve the natural flow of language.
+- **Ideal Use Cases**: Conversational texts, instructional guides, and customer service manuals.
+- **Parameters**:
+  - `max_sentences_per_chunk`: Defines how many sentences are combined in one chunk. Smaller values improve precision in
+  retrieval but can slow down processing.
+  - `split_newlines`: A boolean flag to determine whether new lines should trigger a chunk boundary.
+- **Best Practices**:
+  - For narrative or FAQ-type documents, keep `max_sentences_per_chunk` to 2–3 for tighter, more contextually relevant results.
+  - Enable `split_newlines` in highly structured documents (e.g., step-by-step guides) to improve clarity.
+
+### Sliding window chunking
+- **Definition**: Breaks content into overlapping chunks to preserve context across sections.
+- **Ideal Use Cases**: Legal documents, research papers, or any document where context flows continuously over multiple sections.
+- **Parameters**:
+  - `chunk_size`: Specifies the number of words per chunk.
+  - `overlap_size`: The number of words that overlap between consecutive chunks.
+- **Best Practices**:
+  - Use a larger `chunk_size` (e.g., 50–75 words) for complex documents where continuity is critical.
+  The `overlap_size` should be about 10-20% of the chunk size (e.g., 10–15 words) to ensure sufficient overlap for contextual coherence.
+
+### Paragraph and page chunking
+- **Definition**: Leverages natural document structures, such as paragraphs or page breaks, to split content.
+- **Ideal Use Cases**: Blogs, articles, or any text with clearly defined sections.
+- **Parameters**: No specific chunking parameters are needed beyond selecting `paragraph` or `page` as the strategy.
+- **Best Practices**:
+  - Use for documents with strong structural elements (like headings or tables). This method
+  minimizes the risk of splitting related content and maintains readability.
+
+## **Pre-process for telephone pronunciation**
+
+To ensure text ingested by Datasphere is optimized for voice-based applications, it is critical
+to pre-process content to match phone-readable formats. This is particularly useful when converting
+data for use with SignalWire’s **AI Voice Agents** or telephony systems.
+
+### Convert abbreviations
+- **Why**: Abbreviations can confuse Text-to-Speech (TTS) engines. Converting abbreviations to
+their full forms improves pronunciation accuracy.
+- **Example**:
+  - "oz" → "ounce"
+  - "lbs" → "pounds"
+- **Implementation**: Use regex-based text processing libraries (e.g., Python's [`re`](https://www.w3schools.com/python/python_regex.asp) module)
+to automate this conversion before vectorizing the document.
+
+### Handle numeric values
+- **Why**: Numeric expressions are often mispronounced by TTS systems if not formatted correctly.
+- **Best Practices**: Convert numbers and fractions into word form.
+- **Example**:
+  - "1/2" → "one half"
+  - "3.5" → "three point five"
+- **Automation**: Incorporate NLP (**Natural Language Processing**) tools to scan documents and replace numerals with their word equivalents. Python libraries like [`inflect`](https://pypi.org/project/inflect/) can automate this conversion.
+
+### Symbol adjustments
+
+- **Why**: Special symbols (%, $, &, etc.) are commonly mispronounced by TTS systems. Converting these to readable words enhances clarity.
+- **Best Practices**: Convert symbols into words:
+  - "%" → "percent"
+  - "&" → "and"
+  - "$" → "dollars"
+- **Automation**: Use regex or string replacement functions to automate symbol conversion before document ingestion.
+
+## **Best practices for content chunking and retrieval**
+
+### Content-type specific strategies
+
+- **Narrative Content**: Use **sentence-based chunking** to capture the natural flow of the text. This will yield highly relevant search results, particularly when proximity-based searches are used.
+- **Structured Content**: For content like manuals or FAQs, **paragraph/page chunking** is the best option. This method ensures a more logical break in the text, enabling more accurate and predictable retrieval.
+- **Continuous Context Documents**: For dense documents such as research papers or legal text, consider **sliding chunking** with moderate overlap to retain the flow of context across chunk boundaries.
+
+### Retrieval configuration
+
+Upon document upload, initiate searches using advanced query configurations to maximize retrieval efficiency.
+These configurations may involve adjusting proximity-based search parameters, expanding queries with synonyms,
+and applying tag-based filters to refine results. Such techniques are especially valuable when
+handling large-scale datasets or navigating through intricate, multi-layered documents, ensuring more accurate and relevant search outcomes.
+
+#### Example: Search query with distance, tags and synonym expansion
+
+In the below example, we perform a search query with `distance`, `tags`  and `max_synonyms` settings to retrieve relevant results.
+
+```bash
+curl -L -X POST https://<space_name>.signalwire.com/api/datasphere/documents/search \
+-u <project_id>:<token> \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+--data '{
+  "document_id": "<your-document-id>",
+  "query_string": "What is the cancellation policy?",
+  "tags": ["Legal"],
+  "distance": 10.0,
+  "count": 5,
+  "pos_to_expand": ["NOUN", "VERB"],
+  "max_synonyms": 7
+}' | jq '.'
+```
+
+
+#### Test retrieval configurations
+- **Regular Testing**: Regularly test document retrieval with different proximity and synonym expansion settings.
+- **Proximity Search**: Adjust the `distance` parameter in search queries to fine-tune the relevancy of results.
+- **Synonym Expansion**: Use the `pos_to_expand` and `max_synonyms` settings to expand queries using synonyms of key terms. This can boost search coverage without sacrificing precision.
+- **Automation**: Develop automated tests that periodically query the dataset to ensure optimal retrieval performance across different chunking configurations.
+- **Edge Cases**: Incorporate test suites that focus on edge cases, such as querying highly structured documents, to ensure all scenarios are covered.
+
+
+## **Conclusion**
+
+Optimizing PDF ingestion for SignalWire's Datasphere API requires thoughtful selection of chunking strategies,
+pre-processing techniques for telephone readability, and continuous testing of document retrieval.
+By following these best practices, you can ensure that your document data is well-prepared for efficient AI-powered communication solutions.
+
+For further details, see the full [Datasphere curl usage guide](./datasphere-curl-usage.md) and learn more about integrating
+your data with SignalWire's Call Fabric for advanced AI-powered communication.

@@ -1,0 +1,128 @@
+---
+title: Recording Phone Calls
+slug: /compatibility-api/guides/voice/python/how-to-record-phone-calls
+x-custom:
+  ported_from_readme: true
+  tags:
+    - language:python
+    - sdk:compatibility
+    - product:voice
+---
+
+
+**"This call may be recorded for quality assurance and training purposes".** We've all heard it a million times! Call recording is one of the most common use cases in call centers, customer service lines, and even in your average small business. This guide will show how you can record both inbound and outbound calls with ease in a variety of different ways to suit your needs!
+
+What do I need to get started?
+------------------------------
+
+You will need a SignalWire phone number that we can configure to handle inbound calls or to make outbound calls. You can read our handy guide on [how to purchase a phone number](/platform/phone-numbers/getting-started/buying-a-phone-number) if you have not done so already. 
+
+You can also read [here](/platform/phone-numbers/guides/how-to-configure-your-webhook) to learn more about webhooks and how to configure them. We will be using inbound voice call webhooks for recording inbound calls. 
+
+Outbound calls will instead link to an XML document containing instructions for the call. You will need to make sure you have installed one of the SignalWire client SDKs in Python, Node.JS, PHP, or Ruby to write the XML document. You can view installation instructions [here](/compatibility-api/sdks).
+
+Record Inbound calls
+--------------------
+
+If you are accepting business calls on a SignalWire number, you may need the ability to record incoming calls for later review or for training purposes.
+
+You can use the [Record verb](/compatibility-api/cxml/voice/record) in order to create an audio file with the caller's voice and return the URL to you. You can also enable transcriptions and set a transcription [callback url](/platform/phone-numbers/guides/how-to-configure-your-webhook#recording-status-callback) that will update you with the transcription and recording when one is complete.
+
+This is ideal if you want to [take a voicemail or record a message](/voice/getting-started/how-to-set-up-voicemail) from your callers. 
+
+You can view the above article to learn how to set up a simple voicemail service using serverless XML Bins or keep reading to learn how to create an XML document using a SignalWire SDK that can be the basis of more complex applications for handling inbound calls. 
+
+XML Bins cannot handle _if then_ logic and are ideal for simple use cases. However, maybe you want to build an IVR that can gather input from customers after rotating through a menu and either take a message or forward to an agent. You would need to use one of the SignalWire SDKs and write an XML document, host it on a server, and use it as the webhook for handling inbound calls. 
+
+
+:::info Voice API Guides
+
+Check out the Guides section under Voice API on the left-hand sidebar to see some full IVR demos as well as many other popular voice use cases!
+
+:::
+
+The example below uses the Record verb with the Python SDK and the Flask framework to accept an incoming call, play a short message, and record a voicemail. **Regardless of what SDK you use, make sure to convert the base response element to XML or to string. This is required for the Compatibility API to work as expected. ** 
+
+```python
+from flask import Flask
+from signalwire.voice_response import VoiceResponse
+
+
+app = Flask(__name__)
+
+@app.route("/recordMessage", methods=['GET', 'POST'])
+def recordVoicemail():
+  	# Instantiate the voice response 
+    response = VoiceResponse()
+    
+    # Play a short text to speech message to thank them for their call and advise them to record a message.
+    response.say("Hello! Thank you for calling SignalWire. Unfortunately, we are not able to take your call at this time."
+                 "Please leave your name and number along with how we can help after the beep, and we will get back to you as soon"
+                 "as we can. When you are finished recording, hang up, or press the pound key.")
+    
+    # Initiate recording, set max length of 15 seconds, set finish on key to the pound key, and set transcribe to true.  
+    response.record(max_length=15, finish_on_key='#', transcribe=True,  action="/hangupCall")
+    return str(response)
+  
+# Hang up the call and convert the response to string
+@app.route("/hangupCall", methods=['GET', 'POST'])
+def hangupCall():
+    response = VoiceResponse()
+    response.say("Thank you for your message. Goodbye!")
+    response.hangup()
+    return str(response)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+Record Outbound Calls
+---------------------
+
+You can also use the [Dial verb](/compatibility-api/cxml/voice/dial) with `record` set to true in order to record an actual call as opposed to one-sided audio coming from a customer. Similar to the Record verb, you can also set recording status callbacks.
+
+### Use XML Bins to Create a Call
+
+The easiest implementation of outbound calls is call forwarding. Below you can see an XML bin used as a webhook for handling inbound calls that will forward the call to a new number, record from when it starts ringing, and make a POST request to the recording status callback server with the recording data and recording URL. 
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Dial record="record-from-ringing"
+          recordingStatusCallback="https://example.com/recording_status">
+        <Number>+12141111111</Number>
+    </Dial>
+</Response>
+```
+
+### Use an SDK to create an XML document hosted on a server
+
+Although this example is in Python, you can use any of the SignalWire SDKs. This example actually does the same thing as above, so what's the point of doing it outside of XML Bins? Well, XML bins cannot handle complex applications. This call forwarding example is a building block of a larger application such as an IVR that handles inbound calls, routes the customer to the direct department through a series of menus, and then either takes a message or forwards to the correct agent's phone number. 
+
+```python
+from flask import Flask
+from signalwire.voice_response import VoiceResponse
+
+
+app = Flask(__name__)
+
+@app.route("/forwardCall", methods=['GET', 'POST'])
+def forwardCall():
+		response = VoiceResponse()
+		dial = Dial(record='record-from-ringing', recording_status_callback='https://example.com/recording_status')
+		dial.number('+12141111111')
+		response.append(dial)
+    return str(response)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+How to Access Recordings
+------------------------
+
+To access your recordings, click the **LaML** tab on the left-hand side nav. Click **Recordings**, and you will be able to view, listen, and download your recording files. You will also see the call ID and recording ID that you can use to [access recordings via our API](/rest/compatibility-api/endpoints/retrieve-recording)
+
+<figure>
+  <img className="img-800" src={require("./77e869d-277409a-Screen_Shot_2021-08-10_at_2.58.18_PM.webP").default} alt="A screenshot of the Recordings page of the LaML tab in SignalWire. Recordings are organized by source, duration, date, and status." />
+</figure>

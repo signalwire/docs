@@ -1,0 +1,175 @@
+---
+title: Send an Outbound Survey - Node.js
+slug: /compatibility-api/guides/voice/nodejs/outbound-survey
+sidebar_position: 8
+x-custom:
+  ported_from_readme: true
+  repo: https://github.com/signalwire/signalwire-guides/tree/master/code/outbound_survey
+  tags:
+    - language:nodejs
+    - sdk:compatibility
+    - product:voice
+---
+
+
+A telephone survey can be used to obtain useful information from users or customers, like a medical questionnaire for example. With SignalWire's NodeJS SDK, an application can be created to send an outbound call survey to English or Spanish speakers.
+
+What do I need to run this code?
+--------------------------------
+
+View the full code on our Github [here](https://github.com/signalwire/signalwire-guides/tree/master/code/outbound_survey)!
+
+This guide uses the NodeJS SignalWire SDK, for a guide on installation click [here](/compatibility-api/sdks).
+
+You will need a SignalWire phone number as well as your API Credentials (API Token, Space URL, and Project ID) which can all be found in an easily copyable format within the API tab of your SignalWire portal.
+
+<figure>
+  <img className="img-800" src={require("./d806f4b-API_Accounts.webP").default} alt="A screenshot of the SignalWire Dashboard showing the API tab beneath the Project header." />
+</figure>
+
+How to Run Application
+----------------------
+
+To install prerequisites, run `npm install`.
+
+Configure your application by copying `env.example` to `.env` and editing it with your credentials, including the necessary application domain (see below).
+
+To run the application, simply execute `node index.js`. The application runs on port `3000` by default.
+
+Triggering calls
+----------------
+
+There are a number of different ways that you could trigger your outbound call, but below are two examples using Node.JS and cURL.  
+You will need your SignalWire Project ID, auth token, and Space URL. 
+You can easily find all three values in a copyable format in your SignalWire Dashboard by clicking the API tab on the lefthand sidebar. 
+
+Whatever method you choose to use, you will need the [Create Call API](/rest/compatibility-api/endpoints/create-a-call)!
+
+There is already a defined Sinatra route within this script called `/trigger` in order to initiate the call. This route connects to the SignalWire client in order to create a call and navigate to the `/start` route once the caller and callee are connected. 
+
+```js
+app.post("/trigger", (req, res, next) => {
+  const { RestClient } = require('@signalwire/compatibility-api')
+  const client = RestClient(process.env.SIGNALWIRE_PROJECT_KEY, process.env.SIGNALWIRE_TOKEN, { signalwireSpaceUrl: process.env.SIGNALWIRE_SPACE })
+
+client.calls
+      .create({
+         url: process.env.APP_DOMAIN + '/start',
+         to: req.body.toNumber,
+         from: process.env.SIGNALWIRE_FROM_NUMBER
+       })
+      .then(call => console.log(call.sid))
+ });
+```
+
+You can also use cURL on your command prompt or with a tool such as [Postman](/platform/basics/guides/how-to-test-api-requests-on-postman) to send HTTP requests to create the call. You will need to replace the ProjectID and Space URL within the cURL URL, as well as the webhook pointing to this code, the To number, the From number, and the authentication at the bottom. 
+
+```bash
+curl https://YOURSPACE.signalwire.com/api/laml/2010-04-01/Accounts/YOUR-PROJECT-ID/Calls.json \
+  -X POST \
+  --data-urlencode "Url=YOUR-WEBHOOK-URL/start" \
+  --data-urlencode "To=DESTINATION-NUMBER" \
+  --data-urlencode "From=CALLER-ID-FROM-SIGNALWIRE-ACCOUNT" \
+  -u "YOUR-PROJECT-ID:YOUR-TOKEN"
+```
+
+Step by Step Code Content
+-------------------------
+
+### Configuring the code
+
+First, we need to create a Javascript object using a JSON object literal. This will contain each of the steps of the survey in English and Spanish. We will open with an introduction to gather input on whether we should continue in English or in Spanish. We'll then ask a question in the chosen language, comment on their response, and define a phrase for if there is no input/unclear input.
+
+```js
+const i18n = {
+  'intro': {
+    'en': "Hello, we have some questions for you. Press 1 for English",
+    'es': "Hola, tenemos algunas preguntas para ti. Presione 2 para español"
+  },
+  'question': {
+    'en': "What is your favorite food?",
+    'es': "¿Cuál es tu comida favorita?"
+  },
+  'closing': {
+    'en': "That sounds delicious!",
+    'es': "¡Eso suena delicioso!"
+  },
+  'sorry': {
+    'en': "Sorry, I did not understand",
+    'es': "Perdón no entendí"
+  }
+}
+```
+
+Next we will define a function `sayWithOptions` that will take the verbiage to say, the instantiated response, and the language to use as parameters in order to use text to speech. The `.ssmlProsody` is a feature that can be used to change the pitch, contour, range, rate, duration, and volume for text to speech. You can read more about that [here](https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/speech-synthesis-markup?tabs=csharp#adjust-prosody) in order to make the correct changes for your needs, but in our case we will be slowing the speech slightly down. 
+
+```js
+const sayWithOptions = function(say_what, response, language = 'en') {
+  response.say({
+    language: language
+  }).ssmlProsody({
+    rate:'95%'
+  }, say_what);
+};
+```
+
+Now that we've defined our survey and our language processing function, we can define the two necessary routes `start` and `question`! When a call is sent out, we will always immediately navigate to the `start` route. The first thing we will do is instantiate `VoiceResponse` as `response`. This will allow us to use the SignalWire client for text to speech. `/start` accepts `Digits` as a parameter for when the user presses 1 for English or 2 for Spanish. We need to check if the `Digits` parameter is undefined, which would indicate that this is the first time `/start` has been called so we need need to play the introductory phrases in both languages. Once we play both phrases, we will wait for the user to press 1 or 2 and then call the `/start` route with `Digits` defined this time. When `Digits` is defined, the code will redirect to the `/question` route with the correct language included as a query param. 
+
+```js
+app.post("/start", (req, res, next) => {
+  var response = new RestClient.LaML.VoiceResponse();
+  if (req.body.Digits !== undefined){
+    if (req.body.Digits == '1'){
+      response.redirect('/question?lang=en')
+    } else if (req.body.Digits == '2') {
+      response.redirect('/question?lang=es')
+    } else {
+      sayWithOptions(i18n['intro']['en'], response, 'en')
+      sayWithOptions(i18n['intro']['es'], response, 'es')
+      response.redirect('/start')
+    }
+  } else {
+    gather = response.gather({ timeout: 5, numDigits: 1, action: '/start' })
+    sayWithOptions(i18n['intro']['en'], gather, 'en')
+    sayWithOptions(i18n['intro']['es'], gather, 'es')
+  }
+  respondAndLog(res, response);
+ });
+```
+
+In the `/question` route, we will ask the user the survey question 'What is your favorite food' in English or Spanish. We start by instantiating `VoiceResponse` as we did before and defining the `lang` parameter which as passed through as a query param in the redirect url of the previous route. If the speech result is not undefined, we will repeat it back as a question, call the closing statement in the right language, and hang up. If the speech result is undefined (non existent or unclear), we will repeat the question and try to gather the speech again. Additional failures to gather speech at this point will hang up the call. 
+
+```js
+app.post("/question", (req, res, next) => {
+  var response = new RestClient.LaML.VoiceResponse();
+  var lang = req.query.lang
+
+  if (req.body.SpeechResult !== undefined ) {
+    sayWithOptions(req.body.SpeechResult + "?", response, lang)
+    sayWithOptions(i18n['closing'][lang], response, lang)
+    response.hangup();
+  } else {
+    gather = response.gather({ input: 'speech', speechTimeout: 'auto' })
+    sayWithOptions(i18n['question'][lang], gather, lang)
+  }
+  respondAndLog(res, response);
+ });
+```
+
+Wrap up
+-------
+
+While this example shows English and Spanish, other languages can be implemented as well.  Using SignalWire’s NodeJS SDK, you can generate an outbound call survey to obtain information from your customers.
+
+Required Resources:
+
+- [Github Repo](https://github.com/signalwire/signalwire-guides/tree/master/code/outbound_survey)
+- [NodeJS SignalWire SDK](/compatibility-api/sdks)
+- [SignalWire Workshop: Cloud Case Studies - see a case study of this code in action!](https://youtu.be/7tETDqrle7Y?t=882)
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our Community Slack [here](http://signalwire.community/) or create a Support ticket if you need guidance!
