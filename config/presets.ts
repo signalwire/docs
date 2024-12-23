@@ -39,9 +39,11 @@ const presets: PresetConfig[] = [
       theme: {
         customCss: require.resolve("../src/css/index.scss"),
       },
-      gtag: {
-        trackingID: process.env.GTAG as string ?? "G-XXXXXXX", // To help prevent the build from failing, we set a default value.
-      },
+      gtag: process.env.GTAG
+        ? {
+            trackingID: process.env.GTAG,
+          }
+        : undefined,
     } satisfies Options,
   ],
 ];
