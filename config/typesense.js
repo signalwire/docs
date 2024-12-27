@@ -20,7 +20,7 @@ module.exports = {
         exports: process.env.TYPESENSE_EXPORTS ?? 8108, // The port of the Typesense server. Example: 8108
       },
     ],
-    apiKey: process.env.TYPESENSE_API_KEY ?? "placeholder", // The Read-only API key for the Typesense server. Example: "5BGgXh8xbHygzha5XXXXXXXXXXXXXXXX"
+    apiKey: process.env.TYPESENSE_API_SEARCH_KEY ?? "placeholder", // The Read-only API key for the Typesense server. Example: "5BGgXh8xbHygzha5XXXXXXXXXXXXXXXX"
   },
 
   // Optional: Typesense search parameters: https://typesense.org/docs/0.24.0/api/search.html#search-parameters
