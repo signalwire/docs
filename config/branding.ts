@@ -7,7 +7,19 @@
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration#navbar
  */
 
-module.exports = {
+import type { Navbar } from '@docusaurus/theme-common';
+import navbarItems from './navbar';
+
+
+interface BrandingConfig {
+  title: string;
+  url: string;
+  baseUrl: string;
+  favicon: string;
+  navbar: Navbar;
+}
+
+const branding: BrandingConfig = {
   title: "SignalWire Developer Portal", // Set to the title of the site. This is added to the window title.
   url: "https://developer.signalwire.com", // Set to the URL of the site.
   baseUrl: "/", // Set to the base URL of the site.
@@ -20,6 +32,9 @@ module.exports = {
       href: "pathname:///", // redirect to the root of the site
       target: "_self", // open in the same tab
     },
-    items: require("./navbar.js"), // All navbar options can be modified at the /config/navbar.js file.
-  },
+    hideOnScroll: false,
+    items: navbarItems, // All navbar options can be modified at the /config/navbar.js file.
+  }
 };
+
+export default branding; 

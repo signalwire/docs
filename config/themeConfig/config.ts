@@ -1,18 +1,21 @@
 /**
  * Configuration for the site's theme.
  *
- * Used by: docusaurus.config.js
+ * Used by: docusaurus.config.ts
  * Within: config.themeConfig
  *
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration
  */
 
-const Themes = require("prism-react-renderer").themes;
-const lightCodeTheme = Themes.github;
-const darkCodeTheme = Themes.dracula;
+import { themes as PrismThemes } from 'prism-react-renderer';
+import type { ThemeConfig } from '@docusaurus/preset-classic';
+import footerItems from './footer';
 
-module.exports = {
-  footer: require("./footer"), // footer of the site. All footer options can be modified at the /config/themeConfig/footer.js file.
+const lightCodeTheme = PrismThemes.github;
+const darkCodeTheme = PrismThemes.dracula;
+
+const config: ThemeConfig = {
+  footer: footerItems,
   docs: {
     sidebar: {
       autoCollapseCategories: true,
@@ -23,6 +26,9 @@ module.exports = {
     theme: lightCodeTheme,
     darkTheme: darkCodeTheme,
     additionalLanguages: [
+      "dart",
+      "ocaml",
+      "r",
       "php",
       "csharp",
       "ruby",
@@ -55,3 +61,5 @@ module.exports = {
     },
   },
 };
+
+export default config; 
