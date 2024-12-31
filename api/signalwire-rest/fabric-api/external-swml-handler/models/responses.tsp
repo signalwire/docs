@@ -1,5 +1,36 @@
+
+
+model ExternalSWMLHandlerResponse {
+  @doc("Unique ID of the External SWML Handler.")
+  @example("a87db7ed-8ebe-42e4-829f-8ba5a4152f54")
+  id: uuid;
+
+  @doc("Unique ID of the Project.")
+  @example("99151cf8-9548-4860-ba70-a8de824f3312")
+  project_id: uuid;
+
+  @doc("Display name of the External SWML Handler Fabric Resource")
+  @example("Booking Assistant")
+  display_name: string;
+
+  @doc("Type of the Fabric Resource")
+  @example("external_swml_handler")
+  type: string;
+
+  @doc("Date and time when the resource was created.")
+  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  created_at: utcDateTime;
+
+  @doc("Date and time when the resource was updated.")
+  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  updated_at: utcDateTime;
+
+  @doc("External SWML Handler data.")
+  external_swml_handler: ExternalSWMLHandler;
+}
+
 model ExternalSWMLHandlerListResponse {
-  data: ExternalSWMLHandler[];
+  data: ExternalSWMLHandlerResponse[];
   links: ExternalSWMLHandlerPaginationResponse;
 }
 
