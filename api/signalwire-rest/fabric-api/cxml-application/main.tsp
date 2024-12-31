@@ -33,7 +33,7 @@ namespace FabricAPI.CxmlApplications {
     @summary("Create cXML Application")
     @doc("Creates acXML Application")
     @post create(...CxmlApplicationCreateRequest):
-      { @statusCode statusCode: 201; @body cxml_application: CxmlApplication; } |
+      { @statusCode statusCode: 201; @body cxml_application: CxmlApplicationFabricResource; } |
       StatusCode401 |
       StatusCode404 |
       CxmlApplicationCreateStatusCode422;
@@ -41,7 +41,7 @@ namespace FabricAPI.CxmlApplications {
     @summary("Update cXML Application")
     @doc("Updates a cXML Application by ID")
     @patch update(...CxmlApplicationID, ...CxmlApplicationUpdateRequest): {
-      @statusCode statusCode: 200; @body cxml_application: CxmlApplication;
+      @statusCode statusCode: 200; @body cxml_application: CxmlApplicationFabricResource;
     } |
       StatusCode401 |
       StatusCode404 |
