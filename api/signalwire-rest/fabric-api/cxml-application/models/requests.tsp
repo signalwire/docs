@@ -5,7 +5,7 @@ model CxmlApplicationCreateRequest {
 
   @doc("Indicates whether the call will be handled by a script or an external URL.")
   @example(HandleCallsUsing.Script)
-  used_for?: HandleCallsUsing;
+  handle_calls_using?: HandleCallsUsing;
 
   @doc("Call handler URL")
   @example("https://example.com/cxml")
@@ -33,7 +33,7 @@ model CxmlApplicationCreateRequest {
 
   @doc("Script to handle to call.")
   @example("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Play loop=\"15\">https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3</Play>\n</Response>")
-  call_handler_script: string;
+  call_handler_script?: string;
 }
 
 model CxmlApplicationUpdateRequest {
@@ -43,7 +43,7 @@ model CxmlApplicationUpdateRequest {
 
   @doc("Indicates whether the call will be handled by a script or an external URL.")
   @example(HandleCallsUsing.Script)
-  used_for?: HandleCallsUsing;
+  handle_calls_using?: HandleCallsUsing;
 
   @doc("Call handler URL")
   @example("https://example.com/cxml")
@@ -71,5 +71,5 @@ model CxmlApplicationUpdateRequest {
 
   @doc("Script to handle to call.")
   @example("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Play loop=\"15\">https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3</Play>\n</Response>")
-  call_handler_script: string;
+  call_handler_script?: string;
 }

@@ -20,7 +20,7 @@ model CxmlApplication {
 
   @doc("Indicates whether the call will be handled by a script or an external URL.")
   @example(HandleCallsUsing.Script)
-  used_for: HandleCallsUsing;
+  handle_calls_using: HandleCallsUsing;
 
   @doc("Call handler URL")
   @example("https://example.com/cxml")
