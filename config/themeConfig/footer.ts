@@ -1,14 +1,16 @@
 /**
  * Configuration for the site's footer.
  *
- * Used by: docusaurus.config.js
+ * Used by: docusaurus.config.ts
  * Within: config.themeConfig.footer
  *
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration#footer
  */
 
-module.exports = {
-  style: "dark",
+import type { Footer } from '@docusaurus/theme-common';
+
+const footer = {
+  style: "dark" as const,
   links: [
     {
       title: "Company",
@@ -104,4 +106,6 @@ module.exports = {
     },
   ],
   copyright: `Copyright © ${new Date().getFullYear()} SignalWire Inc.`,
-};
+} satisfies Footer;
+
+export default footer; 
