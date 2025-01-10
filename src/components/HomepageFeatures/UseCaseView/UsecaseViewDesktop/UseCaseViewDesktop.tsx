@@ -47,13 +47,13 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
         >
           {Object.keys(Object.values(data)[selUseCaseIdx]).map((paradigm, idx) => (
             <button
+              key={idx}
               className={clsx(
                 "button",
                 style.pbutton,
                 idx === selParadigmIdx && style.selected,
               )}
               onClick={() => setSelParadigmIdx(idx)}
-              key={idx}
             >
               {Object.keys(Object.values(data)[selUseCaseIdx])[idx]}
             </button>

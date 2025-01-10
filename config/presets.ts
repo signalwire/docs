@@ -20,9 +20,9 @@ const presets: PresetConfig[] = [
         path: "docs",
         routeBasePath: "/",
         sidebarPath: require.resolve("./sidebarsConfig"),
-        showLastUpdateTime: true,
         docItemComponent: "@theme/ApiItem",
         sidebarItemsGenerator: sidebarGenerator,
+        showLastUpdateTime: true,
         remarkPlugins: [
           [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           [require("../plugins/remark-plugin-yaml-and-json"), { sync: false }],
