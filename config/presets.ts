@@ -20,7 +20,6 @@ const presets: PresetConfig[] = [
         path: "docs",
         routeBasePath: "/",
         sidebarPath: require.resolve("./sidebarsConfig"),
-        showLastUpdateTime: true,
         docItemComponent: "@theme/ApiItem",
         sidebarItemsGenerator: sidebarGenerator,
         remarkPlugins: [
