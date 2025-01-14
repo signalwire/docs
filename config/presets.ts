@@ -16,7 +16,7 @@ const presets: PresetConfig[] = [
     "classic",
     {
       docs: {
-        editUrl: "https://github.com/signalwire/signalwire-docs/edit/main/",
+        editUrl: "https://github.com/signalwire/docs/edit/main/",
         path: "docs",
         routeBasePath: "/",
         sidebarPath: require.resolve("./sidebarsConfig"),
@@ -39,9 +39,11 @@ const presets: PresetConfig[] = [
       theme: {
         customCss: require.resolve("../src/css/index.scss"),
       },
-      gtag: {
-        trackingID: process.env.GTAG as string ?? "",
-      },
+      gtag: process.env.GTAG
+        ? {
+            trackingID: process.env.GTAG,
+          }
+        : undefined,
     } satisfies Options,
   ],
 ];

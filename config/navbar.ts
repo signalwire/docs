@@ -1,13 +1,15 @@
 /**
  * Configuration for the site's navbar.
  *
- * Used by: docusaurus.config.js
+ * Used by: docusaurus.config.ts
  * Within: config.themeConfig.navbar.items
  *
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration#navbar
  */
 
-module.exports = [
+import type { NavbarItem } from '@docusaurus/theme-common';
+
+const navbar: NavbarItem[] = [
   /// Guides -------- ///
   { to: "/guides", label: "Guides", position: "left" },
 
@@ -155,13 +157,11 @@ module.exports = [
         label: "Contact Support",
         "aria-label": "Support",
       },
-
       {
         href: "https://status.signalwire.com",
         label: "Platform Status",
         "aria-label": "Platform Status",
       },
-
       {
         href: "https://signalwire-community.slack.com/",
         label: "Slack",
@@ -178,3 +178,5 @@ module.exports = [
     "aria-label": "Dashboard",
   },
 ];
+
+export default navbar; 

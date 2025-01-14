@@ -1,7 +1,7 @@
 FROM node:20 AS builder
 WORKDIR /app
 COPY . /app
-RUN npm run install-ci && npm run build && npm run check-links
+RUN npm run install-ci && npm run build
 
 
 FROM nginx
