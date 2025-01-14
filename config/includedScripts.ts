@@ -1,13 +1,17 @@
 /**
  * Configuration for the site's included scripts.
  *
- * Used by: docusaurus.config.js
+ * Used by: docusaurus.config.ts
  * Within: config.scripts
  *
  * Docusaurus technical reference: https://docusaurus.io/docs/api/docusaurus-config#scripts
  */
 
-module.exports = [
+import type { Config } from '@docusaurus/types';
+
+type ScriptItem = NonNullable<Config['scripts']>[number];
+
+const scripts: ScriptItem[] = [
   {
     src: "/scripts/apollo.js",
     async: true,
@@ -34,3 +38,5 @@ module.exports = [
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
 ];
+
+export default scripts; 
