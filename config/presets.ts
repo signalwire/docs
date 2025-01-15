@@ -22,6 +22,7 @@ const presets: PresetConfig[] = [
         sidebarPath: require.resolve("./sidebarsConfig"),
         docItemComponent: "@theme/ApiItem",
         sidebarItemsGenerator: sidebarGenerator,
+        showLastUpdateTime: true,
         remarkPlugins: [
           [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           [require("../plugins/remark-plugin-yaml-and-json"), { sync: false }],
