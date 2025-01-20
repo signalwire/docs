@@ -28,6 +28,7 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
             className={clsx(style.ucbutton, idx === selUseCaseIdx ? style.selected : "")}
             onClick={(e) => setSelUseCaseIdx(idx)}
             style={{ flex: 1, maxHeight: 65 }}
+            key={idx}
           >
             {useCase}
           </button>
@@ -46,6 +47,7 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
         >
           {Object.keys(Object.values(data)[selUseCaseIdx]).map((paradigm, idx) => (
             <button
+              key={idx}
               className={clsx(
                 "button",
                 style.pbutton,
