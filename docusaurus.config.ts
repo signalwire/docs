@@ -1,6 +1,5 @@
 import type { Config } from '@docusaurus/types';
 import type { ThemeConfig } from '@docusaurus/preset-classic';
-import type { UserThemeConfig } from 'docusaurus-theme-search-typesense';
 import dotenv from "dotenv";
 import branding from "./config/branding"; // Imports all branding options from the /config/branding.ts file.
 import scripts from "./config/includedScripts";

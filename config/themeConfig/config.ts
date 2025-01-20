@@ -11,6 +11,7 @@ import { themes as PrismThemes } from 'prism-react-renderer';
 import type { ThemeConfig } from '@docusaurus/preset-classic';
 import footerItems from './footer';
 
+
 const lightCodeTheme = PrismThemes.github;
 const darkCodeTheme = PrismThemes.dracula;
 
@@ -48,9 +49,9 @@ const config: ThemeConfig = {
     ],
   },
   colorMode: {
-    defaultMode: "light",
+    defaultMode: "dark",
     disableSwitch: false,
-    respectPrefersColorScheme: true,
+    respectPrefersColorScheme: false,
   },
 
   // Theme configuration for lightbox (plugin-image-zoom)

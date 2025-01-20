@@ -177,6 +177,12 @@ const navbar: NavbarItem[] = [
     className: "dashboard-navbar-link",
     "aria-label": "Dashboard",
   },
+  {
+    href: 'https://github.com/signalwire/docs',
+    position: 'right',
+    className: 'header-github-link',
+    'aria-label': 'GitHub repository',
+  }
 ];
 
 export default navbar; 
