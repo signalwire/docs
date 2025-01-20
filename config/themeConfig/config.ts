@@ -15,6 +15,7 @@ const lightCodeTheme = PrismThemes.github;
 const darkCodeTheme = PrismThemes.dracula;
 
 const config: ThemeConfig = {
+
   footer: footerItems,
   docs: {
     sidebar: {
@@ -48,8 +49,8 @@ const config: ThemeConfig = {
   },
   colorMode: {
     defaultMode: "light",
-    disableSwitch: true,
-    respectPrefersColorScheme: false,
+    disableSwitch: false,
+    respectPrefersColorScheme: true,
   },
 
   // Theme configuration for lightbox (plugin-image-zoom)

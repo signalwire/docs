@@ -12,7 +12,7 @@ import themeConfig from "./config/themeConfig/config";
 
 dotenv.config(); // Imports environment variables from the .env file. The .env file should be in the root of the project.
 
-const config: Config = {
+const config: Config = { 
   markdown: {
     mermaid: true, // enables mermaid diagrams in markdown files
   },
