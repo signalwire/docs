@@ -10,6 +10,7 @@ import {
   SiReact,
   SiVuedotjs,
   SiRuby,
+  SiGithub,
 } from "react-icons/si";
 import { GiOpenBook } from "react-icons/gi";
 import { HiExternalLink } from "react-icons/hi";
@@ -59,16 +60,26 @@ function GuideCardWrapper({ item }) {
           {item.type === "category" && `${item.items.length} items`}
         </div>
 
-        {PlatformIcon && (
-          <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8, display: "flex", gap: "12px", alignItems: "center" }}>
+          {PlatformIcon && (
             <a
               href={`/guides?tags=language%3A${platform.toLowerCase()}`}
               style={{ color: "inherit", fontSize: "1.2em" }}
             >
               {PlatformIcon}
             </a>
-          </div>
-        )}
+          )}
+          {item.customProps?.github && (
+            <a
+              href={item.customProps.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "inherit", fontSize: "1.2em" }}
+            >
+              <SiGithub />
+            </a>
+          )}
+        </div>
       </>
     </Card>
   );
