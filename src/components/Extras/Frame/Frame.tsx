@@ -41,10 +41,7 @@ export default function Frame({
   return (
     <div className={clsx(styles.container, "lightbox")}>
       <div className={clsx(styles.frame)}>
-        <div
-          style={{ backgroundPosition: "10px 10px" }}
-          className={clsx(styles.gridOverlay)}
-        />
+        <div className={clsx(styles.gridOverlay)} />
         <div className={clsx(single ? styles.content : styles.contentMultiple)}>
           {processedChildren}
         </div>
