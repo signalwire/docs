@@ -1,0 +1,156 @@
+---
+slug: /ai/gateway
+sidebar_label: SignalWire AI Gateway (SWAIG)
+---
+
+# SignalWire AI Gateway (SWAIG)
+
+## Introduction
+
+The SignalWire AI Gateway (SWAIG) enables seamless integration between AI-powered logic and external APIs, such as The Movie Database (TMDb). This document explains how SWAIG operates and provides a step-by-step guide for creating a movie expert AI agent that can answer user queries using its functions.
+
+## What is SWAIG?
+
+SWAIG acts as a middleware that bridges the communication between AI agents and external APIs. 
+The AI decides which function to call based on user queries, sends structured requests to SWAIG, and processes the responses to generate human-like answers.
+For example, if a user asks, “What was the budget for Top Gun?” SWAIG handles the following steps:
+1. **Function Determination**: The AI decides which function to call based on the query (e.g., `search_movie` to find the movie ID).
+2. **API Integration**: SWAIG sends structured requests to the TMDb API, retrieves data, and returns it to the AI agent.
+3. **Function Chaining**: If additional information is needed, the AI invokes subsequent functions (e.g., `get_movie_details` to fetch detailed information about Top Gun).
+
+## Example Workflow
+
+### User Query
+User: “What was the budget for Top Gun?”
+
+### Step 1: `search_movie` Function
+The AI first identifies that it needs the movie ID. It sends the following request to SWAIG:
+**SENT**:
+
+```json
+{
+  "function": "search_movie",
+  "argument": {
+    "query": "Top Gun",
+    "year": 1986
+  }
+}
+```
+
+**Response**:
+
+```json
+{
+  "response": "These are the search results for movies based on your query:\n\nid: 744 title: Top Gun release_date: 1986-05-16 genre_ids: 28, 18"
+}
+```
+### Step 2: `get_movie_details` Function
+Using the movie ID (744), the AI invokes the `get_movie_details` function:
+
+**SENT**:
+
+```json
+{
+  "function": "get_movie_details",
+  "argument": {
+    "movie_id": 744
+  }
+}
+```
+
+**Response**:
+
+```json
+{
+  "response": "Here are the detailed information about the movie:\n\nid: 744\ntitle: Top Gun\noriginal_title: Top Gun\nrelease_date: 1986-05-16\nruntime: 110 minutes\noverview: For Lieutenant Pete 'Maverick' Mitchell and his friend and co-pilot Nick 'Goose' Bradshaw...\nbudget: $15000000\nrevenue: $356830601"
+}
+```
+
+The AI then parses the response and provides the user with the answer: “The budget for Top Gun was $15,000,000.”
+
+## How SWAIG Works
+
+### 1. **Defining Functions**
+
+Each SWAIG function corresponds to a specific API endpoint. Functions are defined in JSON format, specifying the parameters and expected responses.
+
+**Example: `search_movie` Function**:
+
+```json
+{
+  "name": "search_movie",
+  "argument": {
+    "type": "object",
+    "properties": {
+      "query": { "type": "string", "description": "The movie title to search for." },
+      "year": { "type": "integer", "description": "Filter results by release year." }
+    },
+    "required": ["query"]
+  }
+}
+
+```
+
+### 2. **Sending Requests**
+
+
+When the AI decides to call a function, it sends a structured request containing:
+- **Function Name**: The function to be executed.
+- **Arguments**: Parameters required by the function (e.g., `query`, `year`).
+- **Metadata**: Contextual data such as session ID, project ID, and caller details.
+
+### 3. **Receiving Responses**
+SWAIG processes the request, interacts with the external API, and returns the response to the AI agent in JSON format. The AI uses this data to answer the user's query or decide on the next action.
+
+### 4. **Function Chaining**
+
+For complex queries, multiple functions may be called in sequence. The AI determines the next function based on the previous response.
+
+## Example Implementation
+
+### Sample User Flow
+
+1. **User**: “Recommend an action movie from 2020.”
+2. **AI**: Calls `discover_movies` with `with_genres=Action` and `primary_release_year=2020`.
+3. **SWAIG**: Returns a list of action movies from 2020.
+4. **AI**: Selects a movie from the list and provides details to the user.
+
+### Environment Setup
+
+To use SWAIG, ensure the following environment variables are configured:
+
+- **TMDB_API_KEY**: Your TMDb API key.
+- **HTTP_USERNAME** and **HTTP_PASSWORD**: For authentication.
+
+### Function Example
+
+#### Request
+
+```json
+
+{
+  "function": "get_movie_credits",
+  "argument": {
+    "movie_id": 744
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "response": "Cast: Tom Cruise, Val Kilmer... Crew: Tony Scott (Director)..."
+}
+```
+
+## Tips for New Users
+
+1. **Start Simple**: Experiment with basic functions like `search_movie` to understand the flow.
+2. **Check Logs**: Use logs to debug and refine function calls.
+3. **Test Endpoints**: Validate API responses using tools like Postman before integrating with SWAIG.
+4. **Iterate**: Build and test incrementally, adding more functions as needed.
+
+## Conclusion
+
+SWAIG simplifies the integration of AI logic with external APIs, enabling dynamic and interactive AI applications. By following this primer, you can build a robust AI agent that provides users with real-time, personalized movie information.
