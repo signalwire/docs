@@ -7,9 +7,9 @@
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration
  */
 
-import { themes as PrismThemes } from 'prism-react-renderer';
-import type { ThemeConfig } from '@docusaurus/preset-classic';
-import footerItems from './footer';
+import { themes as PrismThemes } from "prism-react-renderer";
+import type { ThemeConfig } from "@docusaurus/preset-classic";
+import footerItems from "./footer";
 
 
 const lightCodeTheme = PrismThemes.github;
@@ -56,12 +56,12 @@ const config: ThemeConfig = {
 
   // Theme configuration for lightbox (plugin-image-zoom)
   imageZoom: {
-    selector: ".markdown img:not(.nolightbox)",
+    selector: ".lightbox img, img.lightbox",
     options: {
-      margin: 18,
+      margin: 80,
       scrollOffset: 0,
     },
   },
 };
 
-export default config; 
+export default config;
