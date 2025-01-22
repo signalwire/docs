@@ -10,7 +10,7 @@ export const FaxIcon: React.FC<IconProps> = ({ color = "#044EF4", size = 24 }) =
     width={size}
     height={size}
     viewBox="0 0 119.12 122.88"
-    style={{ enableBackground: "new 0 0 119.13 122.88" }}
+    enableBackground="new 0 0 119.13 122.88"
   >
     <path
       fillRule="evenodd"
