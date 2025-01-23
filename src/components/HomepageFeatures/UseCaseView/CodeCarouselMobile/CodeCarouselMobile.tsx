@@ -8,7 +8,7 @@ import "./style.css";
 import clsx from "clsx";
 
 var desktopSettings = {
-  dots: true,
+  dots: false,
   infinite: true,
   speed: 220,
   slidesToShow: 1,
@@ -17,7 +17,7 @@ var desktopSettings = {
 };
 
 var mobileSettings = {
-  dots: true,
+  dots: false,
   infinite: true,
   speed: 220,
   slidesToShow: 1,
