@@ -15,12 +15,12 @@ import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
 
 // Custom components
-import { Accordion, AccordionCover, AccordionGroup } from "../../components/Extras/Accordion";
-import { Card, CardGroup, CardImage } from "../../components/Extras/Card";
+import { Accordion, AccordionGroup } from "../../components/Extras/Accordion";
+import { Card, CardGroup } from "../../components/Extras/Card";
 import CodeGroup from "../../components/Extras/Code";
-import { ExpandableItemCoverIcon } from "../../components/Extras/Expandable";
-import Frame from "../../components/Extras/Frame";
-import Slideshow from "../../components/Extras/Slideshow";
+import { ExpandableItemCoverIcon } from "../../components/Extras/Expandable/ExpandableItemCoverIcon";
+import Frame from "../../components/Extras/Frame/Frame";
+import Slideshow from "../../components/Extras/Slideshow/Slideshow";
 
 export default {
   ...MDXComponents,
@@ -30,7 +30,6 @@ export default {
   LangSwitch,
 
   Accordion,
-  AccordionCover,
   AccordionGroup,
   AlphaBadge,
   APITable,
