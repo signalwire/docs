@@ -15,9 +15,9 @@
     <img src="https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=fff" alt="Slack" href="https://signalwire-community.slack.com/"/>
     <img src="https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white&" alt="GitHub" href="https://github.com/signalwire"/>
     <img src="https://img.shields.io/badge/MIT-License-blue" alt="MIT License" href="LICENSE" />
+    <img src="https://img.shields.io/badge/Creative%20Commons-license-blue.svg?logo=creativecommons&logoColor=ffffff"/>
     <img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg" alt="Contributor Covenant" href="CODE_OF_CONDUCT.md"/>
-    <!-- Star count; won't work until the repo is public -->
-    <img src="https://img.shields.io/github/stars/signalwire/signalwire-docs" alt="GitHub Stars" href="https://github.com/signalwire/signalwire-docs"/>
+    <img src="https://img.shields.io/github/stars/signalwire/docs" alt="GitHub Stars" href="https://github.com/signalwire/docs"/>
 </div>
 
 <img src="static/img/homepage.png" alt="Homepage"/>
