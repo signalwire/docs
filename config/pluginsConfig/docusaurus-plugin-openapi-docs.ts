@@ -5,6 +5,8 @@
 */
 
 import { PluginConfig } from '@docusaurus/types';
+import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
+import {PluginOptions} from "docusaurus-plugin-openapi-docs/src/types"
 
 export const openapiPlugin: PluginConfig = [
   'docusaurus-plugin-openapi-docs',
@@ -22,7 +24,7 @@ export const openapiPlugin: PluginConfig = [
       },
       signalwireCallingRest: {
         specPath: "api/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml",
-        outputDir: "docs/rest/signalwire-rest/endpoints/calling",
+        outputDir: "docs/rest/signalwire-rest/endpoints/calling",        
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -108,6 +110,6 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-    },
-  },
-];
+    } satisfies Record<string, OpenApiPlugin.Options>  
+  } satisfies PluginOptions,
+]; 

@@ -11,10 +11,12 @@ import { themes as PrismThemes } from "prism-react-renderer";
 import type { ThemeConfig } from "@docusaurus/preset-classic";
 import footerItems from "./footer";
 
+
 const lightCodeTheme = PrismThemes.github;
 const darkCodeTheme = PrismThemes.dracula;
 
 const config: ThemeConfig = {
+
   footer: footerItems,
   docs: {
     sidebar: {
@@ -47,8 +49,8 @@ const config: ThemeConfig = {
     ],
   },
   colorMode: {
-    defaultMode: "light",
-    disableSwitch: true,
+    defaultMode: "dark",
+    disableSwitch: false,
     respectPrefersColorScheme: false,
   },
 

@@ -27,6 +27,7 @@ const branding: BrandingConfig = {
 
   navbar: { // Read more about the navbar options at: https://docusaurus.io/docs/api/themes/configuration#navbar
     logo: {
+      srcDark: "img/logo-dark.svg",
       alt: "SignalWire", // Set to the alt text of the logo.
       src: "img/logo.svg", // set in the 'static/img' folder
       href: "pathname:///", // redirect to the root of the site
