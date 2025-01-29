@@ -13,6 +13,7 @@ import DocCard from "@theme/DocCard";
 import { LinkCard, LinkCardContainer, HomepageHeader, ProductButtons, ProductButton, UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
+import Frame from '@site/src/components/Extras/Frame/Frame';
 
 export default {
   ...MDXComponents,
@@ -21,6 +22,7 @@ export default {
   LangItem,
   LangSwitch,
 
+  Frame,
   Tabs,
   TabItem,
   AlphaBadge,
