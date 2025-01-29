@@ -1,6 +1,4 @@
-// @ts-ignore
 import React from 'react';
-// @ts-ignore
 import Link from "@docusaurus/Link";
 
 interface BaseProps {
