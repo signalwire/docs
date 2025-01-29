@@ -6,9 +6,10 @@ import { useWindowSize } from "../../../../utils/hooks/useWindowSize";
 import styles from "./CodeCarouselMobile.module.css";
 import "./style.css";
 import clsx from "clsx";
+import { FaArrowRight, FaArrowLeft } from "react-icons/fa6";
 
 var desktopSettings = {
-  dots: true,
+  dots: false,
   infinite: true,
   speed: 220,
   slidesToShow: 1,
@@ -17,7 +18,7 @@ var desktopSettings = {
 };
 
 var mobileSettings = {
-  dots: true,
+  dots: false,
   infinite: true,
   speed: 220,
   slidesToShow: 1,
@@ -51,16 +52,28 @@ export default function CodeCarouselMobile({ children }: { children: ReactNode[]
         <div style={{ display: "flex", justifyContent: "center", marginTop: 20 }}>
           <button
             className="button button--primary"
-            style={{ marginRight: 10 }}
+            style={{
+              marginRight: 10,
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
             onClick={(e) => sliderRef.current?.slickPrev()}
           >
-            ←
+            <FaArrowLeft />
           </button>
           <button
             className="button button--primary"
+            style={{
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
             onClick={(e) => sliderRef.current?.slickNext()}
           >
-            →
+            <FaArrowRight />
           </button>
         </div>
       )}
