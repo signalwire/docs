@@ -75,6 +75,7 @@ export function Card<T extends ElementType = "div">({
   return (
     <Component
       className={clsx(
+        "card",
         styles.card,
         horizontal && styles.horizontal,
         className,

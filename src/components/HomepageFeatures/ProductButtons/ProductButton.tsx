@@ -1,13 +1,26 @@
 import React from "react";
 import styles from "./styles.module.css";
 import { useHistory } from "@docusaurus/router";
+import { useColorMode } from "@docusaurus/theme-common";
 
-import type { ProductDescription } from "./ProductButtonContainer";
 
-interface ProductButtonProps extends ProductDescription {
+type ProductIcon = {
+  themeAware: boolean;
+  path: string;
+};
+
+interface ProductButtonProps {
+  name: string;
+  icon?: string | ProductIcon;
+  link: string;
+  description?: string;
   width?: number;
   height?: number;
 }
+
+const isExternalLink = (url: string): boolean => {
+  return url.startsWith('http://') || url.startsWith('https://');
+};
 
 export default function ProductButton({
   name,
@@ -18,19 +31,35 @@ export default function ProductButton({
   height = undefined,
 }: ProductButtonProps) {
   const history = useHistory();
+  const { colorMode } = useColorMode();
+  const isDarkMode = colorMode === "dark";
+
+  const iconPath = typeof icon === 'string' 
+    ? icon 
+    : icon?.themeAware
+      ? `/landing-assets/images/svg/${isDarkMode ? 'dark' : 'light'}/${icon.path}`
+      : icon?.path;
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isExternalLink(link)) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    } else {
+      history.push(link);
+    }
+  };
 
   return (
     <div
       key={name}
       className={styles.prodbutton}
-      onClick={(e) => {
-        history.push(link);
-      }}
+      onClick={handleClick}
       style={{ width, height }}
+      role="link"
+      tabIndex={0}
     >
-      {icon && (
+      {iconPath && (
         <div className="icon">
-          <img src={icon} style={{ width: 35, height: 35 }} />
+          <img src={iconPath} style={{ width: 35, height: 35 }} alt={name} />
         </div>
       )}
       <div style={{ fontSize: 20, fontWeight: "bold" }}>{name}</div>
