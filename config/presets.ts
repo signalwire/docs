@@ -15,6 +15,7 @@ const presets: PresetConfig[] = [
   [
     "classic",
     {
+
       docs: {
         editUrl: "https://github.com/signalwire/docs/edit/main/",
         path: "docs",
