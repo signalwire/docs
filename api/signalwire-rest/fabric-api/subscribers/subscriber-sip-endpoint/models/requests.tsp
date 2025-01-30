@@ -11,10 +11,6 @@ model SubscriberSipEndpointBaseRequest {
   @example("hack-me-if-you-can")
   password: string;
 
-  @doc("Confirmation of the Password")
-  @example("hack-me-if-you-can")
-  password_confirmation: string;
-
   @doc("Caller ID of the Sip Endpoint.")
   @example("call-id-123")
   caller_id?: string;
