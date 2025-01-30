@@ -14,6 +14,14 @@ import { LinkCard, LinkCardContainer, HomepageHeader, ProductButtons, ProductBut
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
 
+// Custom components
+import { Accordion, AccordionGroup } from "../../components/Extras/Accordion";
+import { Card, CardGroup } from "../../components/Extras/Card";
+import CodeGroup from "../../components/Extras/Code";
+import { ExpandableItemCoverIcon } from "../../components/Extras/Expandable/ExpandableItemCoverIcon";
+import Frame from "../../components/Extras/Frame/Frame";
+import Slideshow from "../../components/Extras/Slideshow/Slideshow";
+
 export default {
   ...MDXComponents,
 
@@ -21,22 +29,31 @@ export default {
   LangItem,
   LangSwitch,
 
-  Tabs,
-  TabItem,
+  Accordion,
+  AccordionGroup,
   AlphaBadge,
-  BetaBadge,
-  LinkBadge,
-  DocCardList,
   APITable,
   APITableRow,
+  BetaBadge,
+  Card,
+  CardGroup,
+//  CardImage,
+//  CodeGroup,
   DocCard,
+  DocCardList,
+  ExpandableItemCoverIcon,
+  Frame,
+  HomepageHeader,
+  LinkBadge,
   LinkCard,
   LinkCardContainer,
-  HomepageHeader,
-  ProductButtons,
   ProductButton,
-  UseCaseView,
-  UseCaseLinks,
+  ProductButtons,
+  Slideshow,
   Steps,
-  Subtitle
+  Subtitle,
+  Tabs,
+  TabItem,
+  UseCaseLinks,
+  UseCaseView,
 };
