@@ -10,10 +10,25 @@ import { LinkBadge } from "../../components/LinkBadge";
 import DocCardList from "@theme/DocCardList";
 import { APITable, APITableRow } from "../../components/APITable";
 import DocCard from "@theme/DocCard";
-import { LinkCard, LinkCardContainer, HomepageHeader, ProductButtons, ProductButton, UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
+import {
+  LinkCard,
+  LinkCardContainer,
+  HomepageHeader,
+  ProductButtons,
+  ProductButton,
+  UseCaseView,
+  UseCaseLinks,
+} from "../../components/HomepageFeatures";
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
-import Frame from '@site/src/components/Extras/Frame/Frame';
+import Frame from "@site/src/components/Extras/Frame/Frame";
+
+// Custom components
+import { Accordion, AccordionGroup } from "../../components/Extras/Accordion";
+import { Card, CardGroup } from "../../components/Extras/Card";
+import CodeGroup from "../../components/Extras/Code";
+import { ExpandableItemCoverIcon } from "../../components/Extras/Expandable/ExpandableItemCoverIcon";
+import Slideshow from "../../components/Extras/Slideshow/Slideshow";
 
 export default {
   ...MDXComponents,
@@ -23,22 +38,31 @@ export default {
   LangSwitch,
 
   Frame,
-  Tabs,
-  TabItem,
+  Accordion,
+  AccordionGroup,
   AlphaBadge,
-  BetaBadge,
-  LinkBadge,
-  DocCardList,
   APITable,
   APITableRow,
+  BetaBadge,
+  Card,
+  CardGroup,
+  //  CardImage,
+  //  CodeGroup,
   DocCard,
+  DocCardList,
+  ExpandableItemCoverIcon,
+  Frame,
+  HomepageHeader,
+  LinkBadge,
   LinkCard,
   LinkCardContainer,
-  HomepageHeader,
-  ProductButtons,
   ProductButton,
-  UseCaseView,
-  UseCaseLinks,
+  ProductButtons,
+  Slideshow,
   Steps,
-  Subtitle
+  Subtitle,
+  Tabs,
+  TabItem,
+  UseCaseLinks,
+  UseCaseView,
 };
