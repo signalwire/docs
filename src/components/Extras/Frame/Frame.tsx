@@ -13,7 +13,11 @@ function extractImagesFromParagraph(children: React.ReactNode): {
     if (Array.isArray(pChildren)) {
       const processedChildren = pChildren.map((child) => {
         if (React.isValidElement(child) && child.type === "figure") {
-          return React.isValidElement(child) ? child.props?.children : child;
+          return React.isValidElement(child) ? (
+            <div className={styles.imageWrapper}>{child.props?.children}</div>
+          ) : (
+            child
+          );
         }
         return child;
       });
@@ -21,12 +25,23 @@ function extractImagesFromParagraph(children: React.ReactNode): {
     }
 
     if (React.isValidElement(pChildren) && pChildren.type === "figure") {
-      return { content: pChildren.props?.children, single };
+      return {
+        content: <div className={styles.imageWrapper}>{pChildren.props?.children}</div>,
+        single,
+      };
     }
 
     return { content: pChildren, single };
   }
-  return { content: children, single: false };
+  return {
+    content:
+      React.isValidElement(children) && children.type === "figure" ? (
+        <div className={styles.imageWrapper}>{children.props?.children}</div>
+      ) : (
+        children
+      ),
+    single: false,
+  };
 }
 
 export default function Frame({
