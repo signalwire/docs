@@ -1,6 +1,7 @@
 import React, { ReactNode, useEffect, isValidElement, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import Mermaid from '@theme/Mermaid';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 import styles from './styles.module.css';
 
 export interface ModalProps {
@@ -9,7 +10,7 @@ export interface ModalProps {
   children: ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+const ModalContent: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,4 +72,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   return createPortal(modalContent, document.body);
 };
 
-export default React.memo(Modal); 
+const Modal: React.FC<ModalProps> = React.memo((props) => {
+  return (
+    <BrowserOnly>
+      {() => <ModalContent {...props} />}
+    </BrowserOnly>
+  );
+});
+
+Modal.displayName = 'PreviewCardModal';
+
+export default Modal; 
