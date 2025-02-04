@@ -21,7 +21,7 @@ import CodeGroup from "../../components/Extras/Code";
 import { ExpandableItemCoverIcon } from "../../components/Extras/Expandable/ExpandableItemCoverIcon";
 import Frame from "../../components/Extras/Frame/Frame";
 import Slideshow from "../../components/Extras/Slideshow/Slideshow";
-import Tooltips from "../../components/Extras/Tooltip";
+import Tooltips from "../../components/Extras/Tooltips";
 import { PreviewCardGroup, PreviewCard } from "../../components/Extras/PreviewCard";
 
 
