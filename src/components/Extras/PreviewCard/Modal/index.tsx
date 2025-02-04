@@ -35,9 +35,6 @@ const ModalContent: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   const overlayElement = overlayRef.current;
   if (!isOpen && overlayElement?.style.opacity === '0') return null;
 
-  // Check if the content is a Mermaid diagram
-  const isMermaid = isValidElement(children) && children.type === Mermaid;
-
   const modalContent = (
     <div 
       ref={overlayRef}
@@ -46,24 +43,21 @@ const ModalContent: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       aria-hidden={!isOpen}
       role="dialog"
       aria-modal="true"
+      style={{ cursor: 'zoom-out' }}
     >
       <div 
         className={styles.modalContent}
         onClick={e => e.stopPropagation()}
       >
-        <button 
-          className={styles.modalClose} 
+        <div 
+          className={styles.modalContentWrapper}
           onClick={onClose}
-          aria-label="Close modal"
+          role="button"
+          tabIndex={0}
+          aria-label="Click to close expanded view"
+          title="Click to close expanded view"
         >
-          ×
-        </button>
-        <div className={styles.modalContentWrapper}>
-          {isMermaid ? (
-            <div className={styles.mermaidContent}>
-              {children}
-            </div>
-          ) : children}
+          {children}
         </div>
       </div>
     </div>
