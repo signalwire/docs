@@ -171,7 +171,7 @@ const navbar: NavbarItem[] = [
   },
 
   {
-    href: "https://id.signalwire.com",
+    href: "https://signalwire.com/signin",
     label: "Dashboard",
     position: "right",
     className: "dashboard-navbar-link",
