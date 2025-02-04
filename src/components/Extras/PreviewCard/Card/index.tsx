@@ -41,8 +41,9 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
     setIsModalOpen(false);
   }, []);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
       setIsModalOpen(true);
     }
   }, []);
@@ -77,6 +78,9 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
     };
   }, [children, thumbnail]);
 
+  const cardTitle = title || 'Preview content';
+  const ariaLabel = `${cardTitle}. Click to open an expanded view of the content.`;
+
   return (
     <>
       <div 
@@ -84,7 +88,9 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
         onClick={handleOpen}
         role="button"
         tabIndex={0}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyDown}
+        aria-label={ariaLabel}
+        title="Click to open an expanded view of the content"
       >
         <div className={styles.previewCardItemContent}>
           {renderedContent.preview}
