@@ -1,7 +1,8 @@
-import React, { ReactNode, useEffect, isValidElement, useRef } from 'react';
+import React, { ReactNode, useEffect, isValidElement, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Mermaid from '@theme/Mermaid';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import clsx from 'clsx';
 import styles from './styles.module.css';
 
 export interface ModalProps {
@@ -12,9 +13,24 @@ export interface ModalProps {
 
 const ModalContent: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isRendered, setIsRendered] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
+    let animationFrame: number;
+    let timeout: NodeJS.Timeout;
+
     if (isOpen) {
+      setIsRendered(true);
+      
+      timeout = setTimeout(() => {
+        animationFrame = requestAnimationFrame(() => {
+          setIsAnimating(true);
+          contentRef.current?.focus();
+        });
+      }, 10);
+
       document.body.style.overflow = 'hidden';
       
       const handleEscape = (e: KeyboardEvent) => {
@@ -27,36 +43,50 @@ const ModalContent: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       return () => {
         document.body.style.overflow = 'unset';
         document.removeEventListener('keydown', handleEscape);
+        cancelAnimationFrame(animationFrame);
+        clearTimeout(timeout);
       };
+    } else {
+      setIsAnimating(false);
+      timeout = setTimeout(() => {
+        setIsRendered(false);
+      }, 200);
+      return () => clearTimeout(timeout);
     }
   }, [isOpen, onClose]);
 
-  // Don't render anything if modal is not open and animation has finished
-  const overlayElement = overlayRef.current;
-  if (!isOpen && overlayElement?.style.opacity === '0') return null;
+  if (!isRendered) return null;
 
   const modalContent = (
     <div 
       ref={overlayRef}
-      className={styles.modalOverlay} 
+      className={clsx(
+        styles.modalOverlay,
+        isAnimating && styles.modalVisible
+      )}
       onClick={onClose}
-      aria-hidden={!isOpen}
       role="dialog"
       aria-modal="true"
-      style={{ cursor: 'zoom-out' }}
+      aria-labelledby="modal-title"
     >
       <div 
-        className={styles.modalContent}
+        ref={contentRef}
+        className={clsx(
+          styles.modalContent,
+          isAnimating && styles.modalContentVisible
+        )}
         onClick={e => e.stopPropagation()}
+        tabIndex={-1}
       >
         <div 
           className={styles.modalContentWrapper}
           onClick={onClose}
           role="button"
           tabIndex={0}
-          aria-label="Click to close expanded view"
+          aria-label="Close modal"
           title="Click to close expanded view"
         >
+          <div id="modal-title" className={styles.visuallyHidden}>Modal Content</div>
           {children}
         </div>
       </div>
