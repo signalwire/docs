@@ -17,14 +17,13 @@ import { openapiPlugin } from "./docusaurus-plugin-openapi-docs";
 import { sassPlugin } from "./sass";
 import { markdownPrinterPlugin } from "./markdown-printer";
 import { showcasePlugin } from "./guide-showcase";
-import { imageAlias } from "./wepack-image-alias";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
   sassPlugin,
   markdownPrinterPlugin,
   showcasePlugin,
-  imageAlias,
+  require.resolve("../../plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
 ];
 
