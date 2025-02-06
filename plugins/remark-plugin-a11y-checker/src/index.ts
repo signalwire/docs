@@ -47,7 +47,7 @@ function isSmallImageFormat(str) {
   );
 }
 
-export default function a11yValidator() {
+export default function a11yValidator({ stopOnError = false }) {
   return (tree, vfile) => {
     function a11yCheck({ parent, altText, srcText }) {
       // get the accessibility related message
@@ -56,17 +56,31 @@ export default function a11yValidator() {
       let positionOfNode = position(parent);
 
       if (altTextMessage) {
-        vfile.fail(`${altTextMessage} (${altText ?? ""})`, {
-          place: positionOfNode,
-          source: "remark-plugin-a11y-checker",
-        });
+        if (stopOnError) {
+          vfile.fail(`${altTextMessage} (${altText ?? ""})`, {
+            place: positionOfNode,
+            source: "remark-plugin-a11y-checker",
+          });
+        } else {
+          vfile.info(`${altTextMessage} (${altText ?? ""})`, {
+            place: positionOfNode,
+            source: "remark-plugin-a11y-checker",
+          });
+        }
       }
 
       if (typeof srcText === "string" && !isSmallImageFormat(srcText)) {
-        vfile.fail(`Your image at ${srcText} is not a webp or an SVG.`, {
-          place: positionOfNode,
-          source: "remark-plugin-a11y-checker",
-        });
+        if (stopOnError) {
+          vfile.fail(`Your image at ${srcText} is not a webp or an SVG.`, {
+            place: positionOfNode,
+            source: "remark-plugin-a11y-checker",
+          });
+        } else {
+          vfile.info(`Your image at ${srcText} is not a webp or an SVG.`, {
+            place: positionOfNode,
+            source: "remark-plugin-a11y-checker",
+          });
+        }
       }
     }
 

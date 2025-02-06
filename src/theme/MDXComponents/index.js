@@ -10,7 +10,15 @@ import { LinkBadge } from "../../components/LinkBadge";
 import DocCardList from "@theme/DocCardList";
 import { APITable, APITableRow } from "../../components/APITable";
 import DocCard from "@theme/DocCard";
-import { LinkCard, LinkCardContainer, HomepageHeader, ProductButtons, ProductButton, UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
+import {
+  LinkCard,
+  LinkCardContainer,
+  HomepageHeader,
+  ProductButtons,
+  ProductButton,
+  UseCaseView,
+  UseCaseLinks,
+} from "../../components/HomepageFeatures";
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
 
@@ -33,7 +41,9 @@ export default {
   Language,
   LangItem,
   LangSwitch,
-
+  Frame,
+  Tabs,
+  TabItem,
   Accordion,
   AccordionGroup,
   AlphaBadge,
@@ -42,8 +52,8 @@ export default {
   BetaBadge,
   Card,
   CardGroup,
-//  CardImage,
-//  CodeGroup,
+  //  CardImage,
+  //  CodeGroup,
   DocCard,
   DocCardList,
   ExpandableItemCoverIcon,
@@ -55,14 +65,10 @@ export default {
   LinkCard,
   LinkCardContainer,
   ProductButton,
-
   ProductButtons,
-
   Slideshow,
   Steps,
   Subtitle,
-  Tabs,
-  TabItem,
   UseCaseLinks,
   UseCaseView,
   Tooltips,
