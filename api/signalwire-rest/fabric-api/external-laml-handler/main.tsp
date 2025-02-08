@@ -25,7 +25,7 @@ namespace FabricAPI.ExternalLAMLHandlers {
     @doc("Returns an External LAML Handler by ID")
     read(...ExternalLAMLHandlerID): {
         @statusCode statusCode: 200;
-        @body external_laml_handler: ExternalLAMLHandler;
+        @body external_laml_handler: ExternalLAMLHandlerResponse;
       } |
       StatusCode401 |
       StatusCode404;
@@ -33,7 +33,7 @@ namespace FabricAPI.ExternalLAMLHandlers {
     @summary("Create External LAML Handler")
     @doc("Creates an External LAML Handler")
     @post create(...ExternalLAMLHandlerCreateRequest):
-      { @statusCode statusCode: 201; @body external_laml_handler: ExternalLAMLHandler; } |
+      { @statusCode statusCode: 201; @body external_laml_handler: ExternalLAMLHandlerResponse; } |
       StatusCode401 |
       StatusCode404 |
       ExternalLamlHandlerCreateStatusCode422;
@@ -41,7 +41,7 @@ namespace FabricAPI.ExternalLAMLHandlers {
     @summary("Update External LAML Handler")
     @doc("Updates an External LAML Handler by ID")
     @patch update(...ExternalLAMLHandlerID, ...ExternalLAMLHandlerUpdateRequest): {
-      @statusCode statusCode: 200; @body external_laml_handler: ExternalLAMLHandler;
+      @statusCode statusCode: 200; @body external_laml_handler: ExternalLAMLHandlerResponse;
     } |
       StatusCode401 |
       StatusCode404 |
