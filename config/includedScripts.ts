@@ -18,6 +18,11 @@ const scripts: ScriptItem[] = [
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
   {
+    src: "/scripts/noticeable.js",
+    async: true,
+    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
+  },
+  {
     src: "/scripts/koala.js",
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",

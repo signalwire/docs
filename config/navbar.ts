@@ -170,6 +170,7 @@ const navbar: NavbarItem[] = [
     ],
   },
 
+  { to: "/changelog", label: "Changelog", position: "right" },
   {
     href: "https://signalwire.com/signin",
     label: "Dashboard",
