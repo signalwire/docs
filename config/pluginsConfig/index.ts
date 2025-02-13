@@ -23,6 +23,7 @@ const plugins: PluginConfig[] = [
   sassPlugin,
   markdownPrinterPlugin,
   showcasePlugin,
+  require.resolve("../../plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
 ];
 
