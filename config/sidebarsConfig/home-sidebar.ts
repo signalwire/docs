@@ -69,6 +69,11 @@ const homeSidebar: SidebarsConfig = {
         },
         {
           type: "link",
+          label: "Changelog",
+          href: "/changelog",
+        },
+        {
+          type: "link",
           label: "Community",
           href: "https://signalwire.com/community?utm_source=bobbystable.ai",
         },
