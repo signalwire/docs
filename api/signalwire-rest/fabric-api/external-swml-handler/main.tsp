@@ -25,7 +25,7 @@ namespace FabricAPI.ExternalSWMLHandlers {
     @doc("Returns an External SWML Handler by ID")
     read(...ExternalSWMLHandlerID): {
         @statusCode statusCode: 200;
-        @body external_laml_handler: ExternalSWMLHandler;
+        @body external_laml_handler: ExternalSWMLHandlerResponse;
       } |
       StatusCode401 |
       StatusCode404;
@@ -33,7 +33,7 @@ namespace FabricAPI.ExternalSWMLHandlers {
     @summary("Create External SWML Handler")
     @doc("Creates an External SWML Handler")
     @post create(...ExternalSWMLHandlerCreateRequest):
-      { @statusCode statusCode: 201; @body external_swml_handler: ExternalSWMLHandler; } |
+      { @statusCode statusCode: 201; @body external_swml_handler: ExternalSWMLHandlerResponse; } |
       StatusCode401 |
       StatusCode404 |
       ExternalSwmlHandlerCreateStatusCode422;
@@ -41,7 +41,7 @@ namespace FabricAPI.ExternalSWMLHandlers {
     @summary("Update External SWML Handler")
     @doc("Updates an External SWML Handler by ID")
     @patch update(...ExternalSWMLHandlerID, ...ExternalSWMLHandlerUpdateRequest): {
-      @statusCode statusCode: 200; @body external_swml_handler: ExternalSWMLHandler;
+      @statusCode statusCode: 200; @body external_swml_handler: ExternalSWMLHandlerResponse;
     } |
       StatusCode401 |
       StatusCode404 |
