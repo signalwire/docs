@@ -112,45 +112,45 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "cXML Applications",
+      label: "cXML Application",
       link: {
         type: "doc",
-        id: "rest/signalwire-rest/endpoints/fabric/c-xml-applications",
+        id: "rest/signalwire-rest/endpoints/fabric/c-xml-application",
       },
       items: [
         {
           type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/list-cxml-application-addresses",
-          label: "List cXML Application Addresses",
-          className: "api-method get",
-        },
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/list-cxml-applications",
+          id: "rest/signalwire-rest/endpoints/fabric/cxml-applications-list",
           label: "List cXML Applications",
           className: "api-method get",
         },
         {
           type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/create-cxml-application",
+          id: "rest/signalwire-rest/endpoints/fabric/cxml-applications-create",
           label: "Create cXML Application",
           className: "api-method post",
         },
         {
           type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/get-cxml-application",
+          id: "rest/signalwire-rest/endpoints/fabric/cxml-application-addresses-list",
+          label: "List cXML Application Addresses",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/cxml-applications-read",
           label: "Get cXML Application",
           className: "api-method get",
         },
         {
           type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/update-cxml-application",
+          id: "rest/signalwire-rest/endpoints/fabric/cxml-applications-update",
           label: "Update cXML Application",
-          className: "api-method put",
+          className: "api-method patch",
         },
         {
           type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/delete-cxml-application",
+          id: "rest/signalwire-rest/endpoints/fabric/cxml-applications-delete",
           label: "Delete cXML Application",
           className: "api-method delete",
         },
@@ -285,6 +285,28 @@ const sidebar: SidebarsConfig = {
           id: "rest/signalwire-rest/endpoints/fabric/external-swml-handlers-delete",
           label: "Delete External SWML Handler",
           className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Fabric Address",
+      link: {
+        type: "doc",
+        id: "rest/signalwire-rest/endpoints/fabric/fabric-address",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/fabric-addresses-list",
+          label: "List Fabric Addresses",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/fabric-addresses-read",
+          label: "Get Fabric Address",
+          className: "api-method get",
         },
       ],
     },
@@ -803,24 +825,6 @@ const sidebar: SidebarsConfig = {
           id: "rest/signalwire-rest/endpoints/fabric/guest-tokens-create",
           label: "Create Subscriber Guest Token",
           className: "api-method post",
-        },
-      ],
-    },
-    {
-      type: "category",
-      label: "Fabric Address",
-      items: [
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/fabric-addresses-list",
-          label: "List Fabric Addresses",
-          className: "api-method get",
-        },
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/fabric-addresses-read",
-          label: "Get Fabric Address",
-          className: "api-method get",
         },
       ],
     },
