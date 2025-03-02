@@ -30,18 +30,15 @@ const getImageWithText = (
 
       ctx.drawImage(img, 0, 0);
 
-      ctx.fillStyle = "#f72a72";
-      ctx.font = `bold ${img.width * 0.05}px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`;
+      ctx.fillStyle = style.font.fillStyle;
+      ctx.font = style.font.style();
       ctx.textAlign = "center";
 
       const text = `${library.trim()} ${version.trim()}`.trim();
       const textMetrics = ctx.measureText(text);
       const textWidth = textMetrics.width;
-      ctx.fillText(
-        text,
-        (canvas.width - textWidth) / 2 + textWidth / 2,
-        canvas.height * 0.5,
-      );
+      const { x, y } = style.font.position(canvas.width, canvas.height);
+      ctx.fillText(text, x, y);
 
       resolve(canvas.toDataURL());
     };
