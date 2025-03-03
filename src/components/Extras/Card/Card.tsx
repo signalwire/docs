@@ -1,4 +1,5 @@
 import React, { ComponentPropsWithoutRef, ElementType, ReactNode, Ref } from "react";
+import Link from "@docusaurus/Link";
 import styles from "./Card.module.css";
 import clsx from "clsx";
 import { CardImage } from "./CardImage";
@@ -57,7 +58,7 @@ export function Card<T extends ElementType = "div">({
   titleIcon,
   ...props
 }: CardProps<T>) {
-  const Component = as || props.href != undefined ? "a" : "div";
+  const Component = as || props.href != undefined ? Link : "div";
   const isImageSrc: boolean = typeof icon === "string";
 
   const renderIcon: JSX.Element = (
