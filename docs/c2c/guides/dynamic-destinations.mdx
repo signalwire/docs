@@ -1,0 +1,494 @@
+---
+title: "Dynamic Destinations"
+description: "Route calls to different departments or agents using dynamic destinations"
+sidebar_position: 3
+---
+
+# Dynamic Call Destinations
+
+This guide explains how to implement dynamic destinations for your Click-to-Call widget, allowing you to route calls to different departments, agents, or phone numbers based on user selection or other criteria.
+
+## Why Use Dynamic Destinations?
+
+Implementing dynamic destinations offers several benefits:
+
+- **Improved routing**: Direct calls to the most appropriate department or agent
+- **Reduced wait times**: Connect callers with specialists who can address their specific needs
+- **Better customer experience**: Provide options that align with caller intent
+- **Load balancing**: Distribute calls among different teams or agents
+- **Business hours handling**: Route calls based on availability or time of day
+
+## Implementation Approaches
+
+There are several ways to implement dynamic destinations with the Click-to-Call widget:
+
+1. **Selector-based**: Let users choose a department from a dropdown menu
+2. **Page-based**: Set different destinations based on the page the user is viewing
+3. **User behavior-based**: Route based on browsing history or interactions
+4. **Time-based**: Change destinations based on business hours or day of week
+
+## Approach 1: Selector-Based Routing
+
+This approach allows users to select their desired department before initiating a call.
+
+### Step 1: Create the HTML Structure
+
+Add a dropdown selector before the C2C button:
+
+```html
+<div id="call-container">
+  <div class="department-selector">
+    <label for="department">Choose a department:</label>
+    <select id="department">
+      <option value="/public/sales">Sales</option>
+      <option value="/public/support">Technical Support</option>
+      <option value="/public/billing">Billing</option>
+      <option value="/public/general">General Inquiries</option>
+    </select>
+  </div>
+  
+  <div id="c2c-button-container"></div>
+  <div id="c2c-call-container"></div>
+</div>
+```
+
+### Step 2: Initialize C2C with the Selected Destination
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  const departmentSelector = document.getElementById('department');
+  const buttonContainer = document.getElementById('c2c-button-container');
+  
+  // Function to initialize C2C with the selected department
+  function initializeC2C() {
+    // Remove any existing button
+    buttonContainer.innerHTML = '';
+    
+    // Get the selected destination
+    const destination = departmentSelector.value;
+    
+    // Initialize C2C with the selected destination
+    sw.c2c.spawn('C2CButton', {
+      destination: destination,
+      buttonParentSelector: '#c2c-button-container',
+      callParentSelector: '#c2c-call-container',
+      buttonText: `Call ${departmentSelector.options[departmentSelector.selectedIndex].text}`
+    });
+  }
+  
+  // Initialize with default selection
+  initializeC2C();
+  
+  // Update when selection changes
+  departmentSelector.addEventListener('change', initializeC2C);
+});
+```
+
+## Approach 2: Page-Based Routing
+
+Configure different destinations based on the page the user is viewing.
+
+### Step 1: Add a Data Attribute to the Button Container
+
+```html
+<!-- On the product page -->
+<div id="c2c-button-container" data-destination="/public/sales"></div>
+<div id="c2c-call-container"></div>
+
+<!-- On the support page -->
+<div id="c2c-button-container" data-destination="/public/support"></div>
+<div id="c2c-call-container"></div>
+
+<!-- On the billing page -->
+<div id="c2c-button-container" data-destination="/public/billing"></div>
+<div id="c2c-call-container"></div>
+```
+
+### Step 2: Initialize C2C with the Page-Specific Destination
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  const buttonContainer = document.getElementById('c2c-button-container');
+  const destination = buttonContainer.getAttribute('data-destination');
+  
+  // Set button text based on destination
+  let buttonText = 'Call Us';
+  if (destination.includes('sales')) {
+    buttonText = 'Speak with Sales';
+  } else if (destination.includes('support')) {
+    buttonText = 'Get Technical Support';
+  } else if (destination.includes('billing')) {
+    buttonText = 'Billing Questions';
+  }
+  
+  // Initialize C2C with the page-specific destination
+  sw.c2c.spawn('C2CButton', {
+    destination: destination,
+    buttonParentSelector: '#c2c-button-container',
+    callParentSelector: '#c2c-call-container',
+    buttonText: buttonText
+  });
+});
+```
+
+## Approach 3: User Behavior-Based Routing
+
+Route calls based on the user's browsing behavior or interactions.
+
+### Step 1: Track User Behavior
+
+```javascript
+// Simple behavior tracking
+const userInterests = {
+  product: 0,
+  pricing: 0,
+  support: 0
+};
+
+// Increment interest counters based on page views
+function trackPageView(page) {
+  if (page.includes('product')) {
+    userInterests.product++;
+  } else if (page.includes('pricing')) {
+    userInterests.pricing++;
+  } else if (page.includes('support')) {
+    userInterests.support++;
+  }
+  
+  // Store in session storage
+  sessionStorage.setItem('userInterests', JSON.stringify(userInterests));
+}
+
+// Track the current page
+trackPageView(window.location.pathname);
+```
+
+### Step 2: Determine Destination Based on Behavior
+
+```javascript
+function getDestinationFromInterests() {
+  // Retrieve stored interests
+  const storedInterests = sessionStorage.getItem('userInterests');
+  const interests = storedInterests ? JSON.parse(storedInterests) : { product: 0, pricing: 0, support: 0 };
+  
+  // Determine primary interest
+  let destination = '/public/general'; // Default destination
+  let maxInterest = 0;
+  
+  if (interests.product > maxInterest) {
+    maxInterest = interests.product;
+    destination = '/public/sales';
+  }
+  
+  if (interests.pricing > maxInterest) {
+    maxInterest = interests.pricing;
+    destination = '/public/sales';
+  }
+  
+  if (interests.support > maxInterest) {
+    maxInterest = interests.support;
+    destination = '/public/support';
+  }
+  
+  return destination;
+}
+```
+
+### Step 3: Initialize C2C with the Behavior-Based Destination
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  const destination = getDestinationFromInterests();
+  
+  // Initialize C2C with the behavior-based destination
+  sw.c2c.spawn('C2CButton', {
+    destination: destination,
+    buttonParentSelector: '#c2c-button-container',
+    callParentSelector: '#c2c-call-container'
+  });
+});
+```
+
+## Approach 4: Time-Based Routing
+
+Route calls to different destinations based on time of day or day of week.
+
+### Step 1: Define Business Hours and Rules
+
+```javascript
+const businessHours = {
+  // Hours in 24-hour format, UTC
+  weekdays: {
+    start: 9, // 9:00 AM
+    end: 17   // 5:00 PM
+  },
+  weekend: {
+    start: 10, // 10:00 AM
+    end: 15    // 3:00 PM
+  },
+  timezone: 'America/New_York'
+};
+
+const destinations = {
+  businessHours: '/public/support',
+  afterHours: '/public/voicemail',
+  sales: '/public/sales'
+};
+```
+
+### Step 2: Determine Appropriate Destination Based on Time
+
+```javascript
+function getTimeBasedDestination() {
+  const now = new Date();
+  
+  // Convert to local time in the specified timezone
+  const options = { timeZone: businessHours.timezone };
+  const localTime = new Date(now.toLocaleString('en-US', options));
+  
+  const hour = localTime.getHours();
+  const day = localTime.getDay(); // 0 = Sunday, 6 = Saturday
+  const isWeekend = day === 0 || day === 6;
+  
+  // Determine if within business hours
+  const hours = isWeekend ? businessHours.weekend : businessHours.weekdays;
+  const isBusinessHours = hour >= hours.start && hour < hours.end;
+  
+  // Return appropriate destination
+  return isBusinessHours ? destinations.businessHours : destinations.afterHours;
+}
+```
+
+### Step 3: Initialize C2C with the Time-Based Destination
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  const destination = getTimeBasedDestination();
+  
+  // Set button text based on destination
+  let buttonText = 'Call Us';
+  let customMessage = '';
+  
+  if (destination === destinations.afterHours) {
+    buttonText = 'Leave a Message';
+    customMessage = 'We\'re currently closed. Please leave a message and we\'ll get back to you during business hours.';
+  }
+  
+  // Initialize C2C with the time-based destination
+  sw.c2c.spawn('C2CButton', {
+    destination: destination,
+    buttonParentSelector: '#c2c-button-container',
+    callParentSelector: '#c2c-call-container',
+    buttonText: buttonText,
+    
+    // Display a custom message for after-hours calls
+    beforeCallStartFn: () => {
+      if (customMessage) {
+        alert(customMessage);
+      }
+      return true;
+    }
+  });
+});
+```
+
+## Combining Multiple Approaches
+
+For more sophisticated routing, you can combine these approaches:
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  // Let user selection override other factors
+  const departmentSelector = document.getElementById('department');
+  
+  function getDynamicDestination() {
+    // Priority 1: User explicitly selected a department
+    if (departmentSelector && departmentSelector.value) {
+      return departmentSelector.value;
+    }
+    
+    // Priority 2: Check business hours
+    const timeBasedDestination = getTimeBasedDestination();
+    if (timeBasedDestination === destinations.afterHours) {
+      return timeBasedDestination; // Always respect after-hours routing
+    }
+    
+    // Priority 3: Use page-specific destination if available
+    const buttonContainer = document.getElementById('c2c-button-container');
+    const pageDestination = buttonContainer.getAttribute('data-destination');
+    if (pageDestination) {
+      return pageDestination;
+    }
+    
+    // Priority 4: Fall back to user behavior
+    return getDestinationFromInterests();
+  }
+  
+  function initializeC2C() {
+    const destination = getDynamicDestination();
+    
+    sw.c2c.spawn('C2CButton', {
+      destination: destination,
+      buttonParentSelector: '#c2c-button-container',
+      callParentSelector: '#c2c-call-container'
+    });
+  }
+  
+  // Initialize C2C
+  initializeC2C();
+  
+  // Update if user changes selection
+  if (departmentSelector) {
+    departmentSelector.addEventListener('change', initializeC2C);
+  }
+});
+```
+
+## Complete Example: Department Selector
+
+Here's a complete example implementing the department selector approach:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dynamic Destinations Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .call-container {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+    
+    .department-selector {
+      margin-bottom: 20px;
+    }
+    
+    select {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Contact Us</h1>
+  <p>Choose a department below to speak with a representative:</p>
+  
+  <div class="call-container">
+    <div class="department-selector">
+      <label for="department">Department:</label>
+      <select id="department">
+        <option value="/public/sales">Sales</option>
+        <option value="/public/support">Technical Support</option>
+        <option value="/public/billing">Billing</option>
+        <option value="/public/general">General Inquiries</option>
+      </select>
+    </div>
+    
+    <div id="c2c-button-container"></div>
+    <div id="c2c-call-container"></div>
+  </div>
+  
+  <!-- SignalWire C2C loader -->
+  <script>
+    (function(w, d, s, c2c, dc) {
+      const project = 'YOUR_PROJECT';
+      const token = 'YOUR_TOKEN';
+      
+      w['sw'] = w['sw'] || {};
+      const l = function() {
+        if (!w.sw.c2c) {
+          var s = d.createElement('script');
+          s.type = 'text/javascript';
+          s.async = true;
+          s.src = `https://${project}.signalwire.com/c2c/${token}/index.js`;
+          var x = d.getElementsByTagName('script')[0];
+          x.parentNode.insertBefore(s, x);
+        }
+      };
+      
+      if (typeof w.sw[c2c] !== 'object') {
+        w.sw[c2c] = {};
+      }
+      
+      if (w.attachEvent) {
+        w.attachEvent('onload', l);
+      } else {
+        w.addEventListener('load', l, false);
+      }
+    })(window, document, 'script', 'c2c', 'sw');
+  </script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const departmentSelector = document.getElementById('department');
+      const buttonContainer = document.getElementById('c2c-button-container');
+      
+      // Function to initialize C2C with the selected department
+      function initializeC2C() {
+        // Remove any existing button
+        buttonContainer.innerHTML = '';
+        
+        // Wait for C2C to load
+        const checkC2C = setInterval(() => {
+          if (window.sw && window.sw.c2c) {
+            clearInterval(checkC2C);
+            
+            // Get the selected destination
+            const destination = departmentSelector.value;
+            
+            // Initialize C2C with the selected destination
+            sw.c2c.spawn('C2CButton', {
+              destination: destination,
+              buttonParentSelector: '#c2c-button-container',
+              callParentSelector: '#c2c-call-container',
+              buttonText: `Call ${departmentSelector.options[departmentSelector.selectedIndex].text}`
+            });
+          }
+        }, 100);
+      }
+      
+      // Initialize with default selection once page is loaded
+      const initWhenReady = setInterval(() => {
+        if (document.readyState === 'complete') {
+          clearInterval(initWhenReady);
+          initializeC2C();
+        }
+      }, 100);
+      
+      // Update when selection changes
+      departmentSelector.addEventListener('change', initializeC2C);
+    });
+  </script>
+</body>
+</html>
+```
+
+## Considerations
+
+1. **Destination Format**: Ensure you're using the correct format for destinations (e.g., `/public/support`, phone numbers, or SIP addresses).
+
+2. **Error Handling**: Implement fallback destinations if the primary destination is unavailable.
+
+3. **User Experience**: Communicate to users why you're asking for department selection or notify them about after-hours routing.
+
+4. **Testing**: Test each routing scenario to ensure calls are directed to the correct destinations.
+
+5. **Data Privacy**: If tracking user behavior, ensure compliance with privacy regulations and provide appropriate disclosures.

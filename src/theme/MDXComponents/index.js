@@ -29,6 +29,7 @@ import CodeGroup from "../../components/Extras/Code";
 import { ExpandableItemCoverIcon } from "../../components/Extras/Expandable/ExpandableItemCoverIcon";
 import Frame from "../../components/Extras/Frame/Frame";
 import Slideshow from "../../components/Extras/Slideshow/Slideshow";
+import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 
 export default {
   ...MDXComponents,
@@ -67,4 +68,6 @@ export default {
   Subtitle,
   UseCaseLinks,
   UseCaseView,
+  GuidesList,
+  GuidesListMirror
 };

@@ -1,0 +1,520 @@
+---
+title: "Delayed Loading"
+description: "Optimize page performance by loading Click-to-Call only when needed"
+sidebar_position: 5
+---
+
+# Delayed Loading for Click-to-Call
+
+This guide explains how to implement delayed loading for the Click-to-Call widget to optimize your website's performance. Instead of loading the C2C component on initial page load, you'll learn how to load it only when needed.
+
+## Why Use Delayed Loading?
+
+Implementing delayed loading offers several performance benefits:
+
+- **Faster initial page load**: Reduce the number of scripts loaded when a user first visits your site
+- **Improved Core Web Vitals**: Better LCP (Largest Contentful Paint) and TTI (Time to Interactive) metrics
+- **Reduced bandwidth usage**: Only load the C2C component for users who are likely to use it
+- **Prioritized content delivery**: Focus on delivering your core content before loading ancillary features
+- **Enhanced mobile experience**: Particularly beneficial for users on slower mobile connections
+
+## Implementation Approaches
+
+There are several effective strategies for implementing delayed loading:
+
+1. **User interaction trigger**: Load C2C when a user interacts with a placeholder button
+2. **Scroll-based loading**: Load when the user scrolls to a specific section
+3. **Timed delay**: Load after the user has spent a certain amount of time on the page
+4. **Idle loading**: Load when the browser becomes idle after rendering critical content
+
+## Approach 1: User Interaction Trigger
+
+This approach uses a placeholder button that, when clicked, loads the C2C component and then activates it.
+
+### Step 1: Create a Placeholder Button
+
+Start with a simple placeholder button that will eventually be replaced by the actual C2C button:
+
+```html
+<!-- Placeholder button -->
+<button id="load-c2c-button" class="call-button-placeholder">
+  <span>Call Us</span>
+</button>
+
+<!-- Container for the actual C2C button (initially empty) -->
+<div id="c2c-button-container" style="display: none;"></div>
+
+<!-- Container for the call widget -->
+<div id="c2c-call-container"></div>
+```
+
+### Step 2: Style the Placeholder Button
+
+Make the placeholder button match the style of the eventual C2C button for a seamless transition:
+
+```css
+.call-button-placeholder {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.call-button-placeholder:hover {
+  background-color: #0069d9;
+}
+
+/* Add a phone icon using CSS */
+.call-button-placeholder::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M13.3,10.3c-0.5-0.4-1.1-0.8-1.7-1.1c-0.7-0.3-1.3,0-1.7,0.5l-0.4,0.6c-0.1,0.2-0.3,0.2-0.5,0.1 C8.4,10.1,7.8,9.6,7.3,9.1C6.8,8.6,6.4,8,6.1,7.4C6,7.2,6,7,6.2,6.9l0.6-0.4C7.3,6.1,7.6,5.5,7.3,4.8 C7,4.2,6.6,3.6,6.2,3.1C5.8,2.6,5.3,2.5,4.7,2.7L4.1,3C2.4,3.9,2.2,6.3,3.9,8.9c0.7,1.2,1.8,2.3,3,3 c1.2,0.7,2.3,1.1,3.2,1.1c0.9,0,1.6-0.3,2-0.9l0.4-0.6C13.1,10.9,13,10.7,13.3,10.3z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+}
+```
+
+### Step 3: Add the Loading Logic
+
+When the placeholder button is clicked, load the C2C script and initialize the component:
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  const placeholderButton = document.getElementById('load-c2c-button');
+  const buttonContainer = document.getElementById('c2c-button-container');
+  
+  placeholderButton.addEventListener('click', () => {
+    // Show loading state
+    placeholderButton.innerHTML = '<span>Loading...</span>';
+    placeholderButton.disabled = true;
+    
+    // Load the C2C script
+    loadC2CScript()
+      .then(() => {
+        // Hide placeholder and show actual C2C button container
+        placeholderButton.style.display = 'none';
+        buttonContainer.style.display = 'block';
+        
+        // Initialize C2C
+        sw.c2c.spawn('C2CButton', {
+          destination: '/public/support',
+          buttonParentSelector: '#c2c-button-container',
+          callParentSelector: '#c2c-call-container',
+          // Auto-click the button to start call process immediately
+          afterCallStartFn: () => {
+            setTimeout(() => {
+              const c2cButton = document.querySelector('.c2c-button');
+              if (c2cButton) {
+                c2cButton.click();
+              }
+            }, 100);
+          }
+        });
+      })
+      .catch(error => {
+        console.error('Error loading C2C:', error);
+        // Restore placeholder button in case of error
+        placeholderButton.innerHTML = '<span>Call Us</span>';
+        placeholderButton.disabled = false;
+      });
+  });
+});
+
+// Function to dynamically load the C2C script
+function loadC2CScript() {
+  return new Promise((resolve, reject) => {
+    if (window.sw && window.sw.c2c) {
+      // Script already loaded
+      resolve();
+      return;
+    }
+    
+    // Prepare the async loader
+    window.sw = window.sw || {};
+    
+    // Create and append the script
+    const script = document.createElement('script');
+    script.src = 'https://YOUR_PROJECT.signalwire.com/c2c/YOUR_TOKEN/index.js';
+    script.async = true;
+    
+    // Set up callbacks
+    script.onload = () => {
+      // Check if C2C is available
+      const checkInterval = setInterval(() => {
+        if (window.sw && window.sw.c2c) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        reject(new Error('C2C script loaded but C2C object not available'));
+      }, 10000);
+    };
+    
+    script.onerror = () => {
+      reject(new Error('Failed to load C2C script'));
+    };
+    
+    // Add to the document
+    document.head.appendChild(script);
+  });
+}
+```
+
+## Approach 2: Scroll-Based Loading
+
+Load the C2C component when the user scrolls to a specific section of your page.
+
+### Step 1: Create the HTML Structure
+
+```html
+<div class="hero-section">
+  <!-- Your page hero/header content -->
+</div>
+
+<div class="content-section">
+  <!-- Your main content -->
+</div>
+
+<div class="contact-section" id="contact-section">
+  <h2>Contact Us</h2>
+  <p>We're here to help! Reach out to our team for assistance.</p>
+  
+  <!-- C2C placeholders -->
+  <div id="c2c-button-container"></div>
+  <div id="c2c-call-container"></div>
+</div>
+```
+
+### Step 2: Add Scroll Detection
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  let c2cLoaded = false;
+  
+  // Create an intersection observer
+  const observer = new IntersectionObserver((entries) => {
+    // If the contact section is visible and C2C hasn't been loaded yet
+    if (entries[0].isIntersecting && !c2cLoaded) {
+      c2cLoaded = true;
+      
+      // Load the C2C script
+      loadC2CScript()
+        .then(() => {
+          // Initialize C2C
+          sw.c2c.spawn('C2CButton', {
+            destination: '/public/support',
+            buttonParentSelector: '#c2c-button-container',
+            callParentSelector: '#c2c-call-container'
+          });
+        })
+        .catch(error => {
+          console.error('Error loading C2C:', error);
+        });
+      
+      // Stop observing once loaded
+      observer.disconnect();
+    }
+  }, { threshold: 0.1 }); // Trigger when at least 10% of the element is visible
+  
+  // Start observing the contact section
+  const contactSection = document.getElementById('contact-section');
+  if (contactSection) {
+    observer.observe(contactSection);
+  }
+});
+
+// loadC2CScript function from previous example
+```
+
+## Approach 3: Timed Delay
+
+Load the C2C component after the user has spent a certain amount of time on the page.
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  let c2cLoaded = false;
+  
+  // Wait for 5 seconds before loading C2C
+  setTimeout(() => {
+    if (!c2cLoaded) {
+      c2cLoaded = true;
+      
+      loadC2CScript()
+        .then(() => {
+          sw.c2c.spawn('C2CButton', {
+            destination: '/public/support',
+            buttonParentSelector: '#c2c-button-container',
+            callParentSelector: '#c2c-call-container'
+          });
+        })
+        .catch(error => {
+          console.error('Error loading C2C:', error);
+        });
+    }
+  }, 5000); // 5000ms = 5 seconds
+});
+```
+
+## Approach 4: Idle Loading
+
+Load the C2C component when the browser becomes idle after loading critical content.
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  let c2cLoaded = false;
+  
+  // Check if requestIdleCallback is supported
+  if ('requestIdleCallback' in window) {
+    // Load when browser is idle
+    requestIdleCallback(() => {
+      if (!c2cLoaded) {
+        c2cLoaded = true;
+        
+        loadC2CScript()
+          .then(() => {
+            sw.c2c.spawn('C2CButton', {
+              destination: '/public/support',
+              buttonParentSelector: '#c2c-button-container',
+              callParentSelector: '#c2c-call-container'
+            });
+          })
+          .catch(error => {
+            console.error('Error loading C2C:', error);
+          });
+      }
+    }, { timeout: 5000 }); // Fallback timeout of 5 seconds
+  } else {
+    // Fallback for browsers without requestIdleCallback
+    setTimeout(() => {
+      if (!c2cLoaded) {
+        c2cLoaded = true;
+        
+        loadC2CScript()
+          .then(() => {
+            sw.c2c.spawn('C2CButton', {
+              destination: '/public/support',
+              buttonParentSelector: '#c2c-button-container',
+              callParentSelector: '#c2c-call-container'
+            });
+          })
+          .catch(error => {
+            console.error('Error loading C2C:', error);
+          });
+      }
+    }, 3000);
+  }
+});
+```
+
+## Complete Example: User Interaction Trigger
+
+Here's a complete example implementing the user interaction approach:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delayed Loading Click-to-Call Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .contact-container {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    
+    .call-button-placeholder {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+    
+    .call-button-placeholder:hover {
+      background-color: #0069d9;
+    }
+    
+    .call-button-placeholder:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .call-button-placeholder::before {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M13.3,10.3c-0.5-0.4-1.1-0.8-1.7-1.1c-0.7-0.3-1.3,0-1.7,0.5l-0.4,0.6c-0.1,0.2-0.3,0.2-0.5,0.1 C8.4,10.1,7.8,9.6,7.3,9.1C6.8,8.6,6.4,8,6.1,7.4C6,7.2,6,7,6.2,6.9l0.6-0.4C7.3,6.1,7.6,5.5,7.3,4.8 C7,4.2,6.6,3.6,6.2,3.1C5.8,2.6,5.3,2.5,4.7,2.7L4.1,3C2.4,3.9,2.2,6.3,3.9,8.9c0.7,1.2,1.8,2.3,3,3 c1.2,0.7,2.3,1.1,3.2,1.1c0.9,0,1.6-0.3,2-0.9l0.4-0.6C13.1,10.9,13,10.7,13.3,10.3z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body>
+  <h1>Our Product</h1>
+  <p>Learn about our amazing products and services.</p>
+  
+  <!-- Main content of your website -->
+  <div class="main-content">
+    <h2>Features</h2>
+    <p>Our product includes many incredible features...</p>
+    
+    <!-- More content sections -->
+  </div>
+  
+  <!-- Contact section with delayed C2C loading -->
+  <div class="contact-container">
+    <h2>Questions? We're Here to Help</h2>
+    <p>Click the button below to speak with a representative.</p>
+    
+    <!-- Placeholder button that will trigger C2C loading -->
+    <button id="load-c2c-button" class="call-button-placeholder">
+      <span>Call Us</span>
+    </button>
+    
+    <!-- Container for the actual C2C button (initially hidden) -->
+    <div id="c2c-button-container" style="display: none;"></div>
+    
+    <!-- Container for the call widget -->
+    <div id="c2c-call-container"></div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const placeholderButton = document.getElementById('load-c2c-button');
+      const buttonContainer = document.getElementById('c2c-button-container');
+      
+      placeholderButton.addEventListener('click', () => {
+        // Show loading state
+        placeholderButton.innerHTML = '<span>Loading...</span>';
+        placeholderButton.disabled = true;
+        
+        // Load the C2C script
+        loadC2CScript()
+          .then(() => {
+            // Hide placeholder and show actual C2C button container
+            placeholderButton.style.display = 'none';
+            buttonContainer.style.display = 'block';
+            
+            // Initialize C2C
+            sw.c2c.spawn('C2CButton', {
+              destination: '/public/support',
+              buttonParentSelector: '#c2c-button-container',
+              callParentSelector: '#c2c-call-container',
+              // Auto-click the button to start call process immediately
+              afterCallStartFn: () => {
+                setTimeout(() => {
+                  const c2cButton = document.querySelector('.c2c-button');
+                  if (c2cButton) {
+                    c2cButton.click();
+                  }
+                }, 100);
+              }
+            });
+          })
+          .catch(error => {
+            console.error('Error loading C2C:', error);
+            // Restore placeholder button in case of error
+            placeholderButton.innerHTML = '<span>Call Us</span>';
+            placeholderButton.disabled = false;
+          });
+      });
+      
+      // Function to dynamically load the C2C script
+      function loadC2CScript() {
+        return new Promise((resolve, reject) => {
+          if (window.sw && window.sw.c2c) {
+            // Script already loaded
+            resolve();
+            return;
+          }
+          
+          // Prepare the async loader
+          window.sw = window.sw || {};
+          
+          // Create and append the script
+          const script = document.createElement('script');
+          
+          // Replace with your actual project and token
+          script.src = 'https://YOUR_PROJECT.signalwire.com/c2c/YOUR_TOKEN/index.js';
+          script.async = true;
+          
+          // Set up callbacks
+          script.onload = () => {
+            // Check if C2C is available
+            const checkInterval = setInterval(() => {
+              if (window.sw && window.sw.c2c) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 100);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+              clearInterval(checkInterval);
+              reject(new Error('C2C script loaded but C2C object not available'));
+            }, 10000);
+          };
+          
+          script.onerror = () => {
+            reject(new Error('Failed to load C2C script'));
+          };
+          
+          // Add to the document
+          document.head.appendChild(script);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+## Considerations
+
+1. **User Experience**: Ensure there's no jarring transition when the C2C component loads.
+
+2. **Loading Indicators**: Always provide visual feedback when loading is in progress.
+
+3. **Error Handling**: Implement proper error handling in case the script fails to load.
+
+4. **Tracking Variables**: Use flags to prevent multiple loading attempts.
+
+5. **Timeout Management**: Set reasonable timeouts for loading operations.
+
+6. **Accessibility**: Make sure placeholder elements are accessible and provide appropriate ARIA attributes.
+
+7. **Mobile Optimization**: Consider implementing different loading strategies for mobile devices with limited bandwidth.
+
+## Next Steps
+
+- Learn about [Custom Button Styling](./custom-button.mdx) to create visually appealing call buttons
+- Explore [Modal Integration](./modal-integration.mdx) to combine delayed loading with modal dialogs
+- Discover how to implement [Dynamic Destinations](./dynamic-destinations.mdx) for more sophisticated routing 
