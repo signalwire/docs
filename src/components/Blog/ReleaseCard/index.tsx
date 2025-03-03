@@ -35,8 +35,6 @@ const getImageWithText = (
       ctx.textAlign = "center";
 
       const text = `${library.trim()} ${version.trim()}`.trim();
-      const textMetrics = ctx.measureText(text);
-      const textWidth = textMetrics.width;
       const { x, y } = style.font.position(canvas.width, canvas.height);
       ctx.fillText(text, x, y);
 
@@ -54,10 +52,10 @@ export default function ReleaseCard({ library, version, releaseType }: ReleaseCa
     getImageWithText(library, version, releaseType, style).then((image) =>
       setCombinedImage(image),
     );
-  }, [version, library, colorMode]);
+  }, [version, library, releaseType, colorMode]);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ aspectRatio: "2" }}>
       <img src={combinedImage} alt={`${library} ${version} release`} />
     </div>
   );

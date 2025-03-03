@@ -9,6 +9,8 @@ export interface ReleaseCardStyle {
   };
 }
 
+const RELEASE_CARD_FONT_SIZE = "30px";
+
 export function mapLibraryToStyle(
   library: string,
   colorMode: "light" | "dark",
@@ -37,13 +39,11 @@ export const releaseCardImages: ReleaseCardImages = {
       font: {
         fillStyle: "#f72a72",
         style: () =>
-          `bold 85px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
-        position: (width: number, height: number) => {
-          return {
-            x: width / 2,
-            y: height * 0.5,
-          };
-        },
+          `bold ${RELEASE_CARD_FONT_SIZE} ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
+        position: (width: number, height: number) => ({
+          x: width / 2,
+          y: height * 0.5,
+        }),
       },
     },
     dark: {
@@ -53,13 +53,11 @@ export const releaseCardImages: ReleaseCardImages = {
       font: {
         fillStyle: "#f72a72",
         style: () =>
-          `bold 85px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
-        position: (width: number, height: number) => {
-          return {
-            x: width / 2,
-            y: height * 0.5,
-          };
-        },
+          `bold ${RELEASE_CARD_FONT_SIZE} ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
+        position: (width: number, height: number) => ({
+          x: width / 2,
+          y: height * 0.5,
+        }),
       },
     },
   },
@@ -71,13 +69,11 @@ export const releaseCardImages: ReleaseCardImages = {
       font: {
         fillStyle: "#f72a72",
         style: () =>
-          `bold 85px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
-        position: (width: number, height: number) => {
-          return {
-            x: width / 2 - 380,
-            y: height * 0.4,
-          };
-        },
+          `bold ${RELEASE_CARD_FONT_SIZE} ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
+        position: (width: number, height: number) => ({
+          x: width / 2 - 140,
+          y: height * 0.39,
+        }),
       },
     },
     dark: {
@@ -87,13 +83,11 @@ export const releaseCardImages: ReleaseCardImages = {
       font: {
         fillStyle: "#f72a72",
         style: () =>
-          `bold 85px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
-        position: (width: number, height: number) => {
-          return {
-            x: width / 2 - 380,
-            y: height * 0.4,
-          };
-        },
+          `bold ${RELEASE_CARD_FONT_SIZE} ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
+        position: (width: number, height: number) => ({
+          x: width / 2 - 140,
+          y: height * 0.39,
+        }),
       },
     },
   },
@@ -105,13 +99,11 @@ export const releaseCardImages: ReleaseCardImages = {
       font: {
         fillStyle: "#f72a72",
         style: () =>
-          `bold 85px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
-        position: (width: number, height: number) => {
-          return {
-            x: width / 2,
-            y: height * 0.5,
-          };
-        },
+          `bold ${RELEASE_CARD_FONT_SIZE} ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
+        position: (width: number, height: number) => ({
+          x: width / 2,
+          y: height * 0.5,
+        }),
       },
     },
     dark: {
@@ -121,13 +113,11 @@ export const releaseCardImages: ReleaseCardImages = {
       font: {
         fillStyle: "#f72a72",
         style: () =>
-          `bold 85px ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
-        position: (width: number, height: number) => {
-          return {
-            x: width / 2,
-            y: height * 0.5,
-          };
-        },
+          `bold ${RELEASE_CARD_FONT_SIZE} ${getComputedStyle(document.documentElement).getPropertyValue("--ifm-font-family-base")}`,
+        position: (width: number, height: number) => ({
+          x: width / 2,
+          y: height * 0.5,
+        }),
       },
     },
   },
