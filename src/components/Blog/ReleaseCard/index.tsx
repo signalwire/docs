@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useTransition } from "react";
 import { useColorMode } from "@docusaurus/theme-common";
 import { mapLibraryToStyle, ReleaseCardStyle } from "./imagesConfig";
 
@@ -46,17 +46,25 @@ const getImageWithText = (
 export default function ReleaseCard({ library, version, releaseType }: ReleaseCardProps) {
   const { colorMode } = useColorMode();
   const [combinedImage, setCombinedImage] = React.useState<string>("");
+  const [isPending, startTransition] = useTransition();
 
   React.useEffect(() => {
     const style = mapLibraryToStyle(library, colorMode);
-    getImageWithText(library, version, releaseType, style).then((image) =>
-      setCombinedImage(image),
-    );
+
+    startTransition(() => {
+      getImageWithText(library, version, releaseType, style).then((image) =>
+        setCombinedImage(image),
+      );
+    });
   }, [version, library, releaseType, colorMode]);
 
   return (
     <div style={{ aspectRatio: "2" }}>
-      <img src={combinedImage} alt={`${library} ${version} release`} />
+      {isPending ? (
+        <div style={{ aspectRatio: "2", background: "#f0f0f0" }} />
+      ) : (
+        <img src={combinedImage} alt={`${library} ${version} release`} />
+      )}
     </div>
   );
 }
