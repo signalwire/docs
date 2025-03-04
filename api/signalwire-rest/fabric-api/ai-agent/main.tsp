@@ -11,7 +11,7 @@ using Types.StatusCodes;
 
 @route("/resources/ai_agents")
 namespace FabricAPI.AIAgents {
-  @tag("AI Agent")
+  @tag("AI Agents: Custom")
   @friendlyName("AI Agent")
   interface AIAgents {
     @summary("List AI Agents")
