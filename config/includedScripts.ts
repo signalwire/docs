@@ -33,7 +33,7 @@ const scripts: ScriptItem[] = [
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
   {
-    src: "/scripts/zendesk.js",
+    src: "/scripts/zoho.js",
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
