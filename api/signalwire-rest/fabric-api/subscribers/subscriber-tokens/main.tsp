@@ -10,7 +10,7 @@ using Types.StatusCodes;
 
 @route("/subscribers/tokens")
 namespace FabricAPI.SubscriberTokens {
-  @tag("Subscribers")
+  @tag("Subscribers: Tokens")
   @friendlyName("Subscriber Access Tokens")
   interface SubscriberTokens {
     @summary("Create Subscriber Token")
