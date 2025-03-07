@@ -9,7 +9,7 @@ using Types.StatusCodes;
 
 @route("/guests/tokens")
 namespace FabricAPI.SubscriberGuestTokens {
-  @tag("Subscriber Guest Token")
+  @tag("Subscribers: Tokens")
   @friendlyName("Guest Token")
   interface GuestTokens {
 

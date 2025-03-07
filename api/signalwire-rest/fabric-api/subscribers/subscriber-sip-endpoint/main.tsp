@@ -11,7 +11,7 @@ using Types.StatusCodes;
 
 @route("/{fabric_subscriber_id}/sip_endpoints")
 namespace FabricAPI.Subscribers.SipEndpoints {
-  @tag("Subscribers")
+  @tag("Subscribers: SIP Endpoints")
   @friendlyName("SIP Endpoints")
   interface SubscriberSipEndpoint {
     @summary("List Subscriber SIP Endpoints")
