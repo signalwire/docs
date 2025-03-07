@@ -1,6 +1,4 @@
-import { ProductList } from "../../components/HomepageFeatures/ProductButtons/ProductButtonContainer";
-
-export const products: ProductList = [
+export const products = [
   {
     name: "Voice",
     description: "High-performance realtime and compatible APIs",

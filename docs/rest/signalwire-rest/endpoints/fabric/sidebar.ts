@@ -8,10 +8,10 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "AI Agents",
+      label: "AI Agents: Custom",
       link: {
         type: "doc",
-        id: "rest/signalwire-rest/endpoints/fabric/ai-agents",
+        id: "rest/signalwire-rest/endpoints/fabric/ai-agents-custom",
       },
       items: [
         {
@@ -48,6 +48,46 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "rest/signalwire-rest/endpoints/fabric/delete-ai-agent",
           label: "Delete AI Agent",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "AI Agents: Dialogflow",
+      link: {
+        type: "doc",
+        id: "rest/signalwire-rest/endpoints/fabric/ai-agents-dialogflow",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/list-dialogflow-agent-addresses",
+          label: "List Dialogflow Agent Addresses",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/list-dialogflow-agents",
+          label: "List Dialogflow Agents",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/get-dialogflow-agent",
+          label: "Get Dialogflow Agent",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/update-dialogflow-agent",
+          label: "Update Dialogflow Agent",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/delete-dialogflow-agent",
+          label: "Delete Dialogflow Agent",
           className: "api-method delete",
         },
       ],
@@ -152,46 +192,6 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "rest/signalwire-rest/endpoints/fabric/cxml-applications-delete",
           label: "Delete cXML Application",
-          className: "api-method delete",
-        },
-      ],
-    },
-    {
-      type: "category",
-      label: "Dialogflow Agents",
-      link: {
-        type: "doc",
-        id: "rest/signalwire-rest/endpoints/fabric/dialogflow-agents",
-      },
-      items: [
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/list-dialogflow-agent-addresses",
-          label: "List Dialogflow Agent Addresses",
-          className: "api-method get",
-        },
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/list-dialogflow-agents",
-          label: "List Dialogflow Agents",
-          className: "api-method get",
-        },
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/get-dialogflow-agent",
-          label: "Get Dialogflow Agent",
-          className: "api-method get",
-        },
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/update-dialogflow-agent",
-          label: "Update Dialogflow Agent",
-          className: "api-method put",
-        },
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/delete-dialogflow-agent",
-          label: "Delete Dialogflow Agent",
           className: "api-method delete",
         },
       ],
