@@ -1,0 +1,658 @@
+---
+title: "Working with Callback Functions"
+description: "Learn how to effectively use callback functions to customize the behavior of your Click-to-Call widget"
+sidebar_position: 3
+slug: /c2c/guides/working-with-callbacks
+---
+
+# Working with Callback Functions
+
+Click-to-Call provides several callback functions that allow you to customize the behavior of your widget at different stages of the call lifecycle. This guide explains how to implement these callbacks and use them effectively in your applications.
+
+## Understanding Callback Functions
+
+Callbacks in the C2C widget allow you to:
+
+- Execute custom code at specific points in the call lifecycle
+- Control the flow of calls (allow or prevent calls based on custom logic)
+- Update your UI in response to call events
+- Integrate with analytics or other systems
+- Handle errors gracefully
+
+## Available Callbacks
+
+The C2C widget provides the following callback functions:
+
+| Callback | Triggered | Return Value | Purpose |
+|:---------|:----------|:-------------|:--------|
+| `beforeCallStartFn` | When user clicks to start a call, before setup begins | `true` / `false` | Determine whether the call should proceed |
+| `afterCallStartFn` | After call setup completes and connection is established | None | Update UI or track successful connections |
+| `beforeCallLeaveFn` | When user initiates call end, before teardown begins | `true` / `false` | Determine whether call should be ended |
+| `afterCallLeaveFn` | After call has ended and widget is removed | None | Clean up, show feedback forms, etc. |
+| `onCallError` | If any error occurs during call setup | None | Handle and display error information |
+
+## Implementing Callbacks
+
+To implement callbacks, include them in the options object when calling `sw.c2c.spawn()`:
+
+```javascript
+sw.c2c.spawn('C2CButton', {
+  destination: '/public/support',
+  buttonParentSelector: '#click2call',
+  callParentSelector: '#call',
+  
+  // Callback implementation
+  beforeCallStartFn: () => {
+    // Your code here
+    return true; // allow the call to proceed
+  },
+  
+  // Other callbacks as needed
+});
+```
+
+## Callback Flow
+
+The following diagram illustrates the order in which callbacks are invoked during a typical call lifecycle:
+
+1. User clicks the C2C button
+2. ➡️ `beforeCallStartFn()` is called
+3. If returned `true`, call setup begins
+4. Call connects
+5. ➡️ `afterCallStartFn()` is called
+6. User or system initiates call end
+7. ➡️ `beforeCallLeaveFn()` is called
+8. If returned `true`, call teardown begins
+9. Call ends
+10. ➡️ `afterCallLeaveFn()` is called
+
+If an error occurs at any point during setup:
+- ➡️ `onCallError(error)` is called
+
+## Practical Examples
+
+Let's explore practical examples for each callback function:
+
+### Controlling Call Initiation with `beforeCallStartFn`
+
+The `beforeCallStartFn` callback is executed when a user attempts to start a call, but before any call setup begins. This is your opportunity to apply business logic to control whether the call should proceed.
+
+#### Example: Business Hours Check
+
+```javascript
+beforeCallStartFn: () => {
+  // Get current time
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const hour = now.getHours();
+  
+  // Check if it's a weekday and within business hours (9 AM - 5 PM)
+  if ((dayOfWeek === 0 || dayOfWeek === 6) || (hour < 9 || hour >= 17)) {
+    // Outside business hours
+    const messageEl = document.getElementById('business-hours-message');
+    messageEl.style.display = 'block';
+    messageEl.innerHTML = 'Our support team is available Monday-Friday, 9 AM - 5 PM.';
+    
+    return false; // Don't proceed with the call
+  }
+  
+  // Within business hours - proceed with call
+  document.getElementById('loading-indicator').style.display = 'block';
+  return true;
+}
+```
+
+#### Example: Form Validation
+
+```javascript
+beforeCallStartFn: () => {
+  // Get form values
+  const name = document.getElementById('name-input').value.trim();
+  const reason = document.getElementById('reason-select').value;
+  
+  // Validate inputs
+  if (!name || name.length < 2) {
+    alert('Please enter your name before starting the call.');
+    return false;
+  }
+  
+  if (!reason || reason === 'select') {
+    alert('Please select a reason for your call.');
+    return false;
+  }
+  
+  // Store information for later use
+  window.callData = { name, reason, startTime: new Date() };
+  
+  // All validation passed
+  return true;
+}
+```
+
+### Updating UI with `afterCallStartFn`
+
+The `afterCallStartFn` callback is executed once a call has been successfully connected. This is ideal for updating your UI to reflect the active call state.
+
+```javascript
+afterCallStartFn: () => {
+  // Hide the loading indicator
+  document.getElementById('loading-indicator').style.display = 'none';
+  
+  // Update page UI
+  document.getElementById('call-status').textContent = 'Call Connected';
+  document.getElementById('call-status').className = 'status-connected';
+  
+  // Hide the call button during the call
+  document.getElementById('call-button-container').style.display = 'none';
+  
+  // Start call timer
+  window.callStartTime = new Date();
+  window.callTimerInterval = setInterval(() => {
+    const elapsedSeconds = Math.floor((new Date() - window.callStartTime) / 1000);
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = elapsedSeconds % 60;
+    document.getElementById('call-timer').textContent = 
+      `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  }, 1000);
+  
+  // Log call for analytics
+  if (typeof analytics !== 'undefined') {
+    analytics.track('Call Started', {
+      destination: '/public/support',
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+```
+
+### Confirming Call End with `beforeCallLeaveFn`
+
+The `beforeCallLeaveFn` callback is executed when a call is about to end. You can use this to confirm the action with the user or perform cleanup operations.
+
+```javascript
+beforeCallLeaveFn: () => {
+  // For calls longer than 10 seconds, ask for confirmation
+  const callDuration = (new Date() - window.callStartTime) / 1000;
+  
+  if (callDuration > 10) {
+    return confirm('Are you sure you want to end this call?');
+  }
+  
+  // For short calls, no confirmation needed
+  return true;
+}
+```
+
+### Post-Call Actions with `afterCallLeaveFn`
+
+The `afterCallLeaveFn` callback is executed after a call has ended. This is perfect for resetting your UI or showing feedback forms.
+
+```javascript
+afterCallLeaveFn: () => {
+  // Clear the call timer
+  clearInterval(window.callTimerInterval);
+  document.getElementById('call-timer').textContent = '0:00';
+  
+  // Update status
+  document.getElementById('call-status').textContent = 'Call Ended';
+  document.getElementById('call-status').className = 'status-ended';
+  
+  // Show the call button again
+  document.getElementById('call-button-container').style.display = 'block';
+  
+  // Show feedback form for calls that lasted more than 30 seconds
+  const callDuration = (new Date() - window.callStartTime) / 1000;
+  if (callDuration > 30) {
+    document.getElementById('feedback-form').style.display = 'block';
+  }
+  
+  // Log call end for analytics
+  if (typeof analytics !== 'undefined') {
+    analytics.track('Call Ended', {
+      destination: '/public/support',
+      duration: Math.floor(callDuration),
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+```
+
+### Error Handling with `onCallError`
+
+The `onCallError` callback is executed if any error occurs during call setup. It receives the error object as a parameter.
+
+```javascript
+onCallError: (error) => {
+  console.error('Call error:', error);
+  
+  // Hide loading indicator
+  document.getElementById('loading-indicator').style.display = 'none';
+  
+  // Update UI
+  document.getElementById('call-status').textContent = 'Call Failed';
+  document.getElementById('call-status').className = 'status-error';
+  
+  // Show appropriate error message
+  let errorMessage = 'Sorry, we couldn\'t connect your call. Please try again later.';
+  
+  if (error.name === 'MediaDeviceError') {
+    errorMessage = 'Please ensure your microphone is connected and you have granted permission to use it.';
+  } else if (error.name === 'NetworkError') {
+    errorMessage = 'Network connection error. Please check your internet connection and try again.';
+  }
+  
+  document.getElementById('error-message').textContent = errorMessage;
+  document.getElementById('error-container').style.display = 'block';
+  
+  // Log error for analytics
+  if (typeof analytics !== 'undefined') {
+    analytics.track('Call Error', {
+      error_type: error.name,
+      error_message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+```
+
+## Common Use Cases
+
+### Call Center Hours
+
+Control when users can initiate calls based on your call center's operating hours:
+
+```javascript
+beforeCallStartFn: () => {
+  const now = new Date();
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  
+  // Convert to a decimal time for easier comparison (e.g., 9:30 AM = 9.5)
+  const currentTime = hour + (minute / 60);
+  
+  // Define business hours
+  const businessHours = {
+    1: { open: 9, close: 17 },     // Monday: 9 AM - 5 PM
+    2: { open: 9, close: 17 },     // Tuesday: 9 AM - 5 PM
+    3: { open: 9, close: 17 },     // Wednesday: 9 AM - 5 PM
+    4: { open: 9, close: 17 },     // Thursday: 9 AM - 5 PM
+    5: { open: 9, close: 16 },     // Friday: 9 AM - 4 PM
+    6: { open: 10, close: 14 },    // Saturday: 10 AM - 2 PM
+    0: { open: null, close: null } // Sunday: Closed
+  };
+  
+  const todayHours = businessHours[day];
+  
+  // Check if closed today
+  if (todayHours.open === null) {
+    document.getElementById('hours-message').innerHTML = 'We are closed today. Please call back during business hours.';
+    document.getElementById('hours-message').style.display = 'block';
+    return false;
+  }
+  
+  // Check if within open hours
+  if (currentTime < todayHours.open || currentTime >= todayHours.close) {
+    const nextDay = (day + 1) % 7;
+    const nextOpenDay = businessHours[nextDay].open === null ? 
+      findNextBusinessDay(nextDay, businessHours) : nextDay;
+    
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    document.getElementById('hours-message').innerHTML = 
+      `We are currently closed. Our next available hours are ${dayNames[nextOpenDay]} at ${businessHours[nextOpenDay].open}:00 AM.`;
+    document.getElementById('hours-message').style.display = 'block';
+    return false;
+  }
+  
+  return true;
+}
+
+// Helper function to find the next business day
+function findNextBusinessDay(startDay, businessHours) {
+  let checkDay = startDay;
+  for (let i = 0; i < 7; i++) {
+    if (businessHours[checkDay].open !== null) {
+      return checkDay;
+    }
+    checkDay = (checkDay + 1) % 7;
+  }
+  return startDay; // Fallback
+}
+```
+
+### Call Analytics Integration
+
+Track call metrics using a third-party analytics service:
+
+```javascript
+// Initialize call tracking
+let callData = {
+  callId: null,
+  startTime: null,
+  endTime: null,
+  duration: 0,
+  status: 'not_started'
+};
+
+// In beforeCallStartFn
+beforeCallStartFn: () => {
+  // Generate a unique ID for this call
+  callData.callId = 'call_' + Date.now();
+  callData.status = 'initiating';
+  
+  // Track call initiation
+  analytics.track('Call Initiated', {
+    callId: callData.callId,
+    timestamp: new Date().toISOString(),
+    page: window.location.pathname
+  });
+  
+  return true;
+}
+
+// In afterCallStartFn
+afterCallStartFn: () => {
+  callData.startTime = new Date();
+  callData.status = 'in_progress';
+  
+  // Track call connected
+  analytics.track('Call Connected', {
+    callId: callData.callId,
+    timestamp: callData.startTime.toISOString(),
+    setupTime: Date.now() - parseInt(callData.callId.split('_')[1])
+  });
+}
+
+// In afterCallLeaveFn
+afterCallLeaveFn: () => {
+  callData.endTime = new Date();
+  callData.status = 'completed';
+  
+  if (callData.startTime) {
+    callData.duration = Math.round((callData.endTime - callData.startTime) / 1000);
+    
+    // Track call completed with duration
+    analytics.track('Call Completed', {
+      callId: callData.callId,
+      timestamp: callData.endTime.toISOString(),
+      duration: callData.duration,
+      // You could include user feedback here if collected
+      feedback: document.getElementById('call-rating')?.value
+    });
+  }
+}
+```
+
+## Best Practices
+
+### Keep Callbacks Fast and Efficient
+
+Callbacks can impact the responsiveness of your C2C widget. Follow these tips for optimal performance:
+
+- Avoid lengthy operations that might block the UI thread
+- Minimize DOM manipulations
+- Consider using `requestAnimationFrame` for visual updates
+- Handle async operations carefully
+
+### Use a Consistent Error Handling Strategy
+
+When working with the `onCallError` callback:
+
+- Always provide user-friendly error messages
+- Log detailed error information for debugging
+- Consider implementing retry logic for transient errors
+- Test error scenarios thoroughly
+
+### Manage State Properly
+
+When using callbacks to manage application state:
+
+- Use clear variable names for call-related state
+- Clean up any global state in the `afterCallLeaveFn` callback
+- Consider using a small state management system for complex applications
+- Be careful with closures and variable scope
+
+### Testing Your Callbacks
+
+To ensure your callbacks work correctly:
+
+- Test all possible paths through your callback logic
+- Simulate error conditions to verify your error handling
+- Test on different browsers and devices
+- Verify that UI updates happen correctly in each call state
+
+## Complete Example
+
+Here's a complete example that implements all callbacks with best practices:
+
+```javascript
+// Create a state management object
+const callStateManager = {
+  state: {
+    preparing: false,
+    inCall: false,
+    startTime: null,
+    timerInterval: null,
+    callId: null
+  },
+  
+  startPreparing() {
+    this.state.preparing = true;
+    this.state.callId = 'call_' + Date.now();
+    this.updateUI();
+  },
+  
+  startCall() {
+    this.state.preparing = false;
+    this.state.inCall = true;
+    this.state.startTime = new Date();
+    this.startTimer();
+    this.updateUI();
+  },
+  
+  endCall() {
+    this.state.inCall = false;
+    this.stopTimer();
+    this.updateUI();
+    
+    // Determine if we should show feedback
+    const duration = this.getCallDuration();
+    if (duration > 30) {
+      this.showFeedbackForm();
+    }
+    
+    // Reset state after a delay
+    setTimeout(() => {
+      this.state.callId = null;
+      this.state.startTime = null;
+    }, 5000);
+  },
+  
+  handleError(error) {
+    this.state.preparing = false;
+    this.state.inCall = false;
+    this.stopTimer();
+    this.showError(error);
+    this.updateUI();
+  },
+  
+  startTimer() {
+    this.stopTimer(); // Ensure no duplicate timers
+    
+    this.state.timerInterval = setInterval(() => {
+      const duration = this.getCallDuration();
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      
+      // Use requestAnimationFrame for smoother UI updates
+      requestAnimationFrame(() => {
+        document.getElementById('call-timer').textContent = 
+          `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      });
+    }, 1000);
+  },
+  
+  stopTimer() {
+    if (this.state.timerInterval) {
+      clearInterval(this.state.timerInterval);
+      this.state.timerInterval = null;
+    }
+  },
+  
+  getCallDuration() {
+    if (!this.state.startTime) return 0;
+    return Math.floor((new Date() - this.state.startTime) / 1000);
+  },
+  
+  updateUI() {
+    // Update UI based on current state
+    const statusEl = document.getElementById('call-status');
+    const buttonEl = document.getElementById('call-button-container');
+    const loadingEl = document.getElementById('loading-indicator');
+    const callControlsEl = document.getElementById('call-controls');
+    
+    if (this.state.preparing) {
+      statusEl.textContent = 'Connecting...';
+      statusEl.className = 'status-connecting';
+      buttonEl.style.display = 'none';
+      loadingEl.style.display = 'block';
+      callControlsEl.style.display = 'none';
+    } else if (this.state.inCall) {
+      statusEl.textContent = 'Connected';
+      statusEl.className = 'status-connected';
+      buttonEl.style.display = 'none';
+      loadingEl.style.display = 'none';
+      callControlsEl.style.display = 'block';
+    } else {
+      statusEl.textContent = this.state.startTime ? 'Call Ended' : 'Ready';
+      statusEl.className = this.state.startTime ? 'status-ended' : 'status-ready';
+      buttonEl.style.display = 'block';
+      loadingEl.style.display = 'none';
+      callControlsEl.style.display = 'none';
+      document.getElementById('call-timer').textContent = '0:00';
+    }
+  },
+  
+  showFeedbackForm() {
+    const feedbackEl = document.getElementById('feedback-form');
+    feedbackEl.style.display = 'block';
+    
+    // Auto-hide after 5 minutes if not submitted
+    setTimeout(() => {
+      feedbackEl.style.display = 'none';
+    }, 300000);
+  },
+  
+  showError(error) {
+    const errorEl = document.getElementById('error-container');
+    const errorMessageEl = document.getElementById('error-message');
+    
+    let message = 'Sorry, we couldn\'t connect your call. Please try again later.';
+    
+    if (error.name === 'MediaDeviceError') {
+      message = 'Please ensure your microphone is connected and you have granted permission to use it.';
+    } else if (error.name === 'NetworkError') {
+      message = 'Network connection error. Please check your internet connection and try again.';
+    }
+    
+    errorMessageEl.textContent = message;
+    errorEl.style.display = 'block';
+    
+    // Auto-hide error after 10 seconds
+    setTimeout(() => {
+      errorEl.style.display = 'none';
+    }, 10000);
+    
+    // Log error details
+    console.error('Call error details:', error);
+  }
+};
+
+// Initialize the C2C widget with our callbacks
+sw.c2c.spawn('C2CButton', {
+  destination: '/public/support',
+  buttonParentSelector: '#click2call',
+  callParentSelector: '#call',
+  
+  beforeCallStartFn: () => {
+    // Business hours check
+    const now = new Date();
+    const hour = now.getHours();
+    
+    if (hour < 9 || hour >= 17) {
+      document.getElementById('outside-hours-message').style.display = 'block';
+      return false;
+    }
+    
+    // Initialize our state
+    callStateManager.startPreparing();
+    
+    // Track event if analytics is available
+    if (typeof analytics !== 'undefined') {
+      analytics.track('Call Initiated', {
+        callId: callStateManager.state.callId
+      });
+    }
+    
+    return true;
+  },
+  
+  afterCallStartFn: () => {
+    callStateManager.startCall();
+    
+    // Track event if analytics is available
+    if (typeof analytics !== 'undefined') {
+      analytics.track('Call Connected', {
+        callId: callStateManager.state.callId,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  
+  beforeCallLeaveFn: () => {
+    const duration = callStateManager.getCallDuration();
+    
+    // For calls longer than 20 seconds, ask for confirmation
+    if (duration > 20) {
+      return confirm('Are you sure you want to end this call?');
+    }
+    
+    return true;
+  },
+  
+  afterCallLeaveFn: () => {
+    const duration = callStateManager.getCallDuration();
+    callStateManager.endCall();
+    
+    // Track event if analytics is available
+    if (typeof analytics !== 'undefined') {
+      analytics.track('Call Ended', {
+        callId: callStateManager.state.callId,
+        duration: duration,
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  
+  onCallError: (error) => {
+    callStateManager.handleError(error);
+    
+    // Track event if analytics is available
+    if (typeof analytics !== 'undefined') {
+      analytics.track('Call Error', {
+        callId: callStateManager.state.callId,
+        error_type: error.name,
+        error_message: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+});
+```
+
+## Conclusion
+
+Callback functions provide powerful ways to customize the behavior of your Click-to-Call widget and integrate it seamlessly with your website or application. By implementing these callbacks effectively, you can create a more polished user experience, gather valuable data about calls, and ensure your call widget behaves exactly as you need it to.
+
+For more information about the C2C API, check out the [Technical Reference](/c2c/technical-reference). 
