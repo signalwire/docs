@@ -16,6 +16,8 @@ import Subtitle from "../../components/typography/Subtitle";
 import { Accordion, AccordionGroup } from "../../components/Extras/Accordion";
 import { Card, CardGroup } from "../../components/Extras/Card";
 import Frame from "../../components/Extras/Frame/Frame";
+import Slideshow from "../../components/Extras/Slideshow/Slideshow";
+import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 import ReleaseCard from "../../components/Blog/ReleaseCard";
 
 export default {
@@ -49,6 +51,7 @@ export default {
   Subtitle,
   UseCaseLinks,
   UseCaseView,
-
-  ReleaseCard,
+  GuidesList,
+  GuidesListMirror,
+  ReleaseCard
 };
