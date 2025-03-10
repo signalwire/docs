@@ -23,7 +23,6 @@ import swmlTechRefSidebar from './swml-sidebar';
 import callFlowBuilderSidebar from './call-flow-builder-sidebar';
 import compatibilityAPI from './compatibility-api-sidebar';
 import cantinaSidebar from './cantina-sidebar';
-import c2cSidebar from './c2c-sidebar';
 
 const sidebars: SidebarsConfig = {
   ...homeSidebar,
@@ -35,7 +34,6 @@ const sidebars: SidebarsConfig = {
   ...callFlowBuilderSidebar,
   ...compatibilityAPI,
   ...cantinaSidebar,
-  ...c2cSidebar,
 };
 
 export default sidebars;
