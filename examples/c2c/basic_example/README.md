@@ -6,8 +6,43 @@ This example demonstrates how to integrate SignalWire's Click-to-Call (C2C) widg
 
 - A SignalWire account ([Sign up here](https://my.signalwire.com/))
 - A website where you want to add the Click-to-Call feature
+- A code editor and a terminal emulator
+   - If you don't have either, VSCode is a very popular editor that includes a terminal.
+- Git ([installation instructions](https://git-scm.com/downloads))
+- Basic familiarity with the command line and web development (HTML, CSS, JS) is helpful but not required.
 
 ## Setup Instructions
+
+### 1. Copy our example site
+
+First, we'll download our ready-made site using Git.
+
+- **Choose where to store the project files**
+   - If you don't already have one, we recommend creating a `Code` folder in your user directory.
+- **Open your terminal emulator**
+- **Navigate to your desired folder in the terminal**
+- **Run the following Git command:**
+
+This command combines multiple Git commands to selectively download our C2C example from within the `docs` repository.
+
+#### macOS command
+
+Copy and run this single command in your terminal emulator.
+
+```shell
+git clone -n https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout init && git sparse-checkout set examples/c2c/basic_example && git checkout main
+```
+
+<details>
+   <summary>What does that command do?  <i>(Click to expand)</i></summary>
+   <ul>
+      <li><code>git clone -n https://github.com/signalwire/docs.git SignalWire-Examples</code>: Clone the SignalWire Docs repo into a folder titled SignalWire-Examples. The `-n` flag stops Git from automatically checking out (downloading).</li>
+      <li><code>cd SignalWire-Examples</code>: Move into the newly created directory</li>
+      <li><code>git sparse-checkout init</code>: Enable Git's "Sparse Checkout" mode</li>
+      <li><code>git sparse-checkout set examples/c2c/basic_example</code>: Tell Git which part of the repo we want to clone</li>
+      <li><code>git checkout main</code>: Checkout the repo</li>
+   </ul>
+</details>
 
 ### 1. Create a Click-to-Call Widget
 
