@@ -27,7 +27,7 @@ This command combines multiple Git commands to selectively download our C2C exam
 On Windows, make sure you run this command in Git Bash. It won't work in Powershell or Command Prompt.
 
 ```shell
-git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout set --no-cone 'examples/c2c/basic_example' && git checkout main && cd examples/c2c/basic_example/
+git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout set --no-cone 'examples/c2c/basic_example' && git checkout main && cd examples/c2c/basic_example/public && ls
 ```
 
 <!-- explanation
@@ -70,7 +70,17 @@ git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples &&
    <div id="call"></div>
    ```
 
-### 4. Customize Your Widget
+### 4. Deploy the site
+
+There are a lot of ways to do this, but for this demo, we'll be using a service called `surge.sh`.
+
+- Install Surge via NPM: `npm install -g surge`
+- Run `surge` inside the `/SignalWire-Examples/examples/c2c/basic_example/public` directory
+- Customize your subdomain, if desired
+- Once pushed to Surge's CDN, your site will be live!
+- Rerun `surge` to update the deployment.
+
+### 5. Customize Your Widget
 
 The default script will look something like this:
 
