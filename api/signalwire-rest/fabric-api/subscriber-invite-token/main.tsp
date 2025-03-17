@@ -9,7 +9,7 @@ using Types.StatusCodes;
 
 @route("/subscriber/invites")
 namespace FabricAPI.SubscriberInviteTokens {
-  @tag("Subscribers")
+  @tag("Subscribers: Tokens")
   @friendlyName("Invite Token")
   interface InviteTokens {
 
