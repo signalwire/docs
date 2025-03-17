@@ -44,7 +44,7 @@ git clone -n https://github.com/signalwire/docs.git SignalWire-Examples && cd Si
    </ul>
 </details>
 
-### 1. Create a Click-to-Call Widget
+### 2. Create a Click-to-Call Widget
 
 1. Log in to your SignalWire Dashboard at [my.signalwire.com](https://my.signalwire.com/?page=click_to_calls)
 2. Navigate to the Click-to-Call page
@@ -56,7 +56,7 @@ git clone -n https://github.com/signalwire/docs.git SignalWire-Examples && cd Si
    - Configure any additional settings as needed
 5. Click "Create Widget" to generate your custom script
 
-### 2. Add the Widget to Your Website
+### 3. Add the Widget to Your Website
 
 1. Copy the generated script from the SignalWire Dashboard
 2. Open your website's HTML file (in this example, `public/index.html`)
@@ -71,7 +71,7 @@ git clone -n https://github.com/signalwire/docs.git SignalWire-Examples && cd Si
    <div id="call"></div>
    ```
 
-### 3. Customize Your Widget
+### 4. Customize Your Widget
 
 The default script will look something like this:
 
