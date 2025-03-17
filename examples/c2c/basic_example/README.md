@@ -24,15 +24,13 @@ First, we'll download our ready-made site using Git.
 - **Run the following Git command:**
 
 This command combines multiple Git commands to selectively download our C2C example from within the `docs` repository.
-
-#### macOS command
-
-Copy and run this single command in your terminal emulator.
+On Windows, make sure you run this command in Git Bash. It won't work in Powershell or Command Prompt.
 
 ```shell
-git clone -n https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout init && git sparse-checkout set examples/c2c/basic_example && git checkout main
+git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout set --no-cone 'examples/c2c/basic_example' && git checkout main
 ```
 
+<!-- explanation
 <details>
    <summary>What does that command do?  <i>(Click to expand)</i></summary>
    <ul>
@@ -43,6 +41,7 @@ git clone -n https://github.com/signalwire/docs.git SignalWire-Examples && cd Si
       <li><code>git checkout main</code>: Checkout the repo</li>
    </ul>
 </details>
+-->
 
 ### 2. Create a Click-to-Call Widget
 
