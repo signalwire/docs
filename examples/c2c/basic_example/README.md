@@ -27,7 +27,7 @@ This command combines multiple Git commands to selectively download our C2C exam
 On Windows, make sure you run this command in Git Bash. It won't work in Powershell or Command Prompt.
 
 ```shell
-git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout set --no-cone 'examples/c2c/basic_example' && git checkout main
+git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout set --no-cone 'examples/c2c/basic_example' && git checkout main && cd examples/c2c/basic_example/
 ```
 
 <!-- explanation
