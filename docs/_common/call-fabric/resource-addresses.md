@@ -29,6 +29,6 @@ Additionally, you can view the created resource in the `Resources` tab of the Si
 Here, you can view the address, type, and other details of the resource.
 
 <figure>
-  <img src={require("../_shared/created-resources.webp").default} alt="Picture showing the Resources Page on the SignalWire Dashboard. Two resources are created and shown in the list: 'Subscriber' and a `SWML Script'." />
+  <img src={require("/docs/_common/call-fabric/created-resources.webp").default} alt="Picture showing the Resources Page on the SignalWire Dashboard. Two resources are created and shown in the list: 'Subscriber' and a `SWML Script'." />
   <figcaption>List of Resources</figcaption>
 </figure>
