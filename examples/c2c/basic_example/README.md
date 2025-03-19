@@ -6,10 +6,44 @@ This example demonstrates how to integrate SignalWire's Click-to-Call (C2C) widg
 
 - A SignalWire account ([Sign up here](https://my.signalwire.com/))
 - A website where you want to add the Click-to-Call feature
+- A code editor and a terminal emulator
+   - If you don't have either, VSCode is a very popular editor that includes a terminal.
+- Git ([installation instructions](https://git-scm.com/downloads))
+- Basic familiarity with the command line and web development (HTML, CSS, JS) is helpful but not required.
 
 ## Setup Instructions
 
-### 1. Create a Click-to-Call Widget
+### 1. Copy our example site
+
+First, we'll download our ready-made site using Git.
+
+- **Choose where to store the project files**
+   - If you don't already have one, we recommend creating a `Code` folder in your user directory.
+- **Open your terminal emulator**
+- **Navigate to your desired folder in the terminal**
+- **Run the following Git command:**
+
+This command combines multiple Git commands to selectively download our C2C example from within the `docs` repository.
+On Windows, make sure you run this command in Git Bash. It won't work in Powershell or Command Prompt.
+
+```shell
+git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples && cd SignalWire-Examples && git sparse-checkout set --no-cone 'examples/c2c/basic_example' && git checkout main && cd examples/c2c/basic_example/public && ls
+```
+
+<!-- explanation
+<details>
+   <summary>What does that command do?  <i>(Click to expand)</i></summary>
+   <ul>
+      <li><code>git clone -n https://github.com/signalwire/docs.git SignalWire-Examples</code>: Clone the SignalWire Docs repo into a folder titled SignalWire-Examples. The `-n` flag stops Git from automatically checking out (downloading).</li>
+      <li><code>cd SignalWire-Examples</code>: Move into the newly created directory</li>
+      <li><code>git sparse-checkout init</code>: Enable Git's "Sparse Checkout" mode</li>
+      <li><code>git sparse-checkout set examples/c2c/basic_example</code>: Tell Git which part of the repo we want to clone</li>
+      <li><code>git checkout main</code>: Checkout the repo</li>
+   </ul>
+</details>
+-->
+
+### 2. Create a Click-to-Call Widget
 
 1. Log in to your SignalWire Dashboard at [my.signalwire.com](https://my.signalwire.com/?page=click_to_calls)
 2. Navigate to the Click-to-Call page
@@ -21,7 +55,8 @@ This example demonstrates how to integrate SignalWire's Click-to-Call (C2C) widg
    - Configure any additional settings as needed
 5. Click "Create Widget" to generate your custom script
 
-### 2. Add the Widget to Your Website
+
+### 3. Add the Widget to Your Website
 
 1. Copy the generated script from the SignalWire Dashboard
 2. Open your website's HTML file (in this example, `public/index.html`)
@@ -36,7 +71,18 @@ This example demonstrates how to integrate SignalWire's Click-to-Call (C2C) widg
    <div id="call"></div>
    ```
 
-### 3. Customize Your Widget
+
+### 4. Deploy the site
+
+There are a lot of ways to do this, but for this demo, we'll be using a service called `surge.sh`.
+
+- Install Surge via NPM: `npm install -g surge`
+- Run `surge` inside the `/SignalWire-Examples/examples/c2c/basic_example/public` directory
+- Customize your subdomain, if desired
+- Once pushed to Surge's CDN, your site will be live!
+- Rerun `surge` to update the deployment.
+
+### 5. Customize Your Widget
 
 The default script will look something like this:
 
