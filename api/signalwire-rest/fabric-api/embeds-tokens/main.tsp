@@ -8,6 +8,7 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 // Define the API path for embeds
+@useAuth({ type: Http.AuthType.noAuth })
 @route("/embeds/tokens")
 namespace FabricAPI.EmbedsTokens {
     @tag("Embeds Tokens")
