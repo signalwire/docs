@@ -300,6 +300,34 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Recordings",
+      link: {
+        type: "doc",
+        id: "rest/signalwire-rest/endpoints/space/recordings",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/space/recordings-list",
+          label: "List Relay Recordings",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/space/recordings-get",
+          label: "Get Relay Recording",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/space/recordings-delete",
+          label: "Delete Relay Recording",
+          className: "api-method delete",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "SIP Endpoints",
       link: {
         type: "doc",
