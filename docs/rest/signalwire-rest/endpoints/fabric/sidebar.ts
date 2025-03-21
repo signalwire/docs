@@ -198,6 +198,22 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Embeds Tokens",
+      link: {
+        type: "doc",
+        id: "rest/signalwire-rest/endpoints/fabric/embeds-tokens",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/embeds-tokens-create",
+          label: "Create Embeds Tokens",
+          className: "api-method post",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "External LAML Handler",
       link: {
         type: "doc",
