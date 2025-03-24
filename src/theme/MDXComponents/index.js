@@ -2,17 +2,23 @@
 import MDXComponents from "../MDXComponentsOriginal/index";
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
+import DocCard from "@theme/DocCard";
+import DocCardList from "@theme/DocCardList";
 
+// Custom components
 import { Language, LangItem } from "../../components/Language/Language";
 import LangSwitch from "../../components/Language/LangSwitch";
 import { AlphaBadge, BetaBadge } from "../../components/AlphaBetaBadges";
-import { LinkBadge } from "../../components/LinkBadge";
-import DocCardList from "@theme/DocCardList";
 import { APITable, APITableRow } from "../../components/APITable";
-import DocCard from "@theme/DocCard";
-import { LinkCard, LinkCardContainer, HomepageHeader, ProductButtons, ProductButton, UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
+import { UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
+import { Accordion, AccordionGroup } from "../../components/Extras/Accordion";
+import { Card, CardGroup } from "../../components/Extras/Card";
+import Frame from "../../components/Extras/Frame/Frame";
+import Slideshow from "../../components/Extras/Slideshow/Slideshow";
+import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
+import ReleaseCard from "../../components/Blog/ReleaseCard";
 
 export default {
   ...MDXComponents,
@@ -21,22 +27,31 @@ export default {
   LangItem,
   LangSwitch,
 
+  Frame,
+
   Tabs,
   TabItem,
+
+  Accordion,
+  AccordionGroup,
+
   AlphaBadge,
   BetaBadge,
-  LinkBadge,
-  DocCardList,
+
   APITable,
   APITableRow,
+
+  Card,
+  CardGroup,
+
   DocCard,
-  LinkCard,
-  LinkCardContainer,
-  HomepageHeader,
-  ProductButtons,
-  ProductButton,
-  UseCaseView,
-  UseCaseLinks,
+  DocCardList,
+
   Steps,
-  Subtitle
+  Subtitle,
+  UseCaseLinks,
+  UseCaseView,
+  GuidesList,
+  GuidesListMirror,
+  ReleaseCard
 };

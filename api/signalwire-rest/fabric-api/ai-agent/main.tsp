@@ -11,8 +11,8 @@ using Types.StatusCodes;
 
 @route("/resources/ai_agents")
 namespace FabricAPI.AIAgents {
-  @tag("AI Agent")
-  @friendlyName("AI Agent")
+  @tag("AI Agents: Custom")
+  @friendlyName("AI Agent: Custom")
   interface AIAgents {
     @summary("List AI Agents")
     @doc("A list of AI Agents")
@@ -24,14 +24,14 @@ namespace FabricAPI.AIAgents {
     @summary("Get AI Agent")
     @doc("Returns an AI Agent by ID")
     read(...AIAgentPathID):
-      { @statusCode statusCode: 200; @body ai_agent: AIAgent; } |
+      { @statusCode statusCode: 200; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
       StatusCode404;
 
     @summary("Create AI Agent")
     @doc("Creates an AI Agent")
     @post create(...AIAgentCreateRequest):
-      { @statusCode statusCode: 201; @body ai_agent: AIAgent; } |
+      { @statusCode statusCode: 201; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
       StatusCode404 |
       AIAgentCreateStatusCode422;
@@ -39,7 +39,7 @@ namespace FabricAPI.AIAgents {
     @summary("Update AI Agent")
     @doc("Updates an AI Agent by ID")
     @patch update(...AIAgentPathID, ...AIAgentUpdateRequest):
-      { @statusCode statusCode: 200; @body ai_agent: AIAgent; } |
+      { @statusCode statusCode: 200; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
       StatusCode404 |
       AIAgentUpdateStatusCode422;

@@ -171,12 +171,18 @@ const navbar: NavbarItem[] = [
   },
 
   {
-    href: "https://id.signalwire.com",
+    href: "https://signalwire.com/signin",
     label: "Dashboard",
     position: "right",
     className: "dashboard-navbar-link",
     "aria-label": "Dashboard",
   },
+  {
+    href: 'https://github.com/signalwire/docs',
+    position: 'right',
+    className: 'header-github-link',
+    'aria-label': 'GitHub repository',
+  }
 ];
 
 export default navbar; 

@@ -36,6 +36,12 @@ enum UrlMethodType {
   Post: "POST",
 }
 
+@doc("Indicates whether the call will be handled by a script or an external url.")
+enum HandleCallsUsing {
+  Script: "script",
+  ExternalUrl: "external_url",
+}
+
 union AddressChannel {
   AudioChannel,
   MessagingChannel,
