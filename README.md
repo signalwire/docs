@@ -20,6 +20,7 @@
     <img src="https://img.shields.io/github/stars/signalwire/docs" alt="GitHub Stars" href="https://github.com/signalwire/docs"/>
 </div>
 
+
 <img src="static/img/homepage.png" alt="Homepage"/>
 
 ## Contents
