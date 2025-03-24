@@ -632,16 +632,42 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/invite-tokens-create",
-          label: "Create a Subscriber Invite Token",
-          className: "api-method post",
-        },
-        {
-          type: "doc",
           id: "rest/signalwire-rest/endpoints/fabric/subscriber-addresses-list",
           label: "List Subscriber Addresses",
           className: "api-method get",
         },
+      ],
+    },
+    {
+      type: "category",
+      label: "Subscribers: Tokens",
+      link: {
+        type: "doc",
+        id: "rest/signalwire-rest/endpoints/fabric/subscribers-tokens",
+      },
+      items: [
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/guest-tokens-create",
+          label: "Create Subscriber Guest Token",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "rest/signalwire-rest/endpoints/fabric/invite-tokens-create",
+          label: "Create a Subscriber Invite Token",
+          className: "api-method post",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Subscribers: SIP Endpoints",
+      link: {
+        type: "doc",
+        id: "rest/signalwire-rest/endpoints/fabric/subscribers-sip-endpoints",
+      },
+      items: [
         {
           type: "doc",
           id: "rest/signalwire-rest/endpoints/fabric/subscriber-sip-endpoint-list",
@@ -809,22 +835,6 @@ const sidebar: SidebarsConfig = {
           id: "rest/signalwire-rest/endpoints/fabric/delete-conference-room",
           label: "Delete Conference Room",
           className: "api-method delete",
-        },
-      ],
-    },
-    {
-      type: "category",
-      label: "Subscriber Guest Token",
-      link: {
-        type: "doc",
-        id: "rest/signalwire-rest/endpoints/fabric/subscriber-guest-token",
-      },
-      items: [
-        {
-          type: "doc",
-          id: "rest/signalwire-rest/endpoints/fabric/guest-tokens-create",
-          label: "Create Subscriber Guest Token",
-          className: "api-method post",
         },
       ],
     },
