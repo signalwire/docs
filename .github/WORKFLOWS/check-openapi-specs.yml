@@ -1,0 +1,87 @@
+name: Check OpenAPI Specs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'api/**/_spec_.yaml'
+      - 'api/**/tsp-output/@typespec/openapi3/openapi.yaml'
+
+jobs:
+  check-specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install typescript ts-node @types/node
+        
+      - name: Generate matrix
+        id: generate-matrix
+        run: |
+          MATRIX=$(npx ts-node scripts/generate-matrix.ts)
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+      - name: Evaluate OpenAPI specs
+        id: evaluate-specs
+        env:
+          RATEMYOPENAPI_KEY: ${{ secrets.RATEMYOPENAPI_KEY }}
+        run: |
+          # Start building the output
+          REPORT_CONTENT="# OpenAPI Specification Analysis\n\n"
+          REPORT_CONTENT+="| Spec | Docs | Completeness | SDK Gen | Security | Overall | Warnings | Errors | Report |\n"
+          REPORT_CONTENT+="|------|------|--------------|---------|----------|---------|----------|---------|---------|\n"
+          
+          # Process each spec
+          while IFS= read -r spec; do
+            # Get relative path for display
+            RELATIVE_PATH=$(realpath --relative-to="$(pwd)" "$spec")
+            
+            # Make API request and store response
+            RESPONSE=$(curl -X POST \
+              -H "Authorization: Bearer $RATEMYOPENAPI_KEY" \
+              -H "Content-Type: multipart/form-data" \
+              -F "apiFile=@$spec" \
+              https://api.ratemyopenapi.com/sync-report)
+            
+            # Extract scores
+            DOCS_SCORE=$(echo $RESPONSE | jq -r '.results.simpleReport.docsScore')
+            COMPLETENESS_SCORE=$(echo $RESPONSE | jq -r '.results.simpleReport.completenessScore')
+            SDK_SCORE=$(echo $RESPONSE | jq -r '.results.simpleReport.sdkGenerationScore')
+            SECURITY_SCORE=$(echo $RESPONSE | jq -r '.results.simpleReport.securityScore')
+            OVERALL_SCORE=$(echo $RESPONSE | jq -r '.results.simpleReport.score')
+            REPORT_URL=$(echo $RESPONSE | jq -r '.reportUrl')
+            
+            # Count warnings and errors
+            WARNINGS=$(echo $RESPONSE | jq '[.results.fullReport.issues[] | select(.severity == 2)] | length')
+            ERRORS=$(echo $RESPONSE | jq '[.results.fullReport.issues[] | select(.severity == 1)] | length')
+            
+            # Add row to table
+            REPORT_CONTENT+="| [\`$RELATIVE_PATH\`](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/$RELATIVE_PATH) | $DOCS_SCORE/100 | $COMPLETENESS_SCORE/100 | $SDK_SCORE/100 | $SECURITY_SCORE/100 | $OVERALL_SCORE/100 | $WARNINGS | $ERRORS | [View](${REPORT_URL}) |\n"
+          done < <(echo '${{ steps.generate-matrix.outputs.matrix }}' | jq -r '.[].path')
+
+          # Save the report content for the next step
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$REPORT_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v2
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: "OpenAPI Specification Analysis"
+
+      - name: Create or Update Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.evaluate-specs.outputs.report }}
+          edit-mode: replace
