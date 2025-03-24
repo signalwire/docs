@@ -1,0 +1,37 @@
+name: Check OpenAPI Specs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-specs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        spec: ${{ fromJson(steps.generate-matrix.outputs.matrix) }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm install typescript ts-node @types/node
+        
+      - name: Generate matrix
+        id: generate-matrix
+        run: npx ts-node scripts/generate-matrix.ts > matrix.json && echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+      
+      - name: Check OpenAPI Spec
+        uses: zuplo/rmoa-action@v1
+        with:
+          filepath: ${{ matrix.spec.path }}
+          apikey: ${{ secrets.RATEMYOPENAPI_KEY }}
+          minimum-score: 70
+          max-errors: 0
+          max-warnings: 5 
