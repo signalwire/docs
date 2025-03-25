@@ -1,0 +1,66 @@
+name: Check OpenAPI Specs
+
+on:
+  pull_request:
+    paths:
+      - 'api/**/tsp-output/@typespec/openapi3/openapi.yaml'
+      - 'api/**/_spec_.yaml'
+
+permissions:
+  contents: read
+  pull-requests: write  # Needed for commenting on PRs
+
+jobs:
+  check-specs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install typescript ts-node @types/node axios form-data
+          
+      - name: Generate report
+        id: generate-report
+        env:
+          RATEMYOPENAPI_KEY: ${{ secrets.RATEMYOPENAPI_KEY }}
+          GITHUB_EVENT_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "=== Starting Report Generation ==="
+          # Run the script and capture stdout for the report
+          REPORT=$(npx ts-node scripts/generate-matrix.ts)
+          EXIT_CODE=$?
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Failed to generate report"
+            exit 1
+          fi
+          
+          # Capture for GitHub output
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          echo "$REPORT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "=== Report Generation Complete ==="
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v2
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: "OpenAPI Specification Analysis"
+
+      - name: Create or Update Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id || '' }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.generate-report.outputs.report }}
+          edit-mode: replace 
