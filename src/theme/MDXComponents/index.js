@@ -17,8 +17,11 @@ import { Accordion, AccordionGroup } from "../../components/Extras/Accordion";
 import { Card, CardGroup } from "../../components/Extras/Card";
 import Frame from "../../components/Extras/Frame/Frame";
 import Slideshow from "../../components/Extras/Slideshow/Slideshow";
+import Tooltips from "../../components/Extras/Tooltips";
+import { PreviewCardGroup, PreviewCard } from "../../components/Extras/PreviewCard";
 import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 import ReleaseCard from "../../components/Blog/ReleaseCard";
+
 
 export default {
   ...MDXComponents,
@@ -26,15 +29,12 @@ export default {
   Language,
   LangItem,
   LangSwitch,
-
   Frame,
 
   Tabs,
   TabItem,
-
   Accordion,
   AccordionGroup,
-
   AlphaBadge,
   BetaBadge,
 
@@ -46,11 +46,15 @@ export default {
 
   DocCard,
   DocCardList,
-
+  Frame,
+  PreviewCardGroup,
+  PreviewCard,
+  Slideshow,
   Steps,
   Subtitle,
   UseCaseLinks,
   UseCaseView,
+  Tooltips,
   GuidesList,
   GuidesListMirror,
   ReleaseCard
