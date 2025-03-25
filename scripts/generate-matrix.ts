@@ -42,6 +42,9 @@ const getRetryDelay = (error: AxiosError): number => {
   return 5000; // Default 5 second delay
 };
 
+// Helper function for logging to stderr
+const log = (...args: any[]) => console.error(...args);
+
 async function evaluateSpec(specPath: string, apiKey: string, retries = 3): Promise<{
   docsScore: number;
   completenessScore: number;
@@ -52,14 +55,14 @@ async function evaluateSpec(specPath: string, apiKey: string, retries = 3): Prom
   errors: number;
   reportUrl: string;
 }> {
-  console.log(`\n📤 Making API request for spec: ${path.basename(specPath)}`);
-  console.log(`   Attempt ${4 - retries}/3`);
+  log(`\n📤 Making API request for spec: ${path.basename(specPath)}`);
+  log(`   Attempt ${4 - retries}/3`);
   
   const form = new FormData();
   form.append('apiFile', fs.createReadStream(specPath));
 
   try {
-    console.log('   Sending request to RateMyOpenAPI...');
+    log('   Sending request to RateMyOpenAPI...');
     const response = await axios.post<RateMyOpenAPIResponse>(
       'https://api.ratemyopenapi.com/sync-report',
       form,
@@ -71,11 +74,11 @@ async function evaluateSpec(specPath: string, apiKey: string, retries = 3): Prom
       }
     );
 
-    console.log('   ✅ Received response from API');
+    log('   ✅ Received response from API');
     const { results, reportUrl } = response.data;
     const { simpleReport, fullReport } = results;
     
-    console.log(`   📊 Scores:
+    log(`   📊 Scores:
       - Docs: ${simpleReport.docsScore}/100
       - Completeness: ${simpleReport.completenessScore}/100
       - SDK Generation: ${simpleReport.sdkGenerationScore}/100
@@ -102,13 +105,13 @@ async function evaluateSpec(specPath: string, apiKey: string, retries = 3): Prom
       // Handle rate limiting
       if (axiosError.response?.status === 429 && retries > 0) {
         const delay = getRetryDelay(axiosError);
-        console.log(`   ⚠️ Rate limited (429). Waiting ${delay/1000} seconds before retry...`);
+        log(`   ⚠️ Rate limited (429). Waiting ${delay/1000} seconds before retry...`);
         await sleep(delay);
         return evaluateSpec(specPath, apiKey, retries - 1);
       }
       
       // Handle other errors
-      console.error(`   ❌ API Error:
+      log(`   ❌ API Error:
         Status: ${axiosError.response?.status}
         Message: ${axiosError.response?.data || axiosError.message}
         Headers: ${JSON.stringify(axiosError.response?.headers, null, 2)}
@@ -121,11 +124,11 @@ async function evaluateSpec(specPath: string, apiKey: string, retries = 3): Prom
 
 async function main() {
   try {
-    console.log('🔍 Reading plugin configuration...');
+    log('🔍 Reading plugin configuration...');
     const pluginConfig = (openapiPlugin as unknown as [string, PluginOptions])[1].config;
     
     if (!pluginConfig || typeof pluginConfig !== 'object') {
-      console.error('❌ Invalid plugin configuration');
+      log('❌ Invalid plugin configuration');
       process.exit(1);
     }
 
@@ -135,15 +138,15 @@ async function main() {
     }));
 
     if (!Array.isArray(matrix) || matrix.length === 0) {
-      console.error('❌ No OpenAPI specs found in configuration');
+      log('❌ No OpenAPI specs found in configuration');
       process.exit(1);
     }
 
-    console.log(`📋 Found ${matrix.length} OpenAPI specs to process`);
+    log(`📋 Found ${matrix.length} OpenAPI specs to process`);
 
     const apiKey = process.env.RATEMYOPENAPI_KEY;
     if (!apiKey) {
-      console.error('❌ RATEMYOPENAPI_KEY environment variable is required');
+      log('❌ RATEMYOPENAPI_KEY environment variable is required');
       process.exit(1);
     }
 
@@ -155,27 +158,27 @@ async function main() {
     // Process each spec with delay between requests
     for (const spec of matrix) {
       const relativePath = path.relative(process.cwd(), spec.path);
-      console.log(`\n🔄 Processing spec: ${relativePath}`);
+      log(`\n🔄 Processing spec: ${relativePath}`);
       
       try {
         const results = await evaluateSpec(spec.path, apiKey);
         reportContent += `| [\`${relativePath}\`](${spec.path}) | ${results.docsScore}/100 | ${results.completenessScore}/100 | ${results.sdkScore}/100 | ${results.securityScore}/100 | ${results.overallScore}/100 | ${results.warnings} | ${results.errors} | [View](${results.reportUrl}) |\n`;
       } catch (error) {
-        console.error(`   ❌ Failed to process spec: ${relativePath}`);
+        log(`   ❌ Failed to process spec: ${relativePath}`);
         reportContent += `| [\`${relativePath}\`](${spec.path}) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Failed to process |\n`;
       }
       
       // Add delay between requests to avoid rate limiting
       if (matrix.indexOf(spec) < matrix.length - 1) {
-        console.log('   ⏳ Waiting 2 seconds before next request...');
+        log('   ⏳ Waiting 2 seconds before next request...');
         await sleep(2000);
       }
     }
 
-    console.log('\n📝 Generated report:');
+    // Only output the report to stdout
     console.log(reportContent);
   } catch (error) {
-    console.error('❌ Error generating report:', error);
+    log('❌ Error generating report:', error);
     process.exit(1);
   }
 }

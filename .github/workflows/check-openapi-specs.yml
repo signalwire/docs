@@ -26,17 +26,16 @@ jobs:
         env:
           RATEMYOPENAPI_KEY: ${{ secrets.RATEMYOPENAPI_KEY }}
         run: |
-          # Use tee to show output in real-time while also capturing it
-          npx ts-node scripts/generate-matrix.ts 2>&1 | tee /dev/tty | {
-            REPORT=$(cat)
-            if [ $? -ne 0 ]; then
-              echo "Failed to generate report"
-              exit 1
-            fi
-            echo "report<<EOF" >> $GITHUB_OUTPUT
-            echo "$REPORT" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          }
+          # Run the script and split output: logs go to stderr, report to stdout
+          REPORT=$(npx ts-node scripts/generate-matrix.ts 2> >(tee /dev/stderr))
+          if [ $? -ne 0 ]; then
+            echo "Failed to generate report" >&2
+            exit 1
+          fi
+          # Only capture the actual report content for GitHub output
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          echo "$REPORT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Find Comment
         uses: peter-evans/find-comment@v2
