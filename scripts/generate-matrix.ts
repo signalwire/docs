@@ -64,9 +64,9 @@ const formatScoreComparison = (newScore: number, oldScore?: number): string => {
   }
   const diff = newScore - oldScore;
   log(`   📊 Score comparison: new=${newScore}, old=${oldScore}, diff=${diff.toFixed(1)}`);
-  if (diff > 0) return `${newScore}/100 (+${diff.toFixed(1)}) 🟢`;
-  if (diff < 0) return `${newScore}/100 (${diff.toFixed(1)}) 🔴`;
-  return `${newScore}/100 (=) ⚪`;
+  if (diff > 0) return `${newScore}/100<br>(+${diff.toFixed(1)}) 🟢`;
+  if (diff < 0) return `${newScore}/100<br>(${diff.toFixed(1)}) 🔴`;
+  return `${newScore}/100<br>(=) ⚪`;
 };
 
 // Helper function to format issue count comparison with logging
@@ -78,9 +78,9 @@ const formatIssueComparison = (newCount: number, oldCount?: number): string => {
   const diff = newCount - oldCount;
   log(`   📊 Issue comparison: new=${newCount}, old=${oldCount}, diff=${diff}`);
   // Note: For issues, fewer is better, so we invert the colors
-  if (diff > 0) return `${newCount} (+${diff}) 🔴`;
-  if (diff < 0) return `${newCount} (${diff}) 🟢`;
-  return `${newCount} (=) ⚪`;
+  if (diff > 0) return `${newCount}<br>(+${diff}) 🔴`;
+  if (diff < 0) return `${newCount}<br>(${diff}) 🟢`;
+  return `${newCount}<br>(=) ⚪`;
 };
 
 async function evaluateSpec(specPath: string, apiKey: string, retries = 3): Promise<{
