@@ -1,0 +1,358 @@
+---
+title: "Modal Integration"
+description: "Embed Click-to-Call in a modal dialog for a cleaner user experience"
+slug: /tools/c2c/guides/modal-integration
+---
+
+[c2c-intro]: /tools/c2c
+
+# Integrating Click-to-Call in a Modal Dialog
+
+This guide explains how to implement Click-to-Call within a modal dialog for a cleaner user experience. This approach allows your users to initiate calls without navigating away from their current page.
+
+## Why Use a Modal?
+
+Embedding your C2C widget in a modal offers several advantages:
+
+- **Improved UX**: Users can make calls without leaving their current context
+- **Clean interface**: The call interface appears only when needed
+- **Flexible positioning**: The modal can be centered or positioned anywhere on the screen
+- **Overlay background**: Helps focus the user's attention on the call
+- **Easy dismissal**: Users can close the modal to cancel the call process
+
+## Prerequisites
+
+Before implementing this solution, ensure you have:
+
+1. A SignalWire account and project
+2. Basic understanding of HTML, CSS, and JavaScript
+3. Familiarity with the [basic C2C setup][c2c-intro]
+
+## Implementation
+
+### Step 1: Prepare HTML Structure
+
+Create the necessary HTML structure for both the call button and the modal:
+
+```html
+<!-- Call button that will open the modal -->
+<button id="open-call-modal">Call Us Now</button>
+
+<!-- Modal container (hidden by default) -->
+<div id="call-modal" style="display: none;">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <button id="close-modal">×</button>
+    <h3>Call Us</h3>
+    
+    <!-- C2C button container -->
+    <div id="c2c-button-container"></div>
+    
+    <!-- C2C call container -->
+    <div id="c2c-call-container"></div>
+  </div>
+</div>
+```
+
+### Step 2: Style the Modal
+
+Add CSS to style your modal dialog:
+
+```css
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  width: 300px;
+}
+
+#close-modal {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+```
+
+### Step 3: Add Modal Toggle JavaScript
+
+Create functionality to open and close the modal:
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  const openModalBtn = document.getElementById('open-call-modal');
+  const closeModalBtn = document.getElementById('close-modal');
+  const modalOverlay = document.querySelector('.modal-overlay');
+  const callModal = document.getElementById('call-modal');
+  
+  // Open modal
+  openModalBtn.addEventListener('click', () => {
+    callModal.style.display = 'block';
+  });
+  
+  // Close modal (both X button and overlay click)
+  closeModalBtn.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', closeModal);
+  
+  function closeModal() {
+    callModal.style.display = 'none';
+  }
+});
+```
+
+### Step 4: Initialize C2C When Modal Opens
+
+Modify your C2C initialization to work with the modal:
+
+```javascript
+document.addEventListener('DOMContentLoaded', () => {
+  // Previous modal toggle code...
+  
+  const openModalBtn = document.getElementById('open-call-modal');
+  
+  // Initialize C2C when modal opens
+  openModalBtn.addEventListener('click', () => {
+    callModal.style.display = 'block';
+    
+    // Initialize C2C component
+    sw.c2c.spawn('C2CButton', {
+      destination: '/public/support',
+      buttonParentSelector: '#c2c-button-container',
+      callParentSelector: '#c2c-call-container',
+      
+      // Close modal when call ends
+      afterCallLeaveFn: () => {
+        setTimeout(() => {
+          callModal.style.display = 'none';
+        }, 1000); // Slight delay for a better user experience
+      }
+    });
+  });
+});
+```
+
+### Step 5: Handle Modal Close During Active Call
+
+Add code to properly handle closing the modal during an active call:
+
+```javascript
+function closeModal() {
+  // Check if there's an active call
+  const activeCall = document.querySelector('.phone-call-active');
+  
+  if (activeCall) {
+    // If a call is active, confirm before closing
+    if (confirm('Are you sure you want to end your call?')) {
+      // Find and click the hang-up button
+      const hangupBtn = document.querySelector('.phone-call-hangup');
+      if (hangupBtn) {
+        hangupBtn.click();
+      }
+      callModal.style.display = 'none';
+    }
+  } else {
+    // No active call, just close the modal
+    callModal.style.display = 'none';
+  }
+}
+```
+
+## Complete Example
+
+Here's a complete example combining all the code:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Click-to-Call Modal Example</title>
+  <style>
+    /* Modal styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1001;
+      width: 300px;
+    }
+    
+    #close-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    /* Button styling */
+    #open-call-modal {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    #open-call-modal:hover {
+      background-color: #0069d9;
+    }
+  </style>
+</head>
+<body>
+  <h1>My Website</h1>
+  
+  <!-- Call button that will open the modal -->
+  <button id="open-call-modal">Call Us Now</button>
+  
+  <!-- Modal container (hidden by default) -->
+  <div id="call-modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <button id="close-modal">×</button>
+      <h3>Call Us</h3>
+      
+      <!-- C2C button container -->
+      <div id="c2c-button-container"></div>
+      
+      <!-- C2C call container -->
+      <div id="c2c-call-container"></div>
+    </div>
+  </div>
+  
+  <!-- SignalWire C2C loader -->
+  <script>
+    (function(w, d, s, c2c, dc) {
+      const project = 'YOUR_PROJECT';
+      const token = 'YOUR_TOKEN';
+      
+      w['sw'] = w['sw'] || {};
+      const l = function() {
+        if (!w.sw.c2c) {
+          var s = d.createElement('script');
+          s.type = 'text/javascript';
+          s.async = true;
+          s.src = `https://${project}.signalwire.com/c2c/${token}/index.js`;
+          var x = d.getElementsByTagName('script')[0];
+          x.parentNode.insertBefore(s, x);
+        }
+      };
+      
+      if (typeof w.sw[c2c] !== 'object') {
+        w.sw[c2c] = {};
+      }
+      
+      if (w.attachEvent) {
+        w.attachEvent('onload', l);
+      } else {
+        w.addEventListener('load', l, false);
+      }
+    })(window, document, 'script', 'c2c', 'sw');
+  </script>
+  
+  <!-- Modal and C2C initialization -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const openModalBtn = document.getElementById('open-call-modal');
+      const closeModalBtn = document.getElementById('close-modal');
+      const modalOverlay = document.querySelector('.modal-overlay');
+      const callModal = document.getElementById('call-modal');
+      
+      // Open modal and initialize C2C
+      openModalBtn.addEventListener('click', () => {
+        callModal.style.display = 'block';
+        
+        // Initialize C2C component if not already initialized
+        if (!window.sw.c2cInitialized) {
+          sw.c2c.spawn('C2CButton', {
+            destination: '/public/support',
+            buttonParentSelector: '#c2c-button-container',
+            callParentSelector: '#c2c-call-container',
+            
+            // Close modal when call ends
+            afterCallLeaveFn: () => {
+              setTimeout(() => {
+                callModal.style.display = 'none';
+              }, 1000);
+            }
+          });
+          
+          window.sw.c2cInitialized = true;
+        }
+      });
+      
+      // Close modal (both X button and overlay click)
+      closeModalBtn.addEventListener('click', closeModal);
+      modalOverlay.addEventListener('click', closeModal);
+      
+      function closeModal() {
+        // Check if there's an active call
+        const activeCall = document.querySelector('.phone-call-active');
+        
+        if (activeCall) {
+          // If a call is active, confirm before closing
+          if (confirm('Are you sure you want to end your call?')) {
+            // Find and click the hang-up button
+            const hangupBtn = document.querySelector('.phone-call-hangup');
+            if (hangupBtn) {
+              hangupBtn.click();
+            }
+            callModal.style.display = 'none';
+          }
+        } else {
+          // No active call, just close the modal
+          callModal.style.display = 'none';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+```
+
+## Considerations
+
+1. **Multiple Modals**: If your site has multiple C2C buttons opening the same modal, make sure to track initialization state to avoid duplicating components.
+
+2. **Responsive Design**: Adjust the modal width and styling for mobile devices.
+
+3. **Accessibility**: Ensure your modal is keyboard accessible and follows accessibility best practices.
+
+4. **Call State Management**: The example includes basic call state management, but you might need more sophisticated handling for complex applications.
