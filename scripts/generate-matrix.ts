@@ -150,6 +150,11 @@ async function main() {
       process.exit(1);
     }
 
+    // Get PR info from GitHub environment
+    const prNumber = process.env.GITHUB_EVENT_NUMBER || '';
+    const repo = process.env.GITHUB_REPOSITORY || '';
+    const sha = process.env.GITHUB_SHA || '';
+
     // Generate the report table
     let reportContent = "# OpenAPI Specification Analysis\n\n";
     reportContent += "| Spec | Docs | Completeness | SDK Gen | Security | Overall | Warnings | Errors | Report |\n";
@@ -162,10 +167,16 @@ async function main() {
       
       try {
         const results = await evaluateSpec(spec.path, apiKey);
-        reportContent += `| [\`${relativePath}\`](${spec.path}) | ${results.docsScore}/100 | ${results.completenessScore}/100 | ${results.sdkScore}/100 | ${results.securityScore}/100 | ${results.overallScore}/100 | ${results.warnings} | ${results.errors} | [View](${results.reportUrl}) |\n`;
+        
+        // Construct GitHub blob URL
+        const fileUrl = sha ? 
+          `https://github.com/${repo}/blob/${sha}/${relativePath}` :
+          relativePath;
+
+        reportContent += `| [\`${relativePath}\`](${fileUrl}) | ${results.docsScore}/100 | ${results.completenessScore}/100 | ${results.sdkScore}/100 | ${results.securityScore}/100 | ${results.overallScore}/100 | ${results.warnings} | ${results.errors} | [View](${results.reportUrl}) |\n`;
       } catch (error) {
         log(`   ❌ Failed to process spec: ${relativePath}`);
-        reportContent += `| [\`${relativePath}\`](${spec.path}) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Failed to process |\n`;
+        reportContent += `| [\`${relativePath}\`](${relativePath}) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Failed to process |\n`;
       }
       
       // Add delay between requests to avoid rate limiting
