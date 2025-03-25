@@ -1,0 +1,1 @@
+Test add file to /api/ directory, which should trigger the RateMyApi workflow
