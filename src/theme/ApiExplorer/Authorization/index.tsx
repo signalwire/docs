@@ -5,6 +5,7 @@ import FormSelect from "@theme/ApiExplorer/FormSelect";
 import FormTextInput from "@theme/ApiExplorer/FormTextInput";
 import { useTypedDispatch, useTypedSelector } from "@theme/ApiItem/hooks";
 
+
 import { setAuthData, setSelectedAuth } from "./slice";
 
 function Authorization() {

@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import TOC from "@docusaurus/theme-classic/lib/theme/TOC";
 import { TOCHighlightConfig } from "@docusaurus/theme-common/internal";
-import type { TOCItem } from '@docusaurus/mdx-loader';
+// @ts-ignore
+import type {TOCItem} from '@docusaurus/mdx-loader';
 import clsx from 'clsx';
 import styles from '../../styles.module.css';
 import { AllHeaders, ArticleHeader, GroupedArticles } from "types/articles";
