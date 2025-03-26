@@ -5,6 +5,7 @@ import FormSelect from "@theme/ApiExplorer/FormSelect";
 import FormTextInput from "@theme/ApiExplorer/FormTextInput";
 import { useTypedDispatch, useTypedSelector } from "@theme/ApiItem/hooks";
 
+
 import { setAuthData, setSelectedAuth } from "./slice";
 
 function Authorization() {
@@ -97,9 +98,9 @@ function Authorization() {
                   }}
                 />
               </FormItem>
-              <FormItem label="API key">
+              <FormItem label="API Token">
                 <FormTextInput
-                  placeholder="API key"
+                  placeholder="API Token"
                   password
                   value={data[a.key].password ?? ""}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
