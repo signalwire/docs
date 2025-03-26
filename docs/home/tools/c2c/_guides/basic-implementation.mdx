@@ -1,0 +1,375 @@
+---
+title: "Basic Implementation Guide"
+description: "Step-by-step guide to implementing SignalWire Click-to-Call in a basic HTML page"
+sidebar_position: 0
+slug: /tools/c2c/guides/basic-implementation
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+[dashboard]: https://my.signalwire.com
+[dashboard-c2c]: https://my.signalwire.com?page=click_to_calls
+[c2c-reference]: /tools/c2c/technical-reference
+[callbacks-guide]: /tools/c2c/guides/working-with-callbacks
+[custom-button-guide]: /tools/c2c/guides/custom-button
+[modal-guide]: /tools/c2c/guides/modal-integration
+
+## Introduction
+
+This guide demonstrates how to implement SignalWire Click-to-Call in a basic HTML website. We'll start with a simple website template and progressively add the C2C components until we have a fully functional implementation.
+
+By the end of this guide, you'll have:
+- A visual understanding of how C2C integrates into a webpage
+- A functional demo of C2C you can use as a template
+- Clear steps to follow for your own implementation
+
+## Starting Point: Basic Website Template
+
+Let's begin with a basic website without any Click-to-Call functionality. This represents your existing website before adding C2C capabilities:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalWire Click-to-Call Demo</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Base Website Styles -->
+    <style>
+        /*
+        * SignalWire Click-to-Call Demo - Minimal Styling
+        */
+
+        :root {
+            --sw-pink: #f72a72;
+            --sw-blue: #044ef4;
+            --sw-dark: #070c2d;
+            --sw-gradient: linear-gradient(to right, var(--sw-pink), var(--sw-blue));
+        }
+
+        /* Core styles */
+        body {
+            background-color: var(--sw-dark);
+            background-image: linear-gradient(to bottom, rgba(40, 0, 0, 0.4), transparent), 
+                            url('https://raw.githubusercontent.com/signalwire/docs/refs/heads/main/static/img/stardust.png');
+            background-repeat: no-repeat, repeat;
+            background-size: 100% 100%, 300px 300px;
+            color: white;
+        }
+
+        /* Glass effect used throughout */
+        .sw-glass {
+            background-color: rgba(12, 19, 57, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* Header styling */
+        header.navbar {
+            border-bottom: 2px solid transparent;
+            border-image: var(--sw-gradient) 1;
+            border-image-slice: 0 0 1 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with SignalWire logo -->
+    <header class="navbar navbar-dark sw-glass border-bottom py-3">
+        <div class="container">
+            <a class="navbar-brand" href="https://signalwire.com" target="_blank">
+                <img src="https://raw.githubusercontent.com/signalwire/docs/10096406ad91fad1c54457ee9c0cd773508eb6d6/static/img/logo-dark.svg" alt="SignalWire Logo" height="40">
+            </a>
+            <div>
+                <a class="text-white text-decoration-none me-3" href="https://developer.signalwire.com" target="_blank">Documentation</a>
+                <a class="text-white text-decoration-none" href="https://github.com/signalwire" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="container py-5">
+        <!-- Header section -->
+        <div class="text-center py-4 rounded sw-glass mb-4">
+            <h1 class="display-5 fw-bold text-light">Click-to-Call Demo</h1>
+            <p class="lead text-light mx-auto" style="max-width: 700px;">Click-to-Call enables visitors to instantly connect with your business through voice calls directly from your website.</p>
+        </div>
+        
+        <!-- Demo Section -->
+        <div class="p-4 rounded sw-glass text-light">
+            <h2 class="mb-4">Live Example</h2>
+            
+            <!-- This section will contain our C2C components -->
+            <p class="text-center text-muted">Click-to-Call components will be added here</p>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+This template provides a clean, modern design that we'll use to showcase the Click-to-Call functionality. It uses Bootstrap for basic layout and includes some custom styling to create a SignalWire-branded appearance.
+
+<Steps>
+## Add Container Elements
+
+The first step in implementing Click-to-Call is to add the two required container elements:
+- A container for the call button
+- A container for the call interface
+
+Let's add these elements to our demo section:
+
+```html
+<!-- Demo Section -->
+<div class="p-4 rounded sw-glass text-light">
+    <h2 class="mb-4">Live Example</h2>
+
+    <!-- Click-to-Call elements -->
+    <div id="click2call" class="d-flex justify-content-center mb-4"></div>
+    <div id="call" class="rounded sw-call-container"></div>
+</div>
+```
+
+Note the specific IDs assigned to these elements:
+- `id="click2call"` - This is where the call button will appear
+- `id="call"` - This is where the call interface will be displayed when a call is active
+
+We've also added some Bootstrap classes for positioning and a custom class `sw-call-container` that we'll define in the next step.
+
+## Add Styling for C2C Components
+
+Now we need to add CSS styling to make our C2C components look good. Add the following to your stylesheet:
+
+```css
+/* Click-to-Call button */
+#click2call button {
+    background: var(--sw-gradient);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    border-radius: 50px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(247, 42, 114, 0.3);
+    transition: all 0.3s ease;
+}
+
+#click2call button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(247, 42, 114, 0.4);
+}
+
+/* Call container */
+.sw-call-container {
+    min-height: 300px;
+    background-color: rgba(12, 19, 57, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+```
+
+This styling:
+- Gives the button a gradient background matching SignalWire's brand colors
+- Adds a subtle hover effect to make the button more interactive
+- Creates a container for the call interface with appropriate dimensions and background
+
+## Add the Click-to-Call Script
+
+Now it's time to add the Click-to-Call script to our website. This involves two parts:
+
+1. Loading the C2C library
+2. Configuring and initializing the C2C widget
+
+### Get Your Script from the Dashboard
+
+First, you'll need to create a Click-to-Call widget in your SignalWire Dashboard:
+
+1. Log in to your [SignalWire Dashboard][dashboard]
+2. Navigate to [Tools > Click To Call][dashboard-c2c]
+3. Configure your widget settings and create it
+4. Copy the generated script
+
+The script will look something like this (with your unique API key):
+
+```html
+<script>
+(a => {
+  // Minified initialization code...
+})({ apiKey: "c2c_YOUR_UNIQUE_API_KEY", v: "0.0.1" });
+
+// Widget configuration
+sw.c2c.spawn('C2CButton', {
+  destination: '/private/example',
+  buttonParentSelector: '#click2call',
+  callParentSelector: '#call',
+});
+</script>
+```
+
+### Add the Script to Your Website
+
+Place the script in your HTML file's `<head>` section, replacing the placeholder script tag:
+
+```html
+<!-- Before: -->
+<script src="/js/signalwire-c2c.js"></script>
+
+<!-- After: -->
+<script>
+(a => {
+  // Minified initialization code...
+})({ apiKey: "c2c_YOUR_UNIQUE_API_KEY", v: "0.0.1" });
+
+// Widget configuration
+sw.c2c.spawn('C2CButton', {
+  destination: '/private/example',
+  buttonParentSelector: '#click2call',
+  callParentSelector: '#call',
+});
+</script>
+```
+
+:::warning
+Always use the script generated from your own dashboard with your unique API key. The example above is for illustrative purposes only.
+:::
+</Steps>
+
+## Complete Implementation
+
+With all the pieces in place, here's the complete implementation of the Click-to-Call demo:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalWire Click-to-Call Demo</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Base Website Styles -->
+    <style>
+        /*
+        * SignalWire Click-to-Call Demo - Minimal Styling
+        */
+
+        :root {
+            --sw-pink: #f72a72;
+            --sw-blue: #044ef4;
+            --sw-dark: #070c2d;
+            --sw-gradient: linear-gradient(to right, var(--sw-pink), var(--sw-blue));
+        }
+
+        /* Core styles */
+        body {
+            background-color: var(--sw-dark);
+            background-image: linear-gradient(to bottom, rgba(40, 0, 0, 0.4), transparent), 
+                            url('https://raw.githubusercontent.com/signalwire/docs/refs/heads/main/static/img/stardust.png');
+            background-repeat: no-repeat, repeat;
+            background-size: 100% 100%, 300px 300px;
+            color: white;
+        }
+
+        /* Glass effect used throughout */
+        .sw-glass {
+            background-color: rgba(12, 19, 57, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* Header styling */
+        header.navbar {
+            border-bottom: 2px solid transparent;
+            border-image: var(--sw-gradient) 1;
+            border-image-slice: 0 0 1 0;
+            width: 100%;
+        }
+
+        /* Click-to-Call button */
+        #click2call button {
+            background: var(--sw-gradient);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(247, 42, 114, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        #click2call button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(247, 42, 114, 0.4);
+        }
+
+        /* Call container */
+        .sw-call-container {
+            min-height: 300px;
+            background-color: rgba(12, 19, 57, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+    
+    <!-- Click-to-Call Script - Replace with your own from the dashboard -->
+    <script>
+    (a => {
+      // Minified initialization code - This will be provided by your dashboard
+    })({ apiKey: "c2c_YOUR_UNIQUE_API_KEY", v: "0.0.1" });
+
+    // Widget configuration
+    sw.c2c.spawn('C2CButton', {
+      destination: '/private/example',
+      buttonParentSelector: '#click2call',
+      callParentSelector: '#call',
+    });
+    </script>
+</head>
+<body>
+    <!-- Header with SignalWire logo -->
+    <header class="navbar navbar-dark sw-glass border-bottom py-3">
+        <div class="container">
+            <a class="navbar-brand" href="https://signalwire.com" target="_blank">
+                <img src="https://raw.githubusercontent.com/signalwire/docs/10096406ad91fad1c54457ee9c0cd773508eb6d6/static/img/logo-dark.svg" alt="SignalWire Logo" height="40">
+            </a>
+            <div>
+                <a class="text-white text-decoration-none me-3" href="https://developer.signalwire.com" target="_blank">Documentation</a>
+                <a class="text-white text-decoration-none" href="https://github.com/signalwire" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="container py-5">
+        <!-- Header section -->
+        <div class="text-center py-4 rounded sw-glass mb-4">
+            <h1 class="display-5 fw-bold text-light">Click-to-Call Demo</h1>
+            <p class="lead text-light mx-auto" style="max-width: 700px;">Click-to-Call enables visitors to instantly connect with your business through voice calls directly from your website.</p>
+        </div>
+        
+        <!-- Demo Section -->
+        <div class="p-4 rounded sw-glass text-light">
+            <h2 class="mb-4">Live Example</h2>
+
+            <!-- Click-to-Call elements -->
+            <div id="click2call" class="d-flex justify-content-center mb-4"></div>
+            <div id="call" class="rounded sw-call-container"></div>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+For a complete reference of all available configuration options,
+see the [Technical Reference][c2c-reference].

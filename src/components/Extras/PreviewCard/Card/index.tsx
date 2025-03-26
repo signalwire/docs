@@ -41,16 +41,19 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
     }
   }, [expandable]);
 
+
   const handleClose = useCallback(() => {
     setIsModalOpen(false);
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+ Devon/prompt-engineering
     if (expandable && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       setIsModalOpen(true);
     }
   }, [expandable]);
+
 
   // Memoize the rendered content
   const renderedContent = useMemo(() => {

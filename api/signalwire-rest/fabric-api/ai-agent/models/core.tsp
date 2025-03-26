@@ -40,8 +40,8 @@ model AIAgent {
   @doc("An array of JSON objects defining supported languages in the conversation.")
   languages?: Languages[];
 
-  @doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
-  SWAIG?: SWAIG[];
+  @doc("A JSON object to create user-defined functions/endpoints that can be executed during the dialogue.")
+  SWAIG?: SWAIG;
 }
 
 model AIAgentWithID {
