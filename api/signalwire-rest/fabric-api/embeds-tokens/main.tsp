@@ -15,6 +15,7 @@ namespace FabricAPI.EmbedsTokens {
     @friendlyName("Embeds Tokens")
     interface EmbedsTokens {
         @summary("Create Embeds Tokens")
+        @doc("Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.")
         @post
         create(@body body: EmbedsTokensRequest):
         { @statusCode statusCode: 201; @body subscriber: EmbedsTokensResponse; } |
