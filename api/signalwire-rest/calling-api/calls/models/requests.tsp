@@ -43,7 +43,7 @@ model CallCreateParamsBase {
 }
 
 @summary("Create a call with a URL")
-model CallCreateParamsURL extends CallCreateParamsBase {
+model CallCreateParamsURL is CallCreateParamsBase {
     
     @doc("""
         The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
@@ -55,7 +55,7 @@ model CallCreateParamsURL extends CallCreateParamsBase {
 }
 
 @summary("Create a call with SWML") 
-model CallCreateParamsSWML extends CallCreateParamsBase {
+model CallCreateParamsSWML is CallCreateParamsBase {
     
     @doc("Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
     @example(CallSWMLExample)
@@ -83,7 +83,7 @@ model CallUpdateParamsBase {
 
 
 @summary("Update a call with SWML") 
-model CallUpdateParamsSWML extends CallUpdateParamsBase {
+model CallUpdateParamsSWML is CallUpdateParamsBase {
     
     @doc("Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
     @example(CallSWMLExample)
@@ -91,7 +91,7 @@ model CallUpdateParamsSWML extends CallUpdateParamsBase {
 }
 
 @summary("Update a call with a URL")
-model CallUpdateParamsURL extends CallUpdateParamsBase {
+model CallUpdateParamsURL is CallUpdateParamsBase {
     
     @doc("""
         The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.

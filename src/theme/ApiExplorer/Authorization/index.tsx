@@ -1,8 +1,12 @@
 import React from "react";
 
+// @ts-ignore
 import FormItem from "@theme/ApiExplorer/FormItem";
+// @ts-ignore
 import FormSelect from "@theme/ApiExplorer/FormSelect";
+// @ts-ignore
 import FormTextInput from "@theme/ApiExplorer/FormTextInput";
+// @ts-ignore
 import { useTypedDispatch, useTypedSelector } from "@theme/ApiItem/hooks";
 
 
