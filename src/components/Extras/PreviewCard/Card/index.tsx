@@ -9,6 +9,7 @@ export interface PreviewCardProps {
   children: ReactNode;
   className?: string;
   thumbnail?: ReactNode;
+  expandable?: boolean;
 }
 
 const CardMetadata = React.memo<{ title?: string; description?: string }>(({ title, description }) => {
@@ -30,23 +31,29 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
   children,
   className,
   thumbnail,
+  expandable = true,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpen = useCallback(() => {
-    setIsModalOpen(true);
-  }, []);
+    if (expandable) {
+      setIsModalOpen(true);
+    }
+  }, [expandable]);
+
 
   const handleClose = useCallback(() => {
     setIsModalOpen(false);
   }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+ Devon/prompt-engineering
+    if (expandable && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       setIsModalOpen(true);
     }
-  }, []);
+  }, [expandable]);
+
 
   // Memoize the rendered content
   const renderedContent = useMemo(() => {
@@ -79,18 +86,24 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
   }, [children, thumbnail]);
 
   const cardTitle = title || 'Preview content';
-  const ariaLabel = `${cardTitle}. Click to open an expanded view of the content.`;
+  const ariaLabel = expandable 
+    ? `${cardTitle}. Click to open an expanded view of the content.`
+    : cardTitle;
 
   return (
     <>
       <div 
-        className={clsx(styles.previewCard, className)}
+        className={clsx(
+          styles.previewCard, 
+          className,
+          !expandable && styles.notExpandable
+        )}
         onClick={handleOpen}
-        role="button"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
+        role={expandable ? "button" : undefined}
+        tabIndex={expandable ? 0 : undefined}
+        onKeyDown={expandable ? handleKeyDown : undefined}
         aria-label={ariaLabel}
-        title="Click to open an expanded view of the content"
+        title={expandable ? "Click to open an expanded view of the content" : undefined}
       >
         <div className={styles.previewCardItemContent}>
           {renderedContent.preview}
@@ -98,12 +111,14 @@ const PreviewCard: React.FC<PreviewCardProps> = React.memo(({
         </div>
       </div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleClose}
-      >
-        {renderedContent.modal}
-      </Modal>
+      {expandable && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={handleClose}
+        >
+          {renderedContent.modal}
+        </Modal>
+      )}
     </>
   );
 });
