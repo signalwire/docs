@@ -144,3 +144,9 @@ Contact Support via the [SignalWire Support Portal](https://support.signalwire.c
 [prs-issues-guide]: https://github.com/signalwire/signalwire-docs/wiki/Guidelines-to-Pull-Request-and-Issues
 [style-guide]: https://github.com/signalwire/signalwire-docs/wiki/Style-Guidelines
 [prs-deploy]: https://github.com/signalwire/signalwire-docs/wiki/Contributing-to-the-signalwire%E2%80%90docs-repository
+
+---
+
+## Star History
+
+![Star History Chart](https://api.star-history.com/svg?repos=signalwire/docs&type=Date)
