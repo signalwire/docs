@@ -269,6 +269,157 @@ components:
           type: string
         prev:
           type: string
+    RecordingListResponse:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecordingResponse'
+        links:
+          $ref: '#/components/schemas/RecordingPaginationResponse'
+    RecordingPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+        - next
+      properties:
+        self:
+          type: string
+          format: uri
+          example: https://{space_name}.signalwire.com/api/relay/rest/recordings?page_number=0&page_size=50
+          description: Link of the current page
+        first:
+          type: string
+          format: uri
+          example: https://{space_name}.signalwire.com/api/relay/rest/recordings?page_number=0&page_size=50
+          description: Link to the first page
+        next:
+          type: string
+          format: uri
+          example: https://{space_name}.signalwire.com/api/relay/rest/recordings?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+          description: Link to the next page
+    RecordingResponse:
+      oneOf:
+        - type: object
+          title: PSTN
+          required:
+            - relay_pstn_leg_id
+          properties:
+            relay_pstn_leg_id:
+              type: string
+              format: uuid
+              description: ID of the PSTN leg associated with the recording.
+        - type: object
+          title: SIP
+          required:
+            - relay_sip_leg_id
+          properties:
+            relay_sip_leg_id:
+              type: string
+              format: uuid
+              description: ID of the SIP leg associated with the recording.
+        - type: object
+          title: WebRTC
+          required:
+            - relay_webrtc_leg_id
+          properties:
+            relay_webrtc_leg_id:
+              type: string
+              format: uuid
+              description: ID of the WebRTC leg associated with the recording.
+      allOf:
+        - type: object
+          required:
+            - id
+            - project_id
+            - created_at
+            - updated_at
+            - duration_in_seconds
+            - error_code
+            - price
+            - price_unit
+            - status
+            - url
+            - stereo
+            - byte_size
+            - track
+          properties:
+            id:
+              type: string
+              example: d369a402-7b43-4512-8735-9d5e1f387814
+              description: Unique ID of the recording.
+            project_id:
+              type: string
+              example: d369a402-7b43-4512-8735-9d5e1f387814
+              description: Unique ID of the project.
+            created_at:
+              type: string
+              format: date-time
+              example: 2024-10-17T14:14:53Z
+              description: Date and time when the recording was created.
+            updated_at:
+              type: string
+              format: date-time
+              example: 2024-10-17T14:14:53Z
+              description: Date and time when the recording was last updated.
+            duration_in_seconds:
+              type: integer
+              format: int32
+              example: 2
+              description: Duration of the recording in seconds.
+            error_code:
+              type: string
+              nullable: true
+              example: null
+              description: Error code if the recording failed.
+            price:
+              type: number
+              example: 0.05
+              description: Price of the recording.
+            price_unit:
+              type: string
+              example: USD
+              description: Currency unit for the price.
+            status:
+              type: string
+              example: completed
+              description: Status of the recording.
+            url:
+              type: string
+              format: uri
+              example: https://example.com/recording.mp3
+              description: URL of the recording file.
+            stereo:
+              type: boolean
+              example: false
+              description: Indicates whether the recording is stereo.
+            byte_size:
+              type: integer
+              format: int32
+              nullable: true
+              example: 10
+              description: Size of the recording file in bytes.
+            track:
+              type: string
+              example: inbound
+              description: Audio track of the recording.
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
+  parameters:
+    RecordingPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of a Recording.
+      schema:
+        $ref: '#/components/schemas/uuid'
     
 tags:
   - name: Addresses
@@ -278,6 +429,7 @@ tags:
   - name: Number Group Membership
   - name: Phone Numbers
   - name: Phone Number Lookup
+  - name: Recordings
   - name: Signalwire Access Tokens
   - name: SIP Endpoints
   - name: SIP Profile
@@ -9643,3 +9795,90 @@ paths:
                           caller ID. Current values are "Verified" and "Awaiting
                           Verification"
                         example: Awaiting Verification
+  /recordings:
+    get:
+      operationId: Recordings_list
+      summary: List Relay Recordings
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+      tags:
+        - Recordings
+  /recordings/{id}:
+    get:
+      operationId: Recordings_get
+      summary: Get Relay Recording
+      parameters:
+        - $ref: '#/components/parameters/RecordingPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+      tags:
+        - Recordings
+    delete:
+      operationId: Recordings_delete
+      summary: Delete Relay Recording
+      parameters:
+        - $ref: '#/components/parameters/RecordingPathID'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+      tags:
+        - Recordings

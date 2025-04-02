@@ -55,6 +55,7 @@ git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples &&
    - Configure any additional settings as needed
 5. Click "Create Widget" to generate your custom script
 
+
 ### 3. Add the Widget to Your Website
 
 1. Copy the generated script from the SignalWire Dashboard
@@ -69,6 +70,7 @@ git clone --sparse https://github.com/signalwire/docs.git SignalWire-Examples &&
    <div id="click2call"></div>
    <div id="call"></div>
    ```
+
 
 ### 4. Deploy the site
 
