@@ -28,7 +28,11 @@ Once you have created a Resource, you can use the address to interact with it wi
 Additionally, you can view the created resource in the `Resources` tab of the SignalWire Dashboard.
 Here, you can view the address, type, and other details of the resource.
 
-<figure>
-  <img src={require("/docs/_common/call-fabric/created-resources.webp").default} alt="Picture showing the Resources Page on the SignalWire Dashboard. Two resources are created and shown in the list: 'Subscriber' and a `SWML Script'." />
-  <figcaption>List of Resources</figcaption>
-</figure>
+<Frame
+  
+  caption="The filterable Resources list in the SignalWire Dashboard."
+  >
+
+  ![The Resources page of the SignalWire Dashboard.](@image/dashboard/resources.webp)
+
+</Frame>

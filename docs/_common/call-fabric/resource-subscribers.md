@@ -1,10 +1,30 @@
-Subscribers represent **registered end-users** within the Call Fabric paradigm.
-In other words, subscribers are internal account-holders.
-As such, they always use the `private` context.
+<div 
+  className="row">
 
-Subscribers are the focal points of communication, capable of receiving or initiating calls, messages, and other forms of interaction.
-The system facilitates smooth transitions between different communication modes,
-such as switching from a voice call to a video conference, or from a text chat to a voice call.
+  <div 
+    className="col col--6">
 
-This offers a seamless user experience by allowing easy switching between different communication channels,
-and improves accessibility and convenience by catering to the preferences and needs of different users.
+    Subscribers represent **registered end-users**, 
+    or internal account-holders, 
+    within the Call Fabric paradigm.
+    
+    Subscribers always use the `private` [context](#contexts) by default, though `public` Aliases can be added.
+
+    Subscribers can receive or initiate calls, messages, and other forms of interaction.
+    
+    The SignalWire platform facilitates smooth transitions between different communication modes,
+    such as switching from a voice call to a video conference, or from a text chat to a voice call.
+
+  </div>
+
+  <div 
+    className="col col--6">
+
+    <Frame 
+      caption="Viewing details for a Subscriber in the Resources tab of the SignalWire Dashboard.">
+      ![Subscribers](@image/dashboard/resources/subscriber.webp)
+    </Frame>
+
+  </div>
+
+</div>
