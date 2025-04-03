@@ -93,7 +93,7 @@ model Chunk {
 model DatasphereChunk {
   @doc("Unique ID of the chunk.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
-  id: string;
+  id: uuid;
 
   @doc("Unique ID of the chunk's datasphere document.'")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
@@ -101,7 +101,7 @@ model DatasphereChunk {
 
   @doc("Unique ID of the project.")
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
-  project_id: string;
+  project_id: uuid;
 
   @doc("Status of the chunk.")
   @example(ChunkStatus.InProgress)
