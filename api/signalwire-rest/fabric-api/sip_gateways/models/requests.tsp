@@ -1,9 +1,9 @@
 model SipGatewayCreateRequest {
   @doc("Display name for the SIP Gateway.")
-  @example("Different SIP Endpoint Name")
+  @example("My SIP Gateway")
   name: string;
 
-  @doc("SIP URI for the endpoint.")
+  @doc("External SIP URI.")
   @example("user2@domain.com")
   uri: string;
 

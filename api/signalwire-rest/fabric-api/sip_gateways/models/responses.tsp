@@ -13,7 +13,7 @@ model SipGatewayCreateResponse {
   project_id: string;
 
   @doc("Display name of the SIP Gateway.")
-  @example("Different SIP Endpoint Name")
+  @example("My SIP Gateway")
   display_name: string;
 
   @doc("Type of the resource.")
@@ -40,12 +40,12 @@ model SipGateway {
   @example("cce59cad-104d-4c28-ada4-98cfd102ae09")
   id: string;
 
-  @doc("SIP URI for the endpoint.")
+  @doc("The URI for the SIP Gateway.")
   @example("user3@domain.com")
   uri: string;
 
   @doc("Display name of the SIP Gateway.")
-  @example("Different SIP Endpoint Name")
+  @example("My SIP Gateway")
   name: string;
 
   @doc("List of supported SIP ciphers.")

@@ -30,7 +30,7 @@ namespace FabricAPI.SipGateways {
       StatusCode404;
 
     @summary("Create SIP Gateway")
-    @doc("Creates a Subscriber Guest Token to be used for server-side API calls. The token is authorized using an existing API token.")
+    @doc("Creates a SIP Gateway that can be used to dial external SIP entities.")
     @post create(...SipGatewayCreateRequest):
       { @statusCode statusCode: 201; @body sip_gateway: SipGatewayCreateResponse; } |
       StatusCode401 |
@@ -40,7 +40,7 @@ namespace FabricAPI.SipGateways {
     @summary("Update SIP Gateway")
     @doc("Updates a SIP Gateway by ID")
     @patch update(...SipGatewayID, ...SipGatewayUpdateRequest): {
-      @statusCode statusCode: 200; @body cxml_application: SipGatewayUpdateResponse;
+      @statusCode statusCode: 200; @body sip_gateway: SipGatewayUpdateResponse;
     } |
       StatusCode401 |
       StatusCode404 |
