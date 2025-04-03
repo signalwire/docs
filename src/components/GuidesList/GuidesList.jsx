@@ -57,7 +57,12 @@ function GuideCardWrapper({ item }) {
         )}
 
         <div style={{ marginTop: 10, opacity: 0.9 }}>
-          {item.type === "category" && `${item.items.length} items`}
+          {item.type === "category" && (
+            <>
+              {item.description && <p>{item.description}</p>}
+              <div>{`${item.items.length} items`}</div>
+            </>
+          )}
         </div>
 
         <div style={{ marginTop: 8, display: "flex", gap: "12px", alignItems: "center" }}>
