@@ -53,3 +53,34 @@ namespace DatasphereAPI.Documents {
       SearchStatusCode422;
     }
 }
+
+namespace DatasphereAPI.Chunks {
+  @route("/documents/{documentId}/chunks")
+  @tag("Chunks")
+  @friendlyName("Chunks")
+
+  interface Chunks {
+    @doc("A list of chunks for a Datasphere Document.")
+    @summary("List Chunks")
+    list(...DocumentPathID):
+      ChunkListResponse |
+      StatusCode401 |
+      StatusCode404;
+
+    @doc("Retrieves a specific chunk for a Datasphere Document by ID.")
+    @summary("Retrieve Chunk")
+    @route("/{chunkId}")
+    get(...ChunkPathID):
+      ChunkResponse |
+      StatusCode401 |
+      StatusCode404;
+
+    @doc("Deletes a specific chunk for a Datasphere Document by ID.")
+    @summary("Delete Chunk")
+    @route("/{chunkId}")
+    @delete delete(...ChunkPathID):
+      { @statusCode statusCode: 204; } |
+      StatusCode401 |
+      StatusCode404;
+    }
+}
