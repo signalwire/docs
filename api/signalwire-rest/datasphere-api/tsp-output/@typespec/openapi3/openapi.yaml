@@ -5,6 +5,7 @@ info:
   version: 0.0.0
 tags:
   - name: Documents
+  - name: Chunks
 paths:
   /documents:
     get:
@@ -124,6 +125,99 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentSearchRequest'
+  /documents/{documentId}/chunks:
+    get:
+      operationId: Chunks_list
+      summary: List Chunks
+      description: A list of chunks for a Datasphere Document.
+      parameters:
+        - $ref: '#/components/parameters/DocumentPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChunkListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+      tags:
+        - Chunks
+  /documents/{documentId}/chunks/{chunkId}:
+    get:
+      operationId: Chunks_get
+      summary: Retrieve Chunk
+      description: Retrieves a specific chunk for a Datasphere Document by ID.
+      parameters:
+        - $ref: '#/components/parameters/ChunkPathID.documentId'
+        - $ref: '#/components/parameters/ChunkPathID.chunkId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChunkResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+      tags:
+        - Chunks
+    delete:
+      operationId: Chunks_delete
+      summary: Delete Chunk
+      description: Deletes a specific chunk for a Datasphere Document by ID.
+      parameters:
+        - $ref: '#/components/parameters/ChunkPathID.documentId'
+        - $ref: '#/components/parameters/ChunkPathID.chunkId'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+      tags:
+        - Chunks
   /documents/{id}:
     patch:
       operationId: Documents_update
@@ -199,6 +293,27 @@ security:
   - BasicAuth: []
 components:
   parameters:
+    ChunkPathID.chunkId:
+      name: chunkId
+      in: path
+      required: true
+      description: Unique ID of a Chunk.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    ChunkPathID.documentId:
+      name: documentId
+      in: path
+      required: true
+      description: Unique ID of the parent Document.
+      schema:
+        $ref: '#/components/schemas/docid'
+    DocumentPathID:
+      name: documentId
+      in: path
+      required: true
+      description: Unique ID of the Document.
+      schema:
+        $ref: '#/components/schemas/docid'
     PathID:
       name: id
       in: path
@@ -215,13 +330,101 @@ components:
       properties:
         text:
           type: string
-          example: Cristiano Ronaldo is the highest-paid football player in the world in 2024
           description: A search result.
+          example: Cristiano Ronaldo is the highest-paid football player in the world in 2024
         document_id:
           allOf:
             - $ref: '#/components/schemas/docid'
-          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
           description: Unique ID of the Document.
+          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
+    ChunkListResponse:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChunkResponse'
+        links:
+          $ref: '#/components/schemas/ChunkPaginationResponse'
+    ChunkPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+        - next
+      properties:
+        self:
+          type: string
+          format: uri
+          description: Link of the current page
+          example: https://{space_name}.signalwire.com/api/data_sphere/documents/document_id={document_id}/chunks?page_number=0&page_size=50
+        first:
+          type: string
+          format: uri
+          description: Link to the first page
+          example: https://{space_name}.signalwire.com/api/data_sphere/documents/document_id={document_id}/chunks?page_number=0&page_size=50
+        next:
+          type: string
+          format: uri
+          description: Link to the next page
+          example: https://{space_name}.signalwire.com/api/data_sphere/documents/document_id={document_id}/chunks?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+    ChunkResponse:
+      type: object
+      required:
+        - id
+        - datasphere_document_id
+        - project_id
+        - status
+        - tags
+        - content
+        - created_at
+        - updated_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the chunk.
+          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
+        datasphere_document_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the chunk's datasphere document.
+          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Unique ID of the project.
+          example: d369a402-7b43-4512-8735-9d5e1f387814
+        status:
+          type: string
+          description: Status of the chunk.
+          example: completed
+        tags:
+          type: array
+          items:
+            type: string
+          description: The tags of the document associated with the chunk.
+          example:
+            - sports
+            - football
+            - game
+        content:
+          type: string
+          description: Content of the chunk
+          example: This is the content from the original document that was chunked.
+        created_at:
+          type: string
+          format: date-time
+          description: Chunk Creation Date.
+          example: 2024-05-06T12:20-12Z
+        updated_at:
+          type: string
+          format: date-time
+          description: Chunk Update Date.
+          example: 2024-05-06T12:20-12Z
     ChunkingStrategy:
       type: string
       enum:
@@ -265,61 +468,61 @@ components:
         id:
           allOf:
             - $ref: '#/components/schemas/docid'
-          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
           description: Unique ID of the Document.
+          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
         filename:
           type: string
-          example: player_list.pdf
           description: Name of the Document.
+          example: player_list.pdf
         status:
           allOf:
             - $ref: '#/components/schemas/DocumentStatus'
-          example: in_progress
           description: Status of the Document.
+          example: in_progress
         tags:
           type: array
           items:
             type: string
+          description: Document tags.
           example:
             - sports
             - football
             - game
-          description: Document tags.
         chunking_strategy:
           allOf:
             - $ref: '#/components/schemas/ChunkingStrategy'
-          example: sentence
           description: Strategy used to chunk the document.
+          example: sentence
         max_sentences_per_chunk:
           type: string
-          example: '80'
           description: Max Sentences per Chunk (only used for chunking type 'sentence')
+          example: '80'
         split_newlines:
           type: boolean
-          example: true
           description: Split on Newlines (only used for chunking type 'sentence')
+          example: true
         overlap_size:
           type: string
-          example: '10'
           description: Overlap Size (only used for chunking type 'sliding')
+          example: '10'
         chunk_size:
           type: string
-          example: '50'
           description: Chunk Size (only used for chunking type 'sliding')
+          example: '50'
         number_of_chunks:
           type: integer
-          example: 2345
           description: Number of Chunks in the Document.
+          example: 2345
         created_at:
           type: string
           format: date-time
-          example: 2024-05-06T12:20-12Z
           description: Document Creation Date.
+          example: 2024-05-06T12:20-12Z
         updated_at:
           type: string
           format: date-time
-          example: 2024-05-06T12:20-12Z
           description: Document Update Date.
+          example: 2024-05-06T12:20-12Z
     DocumentCreatePageRequest:
       type: object
       properties:
@@ -327,8 +530,8 @@ components:
           type: string
           enum:
             - page
-          example: page
           description: Strategy for chunking the document
+          example: page
       allOf:
         - $ref: '#/components/schemas/DocumentCreateRequestBase'
       title: Page strategy
@@ -339,8 +542,8 @@ components:
           type: string
           enum:
             - paragraph
-          example: paragraph
           description: Strategy for chunking the document
+          example: paragraph
       allOf:
         - $ref: '#/components/schemas/DocumentCreateRequestBase'
       title: Paragraph strategy
@@ -358,40 +561,40 @@ components:
         url:
           type: string
           format: uri
-          example: https://example.com/document.pdf
           description: URL of the document.
+          example: https://example.com/document.pdf
         tags:
           type: array
           items:
             type: string
+          description: Document tags.
           example:
             - sports
             - football
             - game
-          description: Document tags.
     DocumentCreateSentenceRequest:
       type: object
       properties:
         max_sentences_per_chunk:
           type: integer
-          example: 40
           description: Maximum number of sentences per chunk.
+          example: 40
           default: 50
         chunking_strategy:
           type: string
           enum:
             - sentence
-          example: sentence
           description: Strategy for chunking the document
+          example: sentence
         split_newlines:
           type: boolean
-          example: false
           description: |-
             Whether to split chunks on new lines.
 
 
              
             **Default value:** `false`
+          example: false
           default: false
       allOf:
         - $ref: '#/components/schemas/DocumentCreateRequestBase'
@@ -401,19 +604,19 @@ components:
       properties:
         chunk_size:
           type: integer
-          example: 50
           description: Number of words per chunk.
+          example: 50
           default: 50
         chunking_strategy:
           type: string
           enum:
             - sliding
-          example: sliding
           description: Strategy for chunking the document
+          example: sliding
         overlap_size:
           type: integer
-          example: 10
           description: Amount of overlap between chunks, in number of words.
+          example: 10
           default: 10
       allOf:
         - $ref: '#/components/schemas/DocumentCreateRequestBase'
@@ -439,43 +642,43 @@ components:
           type: array
           items:
             type: string
+          description: Document tags.
           example:
             - sports
             - football
             - game
-          description: Document tags.
         document_id:
           allOf:
             - $ref: '#/components/schemas/docid'
-          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
           description: Unique ID of a Document.
+          example: acaa5c49-be5e-4477-bce0-48f4b23b7720
         query_string:
           type: string
-          example: Most paid athlete
           description: Search term.
+          example: Most paid athlete
         distance:
           type: integer
-          example: 2
           minimum: 0
           maximum: 78.3836717690617
           description: Specifies how closely related the query is to the document. Low distance means high relevance and similarity. High distance means low relevance and similarity.
+          example: 2
         count:
           type: integer
-          example: 5
           description: Specifies number of returned Chunks.
+          example: 5
         language:
           type: string
-          example: fr
           description: Language of the Document.
+          example: fr
           default: en
         pos_to_expand:
           type: array
           items:
             type: string
+          description: Part of Speech considered for expansion or analysis.
           example:
             - NOUN
             - VERB
-          description: Part of Speech considered for expansion or analysis.
           default:
             - NOUN
             - VERB
@@ -483,8 +686,8 @@ components:
             - ADV
         max_synonyms:
           type: integer
-          example: 7
           description: Maximum number of synonyms to consider.
+          example: 7
           default: 10
     DocumentStatus:
       type: string
@@ -501,11 +704,11 @@ components:
           type: array
           items:
             type: string
+          description: Document tags.
           example:
             - sports
             - football
             - game
-          description: Document tags.
     PaginationResponse:
       type: object
       required:
@@ -516,18 +719,18 @@ components:
         self:
           type: string
           format: uri
-          example: https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=0&page_size=50
           description: Link of the current page
+          example: https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=0&page_size=50
         first:
           type: string
           format: uri
-          example: https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=0&page_size=50
           description: Link to the first page
+          example: https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=0&page_size=50
         next:
           type: string
           format: uri
-          example: https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
           description: Link to the next page
+          example: https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
     SearchStatusCode422:
       type: object
       required:
@@ -572,6 +775,10 @@ components:
       type: string
       format: uuid
       description: Unique ID of a Document.
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
   securitySchemes:
     BasicAuth:
       type: http

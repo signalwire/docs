@@ -5,11 +5,11 @@ using TypeSpec.Http;
 
 model SubscriberRequest {
 
-    @doc("Password of the Subscriber.")
+    @doc("Password of the Subscriber. Defaults to a secure random password if not provided.")
     @minLength(8)
     @maxLength(72)
     @example("password123")
-    password: string;
+    password?: string;
 
     @doc("Email of the Subscriber.")
     @example("johndoe@example.com")
