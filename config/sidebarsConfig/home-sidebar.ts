@@ -19,8 +19,8 @@ const homeSidebar: SidebarsConfig = {
         },
         {
           type: "link",
-          label: "Community",
-          href: "https://signalwire.com/community?utm_source=bobbystable.ai",
+          label: "Discord",
+          href: "https://discord.com/invite/F2WNYTNjuF",
         },
         {
           type: "link",
