@@ -34,7 +34,7 @@ const clientSdksSidebar: SidebarsConfig = {
         },
         {
           type: "ref",
-          id: "swml/get-started/introduction",
+          id: "swml/get-started/index",
           label: "SWML",
         },
       ],
