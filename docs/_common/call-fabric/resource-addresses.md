@@ -12,7 +12,7 @@ These addresses can be changed or deleted later as needed.
 
 Each **Resource Address** has two components:
 
-- **Context**: A identifier that indicates in which [context](#contexts) the resource is located.
+- **Context**: A identifier that indicates in which [context](/platform/call-fabric/resources#contexts) the resource is located.
 - **Name**: The name is the unique identifier for the resource.
 
 For example, the address for an `AI Agent` resource named `Alice-AI` in the `public` context would be `/public/Alice-AI`.
