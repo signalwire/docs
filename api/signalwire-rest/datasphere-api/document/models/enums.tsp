@@ -13,3 +13,11 @@ enum DocumentStatus {
   Completed: "completed",
   Failed: "failed",
 }
+
+@doc("The current Status of the Chunk.")
+enum ChunkStatus {
+  Submitted: "submitted",
+  InProgress: "in_progress",
+  Completed: "completed",
+  Failed: "failed",
+}

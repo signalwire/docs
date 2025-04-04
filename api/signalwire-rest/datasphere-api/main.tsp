@@ -2,7 +2,6 @@ import "@typespec/http";
 import "../types";
 import "./document";
 
-
 using TypeSpec.Http;
 using Types.StatusCodes;
 

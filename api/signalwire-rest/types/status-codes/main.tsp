@@ -42,3 +42,9 @@ namespace Types.StatusCodes {
     }
   }
 
+  @error
+  model StatusCode403 {
+    @statusCode statusCode: 401;
+    @bodyRoot error: "Forbidden"
+  }
+
