@@ -1,0 +1,158 @@
+---
+sidebar_label: pay.payment_connector_url
+title: pay.payment_connector_url
+description: The payment_connector_url is the URL to make payment requests to upon completion of all required payment details.
+---
+
+[pay-method]: /swml/methods/pay
+[pay-parameters]: /swml/methods/pay/parameters
+[payment-step]: /swml/methods/pay/prompts#payment-steps
+
+The `payment_connector_url` is a required URL that processes payment requests during the payment flow. It receives payment details once all required information has been gathered from the user, and it processes the final payment transaction, returning the results in the response.
+
+
+| Name | Type | Description |
+|:-----|:-----|:------------|
+| `payment_connector_url` | `string` | The URL to which payment requests are sent after all required payment details have been provided. |
+
+
+## Payment connector URL request
+
+SignalWire sends a `POST` request to the URL specified in the `payment_connector_url` parameter. 
+The connector URL receives these details once all required payment information has been collected from the user.
+
+| Name | Type | Description |
+|:-----|:-----|:------------|
+| `transaction_id` | `string` | The unique identifier for the transaction. |
+| `method` | `string` | The payment method. |
+| `cardnumber` | `string` | The card number. |
+| `cvv` | `string` | The CVV. |
+| `postal_code` | `string` | The postal code. |
+| `description` | `string` | The description. |
+| `chargeAmount` | `string` | The charge amount. |
+| `token_type` | `string` | The token type. |
+| `expiry_month` | `string` | The expiry month. |
+| `expiry_year` | `string` | The expiry year. |
+| `currency_code` | `string` | The currency code. |
+
+
+### Request format
+
+The request body is a JSON object containing the payment details.
+
+
+```json title="Request Body Example"
+{
+  "transaction_id": "8c9d14d5-52ae-4e2e-b880-a14e6e1cda7d",
+  "method": "credit-card",
+  "cardnumber": "************1234",
+  "cvv": "***",
+  "postal_code": "123456",
+  "description": "Payment description",
+  "chargeAmount": "10.55",
+  "token_type": "reusable",
+  "expiry_month": "12",
+  "expiry_year": "99",
+  "currency_code": "usd"
+}
+```
+
+
+## Response format
+
+Your payment connector endpoint should respond with specific formats for both successful and failed transactions. 
+The response format varies depending on whether you are processing a charge transaction or generating a token.
+
+### Successful response
+
+<Tabs>
+<TabItem value="charge" label="Successful standard card charge">
+
+For a successful charge transaction, return a `200` HTTP status code with a JSON response containing:
+
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `charge_id` | `string` | A unique identifier for the successful transaction. |
+| `error_code` | `null` | Must be null for successful transactions. |
+| `error_message` | `null` | Must be null for successful transactions. |
+
+
+```json
+{
+  "charge_id": "ch_123456789",
+  "error_code": null,
+  "error_message": null
+}
+```
+
+
+</TabItem>
+<TabItem value="token" label="Successful tokenized card payment">
+
+For a successful tokenization, return a `200` HTTP status code with a JSON response containing:
+
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `token_id` | `string` | A unique identifier for the stored payment method. |
+| `error_code` | `null` | Must be null for successful transactions. |
+| `error_message` | `null` | Must be null for successful transactions. |
+
+```json
+{
+  "token_id": "tok_123456789",
+  "error_code": null,
+  "error_message": null
+}
+```
+
+</TabItem>
+</Tabs>
+
+### Error response
+
+:::note
+The error response will trigger the corresponding [`payment-failed`][payment-step] prompt in your SWML application.
+:::
+
+<Tabs>
+<TabItem value="charge" label="Failed standard card charge">
+
+For failed charge transactions, return a non-200 HTTP status code with a JSON response containing:
+
+```json
+{
+  "charge_id": null,
+  "error_code": "insufficient_funds",
+  "error_message": "Card has insufficient funds"
+}
+```
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `charge_id` | `null` | Must be null for failed transactions. |
+| `error_code` | `string` | An error code identifying the type of failure. |
+| `error_message` | `string` | A human-readable description of the error. |
+
+</TabItem>
+<TabItem value="token" label="Failed tokenized card payment">
+
+For failed tokenization, return a non-200 HTTP status code with a JSON response containing:
+
+```json
+{
+  "token_id": null,
+  "error_code": "invalid_card",
+  "error_message": "Card validation failed"
+}
+```
+
+| Field | Type | Description |
+|:------|:-----|:------------|
+| `token_id` | `null` | Must be null for failed transactions. |
+| `error_code` | `string` | An error code identifying the type of failure. |
+| `error_message` | `string` | A human-readable description of the error. |
+
+</TabItem>
+</Tabs>
