@@ -33,6 +33,6 @@ Here, you can view the address, type, and other details of the resource.
   caption="The filterable Resources list in the SignalWire Dashboard."
   >
 
-  ![The Resources page of the SignalWire Dashboard.](@image/dashboard/resources.webp)
+  ![The Resources page of the SignalWire Dashboard.](@image/dashboard/resources/resource-list.webp)
 
 </Frame>
