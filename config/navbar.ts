@@ -50,30 +50,40 @@ const navbar: NavbarItem[] = [
     position: "left",
     items: [
       {
+        type: "html",
+        value: '<div class="nav-dropdown-title" href="/rest">Calling</div>',
+      },
+      {
         label: "Voice",
         to: "/voice",
       },
       {
-        label: "Messaging",
+        label: "AI",
+        to: "/ai",
+      },
+      {
+        label: "Video",
+        to: "/video",
+      },
+      {
+        label: "Fax",
+        to: "/fax",
+      },
+      { type: "html", value: '<hr class="dropdown-separator">' },
+      {
+        type: "html",
+        value: '<div class="nav-dropdown-title" href="/rest">Messaging</div>',
+      },
+      {
+        label: "SMS",
         to: "/messaging",
       },
       {
         label: "Chat",
         to: "/chat",
       },
-      {
-        label: "Fax",
-        to: "/fax",
-      },
-      {
-        label: "Video",
-        to: "/video",
-      },
       { type: "html", value: '<hr class="dropdown-separator">' },
-      {
-        label: "AI",
-        to: "/ai",
-      },
+
       {
         label: "SWML",
         to: "/swml",
@@ -81,6 +91,10 @@ const navbar: NavbarItem[] = [
       {
         label: "Call Flow Builder",
         to: "/call-flow-builder",
+      },
+      {
+        label: "Datasphere",
+        to: "/rest/signalwire-rest/guides/datasphere/curl-usage",
       },
       {
         label: "RELAY",

@@ -1,0 +1,259 @@
+---
+slug: /video/getting-started/managing-rooms-with-apis
+sidebar_position: 2
+sidebar_label: Managing Rooms with APIs
+author: rsowald
+x-custom:
+  tags:
+    - product:video
+    - language:nodejs
+description: Guide to managing prebuilt rooms with REST APIs. 
+---
+
+# Managing Video Rooms with APIs
+
+In our guide to [Creating a Video Room](/video/conference), we explained how to create and customize video rooms in your [SignalWire Space](https://signalwire.com/signin). If you prefer to create and manage your video rooms programmatically, you can use SignalWire's REST APIs. API calls require a few pieces of authorization information found in your SignalWire Space: your project ID, Space URL, and an **API token** which gives access to SignalWire APIs.
+
+<Frame caption ="">
+
+![The API page shows the active Project ID and Space URL, and a list of API tokens organized by Name, Token, and Last Used.](@image/dashboard/credentials/api-credentials.webp)
+
+</Frame>
+
+Your API token should have at least the video scope enabled for all of the API calls we will discuss below. Keep in mind that this token can, for example, delete any room, mute or unmute any participant, and so on without limitations. Therefore, you may only use the API token **in your server** to communicate with SignalWire. It should never be exposed by making an API call from the browser. All API requests must be made over HTTPS. Calls made over plain HTTP will fail. API requests without authentication will also fail. With your authorization information, you can manage all of the video room settings with our APIs that you did from your SignalWire Space.
+
+## Create a Video Room
+
+First, we can use the API to [create a video room](/rest/signalwire-rest/endpoints/video/create-video-conference) which includes a user interface. We will need to pass our authentication information and room settings. The example below has a small selection of room settings, but you can see all of the possible parameters at the link above.
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+<Tabs groupId="create-room">
+
+<TabItem value="curl" label="cURL">
+
+```shell
+curl "https://$SPACE_URL/api/video/conferences" \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -u "$PROJECT_ID:$API_TOKEN" \
+  --data-raw '{
+    "name": "my_room",
+    "display_name": "My Conference Room",
+    "size": "medium",
+    "quality": "1080p",
+    "layout": "grid-responsive",
+    "enable_room_previews": true,
+    "enable_chat": true
+  }'
+```
+
+</TabItem>
+
+<TabItem value="nodejs" label="Node.js">
+
+```javascript
+const axios = require("axios");
+const data = {
+  name: "my_room",
+  display_name: "My Conference Room",
+  size: "medium",
+  quality: "1080p",
+  layout: "grid-responsive",
+  enable_room_previews: true,
+  enable_chat: true,
+};
+
+const config = {
+  method: "post",
+  url: "https://SPACE_URL/api/video/conferences",
+  auth: {
+    username: PROJECT_ID,
+    password: API_TOKEN,
+  },
+  data: data,
+};
+
+axios(config)
+  .then((response) => {
+    console.log(JSON.stringify(response.data));
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+```
+
+</TabItem>
+
+</Tabs>
+
+This API call will return an object with the Video Room's settings and its ID. You may choose to store this ID because it is required to make other Video Room management calls we will see later.
+
+Just like in your Dashboard, you can also [create a video room without a UI](/rest/signalwire-rest/endpoints/video/create-room) via the API if you would like to start from scratch.
+
+## Video Room token
+
+Next, we will need a Video Room token which allows a client to join the room we created. When we created our video room above, two tokens were automatically generated: a moderator token and a guest token. We will need the the Video Room ID we noted earlier to [list the tokens](/rest/signalwire-rest/endpoints/video/list-conference-tokens) and their permissions. If you did not store the room's ID when it was created, find it by [listing your video conferences](/rest/signalwire-rest/endpoints/video/list-video-conferences), finding the room name in the returned objects, and reading its `id` property.
+
+<Tabs groupId="list-tokens">
+
+<TabItem value="curl" label="cURL">
+
+```shell
+curl "https://$SPACE_URL/api/video/conferences/$ROOM_ID/conference_tokens" \
+  -X GET \
+  -H "Accept: application/json" \
+  -u "$PROJECT_ID:$API_TOKEN"
+```
+
+</TabItem>
+
+<TabItem value="nodejs" label="Node.js">
+
+```javascript
+const axios = require("axios");
+
+const config = {
+  method: "get",
+  url: "https://SPACE_URL/api/video/conferences/ROOM_ID/conference_tokens",
+  auth: {
+    username: PROJECT_ID,
+    password: API_TOKEN,
+  },
+};
+
+axios(config)
+  .then((response) => {
+    console.log(JSON.stringify(response.data));
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+```
+
+</TabItem>
+
+</Tabs>
+
+The response array includes an ID for each token, the token name (moderator or guest), their permissions, and the token string itself. We can use this "token" value with the [Video Conference AppKit](docs/sdks/reference/video-conference-appkit/index.mdx) or the [Community React library](https://signalwire-community.github.io/docs/react/) to join a fully functional Video Room.
+
+The moderator token includes [Video permissions](/rest/signalwire-rest/overview/permissions) to affect the room and any member. The guest token includes permissions which allow the token holder to control just their own audio and video settings without affecting the room settings or other members. These are listed under [default permissions](/rest/signalwire-rest/overview/permissions#default-permissions) in the permissions reference linked above where you can see full descriptions of all Video permissions.
+
+If you are using a Video Room without a prebuilt UI, you will need to [generate a Video Room token](/rest/signalwire-rest/endpoints/video/create-room-token) with a separate API call. Using your own auth system, you can generate tokens with different permissions for participants depending on their desired role similarly to the different tokens generated for rooms that come with a UI. For example, a moderator might get both `room` permissions to affect the room and `room.member` permissions to affect any participant. See the [Permissions reference](/rest/signalwire-rest/overview/permissions) for a full list of possible permissions.
+
+## Update room settings
+
+You can [update the settings](/rest/signalwire-rest/endpoints/video/update-video-conference) of an existing room with a PUT call to the specified room's endpoint. This call will require the ID of the room and the parameters you would like to update. If you did not store the room's ID when it was created, find it by [listing your video conferences](/rest/signalwire-rest/endpoints/video/list-video-conferences), finding the room name in the returned objects, and reading its `id` property. Now, let's update the Video Room we created above to disable the Chat feature, change the name, and customize the room's dark mode colors.
+
+<Tabs groupId="update-room">
+
+<TabItem value="curl" label="cURL">
+
+```shell
+curl "https://$SPACE_URL/api/video/conferences/$ROOM_ID" \
+  -X PUT \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -u "$PROJECT_ID:$API_TOKEN" \
+  --data-raw '{
+    "name": "our_room",
+    "display_name": "Our Room'\''s Name",
+    "enable_chat": false,
+    "dark_background": "#5BB9A9",
+    "dark_negative": "#2E26A1"
+  }'
+```
+
+</TabItem>
+
+<TabItem value="nodejs" label="Node.js">
+
+```javascript
+const axios = require("axios");
+const data = {
+  name: "our_room",
+  display_name: "Our Room's Name",
+  enable_chat: false,
+  dark_background: "#5BB9A9",
+  dark_negative: "#2E26A1",
+};
+
+const config = {
+  method: "put",
+  url: "https://SPACE_URL/api/video/conferences/ROOM_ID",
+  auth: {
+    username: PROJECT_ID,
+    password: API_TOKEN,
+  },
+  data: data,
+};
+
+axios(config)
+  .then((response) => {
+    console.log(JSON.stringify(response.data));
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+```
+
+</TabItem>
+
+</Tabs>
+
+Any room parameters we did not include in the update call will retain the settings we used when creating the room.
+
+If you [created a video room without a UI](/rest/signalwire-rest/endpoints/video/create-room), you can update its settings with [`PUT /rooms/:id`](/rest/signalwire-rest/endpoints/video/update-room). This follows the same pattern as the example above.
+
+## Delete a Video Room
+
+Finally, you can also [delete the Video Room](/rest/signalwire-rest/endpoints/video/delete-video-conference) with an API call. This call only requires the room's ID. As with other calls discussed above, if you did not store the room's ID when you created it, you can find it by [listing your video conferences](/rest/signalwire-rest/endpoints/video/list-video-conferences), finding the room name in the returned objects, and reading its `id` property.
+
+<Tabs groupId="delete-room">
+
+<TabItem value="curl" label="cURL">
+
+```shell
+curl "https://$SPACE_URL/api/video/conferences/$ROOM_ID" \
+  -X DELETE \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -u "$PROJECT_ID:$API_TOKEN" \
+```
+
+</TabItem>
+
+<TabItem value="nodejs" label="Node.js">
+
+```javascript
+const axios = require("axios");
+
+const config = {
+  method: "delete",
+  url: "https://SPACE_URL/api/video/conferences/ROOM_ID",
+  auth: {
+    username: PROJECT_ID,
+    password: API_TOKEN,
+  },
+};
+
+axios(config)
+  .then((response) => {
+    console.log(JSON.stringify(response.data));
+  })
+  .catch((error) => {
+    console.log(error);
+  });
+```
+
+</TabItem>
+
+</Tabs>
+
+If you [created a Video Room without a prebuilt UI](/rest/signalwire-rest/endpoints/video/create-room), you can delete it using [`DELETE /rooms/:id`](/rest/signalwire-rest/endpoints/video/delete-room).
+
+## Wrap Up
+
+We have demonstrated the basic calls to create and manage Video Rooms with SignalWire's REST APIs. While it is easy to manage and use Video Rooms from your [SignalWire Space](https://signalwire.com/signin), you are now able to do the same functions programmatically if required or preferred. For more information on custom coding solutions, you may want to read [Extending Rooms with Custom Code](../extending-rooms-with-custom-code/index.mdx). To see details of all available Video APIs, visit our [Video API technical reference](/rest/signalwire-rest/endpoints/messaging/message-api).
