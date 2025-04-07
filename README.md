@@ -12,7 +12,7 @@
 
 <!-- Badges -->
 <div align="center">
-    <img src="https://img.shields.io/badge/Slack-4A154B?logo=slack&logoColor=fff" alt="Slack" href="https://signalwire-community.slack.com/"/>
+    <img src="https://img.shields.io/badge/Discord%20Community-5865F2" alt="Discord" href="https://discord.com/invite/F2WNYTNjuF"/>
     <img src="https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white&" alt="GitHub" href="https://github.com/signalwire"/>
     <img src="https://img.shields.io/badge/MIT-License-blue" alt="MIT License" href="LICENSE" />
     <img src="https://img.shields.io/badge/Creative%20Commons-license-blue.svg?logo=creativecommons&logoColor=ffffff"/>
