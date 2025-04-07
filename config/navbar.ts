@@ -174,7 +174,7 @@ const navbar: NavbarItem[] = [
       {
         href: "https://discord.com/invite/F2WNYTNjuF",
         label: "Discord",
-        "aria-label": "Slack Community",
+        "aria-label": "Discord Community",
       },
       {
         href: "https://status.signalwire.com",
