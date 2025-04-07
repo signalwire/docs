@@ -172,14 +172,14 @@ const navbar: NavbarItem[] = [
         "aria-label": "Support",
       },
       {
+        href: "https://discord.com/invite/F2WNYTNjuF",
+        label: "Discord",
+        "aria-label": "Slack Community",
+      },
+      {
         href: "https://status.signalwire.com",
         label: "Platform Status",
         "aria-label": "Platform Status",
-      },
-      {
-        href: "https://signalwire-community.slack.com/",
-        label: "Slack",
-        "aria-label": "Slack Community",
       },
     ],
   },
