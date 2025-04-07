@@ -53,8 +53,8 @@ const footer = {
           href: "https://stackoverflow.com/questions/tagged/signalwire",
         },
         {
-          label: "Slack",
-          href: "https://signalwire-community.slack.com",
+          label: "Discord",
+          href: "https://discord.com/invite/F2WNYTNjuF",
         },
       ],
     },
