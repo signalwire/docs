@@ -286,5 +286,5 @@ function processTags(tags) {
 let newPath = path.join(__dirname, "./data/description.mdx");
 
 function addDescriptionContent(content) {
-  fs.appendFileSync(newPath, content);
+  fs.writeFileSync(newPath, content);
 }
