@@ -1,0 +1,650 @@
+---
+title: "POM technical reference"
+description: "Learn more about the Prompt Object Model"
+sidebar_position: 1
+slug: /tools/pom/technical-reference
+sidebar_label: "Technical reference"
+---
+
+[pom-class]: #promptobjectmodel-class
+[section-class]: #section-class
+[add-section]: #add_section
+[find-section]: #find_section
+[to-json]: #to_json
+[render-markdown-pom]: #render_markdown_pom
+[render-xml-pom]: #render_xml_pom
+[from-json]: #from_json
+[add-body]: #add_body
+[add-bullets]: #add_bullets
+[add-subsection]: #add_subsection
+[to-dict]: #to_dict
+[render-markdown-section]: #render_markdown_section
+[render-xml-section]: #render_xml_section
+[json-schema]: https://json-schema.org/understanding-json-schema/about
+[pom-pypi]: https://pypi.org/project/signalwire-pom/
+
+<Subtitle>Learn how to use the Prompt Object Model</Subtitle>
+
+## Introduction
+
+This technical reference provides comprehensive documentation for developers working with the [Prompt Object Model (POM) library][pom-pypi]. 
+To learn more about what the Prompt Object Model is, see the [POM overview](/tools/pom).
+
+## POM format specification
+
+The POM is a JSON array of [section objects][section-class]. Each section is an object with the following fields:
+
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `title` | `string` | `No` unless the section is a nested section | Heading text. |
+| `body` | `string` | `No` | Paragraph or long-form instruction text. |
+| `bullets` | `string[]` | `No` | Bulleted list of short statements or rules. |
+| `subsections` | `nestedSection[]` | `No` | Nested list of sections. Each must include a title. |
+
+
+### JSON schema for POM
+
+Users can refer to the following [JSON schema][json-schema] and basic example below for the POM structure:
+
+<Tabs>
+<TabItem value="schema" label="JSON Schema">
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/pom.schema.json",
+  "title": "Prompt object model",
+  "type": "array",
+  "items": { "$ref": "#/$defs/section" },
+  "$defs": {
+    "section": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "bullets": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "subsections": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nestedSection" }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "nestedSection": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "bullets": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "subsections": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nestedSection" }
+        }
+      },
+      "required": ["title"],
+      "additionalProperties": false
+    }
+  }
+}
+```
+
+</TabItem>
+<TabItem value="example" label="Basic Example">
+
+```json
+[
+  {
+    "title": "String",
+    "body": "String",
+    "bullets": [
+      "String",
+      "String",
+      "String"
+    ],
+    "subsections": [
+      {
+        "title": "String (required for nested sections)",
+        "body": "String",
+        "bullets": [
+          "String",
+          "String"
+        ],
+        "subsections": []
+      }
+    ]
+  }
+]
+```
+
+</TabItem>
+</Tabs>
+
+## Core classes
+
+The library consists of two main classes:
+
+| Class | Description |
+| ----- | ----------- |
+| [`PromptObjectModel`][pom-class] | The main container that holds all sections and provides top-level functionality |
+| [`Section`][section-class] | Represents a single section in the prompt hierarchy with content and structure |
+
+---
+
+## PromptObjectModel class
+
+The `PromptObjectModel` class is the main entry point for creating and managing prompt objects.
+
+### Constructing a new POM
+
+```python
+from signalwire_pom import PromptObjectModel
+
+# Create a new POM
+pom = PromptObjectModel()
+```
+
+### Methods
+
+| Method | Description |
+| ------ | ----------- |
+| [`add_section`][add-section] | Adds a top-level section to the prompt POM. |
+| [`find_section`][find-section] | Finds a section by its title, searching recursively through all sections and subsections. |
+| [`to_json`][to-json] | Converts the entire POM to a JSON string. |
+| [`render_markdown`][render-markdown-pom] | Renders the entire POM as markdown. |
+| [`render_xml`][render-xml-pom] | Renders the entire POM as XML. |
+| [`from_json`][from-json] | Creates a `PromptObjectModel` instance from JSON data. The data must be a [valid POM JSON schema][json-schema]. |
+
+---
+
+#### add_section
+
+Adds a top-level section to the prompt POM.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `title`<span className="optional-arg">Optional</span> | `Optional[str]` | - | The title of the section |
+| `body`<span className="optional-arg">Optional</span> | `str` | - | Body text for the section |
+| `bullets`<span className="optional-arg">Optional</span> | `Optional[List[str]]` | - | List of bullet points |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `Section` | The newly created section object |
+
+**Example:**
+```python
+# Create a section with a title and body
+rules = pom.add_section(
+    "Rules",
+    body="Follow these important guidelines:"
+)
+
+# Add bullet points
+rules.add_bullets([
+    "Never send emails on behalf of the user",
+    "Maintain user privacy and confidentiality"
+])
+```
+
+---
+
+#### find_section
+
+Finds a section by its title, searching recursively through all sections and subsections.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `title`<span className="required-arg">Required</span> | `str` | - | The title to search for |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `Optional[Section]` | The found section or `None` if not found |
+
+**Example:**
+```python
+# Find a section by its title
+rules_section = pom.find_section("Rules")
+if rules_section:
+    # Modify the found section
+    rules_section.add_bullets(["Always suggest proofreading before sending"])
+```
+
+---
+
+#### to_json
+
+Converts the entire POM to a JSON string.
+
+**Parameters:** None
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `str` | JSON string representation of the POM |
+
+**Example:**
+```python
+# Generate JSON representation
+json_data = pom.to_json()
+print(json_data)
+```
+
+---
+
+#### render_markdown {#render_markdown_pom}
+
+Renders the entire POM as markdown.
+The method will follow the below logic when rendering the POM as markdown:
+
+**Rendering Logic:**
+- Top-level sections with titles are rendered as `##` (h2 headings)
+- Each level of nesting increases the heading level (h3, h4, etc.)
+- Body text appears after the heading
+- Bullet points are rendered as markdown list items with `-` prefix
+- Proper line spacing is maintained between elements
+
+**Parameters:** None
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `str` | Markdown representation of the POM |
+
+**Example:**
+```python
+from signalwire_pom import PromptObjectModel
+
+# Create a new POM
+pom = PromptObjectModel()
+
+# Add a section with title and body
+section = pom.add_section(
+    "System instructions", 
+    body="You are a helpful AI assistant."
+)
+
+# Add bullet points
+section.add_bullets([
+    "Answer user questions accurately",
+    "Be concise and clear"
+])
+
+sub_section = section.add_subsection(
+    "Subsection 1",
+    body="This is the body of the subsection."
+)
+
+sub_section.add_bullets([
+    "Answer user questions accurately",
+    "Be concise and clear"
+])
+
+# Render as markdown
+markdown = pom.render_markdown()
+print(markdown)
+```
+
+**Output:**
+```markdown
+## System instructions
+
+You are a helpful AI assistant.
+
+- Answer user questions accurately
+- Be concise and clear
+
+### Subsection 1
+
+This is the body of the subsection.
+
+- Answer user questions accurately
+- Be concise and clear
+```
+
+---
+
+#### render_xml {#render_xml_pom}
+
+Renders the entire POM as XML.
+The method will follow the below logic when rendering the POM as XML:
+
+**Rendering Logic:**
+- The POM is wrapped in a root `<prompt>` element
+- Each section is represented as a `<section>` element
+- Section properties are rendered as child elements:
+  - `<title>` for the section title
+  - `<body>` for the section body text
+  - `<bullets>` containing individual `<bullet>` elements
+  - `<subsections>` containing nested `<section>` elements
+
+**Parameters:** None
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `str` | XML representation of the POM |
+
+**Example:**
+```python
+# Using the same POM from the previous example
+xml = pom.render_xml()
+print(xml)
+```
+
+**Output:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt>
+  <section>
+    <title>System instructions</title>
+    <body>You are a helpful AI assistant.</body>
+    <bullets>
+      <bullet>Answer user questions accurately</bullet>
+      <bullet>Be concise and clear</bullet>
+    </bullets>
+    <subsections>
+      <section>
+        <title>Subsection 1</title>
+        <body>This is the body of the subsection.</body>
+        <bullets>
+          <bullet>Answer user questions accurately</bullet>
+          <bullet>Be concise and clear</bullet>
+        </bullets>
+      </section>
+    </subsections>
+  </section>
+</prompt>
+```
+
+---
+
+#### from_json
+
+Creates a PromptObjectModel instance from JSON data.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `json_data`<span className="required-arg">Required</span> | `Union[str, dict]` | - | Either a JSON string or a parsed dictionary |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `PromptObjectModel` | A new instance populated with data from the JSON |
+
+**Example:**
+```python
+# Create a POM from JSON
+json_string = '''
+[
+  {
+    "title": "Knowledge",
+    "body": "You have the following specific knowledge:",
+    "bullets": ["Email etiquette", "Business terminology"],
+    "subsections": []
+  }
+]
+'''
+knowledge_pom = PromptObjectModel.from_json(json_string)
+```
+
+---
+
+## Section class
+
+The `Section` class represents a single section in the POM hierarchy and provides methods for managing content and structure.
+A section can be accessed through a instance of the `PromptObjectModel` class.
+
+### Constructing a new Section
+
+```python
+from signalwire_pom import PromptObjectModel
+
+# Create a new POM
+pom = PromptObjectModel()
+
+# Add a section to the POM
+section = pom.add_section("Section title", body="This is the main content of my section.")
+```
+
+### Methods
+
+| Method | Description |
+| :------ | :----------- |
+| [`add_body`][add-body] | Adds or replaces the body text for this section. |
+| [`add_bullets`][add-bullets] | Adds bullet points to this section. |
+| [`add_subsection`][add-subsection] | Adds a subsection to this section. |
+| [`to_dict`][to-dict] | Converts the section to a dictionary representation. |
+| [`render_markdown`][render-markdown-section] | Renders this section and all its subsections as markdown. |
+| [`render_xml`][render-xml-section] | Renders this section and all its subsections as XML. |
+
+---
+
+#### add_body
+
+Adds or replaces the body text for this section.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `body`<span className="required-arg">Required</span> | `str` | - | The text to set as the section body |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `None` | This method doesn't return a value |
+
+**Example:**
+```python
+section = pom.add_section("Section title")
+section.add_body("This is the main content of my section.")
+```
+
+---
+
+#### add_bullets
+
+Adds bullet points to this section.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `bullets`<span className="required-arg">Required</span> | `List[str]` | - | List of bullet points to add |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `None` | This method doesn't return a value |
+
+**Example:**
+```python
+section = pom.add_section("Guidelines")
+section.add_bullets([
+    "First important point",
+    "Second important point",
+    "Third important point"
+])
+```
+
+---
+
+#### add_subsection
+
+Adds a subsection to this section.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `title`<span className="required-arg">Required</span> | `str` | - | The title of the subsection |
+| `body`<span className="optional-arg">Optional</span> | `str` | - | Optional body text for the subsection |
+| `bullets`<span className="optional-arg">Optional</span> | `Optional[List[str]]` | - | Optional list of bullet points |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `Section` | The newly created subsection |
+
+**Example:**
+```python
+capabilities = pom.add_section("Capabilities")
+drafting = capabilities.add_subsection(
+    "Email drafting",
+    body="Create email drafts based on user specifications."
+)
+drafting.add_bullets([
+    "Format emails properly with greeting, body, and signature",
+    "Adjust tone based on recipient and purpose"
+])
+```
+
+---
+
+#### to_dict
+
+Converts the section to a dictionary representation.
+
+**Parameters:** None
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `dict` | Dictionary representation of the section |
+
+**Example:**
+```python
+section = pom.add_section("Test section")
+section_dict = section.to_dict()
+```
+
+---
+
+#### render_markdown {#render_markdown_section}
+
+Renders this section and all its subsections as markdown.
+The method will follow the below logic when rendering the section as markdown:
+
+**Rendering Logic:**
+- The section title is rendered as a heading, with heading level based on nesting depth
+- The heading level starts at the provided `level` parameter (default: 2, which is `##`)
+- Body text appears after the heading with a blank line
+- Bullet points are rendered as markdown list items with `-` prefix
+- Subsections are rendered with incremented heading levels to show hierarchy
+- If a section has no title (only valid at root level), its content is rendered directly
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `level`<span className="optional-arg">Optional</span> | `int` | `2` | The heading level to start with (default: 2, which corresponds to ##) |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `str` | Markdown representation of the section |
+
+**Example:**
+```python
+# Using a section from the previous example
+section_markdown = section.render_markdown()
+print(section_markdown)
+```
+
+**Output:**
+```markdown
+## System instructions
+
+You are a helpful AI assistant.
+
+- Answer user questions accurately
+- Be concise and clear
+
+### Subsection 1
+
+This is the body of the subsection.
+
+- Answer user questions accurately
+- Be concise and clear
+```
+
+---
+
+#### render_xml {#render_xml_section}
+
+Renders this section and all its subsections as XML.
+The method will follow the below logic when rendering the section as XML:
+
+**Rendering Logic:**
+- The section is represented as a `<section>` element
+- Section properties are rendered as child elements:
+  - `<title>` for the section title (if present)
+  - `<body>` for the section body text (if present)
+  - `<bullets>` containing individual `<bullet>` elements (if present)
+  - `<subsections>` containing nested `<section>` elements (if present)
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `indent`<span className="optional-arg">Optional</span> | `int` | `0` | The indentation level to start with (default: 0) |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `str` | XML representation of the section |
+
+**Example:**
+```python
+# Using a section from the previous example
+section_xml = section.render_xml()
+print(section_xml)
+```
+
+**Output:**
+```xml
+<section>
+  <title>System instructions</title>
+  <body>You are a helpful AI assistant.</body>
+  <bullets>
+    <bullet>Answer user questions accurately</bullet>
+    <bullet>Be concise and clear</bullet>
+  </bullets>
+  <subsections>
+    <section>
+      <title>Subsection 1</title>
+      <body>This is the body of the subsection.</body>
+      <bullets>
+        <bullet>Answer user questions accurately</bullet>
+        <bullet>Be concise and clear</bullet>
+      </bullets>
+    </section>
+  </subsections>
+</section>
+```
