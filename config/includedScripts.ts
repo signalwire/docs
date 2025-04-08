@@ -33,15 +33,15 @@ const scripts: ScriptItem[] = [
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
   {
-    src: "/scripts/zendesk.js",
-    async: true,
-    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
-  },
-  {
     src: "/scripts/hubspot.js",
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
+  {
+    src: "/scripts/zoho.js",
+    async: true,
+    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
+  }
 ];
 
 export default scripts; 
