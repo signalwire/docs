@@ -5,13 +5,13 @@ import "../../../types";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-model ExternalLAMLHandlerIDPath {
-  @doc("Unique ID of a External LAML Handler.")
+model CXMLWebhookIDPath {
+  @doc("Unique ID of a CXML Webhook.")
   @path
   external_laml_handler_id: uuid
 }
 
-model ExternalLAMLHandlerAddress {
+model CXMLWebhookAddress {
   @doc("Unique ID of the Fabric Address.")
   @example("691af061-cd86-4893-a605-173f47afc4c2")
   id: uuid;

@@ -1,9 +1,9 @@
-model ExternalLAMLHandlerAddressListResponse {
-  data: ExternalLAMLHandlerAddress[];
-  links: ExternalLAMLHandlerAddressPaginationResponse;
+model CXMLWebhookAddressListResponse {
+  data: CXMLWebhookAddress[];
+  links: CXMLWebhookAddressPaginationResponse;
 }
 
-model ExternalLAMLHandlerAddressPaginationResponse {
+model CXMLWebhookAddressPaginationResponse {
   @doc("Link of the current page")
   @example("https://{space_name}.signalwire.com/api/fabric/resources/external_laml_handlers/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50")
   self: url;

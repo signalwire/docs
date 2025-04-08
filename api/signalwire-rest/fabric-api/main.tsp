@@ -4,15 +4,15 @@ import "./addresses";
 import "./subscribers";
 import "./subscriber-guest-token";
 import "./subscriber-invite-token";
-import "./external-laml-handler";
-import "./external-laml-handler-addresses";
 import "./external-swml-handler";
 import "./external-swml-handler-addresses";
 import "./ai-agent";
 import "./ai-agent-addresses";
+import "./cxml-webhooks";
 import "./cxml-application";
 import "./cxml-application-addresses";
 import "./embeds-tokens";
+import "./cxml-webhook-addresses";
 
 
 using TypeSpec.Http;

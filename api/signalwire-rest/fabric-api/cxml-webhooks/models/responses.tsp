@@ -1,6 +1,6 @@
 
-model ExternalLAMLHandlerResponse {
-  @doc("Unique ID of the ExternalLAMLHandler.")
+model CXMLWebhookResponse {
+  @doc("Unique ID of the CXMLWebhook.")
   @example("a87db7ed-8ebe-42e4-829f-8ba5a4152f54")
   id: uuid;
 
@@ -8,7 +8,7 @@ model ExternalLAMLHandlerResponse {
   @example("99151cf8-9548-4860-ba70-a8de824f3312")
   project_id: uuid;
 
-  @doc("Display name of the ExternalLAMLHandler Fabric Resource")
+  @doc("Display name of the CXMLWebhook Fabric Resource")
   @example("Booking Assistant")
   display_name: string;
 
@@ -24,16 +24,16 @@ model ExternalLAMLHandlerResponse {
   @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
   updated_at: utcDateTime;
 
-  @doc("ExternalLAMLHandler data.")
-  external_laml_handler: ExternalLAMLHandler;
+  @doc("CXMLWebhook data.")
+  external_laml_handler: CXMLWebhook;
 }
 
-model ExternalLAMLHandlerListResponse {
-  data: ExternalLAMLHandlerResponse[];
-  links: ExternalLAMLHandlerPaginationResponse;
+model CXMLWebhookListResponse {
+  data: CXMLWebhookResponse[];
+  links: CXMLWebhookPaginationResponse;
 }
 
-model ExternalLAMLHandlerPaginationResponse {
+model CXMLWebhookPaginationResponse {
   @doc("Link of the current page")
   @example("https://{space_name}.signalwire.com/api/fabric/resources/external_laml_handlers?page_number=0&page_size=50")
   self: url;
