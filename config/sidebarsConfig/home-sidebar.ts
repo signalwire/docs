@@ -14,8 +14,13 @@ const homeSidebar: SidebarsConfig = {
       items: [
         {
           type: "link",
-          label: "Guides",
+          label: "All guides",
           href: "/guides",
+        },
+        {
+          type: "link",
+          label: "Communities",
+          href: "https://signalwire.com/communities",
         },
         {
           type: "link",
@@ -24,13 +29,13 @@ const homeSidebar: SidebarsConfig = {
         },
         {
           type: "link",
-          label: "Support",
-          href: "https://support.signalwire.com/hc/en-us",
+          label: "GitHub",
+          href: "https://github.com/signalwire",
         },
         {
           type: "link",
-          label: "GitHub",
-          href: "https://github.com/signalwire",
+          label: "Support",
+          href: "https://support.signalwire.com/hc/en-us",
         },
       ],
     },
