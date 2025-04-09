@@ -167,11 +167,6 @@ const navbar: NavbarItem[] = [
     position: "right",
     items: [
       {
-        href: "https://support.signalwire.com",
-        label: "Contact Support",
-        "aria-label": "Support",
-      },
-      {
         href: "https://signalwire.zohodesk.com/portal/en/myarea?viewId=1029313000000240047",
         label: "My Tickets",
         "aria-label": "Support",
