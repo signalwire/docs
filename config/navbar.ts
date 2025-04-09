@@ -192,12 +192,12 @@ const navbar: NavbarItem[] = [
     items: [
       {
         href: "https://signalwire.zohodesk.com/portal/en/community",
-        label: "Community forum",
+        label: "Community Forum",
         "aria-label": "Community forum",
       },
       {
         href: "https://discord.com/invite/F2WNYTNjuF",
-        label: "Discord server",
+        label: "Discord Server",
         "aria-label": "Discord server",
       },
     ],
