@@ -9,7 +9,7 @@ import "../../types";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@route("/resources/external_laml_handlers")
+@route("/resources/cxml_webhooks")
 namespace FabricAPI.CXMLWebhooks {
   @tag("cXML Webhook")
   @friendlyName("cXML Webhooks")
@@ -25,7 +25,7 @@ namespace FabricAPI.CXMLWebhooks {
     @doc("Returns an cXML Webhook by ID")
     read(...CXMLWebhookID): {
         @statusCode statusCode: 200;
-        @body external_laml_handler: CXMLWebhookResponse;
+        @body cxml_webhook: CXMLWebhookResponse;
       } |
       StatusCode401 |
       StatusCode404;
@@ -33,7 +33,7 @@ namespace FabricAPI.CXMLWebhooks {
     @summary("Create cXML Webhook")
     @doc("Creates an cXML Webhook")
     @post create(...CXMLWebhookCreateRequest):
-      { @statusCode statusCode: 201; @body external_laml_handler: CXMLWebhookResponse; } |
+      { @statusCode statusCode: 201; @body cxml_webhook: CXMLWebhookResponse; } |
       StatusCode401 |
       StatusCode404 |
       CXMLWebhookCreateStatusCode422;
@@ -41,7 +41,7 @@ namespace FabricAPI.CXMLWebhooks {
     @summary("Update cXML Webhook")
     @doc("Updates an cXML Webhook by ID")
     @patch update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest): {
-      @statusCode statusCode: 200; @body external_laml_handler: CXMLWebhookResponse;
+      @statusCode statusCode: 200; @body cxml_webhook: CXMLWebhookResponse;
     } |
       StatusCode401 |
       StatusCode404 |

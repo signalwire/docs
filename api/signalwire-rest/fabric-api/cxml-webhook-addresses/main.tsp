@@ -7,7 +7,7 @@ import "../../types";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@route("/resources/external_laml_handlers/{external_laml_handler_id}/addresses")
+@route("/resources/cxml_webhooks/{cxml_webhook_id}/addresses")
 namespace FabricAPI.CXMLWebhookAddresses {
   @tag("cXML Webhook")
   @friendlyName("cXML Webhooks")

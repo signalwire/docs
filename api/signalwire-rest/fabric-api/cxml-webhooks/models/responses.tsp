@@ -13,7 +13,7 @@ model CXMLWebhookResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("external_laml_handler")
+  @example("cxml_webhook")
   type: string;
 
   @doc("Date and time when the resource was created.")
@@ -25,7 +25,7 @@ model CXMLWebhookResponse {
   updated_at: utcDateTime;
 
   @doc("CXMLWebhook data.")
-  external_laml_handler: CXMLWebhook;
+  cxml_webhook: CXMLWebhook;
 }
 
 model CXMLWebhookListResponse {
@@ -35,14 +35,14 @@ model CXMLWebhookListResponse {
 
 model CXMLWebhookPaginationResponse {
   @doc("Link of the current page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/external_laml_handlers?page_number=0&page_size=50")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/cxml_webhooks?page_number=0&page_size=50")
   self: url;
 
   @doc("Link to the first page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/external_laml_handlers?page_number=0&page_size=50")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/cxml_webhooks?page_number=0&page_size=50")
   first: url;
 
   @doc("Link to the next page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/external_laml_handlers?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/cxml_webhooks?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
   next: url;
 }

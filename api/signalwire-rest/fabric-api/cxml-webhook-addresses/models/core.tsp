@@ -8,7 +8,7 @@ using TypeSpec.OpenAPI;
 model CXMLWebhookIDPath {
   @doc("Unique ID of a CXML Webhook.")
   @path
-  external_laml_handler_id: uuid
+  cxml_webhook_id: uuid
 }
 
 model CXMLWebhookAddress {
