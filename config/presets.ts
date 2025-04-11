@@ -34,6 +34,8 @@ const presets: PresetConfig[] = [
           [require("../plugins/remark-plugin-a11y-checker"), { stopOnError: false }],
           [require("../plugins/remark-plugin-image-to-figure"), {}],
         ],
+        tags: 'tags.yml',
+        onInlineTags: 'throw'
       },
       blog: {
         blogSidebarCount: "ALL",
