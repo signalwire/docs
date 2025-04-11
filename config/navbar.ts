@@ -167,19 +167,38 @@ const navbar: NavbarItem[] = [
     position: "right",
     items: [
       {
-        href: "https://support.signalwire.com",
-        label: "Contact Support",
+        href: "https://signalwire.zohodesk.com/portal/en/newticket",
+        label: "Create a Ticket",
         "aria-label": "Support",
       },
       {
-        href: "https://discord.com/invite/F2WNYTNjuF",
-        label: "Discord",
-        "aria-label": "Discord Community",
+        href: "https://signalwire.zohodesk.com/portal/en/myarea",
+        label: "My Tickets",
+        "aria-label": "Support",
       },
       {
         href: "https://status.signalwire.com",
         label: "Platform Status",
         "aria-label": "Platform Status",
+      },
+    ],
+  },
+
+  /// Community Dropdown -------- ///
+  {
+    type: "dropdown",
+    label: "Community",
+    position: "right",
+    items: [
+      {
+        href: "https://signalwire.zohodesk.com/portal/en/community",
+        label: "Community Forum",
+        "aria-label": "Community forum",
+      },
+      {
+        href: "https://discord.com/invite/F2WNYTNjuF",
+        label: "Discord Server",
+        "aria-label": "Discord server",
       },
     ],
   },
