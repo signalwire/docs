@@ -2,9 +2,12 @@
 title: "POM technical reference"
 description: "Learn more about the Prompt Object Model"
 sidebar_position: 1
-slug: /tools/pom/technical-reference
+slug: /ai/pom/technical-reference
 sidebar_label: "Technical reference"
 ---
+
+import Schema from './_schema.mdx';
+
 
 [pom-class]: #promptobjectmodel-class
 [section-class]: #section-class
@@ -22,6 +25,10 @@ sidebar_label: "Technical reference"
 [render-xml-section]: #render_xml_section
 [json-schema]: https://json-schema.org/understanding-json-schema/about
 [pom-pypi]: https://pypi.org/project/signalwire-pom/
+[to_yaml]: #to_yaml
+[to_dict_pom]: #to-dict-pom
+[from_yaml]: #from_yaml
+[add_pom_as_subsection]: #add_pom_as_subsection
 
 <Subtitle>Learn how to use the Prompt Object Model</Subtitle>
 
@@ -32,15 +39,16 @@ To learn more about what the Prompt Object Model is, see the [POM overview](/too
 
 ## POM format specification
 
-The POM is a JSON array of [section objects][section-class]. Each section is an object with the following fields:
+The POM is a JSON array of section objects with specific requirements based on position and nesting:
 
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `title` | `string` | `No` unless the section is a nested section | Heading text. |
-| `body` | `string` | `No` | Paragraph or long-form instruction text. |
-| `bullets` | `string[]` | `No` | Bulleted list of short statements or rules. |
-| `subsections` | `nestedSection[]` | `No` | Nested list of sections. Each must include a title. |
-
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | No | Heading text |
+| `body` | One of `body` or `bullets` required | Paragraph or long-form instruction text |
+| `bullets` | One of `body` or `bullets` required | Non-empty array of short statements/rules |
+| `subsections` | No | Nested list of sections |
+| `numbered` | No | Boolean indicating if section should be numbered |
+| `numberedBullets` | No | Boolean indicating if bullets should be numbered |
 
 ### JSON schema for POM
 
@@ -48,52 +56,7 @@ Users can refer to the following [JSON schema][json-schema] and basic example be
 
 <Tabs>
 <TabItem value="schema" label="JSON Schema">
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/pom.schema.json",
-  "title": "Prompt object model",
-  "type": "array",
-  "items": { "$ref": "#/$defs/section" },
-  "$defs": {
-    "section": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "body": { "type": "string" },
-        "bullets": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "subsections": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/nestedSection" }
-        }
-      },
-      "required": [],
-      "additionalProperties": false
-    },
-    "nestedSection": {
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "body": { "type": "string" },
-        "bullets": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "subsections": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/nestedSection" }
-        }
-      },
-      "required": ["title"],
-      "additionalProperties": false
-    }
-  }
-}
-```
+<Schema/>
 
 </TabItem>
 <TabItem value="example" label="Basic Example">
@@ -101,24 +64,33 @@ Users can refer to the following [JSON schema][json-schema] and basic example be
 ```json
 [
   {
-    "title": "String",
-    "body": "String",
+    "body": "You are a helpful AI assistant with specific capabilities.",
     "bullets": [
-      "String",
-      "String",
-      "String"
+      "Follow user instructions carefully",
+      "Maintain professional tone"
     ],
+    "numbered": true,
     "subsections": [
       {
-        "title": "String (required for nested sections)",
-        "body": "String",
+        "title": "Communication Style",
+        "body": "When communicating, follow these guidelines:",
+        "numberedBullets": true,
         "bullets": [
-          "String",
-          "String"
-        ],
-        "subsections": []
+          "Be clear and concise",
+          "Use professional language"
+        ]
       }
     ]
+  },
+  {
+    "title": "Task Execution",
+    "body": "When executing tasks, follow this process:",
+    "bullets": [
+      "Understand the requirements fully",
+      "Plan the approach",
+      "Execute carefully"
+    ],
+    "numbered": true
   }
 ]
 ```
@@ -157,9 +129,13 @@ pom = PromptObjectModel()
 | [`add_section`][add-section] | Adds a top-level section to the prompt POM. |
 | [`find_section`][find-section] | Finds a section by its title, searching recursively through all sections and subsections. |
 | [`to_json`][to-json] | Converts the entire POM to a JSON string. |
+| [`to_yaml`][to_yaml] | Converts the entire POM to a YAML string. |
+| [`to_dict`][to_dict_pom] | Converts the entire POM to a list of dictionaries. |
 | [`render_markdown`][render-markdown-pom] | Renders the entire POM as markdown. |
 | [`render_xml`][render-xml-pom] | Renders the entire POM as XML. |
-| [`from_json`][from-json] | Creates a `PromptObjectModel` instance from JSON data. The data must be a [valid POM JSON schema][json-schema]. |
+| [`from_json`][from-json] | Creates a `PromptObjectModel` instance from JSON data. |
+| [`from_yaml`][from_yaml] | Creates a `PromptObjectModel` instance from YAML data. |
+| [`add_pom_as_subsection`][add_pom_as_subsection] | Adds another POM as a subsection to a specified section. |
 
 ---
 
@@ -172,8 +148,10 @@ Adds a top-level section to the prompt POM.
 | Parameter | Type | Default Value | Description |
 | --------- | ---- | ------------ | ----------- |
 | `title`<span className="optional-arg">Optional</span> | `Optional[str]` | - | The title of the section |
-| `body`<span className="optional-arg">Optional</span> | `str` | - | Body text for the section |
-| `bullets`<span className="optional-arg">Optional</span> | `Optional[List[str]]` | - | List of bullet points |
+| `body`<span className="optional-arg">Optional</span> | `str` | `''` | Body text for the section |
+| `bullets`<span className="optional-arg">Optional</span> | `Union[List[str], str]` | - | List of bullet points or a single string (which will be converted to a single-item list) |
+| `numbered`<span className="optional-arg">Optional</span> | `Optional[bool]` | `None` | Whether this section should be numbered |
+| `numberedBullets`<span className="optional-arg">Optional</span> | `bool` | `False` | Whether bullets should be numbered instead of using bullet points |
 
 **Returns:**
 
@@ -242,6 +220,48 @@ Converts the entire POM to a JSON string.
 # Generate JSON representation
 json_data = pom.to_json()
 print(json_data)
+```
+
+---
+
+#### to_yaml
+
+Converts the entire POM to a YAML string.
+
+**Parameters:** None
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `str` | YAML string representation of the POM |
+
+**Example:**
+```python
+# Generate YAML representation
+yaml_data = pom.to_yaml()
+print(yaml_data)
+```
+
+---
+
+#### to_dict {#to-dict-pom}
+
+Converts the entire POM to a list of dictionaries.
+
+**Parameters:** None
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `List[dict]` | List of dictionaries representing each section in the POM |
+
+**Example:**
+```python
+# Convert POM to dictionary representation
+dict_data = pom.to_dict()
+print(dict_data)
 ```
 
 ---
@@ -333,7 +353,11 @@ The method will follow the below logic when rendering the POM as XML:
   - `<bullets>` containing individual `<bullet>` elements
   - `<subsections>` containing nested `<section>` elements
 
-**Parameters:** None
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `indent`<span className="optional-arg">Optional</span> | `int` | `0` | The indentation level to start with (default: 0) |
 
 **Returns:**
 
@@ -405,6 +429,75 @@ json_string = '''
 ]
 '''
 knowledge_pom = PromptObjectModel.from_json(json_string)
+```
+
+---
+
+#### from_yaml
+
+Creates a PromptObjectModel instance from YAML data.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `yaml_data`<span className="required-arg">Required</span> | `Union[str, dict]` | - | Either a YAML string or a parsed dictionary |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `PromptObjectModel` | A new instance populated with data from the YAML |
+
+**Example:**
+```python
+# Create a POM from YAML
+yaml_string = '''
+- title: Knowledge
+  body: You have the following specific knowledge
+  bullets:
+    - Email etiquette
+    - Business terminology
+  subsections: []
+'''
+knowledge_pom = PromptObjectModel.from_yaml(yaml_string)
+```
+
+---
+
+#### add_pom_as_subsection
+
+Adds another PromptObjectModel as a subsection to a section with the given title or section object.
+
+**Parameters:**
+
+| Parameter | Type | Default Value | Description |
+| --------- | ---- | ------------ | ----------- |
+| `target`<span className="required-arg">Required</span> | `Union[str, Section]` | - | The title of the section or the Section object to add to |
+| `pom_to_add`<span className="required-arg">Required</span> | `PromptObjectModel` | - | The PromptObjectModel to add as a subsection |
+
+**Returns:**
+
+| Type | Description |
+| ---- | ----------- |
+| `None` | This method doesn't return a value |
+
+**Raises:**
+
+- `ValueError`: If no section with the target title is found (when target is a string)
+- `TypeError`: If target is neither a string nor a Section object
+
+**Example:**
+```python
+# Create two POMs
+base_pom = PromptObjectModel()
+base_section = base_pom.add_section("Base Section", body="Main content")
+
+additional_pom = PromptObjectModel()
+additional_pom.add_section("Additional Content", body="Extra information")
+
+# Add the additional POM as a subsection
+base_pom.add_pom_as_subsection("Base Section", additional_pom)
 ```
 
 ---
@@ -499,7 +592,7 @@ Adds a subsection to this section.
 
 | Parameter | Type | Default Value | Description |
 | --------- | ---- | ------------ | ----------- |
-| `title`<span className="required-arg">Required</span> | `str` | - | The title of the subsection |
+| `title`<span className="optional-arg">Optional</span> | `str` | - | The title of the subsection |
 | `body`<span className="optional-arg">Optional</span> | `str` | - | Optional body text for the subsection |
 | `bullets`<span className="optional-arg">Optional</span> | `Optional[List[str]]` | - | Optional list of bullet points |
 
@@ -647,4 +740,63 @@ print(section_xml)
     </section>
   </subsections>
 </section>
+```
+
+---
+
+## Command line interface
+
+The POM library includes a command-line interface (CLI) tool for working with POM files. The CLI allows you to convert between different formats and merge POM files.
+
+### Usage
+
+```bash
+pom_tool <input_file> [--output=<format>] [--outfile=<file>] [--merge_pom="<section name>:<filename>"]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `input_file`<span className="required-arg">Required</span> | Path to the input POM file (JSON or YAML format) |
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `-h, --help`<span className="optional-arg">Optional</span> | - | Show help message |
+| `--output=<format>`<span className="optional-arg">Optional</span> | `md` | Output format: `md`, `xml`, `json`, `yaml` |
+| `--outfile=<file>`<span className="optional-arg">Optional</span> | - | Output file path (if not specified, prints to stdout) |
+| `--merge_pom=<arg>`<span className="optional-arg">Optional</span> | - | Merge another POM file into a section: `"<section name>:<filename>"` |
+
+
+### Error handling
+
+The tool handles several error conditions:
+
+1. **Invalid output format**: Returns an error if the specified output format is not one of: `md`, `xml`, `json`, `yaml`
+2. **File parsing errors**: Reports JSON/YAML parsing errors with descriptive messages
+3. **Section not found**: When using `--merge_pom`, reports if the target section is not found
+4. **Invalid merge syntax**: Validates the `section:filename` format for the merge option
+
+### Examples
+
+1. Convert a JSON POM file to Markdown:
+```bash
+pom_tool input.json --output=md
+```
+
+2. Convert a YAML POM file to XML and save to file:
+```bash
+pom_tool input.yaml --output=xml --outfile=output.xml
+```
+
+3. Merge two POM files:
+```bash
+pom_tool base.json --merge_pom="System Instructions:additional.json" --output=json
+```
+
+4. Show help message:
+```bash
+pom_tool --help
 ```
