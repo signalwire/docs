@@ -7,11 +7,15 @@
  * Typesense technical reference: https://typesense.org/docs/0.24.0/api/search.html#search-parameters
  */
 
-import type { ThemeConfig } from 'docusaurus-theme-search-typesense';
-import type { ConfigurationOptions } from 'typesense/lib/Typesense/Configuration';
-import type { SearchParams } from 'typesense/lib/Typesense/Documents';
+import dotenv from "dotenv";
+import type { ThemeConfig } from "docusaurus-theme-search-typesense";
+import type { ConfigurationOptions } from "typesense/lib/Typesense/Configuration";
+import type { SearchParams } from "typesense/lib/Typesense/Documents";
 
-const config: NonNullable<ThemeConfig['typesense']> = {
+// Load environment variables
+dotenv.config();
+
+const config: NonNullable<ThemeConfig["typesense"]> = {
   typesenseCollectionName: process.env.TYPESENSE_COLLECTION_NAME ?? "placeholder",
 
   typesenseServerConfig: {
@@ -31,4 +35,4 @@ const config: NonNullable<ThemeConfig['typesense']> = {
   searchPagePath: false,
 };
 
-export default config; 
+export default config;
