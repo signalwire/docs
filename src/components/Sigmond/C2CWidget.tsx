@@ -1,3 +1,4 @@
+import React from "react";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import C2CWidgetInternal from "./C2CWidgetInternal";
 import useIsBrowser from "@docusaurus/useIsBrowser";
@@ -25,15 +26,13 @@ export default function C2CWidget({
     <BrowserOnly>
       {() => (
         <>
-          <button
+          <div
             id={`callButton-${randomId}`}
-            className="button button--primary button--lg demo-button-disabled"
-            style={{
-              margin: "10px 0px",
-            }}
+            className="demo-button-disabled"
+            style={{ flex: 1, transition: "opacity 0.4s ease-in-out" }}
           >
             {children}
-          </button>
+          </div>
           <C2CWidgetInternal
             buttonId={`callButton-${randomId}`}
             destination={destination}

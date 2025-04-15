@@ -42,11 +42,6 @@ const scripts: ScriptItem[] = [
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
-  {
-    src: "https://assets.swrooms.com/c2c-widget.js",
-    async: true,
-    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
-  },
 ];
 
 export default scripts;
