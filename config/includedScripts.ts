@@ -7,9 +7,9 @@
  * Docusaurus technical reference: https://docusaurus.io/docs/api/docusaurus-config#scripts
  */
 
-import type { Config } from '@docusaurus/types';
+import type { Config } from "@docusaurus/types";
 
-type ScriptItem = NonNullable<Config['scripts']>[number];
+type ScriptItem = NonNullable<Config["scripts"]>[number];
 
 const scripts: ScriptItem[] = [
   {
@@ -44,4 +44,4 @@ const scripts: ScriptItem[] = [
   },
 ];
 
-export default scripts; 
+export default scripts;
