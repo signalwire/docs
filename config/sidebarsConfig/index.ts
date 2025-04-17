@@ -20,7 +20,6 @@ import browserSdkTechRefSidebar from './relay-browser-sidebar';
 import realtimeSdkTechRefSidebar from './relay-realtime-sidebar';
 import apiSidebar from './rest-api-sidebar';
 import swmlTechRefSidebar from './swml-sidebar';
-import callFlowBuilderSidebar from './call-flow-builder-sidebar';
 import compatibilityAPI from './compatibility-api-sidebar';
 import cantinaSidebar from './cantina-sidebar';
 
@@ -31,7 +30,6 @@ const sidebars: SidebarsConfig = {
   ...realtimeSdkTechRefSidebar,
   ...apiSidebar,
   ...swmlTechRefSidebar,
-  ...callFlowBuilderSidebar,
   ...compatibilityAPI,
   ...cantinaSidebar,
 };

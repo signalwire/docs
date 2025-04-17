@@ -16,4 +16,4 @@ const DescriptionComponent = () => {
   );
 };
 
-export default DescriptionComponent;
+export default React.memo(DescriptionComponent);

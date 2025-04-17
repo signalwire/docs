@@ -13,6 +13,7 @@ import "./ai-agent-addresses";
 import "./cxml-application";
 import "./cxml-application-addresses";
 import "./sip_gateways";
+import "./embeds-tokens";
 
 
 using TypeSpec.Http;
