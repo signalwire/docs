@@ -11,6 +11,7 @@ import "./external-swml-handler-addresses";
 import "./ai-agent";
 import "./ai-agent-addresses";
 import "./embeds-tokens";
+import "./sip_gateways";
 
 
 using TypeSpec.Http;
