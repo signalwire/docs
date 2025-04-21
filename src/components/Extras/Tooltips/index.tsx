@@ -1,64 +1,120 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useRef, useEffect, useId } from 'react';
 import { useWindowSize } from '@docusaurus/theme-common';
 import clsx from 'clsx';
 import styles from './styles.module.css';
+// @ts-expect-error ES module import; handled correctly by bundler
+import ReactMarkdown from 'react-markdown';
+// @ts-expect-error ES module import; handled correctly by bundler
+import remarkGfm from 'remark-gfm';
+// @ts-expect-error ES module import; handled correctly by bundler
+import rehypeRaw from 'rehype-raw';
 
 interface TooltipProps {
   children: ReactNode;
-  tip: ReactNode;
-  delay?: number;
+  /**
+   * The tooltip content. Can be a string containing Markdown/MDX **or** a React node.
+   */
+  tip: string | ReactNode;
 }
 
 export default function Tooltips({ 
   children, 
-  tip,
-  delay = 200 
+  tip
 }: TooltipProps) {
   const windowSize = useWindowSize();
   const isMobile = windowSize === 'mobile';
   const [isVisible, setIsVisible] = useState(false);
+  const tooltipId = useId();
+  const containerRef = useRef<HTMLSpanElement>(null);
 
-  if (!tip) {
-    throw new Error('Tooltip requires a non-empty tip prop');
+  if (!tip || !children) {
+    throw new Error('Tooltip requires both tip content and children');
   }
 
-  if (!children) {
-    throw new Error('Tooltip requires children to be provided');
-  }
+  // Handle click outside and body scrolling for mobile
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsVisible(false);
+      }
+    };
+    
+    if (isVisible) {
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobile, isVisible]);
 
-  const handleMouseEnter = () => {
-    setIsVisible(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsVisible(false);
+  const handleEvents = {
+    onMouseEnter: () => !isMobile && setIsVisible(true),
+    onMouseLeave: () => !isMobile && setIsVisible(false),
+    onFocus: () => !isMobile && setIsVisible(true),
+    onBlur: () => !isMobile && setIsVisible(false),
+    onClick: (e: React.MouseEvent) => {
+      if (isMobile) {
+        e.preventDefault();
+        setIsVisible(prev => !prev);
+      }
+    }
   };
 
   return (
-    <span 
-      className={styles.tooltipContainer}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onFocus={handleMouseEnter}
-      onBlur={handleMouseLeave}
-      role="tooltip"
-      tabIndex={0}
-    >
-      {children}
+    <>
+      {/* Darkened, blurred backdrop for mobile */}
+      {isMobile && (
+        <div 
+          className={clsx(styles.tooltipBackdrop, isVisible && styles.visible)}
+          onClick={() => setIsVisible(false)}
+        />
+      )}
+      
       <span 
-        className={clsx(
-          styles.tooltip,
-          isMobile && styles.tooltipMobile,
-          isVisible && styles.visible
-        )}
-        role="tooltip"
-        aria-hidden={!isVisible}
-        style={{
-          transitionDelay: `${isVisible ? 0 : delay}ms`
-        }}
+        ref={containerRef}
+        className={styles.tooltipContainer}
+        {...handleEvents}
+        tabIndex={0}
+        aria-describedby={tooltipId}
       >
-        {tip}
+        {children}
+        <div 
+          id={tooltipId}
+          className={clsx(
+            styles.tooltip,
+            isMobile && styles.tooltipMobile,
+            isVisible && styles.visible
+          )}
+          role="tooltip"
+          aria-expanded={isVisible}
+        >
+          <div className={styles.tooltipContent}>
+            {typeof tip === 'string' ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm as any]}
+                rehypePlugins={[rehypeRaw as any]}
+                components={{
+                  p: ({ node, ...props }) => <span {...props} />, 
+                }}
+              >
+                {tip}
+              </ReactMarkdown>
+            ) : (
+              tip
+            )}
+          </div>
+          
+          {/* Separate arrow element outside of scrollable content */}
+          <div className={styles.tooltipArrow} />
+        </div>
       </span>
-    </span>
+    </>
   );
 }
