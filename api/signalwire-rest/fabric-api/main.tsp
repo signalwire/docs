@@ -10,9 +10,6 @@ import "./external-swml-handler";
 import "./external-swml-handler-addresses";
 import "./ai-agent";
 import "./ai-agent-addresses";
-import "./cxml-application";
-import "./cxml-application-addresses";
-import "./sip_gateways";
 import "./embeds-tokens";
 
 
