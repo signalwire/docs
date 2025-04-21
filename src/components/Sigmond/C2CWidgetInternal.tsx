@@ -16,6 +16,10 @@ export default function C2CWidgetInternal({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    import("@niravcodes/call-widget");
+  }, []);
+
   // react doesn't like other scripts controlling the DOM,
   // we create an empty div and inject things via js
   // note: when component unmounts, we're clearing the div
@@ -32,7 +36,7 @@ export default function C2CWidgetInternal({
           destination,
           supportsVideo,
           supportsAudio,
-        })
+        }),
       );
       widget.setAttribute("token", token);
       rootRef.current.appendChild(widget);
