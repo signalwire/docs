@@ -9,10 +9,8 @@ import "./external-swml-handler-addresses";
 import "./ai-agent";
 import "./ai-agent-addresses";
 import "./cxml-webhooks";
-import "./cxml-application";
-import "./cxml-application-addresses";
-import "./embeds-tokens";
 import "./cxml-webhook-addresses";
+import "./embeds-tokens";
 
 
 using TypeSpec.Http;
