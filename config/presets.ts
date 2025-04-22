@@ -27,7 +27,7 @@ const presets: PresetConfig[] = [
           [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           [require("../plugins/remark-plugin-yaml-and-json"), { sync: false }],
           [require("../plugins/remark-plugin-vfile-reporter"), {}],
-          [require("../plugins/remark-plugin-api-table"), {}],
+          [require("../plugins/remark-plugin-api-table"), {}]
         ],
         beforeDefaultRemarkPlugins: [
           // TODO: temporarily don't fail on a11y errors

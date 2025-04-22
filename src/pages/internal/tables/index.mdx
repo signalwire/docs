@@ -1,0 +1,163 @@
+---
+title: Table Component
+description: A customizable table component for combining Markdown and HTML tables
+slug: /internal/tables
+unlisted: true
+---
+
+import Tables from '@site/src/components/Tables/index';
+import BaseParams from './_partials/base-params.mdx';
+import AdditionalParams from './_partials/additional-params.mdx';
+
+# Tables Component
+
+The `Tables` component allows you to combine multiple Markdown or HTML tables into a single rendered table. This is useful for reusing and extending table content across your documentation.
+
+## Basic Usage
+
+To combine tables, wrap them with the `<Tables>` component. You can use Markdown tables, HTML tables, or tables returned from MDX partials (see below for important usage notes):
+
+```jsx
+<Tables caption="API Parameters">
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| text | string | - | The instructions to send to the agent |
+| contexts | object | - | An object that defines the contexts for the AI |
+</Tables>
+```
+
+## Component Properties
+
+| Property   | Type      | Default | Description                                 |
+|------------|-----------|---------|---------------------------------------------|
+| children   | ReactNode | -       | Table content (Markdown/HTML tables or partials) |
+| className  | string    | -       | Additional CSS class name                   |
+| caption    | string    | -       | Adds a caption to the table                 |
+
+## How It Works
+
+The `Tables` component:
+1. Recursively extracts all `<table>` elements from its children (including those returned by partials).
+2. Requires that **all tables have a `<thead>`**. If any table is missing a `<thead>`, an error is thrown in development or a message is shown in production.
+3. Validates that all tables have the **same header structure** (same number and content of header cells). If not, an error is thrown in development or a message is shown in production.
+4. Combines all rows from all tables into a single `<tbody>`, using the header from the first table.
+
+**Note:**  
+- All children must be DOM elements (not React components).  
+- If using MDX partials, you must call them as functions (e.g. `{Partial()}`), not as JSX components (`<Partial />`).  
+- If you use `<Partial />`, the table rows will not be extracted.
+
+## Combining Tables
+
+You can combine multiple tables by placing them inside a `<Tables>` component:
+
+<Tables caption="Combined Tables Example">
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| text | string | - | The instructions to send to the agent |
+| contexts | object | - | An object that defines the contexts for the AI |
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| temperature | number | 1.0 | Controls how random the output gets |
+| top_p | number | 1.0 | Alternative method to control randomness |
+
+</Tables>
+
+## Header Handling
+
+- **All tables must have a `<thead>`.**
+- **All tables must have the same header structure.** If not, an error will be thrown (in development) or shown (in production).
+- The header from the first table is used for the combined table.
+
+## Column Count Considerations
+
+- The `Tables` component does **not** pad or truncate columns. If a row has fewer cells than the header, the extra header columns will be empty. If a row has more cells, the extra cells will be rendered but may not align with the header.
+- For best results, ensure all tables and partials use the same column structure.
+
+<Tables caption="Handling Different Column Counts">
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| text | string | - | The instructions to send to the agent |
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| confidence | number | 0.6 | Threshold for events |
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| temperature | number | 1.0 | Randomness setting. Float value between 0.0 and 1.5 |
+| top_p | number | 1.0 | Randomness setting. Alternative to temperature |
+
+</Tables>
+
+## Using Partials
+
+> **Important:** When importing MDX partials, you **must call them as functions** (`{BaseParams()}`), not as components (`<BaseParams />`). This ensures the `Tables` component can traverse and extract tables from their output.
+
+```jsx
+import BaseParams from './_partials/base-params.mdx';
+import AdditionalParams from './_partials/additional-params.mdx';
+
+<Tables caption="Combined from Partial Files">
+  {BaseParams()}
+  {AdditionalParams()}
+</Tables>
+```
+
+### Example Partial File
+
+#### _partials/base-params.mdx
+
+```mdx
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| temperature | number | 1.0 | Randomness setting. Float value between 0.0 and 1.5 |
+| top_p | number | 1.0 | Randomness setting. Alternative to temperature |
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| pom | object[] | - | An array of objects that defines the prompt object model |
+| confidence | number | 0.6 | Threshold to fire a speech-detect event |
+| presence_penalty | number | 0 | Aversion to staying on topic |
+```
+
+> **Tip:** If a partial contains multiple tables, all must have the same header structure as the first table in the parent `<Tables>` component.
+
+#### _partials/additional-params.mdx
+
+```mdx
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| temperature | number | 1.0 | Randomness setting. Float value between 0.0 and 1.5 |
+| top_p | number | 1.0 | Randomness setting. Alternative to temperature |
+```
+
+## Best Practices
+
+1. **Use consistent column structure** across all tables and partials to ensure data aligns correctly.
+2. **Put the most descriptive headers first** if you have multiple tables.
+3. **Use placeholder values** like `-` or `N/A` for missing data.
+4. **Keep common parameters in reusable files** to maintain DRY principles.
+5. **When combining tables, ensure they follow the same semantic structure** and header content.
+
+## Common Pitfalls
+
+1. **Inconsistent column structure or headers** – All tables must have the same header structure.
+2. **Missing `<thead>` in any table** – All tables must have a `<thead>`.
+3. **Using `<Partial />` instead of `{Partial()}`** – Always call MDX partials as functions.
+4. **HTML in Markdown tables** – Be careful with raw HTML in Markdown tables; it may not process as expected.
+5. **Unequal column widths** – Column widths are determined by content; use consistent content for best results.
+
+## Benefits of This Approach
+
+- **Modularize your documentation** – Keep common parameters in their own files.
+- **Reuse parameter definitions** – Reference the same parameter definitions across multiple pages.
+- **Maintain consistency** – Update a parameter once and have it reflected everywhere.
+- **Create custom groupings** – Combine parameters in different ways for different contexts.
+
+---
+
+If you need to support more flexible usage (such as allowing `<Partial />`), the component would need to be enhanced to render and traverse React components, not just DOM elements.

@@ -1,0 +1,147 @@
+---
+title: detect_machine
+slug: /swml/methods/detect_machine
+description: Detect if the other end of the call is a machine (fax, voicemail, etc.) or a human, using AMD and Fax detection.
+tags: ['swml']
+---
+
+[variables]: #variables
+[statuscallbacks]: #statuscallbacks
+
+
+A detection method that is a combination of AMD (Answer Machine Detection) and Fax detection.
+Detect if the user on the other end of the call is a `machine` (fax, voicemail, etc.) or a `human`.
+The detection result(s) will be sent to the declared `status_url` as a POST request and also saved in the 
+`detect_result` [variable][variables].
+
+| Name                                                           | Type     | Default | Description                                                                 |
+|:---------------------------------------------------------------|:---------|:--------|:----------------------------------------------------------------------------|
+| `detect_machine`<span className="required-arg">Required</span> | `object` | -       | An object that accepts the [`detect_machine parameters`](#detect_machine-parameters). |
+
+## **detect_machine parameters**
+
+| Name                                                                | Type      | Default         | Description                                                                 |
+|:--------------------------------------------------------------------|:----------|:----------------|:----------------------------------------------------------------------------|
+| `detect_message_end`<span className="optional-arg">Optional</span> | `boolean` | `false`         | If `true`, stops detection on beep / end of voicemail greeting.              |
+| `detectors`<span className="optional-arg">Optional</span>          | `string`  | `amd,fax`       | Comma-separated string: detectors to enable.                                |
+| `end_silence_timeout`<span className="optional-arg">Optional</span>| `number`  | `1.0`           | How long to wait for voice to finish.                                       |
+| `initial_timeout`<span className="optional-arg">Optional</span>    | `number`  | `4.5`           | How long to wait for initial voice before giving up.                        |
+| `machine_ready_timeout`<span className="optional-arg">Optional</span>| `number`| The value of `end_silence_timeout` | How long to wait for voice to finish before firing READY event.         |
+| `machine_voice_threshold`<span className="optional-arg">Optional</span>| `number`| `1.25`          | How much voice in seconds to decide MACHINE.                                |
+| `machine_words_threshold`<span className="optional-arg">Optional</span>| `integer`| `6`            | How many words to count to decide MACHINE.                                  |
+| `status_url`<span className="optional-arg">Optional</span>         | `string`  | -               | The http(s) URL to deliver detector events to. Learn more about [status callbacks][statuscallbacks]. |
+| `timeout`<span className="optional-arg">Optional</span>            | `number`  | `30.0`          | The max time to run detector (seconds).                                     |
+| `tone`<span className="optional-arg">Optional</span>               | `string`  | `CED`           | The tone to detect, will only receive remote side tone. (`CED` or `CNG`)    |
+| `wait`<span className="optional-arg">Optional</span>               | `boolean` | `true`          | If `false`, the detector will run asynchronously and `status_url` must be set. |
+
+---
+
+## **Variables**
+
+The following variables are available after the `detect_machine` method is executed and detection is complete.
+You can reference these variables in your SMWL script utilizing the `%{variable}` syntax.
+
+| Variable                  | Direction | Type                                      | Description                                         |
+|---------------------------|-----------|-------------------------------------------|-----------------------------------------------------|
+| `detect_result`   | out       | `human` \| `machine` \| `fax` \| `unknown`| The result of detection.                            |
+| `detect_machine_beep`     | out       | `true` \| `false`                         | Whether a beep was detected. `true` if detected.    |
+| `detect_ms`               | out       | `integer`                                 | The number of milliseconds the detection took.       |
+
+
+---
+
+## **StatusCallbacks**
+
+A POST request will be sent to `status_url` with a JSON payload like the following:
+
+
+| Field                        | Type     | Description                                                      |
+|------------------------------|----------|------------------------------------------------------------------|
+| `event_type`                 | string   | The type of event, always `calling.call.detect` for this method. |
+| `event_channel`              | string   | The channel for the event, includes the SWML session ID.         |
+| `timestamp`                  | number   | Unix timestamp (float) when the event was generated.             |
+| `project_id`                 | string   | The project ID associated with the call.                         |
+| `space_id`                   | string   | The space ID associated with the call.                           |
+| `params.control_id`          | string   | The control ID for this detect operation.                        |
+| `params.detect`              | object   | Detection result details (see subfields below).                  |
+| `params.detect.type`         | string   | The type of detection.  **Valid values:** `machine` or `fax`.      |
+| `params.detect.params.event` | string   | The detection result. **Valid values:** `HUMAN`, `MACHINE`, `FAX`, `UNKNOWN`, `finished`. |
+| `params.call_id`             | string   | The call ID.                                                     |
+| `params.node_id`             | string   | The node handling the call.                                      |
+| `params.segment_id`          | string   | The segment ID for this part of the call.                        |
+
+### Raw JSON example
+
+```json
+{
+  "event_type": "calling.call.detect",
+  "event_channel": "swml:be38xxxx-8xxx-4xxxx-9fxx-bxxxxxxxxx",
+  "timestamp": 1745332535.668522,
+  "project_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "space_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "params": {
+    "control_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "detect": {
+      "type": "machine",
+      "params": {
+        "event": "HUMAN"
+      }
+    },
+    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "segment_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+}
+```
+
+---
+
+## **Examples**
+
+### Play detection result
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - detect_machine:
+        status_url: 'https://example.com/detect-events'
+        timeout: 20
+    - play:
+        url: 'say:Detection result: %{detect_machine_result}'
+```
+
+
+### Conditional actions based on detection result
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say: Welcome to the machine detection test."
+    - detect_machine:
+        status_url: "https://webhook.site/5c8abf82-b8c7-41c8-b5d6-b32a40068109"
+        detectors: "amd,fax"
+        wait: true
+    - cond:
+        - when: detect_result == 'machine'
+          then:
+            - play:
+                url: "say: You are a machine, goodbye."
+            - hangup: {}
+        - when: detect_result == 'human'
+          then:
+            - play:
+                url: "say: You are a human, hello."
+            - hangup: {}
+        - when: detect_result == 'fax'
+          then:
+            - play:
+                url: "say: You are a fax, goodbye."
+            - hangup: {}
+        - else:
+            - play:
+                url: "say: Unable to determine if you are a human, machine, or fax, goodbye. Result was %{detect_result}"
+            - hangup: {}
+```
