@@ -11,6 +11,7 @@ import "./ai-agent-addresses";
 import "./cxml-webhooks";
 import "./cxml-webhook-addresses";
 import "./embeds-tokens";
+import "./sip_gateways";
 
 
 using TypeSpec.Http;
