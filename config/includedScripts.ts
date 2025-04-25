@@ -32,6 +32,11 @@ const scripts: ScriptItem[] = [
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
+  {
+    src: "/scripts/noticeable-bar.js",
+    async: true,
+    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
+  },
 ];
 
 export default scripts;
