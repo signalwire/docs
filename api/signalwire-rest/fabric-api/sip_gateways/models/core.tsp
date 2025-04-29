@@ -1,17 +1,28 @@
-import "@typespec/openapi3";
-import "./enums.tsp";
 import "../../../types";
 
 using TypeSpec.Http;
-using TypeSpec.OpenAPI;
 
-model ExternalLAMLHandlerIDPath {
-  @doc("Unique ID of a External LAML Handler.")
+model SipGatewayID {
+  @doc("Unique ID of a SIP Gateway.")
   @path
-  external_laml_handler_id: uuid
+  id: uuid
 }
 
-model ExternalLAMLHandlerAddress {
+model SipGatewayAddressPaginationResponse {
+  @doc("Link of the current page")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50")
+  self: url;
+
+  @doc("Link to the first page")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50")
+  first: url;
+
+  @doc("Link to the next page")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  next: url;
+}
+
+model SipGatewayAddress {
   @doc("Unique ID of the Fabric Address.")
   @example("691af061-cd86-4893-a605-173f47afc4c2")
   id: uuid;
