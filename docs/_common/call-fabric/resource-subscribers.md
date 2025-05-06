@@ -8,7 +8,7 @@
     or internal account-holders, 
     within the Call Fabric paradigm.
     
-    Subscribers always use the `private` [context](#contexts) by default, though `public` Aliases can be added.
+    Subscribers always use the `private` [context](/platform/call-fabric#contexts) by default, though `public` Aliases can be added.
 
     Subscribers can receive or initiate calls, messages, and other forms of interaction.
     
