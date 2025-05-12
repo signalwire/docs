@@ -25,29 +25,5 @@ enum EncryptionType {
   Optional: "optional",
 }
 
-@doc("Call handler of the Sip Endpoint.")
-enum CallHandlerType {
-  Default: "default",
-  Passthrough: "passthrough",
-  BlockPstn: "block-pstn",
-  RelayScript: "relay_script",
-  LamlWebhook: "laml_webhook",
-  LamlApplication: "laml_application",
-  Dialogflow: "dialogflow",
-  RelayContext: "relay_context",
-  RelayConnector: "relay_connector",
-  VideoRoom: "video_room",
-  AiAgent: "ai_agent",
-  CallFlow: "call_flow",
-}
-
-@doc("Call handler of the Sip Endpoint.")
-enum CallHandlerPassthroughType {
-  Default: "default",
-  Passthrough: "passthrough",
-  BlockPstn: "block-pstn",
-}
-
-
 alias CodecTypeArray = CodecType[];
 alias CipherTypeArray = CipherType[];
