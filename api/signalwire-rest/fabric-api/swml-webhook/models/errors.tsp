@@ -11,6 +11,6 @@ using Types.StatusCodes;
       url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#http_url_required"
     }],
   })
-  model ExternalSwmlHandlerCreateStatusCode422 is StatusCode422;
+  model SwmlWebhookCreateStatusCode422 is StatusCode422;
 
-  model ExternalSwmlHandlerUpdateStatusCode422 is ExternalSwmlHandlerCreateStatusCode422;
+  model SwmlWebhookUpdateStatusCode422 is SwmlWebhookCreateStatusCode422;
