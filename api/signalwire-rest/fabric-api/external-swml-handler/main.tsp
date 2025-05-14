@@ -40,7 +40,7 @@ namespace FabricAPI.ExternalSWMLHandlers {
 
     @summary("Update External SWML Handler")
     @doc("Updates an External SWML Handler by ID")
-    @patch update(...ExternalSWMLHandlerID, ...ExternalSWMLHandlerUpdateRequest): {
+    @patch update(...ExternalSWMLHandlerID, ...MergePatchUpdate<ExternalSWMLHandlerUpdateRequest>): {
       @statusCode statusCode: 200; @body external_swml_handler: ExternalSWMLHandlerResponse;
     } |
       StatusCode401 |
