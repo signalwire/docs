@@ -1,3 +1,7 @@
+@minValue(10000)
+@maxValue(600000)
+scalar IntegerOrZero extends integer;
+
 @summary("Direction enum")
 enum Direction {
   @doc("Sets the direction of the call to `inbound` for the assistant.")
@@ -17,9 +21,7 @@ model AIParams {
   ai_volume?: integer;
 
   @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values from `10,000` - `600,000`. Set to `0` to disable.")
-  @minValue(10000)
-  @maxValue(600000)
-  attention_timeout?: integer | 0;
+  attention_timeout?: (IntegerOrZero | 0);
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
