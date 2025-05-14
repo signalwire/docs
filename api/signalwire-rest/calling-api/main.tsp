@@ -7,7 +7,7 @@ import "./calls";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@service({
+@service(#{
   title: "Calling API",
 })
 @server("https://{space_name}.signalwire.com/api/calling", "Endpoint", {

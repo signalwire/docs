@@ -17,7 +17,7 @@ import "./sip_gateways";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@service({
+@service(#{
   title: "Call Fabric API",
 })
 @server("https://{space_name}.signalwire.com/api/fabric/", "Endpoint", {
