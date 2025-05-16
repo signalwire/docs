@@ -7,6 +7,8 @@ description: Functions that can be executed during the interaction with the AI.
 tags: ['swml']
 ---
 
+[reserved-functions]: #reserved-functions
+[post-prompt]: /swml/methods/ai/post_prompt
 
 An array of JSON objects to define functions that can be executed during the interaction with the AI.
 
@@ -20,7 +22,7 @@ An array of JSON objects to define functions that can be executed during the int
 | Parameter                                                                                 | Type                    | Default           | Description                                                                                                                                                                                                                                                                                                                                                                                      |
 | :---------------------------------------------------------------------------------------- | :---------------------- | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `description` <span className="required-arg">Required</span>                              | `string`                | -                 | A description of the context and purpose of the function, to explain to the agent when to use it.                                                                                                                                                                                                                                                                                                |
-| `function` <span className="required-arg">Required</span>                                 | `string`                | -                 | A unique name for the function. For example, "get_weather".                                                                                                                                                                                                                                                                                                                                      |
+| `function` <span className="required-arg">Required</span>                                 | `string`                | -                 | A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functoins are SignalWire functions that will be executed at certain points in the conversation. To learn more about reserved functions, see [Reserved Functions][reserved-functions].                                                                                                                                                           |
 | `active` <span className="optional-arg">Optional</span>                                   | `boolean`               | `true`            | Whether the function is active.                                                                                                                                                                                                                                                                                                                                                                  |
 | [`data_map`](./ai_swaig.data_map/index.mdx)<span className="optional-arg">Optional</span> | `object`                | -                 | An object containing properties to process or validate the input, perform actions based on the input, or connect to external APIs or services in a serverless fashion.                                                                                                                                                                                                                           |
 | [`parameters`](./parameters/index.mdx) <span className="optional-arg">Optional</span>     | `object`                | -                 | A JSON object that defines the expected user input parameters and their validation rules for the function.                                                                                                                                                                                                                                                             |
@@ -35,7 +37,72 @@ An array of JSON objects to define functions that can be executed during the int
 | <span className="deprecated-arg">`argument`</span>                                        | `object`                | -                 | <span className="deprecated-desc">Deprecated. Use `parameters` instead.</span>                                                                                                                                                                                                                                                                                                                   |
 
 
-## **Examples** {#examples}
+
+## **Reserved Functions** {#reserved-functions}
+
+Reserved functions are special SignalWire functions that are automatically triggered at specific points during a conversation.
+You define them just like any other SWAIG function, but their names correspond to built-in logic on the SignalWire platform,
+allowing them to perform specific actions at the appropriate time.
+
+:::warning Function name conflicts
+Do not use reserved function names for your own SWAIG functions unless you want to use the reserved function's built-in behavior.
+Otherwise, your function may not work as expected.
+:::
+
+### List of Reserved Functions
+
+| Function Name            | Purpose                                                                                                                                                                                                                   |
+|:------------------------ |:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `start_hook`             | Triggered when the call is answered. Sends the set properties of the function to the defined `web_hook_url`.                                                                       |
+| `stop_hook`              | Triggered when the call is ended. Sends the set properties of the function to the defined `web_hook_url`.                                                                          |
+| `summarize_conversation` | Triggered when the call is ended. The [`post_prompt`][post-prompt] must be defined for this function to be triggered. Provides a summary of the conversation and any set properties to the defined `web_hook_url`. |
+
+:::important Where are my function properties?
+If the AI is not returning the properties you set in your SWAIG function, it may be because a reserved function was triggered before
+those properties were available. To ensure your function receives all necessary information, make sure the AI has access to the
+required property values before the reserved function is called. Any property missing at the time the reserved function runs will
+not be included in the data sent back.
+:::
+
+
+## Diagram examples {#diagrams}
+
+```mermaid
+sequenceDiagram
+    participant SW System
+    participant User
+    participant AI
+    participant SWAIG
+
+    %% Call starts
+    SW System->>AI: Event: Call answered
+    AI->>SWAIG: Trigger reserved function start_hook
+    SWAIG->>AI: start_hook response
+
+    %% User asks a simple question (no function needed)
+    User->>AI: "Hello, who am I speaking with?"
+    Note right of AI: Intent does NOT match a function
+    AI->>User: "You are speaking with the SignalWire assistant."
+
+    %% User asks for weather (triggers function)
+    User->>AI: "What's the weather in Paris?"
+    Note right of AI: Intent matches get_weather function
+    AI->>SWAIG: Call get_weather with location=Paris
+    SWAIG->>AI: Response payload:<br>{ "location": "Paris", "temp": "75°F", "condition": "Sunny" }
+    AI->>User: "It's sunny and 75°F in Paris."
+
+    %% Call ends
+    SW System->>AI: Event: Call ended
+    AI->>SWAIG: Trigger reserved function stop_hook
+    SWAIG->>AI: stop_hook response
+
+    %% Conversation ends (post_prompt defined)
+    SW System->>AI: Event: Conversation ended
+    AI->>SWAIG: Trigger reserved function summarize_conversation
+```
+
+
+## SWML **Examples** {#examples}
 
 ### Using SWAIG Functions
 
@@ -48,6 +115,7 @@ sections:
         prompt:
           text: |
             You are a helpful assistant that can provide information to users about a destination.
+            At the start of the conversation, always ask the user for their name.
             You can use the appropriate function to get the phone number, address,
             or weather information.
         post_prompt:
@@ -73,4 +141,11 @@ sections:
                     type: string
                     description: The name of the city to find the weather from.
                 type: object
+            - function: summarize_conversation
+              description: Summarize the conversation.
+              parameters:
+                properties:
+                  name:
+                    type: string
+                    description: The name of the user.
 ```

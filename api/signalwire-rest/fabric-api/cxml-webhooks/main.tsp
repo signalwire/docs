@@ -40,7 +40,7 @@ namespace FabricAPI.CXMLWebhooks {
 
     @summary("Update cXML Webhook")
     @doc("Updates an cXML Webhook by ID")
-    @patch update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest): {
+    @patch update(...CXMLWebhookID, ...MergePatchUpdate<CXMLWebhookUpdateRequest>): {
       @statusCode statusCode: 200; @body cxml_webhook: CXMLWebhookResponse;
     } |
       StatusCode401 |

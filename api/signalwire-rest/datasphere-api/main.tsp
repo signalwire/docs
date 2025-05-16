@@ -5,7 +5,7 @@ import "./document";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@service({
+@service(#{
   title: "Datasphere API",
 })
 @server("https://{space_name}.signalwire.com/api/datasphere", "Endpoint", {
