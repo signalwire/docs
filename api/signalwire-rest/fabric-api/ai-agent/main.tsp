@@ -38,7 +38,7 @@ namespace FabricAPI.AIAgents {
 
     @summary("Update AI Agent")
     @doc("Updates an AI Agent by ID")
-    @patch update(...AIAgentPathID, ...MergePatchUpdate<AIAgentUpdateRequest>):
+    @patch(#{ implicitOptionality: true })  update(...AIAgentPathID, ...AIAgentUpdateRequest):
       { @statusCode statusCode: 200; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
       StatusCode404 |

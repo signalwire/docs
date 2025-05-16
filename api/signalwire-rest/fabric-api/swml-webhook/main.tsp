@@ -39,7 +39,7 @@ namespace FabricAPI.SWMLWebhooks {
       SwmlWebhookCreateStatusCode422;
     @summary("Update SWML Webhook")
     @doc("Updates an SWML Webhook by ID")
-    @patch update(...SWMLWebhookID, ...SWMLWebhookUpdateRequest): {
+    @patch(#{ implicitOptionality: true })  update(...SWMLWebhookID, ...SWMLWebhookUpdateRequest): {
       @statusCode statusCode: 200; @body swml_webhook: SWMLWebhookResponse;
     } |
       StatusCode401 |
