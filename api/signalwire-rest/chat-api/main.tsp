@@ -8,7 +8,7 @@ import "./tokens";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@service({
+@service(#{
   title: "Chat API",
 })
 @server("https://{space_name}.signalwire.com/api/chat", "Endpoint", {

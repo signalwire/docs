@@ -39,7 +39,7 @@ namespace FabricAPI.SipGateways {
 
     @summary("Update SIP Gateway")
     @doc("Updates a SIP Gateway by ID")
-    @patch update(...SipGatewayID, ...SipGatewayUpdateRequest): {
+    @patch(#{ implicitOptionality: true })  update(...SipGatewayID, ...SipGatewayUpdateRequest): {
       @statusCode statusCode: 200; @body sip_gateway: SipGatewayUpdateResponse;
     } |
       StatusCode401 |

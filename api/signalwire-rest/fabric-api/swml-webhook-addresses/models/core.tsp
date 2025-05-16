@@ -5,13 +5,13 @@ import "../../../types";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-model ExternalSWMLHandlerIDPath {
-  @doc("Unique ID of a External SWML Handler.")
+model SWMLWebhookIDPath {
+  @doc("Unique ID of a SWML Webhook.")
   @path
-  external_swml_handler_id: uuid
+  swml_webhook_id: uuid
 }
 
-model ExternalSWMLHandlerAddress {
+model SWMLWebhookAddress {
   @doc("Unique ID of the Fabric Address.")
   @example("691af061-cd86-4893-a605-173f47afc4c2")
   id: uuid;

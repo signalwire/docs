@@ -40,7 +40,7 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
     @summary("Update Subscriber SIP Endpoint")
     @doc("Updates a Subscriber Sip Endpoint by ID")
-    @patch update(...SIPEndpointID, ...FabricSubscriberID, @body body: SubscriberSipEndpointRequest): {
+    @patch(#{ implicitOptionality: true }) update(...SIPEndpointID, ...FabricSubscriberID, @body body: SubscriberSipEndpointUpdateRequest): {
       @statusCode statusCode: 200; @body subscriber_sip_endpoint: SIPEndpoint;
     } |
       StatusCode401 |

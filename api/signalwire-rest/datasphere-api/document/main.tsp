@@ -29,7 +29,7 @@ namespace DatasphereAPI.Documents {
 
     @doc("Updates a Datasphere Document by ID")
     @summary("Update a Document")
-    @patch update(...PathID, ...DocumentUpdateRequest): {
+    @patch(#{ implicitOptionality: true })  update(...PathID, ...DocumentUpdateRequest): {
       @statusCode statusCode: 200; @body document: Document;
     } |
       StatusCode401 |
