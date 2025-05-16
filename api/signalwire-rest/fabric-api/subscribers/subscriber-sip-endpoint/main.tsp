@@ -32,7 +32,7 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
     @summary("Create Subscriber SIP Endpoint")
     @doc("Creates a Subscriber Sip Endpoint")
-    @post create(...FabricSubscriberID, @body body: SubscriberSipEndpointCreateRequest):
+    @post create(...FabricSubscriberID, @body body: SubscriberSipEndpointRequest):
       { @statusCode statusCode: 201; @body subscriber_sip_endpoint: SIPEndpoint; } |
       StatusCode401 |
       StatusCode404 |
@@ -40,7 +40,7 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
     @summary("Update Subscriber SIP Endpoint")
     @doc("Updates a Subscriber Sip Endpoint by ID")
-    @patch(#{ implicitOptionality: true }) update(...SIPEndpointID, ...FabricSubscriberID, @body body: SubscriberSipEndpointUpdateRequest): {
+    @patch(#{ implicitOptionality: true }) update(...SIPEndpointID, ...FabricSubscriberID, @body body: SubscriberSipEndpointRequest): {
       @statusCode statusCode: 200; @body subscriber_sip_endpoint: SIPEndpoint;
     } |
       StatusCode401 |

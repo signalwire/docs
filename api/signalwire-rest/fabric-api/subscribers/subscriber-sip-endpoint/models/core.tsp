@@ -16,11 +16,6 @@ model SIPEndpointID {
   id: uuid
 }
 
-model CallingHandlerResourceID {
-  @doc("Unique ID of the Calling Handler Resource.")
-  calling_handler_resource_id: uuid
-}
-
 model SIPEndpoint {
   @doc("Unique ID of the Sip Endpoint.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
@@ -47,12 +42,4 @@ model SIPEndpoint {
   @doc("Encryption requirement of the Sip Endpoint.")
   @example(EncryptionType.Optional)
   encryption: EncryptionType;
-
-  @doc("Call handler of the Sip Endpoint.")
-  @example(CallHandlerType.AiAgent)
-  call_handler: CallHandlerType;
-
-  @doc("Unique ID of the Calling Handler Resource.")
-  @example("f7078ea7-dc79-4763-96f6-725bf5829097")
-  calling_handler_resource_id: uuid
 }
