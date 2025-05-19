@@ -1,6 +1,7 @@
 FROM node:20 AS builder
 WORKDIR /app
 COPY . /app
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run install-ci && npm run build
 
 

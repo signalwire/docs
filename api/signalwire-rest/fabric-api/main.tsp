@@ -4,21 +4,20 @@ import "./addresses";
 import "./subscribers";
 import "./subscriber-guest-token";
 import "./subscriber-invite-token";
-import "./external-laml-handler";
-import "./external-laml-handler-addresses";
-import "./external-swml-handler";
-import "./external-swml-handler-addresses";
+import "./swml-webhook";
+import "./swml-webhook-addresses";
 import "./ai-agent";
 import "./ai-agent-addresses";
-import "./cxml-application";
-import "./cxml-application-addresses";
+import "./cxml-webhooks";
+import "./cxml-webhook-addresses";
 import "./embeds-tokens";
+import "./sip_gateways";
 
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@service({
+@service(#{
   title: "Call Fabric API",
 })
 @server("https://{space_name}.signalwire.com/api/fabric/", "Endpoint", {

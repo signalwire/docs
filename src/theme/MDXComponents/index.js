@@ -22,7 +22,7 @@ import { PreviewCardGroup, PreviewCard } from "../../components/Extras/PreviewCa
 
 import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 import ReleaseCard from "../../components/Blog/ReleaseCard";
-
+import Tables from "../../components/Tables";
 
 export default {
   ...MDXComponents,
@@ -58,5 +58,6 @@ export default {
   Tooltips,
   GuidesList,
   GuidesListMirror,
-  ReleaseCard
+  ReleaseCard,
+  Tables
 };
