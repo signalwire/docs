@@ -1,8 +1,8 @@
 import path from 'path';
-import { createFileError, getErrorCause } from '../../utils/errors';
+import { createFileError, getErrorCause } from '../../utils';
 import { toPosixPath } from '../path';
 import { safeGlobby } from '@docusaurus/utils';
-import { HtmlFileEntry } from '../../types/fs';
+import { HtmlFileEntry } from '../../types';
 
 /**
  * Async generator that recursively finds HTML files in a directory and yields them as HtmlFileEntry objects.

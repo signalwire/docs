@@ -1,8 +1,8 @@
 import { visit } from 'unist-util-visit';
 import type { Root, Element } from 'hast';
-import { formatDocUrl } from '../utils/url';
-import { parseLocalURLPath } from '@docusaurus/utils';
-import type { RehypeLinksOptions } from '../types/unified';
+import { formatDocUrl } from '../../utils';
+import { parseLocalURLPath, createMatcher } from '@docusaurus/utils';
+import type { RehypeLinksOptions } from '../../types';
 
 /**
  * Check if a URL is an internal relative link using Docusaurus utilities
@@ -16,6 +16,32 @@ function isInternalLink(href: string): boolean {
   // Use Docusaurus parseLocalURLPath which returns null for external URLs
   const parsed = parseLocalURLPath(href);
   return parsed !== null;
+}
+
+/**
+ * Check if a URL should be excluded from transformation based on exclude patterns
+ */
+function isExcludedLink(href: string, excludePaths?: readonly string[]): boolean {
+  if (!excludePaths?.length) {
+    return false;
+  }
+  
+  // Parse the URL to get the pathname
+  const parsed = parseLocalURLPath(href);
+  if (!parsed) {
+    return false;
+  }
+  
+  let { pathname } = parsed;
+  
+  // Normalize pathname to match exclude patterns (ensure it starts with /)
+  if (!pathname.startsWith('/')) {
+    pathname = `/${pathname}`;
+  }
+  
+  // Create matcher and test the pathname
+  const isExcluded = createMatcher([...excludePaths]);
+  return isExcluded(pathname);
 }
 
 /**
@@ -45,8 +71,13 @@ function transformInternalLink(
     pathname = `/${pathname}`;
   }
   
-  // Remove any existing file extensions for consistent processing
+  // Remove any existing file extensions and trailing slashes for consistent processing
   pathname = pathname.replace(/\.(html|md)$/, '');
+  
+  // Remove trailing slashes (except for root path)
+  if (pathname !== '/' && pathname.endsWith('/')) {
+    pathname = pathname.slice(0, -1);
+  }
   
   // Use our URL formatting utility for the pathname
   const transformedPathname = formatDocUrl(
@@ -70,10 +101,14 @@ function transformInternalLink(
  * - If relativePaths=false → prepend baseUrl to internal links  
  * - If enableMarkdownFiles=true → append .md to internal links
  * - If relativePaths=false AND enableMarkdownFiles=true → do both
+ * 
+ * Special handling for excluded links:
+ * - If relativePaths=false → excluded links get baseUrl but NO .md extension (since no file is generated)
+ * - If relativePaths=true → excluded links are left unchanged
  */
 export default function rehypeLinks(options: RehypeLinksOptions = {}) {
   return function transformer(tree: Root): Root {
-    const { enableMarkdownFiles = true, relativePaths = true } = options;
+    const { enableMarkdownFiles = true, relativePaths = true, excludePaths } = options;
     
     // If relative paths are enabled and markdown files are disabled,
     // skip processing as links don't need transformation
@@ -94,10 +129,25 @@ export default function rehypeLinks(options: RehypeLinksOptions = {}) {
         return;
       }
       
-      // Transform the link
-      const transformedHref = transformInternalLink(href, options);
+      // Check if the link is excluded
+      const isExcluded = isExcludedLink(href, excludePaths);
       
-      // Update the href attribute
+      if (isExcluded) {
+        // For excluded links, still apply base URL transformation if using absolute paths
+        // but don't add .md extension since we're not generating files for excluded paths
+        if (!relativePaths) {
+          const transformedHref = transformInternalLink(href, {
+            ...options,
+            enableMarkdownFiles: false  // Force no .md extension for excluded links
+          });
+          node.properties.href = transformedHref;
+        }
+        // If using relative paths, leave excluded links unchanged
+        return;
+      }
+      
+      // Transform non-excluded links normally
+      const transformedHref = transformInternalLink(href, options);
       node.properties.href = transformedHref;
     });
     

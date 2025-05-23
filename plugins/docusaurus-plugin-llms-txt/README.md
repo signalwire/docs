@@ -27,7 +27,6 @@ module.exports = {
         siteTitle: 'My Documentation',
         siteDescription: 'Comprehensive documentation for our platform',
         enableMarkdownFiles: true,
-        enableLlmsTxt: true,
       },
     ],
   ],
@@ -42,7 +41,7 @@ npm run build
 
 The plugin will generate:
 - Individual `.md` files in your build directory (if `enableMarkdownFiles: true`)
-- An `llms.txt` file in your build root (if `enableLlmsTxt: true`)
+- An `llms.txt` file in your build root (always generated)
 
 ## Configuration
 
@@ -51,8 +50,7 @@ The plugin will generate:
 ```javascript
 {
   // Core functionality
-  enableLlmsTxt: true,              // Generate llms.txt file
-  enableMarkdownFiles: true,        // Generate individual .md files
+  enableMarkdownFiles: true,        // Generate individual .md files (llms.txt always generated)
   runOnPostBuild: true,            // Run during Docusaurus build
   
   // Site information
@@ -115,6 +113,16 @@ The plugin will generate:
       path: '/guides/**',
       category: 'User Guides',     // Override category name
       depth: 2
+    },
+    {
+      path: "/swml/**",
+      category: "SWML",  // Override category display name
+      depth: 2
+    },
+    {
+      path: "/api/reference/**",
+      contentSelectors: [".api-content"],
+      excludePaths: ["/api/reference/internal/**"]
     }
   ],
   
@@ -200,7 +208,6 @@ Individual `.md` files are created for each HTML page:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `enableLlmsTxt` | `boolean` | `true` | Generate the llms.txt index file |
 | `enableMarkdownFiles` | `boolean` | `true` | Generate individual .md files |
 | `runOnPostBuild` | `boolean` | `true` | Run during Docusaurus postBuild |
 | `siteTitle` | `string` | `""` | Custom title for llms.txt (overrides site title) |
@@ -221,6 +228,114 @@ Individual `.md` files are created for each HTML page:
 | `optionalLinks` | `OptionalLink[]` | `[]` | Additional links to include in llms.txt |
 | `logLevel` | `0\|1\|2\|3` | `2` | Logging verbosity (ERROR/WARN/INFO/DEBUG) |
 
+### Path Rules
+
+Path rules allow you to configure **how to process** specific paths. For excluding files entirely, use `excludePaths` instead.
+
+```typescript
+{
+  // Control WHETHER to process files
+  excludePaths: ["/internal/**", "/temp/**"],
+  
+  // Control HOW to process files
+  pathRules: [
+    {
+      path: "/swml/**",
+      category: "SWML",  // Override category display name
+      depth: 2
+    },
+    {
+      path: "/api/reference/**",
+      contentSelectors: [".api-content"],
+      excludePaths: ["/api/reference/internal/**"]
+    }
+  ]
+}
+```
+
+#### Path Rule Options
+
+- **`path`** (required): Glob pattern to match route paths (e.g., `/swml/**`, `/docs/api/*`)
+- **`depth`**: Override categorization depth for this path
+- **`category`**: Override the display name for the category
+- **`excludePaths`**: Exclude sub-paths from this rule  
+- **`contentSelectors`**: Override content selectors for this path
+
+#### Category Override Examples
+
+```typescript
+// Example 1: Rename top-level category
+{
+  pathRules: [
+    {
+      path: "/swml/**",
+      category: "SWML Documentation"  // /swml → "SWML Documentation"
+    }
+  ]
+}
+// Result: All files under /swml/ will be categorized under "SWML Documentation"
+
+// Example 2: Multiple category overrides
+{
+  pathRules: [
+    {
+      path: "/swml/**",
+      category: "SWML"
+    },
+    {
+      path: "/swml/methods/**", 
+      category: "SWML Methods"  // More specific override
+    }
+  ]
+}
+// Result: 
+// - /swml/guides/... → "SWML" > "guides"
+// - /swml/methods/... → "SWML Methods" > subcategories
+```
+
+#### Excluding Files vs. Configuring Processing
+
+```typescript
+{
+  // ✅ Use excludePaths to skip files entirely
+  excludePaths: [
+    "/internal/**",     // Internal documentation
+    "/temp/**",         // Temporary files
+    "/node_modules/**"  // Dependencies
+  ],
+
+  // ✅ Use pathRules to configure how to process files
+  pathRules: [
+    {
+      path: "/api/**",
+      depth: 3,
+      category: "API Documentation",
+      contentSelectors: [".api-content"]
+    }
+  ]
+}
+```
+
+#### Link Handling for Excluded Paths
+
+When files reference excluded paths, the links are handled intelligently:
+
+**With `relativePaths: false` (absolute URLs):**
+```typescript
+{
+  excludePaths: ["/internal/**"],
+  relativePaths: false,
+  baseUrl: "https://example.com"
+}
+```
+
+**Result:** Links to excluded paths get the base URL but no `.md` extension since no file is generated.
+- `<a href="/internal/debug">` → `<a href="https://example.com/internal/debug">`
+- `<a href="/docs/guide">` → `<a href="https://example.com/docs/guide.md">` (processed file)
+
+**With `relativePaths: true` (relative URLs):**
+Excluded links are left unchanged since no transformation is needed for relative paths.
+
 ### PathRule Configuration
 
 ```typescript
@@ -230,7 +345,6 @@ interface PathRule {
   excludePaths?: string[];         // Exclude sub-paths from this rule
   contentSelectors?: string[];     // Override content selectors
   category?: string;               // Override category name
-  skipProcessing?: boolean;        // Skip processing entirely
 }
 ```
 
@@ -327,6 +441,8 @@ Error: Build directory not found: /path/to/build
 - Verify `baseUrl` in your Docusaurus config
 - Use path rules for specific URL patterns
 
+**Note**: The plugin automatically normalizes URLs by removing trailing slashes and file extensions before applying transformations. For example, `/docs/api/` becomes `/docs/api.md` (not `/docs/api/.md`).
+
 ## TypeScript Support
 
 The plugin is fully typed. Import types for configuration:
@@ -335,7 +451,7 @@ The plugin is fully typed. Import types for configuration:
 import { PluginOptions, LogLevel, Depth } from 'docusaurus-plugin-llms-txt';
 
 const config: PluginOptions = {
-  enableLlmsTxt: true,
+  enableMarkdownFiles: true,  // llms.txt always generated
   logLevel: LogLevel.INFO,
   depth: Depth.TWO,
   // ... other options

@@ -20,6 +20,8 @@ export interface RehypeLinksOptions {
   relativePaths?: boolean;
   /** Base URL of the site */
   baseUrl?: string;
+  /** Glob patterns to exclude from link processing */
+  excludePaths?: readonly string[];
 }
 
 /**

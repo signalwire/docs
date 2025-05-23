@@ -1,6 +1,7 @@
 import baseLogger from '@docusaurus/logger';
-import { LogLevel } from '../types/plugin';
-import { Logger } from '../types/logging';
+import { Logger } from '../types';
+import { LogLevel } from '../constants';
+
 
 /**
  * Logger implementation that can be instantiated

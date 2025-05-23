@@ -16,8 +16,8 @@ export const llmsTxtPlugin: PluginConfig = [
     siteDescription: "SignalWire Documentation",
     siteTitle: "SignalWire Documentation",
     enableDescriptions: true,
-    logLevel: LogLevel.INFO,
-    depth: Depth.ONE,
+    logLevel: 2 as LogLevel,
+    depth: 1 as Depth,
     runOnPostBuild: true,
     enableCache: false,
     relativePaths: false,
@@ -27,7 +27,7 @@ export const llmsTxtPlugin: PluginConfig = [
       {
         path: "/swml/**",
         category: "SWML",
-        depth: Depth.TWO
+        depth: 2 as Depth
       }
     ],
 

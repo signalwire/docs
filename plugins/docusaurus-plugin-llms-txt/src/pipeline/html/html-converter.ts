@@ -2,12 +2,12 @@
 import { toHtml } from 'hast-util-to-html';
 import { select } from 'hast-util-select';
 import type * as HostHast from 'hast';
-import { MarkdownConversionOptions, ConversionResult } from '../types/plugin';
-import { createConversionError } from '../utils/errors';
+import { MarkdownConversionOptions, ConversionResult } from '../../types';
+import { createConversionError } from '../../utils';
 import { unified } from 'unified';
 import rehypeParse from 'rehype-parse';
-import { buildMarkdownProcessor } from './pipeline-builder';
-import { extractTitle } from './title-extractors';
+import { buildMarkdownProcessor } from '../core';
+import { extractTitle } from '.';
 
 /**
  * Extract content, title, and description from HTML AST
@@ -118,6 +118,8 @@ export async function processHtmlToMarkdown(
       baseUrl: options.baseUrl,
       relativePaths: options.relativePaths,
       enableMarkdownFiles: options.enableMarkdownFiles,
+      excludePaths: options.excludePaths,
+      logger: options.logger,
     });
 
     const result = await processor.process(contentHtml);

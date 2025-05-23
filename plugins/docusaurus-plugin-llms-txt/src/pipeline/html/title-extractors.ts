@@ -1,7 +1,7 @@
 import { toString } from 'hast-util-to-string';
 import { select } from 'hast-util-select';
 import type * as HostHast from 'hast';
-import type { TitleExtractor } from '../types/plugin';
+import type { TitleExtractor } from '../../types';
 
 /**
  * Extract title from header H1 element (most specific, cleanest in Docusaurus)
@@ -16,14 +16,24 @@ export const extractHeaderH1: TitleExtractor = (tree: HostHast.Root): string | n
 };
 
 /**
- * Extract title from any H1 element on the page
+ * Extract title from main content area heading
+ * Checks multiple common selectors for content areas
  */
-export const extractPageH1: TitleExtractor = (tree: HostHast.Root): string | null => {
+export const extractContentH1: TitleExtractor = (tree: HostHast.Root): string | null => {
+  // Combined selectors from both previous methods (mainContentH1 and pageH1)
+  const mainH1 = select('main h1, .main-wrapper h1, article h1', tree) as HostHast.Element | null;
+  if (mainH1) {
+    const title = toString(mainH1 as HostHast.Nodes).trim();
+    return title || null;
+  }
+  
+  // General H1 selector as fallback
   const pageH1 = select('h1', tree) as HostHast.Element | null;
   if (pageH1) {
     const title = toString(pageH1 as HostHast.Nodes).trim();
     return title || null;
   }
+  
   return null;
 };
 
@@ -45,27 +55,14 @@ export const extractDocumentTitle: TitleExtractor = (tree: HostHast.Root): strin
 };
 
 /**
- * Extract title from main content area heading
- */
-export const extractMainContentH1: TitleExtractor = (tree: HostHast.Root): string | null => {
-  const mainH1 = select('main h1, .main-wrapper h1, article h1', tree) as HostHast.Element | null;
-  if (mainH1) {
-    const title = toString(mainH1 as HostHast.Nodes).trim();
-    return title || null;
-  }
-  return null;
-};
-
-/**
  * Default title extractor strategy chain
  * Attempts extractors in order of preference until one succeeds
  */
-export const defaultTitleExtractors: readonly TitleExtractor[] = [
+export const defaultTitleExtractors = [
   extractHeaderH1,
-  extractMainContentH1,
-  extractPageH1,
+  extractContentH1,
   extractDocumentTitle
-] as const;
+];
 
 /**
  * Extract title using a strategy chain approach
@@ -87,25 +84,4 @@ export function extractTitle(
   
   // Fallback if no extractors succeed
   return 'Untitled Document';
-}
-
-/**
- * Create a custom title extractor that uses CSS selectors
- * 
- * @param selectors - CSS selectors to try in order
- * @returns A title extractor function
- */
-export function createSelectorExtractor(selectors: readonly string[]): TitleExtractor {
-  return (tree: HostHast.Root): string | null => {
-    for (const selector of selectors) {
-      const element = select(selector, tree) as HostHast.Element | null;
-      if (element) {
-        const title = toString(element as HostHast.Nodes).trim();
-        if (title) {
-          return title;
-        }
-      }
-    }
-    return null;
-  };
 } 

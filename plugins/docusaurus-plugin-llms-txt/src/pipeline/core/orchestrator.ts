@@ -1,18 +1,17 @@
 // Processing pipeline: walk HTML → convert → build tree → write llms.txt
 
 import path from 'path';
-import type { HtmlFileEntry } from '../types/fs';
-import { DocInfo, PluginOptions } from '../types/plugin';
-import type { Logger } from '../types/logging';
-import { loadCache, saveCache, calcConfigHash, fileUnchanged, toFingerprint, hashFile } from '../fs/cache/manager';
-import { getErrorMessage, getErrorCause } from '../utils/errors';
-import { generateRoutePath } from '../fs/path';
+import type { HtmlFileEntry } from '../../types';
+import { DocInfo, PluginOptions, Logger } from '../../types';
+import { loadCache, saveCache, calcConfigHash, fileUnchanged, toFingerprint, hashFile } from '../../fs/cache/manager';
+import { getErrorMessage, getErrorCause } from '../../utils';
+import { generateRoutePath } from '../../fs/path';
 import { createMatcher } from '@docusaurus/utils';
-import pkg from '../../package.json';
+import pkg from '../../../package.json';
 
 // Import from newly created modules
-import { processHtmlFile, checkMarkdownFileExists } from './html-processor';
-import { cleanupMarkdownFiles } from '../fs/cache/cleaner';
+import { processHtmlFile, checkMarkdownFileExists } from '../html/html-processor';
+import { cleanupMarkdownFiles } from '../../fs/cache/cleaner';
 
 // plugin version for cache busting
 const pluginVersion: string = (pkg as { version?: string }).version ?? '0.0.0';
@@ -54,12 +53,23 @@ export async function processHtmlFilesStream(
   
   // Reset cache if version changed
   if (mutableCache.pluginVersion !== pluginVersion) {
+    log.info('Plugin version changed, invalidating cache');
     mutableCache.files = {};
     mutableCache.pluginVersion = pluginVersion;
   }
   
+  // Reset cache if content-affecting configuration changed
+  if (cache.configHash && cache.configHash !== cfgHash) {
+    log.info('Content-affecting configuration changed, invalidating cache');
+    mutableCache.files = {};
+  }
+  
   const docs: DocInfo[] = [];
   const errors: Error[] = [];
+  
+  // Track cache statistics
+  let cacheHits = 0;
+  let cacheTotal = 0;
 
   log.debug('Processing HTML files (stream)');
 
@@ -113,10 +123,12 @@ export async function processHtmlFilesStream(
         title: cached.title, 
         description: cached.description 
       });
+      cacheHits++;
       continue;
     }
 
     await processAndAddToCache(relPath, hash);
+    cacheTotal++;
   }
   
   // Helper function to process an HTML file and add to cache
@@ -163,6 +175,13 @@ export async function processHtmlFilesStream(
   } catch (error) {
     const errorMsg = getErrorMessage(error);
     log.error(`Failed to save llms-txt cache: ${errorMsg}`);
+  }
+
+  // Report cache statistics
+  const totalFiles = cacheHits + cacheTotal;
+  if (totalFiles > 0) {
+    const hitRate = Math.round((cacheHits / totalFiles) * 100);
+    log.info(`Cache statistics: ${cacheHits}/${totalFiles} hits (${hitRate}%)`);
   }
 
   return docs;

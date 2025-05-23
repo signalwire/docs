@@ -1,7 +1,7 @@
-import { TreeNode } from '../types/plugin';
-import { formatDocUrl } from '../utils/url';
+import { TreeNode } from '../../types';
+import { formatDocUrl } from '../../utils';
 import { createSlugger } from '@docusaurus/utils';
-import { DEFAULT_MARKDOWN_HEADER_LEVEL } from '../constants';
+import { DEFAULT_MARKDOWN_HEADER_LEVEL } from '../../constants';
 
 /**
  * Check if two titles are similar using slug comparison

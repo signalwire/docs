@@ -7,27 +7,13 @@ import type * as HostHast from 'hast';
 /**
  * Depth levels for document categorization
  */
-export enum Depth {
-  ONE = 1,
-  TWO = 2,
-  THREE = 3,
-  FOUR = 4,
-  FIVE = 5
-}
+export type Depth = 1 | 2 | 3 | 4 | 5;
 
 /**
  * Log level to control verbosity
  */
-export enum LogLevel {
-  /** Only errors are logged */
-  ERROR = 0,
-  /** Errors and warnings are logged */
-  WARN = 1,
-  /** Regular information logs (default) */
-  INFO = 2,
-  /** Detailed logs for debugging */
-  DEBUG = 3
-}
+export type LogLevel = 0 | 1 | 2 | 3;
+
 
 /**
  * Configuration for processing specific route paths
@@ -43,8 +29,6 @@ export interface PathRule {
   readonly contentSelectors?: readonly string[];
   /** Category override for this path */
   readonly category?: string;
-  /** If true, skip processing this path entirely */
-  readonly skipProcessing?: boolean;
 }
 
 /**
@@ -66,7 +50,6 @@ export interface OptionalLink {
 export interface PluginOptions {
   // Core functionality options
 
-  readonly enableLlmsTxt?: boolean;
   /** Whether to generate individual Markdown files */
   readonly enableMarkdownFiles?: boolean;
   /** Custom title for the llms.txt file, overrides site title from Docusaurus config */
@@ -191,6 +174,12 @@ export interface MarkdownConversionOptions {
   
   /** Whether markdown files are enabled */
   readonly enableMarkdownFiles?: boolean;
+  
+  /** Glob patterns to exclude from link processing */
+  readonly excludePaths?: readonly string[];
+  
+  /** Logger instance for debugging */
+  readonly logger?: import('../types/logging').Logger;
 }
 
 /**
@@ -211,7 +200,6 @@ export interface ConversionResult {
  */
 export const pluginOptionsSchema = Joi.object({
   // Core toggles
-  enableLlmsTxt: Joi.boolean().default(true),
   enableMarkdownFiles: Joi.boolean().default(true),
   runOnPostBuild: Joi.boolean().default(true),
   siteTitle: Joi.string().allow('').default(''),
@@ -235,7 +223,6 @@ export const pluginOptionsSchema = Joi.object({
       excludePaths: Joi.array().items(Joi.string()),
       contentSelectors: Joi.array().items(Joi.string()),
       category: Joi.string(),
-      skipProcessing: Joi.boolean(),
     }).unknown(false)
   ).default([]),
 

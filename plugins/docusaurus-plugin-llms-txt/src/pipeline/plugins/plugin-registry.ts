@@ -1,11 +1,10 @@
 import type { Processor } from 'unified';
-import type { MarkdownConversionOptions } from '../types/plugin';
-import type { RehypeLinksOptions, BuiltInPluginEntry } from '../types/unified';
+import type { RehypeLinksOptions, BuiltInPluginEntry, MarkdownConversionOptions } from '../../types';
 import rehypeTables from './rehype-tables';
 import rehypeLinks from './rehype-links';
 import remarkGfm, { Options as RemarkGfmOptions } from 'remark-gfm';
 import remarkStringify, { Options as RemarkStringifyOptions } from 'remark-stringify';
-import { defaultGfm } from './plugins';
+import { DEFAULT_GFM } from '../../constants';
 
 /**
  * Rehype plugins (HTML processing stage)
@@ -44,13 +43,13 @@ const builtInRemarkPlugins = [
     key: 'remarkGfm',
     plugin: remarkGfm,
     stage: 'remark',
-    defaultOptions: defaultGfm,
+    defaultOptions: DEFAULT_GFM,
     optionsHandler: (options: unknown): RemarkGfmOptions | false => {
       if (options === false) return false;
       if (typeof options === 'object' && options !== null) {
-        return { ...defaultGfm, ...options as Partial<RemarkGfmOptions> };
+        return { ...DEFAULT_GFM, ...options as Partial<RemarkGfmOptions> };
       }
-      return defaultGfm;
+      return DEFAULT_GFM;
     }
   },
   {
@@ -115,6 +114,7 @@ export function applyPluginsToProcessor(
           baseUrl: options.baseUrl || '',
           relativePaths: options.relativePaths !== false,
           enableMarkdownFiles: options.enableMarkdownFiles === true,
+          excludePaths: options.excludePaths || [],
         };
         applyBuiltInPlugin(processor, entry, linkOptions);
       }

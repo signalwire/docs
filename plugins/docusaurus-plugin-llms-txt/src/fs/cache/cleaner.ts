@@ -1,9 +1,9 @@
 import fs from 'fs-extra';
-import type { Logger } from '../../types/logging';
-import { noopLogger } from '../../logging/logger';
+import type { Logger } from '../../types';
+import { noopLogger } from '../../logging';
 import { loadCache } from './manager';
 import { htmlPathToMdPath } from '../path';
-import { logAndContinue } from '../../utils/errors';
+import { logAndContinue } from '../../utils';
 
 /**
  * Clean up markdown files using the cache for tracking

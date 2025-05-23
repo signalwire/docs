@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs-extra';
-import { createFileError, getErrorCause } from '../../utils/errors';
+import { createFileError, getErrorCause } from '../../utils';
 
 /**
  * Saves markdown content to a file, creating directories as needed.

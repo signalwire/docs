@@ -1,10 +1,11 @@
 import path from 'path';
 import type { LoadContext, Plugin } from '@docusaurus/types';
-import { PluginOptions, LogLevel, pluginOptionsSchema } from './types/plugin';
-import { getConfig } from './config/options';
-import { createLogger } from './logging/logger';
+import { PluginOptions, pluginOptionsSchema } from './types';
+import { getConfig } from './config';
+import { createLogger } from './logging';
 import { registerLlmsTxt, registerLlmsTxtClean } from './cli/command';
 import { runConversion } from './utils/conversion';
+import { LogLevel } from './constants';
 
 /**
  * Docusaurus plugin to generate Markdown versions of HTML pages and an llms.txt index file.

@@ -2,12 +2,12 @@ import type { CommanderStatic } from 'commander';
 import path from 'path';
 import fs from 'fs-extra';
 import type { LoadContext } from '@docusaurus/types';
-import { PluginOptions, LogLevel } from '../types/plugin';
+import { PluginOptions } from '../types';
 // Import the shared runConversion function from utils
 import { runConversion } from '../utils/conversion';
-import { createLogger } from '../logging/logger';
+import { createLogger } from '../logging';
 import { cleanupMarkdownFiles } from '../fs/cache/cleaner';
-import { LLMS_TXT_FILENAME } from '../constants';
+import { LLMS_TXT_FILENAME, LogLevel } from '../constants';
 
 /**
  * Register the `llms-txt` command on Docusaurus' CLI instance.
@@ -45,8 +45,8 @@ export function registerLlmsTxt(
       
       // Simplified logging - only show core configuration details
       log.info('Starting llms-txt conversion');
-      log.info(`Using configuration: llms.txt=${baseOptions.enableLlmsTxt ? 'enabled' : 'disabled'}, markdown=${baseOptions.enableMarkdownFiles ? 'enabled' : 'disabled'}`);
-      log.info(`Build directory: ${buildDir}`);
+      log.info(`Using configuration: markdown files=${baseOptions.enableMarkdownFiles ? 'enabled' : 'disabled'}`);
+      log.info(`Site directory: ${siteDir}`);
       
       // Access siteConfig from context when the command is executed
       const title = context.siteConfig.title;

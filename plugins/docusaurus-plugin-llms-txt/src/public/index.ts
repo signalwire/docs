@@ -12,27 +12,22 @@ export { default, validateOptions } from '../index';
 
 // === CONFIGURATION TYPES ===
 
-// Core configuration types that users need for plugin setup
 export type { 
   PluginOptions,
   PathRule,
-  OptionalLink
-} from '../types/plugin';
-
-// Enums for configuration
-export { 
+  OptionalLink,
   LogLevel,
   Depth
-} from '../types/plugin';
+} from '../types';
 
 // === PLUGIN DEVELOPMENT UTILITIES ===
 
 // Logging interface and factory for potential plugin extensions
-export type { Logger } from '../types/logging';
-export { createLogger } from '../logging/logger';
+export type { Logger } from '../types';
+export { createLogger } from '../logging';
 
 // === ERROR HANDLING ===
 
 // Error types and utilities for graceful error handling
-export type { ErrorType } from '../utils/errors';
-export { PluginError } from '../utils/errors'; 
+export type { ErrorType } from '../utils';
+export { PluginError } from '../utils'; 

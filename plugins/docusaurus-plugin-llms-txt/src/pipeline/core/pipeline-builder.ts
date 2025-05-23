@@ -1,8 +1,8 @@
 import { Processor, unified } from 'unified';
 import rehypeParse from 'rehype-parse';
 import rehypeRemark from 'rehype-remark';
-import type { MarkdownConversionOptions } from '../types/plugin';
-import { getPluginsByStage, applyPluginsToProcessor } from './plugin-registry';
+import { getPluginsByStage, applyPluginsToProcessor } from '../plugins/plugin-registry';
+import { MarkdownConversionOptions } from '../../types';
 
 /**
  * Builds a unified markdown processor with configurable pipeline.

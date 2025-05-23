@@ -295,8 +295,8 @@ Create test scenarios:
 ```javascript
 // Test different configurations
 const testConfigs = [
-  { enableMarkdownFiles: true, enableLlmsTxt: true },
-  { enableMarkdownFiles: false, enableLlmsTxt: true },
+  { enableMarkdownFiles: true },  // llms.txt always generated
+  { enableMarkdownFiles: false }, // llms.txt only
   { depth: 3, excludePaths: ['/blog/**'] },
   { pathRules: [{ path: '/api/**', depth: 2 }] }
 ];

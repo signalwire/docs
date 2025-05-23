@@ -4,7 +4,7 @@
 
 import { normalizeUrl, encodePath, isValidPathname, parseURLOrPath } from '@docusaurus/utils';
 import type { Logger } from '../types/logging';
-import { createLogger } from '../logging/logger';
+import { createLogger } from '../logging';
 
 /**
  * Validate and format a URL path safely

@@ -1,13 +1,12 @@
 import path from 'path';
 import fs from 'fs-extra';
-import { DocInfo, PluginOptions, MarkdownConversionOptions } from '../types/plugin';
+import { DocInfo, PluginOptions, MarkdownConversionOptions, Logger } from '../../types';
 import { processHtmlToMarkdown, extractHtmlMetadata } from './html-converter';
-import { htmlPathToMdPath, generateRoutePath } from '../fs/path';
-import type { Logger } from '../types/logging';
-import { noopLogger } from '../logging/logger';
-import { createDocumentError, getErrorMessage, getErrorCause } from '../utils/errors';
-import { saveMarkdownFile } from '../fs/io/write';
-import { TITLE_TRUNCATE_LENGTH } from '../constants';
+import { htmlPathToMdPath, generateRoutePath } from '../../fs/path';
+import { noopLogger } from '../../logging';
+import { createDocumentError, getErrorMessage, getErrorCause } from '../../utils';
+import { saveMarkdownFile } from '../../fs/io/write';
+import { TITLE_TRUNCATE_LENGTH } from '../../constants';
 
 /**
  * Check if a markdown file exists for the given HTML path
@@ -62,6 +61,8 @@ export async function processHtmlFile(
         baseUrl: baseUrl,
         relativePaths: config.relativePaths,
         enableMarkdownFiles: config.enableMarkdownFiles,
+        excludePaths: config.excludePaths,
+        logger: logger,
       };
       
       const result = await processHtmlToMarkdown(html, conversionOptions, contentSelectors);

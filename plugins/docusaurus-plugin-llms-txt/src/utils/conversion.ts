@@ -1,13 +1,11 @@
 import path from 'path';
-import { PluginOptions, LogLevel, DocInfo, TreeNode } from '../types/plugin';
-import { getConfig } from '../config/options';
+import { PluginOptions, DocInfo, TreeNode } from '../types/plugin';
+import { getConfig } from '../config';
 import { saveMarkdownFile } from '../fs/io/write';
 import { walkHtmlFiles } from '../fs/io/read';
-import { processHtmlFilesStream } from '../pipeline/orchestrator';
-import { buildTree } from '../pipeline/tree-builder';
-import { renderTreeMarkdown } from '../pipeline/markdown-renderer';
-import { createLogger } from '../logging/logger';
-import { LLMS_TXT_FILENAME } from '../constants';
+import { renderTreeMarkdown, processHtmlFilesStream, buildTree } from '../pipeline/core';
+import { createLogger } from '../logging';
+import { LLMS_TXT_FILENAME, LogLevel } from '../constants';
 
 /**
  * Setup and validate directory paths for the conversion process
@@ -123,20 +121,22 @@ export async function runConversion(
       baseUrl
     );
 
-    if (config.enableLlmsTxt && docs.length) {
+    if (docs.length) {
       const tree = buildTree(docs, config);
       
       // Look for the root document (index page)
       const rootDoc = docs.find(doc => doc.routePath === '/index.md' || doc.routePath === 'index.md');
       
       const documentTitle = resolveDocumentTitle(config, title, rootDoc);
-      const markdown = generateLlmsTxtContent(tree, config, baseUrl, documentTitle, rootDoc);
+      const llmsTxtContent = generateLlmsTxtContent(tree, config, baseUrl, documentTitle, rootDoc);
       
       await saveMarkdownFile(
         path.join(outDir, LLMS_TXT_FILENAME),
-        markdown,
+        llmsTxtContent,
       );
-      log.info('llms.txt written');
+      log.info(`Generated llms.txt with ${docs.length} documents`);
+    } else {
+      log.warn('No documents found to generate llms.txt');
     }
 
     log.info('llms-txt conversion completed');
