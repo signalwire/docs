@@ -1,18 +1,16 @@
-import { toString } from 'hast-util-to-string';
-import { select } from 'hast-util-select';
 import type * as HostHast from 'hast';
 import type { TitleExtractor } from '../../types';
+import { select } from 'hast-util-select';
+import { toString } from 'hast-util-to-string';
 
 /**
  * Extract title from header H1 element (most specific, cleanest in Docusaurus)
  */
 export const extractHeaderH1: TitleExtractor = (tree: HostHast.Root): string | null => {
   const headerH1 = select('header h1', tree) as HostHast.Element | null;
-  if (headerH1) {
-    const title = toString(headerH1 as HostHast.Nodes).trim();
-    return title || null;
-  }
-  return null;
+  if (!headerH1) return null;
+  const title = toString(headerH1 as HostHast.Nodes).trim();
+  return title || null;
 };
 
 /**
@@ -44,7 +42,7 @@ export const extractContentH1: TitleExtractor = (tree: HostHast.Root): string | 
 export const extractDocumentTitle: TitleExtractor = (tree: HostHast.Root): string | null => {
   const titleEl = select('title', tree) as HostHast.Element | null;
   if (titleEl) {
-    const fullTitle = toString(titleEl as HostHast.Nodes);
+    const fullTitle = toString(titleEl as HostHast.Nodes).trim();
     if (fullTitle) {
       // Split on pipe and take the first part (page title)
       const parts = fullTitle.split('|');

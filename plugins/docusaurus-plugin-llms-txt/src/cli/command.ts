@@ -2,20 +2,164 @@ import type { CommanderStatic } from 'commander';
 import path from 'path';
 import fs from 'fs-extra';
 import type { LoadContext } from '@docusaurus/types';
-import { PluginOptions } from '../types';
-// Import the shared runConversion function from utils
-import { runConversion } from '../utils/conversion';
+import { PluginOptions, DocInfo } from '../types';
 import { createLogger } from '../logging';
-import { cleanupMarkdownFiles } from '../fs/cache/cleaner';
-import { LLMS_TXT_FILENAME, LogLevel } from '../constants';
+import { 
+  LLMS_TXT_FILENAME, 
+  LogLevel, 
+  DEFAULT_SITE_TITLE,
+  ROOT_ROUTE_PATH,
+  INDEX_ROUTE_PATH,
+} from '../constants';
+import { loadCache, hasCachedRoutes, getProcessedRoutesFromCache, cachedRouteToDocInfo, getCachedRoutesForProcessing, saveCache, calcConfigHash } from '../fs/cache/manager';
+import { getConfig } from '../config';
+import { buildTree } from '../pipeline/core/tree-builder';
+import { renderTreeMarkdown } from '../pipeline/core/markdown-renderer';
+import { saveMarkdownFile } from '../fs/io/write';
+import { processRoutesStream } from '../pipeline/core/route-processor';
+import { setupDirectories, buildSiteUrl } from '../utils';
+import packageJson from '../../package.json';
 
 /**
- * Register the `llms-txt` command on Docusaurus' CLI instance.
- * 
- * @param cli - Docusaurus CLI instance
- * @param pluginName - Plugin name for logging
- * @param baseOptions - Base plugin options from the config
- * @param context - Docusaurus load context containing siteConfig
+ * Build complete llms.txt content
+ */
+function buildLlmsTxtContent(
+  docs: DocInfo[],
+  config: PluginOptions,
+  siteConfig: { title?: string; url: string; baseUrl: string }
+): string {
+  const tree = buildTree(docs, config);
+  const rootDoc = docs.find(doc => doc.routePath === ROOT_ROUTE_PATH || doc.routePath === INDEX_ROUTE_PATH);
+  
+  // Generate configuration values
+  const documentTitle = config.siteTitle || siteConfig.title || rootDoc?.title || DEFAULT_SITE_TITLE;
+  const enableDescriptions = config.enableDescriptions !== false;
+  const useRelativePaths = config.relativePaths !== false;
+  const siteUrl = buildSiteUrl(siteConfig);
+  
+  // Build content sections
+  let content = `# ${documentTitle}\n\n`;
+  
+  // Add description if enabled and available
+  if (enableDescriptions) {
+    const description = config.siteDescription || rootDoc?.description;
+    if (description) {
+      content += `> ${description}\n\n`;
+    }
+  }
+  
+  // Add main content
+  content += renderTreeMarkdown(
+    tree,
+    2,
+    true,
+    siteUrl,
+    useRelativePaths,
+    !!config.enableMarkdownFiles,
+    enableDescriptions
+  );
+  
+  // Add optional links if configured
+  if (config.optionalLinks?.length) {
+    content += `\n## Optional\n`;
+    for (const link of config.optionalLinks) {
+      const descPart = enableDescriptions && link.description ? `: ${link.description}` : '';
+      content += `- [${link.title}](${link.url})${descPart}\n`;
+    }
+  }
+  
+  return content;
+}
+
+/**
+ * Shared function to generate llms.txt content from documents
+ */
+export async function generateLlmsTxt(
+  docs: DocInfo[],
+  config: PluginOptions,
+  siteConfig: { title?: string; url: string; baseUrl: string },
+  outDir: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<void> {
+  if (docs.length === 0) {
+    logger.warn('No documents found to generate llms.txt');
+    return;
+  }
+
+  const llmsTxtContent = buildLlmsTxtContent(docs, config, siteConfig);
+  await saveMarkdownFile(path.join(outDir, LLMS_TXT_FILENAME), llmsTxtContent);
+  logger.info(`Generated llms.txt with ${docs.length} documents`);
+}
+
+/**
+ * CLI-specific conversion function
+ */
+async function runCliConversion(
+  siteDir: string,
+  options: Partial<PluginOptions>,
+  context: LoadContext,
+): Promise<void> {
+  const config = getConfig(options);
+  const log = createLogger('docusaurus-plugin-llms-txt', config.logLevel || LogLevel.INFO);
+  
+  try {
+    const { cache, dir: cacheDir } = await loadCache(siteDir);
+    
+    if (!hasCachedRoutes(cache)) {
+      log.error('❌ No cached routes found. Please run "npm run build" first.');
+      process.exit(1);
+    }
+    
+    let docs: DocInfo[];
+    
+    if (config.enableCache !== false) {
+      // Use cached data for instant processing
+      const processedRoutes = getProcessedRoutesFromCache(cache);
+      docs = processedRoutes
+        .map(cachedRoute => cachedRouteToDocInfo(cachedRoute))
+        .filter((doc): doc is NonNullable<typeof doc> => doc !== null);
+      
+      log.info(`Using ${docs.length} cached documents`);
+    } else {
+      // Reprocess files but maintain cache
+      const routesForProcessing = getCachedRoutesForProcessing(cache);
+      const directories = setupDirectories(siteDir, config);
+      const siteUrl = buildSiteUrl(context.siteConfig);
+      
+      const { docs: processedDocs, cachedRoutes } = await processRoutesStream(
+        routesForProcessing,
+        directories.docsDir,
+        directories.mdOutDir,
+        siteDir,
+        config,
+        log,
+        siteUrl
+      );
+      
+      docs = processedDocs;
+      
+      // Update cache
+      const updatedCache = {
+        pluginVersion: packageJson.version,
+        configHash: calcConfigHash(config),
+        routes: cachedRoutes,
+      };
+      
+      await saveCache(cacheDir, updatedCache);
+      log.info(`Reprocessed ${docs.length} documents`);
+    }
+    
+    const directories = setupDirectories(siteDir, config);
+    await generateLlmsTxt(docs, config, context.siteConfig, directories.outDir, log);
+    log.info('✅ CLI conversion completed successfully');
+  } catch (error) {
+    log.error(`❌ CLI conversion failed: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Register the `llms-txt` command
  */
 export function registerLlmsTxt(
   cli: CommanderStatic,
@@ -25,44 +169,15 @@ export function registerLlmsTxt(
 ): void {
   cli
     .command('llms-txt [siteDir]')
-    .description('Generate llms.txt and/or Markdown files using site configuration')
-    .action(async (
-      siteDirArg: string | undefined,
-    ) => {
+    .description('Generate llms.txt and/or Markdown files using cached routes from build')
+    .action(async (siteDirArg: string | undefined) => {
       const siteDir = siteDirArg ? path.resolve(siteDirArg) : process.cwd();
-      
-      // Create logger using factory function
-      const log = createLogger(pluginName, LogLevel.INFO);
-      
-      // Check if build directory exists before proceeding
-      const buildDir = path.join(siteDir, baseOptions.buildDir || 'build');
-      if (!await fs.pathExists(buildDir)) {
-        log.error(`Build directory not found: ${buildDir}`);
-        log.error('Please run "npm run build" or "yarn build" first to generate the site build.');
-        log.error('Alternatively, specify a custom build directory using the buildDir option in your plugin configuration.');
-        process.exit(1);
-      }
-      
-      // Simplified logging - only show core configuration details
-      log.info('Starting llms-txt conversion');
-      log.info(`Using configuration: markdown files=${baseOptions.enableMarkdownFiles ? 'enabled' : 'disabled'}`);
-      log.info(`Site directory: ${siteDir}`);
-      
-      // Access siteConfig from context when the command is executed
-      const title = context.siteConfig.title;
-      const siteUrl = context.siteConfig.url + (context.siteConfig.baseUrl !== '/' ? context.siteConfig.baseUrl : '');
-      
-      // Call the shared conversion function with the original plugin options
-      await runConversion(siteDir, baseOptions, title, siteUrl);
+      await runCliConversion(siteDir, baseOptions, context);
     });
 }
 
 /**
- * Register the `llms-txt-clean` command on Docusaurus' CLI instance.
- * 
- * @param cli - Docusaurus CLI instance
- * @param pluginName - Plugin name for logging
- * @param baseOptions - Base plugin options from the config
+ * Register the `llms-txt-clean` command
  */
 export function registerLlmsTxtClean(
   cli: CommanderStatic,
@@ -71,46 +186,52 @@ export function registerLlmsTxtClean(
 ): void {
   cli
     .command('llms-txt-clean [siteDir]')
-    .description('Remove all generated markdown files and llms.txt from the plugin')
-    .action(async (
-      siteDirArg: string | undefined,
-    ) => {
+    .description('Remove all generated markdown files and llms.txt using cached file info')
+    .action(async (siteDirArg: string | undefined) => {
       const siteDir = siteDirArg ? path.resolve(siteDirArg) : process.cwd();
-      
-      // Create logger using factory function
-      const log = createLogger(pluginName, LogLevel.INFO);
-      
-      log.info('Starting llms-txt cleanup');
-      
-      // Determine directories from config
-      const config = baseOptions;
-      const outDir = path.join(siteDir, config.buildDir || 'build');
-      const docsDir = path.join(outDir, config.docsRoot || '');
-      const mdOutDir = config.outputDir ? path.join(siteDir, config.outputDir) : docsDir;
-      
-      // Check if build directory exists (but don't fail if it doesn't for cleanup)
-      if (!await fs.pathExists(outDir)) {
-        log.info(`Build directory not found: ${outDir} (already clean)`);
-        return;
-      }
+      const config = getConfig(baseOptions);
+      const log = createLogger(pluginName, config.logLevel || LogLevel.INFO);
       
       try {
-        // Clean up markdown files
-        await cleanupMarkdownFiles(mdOutDir, siteDir, log);
+        const { cache } = await loadCache(siteDir);
+        const directories = setupDirectories(siteDir, config);
+        
+        if (!await fs.pathExists(directories.outDir)) {
+          log.info(`Build directory not found: ${directories.outDir} (already clean)`);
+          return;
+        }
+        
+        let cleanedFiles = 0;
+        
+        if (cache.routes?.length > 0) {
+          for (const cachedRoute of cache.routes) {
+            if (cachedRoute.markdownFile && cachedRoute.processed) {
+              try {
+                const fullMarkdownPath = config.outputDir 
+                  ? path.join(siteDir, config.outputDir, cachedRoute.markdownFile)
+                  : path.join(directories.outDir, cachedRoute.markdownFile);
+                  
+                if (await fs.pathExists(fullMarkdownPath)) {
+                  await fs.remove(fullMarkdownPath);
+                  cleanedFiles++;
+                }
+              } catch (error) {
+                log.warn(`Failed to remove ${cachedRoute.markdownFile}: ${error instanceof Error ? error.message : String(error)}`);
+              }
+            }
+          }
+        }
         
         // Clean up llms.txt file
-        const llmsTxtPath = path.join(outDir, LLMS_TXT_FILENAME);
+        const llmsTxtPath = path.join(directories.outDir, LLMS_TXT_FILENAME);
         if (await fs.pathExists(llmsTxtPath)) {
           await fs.remove(llmsTxtPath);
           log.info(`Removed ${LLMS_TXT_FILENAME}`);
-        } else {
-          log.info(`${LLMS_TXT_FILENAME} not found (already clean)`);
         }
         
-        log.info('✅ Cleanup completed successfully');
+        log.info(`✅ Cleanup completed (${cleanedFiles} files removed)`);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        log.error(`❌ Cleanup failed: ${errorMessage}`);
+        log.error(`❌ Cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     });

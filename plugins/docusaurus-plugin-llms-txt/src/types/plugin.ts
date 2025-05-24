@@ -1,7 +1,7 @@
 import type { Options as RemarkGfmOptions } from 'remark-gfm';
 import type { Options as RemarkStringifyOptions } from 'remark-stringify';
 import { Joi } from '@docusaurus/utils-validation';
-import { DEFAULT_CONTENT_SELECTORS } from '../constants';
+import { DEFAULT_CONTENT_SELECTORS, DEFAULT_BUILD_DIR, DEFAULT_DOCS_ROOT, DEFAULT_OUTPUT_DIR, DEFAULT_DEPTH } from '../constants';
 import type * as HostHast from 'hast';
 
 /**
@@ -13,7 +13,6 @@ export type Depth = 1 | 2 | 3 | 4 | 5;
  * Log level to control verbosity
  */
 export type LogLevel = 0 | 1 | 2 | 3;
-
 
 /**
  * Configuration for processing specific route paths
@@ -45,65 +44,43 @@ export interface OptionalLink {
 
 /**
  * Main plugin configuration options
- * This should always be aligned with the JOI schema below
  */
 export interface PluginOptions {
   // Core functionality options
-
-  /** Whether to generate individual Markdown files */
   readonly enableMarkdownFiles?: boolean;
-  /** Custom title for the llms.txt file, overrides site title from Docusaurus config */
   readonly siteTitle?: string;
-  /** Whether to enable caching for better performance */
   readonly enableCache?: boolean;
-  /** Whether to use relative paths (true) or absolute paths with baseUrl (false) */
   readonly relativePaths?: boolean;
-  /** Whether to include descriptions in llms.txt file (true by default) */
   readonly enableDescriptions?: boolean;
   
+  // Content filtering options
+  readonly includeBlog?: boolean;
+  readonly includePages?: boolean;
+  readonly includeDocs?: boolean;
+  readonly skipGeneratedPages?: boolean;
+  
   // Content extraction options
-  /** CSS selectors to extract content from HTML files */
   readonly contentSelectors?: readonly string[];
-  /** Root directory for docs relative to build output */
   readonly docsRoot?: string;
-  /** Directory (relative to site root) where Markdown files will be written. Defaults to same as docsRoot build directory. */
   readonly outputDir?: string;
-  /** Build directory name relative to site root (default: 'build') */
   readonly buildDir?: string;
   
   // Structure options
-  /** Default category depth to use for the document tree */
   readonly depth?: Depth;
-  /** Glob patterns to exclude from processing */
   readonly excludePaths?: readonly string[];
-  /** Path-specific rules */
   readonly pathRules?: readonly PathRule[];
   
   // Format options
-  /** Options for remark-stringify when using remark converter */
   readonly remarkStringify?: Readonly<RemarkStringifyOptions>;
-  /**
-   * Configuration for remark-gfm (GitHub Flavoured Markdown).
-   * - `false`  → disable the plugin entirely
-   * - `true`   → enable with built-in defaults
-   * - `object` → enable and merge with defaults
-   */
   readonly remarkGfm?: boolean | Readonly<RemarkGfmOptions>;
-
-  /** Enable or disable the custom table-list fixer */
   readonly rehypeProcessTables?: boolean;
   
   // Additional features
-  /** Site description to include in llms.txt */
   readonly siteDescription?: string;
-  /** Additional links to include in llms.txt */
   readonly optionalLinks?: readonly OptionalLink[];
   
   // Logging
-  /** Log level to control verbosity */
   readonly logLevel?: LogLevel;
-
-  /** If false, plugin does nothing during Docusaurus postBuild; conversion can be run via CLI. Default true */
   readonly runOnPostBuild?: boolean;
 }
 
@@ -116,13 +93,9 @@ export type EffectiveConfig = PluginOptions & PathRule;
  * Information about a document
  */
 export interface DocInfo {
-  /** Route path for the document */
   readonly routePath: string;
-  /** HTML file path */
   readonly htmlPath: string;
-  /** Document title */
   readonly title: string;
-  /** Document description */
   readonly description: string;
 }
 
@@ -130,19 +103,12 @@ export interface DocInfo {
  * Represents a node in the document tree
  */
 export interface TreeNode {
-  /** Category name */
   readonly name: string;
-  /** Relative path */
   readonly relPath: string;
-  /** Category title (optional) */
   readonly title?: string;
-  /** Category description (optional) */
   readonly description?: string;
-  /** Index document for this category */
   indexDoc?: DocInfo;
-  /** Documents in this category */
   docs: DocInfo[];
-  /** Sub-categories */
   subCategories: TreeNode[];
 }
 
@@ -150,35 +116,14 @@ export interface TreeNode {
  * HTML to Markdown conversion options
  */
 export interface MarkdownConversionOptions {
-  /** Options for remark-stringify */
   readonly remarkStringify?: Readonly<RemarkStringifyOptions>;
-  /**
-   * Configuration for remark-gfm (GitHub Flavoured Markdown).
-   * - `false`  → disable the plugin entirely
-   * - `true`   → enable with built-in defaults
-   * - `object` → enable and merge with defaults
-   */
   readonly remarkGfm?: boolean | Readonly<RemarkGfmOptions>;
-
-  /** Enable or disable the custom table-list fixer */
   readonly rehypeProcessTables?: boolean;
-  
-  /** Enable or disable internal link transformation (automatically determined) */
   readonly rehypeProcessLinks?: boolean;
-  
-  /** Base URL for link transformation */
   readonly baseUrl?: string;
-  
-  /** Whether to use relative paths */
   readonly relativePaths?: boolean;
-  
-  /** Whether markdown files are enabled */
   readonly enableMarkdownFiles?: boolean;
-  
-  /** Glob patterns to exclude from link processing */
   readonly excludePaths?: readonly string[];
-  
-  /** Logger instance for debugging */
   readonly logger?: import('../types/logging').Logger;
 }
 
@@ -186,17 +131,18 @@ export interface MarkdownConversionOptions {
  * HTML to Markdown conversion result
  */
 export interface ConversionResult {
-  /** Markdown content */
   readonly content: string;
-  /** Document title */
   readonly title: string;
-  /** Document description */
   readonly description: string;
 }
 
 /**
- * Joi schema matching the PluginOptions interface.
- * Keep this as the single source of truth for runtime validation.
+ * Type for title extraction strategy functions
+ */
+export type TitleExtractor = (tree: HostHast.Root) => string | null;
+
+/**
+ * Joi schema for runtime validation
  */
 export const pluginOptionsSchema = Joi.object({
   // Core toggles
@@ -207,13 +153,19 @@ export const pluginOptionsSchema = Joi.object({
   relativePaths: Joi.boolean().default(true),
   enableDescriptions: Joi.boolean().default(true),
 
-  // Extraction / path options
-  docsRoot: Joi.string().allow('').default(''),
-  contentSelectors: Joi.array().items(Joi.string()).default([...DEFAULT_CONTENT_SELECTORS]),
-  depth: Joi.number().integer().min(1).max(5).default(1),
+  // Content filtering options
+  includeBlog: Joi.boolean().default(false),
+  includePages: Joi.boolean().default(false),
+  includeDocs: Joi.boolean().default(true),
+  skipGeneratedPages: Joi.boolean().default(true),
   excludePaths: Joi.array().items(Joi.string()).default([]),
-  outputDir: Joi.string().allow('').default(''),
-  buildDir: Joi.string().allow('').default('build'),
+
+  // Extraction / path options
+  docsRoot: Joi.string().allow('').default(DEFAULT_DOCS_ROOT),
+  contentSelectors: Joi.array().items(Joi.string()).default([...DEFAULT_CONTENT_SELECTORS]),
+  depth: Joi.number().integer().min(1).max(5).default(DEFAULT_DEPTH),
+  outputDir: Joi.string().allow('').default(DEFAULT_OUTPUT_DIR),
+  buildDir: Joi.string().allow('').default(DEFAULT_BUILD_DIR),
 
   // Path-specific rules
   pathRules: Joi.array().items(
@@ -251,17 +203,4 @@ export const pluginOptionsSchema = Joi.object({
     })
   ).default([]),
   logLevel: Joi.number().integer().min(0).max(3).default(2),
-});
-
-/**
- * Type for title extraction strategy functions
- */
-export type TitleExtractor = (tree: HostHast.Root) => string | null;
-
-/**
- * Runtime config used by processors – identical to PluginOptions but adds mutable properties
- */
-export interface RuntimeConfig extends Omit<PluginOptions, 'remarkGfm'> {
-  remarkGfm?: boolean | Record<string, unknown>;
-  rehypeProcessTables?: boolean;
-} 
+}); 

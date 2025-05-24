@@ -17,6 +17,25 @@ export const DOCUSAURUS_CACHE_DIR = '.docusaurus' as const;
 export const HTML_EXTENSION = '.html' as const;
 export const MD_EXTENSION = '.md' as const;
 
+// File extension regex patterns
+export const MD_EXTENSION_REGEX = /\.md$/;
+export const HTML_EXTENSION_REGEX = /\.html$/;
+export const INDEX_HTML_REGEX = /[/\\]index\.html$/;
+export const HTML_OR_MD_EXTENSION_REGEX = /\.(html|md)$/;
+
+// Default configuration values
+export const DEFAULT_BUILD_DIR = 'build' as const;
+export const DEFAULT_DOCS_ROOT = '' as const;
+export const DEFAULT_OUTPUT_DIR = '' as const;
+export const DEFAULT_SITE_TITLE = 'Documentation' as const;
+export const DEFAULT_DEPTH = 1 as const;
+export const ROOT_BASE_URL = '/' as const;
+
+// Route patterns
+export const ROOT_ROUTE_PATH = '/' as const;
+export const INDEX_ROUTE_PATH = '/index.md' as const;
+export const INDEX_SEGMENT = 'index' as const;
+
 export enum LogLevel {
   ERROR = 0,
   WARN = 1,

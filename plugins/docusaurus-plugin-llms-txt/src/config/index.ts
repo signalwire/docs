@@ -1,44 +1,41 @@
-import { PluginOptions, EffectiveConfig, pluginOptionsSchema, RuntimeConfig } from '../types/plugin';
+import { PluginOptions, EffectiveConfig, pluginOptionsSchema } from '../types/plugin';
 import stringWidth from 'string-width';
 import { createMatcher } from '@docusaurus/utils';
 
 /**
  * Processes and validates plugin options, applying defaults
  */
-export function getConfig(options: Partial<PluginOptions>): RuntimeConfig {
+export function getConfig(options: Partial<PluginOptions>): PluginOptions {
   const validated = pluginOptionsSchema
     .validate(options, { abortEarly: false })
     .value as PluginOptions;
   
-  // Create a mutable copy of the config
-  const config: RuntimeConfig = { ...validated };
-
-  // Setup remark-gfm defaults
-  const defaultRemarkGfm = {
-    singleTilde: false,
-    tableCellPadding: true,
-    tablePipeAlign: true,
-    stringLength: stringWidth,
-  } as const;
-
-  if (config.remarkGfm === false) {
-    // noop - already false
-  } else if (config.remarkGfm === true) {
-    config.remarkGfm = defaultRemarkGfm;
-  } else if (config.remarkGfm) {
-    config.remarkGfm = {
-      ...defaultRemarkGfm,
-      ...config.remarkGfm,
+  // Setup remark-gfm defaults if needed
+  if (validated.remarkGfm === true || (typeof validated.remarkGfm === 'object' && validated.remarkGfm !== null)) {
+    const defaultRemarkGfm = {
+      singleTilde: false,
+      tableCellPadding: true,
+      tablePipeAlign: true,
+      stringLength: stringWidth,
     };
+
+    if (validated.remarkGfm === true) {
+      (validated as any).remarkGfm = defaultRemarkGfm;
+    } else if (typeof validated.remarkGfm === 'object') {
+      (validated as any).remarkGfm = {
+        ...defaultRemarkGfm,
+        ...validated.remarkGfm,
+      };
+    }
   }
 
-  return config;
+  return validated;
 }
 
 /**
  * Gets config effective for a specific path, applying any matching path rules
  */
-export function getEffectiveConfigForPath(relPath: string, config: RuntimeConfig): EffectiveConfig {
+export function getEffectiveConfigForPath(relPath: string, config: PluginOptions): EffectiveConfig {
   const matchPath = relPath.startsWith('/') ? relPath : `/${relPath}`;
 
   // Apply first matching path rule if any

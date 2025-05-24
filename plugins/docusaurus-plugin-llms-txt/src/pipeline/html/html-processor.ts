@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { DocInfo, PluginOptions, MarkdownConversionOptions, Logger } from '../../types';
 import { processHtmlToMarkdown, extractHtmlMetadata } from './html-converter';
-import { htmlPathToMdPath, generateRoutePath } from '../../fs/path';
+import { htmlPathToMdPath } from '../../fs/path';
 import { noopLogger } from '../../logging';
 import { createDocumentError, getErrorMessage, getErrorCause } from '../../utils';
 import { saveMarkdownFile } from '../../fs/io/write';
@@ -25,10 +25,11 @@ export async function checkMarkdownFileExists(
 }
 
 /**
- * Process a single HTML file → Markdown + metadata
+ * Process a single HTML file → Markdown + metadata (with provided route path)
  */
-export async function processHtmlFile(
+export async function processHtmlFileWithRoute(
   relHtmlPath: string,
+  routePath: string,
   docsDir: string,
   mdOutDir: string,
   config: PluginOptions,
@@ -36,9 +37,6 @@ export async function processHtmlFile(
   baseUrl: string = '',
 ): Promise<DocInfo> {
   const absHtmlPath = path.join(docsDir, relHtmlPath);
-  
-  // Generate route path using improved Docusaurus-aligned approach
-  const routePath = generateRoutePath(relHtmlPath, !!config.enableMarkdownFiles, logger);
 
   logger.debug(`Processing file: ${relHtmlPath} → ${routePath}`);
 

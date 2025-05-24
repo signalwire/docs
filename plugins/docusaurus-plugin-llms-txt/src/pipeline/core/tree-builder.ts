@@ -1,6 +1,7 @@
 import { DocInfo, PluginOptions, TreeNode } from '../../types';
 import { getEffectiveConfigForPath } from '../../config';
 import { createMatcher } from '@docusaurus/utils';
+import { MD_EXTENSION_REGEX, INDEX_SEGMENT, DEFAULT_DEPTH } from '../../constants';
 
 /**
  * Build hierarchical tree from docs
@@ -20,13 +21,13 @@ export function buildTree(docs: DocInfo[], globalConfig: PluginOptions): TreeNod
 
   for (const doc of docs) {
     // Use categoryPath (standard Docusaurus route) for categorization
-    const route = doc.routePath.replace(/\.md$/, ''); // Strip .md for categorization
+    const route = doc.routePath.replace(MD_EXTENSION_REGEX, ''); // Strip .md for categorization
     const routePath = route.startsWith('/') ? route : '/' + route;
     const effectiveConfig = getEffectiveConfigForPath(routePath, globalConfig);
-    const depth = effectiveConfig.depth || 1;
+    const depth = effectiveConfig.depth || DEFAULT_DEPTH;
 
     const segments = routePath.split('/').filter(Boolean);
-    if (segments.length === 1 && segments[0] === 'index') {
+    if (segments.length === 1 && segments[0] === INDEX_SEGMENT) {
       root.indexDoc = doc;
       continue;
     }

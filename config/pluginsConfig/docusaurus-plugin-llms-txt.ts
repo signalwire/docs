@@ -19,7 +19,7 @@ export const llmsTxtPlugin: PluginConfig = [
     logLevel: 2 as LogLevel,
     depth: 1 as Depth,
     runOnPostBuild: true,
-    enableCache: false,
+    enableCache: true,
     relativePaths: false,
     enableMarkdownFiles: true,
 

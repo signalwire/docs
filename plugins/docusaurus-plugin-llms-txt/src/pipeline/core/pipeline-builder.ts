@@ -1,7 +1,6 @@
 import { Processor, unified } from 'unified';
 import rehypeParse from 'rehype-parse';
-import rehypeRemark from 'rehype-remark';
-import { getPluginsByStage, applyPluginsToProcessor } from '../plugins/plugin-registry';
+import { applyPluginsToProcessor } from '../plugins/plugin-registry';
 import { MarkdownConversionOptions } from '../../types';
 
 /**
@@ -21,18 +20,8 @@ export function buildMarkdownProcessor(opts: MarkdownConversionOptions): Process
   const proc = unified();
   proc.use(rehypeParse, { fragment: false });
 
-  // Stage 1: Apply rehype plugins (HTML processing)
-  const rehypePlugins = getPluginsByStage('rehype');
-  applyPluginsToProcessor(proc, rehypePlugins, opts);
-
-  // Stage 2: Bridge from HTML to Markdown - convert <br> to HTML to preserve line breaks
-  proc.use(rehypeRemark, {
-    handlers: { br: () => ({ type: 'html', value: '<br />' }) },
-  });
-
-  // Stage 3: Apply remark plugins (Markdown processing)
-  const remarkPlugins = getPluginsByStage('remark');
-  applyPluginsToProcessor(proc, remarkPlugins, opts);
+  // Apply all plugins in the correct order
+  applyPluginsToProcessor(proc, opts);
 
   return proc;
 } 

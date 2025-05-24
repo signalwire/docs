@@ -1,13 +1,13 @@
 // Unified pipeline helper
 import { toHtml } from 'hast-util-to-html';
-import { select } from 'hast-util-select';
 import type * as HostHast from 'hast';
 import { MarkdownConversionOptions, ConversionResult } from '../../types';
-import { createConversionError } from '../../utils';
+import { createError } from '../../utils';
 import { unified } from 'unified';
 import rehypeParse from 'rehype-parse';
-import { buildMarkdownProcessor } from '../core';
-import { extractTitle } from '.';
+import { buildMarkdownProcessor } from '../core/pipeline-builder';
+import { extractTitle } from './title-extractors';
+import { select } from 'hast-util-select';
 
 /**
  * Extract content, title, and description from HTML AST
@@ -22,21 +22,16 @@ function extractContent(
 ): { content: HostHast.Element | null; title: string; description: string } {
   // Get meta description
   const metaDesc = select('meta[name="description"]', tree) as HostHast.Element | null;
-  const description = metaDesc ? ((metaDesc.properties?.content as string) || '') : '';
+  const description = metaDesc?.properties?.content ? String(metaDesc.properties.content) : '';
   
   // Extract title using strategy pattern
   const title = extractTitle(tree);
 
-  // Content extraction
+  // Content extraction - try each selector in order until we find content
   let content: HostHast.Element | null = null;
-  
-  // Try each selector in order until we find content
-  for (const sel of selectors) {
-    const node = select(sel, tree) as HostHast.Element | null;
-    if (node) { 
-      content = node; 
-      break; 
-    }
+  for (const selector of selectors) {
+    content = select(selector, tree) as HostHast.Element | null;
+    if (content) break;
   }
   
   // Fall back to body if no selectors matched
@@ -64,7 +59,7 @@ export async function extractHtmlMetadata(
 
     // Get meta description directly from HTML
     const metaDesc = select('meta[name="description"]', htmlAst) as HostHast.Element | null;
-    const description = metaDesc ? ((metaDesc.properties?.content as string) || '') : '';
+    const description = metaDesc?.properties?.content ? String(metaDesc.properties.content) : '';
     
     // Extract title directly from HTML
     const title = extractTitle(htmlAst);
@@ -74,8 +69,9 @@ export async function extractHtmlMetadata(
       description: description || '' 
     };
   } catch (error) {
-    throw createConversionError(
+    throw createError(
       `Error extracting HTML metadata: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
       error instanceof Error ? error : undefined,
     );
   }
@@ -131,8 +127,9 @@ export async function processHtmlToMarkdown(
       description: description || '' 
     };
   } catch (error) {
-    throw createConversionError(
+    throw createError(
       `Error processing HTML to Markdown: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
       error instanceof Error ? error : undefined,
     );
   }
