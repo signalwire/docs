@@ -6,7 +6,7 @@
 import path from 'path';
 import { normalizeUrl } from '@docusaurus/utils';
 import { PluginOptions, DirectoryConfig } from '../../types';
-import { DEFAULT_DOCS_ROOT, MD_EXTENSION } from '../../constants';
+import { MD_EXTENSION } from '../../constants';
 
 /**
  * Path management service that consolidates common path operations
@@ -34,12 +34,12 @@ export class PathManager {
 
 /**
  * Setup directory paths based on plugin configuration
- * Centralizes the repeated directory setup pattern used across the plugin
+ * Simplified to use outDir directly without docsRoot/outputDir customization
  * @internal
  * 
  * @param siteDir - Site root directory
- * @param config - Plugin configuration
- * @param outDir - Optional build output directory (if not provided, calculated from siteDir)
+ * @param config - Plugin configuration  
+ * @param outDir - Build output directory (must be provided from Docusaurus)
  * @returns Directory configuration object
  */
 export function setupDirectories(
@@ -55,8 +55,9 @@ export function setupDirectories(
     );
   }
   
-  const docsDir = path.join(outDir, config.docsRoot || DEFAULT_DOCS_ROOT);
-  const mdOutDir = config.outputDir ? path.join(siteDir, config.outputDir) : docsDir;
+  // Simplified: use outDir directly as both docsDir and mdOutDir
+  const docsDir = outDir;
+  const mdOutDir = outDir;
   
   return {
     siteDir,

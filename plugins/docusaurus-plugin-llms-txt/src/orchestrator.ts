@@ -31,7 +31,6 @@ export async function orchestrateProcessing(
   const isCliContext = routes.length === 0;
   const cacheStrategy = analyzeCacheStrategy(cacheManager, cache, config, isCliContext, logger);
   
-  logger.debug(`Context: CLI=${isCliContext}, cache=${config.enableCache !== false}`);
   
   // Validate CLI context if needed
   if (isCliContext) {

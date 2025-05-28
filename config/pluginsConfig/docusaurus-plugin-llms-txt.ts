@@ -20,7 +20,6 @@ export const llmsTxtPlugin: PluginConfig = [
     logLevel: 1,
     depth: 1,
     runOnPostBuild: true,
-    enableCache: false,
     
     // Global ordering - guides first, then methods/reference
     includeOrder: [

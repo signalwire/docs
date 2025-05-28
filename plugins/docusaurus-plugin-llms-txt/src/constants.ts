@@ -109,7 +109,6 @@ export const CACHE_MESSAGES = {
   NO_ROUTES: 'No cached routes found. Please run "npm run build" first.',
   CONFIG_CHANGED_CLI: 'Configuration changed - regenerating with current settings',
   CONFIG_CHANGED_BUILD: 'Configuration changed - rebuilding cache',
-  CACHE_DISABLED: 'Cache disabled in configuration',
   USING_CACHED: 'Using cached data',
   CONFIG_CHANGED_REGENERATE: 'Configuration changed - using current settings to regenerate output'
 } as const;
@@ -155,8 +154,6 @@ export const MD_EXTENSION = '.md' as const;
 export const HTML_OR_MD_EXTENSION_REGEX = /\.(html|md)$/;
 
 // Default configuration values - these are public for user reference
-export const DEFAULT_DOCS_ROOT = '' as const;
-export const DEFAULT_OUTPUT_DIR = '' as const;
 export const DEFAULT_SITE_TITLE = 'Documentation' as const;
 export const DEFAULT_DEPTH = 1 as const;
 
@@ -165,15 +162,6 @@ export const DEFAULT_DEPTH = 1 as const;
 export const ROOT_ROUTE_PATH = '/' as const;
 /** @internal */
 export const INDEX_ROUTE_PATH = '/index.md' as const;
-
-export const LogLevel = {
-  ERROR: 0,
-  WARN: 1,
-  INFO: 2,
-  DEBUG: 3
-} as const;
-
-export type LogLevelType = typeof LogLevel[keyof typeof LogLevel];
 
 // Default content selectors - public for user reference
 export const DEFAULT_CONTENT_SELECTORS = [

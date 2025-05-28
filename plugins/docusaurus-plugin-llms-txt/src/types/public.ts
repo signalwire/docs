@@ -3,16 +3,14 @@
  * Only exports types that plugin users need to configure and use the plugin
  */
 
-import { Joi } from '@docusaurus/utils-validation';
-import type { ReportingSeverity } from '@docusaurus/types';
-import type { Options as RemarkGfmOptions } from 'remark-gfm';
 import type { Options as RemarkStringifyOptions } from 'remark-stringify';
+import type { Options as RemarkGfmOptions } from 'remark-gfm';
+import { Joi } from '@docusaurus/utils-validation';
 import { 
-  DEFAULT_CONTENT_SELECTORS, 
-  DEFAULT_DOCS_ROOT, 
-  DEFAULT_OUTPUT_DIR, 
-  DEFAULT_DEPTH 
+  DEFAULT_CONTENT_SELECTORS,
+  DEFAULT_DEPTH,
 } from '../constants';
+import type { ReportingSeverity } from '@docusaurus/types';
 
 // ============================================================================
 // USER CONFIGURATION TYPES
@@ -107,12 +105,6 @@ export interface PluginOptions {
   readonly includeOrder?: readonly string[];
   
   // Environment options (execution settings)
-  /** Whether to enable caching (default: true) */
-  readonly enableCache?: boolean;
-  /** Root directory for docs relative to build output */
-  readonly docsRoot?: string;
-  /** Output directory for generated markdown files */
-  readonly outputDir?: string;
   /** Whether to run during postBuild phase (default: true) */
   readonly runOnPostBuild?: boolean;
   
@@ -168,11 +160,14 @@ export interface Logger {
 // ============================================================================
 
 /**
- * Joi schema for runtime validation
+ * Joi schema for plugin options validation
+ * Separated concerns: onRouteError for error handling, logLevel for operational verbosity
+ * @internal - This is used by Docusaurus framework for options validation
  */
-export const pluginOptionsSchema = Joi.object({
+export const pluginOptionsSchema = Joi.object<PluginOptions>({
   // Content processing options
   content: Joi.object({
+    // File generation
     enableMarkdownFiles: Joi.boolean().default(true),
     relativePaths: Joi.boolean().default(true),
     
@@ -190,46 +185,36 @@ export const pluginOptionsSchema = Joi.object({
         depth: Joi.number().integer().min(1).max(5),
         contentSelectors: Joi.array().items(Joi.string()),
         categoryName: Joi.string(),
-        includeOrder: Joi.array().items(Joi.string()),
-      }).unknown(false)
+        includeOrder: Joi.array().items(Joi.string())
+      })
     ).default([]),
     
     // Format options
-    remarkStringify: Joi.object().unknown(true).default({
-      bullet: '-',
-      emphasis: '_',
-      strong: '*',
-      fence: '`',
-      fences: true,
-      incrementListMarker: true,
-      listItemIndent: 'one',
-      tightDefinitions: true,
-      setext: false,
-    }),
-    remarkGfm: Joi.alternatives().try(Joi.boolean(), Joi.object().unknown(true)).default(true),
-    rehypeProcessTables: Joi.boolean().default(true),
+    remarkStringify: Joi.object().unknown(true).default({}),
+    remarkGfm: Joi.alternatives().try(
+      Joi.boolean(),
+      Joi.object().unknown(true)
+    ).default(true),
+    rehypeProcessTables: Joi.boolean().default(true)
   }).default({}),
-
-  // Structure options (llms.txt generation)
+  
+  // Structure options
   depth: Joi.number().integer().min(1).max(5).default(DEFAULT_DEPTH),
   enableDescriptions: Joi.boolean().default(true),
-  siteTitle: Joi.string().allow('').default(''),
-  siteDescription: Joi.string().allow('').default(''),
+  siteTitle: Joi.string().allow(''),
+  siteDescription: Joi.string().allow(''),
   optionalLinks: Joi.array().items(
     Joi.object({
       title: Joi.string().required(),
       url: Joi.string().required(),
-      description: Joi.string().optional(),
+      description: Joi.string()
     })
   ).default([]),
   includeOrder: Joi.array().items(Joi.string()).default([]),
-
+  
   // Environment options
-  enableCache: Joi.boolean().default(true),
-  docsRoot: Joi.string().allow('').default(DEFAULT_DOCS_ROOT),
-  outputDir: Joi.string().allow('').default(DEFAULT_OUTPUT_DIR),
   runOnPostBuild: Joi.boolean().default(true),
-
+  
   // Logging configuration
   onRouteError: Joi.string().valid('ignore', 'log', 'warn', 'throw').default('warn'),
   logLevel: Joi.number().integer().min(0).max(3).default(1),

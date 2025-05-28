@@ -38,17 +38,14 @@ export function analyzeCacheStrategy(
     logger.debug(`Cache invalidated: config changed (${cachedHash} → ${currentHash})`);
   }
   
-  // Determine cache usage strategy
-  const useCache = isCliContext 
-    ? cacheHasRoutes && configMatches
-    : cacheHasRoutes && configMatches && config.enableCache !== false;
+  // Always use cache when available and valid
+  const useCache = cacheHasRoutes && configMatches;
   
   // Generate reason for cache decision
   const reason = generateCacheReason(
     cacheHasRoutes,
     configMatches,
-    isCliContext,
-    config.enableCache
+    isCliContext
   );
   
   logger.debug(`Cache: hasRoutes=${cacheHasRoutes}, configMatches=${configMatches}, useCache=${useCache}`);
@@ -67,8 +64,7 @@ export function analyzeCacheStrategy(
 function generateCacheReason(
   hasRoutes: boolean,
   configMatches: boolean,
-  isCliContext: boolean,
-  enableCache?: boolean
+  isCliContext: boolean
 ): string {
   if (!hasRoutes) {
     return CACHE_MESSAGES.NO_ROUTES;
@@ -78,10 +74,6 @@ function generateCacheReason(
     return isCliContext 
       ? CACHE_MESSAGES.CONFIG_CHANGED_CLI
       : CACHE_MESSAGES.CONFIG_CHANGED_BUILD;
-  }
-  
-  if (!isCliContext && enableCache === false) {
-    return CACHE_MESSAGES.CACHE_DISABLED;
   }
   
   return CACHE_MESSAGES.USING_CACHED;
