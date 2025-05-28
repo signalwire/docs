@@ -35,7 +35,7 @@ export function analyzeCacheStrategy(
     const cachedHash = cache.configHash.slice(0, HASH_DISPLAY_LENGTH);
     const currentHash = cacheManager.calcConfigHash(config)
       .slice(0, HASH_DISPLAY_LENGTH);
-    logger.info(`Cache invalidated due to config change (cached: ${cachedHash}, current: ${currentHash})`);
+    logger.debug(`Cache invalidated: config changed (${cachedHash} → ${currentHash})`);
   }
   
   // Determine cache usage strategy
@@ -51,9 +51,7 @@ export function analyzeCacheStrategy(
     config.enableCache
   );
   
-  logger.debug(
-    `Cache validation: hasRoutes=${cacheHasRoutes}, configMatches=${configMatches}, useCache=${useCache}`
-  );
+  logger.debug(`Cache: hasRoutes=${cacheHasRoutes}, configMatches=${configMatches}, useCache=${useCache}`);
   
   return {
     useCache,
@@ -102,6 +100,6 @@ export function validateCliContext(
   }
   
   if (!configMatches) {
-    logger.info(CACHE_MESSAGES.CONFIG_CHANGED_REGENERATE);
+    logger.debug(CACHE_MESSAGES.CONFIG_CHANGED_REGENERATE);
   }
 } 

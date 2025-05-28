@@ -14,7 +14,7 @@ import type {
 } from '../../types';
 import { CacheManager } from '../fs/cache';
 import { processHtmlFileWithContext } from '../transformation/html-file-processor';
-import { getEffectiveConfigForPath, getContentConfig } from '../../config';
+import { getEffectiveConfigForRoute, getContentConfig } from '../../config';
 import { ERROR_MESSAGES } from '../../constants';
 import { getErrorMessage } from '../../errors';
 import { hashFile } from '../fs/cache-validation';
@@ -35,13 +35,13 @@ async function processSingleRoute(
   outDir?: string
 ): Promise<{ doc?: DocInfo; updatedCachedRoute?: CachedRouteInfo }> {
   if (!cachedRoute.htmlPath) {
-    logger.warn(`No HTML path for route: ${route.path}`);
+    logger.debug(`No HTML path for route: ${route.path}`);
     return {};
   }
 
   try {
     const fullHtmlPath = path.join(directories.docsDir, cachedRoute.htmlPath);
-    const effectiveConfig = getEffectiveConfigForPath(route.path, config);
+    const effectiveConfig = getEffectiveConfigForRoute(route.path, config);
     
     const doc = await processHtmlFileWithContext(
       fullHtmlPath,
@@ -65,14 +65,14 @@ async function processSingleRoute(
         contentConfig.enableMarkdownFiles
       );
       
-      logger.debug(`Updated cache for route: ${route.path}`);
+      logger.debug(`Processed route: ${route.path}`);
       return { doc, updatedCachedRoute };
     }
     
     return {};
   } catch (error) {
     const errorMessage = getErrorMessage(error);
-    logger.error(ERROR_MESSAGES.ROUTE_PROCESSING_FAILED(route.path, errorMessage));
+    logger.reportRouteError(ERROR_MESSAGES.ROUTE_PROCESSING_FAILED(route.path, errorMessage));
     return {};
   }
 }
@@ -156,11 +156,11 @@ export async function processDocuments(
   outDir?: string,
   generatedFilesDir?: string
 ): Promise<{ docs: DocInfo[]; cachedRoutes?: CachedRouteInfo[] }> {
-  logger.debug(`processDocuments: useCache=${useCache}, routes.length=${routes.length}`);
+  logger.debug(`Processing: useCache=${useCache}, routes=${routes.length}`);
   
   // Analyze processing context
   const context = analyzeProcessingContext(routes, cache, logger);
-  logger.info(context.description);
+  logger.debug(context.description);
   
   // Validate CLI context if needed
   if (context.mode === 'cli') {
@@ -184,6 +184,6 @@ export async function processDocuments(
     outDir
   );
   
-  logger.info(`Processed ${result.docs.length} documents`);
+  logger.debug(`Processed ${result.docs.length} documents`);
   return result;
 } 

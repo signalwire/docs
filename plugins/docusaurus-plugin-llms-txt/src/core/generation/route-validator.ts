@@ -5,7 +5,7 @@
 
 import type { RouteConfig, PluginRouteConfig } from '@docusaurus/types';
 import type { PluginOptions, Logger, CachedRouteInfo, ValidationResult } from '../../types';
-import { validateRouteForProcessing } from '../discovery/route-filter';
+import { validateRouteForProcessing, validateAndLogRouteFiltering } from '../discovery/route-filter';
 import { createExclusionMatcher } from '../discovery/exclusion-matcher';
 import { getContentConfig } from '../../config';
 
@@ -46,6 +46,12 @@ export function validateRoutesForProcessing(
   const contentConfig = getContentConfig(options);
   const isExcluded = createExclusionMatcher(contentConfig.excludeRoutes);
   
+  // Get filtering info if we have route data to filter
+  if (routes.length > 0) {
+    const pluginRoutes = routes as PluginRouteConfig[];
+    validateAndLogRouteFiltering(pluginRoutes, options, isExcluded, logger);
+  }
+  
   // Create a simple map for route lookup
   const routeMap = new Map<string, RouteConfig>();
   for (const route of routes) {
@@ -56,7 +62,7 @@ export function validateRoutesForProcessing(
     const route = routeMap.get(cachedRoute.path);
     
     if (!route) {
-      logger.warn(`Route not found in map: ${cachedRoute.path}`);
+      logger.debug(`Route not found in processing map: ${cachedRoute.path}`);
       return { route: { path: cachedRoute.path } as RouteConfig, cachedRoute, isValid: false };
     }
     

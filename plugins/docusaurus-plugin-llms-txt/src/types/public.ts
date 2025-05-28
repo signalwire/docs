@@ -4,14 +4,14 @@
  */
 
 import { Joi } from '@docusaurus/utils-validation';
+import type { ReportingSeverity } from '@docusaurus/types';
 import type { Options as RemarkGfmOptions } from 'remark-gfm';
 import type { Options as RemarkStringifyOptions } from 'remark-stringify';
 import { 
   DEFAULT_CONTENT_SELECTORS, 
   DEFAULT_DOCS_ROOT, 
   DEFAULT_OUTPUT_DIR, 
-  DEFAULT_DEPTH, 
-  LogLevelType 
+  DEFAULT_DEPTH 
 } from '../constants';
 
 // ============================================================================
@@ -113,10 +113,14 @@ export interface PluginOptions {
   readonly docsRoot?: string;
   /** Output directory for generated markdown files */
   readonly outputDir?: string;
-  /** Logging verbosity level (default: 2/INFO) */
-  readonly logLevel?: LogLevelType;
   /** Whether to run during postBuild phase (default: true) */
   readonly runOnPostBuild?: boolean;
+  
+  // Logging configuration
+  /** How to handle route processing failures: 'ignore' | 'log' | 'warn' | 'throw' (default: 'warn') */
+  readonly onRouteError?: ReportingSeverity;
+  /** Operational logging level: 0=quiet, 1=normal, 2=verbose, 3=debug (default: 1) */
+  readonly logLevel?: 0 | 1 | 2 | 3;
 }
 
 // ============================================================================
@@ -140,17 +144,23 @@ export { isPluginError } from '../errors';
 
 /**
  * Logger interface for plugin operations
- * Users might need this if they're extending the plugin
+ * Separated concerns: onRouteError for error handling, logLevel for operational verbosity
  */
 export interface Logger {
-  /** Log an error message */
+  /** Report a route processing error with configurable severity */
+  reportRouteError: (_msg: string) => void;
+  /** Log errors (always shown) */
   error: (_msg: string) => void;
-  /** Log a warning message */
+  /** Log warnings (level 1+) */
   warn: (_msg: string) => void;
-  /** Log an info message */
+  /** Log info messages (level 2+) */
   info: (_msg: string) => void;
-  /** Log a debug message */
+  /** Log debug messages (level 3+) */
   debug: (_msg: string) => void;
+  /** Log success messages (level 1+) */
+  success: (_msg: string) => void;
+  /** Core reporting method for specific severity */
+  report: (_severity: ReportingSeverity, _msg: string) => void;
 }
 
 // ============================================================================
@@ -218,6 +228,9 @@ export const pluginOptionsSchema = Joi.object({
   enableCache: Joi.boolean().default(true),
   docsRoot: Joi.string().allow('').default(DEFAULT_DOCS_ROOT),
   outputDir: Joi.string().allow('').default(DEFAULT_OUTPUT_DIR),
-  logLevel: Joi.number().integer().min(0).max(3).default(2),
   runOnPostBuild: Joi.boolean().default(true),
+
+  // Logging configuration
+  onRouteError: Joi.string().valid('ignore', 'log', 'warn', 'throw').default('warn'),
+  logLevel: Joi.number().integer().min(0).max(3).default(1),
 }); 

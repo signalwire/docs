@@ -30,8 +30,6 @@ export type {
   Logger
 } from '../types/public';
 
-export type { LogLevelType as LogLevel } from '../constants';
-
 // === USER ERROR HANDLING ===
 
 // Export error utilities

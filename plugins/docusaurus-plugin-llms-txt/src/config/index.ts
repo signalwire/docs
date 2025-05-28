@@ -65,17 +65,21 @@ export function getContentConfig(config: PluginOptions): Required<ContentOptions
 }
 
 /**
- * Gets config effective for a specific path, applying any matching route rules
- * Simplified using focused route rules engine
+ * Gets config effective for a specific route, applying any matching route rules
+ * Consolidated entry point for all route rule effects (depth, categoryName, includeOrder)
  * @internal
  */
-export function getEffectiveConfigForPath(relPath: string, config: PluginOptions): EffectiveConfig {
+export function getEffectiveConfigForRoute(
+  relPath: string, 
+  config: PluginOptions, 
+  routeSegment?: string
+): EffectiveConfig {
   const matchPath = ensureLeadingSlash(relPath);
   const contentConfig = getContentConfig(config);
 
-  // Use focused route rules engine
+  // Use focused route rules engine - single source of truth for all rule effects
   const rule = findMostSpecificRule(matchPath, contentConfig.routeRules);
-  return applyRouteRule(rule, config, contentConfig, matchPath);
+  return applyRouteRule(rule, config, contentConfig, matchPath, routeSegment);
 }
 
 

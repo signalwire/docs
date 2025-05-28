@@ -43,9 +43,9 @@ export default function llmsTxtPlugin(
       const config = getConfig(options);
       const log = createPluginLogger(config);
 
-      log.info(`outDir: ${outDir}`);
-      log.info(`siteDir: ${siteDir}`);
-      log.info(`generatedFilesDir: ${generatedFilesDir}`);
+      log.debug(`outDir: ${outDir}`);
+      log.debug(`siteDir: ${siteDir}`);
+      log.debug(`generatedFilesDir: ${generatedFilesDir}`);
 
       if (config.runOnPostBuild === false) {
         log.info('Skipping postBuild processing (runOnPostBuild=false)');
@@ -55,7 +55,7 @@ export default function llmsTxtPlugin(
       try {
         const finalRoutes = flattenRoutes(routes);
         
-        log.info(`Processing ${finalRoutes.length} total routes`);
+        log.info(`Processing ${finalRoutes.length} routes`);
         
         // Use unified processing orchestrator with Docusaurus-provided paths
         const result = await orchestrateProcessing(finalRoutes, {
@@ -69,7 +69,7 @@ export default function llmsTxtPlugin(
           relativePaths: config.content?.relativePaths !== false,
         });
         
-        log.info(`✅ Plugin completed successfully - processed ${result.processedCount} documents`);
+        log.success(`Plugin completed successfully - processed ${result.processedCount} documents`);
       } catch (error) {
         const errorMessage = getErrorMessage(error);
         

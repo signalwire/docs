@@ -6,8 +6,6 @@
 import type { RouteConfig } from '@docusaurus/types';
 import type { CachedRouteInfo } from '../../types';
 
-
-
 /**
  * Convert cached route info back to RouteConfig objects
  * This allows CLI to use the same processing pipeline as postBuild

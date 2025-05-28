@@ -28,7 +28,7 @@ export async function generateOutputFiles(
   logger: Logger
 ): Promise<OutputResult> {
   if (docs.length === 0) {
-    logger.warn(PROCESSING_MESSAGES.NO_DOCUMENTS);
+    logger.info(PROCESSING_MESSAGES.NO_DOCUMENTS);
     return {
       llmsTxtPath: '',
       contentLength: 0
@@ -39,15 +39,14 @@ export async function generateOutputFiles(
   const llmsTxtContent = buildLlmsTxtContent(docs, config, siteConfig);
   const llmsTxtPath = path.join(directories.outDir, LLMS_TXT_FILENAME);
   
-  // Log generation details
+  // Log generation details at debug level
   logger.debug(`Saving llms.txt to: ${llmsTxtPath}`);
-  logger.debug(`Output directory: ${directories.outDir}`);
   logger.debug(`Content length: ${llmsTxtContent.length} characters`);
   
   // Save the file
   await saveMarkdownFile(llmsTxtPath, llmsTxtContent);
   
-  logger.debug(`Successfully saved llms.txt file`);
+  logger.debug(`Successfully saved llms.txt`);
   logger.info(`Generated llms.txt with ${docs.length} documents`);
   
   return {

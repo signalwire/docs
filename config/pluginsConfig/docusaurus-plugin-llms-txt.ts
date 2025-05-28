@@ -16,7 +16,8 @@ export const llmsTxtPlugin: PluginConfig = [
     siteDescription: "SignalWire Documentation",
     siteTitle: "SignalWire Documentation",
     enableDescriptions: true,
-    logLevel: 2,
+    onRouteError: 'warn',
+    logLevel: 1,
     depth: 1,
     runOnPostBuild: true,
     enableCache: false,
@@ -36,11 +37,9 @@ export const llmsTxtPlugin: PluginConfig = [
     content: {
       excludeRoutes: [
         "/attachments/**",
-        "/blog/**",
         "/cluecon-2024/**",
         "/img/**",
         "/demos/**",
-        "/page/**",
         "/tags/**",
         "/rest/**",
         "/plugins/**",
@@ -52,18 +51,17 @@ export const llmsTxtPlugin: PluginConfig = [
         "/404.html",
         "/media/**" 
       ],
+      includeBlog: false,
+      includePages: false,
+      includeDocs: true,
       relativePaths: false,
       enableMarkdownFiles: true,
       routeRules: [
-        // More specific rules first (CSS-like specificity)
-        { route: "/swml/methods/**", depth: 2 },
-        { route: "/swml/guides/**", depth: 2 },
         { 
-          route: "/swml", 
+          route: "/swml/**", 
           categoryName: "SWML", 
           depth: 2,
-          // Override global ordering - methods first for SWML specifically
-          includeOrder: ["/swml/methods/**", "/swml/guides/**"]
+          includeOrder: ["/swml/guides/**", "/swml/methods/**"]
         }
       ],
     }

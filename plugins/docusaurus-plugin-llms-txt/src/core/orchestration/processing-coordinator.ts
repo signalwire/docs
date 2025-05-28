@@ -52,16 +52,16 @@ export async function coordinateProcessing(
     generatedFilesDir
   );
   
-  logger.debug(`processDocuments returned: docs.length=${docs.length}, cachedRoutes=${cachedRoutes ? cachedRoutes.length : 'undefined'}`);
+  logger.debug(`processDocuments returned: ${docs.length} docs, ${cachedRoutes ? 'cache updated' : 'cache used'}`);
   
   // Update cache if we processed fresh routes and have updates
   let cacheUpdated = false;
   if (cachedRoutes) {
     await cacheManager.updateCacheWithRoutes(config, cachedRoutes);
     cacheUpdated = true;
-    logger.info(`Cache updated with ${cachedRoutes.length} routes`);
+    logger.debug(`Cache updated with ${cachedRoutes.length} routes`);
   } else {
-    logger.debug('No cachedRoutes to update - cache processing was used');
+    logger.debug('Using cached processing results');
   }
   
   return {

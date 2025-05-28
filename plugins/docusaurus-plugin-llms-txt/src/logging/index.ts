@@ -1,81 +1,92 @@
 import baseLogger from '@docusaurus/logger';
+import type { ReportingSeverity } from '@docusaurus/types';
 import { Logger } from '../types';
-import { LogLevel, LogLevelType } from '../constants';
-
 
 /**
- * Logger implementation that can be instantiated
+ * Logger implementation with separated concerns:
+ * - onRouteError: Controls how route processing failures are handled
+ * - logLevel: Controls operational logging verbosity (0=quiet, 1=normal, 2=verbose, 3=debug)
  */
 class PluginLogger implements Logger {
   private name: string;
-  private logLevel: LogLevelType;
+  private onRouteError: ReportingSeverity;
+  private logLevel: number;
 
-  constructor(name: string, logLevel: LogLevelType = LogLevel.INFO) {
+  constructor(
+    name: string, 
+    onRouteError: ReportingSeverity = 'warn',
+    logLevel: number = 1
+  ) {
     this.name = name;
+    this.onRouteError = onRouteError;
     this.logLevel = logLevel;
   }
 
   /**
    * Gets the prefix for log messages
-   * 
-   * @returns The formatted prefix string
    */
   private getPrefix(): string {
     return `[${this.name}]`;
   }
 
   /**
-   * Checks if a message should be logged based on level
-   * 
-   * @param level - The level of the message
-   * @returns True if the message should be logged
+   * Core reporting method (public API)
    */
-  private shouldLog(level: LogLevelType): boolean {
-    return level <= this.logLevel;
+  public report(severity: ReportingSeverity, msg: string): void {
+    const reportingMethod = baseLogger.report(severity);
+    reportingMethod(`${this.getPrefix()} ${msg}`);
   }
 
   /**
-   * Logs an error message
-   * 
-   * @param msg - The error message
+   * Report a route processing error with configurable severity
+   */
+  public reportRouteError(msg: string): void {
+    if (this.onRouteError === 'ignore') {
+      return;
+    }
+    this.report(this.onRouteError, `Route Error: ${msg}`);
+  }
+
+  /**
+   * Log an error (always shown)
    */
   public error(msg: string): void {
-    if (this.shouldLog(LogLevel.ERROR)) {
-      baseLogger.error(`${this.getPrefix()} ${msg}`);
-    }
+    baseLogger.error(`${this.getPrefix()} ERROR: ${msg}`);
   }
 
   /**
-   * Logs a warning message
-   * 
-   * @param msg - The warning message
+   * Log a warning (level 1+)
    */
   public warn(msg: string): void {
-    if (this.shouldLog(LogLevel.WARN)) {
-      baseLogger.warn(`${this.getPrefix()} ${msg}`);
+    if (this.logLevel >= 1) {
+      baseLogger.warn(`${this.getPrefix()} WARNING: ${msg}`);
     }
   }
 
   /**
-   * Logs an info message
-   * 
-   * @param msg - The info message
+   * Log general info (level 2+)
    */
   public info(msg: string): void {
-    if (this.shouldLog(LogLevel.INFO)) {
+    if (this.logLevel >= 2) {
       baseLogger.info(`${this.getPrefix()} ${msg}`);
     }
   }
 
   /**
-   * Logs a debug message
-   * 
-   * @param msg - The debug message
+   * Log debug info (level 3+)
    */
   public debug(msg: string): void {
-    if (this.shouldLog(LogLevel.DEBUG)) {
-      // Use info since Docusaurus has no debug level
-      baseLogger.info(`${this.getPrefix()} [DEBUG] ${msg}`);
+    if (this.logLevel >= 3) {
+      baseLogger.info(baseLogger.yellow(`${this.getPrefix()} DEBUG: ${msg}`));
+    }
+  }
+
+  /**
+   * Log success message (level 1+)
+   */
+  public success(msg: string): void {
+    if (this.logLevel >= 1) {
+      baseLogger.success(`${this.getPrefix()} ${msg}`);
     }
   }
 }
@@ -84,20 +95,57 @@ class PluginLogger implements Logger {
  * Factory function to create logger instances
  * 
  * @param name - Name for log prefix
- * @param logLevel - Minimum log level to display
+ * @param onRouteError - How to handle route processing failures
+ * @param logLevel - Operational logging level (0=quiet, 1=normal, 2=verbose, 3=debug)
  * @returns A new logger instance
  */
-export function createLogger(name: string, logLevel: LogLevelType = LogLevel.INFO): Logger {
-  return new PluginLogger(name, logLevel);
+export function createLogger(
+  name: string, 
+  onRouteError: ReportingSeverity = 'warn',
+  logLevel: number = 1
+): Logger {
+  return new PluginLogger(name, onRouteError, logLevel);
 }
 
 /**
  * Create logger for plugin operations with standard naming
  * 
- * @param config - Plugin configuration (optional)
+ * @param pluginConfig - Plugin configuration (optional)
  * @returns Logger instance with standard plugin name
+ * 
+ * @example
+ * ```typescript
+ * // Quiet mode - only errors and successes
+ * const logger = createPluginLogger({
+ *   logLevel: 0
+ * });
+ * 
+ * // Normal mode (default) - errors, warnings, successes
+ * const logger = createPluginLogger({
+ *   logLevel: 1  // default
+ * });
+ * 
+ * // Verbose mode - errors, warnings, successes, info
+ * const logger = createPluginLogger({
+ *   logLevel: 2
+ * });
+ * 
+ * // Debug mode - everything including debug messages
+ * const logger = createPluginLogger({
+ *   logLevel: 3
+ * });
+ * 
+ * // Route error handling
+ * const logger = createPluginLogger({
+ *   onRouteError: 'throw'  // Fail fast on route errors
+ * });
+ * ```
  */
-export function createPluginLogger(config?: { logLevel?: LogLevelType }): Logger {
-  const logLevel = config?.logLevel ?? LogLevel.INFO;
-  return createLogger('docusaurus-plugin-llms-txt', logLevel);
+export function createPluginLogger(pluginConfig?: { 
+  onRouteError?: ReportingSeverity;
+  logLevel?: number;
+}): Logger {
+  const onRouteError = pluginConfig?.onRouteError ?? 'warn';
+  const logLevel = pluginConfig?.logLevel ?? 1;
+  return createLogger('docusaurus-plugin-llms-txt', onRouteError, logLevel);
 } 

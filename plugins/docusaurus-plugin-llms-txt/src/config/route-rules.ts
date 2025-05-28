@@ -44,24 +44,47 @@ export function findMostSpecificRule(
 }
 
 /**
+ * Check if a path exactly matches the base path of a route rule
+ * Only applies categoryName to the exact base path, not subcategories
+ */
+function isExactBasePath(path: string, rule: RouteRule): boolean {
+  if (!rule.categoryName) {
+    return false; // No categoryName to apply
+  }
+  
+  // Extract base path from rule (remove /** suffix)
+  const ruleBasePath = rule.route.replace(/\/\*\*$/, '');
+  
+  // Check if current path exactly matches the rule's base path
+  return path === ruleBasePath;
+}
+
+/**
  * Apply route rule to create effective configuration
  */
 export function applyRouteRule(
   rule: RouteRule | null,
   baseConfig: PluginOptions,
   contentConfig: Required<ContentOptions>,
-  path: string
+  path: string,
+  routeSegment?: string
 ): EffectiveConfig {
   const includeOrder = rule?.includeOrder || baseConfig.includeOrder || [];
+  
+  // CategoryName: only apply if this is the exact base path of the rule
+  // Otherwise use routeSegment fallback (preserves subcategory names)
+  const categoryName = (rule && isExactBasePath(path, rule)) 
+    ? rule.categoryName 
+    : routeSegment;
   
   const effectiveConfig: EffectiveConfig = {
     ...baseConfig,
     includeOrder,
     content: contentConfig,
     path,
-    // Apply rule-specific overrides if rule exists
+    // Apply rule-specific overrides if rule exists, with proper fallbacks
     ...(rule?.depth !== undefined && { depth: rule.depth }),
-    ...(rule?.categoryName !== undefined && { categoryName: rule.categoryName })
+    ...(categoryName !== undefined && { categoryName })
   };
 
   return effectiveConfig;

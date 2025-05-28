@@ -31,7 +31,7 @@ export async function processHtmlFileWithContext(
   const pathManager = new PathManager(path.dirname(mdOutDir), config, outDir);
   const relHtmlPath = pathManager.getRelativeHtmlPath(fullHtmlPath);
 
-  logger.debug(`Processing file: ${fullHtmlPath} → ${routePath}`);
+  logger.debug(`Processing: ${routePath}`);
 
   try {
     const html = await fs.readFile(fullHtmlPath, 'utf8');
@@ -67,7 +67,7 @@ export async function processHtmlFileWithContext(
       );
 
       // Save markdown files using PathManager
-      logger.debug(`Saving markdown file for ${relHtmlPath} to ${mdOutDir}`);
+      logger.debug(`Saving markdown: ${routePath}`);
       const mdPath = htmlPathToMdPath(relHtmlPath, mdOutDir);
       await saveMarkdownFile(mdPath, markdown);
       

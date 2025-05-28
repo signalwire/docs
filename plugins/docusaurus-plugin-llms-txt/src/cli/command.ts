@@ -44,7 +44,7 @@ async function runCliConversion(
       }
     );
     
-    log.info(`✅ CLI conversion completed successfully - processed ${result.processedCount} documents`);
+    log.success(`CLI conversion completed successfully - processed ${result.processedCount} documents`);
   } catch (error) {
     const errorMessage = getErrorMessage(error);
     log.error(ERROR_MESSAGES.CLI_OPERATION_FAILED('CLI conversion', errorMessage));
@@ -98,7 +98,7 @@ export function registerLlmsTxtClean(
         const directories = setupDirectories(siteDir, config, context.outDir);
         
         if (!await fs.pathExists(directories.outDir)) {
-          log.info(`Build directory not found: ${directories.outDir} (already clean)`);
+          log.warn(`Build directory not found: ${directories.outDir}. Run 'npm run build' first.`);
           return;
         }
         
@@ -122,9 +122,9 @@ export function registerLlmsTxtClean(
                 if (await fs.pathExists(fullMarkdownPath)) {
                   await fs.remove(fullMarkdownPath);
                   cleanedFiles++;
-                  log.debug(`Removed file: ${fullMarkdownPath}`);
+                  log.debug(`Removed: ${cachedRoute.markdownFile}`);
                 } else {
-                  log.debug(`File not found (may have been moved/renamed): ${fullMarkdownPath}`);
+                  log.debug(`Not found: ${cachedRoute.markdownFile}`);
                 }
                 
                 // Clear the markdownFile field in cache
@@ -153,7 +153,7 @@ export function registerLlmsTxtClean(
         const llmsTxtPath = path.join(directories.outDir, LLMS_TXT_FILENAME);
         if (await fs.pathExists(llmsTxtPath)) {
           await fs.remove(llmsTxtPath);
-          log.info(`Removed ${LLMS_TXT_FILENAME}`);
+          log.debug(`Removed ${LLMS_TXT_FILENAME}`);
         }
         
         // Handle cache clearing if requested
@@ -161,10 +161,9 @@ export function registerLlmsTxtClean(
           const cacheInfo = cacheManager.getCacheInfo();
           if (await fs.pathExists(cacheInfo.dir)) {
             await fs.remove(cacheInfo.dir);
-            log.info(`Cleared cache directory: ${cacheInfo.dir}`);
-            cacheUpdated = false; // Don't update cache since we just deleted it
+            log.debug(`Cleared cache directory: ${cacheInfo.dir}`);
           } else {
-            log.info(`Cache directory not found: ${cacheInfo.dir} (already clean)`);
+            log.debug(`Cache directory not found: ${cacheInfo.dir} (already clean)`);
           }
         } else {
           // Update cache if we modified any routes and not clearing cache
@@ -175,13 +174,13 @@ export function registerLlmsTxtClean(
             };
             
             await cacheManager.saveCache(updatedCache);
-            log.info(`Updated cache to clear ${cacheEntriesCleared} route entries`);
+            log.debug(`Updated cache to clear ${cacheEntriesCleared} route entries`);
           }
         }
         
         const cacheStatus = options.clearCache ? ', cache cleared' : `, ${cacheEntriesCleared} cache entries cleared`;
-        const summary = `✅ Cleanup completed (${cleanedFiles} files removed${cacheStatus})`;
-        log.info(summary);
+        const summary = `Cleanup completed (${cleanedFiles} files removed${cacheStatus})`;
+        log.success(summary);
       } catch (error) {
         const errorMessage = getErrorMessage(error);
         log.error(ERROR_MESSAGES.CLI_OPERATION_FAILED('Cleanup', errorMessage));

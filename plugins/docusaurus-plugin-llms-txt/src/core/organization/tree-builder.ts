@@ -5,7 +5,7 @@
 
 import { createMatcher } from '@docusaurus/utils';
 import type { DocInfo, PluginOptions, TreeNode } from '../../types';
-import { getEffectiveConfigForPath, getContentConfig } from '../../config';
+import { getEffectiveConfigForRoute } from '../../config';
 import { ensureLeadingSlash } from '../../utils';
 import { TREE_ROOT_NAME, INDEX_IDENTIFIER } from '../../constants';
 
@@ -16,7 +16,7 @@ import { TREE_ROOT_NAME, INDEX_IDENTIFIER } from '../../constants';
 function applyOrdering(node: TreeNode, globalConfig: PluginOptions): void {
   // Get effective config for this node's path
   const nodePath = node.relPath ? `/${node.relPath}` : '/';
-  const effectiveConfig = getEffectiveConfigForPath(nodePath, globalConfig);
+  const effectiveConfig = getEffectiveConfigForRoute(nodePath, globalConfig);
   
   // Apply ordering if specified and we have subcategories
   const hasIncludeOrder = effectiveConfig.includeOrder && effectiveConfig.includeOrder.length > 0;
@@ -93,7 +93,9 @@ export function buildDocumentTree(docs: readonly DocInfo[], globalConfig: Plugin
   for (const doc of docs) {
     const route = doc.routePath.replace(/\.md$/, '');
     const routePath = ensureLeadingSlash(route);
-    const effectiveConfig = getEffectiveConfigForPath(routePath, globalConfig);
+    
+    // Single route rule lookup for all effects (depth, categoryName, ordering)
+    const effectiveConfig = getEffectiveConfigForRoute(routePath, globalConfig);
     const depth = effectiveConfig.depth || 1;
 
     const segments = routePath.split('/').filter(Boolean);
@@ -113,23 +115,14 @@ export function buildDocumentTree(docs: readonly DocInfo[], globalConfig: Plugin
       
       const nextPath = categoryPath ? `${categoryPath}/${segment}` : segment;
       if (!categoryMap.has(nextPath)) {
-        let categoryName = segment;
-        
-        // Check if this specific category path has a rule with categoryName override
-        const categoryPathToCheck = `/${nextPath}`;
-        const globalContentConfig = getContentConfig(globalConfig);
-        if (globalContentConfig.routeRules?.length) {
-          for (const rule of globalContentConfig.routeRules) {
-            if (rule.categoryName) {
-              const matcher = createMatcher([rule.route]);
-              
-              if (matcher(categoryPathToCheck)) {
-                categoryName = rule.categoryName;
-                break;
-              }
-            }
-          }
-        }
+        // Get category name from single route rule lookup
+        const categoryPathRoute = `/${nextPath}`;
+        const categoryEffectiveConfig = getEffectiveConfigForRoute(
+          categoryPathRoute, 
+          globalConfig, 
+          segment
+        );
+        const categoryName = categoryEffectiveConfig.categoryName || segment;
         
         const newNode: MutableTreeNode = { 
           name: categoryName,
