@@ -3,9 +3,9 @@
  * Handles cache validation, strategy determination, and related logging
  */
 
-import type { PluginOptions, Logger, CacheSchema } from '../../types';
-import type { CacheManager } from '../fs/cache';
-import { HASH_DISPLAY_LENGTH, CACHE_MESSAGES } from '../../constants';
+import type { PluginOptions, Logger, CacheSchema } from '../types';
+import type { CacheManager } from './cache';
+import { HASH_DISPLAY_LENGTH, CACHE_MESSAGES } from '../constants';
 
 /**
  * Cache strategy analysis result

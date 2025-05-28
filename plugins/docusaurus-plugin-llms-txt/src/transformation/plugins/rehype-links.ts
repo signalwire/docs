@@ -1,10 +1,10 @@
 import { visit } from 'unist-util-visit';
 import type { Root, Element } from 'hast';
 import type { Plugin } from 'unified';
-import { formatUrl, ensureLeadingSlash } from '../../../utils/url';
+import { formatUrl, ensureLeadingSlash } from '../../utils/url';
 import { parseLocalURLPath, createMatcher } from '@docusaurus/utils';
-import type { RehypeLinksOptions } from '../../../types';
-import { HTML_OR_MD_EXTENSION_REGEX } from '../../../constants';
+import type { RehypeLinksOptions } from '../../types';
+import { HTML_OR_MD_EXTENSION_REGEX } from '../../constants';
 
 /**
  * Check if a URL is an internal relative link using Docusaurus utilities

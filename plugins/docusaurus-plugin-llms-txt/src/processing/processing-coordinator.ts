@@ -10,9 +10,9 @@ import type {
   Logger, 
   CacheSchema,
   DirectoryConfig 
-} from '../../types';
-import type { CacheManager } from '../fs/cache';
-import { processDocuments } from '../generation/route-processor';
+} from '../types';
+import type { CacheManager } from '../cache/cache';
+import { processDocuments } from './route-processor';
 
 /**
  * Processing coordination result

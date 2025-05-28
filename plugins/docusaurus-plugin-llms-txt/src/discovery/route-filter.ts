@@ -4,11 +4,11 @@
  */
 
 import type { PluginRouteConfig } from '@docusaurus/types';
-import type { PluginOptions, Logger } from '../../types';
+import type { PluginOptions, Logger } from '../types';
 import { shouldProcessRoute } from './content-classifier';
 import { isRouteExcluded } from './exclusion-matcher';
-import { removeLeadingSlash } from '../../utils';
-import { INDEX_HTML } from '../../constants';
+import { removeLeadingSlash } from '../utils';
+import { INDEX_HTML } from '../constants';
 
 /**
  * Validate routes and return filtering summary for info logging

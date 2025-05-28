@@ -5,8 +5,8 @@ import type { LoadContext } from '@docusaurus/types';
 import { PluginOptions } from '../types';
 import { createPluginLogger } from '../logging';
 import { getErrorMessage } from '../errors';
-import { CacheManager } from '../core/fs/cache';
-import { setupDirectories } from '../core/fs/paths';
+import { CacheManager } from '../cache/cache';
+import { setupDirectories } from '../filesystem/paths';
 import { 
   LLMS_TXT_FILENAME, 
   ERROR_MESSAGES,

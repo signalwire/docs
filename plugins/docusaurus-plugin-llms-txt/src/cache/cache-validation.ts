@@ -6,8 +6,8 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { md5Hash } from '@docusaurus/utils';
-import type { CachedRouteInfo, PluginOptions, DirectoryConfig, ValidationResult } from '../../types';
-import { getContentConfig } from '../../config';
+import type { CachedRouteInfo, PluginOptions, DirectoryConfig, ValidationResult } from '../types';
+import { getContentConfig } from '../config';
 
 /**
  * Check if cached route has required fields

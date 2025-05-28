@@ -3,11 +3,11 @@
  * Build complete llms.txt content from processed documents
  */
 
-import type { DocInfo, PluginOptions } from '../../types';
+import type { DocInfo, PluginOptions } from '../types';
 import { buildDocumentTree } from '../organization/tree-builder';
 import { renderTreeAsMarkdown } from '../organization/tree-renderer';
-import { getContentConfig } from '../../config';
-import { ROOT_ROUTE_PATH, INDEX_ROUTE_PATH, DEFAULT_SITE_TITLE } from '../../constants';
+import { getContentConfig } from '../config';
+import { ROOT_ROUTE_PATH, INDEX_ROUTE_PATH, DEFAULT_SITE_TITLE } from '../constants';
 
 /**
  * Build complete llms.txt content from processed documents

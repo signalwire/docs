@@ -5,9 +5,22 @@
 
 import fs from 'fs-extra';
 import path from 'path';
-import type { CacheSchema } from '../../types';
-import { createCacheError, getErrorCause } from '../../errors';
-import { TEMP_FILE_PREFIX, JSON_INDENT } from '../../constants';
+import type { CacheSchema } from '../types';
+import { createCacheError, getErrorCause } from '../errors';
+import { TEMP_FILE_PREFIX, JSON_INDENT } from '../constants';
+
+/**
+ * Validate that loaded data matches CacheSchema structure
+ */
+function validateCacheSchema(data: unknown): data is CacheSchema {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as Record<string, unknown>).pluginVersion === 'string' &&
+    typeof (data as Record<string, unknown>).configHash === 'string' &&
+    Array.isArray((data as Record<string, unknown>).routes)
+  );
+}
 
 /**
  * Cache file I/O handler
@@ -21,7 +34,14 @@ export class CacheIO {
   async loadCache(): Promise<CacheSchema> {
     try {
       const data = await fs.readJson(this._cachePath);
-      return data as CacheSchema;
+      
+      // Validate the loaded data structure
+      if (validateCacheSchema(data)) {
+        return data;
+      } else {
+        // Return empty cache if structure is invalid
+        return { pluginVersion: '', configHash: '', routes: [] };
+      }
     } catch {
       // Return empty cache if file doesn't exist or is invalid
       return { pluginVersion: '', configHash: '', routes: [] };

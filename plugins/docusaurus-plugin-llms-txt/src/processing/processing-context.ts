@@ -4,7 +4,7 @@
  */
 
 import type { RouteConfig } from '@docusaurus/types';
-import type { CacheSchema, Logger } from '../../types';
+import type { CacheSchema, Logger } from '../types';
 import { cachedRoutesToRouteConfigs } from '../discovery/route-converter';
 
 /**

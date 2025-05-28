@@ -4,9 +4,9 @@
  */
 
 import type { PluginRouteConfig } from '@docusaurus/types';
-import type { PluginOptions } from '../../types';
-import { getContentConfig } from '../../config';
-import { DOCUSAURUS_BLOG_PLUGIN, DOCUSAURUS_PAGES_PLUGIN, CONTENT_TYPES } from '../../constants';
+import type { PluginOptions } from '../types';
+import { getContentConfig } from '../config';
+import { DOCUSAURUS_BLOG_PLUGIN, DOCUSAURUS_PAGES_PLUGIN, CONTENT_TYPES } from '../constants';
 
 /**
  * Classify a route by its plugin type

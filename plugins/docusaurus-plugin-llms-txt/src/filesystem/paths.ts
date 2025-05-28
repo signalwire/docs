@@ -5,8 +5,8 @@
 
 import path from 'path';
 import { normalizeUrl } from '@docusaurus/utils';
-import { PluginOptions, DirectoryConfig } from '../../types';
-import { MD_EXTENSION } from '../../constants';
+import { PluginOptions, DirectoryConfig } from '../types';
+import { MD_EXTENSION } from '../constants';
 
 /**
  * Path management service that consolidates common path operations

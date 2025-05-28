@@ -11,16 +11,23 @@ import type {
   Logger, 
   CachedRouteInfo, 
   CacheSchema
-} from '../../types';
-import { CacheManager } from '../fs/cache';
+} from '../types';
+import { CacheManager } from '../cache/cache';
 import { processHtmlFileWithContext } from '../transformation/html-file-processor';
-import { getEffectiveConfigForRoute, getContentConfig } from '../../config';
-import { ERROR_MESSAGES } from '../../constants';
-import { getErrorMessage } from '../../errors';
-import { hashFile } from '../fs/cache-validation';
+import { getEffectiveConfigForRoute, getContentConfig } from '../config';
+import { ERROR_MESSAGES } from '../constants';
+import { getErrorMessage } from '../errors';
+import { hashFile } from '../cache/cache-validation';
 import { validateRoutesForProcessing } from './route-validator';
 import { analyzeProcessingContext } from './processing-context';
-import { validateCliContext } from '../orchestration/cache-strategy';
+import { validateCliContext } from '../cache/cache-strategy';
+
+/**
+ * Type guard to check if a route is a complete RouteConfig
+ */
+function isCompleteRouteConfig(route: RouteConfig | Partial<RouteConfig>): route is RouteConfig {
+  return 'component' in route && typeof route.component === 'string';
+}
 
 /**
  * Process a single route with error handling
@@ -111,6 +118,12 @@ async function processRoutesStream(
     const { route, cachedRoute, isValid } = routeData;
     if (!isValid) continue;
     
+    // Only process routes that have a complete RouteConfig (not Partial<RouteConfig>)
+    if (!isCompleteRouteConfig(route)) {
+      logger.debug(`Skipping incomplete route: ${route.path}`);
+      continue;
+    }
+    
     // Check if we can use cached data
     const canUseCache = useCache && await cacheManager.isCachedRouteValid(cachedRoute, options);
     
@@ -123,7 +136,7 @@ async function processRoutesStream(
       }
     }
     
-    // Process the route
+    // Process the route - TypeScript now knows route is a complete RouteConfig
     const result = await processSingleRoute(
       route, cachedRoute, options, directories, logger, siteUrl, outDir
     );

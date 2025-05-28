@@ -55,14 +55,7 @@ export const llmsTxtPlugin: PluginConfig = [
       includeDocs: true,
       relativePaths: false,
       enableMarkdownFiles: true,
-      routeRules: [
-        { 
-          route: "/swml/**", 
-          categoryName: "SWML", 
-          depth: 2,
-          includeOrder: ["/swml/guides/**", "/swml/methods/**"]
-        }
-      ],
+      routeRules: [],
     }
   } satisfies PluginOptions
 ];

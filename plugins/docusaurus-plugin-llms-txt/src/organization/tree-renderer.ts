@@ -4,9 +4,9 @@
  */
 
 import { createSlugger } from '@docusaurus/utils';
-import type { TreeNode, DocInfo } from '../../types';
-import { formatUrl } from '../../utils/url';
-import { DEFAULT_MARKDOWN_HEADER_LEVEL, LANDING_PAGE_SUFFIX } from '../../constants';
+import type { TreeNode, DocInfo } from '../types';
+import { formatUrl } from '../utils/url';
+import { DEFAULT_MARKDOWN_HEADER_LEVEL, LANDING_PAGE_SUFFIX } from '../constants';
 
 /**
  * Check if two titles are similar using slug comparison

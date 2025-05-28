@@ -4,7 +4,7 @@
  */
 
 import { createMatcher } from '@docusaurus/utils';
-import { ensureLeadingSlash } from '../../utils';
+import { ensureLeadingSlash } from '../utils';
 
 /**
  * Create exclusion matcher function from exclude patterns

@@ -5,15 +5,15 @@
  */
 
 import path from 'path';
-import type { RouteConfig, PluginRouteConfig } from '@docusaurus/types';
-import type { DocInfo, PluginOptions, CachedRouteInfo, CacheSchema } from '../../types';
-import { PathManager } from './paths';
+import type { RouteConfig } from '@docusaurus/types';
+import type { DocInfo, PluginOptions, CachedRouteInfo, CacheSchema } from '../types';
+import { PathManager } from '../filesystem/paths';
 import { CacheIO } from './cache-io';
 import { isCachedRouteValid, calcConfigHash } from './cache-validation';
 import { routePathToHtmlPath } from '../discovery/route-filter';
-import { htmlPathToMdPath } from './paths';
-import packageJson from '../../../package.json';
-import { CACHE_FILENAME } from '../../constants';
+import { htmlPathToMdPath } from '../filesystem/paths';
+import packageJson from '../../package.json';
+import { CACHE_FILENAME } from '../constants';
 
 /**
  * Simplified cache management service
@@ -67,7 +67,8 @@ export class CacheManager {
   /** Create cached route info from routes */
   createCachedRouteInfo(routes: RouteConfig[]): CachedRouteInfo[] {
     return routes.map(route => {
-      const pluginRoute = route as PluginRouteConfig;
+      // Type guard for PluginRouteConfig with proper typing
+      const pluginRoute = route as { plugin?: { name?: string } };
       
       const baseInfo = {
         path: route.path,
@@ -78,7 +79,7 @@ export class CacheManager {
         ? { plugin: pluginRoute.plugin.name }
         : {};
       
-      return { ...baseInfo, ...pluginInfo } as CachedRouteInfo;
+      return { ...baseInfo, ...pluginInfo } satisfies CachedRouteInfo;
     });
   }
 
@@ -127,7 +128,7 @@ export class CacheManager {
       ? { markdownFile: cachedRoute.markdownFile }
       : {};
     
-    return { ...baseDocInfo, ...markdownInfo } as DocInfo;
+    return { ...baseDocInfo, ...markdownInfo } satisfies DocInfo;
   }
 
   /** Update cache with processed routes and save to disk */

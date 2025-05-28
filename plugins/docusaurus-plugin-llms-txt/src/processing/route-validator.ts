@@ -4,10 +4,17 @@
  */
 
 import type { RouteConfig, PluginRouteConfig } from '@docusaurus/types';
-import type { PluginOptions, Logger, CachedRouteInfo, ValidationResult } from '../../types';
+import type { PluginOptions, Logger, CachedRouteInfo, ValidationResult } from '../types';
 import { validateRouteForProcessing, validateAndLogRouteFiltering } from '../discovery/route-filter';
 import { createExclusionMatcher } from '../discovery/exclusion-matcher';
-import { getContentConfig } from '../../config';
+import { getContentConfig } from '../config';
+
+/**
+ * Type guard to check if a route is a PluginRouteConfig
+ */
+function isPluginRouteConfig(route: RouteConfig): route is PluginRouteConfig {
+  return 'plugin' in route || route.path !== undefined;
+}
 
 /**
  * Validate a single route for processing
@@ -19,10 +26,13 @@ export function validateSingleRoute(
   isExcluded: (_path: string) => boolean,
   logger: Logger
 ): ValidationResult {
-  const pluginRoute = route as PluginRouteConfig;
+  // Safe conversion using type guard
+  if (!isPluginRouteConfig(route)) {
+    return { isValid: false, reason: 'Route is not a valid plugin route' };
+  }
   
   // Check if route should be processed based on content classification
-  if (!validateRouteForProcessing(pluginRoute, options, isExcluded, logger)) {
+  if (!validateRouteForProcessing(route, options, isExcluded, logger)) {
     return { isValid: false, reason: 'Route failed classification validation' };
   }
   
@@ -42,14 +52,19 @@ export function validateRoutesForProcessing(
   cachedRoutes: CachedRouteInfo[],
   options: PluginOptions,
   logger: Logger
-): Array<{ route: RouteConfig; cachedRoute: CachedRouteInfo; isValid: boolean }> {
+): Array<{ 
+  route: RouteConfig | Partial<RouteConfig>; 
+  cachedRoute: CachedRouteInfo; 
+  isValid: boolean 
+}> {
   const contentConfig = getContentConfig(options);
   const isExcluded = createExclusionMatcher(contentConfig.excludeRoutes);
   
   // Get filtering info if we have route data to filter
   if (routes.length > 0) {
-    const pluginRoutes = routes as PluginRouteConfig[];
-    validateAndLogRouteFiltering(pluginRoutes, options, isExcluded, logger);
+    // Filter to only valid plugin routes for validation
+    const validPluginRoutes = routes.filter(isPluginRouteConfig);
+    validateAndLogRouteFiltering(validPluginRoutes, options, isExcluded, logger);
   }
   
   // Create a simple map for route lookup
@@ -63,7 +78,11 @@ export function validateRoutesForProcessing(
     
     if (!route) {
       logger.debug(`Route not found in processing map: ${cachedRoute.path}`);
-      return { route: { path: cachedRoute.path } as RouteConfig, cachedRoute, isValid: false };
+      return { 
+        route: { path: cachedRoute.path } satisfies Partial<RouteConfig>, 
+        cachedRoute, 
+        isValid: false 
+      };
     }
     
     const validation = validateSingleRoute(route, cachedRoute, options, isExcluded, logger);

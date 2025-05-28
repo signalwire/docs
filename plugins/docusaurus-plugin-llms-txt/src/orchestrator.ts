@@ -5,11 +5,11 @@
 
 import type { RouteConfig } from '@docusaurus/types';
 import type { ProcessingConfig, ProcessingResult } from './types';
-import { CacheManager } from './core/fs/cache';
-import { setupDirectories, buildSiteUrl } from './core/fs/paths';
-import { analyzeCacheStrategy, validateCliContext } from './core/orchestration/cache-strategy';
-import { coordinateProcessing } from './core/orchestration/processing-coordinator';
-import { generateOutputFiles } from './core/orchestration/output-generator';
+import { CacheManager } from './cache/cache';
+import { setupDirectories, buildSiteUrl } from './filesystem/paths';
+import { analyzeCacheStrategy, validateCliContext } from './cache/cache-strategy';
+import { coordinateProcessing } from './processing/processing-coordinator';
+import { generateOutputFiles } from './generation/output-generator';
 
 /**
  * Unified processing orchestrator that handles both build-time and CLI scenarios

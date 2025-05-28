@@ -4,10 +4,10 @@
  */
 
 import path from 'path';
-import type { DocInfo, PluginOptions, Logger, DirectoryConfig } from '../../types';
-import { buildLlmsTxtContent } from '../generation/index-builder';
-import { saveMarkdownFile } from '../generation/markdown-writer';
-import { LLMS_TXT_FILENAME, PROCESSING_MESSAGES } from '../../constants';
+import type { DocInfo, PluginOptions, Logger, DirectoryConfig } from '../types';
+import { buildLlmsTxtContent } from './index-builder';
+import { saveMarkdownFile } from './markdown-writer';
+import { LLMS_TXT_FILENAME, PROCESSING_MESSAGES } from '../constants';
 
 /**
  * Output generation result

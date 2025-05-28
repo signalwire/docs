@@ -4,9 +4,9 @@
  */
 
 import type { Root } from 'hast';
-import type { TitleExtractor } from '../../types';
-import { selectText } from '../../utils/html';
-import { DEFAULT_DOCUMENT_TITLE, HTML_SELECTORS } from '../../constants';
+import type { TitleExtractor } from '../types';
+import { selectText } from '../utils/html';
+import { DEFAULT_DOCUMENT_TITLE, HTML_SELECTORS } from '../constants';
 
 /**
  * Extract title from first h1 element found anywhere on the page

@@ -5,12 +5,12 @@
 
 import path from 'path';
 import fs from 'fs-extra';
-import type { DocInfo, PluginOptions, Logger, MarkdownConversionOptions } from '../../types';
-import { getContentConfig } from '../../config';
-import { ERROR_MESSAGES } from '../../constants';
-import { getErrorMessage, getErrorCause, createProcessingError } from '../../errors';
-import { PathManager } from '../fs/paths';
-import { htmlPathToMdPath } from '../fs/paths';
+import type { DocInfo, PluginOptions, Logger, MarkdownConversionOptions } from '../types';
+import { getContentConfig } from '../config';
+import { ERROR_MESSAGES } from '../constants';
+import { getErrorMessage, getErrorCause, createProcessingError } from '../errors';
+import { PathManager } from '../filesystem/paths';
+import { htmlPathToMdPath } from '../filesystem/paths';
 import { saveMarkdownFile } from '../generation/markdown-writer';
 import { extractHtmlMetadata, convertHtmlToMarkdown } from './html-parser';
 

@@ -11,7 +11,7 @@ import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
 import rehypeLinks from './rehype-links';
 import rehypeTables from './rehype-tables';
-import type { MarkdownConversionOptions, RehypeLinksOptions } from '../../../types';
+import type { MarkdownConversionOptions, RehypeLinksOptions } from '../../types';
 
 /**
  * Built-in plugin configurations

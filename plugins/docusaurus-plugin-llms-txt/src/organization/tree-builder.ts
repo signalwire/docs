@@ -4,10 +4,10 @@
  */
 
 import { createMatcher } from '@docusaurus/utils';
-import type { DocInfo, PluginOptions, TreeNode } from '../../types';
-import { getEffectiveConfigForRoute } from '../../config';
-import { ensureLeadingSlash } from '../../utils';
-import { TREE_ROOT_NAME, INDEX_IDENTIFIER } from '../../constants';
+import type { DocInfo, PluginOptions, TreeNode } from '../types';
+import { getEffectiveConfigForRoute } from '../config';
+import { ensureLeadingSlash } from '../utils';
+import { TREE_ROOT_NAME, INDEX_IDENTIFIER } from '../constants';
 
 /**
  * Apply ordering to subcategories based on path rules using glob patterns

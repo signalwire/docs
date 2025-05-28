@@ -5,11 +5,11 @@
 
 import { select, selectAll } from 'hast-util-select';
 import type { ElementContent, Root } from 'hast';
-import type { Logger, MarkdownConversionOptions, ConversionResult } from '../../types';
-import { selectMetaContent } from '../../utils/html';
+import type { Logger, MarkdownConversionOptions, ConversionResult } from '../types';
+import { selectMetaContent } from '../utils/html';
 import { extractTitle } from './title-extractor';
-import { getErrorMessage, createProcessingError } from '../../errors';
-import { DEFAULT_DOCUMENT_TITLE, HTML_SELECTORS } from '../../constants';
+import { getErrorMessage, createProcessingError } from '../errors';
+import { DEFAULT_DOCUMENT_TITLE, HTML_SELECTORS } from '../constants';
 import { defaultPluginRegistry } from './plugins/plugin-registry';
 
 /**

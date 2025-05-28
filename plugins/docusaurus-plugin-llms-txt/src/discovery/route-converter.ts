@@ -4,7 +4,7 @@
  */
 
 import type { RouteConfig } from '@docusaurus/types';
-import type { CachedRouteInfo } from '../../types';
+import type { CachedRouteInfo } from '../types';
 
 /**
  * Convert cached route info back to RouteConfig objects
@@ -19,5 +19,5 @@ export function cachedRoutesToRouteConfigs(
     component: '', // Not needed for processing
     exact: true,   // Not needed for processing
     plugin: cachedRoute.plugin ? { name: cachedRoute.plugin } : undefined,
-  } as RouteConfig));
+  } satisfies RouteConfig));
 } 
