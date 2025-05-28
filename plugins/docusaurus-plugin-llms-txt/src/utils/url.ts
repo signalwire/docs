@@ -2,40 +2,63 @@
  * Utilities for URL handling and formatting
  */
 
-import { normalizeUrl, encodePath } from '@docusaurus/utils';
+import { normalizeUrl } from '@docusaurus/utils';
+import { INDEX_MD } from '../constants';
 
 /**
- * Format a document path for llms.txt output
- * 
- * @param path - Document path
- * @param config - Configuration options
- * @param baseUrl - Base URL for absolute paths
- * @returns Formatted document URL
+ * Ensure a path starts with a forward slash
+ * @internal
  */
-export function formatDocUrl(
-  path: string,
-  config: { relativePaths?: boolean; enableMarkdownFiles?: boolean },
-  baseUrl = ''
-): string {
-  if (!path) {
-    return config.relativePaths !== false || !baseUrl ? '/' : normalizeUrl([baseUrl]);
-  }
-
-  // Handle .md extension based on enableMarkdownFiles setting
-  let formattedPath = path;
-  if (config.enableMarkdownFiles === true && !formattedPath.endsWith('.md')) {
-    formattedPath = `${formattedPath}.md`;
-  } else if (config.enableMarkdownFiles === false && formattedPath.endsWith('.md')) {
-    formattedPath = formattedPath.slice(0, -3);
-  }
-  
-  // Use relative paths by default, or absolute if configured
-  if (config.relativePaths === false && baseUrl) {
-    return normalizeUrl([baseUrl, encodePath(formattedPath)]);
-  }
-  
-  return normalizeUrl([encodePath(formattedPath)]);
+export function ensureLeadingSlash(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`;
 }
 
-// Legacy exports for backward compatibility
-export const formatUrl = formatDocUrl; 
+/**
+ * Remove leading slash from a path
+ * @internal
+ */
+export function removeLeadingSlash(path: string): string {
+  return path.startsWith('/') ? path.slice(1) : path;
+}
+
+/**
+ * Centralized URL formatting that handles all edge cases consistently
+ * @internal
+ * 
+ * @param routePath - Document route path (always starts with /)
+ * @param options - URL formatting options
+ * @param baseUrl - Base URL for absolute paths
+ * @returns Properly formatted URL
+ */
+export function formatUrl(
+  routePath: string,
+  options: {
+    enableMarkdownFiles?: boolean;
+    relativePaths?: boolean;
+    markdownFile?: string;
+  },
+  baseUrl = ''
+): string {
+  const { enableMarkdownFiles = true, relativePaths = true, markdownFile } = options;
+  
+  // Ensure route path starts with /
+  let targetPath = ensureLeadingSlash(routePath);
+  
+  // Use markdown file path if available and enabled
+  if (enableMarkdownFiles && markdownFile) {
+    // Ensure markdown file path starts with / for consistency
+    targetPath = ensureLeadingSlash(markdownFile);
+  } else if (enableMarkdownFiles) {
+    // Add .md extension to route path
+    targetPath = targetPath === '/' ? INDEX_MD : `${targetPath}.md`;
+  }
+  
+  // Handle absolute vs relative paths
+  if (relativePaths === false && baseUrl) {
+    return normalizeUrl([baseUrl, targetPath]);
+  }
+  
+  // For relative paths, ensure we preserve the leading slash
+  // normalizeUrl can sometimes remove it, so we handle it explicitly
+  return targetPath;
+} 

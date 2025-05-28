@@ -8,7 +8,7 @@
 */
 
 import { PluginConfig } from '@docusaurus/types';
-import { PluginOptions, LogLevel, Depth } from 'docusaurus-plugin-llms-txt';
+import { PluginOptions } from 'docusaurus-plugin-llms-txt';
 
 export const llmsTxtPlugin: PluginConfig = [
   "docusaurus-plugin-llms-txt",
@@ -16,46 +16,56 @@ export const llmsTxtPlugin: PluginConfig = [
     siteDescription: "SignalWire Documentation",
     siteTitle: "SignalWire Documentation",
     enableDescriptions: true,
-    logLevel: 2 as LogLevel,
-    depth: 1 as Depth,
+    logLevel: 2,
+    depth: 1,
     runOnPostBuild: true,
-    enableCache: true,
-    relativePaths: false,
-    enableMarkdownFiles: true,
-
-    pathRules: [
-      {
-        path: "/swml/**",
-        category: "SWML",
-        depth: 2 as Depth
-      }
+    enableCache: false,
+    
+    // Global ordering - guides first, then methods/reference
+    includeOrder: [
+      "/swml/**"
     ],
-
-    excludePaths: [
-      "/attachments/**",
-      "/blog/**",
-      "/cluecon-2024/**",
-      "/img/**",
-      "/demos/**",
-      "/page/**",
-      "/tags/**",
-      "/rest/**",
-      "/plugins/**",
-      "/internal/**",
-      "/landing-assets/**",
-      "/livewire/**",
-      "/events/**",
-      "/assets/**",
-      "/404.html",
-      "/media/**" 
-    ],
-
+    
     optionalLinks: [
       {
         title: "Support",
         url: "https://support.signalwire.com",
         description: "SignalWire Support"
       }
-    ]
+    ],
+    content: {
+      excludeRoutes: [
+        "/attachments/**",
+        "/blog/**",
+        "/cluecon-2024/**",
+        "/img/**",
+        "/demos/**",
+        "/page/**",
+        "/tags/**",
+        "/rest/**",
+        "/plugins/**",
+        "/internal/**",
+        "/landing-assets/**",
+        "/livewire/**",
+        "/events/**",
+        "/assets/**",
+        "/404.html",
+        "/media/**" 
+      ],
+      relativePaths: false,
+      enableMarkdownFiles: true,
+      routeRules: [
+        // More specific rules first (CSS-like specificity)
+        { route: "/swml/methods/**", depth: 2 },
+        { route: "/swml/guides/**", depth: 2 },
+        { 
+          route: "/swml", 
+          categoryName: "SWML", 
+          depth: 2,
+          // Override global ordering - methods first for SWML specifically
+          includeOrder: ["/swml/methods/**", "/swml/guides/**"]
+        }
+      ],
+    }
   } satisfies PluginOptions
 ];

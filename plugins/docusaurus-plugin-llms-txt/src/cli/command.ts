@@ -2,97 +2,22 @@ import type { CommanderStatic } from 'commander';
 import path from 'path';
 import fs from 'fs-extra';
 import type { LoadContext } from '@docusaurus/types';
-import { PluginOptions, DocInfo } from '../types';
-import { createLogger } from '../logging';
+import { PluginOptions } from '../types';
+import { createPluginLogger } from '../logging';
+import { getErrorMessage } from '../errors';
+import { CacheManager } from '../core/fs/cache';
+import { setupDirectories } from '../core/fs/paths';
 import { 
   LLMS_TXT_FILENAME, 
-  LogLevel, 
-  DEFAULT_SITE_TITLE,
-  ROOT_ROUTE_PATH,
-  INDEX_ROUTE_PATH,
+  ERROR_MESSAGES,
+  EXIT_CODE_ERROR,
 } from '../constants';
-import { loadCache, hasCachedRoutes, getProcessedRoutesFromCache, cachedRouteToDocInfo, getCachedRoutesForProcessing, saveCache, calcConfigHash } from '../fs/cache/manager';
 import { getConfig } from '../config';
-import { buildTree } from '../pipeline/core/tree-builder';
-import { renderTreeMarkdown } from '../pipeline/core/markdown-renderer';
-import { saveMarkdownFile } from '../fs/io/write';
-import { processRoutesStream } from '../pipeline/core/route-processor';
-import { setupDirectories, buildSiteUrl } from '../utils';
-import packageJson from '../../package.json';
-
-/**
- * Build complete llms.txt content
- */
-function buildLlmsTxtContent(
-  docs: DocInfo[],
-  config: PluginOptions,
-  siteConfig: { title?: string; url: string; baseUrl: string }
-): string {
-  const tree = buildTree(docs, config);
-  const rootDoc = docs.find(doc => doc.routePath === ROOT_ROUTE_PATH || doc.routePath === INDEX_ROUTE_PATH);
-  
-  // Generate configuration values
-  const documentTitle = config.siteTitle || siteConfig.title || rootDoc?.title || DEFAULT_SITE_TITLE;
-  const enableDescriptions = config.enableDescriptions !== false;
-  const useRelativePaths = config.relativePaths !== false;
-  const siteUrl = buildSiteUrl(siteConfig);
-  
-  // Build content sections
-  let content = `# ${documentTitle}\n\n`;
-  
-  // Add description if enabled and available
-  if (enableDescriptions) {
-    const description = config.siteDescription || rootDoc?.description;
-    if (description) {
-      content += `> ${description}\n\n`;
-    }
-  }
-  
-  // Add main content
-  content += renderTreeMarkdown(
-    tree,
-    2,
-    true,
-    siteUrl,
-    useRelativePaths,
-    !!config.enableMarkdownFiles,
-    enableDescriptions
-  );
-  
-  // Add optional links if configured
-  if (config.optionalLinks?.length) {
-    content += `\n## Optional\n`;
-    for (const link of config.optionalLinks) {
-      const descPart = enableDescriptions && link.description ? `: ${link.description}` : '';
-      content += `- [${link.title}](${link.url})${descPart}\n`;
-    }
-  }
-  
-  return content;
-}
-
-/**
- * Shared function to generate llms.txt content from documents
- */
-export async function generateLlmsTxt(
-  docs: DocInfo[],
-  config: PluginOptions,
-  siteConfig: { title?: string; url: string; baseUrl: string },
-  outDir: string,
-  logger: ReturnType<typeof createLogger>
-): Promise<void> {
-  if (docs.length === 0) {
-    logger.warn('No documents found to generate llms.txt');
-    return;
-  }
-
-  const llmsTxtContent = buildLlmsTxtContent(docs, config, siteConfig);
-  await saveMarkdownFile(path.join(outDir, LLMS_TXT_FILENAME), llmsTxtContent);
-  logger.info(`Generated llms.txt with ${docs.length} documents`);
-}
+import { orchestrateProcessing } from '../orchestrator';
 
 /**
  * CLI-specific conversion function
+ * @internal
  */
 async function runCliConversion(
   siteDir: string,
@@ -100,70 +25,40 @@ async function runCliConversion(
   context: LoadContext,
 ): Promise<void> {
   const config = getConfig(options);
-  const log = createLogger('docusaurus-plugin-llms-txt', config.logLevel || LogLevel.INFO);
+  const log = createPluginLogger(config);
   
   try {
-    const { cache, dir: cacheDir } = await loadCache(siteDir);
-    
-    if (!hasCachedRoutes(cache)) {
-      log.error('❌ No cached routes found. Please run "npm run build" first.');
-      process.exit(1);
-    }
-    
-    let docs: DocInfo[];
-    
-    if (config.enableCache !== false) {
-      // Use cached data for instant processing
-      const processedRoutes = getProcessedRoutesFromCache(cache);
-      docs = processedRoutes
-        .map(cachedRoute => cachedRouteToDocInfo(cachedRoute))
-        .filter((doc): doc is NonNullable<typeof doc> => doc !== null);
-      
-      log.info(`Using ${docs.length} cached documents`);
-    } else {
-      // Reprocess files but maintain cache
-      const routesForProcessing = getCachedRoutesForProcessing(cache);
-      const directories = setupDirectories(siteDir, config);
-      const siteUrl = buildSiteUrl(context.siteConfig);
-      
-      const { docs: processedDocs, cachedRoutes } = await processRoutesStream(
-        routesForProcessing,
-        directories.docsDir,
-        directories.mdOutDir,
+    // Use unified processing orchestrator with empty routes (CLI context)
+    const generatedFilesDir = context.generatedFilesDir;
+    const result = await orchestrateProcessing(
+      [], // Empty routes indicates CLI context
+      {
         siteDir,
+        generatedFilesDir,
         config,
-        log,
-        siteUrl
-      );
-      
-      docs = processedDocs;
-      
-      // Update cache
-      const updatedCache = {
-        pluginVersion: packageJson.version,
-        configHash: calcConfigHash(config),
-        routes: cachedRoutes,
-      };
-      
-      await saveCache(cacheDir, updatedCache);
-      log.info(`Reprocessed ${docs.length} documents`);
-    }
+        siteConfig: context.siteConfig,
+        outDir: context.outDir,
+        logger: log,
+        contentSelectors: config.content?.contentSelectors || [],
+        relativePaths: config.content?.relativePaths !== false,
+      }
+    );
     
-    const directories = setupDirectories(siteDir, config);
-    await generateLlmsTxt(docs, config, context.siteConfig, directories.outDir, log);
-    log.info('✅ CLI conversion completed successfully');
+    log.info(`✅ CLI conversion completed successfully - processed ${result.processedCount} documents`);
   } catch (error) {
-    log.error(`❌ CLI conversion failed: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
+    const errorMessage = getErrorMessage(error);
+    log.error(ERROR_MESSAGES.CLI_OPERATION_FAILED('CLI conversion', errorMessage));
+    process.exit(EXIT_CODE_ERROR);
   }
 }
 
 /**
  * Register the `llms-txt` command
+ * @internal
  */
 export function registerLlmsTxt(
   cli: CommanderStatic,
-  pluginName: string,
+  _pluginName: string,
   baseOptions: Partial<PluginOptions>,
   context: LoadContext,
 ): void {
@@ -178,23 +73,29 @@ export function registerLlmsTxt(
 
 /**
  * Register the `llms-txt-clean` command
+ * @internal
  */
 export function registerLlmsTxtClean(
   cli: CommanderStatic,
   pluginName: string,
   baseOptions: Partial<PluginOptions>,
+  context: LoadContext,
 ): void {
   cli
     .command('llms-txt-clean [siteDir]')
     .description('Remove all generated markdown files and llms.txt using cached file info')
-    .action(async (siteDirArg: string | undefined) => {
+    .option('--clear-cache', 'Also clear the plugin cache directory')
+    .action(async (siteDirArg: string | undefined, options: { clearCache?: boolean }) => {
       const siteDir = siteDirArg ? path.resolve(siteDirArg) : process.cwd();
       const config = getConfig(baseOptions);
-      const log = createLogger(pluginName, config.logLevel || LogLevel.INFO);
+      const log = createPluginLogger(config);
       
       try {
-        const { cache } = await loadCache(siteDir);
-        const directories = setupDirectories(siteDir, config);
+        // Use FileOperations service for all cache and path operations
+        const generatedFilesDir = context.generatedFilesDir;
+        const cacheManager = new CacheManager(siteDir, generatedFilesDir, config, context.outDir);
+        const cache = await cacheManager.loadCache();
+        const directories = setupDirectories(siteDir, config, context.outDir);
         
         if (!await fs.pathExists(directories.outDir)) {
           log.info(`Build directory not found: ${directories.outDir} (already clean)`);
@@ -202,21 +103,47 @@ export function registerLlmsTxtClean(
         }
         
         let cleanedFiles = 0;
+        let cacheUpdated = false;
+        let cacheEntriesCleared = 0;
+        const updatedRoutes = [...cache.routes];
         
         if (cache.routes?.length > 0) {
-          for (const cachedRoute of cache.routes) {
-            if (cachedRoute.markdownFile && cachedRoute.processed) {
+          for (let i = 0; i < updatedRoutes.length; i++) {
+            const cachedRoute = updatedRoutes[i];
+            if (cachedRoute && cachedRoute.markdownFile) {
               try {
-                const fullMarkdownPath = config.outputDir 
-                  ? path.join(siteDir, config.outputDir, cachedRoute.markdownFile)
-                  : path.join(directories.outDir, cachedRoute.markdownFile);
+                // The cached markdownFile is already a relative path, use it directly
+                const fullMarkdownPath = path.join(
+                  directories.mdOutDir, 
+                  cachedRoute.markdownFile
+                );
                   
+                // Try to remove file if it exists
                 if (await fs.pathExists(fullMarkdownPath)) {
                   await fs.remove(fullMarkdownPath);
                   cleanedFiles++;
+                  log.debug(`Removed file: ${fullMarkdownPath}`);
+                } else {
+                  log.debug(`File not found (may have been moved/renamed): ${fullMarkdownPath}`);
                 }
+                
+                // Clear the markdownFile field in cache
+                const { markdownFile: _markdownFile, ...restOfRoute } = cachedRoute;
+                updatedRoutes[i] = restOfRoute;
+                cacheUpdated = true;
+                cacheEntriesCleared++;
+                
               } catch (error) {
-                log.warn(`Failed to remove ${cachedRoute.markdownFile}: ${error instanceof Error ? error.message : String(error)}`);
+                const errorMessage = getErrorMessage(error);
+                log.warn(
+                  ERROR_MESSAGES.FILE_REMOVAL_FAILED(cachedRoute.markdownFile, errorMessage)
+                );
+                
+                // Still clear the cache entry even if file removal failed
+                const { markdownFile: _markdownFile, ...restOfRoute } = cachedRoute;
+                updatedRoutes[i] = restOfRoute;
+                cacheUpdated = true;
+                cacheEntriesCleared++;
               }
             }
           }
@@ -229,10 +156,36 @@ export function registerLlmsTxtClean(
           log.info(`Removed ${LLMS_TXT_FILENAME}`);
         }
         
-        log.info(`✅ Cleanup completed (${cleanedFiles} files removed)`);
+        // Handle cache clearing if requested
+        if (options.clearCache) {
+          const cacheInfo = cacheManager.getCacheInfo();
+          if (await fs.pathExists(cacheInfo.dir)) {
+            await fs.remove(cacheInfo.dir);
+            log.info(`Cleared cache directory: ${cacheInfo.dir}`);
+            cacheUpdated = false; // Don't update cache since we just deleted it
+          } else {
+            log.info(`Cache directory not found: ${cacheInfo.dir} (already clean)`);
+          }
+        } else {
+          // Update cache if we modified any routes and not clearing cache
+          if (cacheUpdated) {
+            const updatedCache = {
+              ...cache,
+              routes: updatedRoutes,
+            };
+            
+            await cacheManager.saveCache(updatedCache);
+            log.info(`Updated cache to clear ${cacheEntriesCleared} route entries`);
+          }
+        }
+        
+        const cacheStatus = options.clearCache ? ', cache cleared' : `, ${cacheEntriesCleared} cache entries cleared`;
+        const summary = `✅ Cleanup completed (${cleanedFiles} files removed${cacheStatus})`;
+        log.info(summary);
       } catch (error) {
-        log.error(`❌ Cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        const errorMessage = getErrorMessage(error);
+        log.error(ERROR_MESSAGES.CLI_OPERATION_FAILED('Cleanup', errorMessage));
+        process.exit(EXIT_CODE_ERROR);
       }
     });
 } 

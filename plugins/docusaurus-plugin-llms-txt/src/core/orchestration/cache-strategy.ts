@@ -1,0 +1,107 @@
+/**
+ * Cache strategy management
+ * Handles cache validation, strategy determination, and related logging
+ */
+
+import type { PluginOptions, Logger, CacheSchema } from '../../types';
+import type { CacheManager } from '../fs/cache';
+import { HASH_DISPLAY_LENGTH, CACHE_MESSAGES } from '../../constants';
+
+/**
+ * Cache strategy analysis result
+ */
+export interface CacheStrategyResult {
+  readonly useCache: boolean;
+  readonly cacheHasRoutes: boolean;
+  readonly configMatches: boolean;
+  readonly reason: string;
+}
+
+/**
+ * Analyze cache strategy for the given context
+ */
+export function analyzeCacheStrategy(
+  cacheManager: CacheManager,
+  cache: CacheSchema,
+  config: PluginOptions,
+  isCliContext: boolean,
+  logger: Logger
+): CacheStrategyResult {
+  const cacheHasRoutes = cacheManager.hasCachedRoutes(cache);
+  const configMatches = cacheManager.isCacheConfigValid(cache, config);
+  
+  // Log detailed cache validation info if config changed
+  if (cacheHasRoutes && !configMatches) {
+    const cachedHash = cache.configHash.slice(0, HASH_DISPLAY_LENGTH);
+    const currentHash = cacheManager.calcConfigHash(config)
+      .slice(0, HASH_DISPLAY_LENGTH);
+    logger.info(`Cache invalidated due to config change (cached: ${cachedHash}, current: ${currentHash})`);
+  }
+  
+  // Determine cache usage strategy
+  const useCache = isCliContext 
+    ? cacheHasRoutes && configMatches
+    : cacheHasRoutes && configMatches && config.enableCache !== false;
+  
+  // Generate reason for cache decision
+  const reason = generateCacheReason(
+    cacheHasRoutes,
+    configMatches,
+    isCliContext,
+    config.enableCache
+  );
+  
+  logger.debug(
+    `Cache validation: hasRoutes=${cacheHasRoutes}, configMatches=${configMatches}, useCache=${useCache}`
+  );
+  
+  return {
+    useCache,
+    cacheHasRoutes,
+    configMatches,
+    reason
+  };
+}
+
+/**
+ * Generate human-readable reason for cache decision
+ */
+function generateCacheReason(
+  hasRoutes: boolean,
+  configMatches: boolean,
+  isCliContext: boolean,
+  enableCache?: boolean
+): string {
+  if (!hasRoutes) {
+    return CACHE_MESSAGES.NO_ROUTES;
+  }
+  
+  if (!configMatches) {
+    return isCliContext 
+      ? CACHE_MESSAGES.CONFIG_CHANGED_CLI
+      : CACHE_MESSAGES.CONFIG_CHANGED_BUILD;
+  }
+  
+  if (!isCliContext && enableCache === false) {
+    return CACHE_MESSAGES.CACHE_DISABLED;
+  }
+  
+  return CACHE_MESSAGES.USING_CACHED;
+}
+
+/**
+ * Validate CLI context requirements
+ */
+export function validateCliContext(
+  cacheHasRoutes: boolean,
+  configMatches: boolean,
+  logger: Logger
+): void {
+  if (!cacheHasRoutes) {
+    throw new Error(CACHE_MESSAGES.NO_ROUTES);
+  }
+  
+  if (!configMatches) {
+    logger.info(CACHE_MESSAGES.CONFIG_CHANGED_REGENERATE);
+  }
+} 

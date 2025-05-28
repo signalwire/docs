@@ -1,6 +1,6 @@
 import baseLogger from '@docusaurus/logger';
 import { Logger } from '../types';
-import { LogLevel } from '../constants';
+import { LogLevel, LogLevelType } from '../constants';
 
 
 /**
@@ -8,9 +8,9 @@ import { LogLevel } from '../constants';
  */
 class PluginLogger implements Logger {
   private name: string;
-  private logLevel: LogLevel;
+  private logLevel: LogLevelType;
 
-  constructor(name: string, logLevel: LogLevel = LogLevel.INFO) {
+  constructor(name: string, logLevel: LogLevelType = LogLevel.INFO) {
     this.name = name;
     this.logLevel = logLevel;
   }
@@ -30,7 +30,7 @@ class PluginLogger implements Logger {
    * @param level - The level of the message
    * @returns True if the message should be logged
    */
-  private shouldLog(level: LogLevel): boolean {
+  private shouldLog(level: LogLevelType): boolean {
     return level <= this.logLevel;
   }
 
@@ -87,16 +87,17 @@ class PluginLogger implements Logger {
  * @param logLevel - Minimum log level to display
  * @returns A new logger instance
  */
-export function createLogger(name: string, logLevel: LogLevel = LogLevel.INFO): Logger {
+export function createLogger(name: string, logLevel: LogLevelType = LogLevel.INFO): Logger {
   return new PluginLogger(name, logLevel);
 }
 
 /**
- * No-operation logger that doesn't output anything
+ * Create logger for plugin operations with standard naming
+ * 
+ * @param config - Plugin configuration (optional)
+ * @returns Logger instance with standard plugin name
  */
-export const noopLogger: Logger = {
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-}; 
+export function createPluginLogger(config?: { logLevel?: LogLevelType }): Logger {
+  const logLevel = config?.logLevel ?? LogLevel.INFO;
+  return createLogger('docusaurus-plugin-llms-txt', logLevel);
+} 

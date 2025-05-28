@@ -1,8 +1,13 @@
 /**
  * Public API for docusaurus-plugin-llms-txt
  * 
- * This module exports all types and utilities that plugin users need.
+ * This module exports only what plugin users need.
  * Internal implementation details are not exposed.
+ */
+
+/**
+ * Public API exports
+ * These are the types and functions that plugin users can import
  */
 
 // === PLUGIN EXPORTS ===
@@ -12,22 +17,27 @@ export { default, validateOptions } from '../index';
 
 // === CONFIGURATION TYPES ===
 
-export type { 
+// Export public types
+export type {
   PluginOptions,
-  PathRule,
+  ContentOptions,
+  RouteRule,
   OptionalLink,
-  LogLevel,
-  Depth
-} from '../types';
+  Depth,
+  PluginError,
+  PluginConfigError,
+  PluginValidationError,
+  Logger
+} from '../types/public';
 
-// === PLUGIN DEVELOPMENT UTILITIES ===
+export type { LogLevelType as LogLevel } from '../constants';
 
-// Logging interface and factory for potential plugin extensions
-export type { Logger } from '../types';
-export { createLogger } from '../logging';
+// === USER ERROR HANDLING ===
 
-// === ERROR HANDLING ===
+// Export error utilities
+export { isPluginError } from '../errors';
 
-// Error types and utilities for graceful error handling
-export type { ErrorType } from '../utils';
-export { PluginError } from '../utils'; 
+// === UNIFIED PLUGIN DEVELOPMENT ===
+
+// Logger factory for users creating unified plugins
+export { createLogger } from '../logging'; 

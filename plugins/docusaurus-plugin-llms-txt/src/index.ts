@@ -1,15 +1,13 @@
-import path from 'path';
 import type { LoadContext, Plugin } from '@docusaurus/types';
-import { PluginOptions, pluginOptionsSchema } from './types';
-import { getConfig } from './config';
-import { createLogger } from './logging';
-import { registerLlmsTxt, registerLlmsTxtClean, generateLlmsTxt } from './cli/command';
-import { LogLevel, DEFAULT_BUILD_DIR, DEFAULT_DOCS_ROOT, ROOT_BASE_URL } from './constants';
+import type { PluginOptions } from './types';
+import { pluginOptionsSchema } from './types';
+import { getConfig, validateUserInputs } from './config';
+import { createPluginLogger } from './logging';
+import { getErrorMessage, createConfigError, isPluginError } from './errors';
+import { registerLlmsTxt, registerLlmsTxtClean } from './cli/command';
+import { ERROR_MESSAGES, PLUGIN_NAME } from './constants';
 import { flattenRoutes } from '@docusaurus/utils';
-import { processRoutesStream } from './pipeline/core/route-processor';
-import { loadCache, saveCache, calcConfigHash } from './fs/cache/manager';
-import { setupDirectories, buildSiteUrl } from './utils';
-import packageJson from '../package.json';
+import { orchestrateProcessing } from './orchestrator';
 
 /**
  * Docusaurus plugin to generate Markdown versions of HTML pages and an llms.txt index file.
@@ -23,16 +21,31 @@ export default function llmsTxtPlugin(
   context: LoadContext,
   options: Partial<PluginOptions> = {}
 ): Plugin<void> {
-  // Plugin instance name - helps with debugging
-  const name = 'docusaurus-plugin-llms-txt';
+  const name = PLUGIN_NAME;
+  
+  // Validate user inputs for security
+  try {
+    validateUserInputs(options);
+  } catch (error) {
+    if (isPluginError(error)) {
+      throw error;
+    }
+    throw createConfigError(
+      'Failed to validate plugin options',
+      { options, error: getErrorMessage(error) }
+    );
+  }
   
   return {
     name,
     
-    async postBuild({ outDir, siteConfig, routes }): Promise<void> {
-      // Get configuration and logger
+    async postBuild({ outDir, siteDir, generatedFilesDir, siteConfig, routes }): Promise<void> {
       const config = getConfig(options);
-      const log = createLogger(name, config.logLevel || LogLevel.INFO);
+      const log = createPluginLogger(config);
+
+      log.info(`outDir: ${outDir}`);
+      log.info(`siteDir: ${siteDir}`);
+      log.info(`generatedFilesDir: ${generatedFilesDir}`);
 
       if (config.runOnPostBuild === false) {
         log.info('Skipping postBuild processing (runOnPostBuild=false)');
@@ -40,69 +53,73 @@ export default function llmsTxtPlugin(
       }
       
       try {
-        // Setup directories using utility function
-        const siteDir = path.dirname(outDir);
-        const directories = setupDirectories(siteDir, config, outDir);
-        
-        // Get full site URL using utility function
-        const siteUrl = buildSiteUrl(siteConfig);
-        
-        // Flatten routes and process them
         const finalRoutes = flattenRoutes(routes);
+        
         log.info(`Processing ${finalRoutes.length} total routes`);
         
-        // Load cache to get version info
-        const { dir: cacheDir } = await loadCache(siteDir);
-        const pluginVersion = packageJson.version;
-        const configHash = calcConfigHash(config);
-        
-        const { docs, cachedRoutes } = await processRoutesStream(
-          finalRoutes,
-          directories.docsDir,
-          directories.mdOutDir,
+        // Use unified processing orchestrator with Docusaurus-provided paths
+        const result = await orchestrateProcessing(finalRoutes, {
           siteDir,
+          generatedFilesDir,
           config,
-          log,
-          siteUrl
-        );
+          siteConfig,
+          outDir,
+          logger: log,
+          contentSelectors: config.content?.contentSelectors || [],
+          relativePaths: config.content?.relativePaths !== false,
+        });
         
-        // Save updated cache with enhanced route info
-        const updatedCache = {
-          pluginVersion,
-          configHash,
-          routes: cachedRoutes,
-          // Remove legacy files cache as it's now integrated into routes
-        };
-        
-        await saveCache(cacheDir, updatedCache);
-        log.info(`Cache updated with ${cachedRoutes.length} routes (${cachedRoutes.filter(r => r.processed).length} processed)`);
-        
-        // Use shared function to generate llms.txt (ensures identical behavior with CLI)
-        await generateLlmsTxt(docs, config, siteConfig, outDir, log);
-        
-        log.info('llms-txt conversion completed');
+        log.info(`✅ Plugin completed successfully - processed ${result.processedCount} documents`);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        log.error(`Error: ${errorMessage}`);
+        const errorMessage = getErrorMessage(error);
+        
+        // Enhanced error reporting with better context
+        if (isPluginError(error)) {
+          log.error(`${ERROR_MESSAGES.PLUGIN_BUILD_FAILED(errorMessage)} [${error.code}]`);
+          if (error.context) {
+            log.debug(`Error context: ${JSON.stringify(error.context, null, 2)}`);
+          }
+        } else {
+          log.error(ERROR_MESSAGES.PLUGIN_BUILD_FAILED(errorMessage));
+        }
+        
         throw error;
       }
     },
 
     extendCli(cli): void {
-      // CLI commands will use cached routes from the build process
       registerLlmsTxt(cli, name, options, context);
-      registerLlmsTxtClean(cli, name, options);
+      registerLlmsTxtClean(cli, name, options, context);
     },
   };
 }
 
-// Type-safe validation function
+/**
+ * Type-safe validation function with enhanced error handling
+ * @internal
+ * This function is called by Docusaurus framework - users should not call directly
+ */
 export function validateOptions({ 
-  options, 
-  validate 
+  options: _options, 
+  validate: _validate 
 }: {
   options: unknown;
-  validate: (schema: unknown, options: unknown) => PluginOptions;
+  validate: (_schema: unknown, _options: unknown) => PluginOptions;
 }): PluginOptions {
-  return validate(pluginOptionsSchema, options);
+  try {
+    // Validate user inputs first
+    validateUserInputs(_options);
+    
+    // Then use Joi validation
+    return _validate(pluginOptionsSchema, _options);
+  } catch (error) {
+    if (isPluginError(error)) {
+      throw error;
+    }
+    
+    throw createConfigError(
+      `Plugin option validation failed: ${getErrorMessage(error)}`,
+      { options: _options }
+    );
+  }
 }

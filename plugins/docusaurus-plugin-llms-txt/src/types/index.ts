@@ -1,18 +1,64 @@
 /**
- * Central exports for all plugin types
+ * Unified type exports
+ * Simplified type system using consolidated core types
  */
 
-// Re-export plugin core types
-export * from './plugin';
+// ============================================================================
+// PUBLIC API TYPES (user-facing)
+// ============================================================================
 
-// Re-export unified types
-export * from './unified';
+export type {
+  PluginOptions,
+  ContentOptions,
+  RouteRule,
+  OptionalLink,
+  Depth,
+  Logger,
+  PluginError,
+  PluginConfigError,
+  PluginValidationError
+} from './public';
 
-// Re-export filesystem types
-export * from './fs';
+export { 
+  isPluginError,
+  pluginOptionsSchema 
+} from './public';
 
-// Re-export logging types
-export * from './logging';
+// ============================================================================
+// CONSOLIDATED CORE TYPES
+// ============================================================================
 
-// Re-export error types from utils
-export { ErrorType, PluginError } from '../utils/errors';
+export type {
+  // Cache and file system
+  CachedRouteInfo,
+  CacheSchema,
+  DirectoryConfig,
+  
+  // Document processing
+  DocInfo,
+  TreeNode,
+  EffectiveConfig,
+  
+  // Processing configuration
+  ProcessingConfig,
+  ProcessingResult,
+  
+  // Transformation
+  RehypeLinksOptions,
+  MarkdownConversionOptions,
+  ConversionResult,
+  TitleExtractor,
+  ValidationResult
+} from './core';
+
+// ============================================================================
+// ERROR TYPES
+// ============================================================================
+
+export {
+  createConfigError,
+  createProcessingError,
+  createCacheError,
+  createFileError,
+  createValidationError
+} from '../errors'; 
