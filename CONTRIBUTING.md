@@ -26,11 +26,6 @@ PR, we automatically build the PR and we provide a link to test the end result.
 The link will appear, after a few minutes from the commit, in a comment by
 "netlify bot" within the PR.
 
-If you are working on a PR and you want to avoid for it to be merged (i.e.,
-published) by mistake, you can add "WIP" to the title of the PR – for example,
-"_WIP: update SMS guide_". This will add a check that will remain in "pending"
-state, and will only become successful after you remove the "WIP" keyword from
-the title.
 
 ## 📖 Typical workflow for Guides
 
@@ -52,17 +47,5 @@ a PR.
 If you are starting the site with `npm run start`, this is normal:
 for technical reasons, the landing page is only available in the final build.
 If you need to work on the landing page, run the following command:
-
-```npm run build && npm run serve```
-
-### I get a 404 error when trying to open any REST API page
-
-If you are starting the site with `npm run start`, this is normal.
-For performance reasons, the REST-related pages belong to their own sub-site.
-If you need to work on the REST APIs, then switch to the appropriate directory and start the specific sub-site:
-
-```cd sites/relay-rest && npm run start```
-
-If you want to test the whole site at once, use the following command:
 
 ```npm run build && npm run serve```

@@ -17,6 +17,7 @@ import { openapiPlugin } from "./docusaurus-plugin-openapi-docs";
 import { sassPlugin } from "./sass";
 import { markdownPrinterPlugin } from "./markdown-printer";
 import { showcasePlugin } from "./guide-showcase";
+import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
@@ -25,6 +26,7 @@ const plugins: PluginConfig[] = [
   showcasePlugin,
   require.resolve("../../plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
+  llmsTxtPlugin,
 ];
 
 export default plugins;

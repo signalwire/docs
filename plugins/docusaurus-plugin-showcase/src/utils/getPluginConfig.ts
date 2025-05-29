@@ -1,5 +1,5 @@
-// @ts-ignore
 import siteConfig from "@generated/docusaurus.config";
+
 
 const pluginName: string = "docusaurus-plugin-showcase";
 const plugins = siteConfig.plugins;
