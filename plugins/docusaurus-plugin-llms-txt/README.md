@@ -838,304 +838,267 @@ The plugin uses intelligent caching to speed up subsequent builds:
 
 MIT 
 
-### User Plugin System
+## Public API
 
-The plugin supports custom unified.js plugins for advanced content transformation. You can add your own rehype (HTML processing) or remark (Markdown processing) plugins using standard unified patterns.
+The plugin exports types, utilities, and functions that you can import and use in your Docusaurus configuration and custom plugins.
 
-#### Processing Pipeline Overview
+### Available Imports
 
-The plugin processes documents through two main stages:
-
-1. **HTML Processing (Rehype)**: Works on HTML AST (hast) - good for DOM-like operations
-2. **Markdown Processing (Remark)**: Works on Markdown AST (mdast) - good for markdown-specific transformations
-
-```
-HTML Document
-     ↓
-beforeDefaultRehypePlugins (your HTML preprocessing)
-     ↓
-Built-in rehype-tables (flatten lists in tables)
-     ↓
-Built-in rehype-links (process internal links)
-     ↓
-Built-in rehype-remark (HTML → Markdown AST)
-     ↓
-rehypePlugins (your HTML postprocessing)
-     ↓
-Markdown AST
-     ↓
-beforeDefaultRemarkPlugins (your Markdown preprocessing)
-     ↓
-Built-in remark-gfm (GitHub Flavored Markdown)
-     ↓
-remarkPlugins (your Markdown postprocessing)
-     ↓
-remark-stringify (AST → String)
-     ↓
-Final Markdown
-```
-
-#### When to Use Each Stage
-
-**`beforeDefaultRehypePlugins`** - Use for:
-- HTML preprocessing before built-in processing
-- Adding/removing HTML attributes
-- DOM manipulations that need to happen early
-- Custom HTML element transformations
-
-**`rehypePlugins`** - Use for:
-- HTML postprocessing after links/tables are handled
-- Final HTML cleanup before markdown conversion
-- Custom transformations that depend on built-in processing
-
-**`beforeDefaultRemarkPlugins`** - Use for:
-- Markdown AST preprocessing before GFM processing
-- Custom markdown node transformations
-- Adding markdown-specific metadata
-
-**`remarkPlugins`** - Use for:
-- Final markdown transformations after GFM
-- Custom formatting and cleanup
-- Adding final markdown elements
-
-#### Plugin Configuration
-
-The plugin system follows standard unified.js conventions:
-
-```javascript
-import myRehypePlugin from './my-rehype-plugin';
-import myRemarkPlugin from './my-remark-plugin';
-import remarkEmoji from 'remark-emoji';
-import rehypeSlug from 'rehype-slug';
-
-module.exports = {
-  plugins: [
-    [
-      'docusaurus-plugin-llms-txt',
-      {
-        content: {
-          // HTML processing - before built-in plugins
-          beforeDefaultRehypePlugins: [
-            myRehypePlugin,                           // Direct function
-            [rehypeSlug, { prefix: 'custom-' }]      // Function with options
-          ],
-          
-          // HTML processing - after built-in plugins
-          rehypePlugins: [
-            someCleanupPlugin
-          ],
-          
-          // Markdown processing - before built-in plugins
-          beforeDefaultRemarkPlugins: [
-            [remarkEmoji, { emoticon: true }]
-          ],
-          
-          // Markdown processing - after built-in plugins
-          remarkPlugins: [
-            myRemarkPlugin
-          ]
-        }
-      }
-    ]
-  ]
-};
-```
-
-#### Plugin Input Formats
-
-Following unified.js standards, plugins can be specified as:
-
-- **Direct function**: `myPlugin`
-- **Array with options**: `[myPlugin, { option: 'value' }]`
-- **Array with options and settings**: `[myPlugin, options, settings]` (rarely used)
-
-#### Complete Working Example
-
-Here's a practical example that demonstrates all four plugin stages:
-
-**File: `custom-plugins.js`**
-```javascript
-import { visit } from 'unist-util-visit';
-
-// Stage 1: beforeDefaultRehypePlugins (HTML preprocessing)
-export const addImageAltText = (options = {}) => (tree) => {
-  visit(tree, 'element', (node) => {
-    if (node.tagName === 'img' && !node.properties.alt) {
-      node.properties.alt = options.defaultAlt || 'Image';
-    }
-  });
-  return tree;
-};
-
-// Stage 2: rehypePlugins (HTML postprocessing)
-export const removeEmptyParagraphs = () => (tree) => {
-  visit(tree, 'element', (node, index, parent) => {
-    if (node.tagName === 'p' && 
-        (!node.children || node.children.length === 0)) {
-      parent.children.splice(index, 1);
-      return [visit.SKIP, index];
-    }
-  });
-  return tree;
-};
-
-// Stage 3: beforeDefaultRemarkPlugins (Markdown preprocessing)
-export const addHeaderAnchors = (options = {}) => (tree) => {
-  visit(tree, 'heading', (node) => {
-    if (node.depth <= 3 && options.addAnchors) {
-      // Add anchor text to heading
-      const textNode = node.children.find(child => child.type === 'text');
-      if (textNode) {
-        textNode.value += ` {#${textNode.value.toLowerCase().replace(/\s+/g, '-')}}`;
-      }
-    }
-  });
-  return tree;
-};
-
-// Stage 4: remarkPlugins (Markdown postprocessing)
-export const addReadingTime = (options = {}) => (tree) => {
-  if (!options.addReadingTime) return tree;
-  
-  let wordCount = 0;
-  visit(tree, 'text', (node) => {
-    wordCount += node.value.split(/\s+/).length;
-  });
-  
-  const readingTime = Math.ceil(wordCount / 200); // 200 words per minute
-  
-  // Add reading time as first paragraph
-  tree.children.unshift({
-    type: 'paragraph',
-    children: [{
-      type: 'text',
-      value: `📖 Reading time: ${readingTime} minute${readingTime !== 1 ? 's' : ''}`
-    }]
-  });
-  
-  return tree;
-};
-```
-
-**Usage in `docusaurus.config.js`:**
 ```javascript
 import { 
-  addImageAltText, 
-  removeEmptyParagraphs, 
-  addHeaderAnchors, 
-  addReadingTime 
-} from './custom-plugins';
+  // Types for TypeScript development
+  type PluginOptions,
+  type ContentOptions,
+  type RouteRule,
+  type OptionalLink,
+  type PluginInput,
+  type Depth,
+  type Logger,
+  
+  // Error handling types
+  type PluginError,
+  type PluginConfigError,
+  type PluginValidationError,
+  
+  // Utilities
+  createLogger,
+  isPluginError,
+  
+  // Main plugin (usually not needed directly)
+  default as llmsTxtPlugin,
+  validateOptions
+} from 'docusaurus-plugin-llms-txt';
+```
 
-module.exports = {
-  plugins: [
-    [
-      'docusaurus-plugin-llms-txt',
-      {
-        content: {
-          // Stage 1: HTML preprocessing
-          beforeDefaultRehypePlugins: [
-            [addImageAltText, { defaultAlt: 'Documentation image' }]
-          ],
-          
-          // Stage 2: HTML postprocessing (after tables/links processed)
-          rehypePlugins: [
-            removeEmptyParagraphs
-          ],
-          
-          // Stage 3: Markdown preprocessing (before GFM)
-          beforeDefaultRemarkPlugins: [
-            [addHeaderAnchors, { addAnchors: true }]
-          ],
-          
-          // Stage 4: Final markdown processing
-          remarkPlugins: [
-            [addReadingTime, { addReadingTime: true }]
-          ]
-        }
+## Types
+
+The plugin exports TypeScript types for configuration, plugin development, and error handling.
+
+| Type | Description | Used For |
+|------|-------------|----------|
+| `PluginOptions` | Main plugin configuration interface | Configuring the plugin in `docusaurus.config.js` |
+| `ContentOptions` | Content processing configuration | Configuring how content is processed and transformed |
+| `RouteRule` | Route-specific configuration override | Creating custom rules for specific URL patterns |
+| `OptionalLink` | Additional links for llms.txt | Adding external or additional links to the generated index |
+| `PluginInput` | Unified.js plugin input format | Defining custom rehype/remark plugins in configuration |
+| `Depth` | Categorization depth levels (1-5) | Controlling how deep the document hierarchy goes |
+| `Logger` | Logging interface for custom plugins | Creating consistent logging in custom plugins |
+| `PluginError` | Base class for all plugin errors | Error handling and type checking |
+| `PluginConfigError` | Configuration validation errors | Handling configuration-related errors |
+| `PluginValidationError` | Input validation errors | Handling input validation errors |
+
+### Core Configuration Types
+
+#### `PluginOptions`
+```typescript
+interface PluginOptions {
+  content?: ContentOptions;
+  depth?: Depth;
+  enableDescriptions?: boolean;
+  siteTitle?: string;
+  siteDescription?: string;
+  optionalLinks?: OptionalLink[];
+  includeOrder?: string[];
+  runOnPostBuild?: boolean;
+  onRouteError?: 'ignore' | 'log' | 'warn' | 'throw';
+  logLevel?: 0 | 1 | 2 | 3;
+}
+```
+
+#### `ContentOptions`
+```typescript
+interface ContentOptions {
+  enableMarkdownFiles?: boolean;
+  relativePaths?: boolean;
+  includeBlog?: boolean;
+  includePages?: boolean;
+  includeDocs?: boolean;
+  excludeRoutes?: string[];
+  contentSelectors?: string[];
+  routeRules?: RouteRule[];
+  remarkStringify?: RemarkStringifyOptions;
+  remarkGfm?: boolean | RemarkGfmOptions;
+  rehypeProcessTables?: boolean;
+  beforeDefaultRehypePlugins?: PluginInput[];
+  rehypePlugins?: PluginInput[];
+  beforeDefaultRemarkPlugins?: PluginInput[];
+  remarkPlugins?: PluginInput[];
+}
+```
+
+#### `RouteRule`
+```typescript
+interface RouteRule {
+  route: string;                    // Glob pattern to match
+  depth?: Depth;                   // Override categorization depth
+  contentSelectors?: string[];     // Override content selectors
+  categoryName?: string;           // Override category display name
+  includeOrder?: string[];         // Override subcategory ordering
+}
+```
+
+#### `OptionalLink`
+```typescript
+interface OptionalLink {
+  title: string;        // Required: Display text
+  url: string;          // Required: Link URL
+  description?: string; // Optional description
+}
+```
+
+### Plugin Development Types
+
+#### `PluginInput`
+```typescript
+type PluginInput = 
+  | Plugin<unknown[], any, unknown>                    // Direct function
+  | [Plugin<unknown[], any, unknown>, unknown?, Settings?]; // Array with options
+```
+
+#### `Depth`
+```typescript
+type Depth = 1 | 2 | 3 | 4 | 5;
+```
+
+#### `Logger`
+```typescript
+interface Logger {
+  reportRouteError: (msg: string) => void;
+  error: (msg: string) => void;
+  warn: (msg: string) => void;
+  info: (msg: string) => void;
+  debug: (msg: string) => void;
+  success: (msg: string) => void;
+  report: (severity: ReportingSeverity, msg: string) => void;
+}
+```
+
+## Utils
+
+The plugin exports utility functions for logging, error handling, and plugin development.
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `createLogger` | `name: string, onRouteError?: ReportingSeverity, logLevel?: number` | `Logger` | Creates a custom logger with plugin-style formatting and configurable verbosity |
+| `isPluginError` | `error: unknown` | `boolean` | Type guard to check if an error is a plugin-specific error with additional context |
+
+### `createLogger(name, onRouteError?, logLevel?)`
+
+Creates a custom logger for your plugins with the same styling as the main plugin.
+
+**Parameters:**
+- `name` (string): Logger name for prefixing messages
+- `onRouteError` (optional): How to handle route errors - `'ignore' | 'log' | 'warn' | 'throw'`
+- `logLevel` (optional): Verbosity level - `0 | 1 | 2 | 3`
+
+**Example:**
+```javascript
+import { createLogger } from 'docusaurus-plugin-llms-txt';
+
+// Basic logger
+const logger = createLogger('my-plugin');
+
+// Logger with custom error handling and log level
+const logger = createLogger('my-plugin', 'warn', 2);
+
+// Usage in plugins
+export const myPlugin = () => (tree) => {
+  const logger = createLogger('myPlugin');
+  logger.info('Processing content...');
+  logger.warn('Found potential issue');
+  logger.success('Processing completed');
+  return tree;
+};
+```
+
+### `isPluginError(error)`
+
+Type guard to check if an error is a plugin-specific error.
+
+**Example:**
+```javascript
+import { isPluginError } from 'docusaurus-plugin-llms-txt';
+
+try {
+  // Some operation
+} catch (error) {
+  if (isPluginError(error)) {
+    console.log('Plugin error:', error.code, error.context);
+  } else {
+    console.log('Other error:', error.message);
+  }
+}
+```
+
+## Usage Examples
+
+### Custom Plugin with Logger
+
+```javascript
+import { createLogger, type PluginInput } from 'docusaurus-plugin-llms-txt';
+import { visit } from 'unist-util-visit';
+
+export const myCustomPlugin: PluginInput = (options = {}) => (tree) => {
+  const logger = createLogger('myCustomPlugin', 'warn', 2);
+  
+  logger.info('Starting custom processing...');
+  
+  let processedCount = 0;
+  visit(tree, 'element', (node) => {
+    if (node.tagName === 'img') {
+      // Process images
+      processedCount++;
+    }
+  });
+  
+  logger.success(`Processed ${processedCount} images`);
+  return tree;
+};
+```
+
+### TypeScript Configuration
+
+```typescript
+import type { PluginOptions, RouteRule } from 'docusaurus-plugin-llms-txt';
+
+const customRouteRules: RouteRule[] = [
+  {
+    route: '/api/**',
+    depth: 3,
+    categoryName: 'API Reference'
+  }
+];
+
+const pluginConfig: PluginOptions = {
+  siteTitle: 'My Documentation',
+  depth: 2,
+  logLevel: 1,
+  content: {
+    routeRules: customRouteRules,
+    excludeRoutes: ['/internal/**']
+  }
+};
+```
+
+### Error Handling in Custom Code
+
+```javascript
+import { isPluginError, createLogger } from 'docusaurus-plugin-llms-txt';
+
+const logger = createLogger('myScript');
+
+async function processDocuments() {
+  try {
+    // Your processing logic
+  } catch (error) {
+    if (isPluginError(error)) {
+      logger.error(`Plugin error [${error.code}]: ${error.message}`);
+      if (error.context) {
+        logger.debug('Error context:', JSON.stringify(error.context, null, 2));
       }
-    ]
-  ]
-};
+    } else {
+      logger.error('Unexpected error:', error.message);
+    }
+  }
+}
 ```
-
-#### AST Node Types Reference
-
-**Rehype (HTML) Node Types:**
-- `'element'` - HTML elements (div, p, img, etc.)
-- `'text'` - Text content
-- `'root'` - Document root
-
-**Remark (Markdown) Node Types:**
-- `'heading'` - Markdown headers (# ## ###)
-- `'paragraph'` - Paragraph text
-- `'text'` - Text content
-- `'link'` - Markdown links
-- `'list'` - Lists (ordered/unordered)
-- `'listItem'` - Individual list items
-- `'code'` - Inline code
-- `'codeBlock'` - Code blocks
-- `'blockquote'` - Block quotes
-
-#### Built-in Processing Details
-
-**Rehype Stage (HTML → Markdown AST):**
-1. **`beforeDefaultRehypePlugins`**: Your HTML preprocessing
-2. **`rehype-tables`**: Flattens nested lists in table cells for better markdown
-3. **`rehype-links`**: Processes internal links (adds .md extensions, handles relative paths)
-4. **`rehype-remark`**: Converts HTML AST to Markdown AST
-5. **`rehypePlugins`**: Your HTML postprocessing
-
-**Remark Stage (Markdown AST → String):**
-1. **`beforeDefaultRemarkPlugins`**: Your markdown preprocessing
-2. **`remark-gfm`**: GitHub Flavored Markdown (tables, strikethrough, task lists)
-3. **`remarkPlugins`**: Your markdown postprocessing
-4. **`remark-stringify`**: Converts AST to final markdown string
-
-#### Error Handling and Debugging
-
-**Plugin Error Handling:**
-- **Built-in plugin failures**: Stop processing and throw error
-- **User plugin failures**: Log warning and continue processing
-- **Enable debug logging**: Set `logLevel: 3` to see plugin execution
-
-**Debugging Tips:**
-```javascript
-// Add logging to your plugins
-export const debugPlugin = () => (tree) => {
-  console.log('AST structure:', JSON.stringify(tree, null, 2));
-  return tree;
-};
-
-// Use in config for debugging
-beforeDefaultRehypePlugins: [debugPlugin]
-```
-
-**Common Plugin Patterns:**
-```javascript
-// Pattern 1: Conditional processing
-const conditionalPlugin = (options = {}) => (tree) => {
-  if (!options.enabled) return tree;
-  // ... transformation logic
-  return tree;
-};
-
-// Pattern 2: Node filtering and transformation
-const transformSpecificNodes = () => (tree) => {
-  visit(tree, (node) => node.tagName === 'img', (node) => {
-    // Transform only img elements
-    node.properties.loading = 'lazy';
-  });
-  return tree;
-};
-
-// Pattern 3: Adding new nodes
-const addMetadata = () => (tree) => {
-  tree.children.unshift({
-    type: 'paragraph',
-    children: [{ type: 'text', value: 'Generated by custom plugin' }]
-  });
-  return tree;
-};
-```
-
-For more advanced plugin development, see the [unified.js documentation](https://unifiedjs.com/), [rehype plugin guide](https://github.com/rehypejs/rehype/blob/main/doc/plugins.md), and [remark plugin guide](https://github.com/remarkjs/remark/blob/main/doc/plugins.md).
