@@ -11,6 +11,7 @@ import {
   DEFAULT_DEPTH,
 } from '../constants';
 import type { ReportingSeverity } from '@docusaurus/types';
+import type { Plugin, Settings } from 'unified';
 
 // ============================================================================
 // USER CONFIGURATION TYPES
@@ -50,6 +51,15 @@ export interface OptionalLink {
 }
 
 /**
+ * Standard unified plugin input types
+ * Follows unified.js conventions: function, [function, options], [function, options, settings]
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any -- unified Plugin type requires any for generic plugin support */
+export type PluginInput = 
+ | Plugin<unknown[], any, unknown> 
+ | [Plugin<unknown[], any, unknown>, unknown?, Settings?];
+
+/**
  * Content processing options that affect individual markdown file generation
  */
 export interface ContentOptions {
@@ -81,6 +91,16 @@ export interface ContentOptions {
   readonly remarkGfm?: boolean | Readonly<RemarkGfmOptions>;
   /** Whether to process tables with rehype (default: true) */
   readonly rehypeProcessTables?: boolean;
+  
+  // Unified plugin system (standard unified.js formats)
+  /** Custom rehype plugins run before built-in processing */
+  readonly beforeDefaultRehypePlugins?: readonly PluginInput[];
+  /** Custom rehype plugins run after built-in processing */
+  readonly rehypePlugins?: readonly PluginInput[];
+  /** Custom remark plugins run before built-in processing */
+  readonly beforeDefaultRemarkPlugins?: readonly PluginInput[];
+  /** Custom remark plugins run after built-in processing */
+  readonly remarkPlugins?: readonly PluginInput[];
 }
 
 /**
@@ -161,7 +181,6 @@ export interface Logger {
 
 /**
  * Joi schema for plugin options validation
- * Separated concerns: onRouteError for error handling, logLevel for operational verbosity
  * @internal - This is used by Docusaurus framework for options validation
  */
 export const pluginOptionsSchema = Joi.object<PluginOptions>({
@@ -195,7 +214,33 @@ export const pluginOptionsSchema = Joi.object<PluginOptions>({
       Joi.boolean(),
       Joi.object().unknown(true)
     ).default(true),
-    rehypeProcessTables: Joi.boolean().default(true)
+    rehypeProcessTables: Joi.boolean().default(true),
+    
+    // Unified plugin system (standard unified.js formats)
+    beforeDefaultRehypePlugins: Joi.array().items(
+      Joi.alternatives().try(
+        Joi.function(),
+        Joi.array().items(Joi.function(), Joi.any(), Joi.any()).min(1).max(3)
+      )
+    ).default([]),
+    rehypePlugins: Joi.array().items(
+      Joi.alternatives().try(
+        Joi.function(),
+        Joi.array().items(Joi.function(), Joi.any(), Joi.any()).min(1).max(3)
+      )
+    ).default([]),
+    beforeDefaultRemarkPlugins: Joi.array().items(
+      Joi.alternatives().try(
+        Joi.function(),
+        Joi.array().items(Joi.function(), Joi.any(), Joi.any()).min(1).max(3)
+      )
+    ).default([]),
+    remarkPlugins: Joi.array().items(
+      Joi.alternatives().try(
+        Joi.function(),
+        Joi.array().items(Joi.function(), Joi.any(), Joi.any()).min(1).max(3)
+      )
+    ).default([])
   }).default({}),
   
   // Structure options

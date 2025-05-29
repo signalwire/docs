@@ -122,8 +122,9 @@ export async function convertHtmlToMarkdown(
     // Convert hast to mdast using HTML processor
     const mdastTree = htmlProcessor.runSync(content);
     
-    // Convert mdast to markdown string using markdown processor
-    const markdownContent = String(markdownProcessor.stringify(mdastTree));
+    // Process mdast tree through remark plugins and convert to markdown string
+    const processedMdastTree = markdownProcessor.runSync(mdastTree);
+    const markdownContent = String(markdownProcessor.stringify(processedMdastTree));
 
     return {
       content: markdownContent,

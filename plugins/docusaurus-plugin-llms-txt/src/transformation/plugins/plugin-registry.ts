@@ -1,193 +1,140 @@
 /**
- * Plugin registry for unified processors
- * Handles both built-in and user plugins with proper typing
+ * Simplified plugin registry for unified processors
+ * Follows Docusaurus pattern: before/after arrays with simple order
  */
 
-import type { Processor, Plugin } from 'unified';
-import type { Node, Root } from 'hast';
-import rehypeParse, { Options as RehypeParseOptions } from 'rehype-parse';
+import type { Processor } from 'unified';
+import { unified } from 'unified';
+import rehypeParse from 'rehype-parse';
 import rehypeRemark from 'rehype-remark';
 import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
 import rehypeLinks from './rehype-links';
 import rehypeTables from './rehype-tables';
-import type { MarkdownConversionOptions, RehypeLinksOptions } from '../../types';
+import type { MarkdownConversionOptions, RehypeLinksOptions, PluginInput } from '../../types';
 
 /**
- * Built-in plugin configurations
- */
-interface BuiltinPluginConfig {
-  readonly name: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly plugin: Plugin<any, any, any>;
-  readonly options?: unknown;
-  readonly stage: 'parse' | 'rehype' | 'remark' | 'stringify';
-}
-
-const BUILTIN_PLUGINS: BuiltinPluginConfig[] = [
-  {
-    name: 'rehype-parse',
-    plugin: rehypeParse,
-    options: { fragment: false },
-    stage: 'parse',
-  },
-  {
-    name: 'rehype-tables',
-    plugin: rehypeTables,
-    stage: 'rehype',
-  },
-  {
-    name: 'rehype-links',
-    plugin: rehypeLinks,
-    stage: 'rehype',
-  },
-  {
-    name: 'rehype-remark',
-    plugin: rehypeRemark,
-    options: {
-      handlers: { br: () => ({ type: 'html', value: '<br />' }) },
-    },
-    stage: 'rehype',
-  },
-  {
-    name: 'remark-gfm',
-    plugin: remarkGfm,
-    stage: 'remark',
-  },
-  {
-    name: 'remark-stringify',
-    plugin: remarkStringify,
-    stage: 'stringify',
-  },
-];
-
-/**
- * Plugin registry class
+ * Simplified plugin registry class
  */
 export class PluginRegistry {
-  private plugins: Map<string, BuiltinPluginConfig> = new Map();
+  /**
+   * Apply a single plugin input following unified.js conventions
+   */
+  private applyPluginInput(processor: Processor, pluginInput: PluginInput): void {
+    if (typeof pluginInput === 'function') {
+      // Direct plugin function
+      processor.use(pluginInput);
+    } else if (Array.isArray(pluginInput)) {
+      // Array format: [plugin, options?, settings?]
+      const [plugin, options, settings] = pluginInput;
+      if (settings !== undefined) {
+        processor.use(plugin, options, settings);
+      } else if (options !== undefined) {
+        processor.use(plugin, options);
+      } else {
+        processor.use(plugin);
+      }
+    }
+  }
 
-  constructor() {
-    // Register built-in plugins
-    BUILTIN_PLUGINS.forEach(plugin => {
-      this.plugins.set(plugin.name, plugin);
+  /**
+   * Apply an array of plugins in order
+   */
+  private applyPluginArray(processor: Processor, plugins: readonly PluginInput[] = []): void {
+    for (const pluginInput of plugins) {
+      try {
+        this.applyPluginInput(processor, pluginInput);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.warn(`Failed to apply user plugin: ${errorMessage}`);
+        // Continue processing other plugins
+      }
+    }
+  }
+
+  /**
+   * Apply built-in rehype plugins in fixed order
+   */
+  private applyBuiltinRehypePlugins(
+    processor: Processor, 
+    options: MarkdownConversionOptions
+  ): void {
+    // Apply built-in plugins in fixed order
+    if (options.rehypeProcessTables !== false) {
+      processor.use(rehypeTables);
+    }
+    
+    if (options.rehypeProcessLinks !== false) {
+      const linkOptions: RehypeLinksOptions = {
+        baseUrl: options.baseUrl || '',
+        relativePaths: options.relativePaths !== false,
+        enableMarkdownFiles: options.enableMarkdownFiles !== false,
+        excludeRoutes: options.excludeRoutes || [],
+      };
+      processor.use(rehypeLinks, linkOptions);
+    }
+    
+    // Always last - converts HTML AST to Markdown AST
+    processor.use(rehypeRemark, {
+      handlers: { br: () => ({ type: 'html', value: '<br />' }) }
     });
   }
 
   /**
-   * Apply HTML parsing plugins to processor
+   * Apply built-in remark plugins in fixed order
    */
-  applyHtmlParsingPlugins(
-    processor: Processor,
-    _options: MarkdownConversionOptions
-  ): void {
-    // Parse stage
-    const parsePlugin = this.plugins.get('rehype-parse');
-    if (parsePlugin && parsePlugin.options !== undefined) {
-      // Type assertion is safe here as we know this plugin takes RehypeParseOptions
-      const typedPlugin = parsePlugin.plugin as Plugin<
-        [(RehypeParseOptions | null | undefined)?], 
-        string, 
-        Root
-      >;
-      processor.use(typedPlugin, parsePlugin.options as RehypeParseOptions);
-    } else if (parsePlugin) {
-      const typedPlugin = parsePlugin.plugin as Plugin<[RehypeParseOptions?], string, Root>;
-      processor.use(typedPlugin);
-    }
-  }
-
-  /**
-   * Apply rehype (HTML processing) plugins to processor
-   */
-  applyRehypePlugins(
-    processor: Processor,
+  private applyBuiltinRemarkPlugins(
+    processor: Processor, 
     options: MarkdownConversionOptions
   ): void {
-    // Tables processing
-    if (options.rehypeProcessTables !== false) {
-      const tablesPlugin = this.plugins.get('rehype-tables');
-      if (tablesPlugin) {
-        processor.use(tablesPlugin.plugin as Plugin<[], Root, Root>);
-      }
-    }
-
-    // Links processing
-    if (options.rehypeProcessLinks !== false) {
-      const linksPlugin = this.plugins.get('rehype-links');
-      if (linksPlugin) {
-        const linkOptions: RehypeLinksOptions = {
-          baseUrl: options.baseUrl || '',
-          relativePaths: options.relativePaths !== false,
-          enableMarkdownFiles: options.enableMarkdownFiles !== false,
-          excludeRoutes: options.excludeRoutes || [],
-        };
-        processor.use(
-          linksPlugin.plugin as Plugin<[RehypeLinksOptions], Root, Root>, 
-          linkOptions
-        );
-      }
-    }
-
-    // Bridge to remark (always applied last in rehype stage)
-    const remarkPlugin = this.plugins.get('rehype-remark');
-    if (remarkPlugin && remarkPlugin.options !== undefined) {
-      const typedPlugin = remarkPlugin.plugin as Plugin<
-        [import('rehype-remark').Options?], 
-        Root, 
-        Node
-      >;
-      processor.use(typedPlugin, remarkPlugin.options as import('rehype-remark').Options);
-    } else if (remarkPlugin) {
-      const typedPlugin = remarkPlugin.plugin as Plugin<
-        [import('rehype-remark').Options?], 
-        Root, 
-        Node
-      >;
-      processor.use(typedPlugin);
-    }
-  }
-
-  /**
-   * Apply remark (Markdown processing) plugins to processor
-   */
-  applyRemarkPlugins(
-    processor: Processor,
-    options: MarkdownConversionOptions
-  ): void {
-    // GitHub Flavored Markdown
+    // Apply remark-gfm if enabled
     if (options.remarkGfm !== false) {
-      const gfmPlugin = this.plugins.get('remark-gfm');
-      if (gfmPlugin) {
-        const gfmOptions = typeof options.remarkGfm === 'object' && options.remarkGfm !== null
-          ? options.remarkGfm
-          : undefined;
-        if (gfmOptions !== undefined) {
-          processor.use(gfmPlugin.plugin, gfmOptions);
-        } else {
-          processor.use(gfmPlugin.plugin);
-        }
+      const gfmOptions = typeof options.remarkGfm === 'object' && options.remarkGfm !== null
+        ? options.remarkGfm
+        : undefined;
+      
+      if (gfmOptions !== undefined) {
+        processor.use(remarkGfm, gfmOptions);
+      } else {
+        processor.use(remarkGfm);
       }
     }
   }
 
   /**
-   * Apply stringify plugins to processor
+   * Apply rehype (HTML processing) plugins using Docusaurus pattern
    */
-  applyStringifyPlugins(
-    processor: Processor,
-    options: MarkdownConversionOptions
-  ): void {
-    const stringifyPlugin = this.plugins.get('remark-stringify');
-    if (stringifyPlugin) {
-      const stringifyOptions = options.remarkStringify || {};
-      const typedPlugin = stringifyPlugin.plugin as Plugin<
-        [import('remark-stringify').Options?], 
-        Node, 
-        string
-      >;
-      processor.use(typedPlugin, stringifyOptions);
-    }
+  applyRehypePlugins(processor: Processor, options: MarkdownConversionOptions): void {
+    // 1. Apply "before" plugins first
+    this.applyPluginArray(processor, options.beforeDefaultRehypePlugins);
+    
+    // 2. Apply built-in plugins in fixed order
+    this.applyBuiltinRehypePlugins(processor, options);
+    
+    // 3. Apply "after" plugins last
+    this.applyPluginArray(processor, options.rehypePlugins);
+  }
+
+  /**
+   * Apply remark (Markdown processing) plugins using Docusaurus pattern
+   */
+  applyRemarkPlugins(processor: Processor, options: MarkdownConversionOptions): void {
+    // 1. Apply "before" plugins first
+    this.applyPluginArray(processor, options.beforeDefaultRemarkPlugins);
+    
+    // 2. Apply built-in plugins in fixed order
+    this.applyBuiltinRemarkPlugins(processor, options);
+    
+    // 3. Apply "after" plugins last
+    this.applyPluginArray(processor, options.remarkPlugins);
+  }
+
+  /**
+   * Apply stringify plugins
+   */
+  applyStringifyPlugins(processor: Processor, options: MarkdownConversionOptions): void {
+    const stringifyOptions = options.remarkStringify || {};
+    processor.use(remarkStringify, stringifyOptions);
   }
 
   /**
@@ -198,11 +145,11 @@ export class PluginRegistry {
     markdownProcessor: Processor;
   } {
     // HTML processing pipeline (hast)
-    const htmlProcessor = new (require('unified').unified)();
+    const htmlProcessor = unified();
     this.applyRehypePlugins(htmlProcessor, options);
     
     // Markdown processing pipeline (mdast)
-    const markdownProcessor = new (require('unified').unified)();
+    const markdownProcessor = unified();
     this.applyRemarkPlugins(markdownProcessor, options);
     this.applyStringifyPlugins(markdownProcessor, options);
     
@@ -213,24 +160,10 @@ export class PluginRegistry {
    * Create a lightweight processor for metadata extraction only
    */
   createMetadataProcessor(): Processor {
-    const processor = new (require('unified').unified)();
+    const processor = unified();
     
-    const parsePlugin = this.plugins.get('rehype-parse');
-    if (parsePlugin && parsePlugin.options !== undefined) {
-      const typedPlugin = parsePlugin.plugin as Plugin<
-        [(RehypeParseOptions | null | undefined)?], 
-        string, 
-        Root
-      >;
-      processor.use(typedPlugin, parsePlugin.options as RehypeParseOptions);
-    } else if (parsePlugin) {
-      const typedPlugin = parsePlugin.plugin as Plugin<
-        [(RehypeParseOptions | null | undefined)?], 
-        string, 
-        Root
-      >;
-      processor.use(typedPlugin);
-    }
+    // Only HTML parsing, no user plugins
+    processor.use(rehypeParse, { fragment: false });
     
     return processor;
   }

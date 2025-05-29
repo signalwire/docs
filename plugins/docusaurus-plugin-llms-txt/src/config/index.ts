@@ -61,6 +61,10 @@ export function getContentConfig(config: PluginOptions): Required<ContentOptions
     remarkStringify: content.remarkStringify ?? {},
     remarkGfm: content.remarkGfm ?? true,
     rehypeProcessTables: content.rehypeProcessTables ?? true,
+    beforeDefaultRehypePlugins: content.beforeDefaultRehypePlugins ?? [],
+    rehypePlugins: content.rehypePlugins ?? [],
+    beforeDefaultRemarkPlugins: content.beforeDefaultRemarkPlugins ?? [],
+    remarkPlugins: content.remarkPlugins ?? [],
   };
 }
 

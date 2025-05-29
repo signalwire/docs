@@ -3,7 +3,10 @@
  * Eliminates mutable/immutable duplication using TypeScript utility types
  */
 
-import type { ContentOptions, PluginOptions, Logger } from './public';
+import type { Root } from 'hast';
+import type { Options as RemarkGfmOptions } from 'remark-gfm';
+import type { Options as RemarkStringifyOptions } from 'remark-stringify';
+import type { ContentOptions, PluginOptions, Logger, PluginInput } from './public';
 
 // ============================================================================
 // CACHE AND FILE SYSTEM TYPES
@@ -135,9 +138,14 @@ export interface MarkdownConversionOptions {
   readonly excludeRoutes?: readonly string[];
   readonly rehypeProcessTables?: boolean;
   readonly rehypeProcessLinks?: boolean;
-  readonly remarkGfm?: boolean | Readonly<import('remark-gfm').Options>;
-  readonly remarkStringify?: Readonly<import('remark-stringify').Options>;
+  readonly remarkGfm?: boolean | Readonly<RemarkGfmOptions>;
+  readonly remarkStringify?: Readonly<RemarkStringifyOptions>;
   readonly logger?: Logger;
+  // Simplified plugin system
+  readonly beforeDefaultRehypePlugins?: readonly PluginInput[];
+  readonly rehypePlugins?: readonly PluginInput[];
+  readonly beforeDefaultRemarkPlugins?: readonly PluginInput[];
+  readonly remarkPlugins?: readonly PluginInput[];
 }
 
 /**
@@ -152,7 +160,7 @@ export interface ConversionResult {
 /**
  * Function type for title extraction
  */
-export type TitleExtractor = (_tree: import('hast').Root) => string | null;
+export type TitleExtractor = (_tree: Root) => string | null;
 
 /**
  * Validation result for operations that can succeed or fail with a reason

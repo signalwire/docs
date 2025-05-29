@@ -16,7 +16,8 @@ export type {
   Logger,
   PluginError,
   PluginConfigError,
-  PluginValidationError
+  PluginValidationError,
+  PluginInput
 } from './public';
 
 export { 

@@ -54,6 +54,11 @@ export async function processHtmlFileWithContext(
         enableMarkdownFiles: contentConfig.enableMarkdownFiles,
         excludeRoutes: contentConfig.excludeRoutes,
         logger: logger,
+        // Pass simplified plugin arrays to the conversion pipeline
+        beforeDefaultRehypePlugins: contentConfig.beforeDefaultRehypePlugins,
+        rehypePlugins: contentConfig.rehypePlugins,
+        beforeDefaultRemarkPlugins: contentConfig.beforeDefaultRemarkPlugins,
+        remarkPlugins: contentConfig.remarkPlugins,
       };
       
       const result = await convertHtmlToMarkdown(html, conversionOptions, contentSelectors);

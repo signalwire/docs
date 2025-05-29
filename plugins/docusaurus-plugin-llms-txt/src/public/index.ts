@@ -23,6 +23,7 @@ export type {
   ContentOptions,
   RouteRule,
   OptionalLink,
+  PluginInput,
   Depth,
   PluginError,
   PluginConfigError,

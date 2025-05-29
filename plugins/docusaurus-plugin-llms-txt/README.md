@@ -837,3 +837,305 @@ The plugin uses intelligent caching to speed up subsequent builds:
 ## License
 
 MIT 
+
+### User Plugin System
+
+The plugin supports custom unified.js plugins for advanced content transformation. You can add your own rehype (HTML processing) or remark (Markdown processing) plugins using standard unified patterns.
+
+#### Processing Pipeline Overview
+
+The plugin processes documents through two main stages:
+
+1. **HTML Processing (Rehype)**: Works on HTML AST (hast) - good for DOM-like operations
+2. **Markdown Processing (Remark)**: Works on Markdown AST (mdast) - good for markdown-specific transformations
+
+```
+HTML Document
+     ↓
+beforeDefaultRehypePlugins (your HTML preprocessing)
+     ↓
+Built-in rehype-tables (flatten lists in tables)
+     ↓
+Built-in rehype-links (process internal links)
+     ↓
+Built-in rehype-remark (HTML → Markdown AST)
+     ↓
+rehypePlugins (your HTML postprocessing)
+     ↓
+Markdown AST
+     ↓
+beforeDefaultRemarkPlugins (your Markdown preprocessing)
+     ↓
+Built-in remark-gfm (GitHub Flavored Markdown)
+     ↓
+remarkPlugins (your Markdown postprocessing)
+     ↓
+remark-stringify (AST → String)
+     ↓
+Final Markdown
+```
+
+#### When to Use Each Stage
+
+**`beforeDefaultRehypePlugins`** - Use for:
+- HTML preprocessing before built-in processing
+- Adding/removing HTML attributes
+- DOM manipulations that need to happen early
+- Custom HTML element transformations
+
+**`rehypePlugins`** - Use for:
+- HTML postprocessing after links/tables are handled
+- Final HTML cleanup before markdown conversion
+- Custom transformations that depend on built-in processing
+
+**`beforeDefaultRemarkPlugins`** - Use for:
+- Markdown AST preprocessing before GFM processing
+- Custom markdown node transformations
+- Adding markdown-specific metadata
+
+**`remarkPlugins`** - Use for:
+- Final markdown transformations after GFM
+- Custom formatting and cleanup
+- Adding final markdown elements
+
+#### Plugin Configuration
+
+The plugin system follows standard unified.js conventions:
+
+```javascript
+import myRehypePlugin from './my-rehype-plugin';
+import myRemarkPlugin from './my-remark-plugin';
+import remarkEmoji from 'remark-emoji';
+import rehypeSlug from 'rehype-slug';
+
+module.exports = {
+  plugins: [
+    [
+      'docusaurus-plugin-llms-txt',
+      {
+        content: {
+          // HTML processing - before built-in plugins
+          beforeDefaultRehypePlugins: [
+            myRehypePlugin,                           // Direct function
+            [rehypeSlug, { prefix: 'custom-' }]      // Function with options
+          ],
+          
+          // HTML processing - after built-in plugins
+          rehypePlugins: [
+            someCleanupPlugin
+          ],
+          
+          // Markdown processing - before built-in plugins
+          beforeDefaultRemarkPlugins: [
+            [remarkEmoji, { emoticon: true }]
+          ],
+          
+          // Markdown processing - after built-in plugins
+          remarkPlugins: [
+            myRemarkPlugin
+          ]
+        }
+      }
+    ]
+  ]
+};
+```
+
+#### Plugin Input Formats
+
+Following unified.js standards, plugins can be specified as:
+
+- **Direct function**: `myPlugin`
+- **Array with options**: `[myPlugin, { option: 'value' }]`
+- **Array with options and settings**: `[myPlugin, options, settings]` (rarely used)
+
+#### Complete Working Example
+
+Here's a practical example that demonstrates all four plugin stages:
+
+**File: `custom-plugins.js`**
+```javascript
+import { visit } from 'unist-util-visit';
+
+// Stage 1: beforeDefaultRehypePlugins (HTML preprocessing)
+export const addImageAltText = (options = {}) => (tree) => {
+  visit(tree, 'element', (node) => {
+    if (node.tagName === 'img' && !node.properties.alt) {
+      node.properties.alt = options.defaultAlt || 'Image';
+    }
+  });
+  return tree;
+};
+
+// Stage 2: rehypePlugins (HTML postprocessing)
+export const removeEmptyParagraphs = () => (tree) => {
+  visit(tree, 'element', (node, index, parent) => {
+    if (node.tagName === 'p' && 
+        (!node.children || node.children.length === 0)) {
+      parent.children.splice(index, 1);
+      return [visit.SKIP, index];
+    }
+  });
+  return tree;
+};
+
+// Stage 3: beforeDefaultRemarkPlugins (Markdown preprocessing)
+export const addHeaderAnchors = (options = {}) => (tree) => {
+  visit(tree, 'heading', (node) => {
+    if (node.depth <= 3 && options.addAnchors) {
+      // Add anchor text to heading
+      const textNode = node.children.find(child => child.type === 'text');
+      if (textNode) {
+        textNode.value += ` {#${textNode.value.toLowerCase().replace(/\s+/g, '-')}}`;
+      }
+    }
+  });
+  return tree;
+};
+
+// Stage 4: remarkPlugins (Markdown postprocessing)
+export const addReadingTime = (options = {}) => (tree) => {
+  if (!options.addReadingTime) return tree;
+  
+  let wordCount = 0;
+  visit(tree, 'text', (node) => {
+    wordCount += node.value.split(/\s+/).length;
+  });
+  
+  const readingTime = Math.ceil(wordCount / 200); // 200 words per minute
+  
+  // Add reading time as first paragraph
+  tree.children.unshift({
+    type: 'paragraph',
+    children: [{
+      type: 'text',
+      value: `📖 Reading time: ${readingTime} minute${readingTime !== 1 ? 's' : ''}`
+    }]
+  });
+  
+  return tree;
+};
+```
+
+**Usage in `docusaurus.config.js`:**
+```javascript
+import { 
+  addImageAltText, 
+  removeEmptyParagraphs, 
+  addHeaderAnchors, 
+  addReadingTime 
+} from './custom-plugins';
+
+module.exports = {
+  plugins: [
+    [
+      'docusaurus-plugin-llms-txt',
+      {
+        content: {
+          // Stage 1: HTML preprocessing
+          beforeDefaultRehypePlugins: [
+            [addImageAltText, { defaultAlt: 'Documentation image' }]
+          ],
+          
+          // Stage 2: HTML postprocessing (after tables/links processed)
+          rehypePlugins: [
+            removeEmptyParagraphs
+          ],
+          
+          // Stage 3: Markdown preprocessing (before GFM)
+          beforeDefaultRemarkPlugins: [
+            [addHeaderAnchors, { addAnchors: true }]
+          ],
+          
+          // Stage 4: Final markdown processing
+          remarkPlugins: [
+            [addReadingTime, { addReadingTime: true }]
+          ]
+        }
+      }
+    ]
+  ]
+};
+```
+
+#### AST Node Types Reference
+
+**Rehype (HTML) Node Types:**
+- `'element'` - HTML elements (div, p, img, etc.)
+- `'text'` - Text content
+- `'root'` - Document root
+
+**Remark (Markdown) Node Types:**
+- `'heading'` - Markdown headers (# ## ###)
+- `'paragraph'` - Paragraph text
+- `'text'` - Text content
+- `'link'` - Markdown links
+- `'list'` - Lists (ordered/unordered)
+- `'listItem'` - Individual list items
+- `'code'` - Inline code
+- `'codeBlock'` - Code blocks
+- `'blockquote'` - Block quotes
+
+#### Built-in Processing Details
+
+**Rehype Stage (HTML → Markdown AST):**
+1. **`beforeDefaultRehypePlugins`**: Your HTML preprocessing
+2. **`rehype-tables`**: Flattens nested lists in table cells for better markdown
+3. **`rehype-links`**: Processes internal links (adds .md extensions, handles relative paths)
+4. **`rehype-remark`**: Converts HTML AST to Markdown AST
+5. **`rehypePlugins`**: Your HTML postprocessing
+
+**Remark Stage (Markdown AST → String):**
+1. **`beforeDefaultRemarkPlugins`**: Your markdown preprocessing
+2. **`remark-gfm`**: GitHub Flavored Markdown (tables, strikethrough, task lists)
+3. **`remarkPlugins`**: Your markdown postprocessing
+4. **`remark-stringify`**: Converts AST to final markdown string
+
+#### Error Handling and Debugging
+
+**Plugin Error Handling:**
+- **Built-in plugin failures**: Stop processing and throw error
+- **User plugin failures**: Log warning and continue processing
+- **Enable debug logging**: Set `logLevel: 3` to see plugin execution
+
+**Debugging Tips:**
+```javascript
+// Add logging to your plugins
+export const debugPlugin = () => (tree) => {
+  console.log('AST structure:', JSON.stringify(tree, null, 2));
+  return tree;
+};
+
+// Use in config for debugging
+beforeDefaultRehypePlugins: [debugPlugin]
+```
+
+**Common Plugin Patterns:**
+```javascript
+// Pattern 1: Conditional processing
+const conditionalPlugin = (options = {}) => (tree) => {
+  if (!options.enabled) return tree;
+  // ... transformation logic
+  return tree;
+};
+
+// Pattern 2: Node filtering and transformation
+const transformSpecificNodes = () => (tree) => {
+  visit(tree, (node) => node.tagName === 'img', (node) => {
+    // Transform only img elements
+    node.properties.loading = 'lazy';
+  });
+  return tree;
+};
+
+// Pattern 3: Adding new nodes
+const addMetadata = () => (tree) => {
+  tree.children.unshift({
+    type: 'paragraph',
+    children: [{ type: 'text', value: 'Generated by custom plugin' }]
+  });
+  return tree;
+};
+```
+
+For more advanced plugin development, see the [unified.js documentation](https://unifiedjs.com/), [rehype plugin guide](https://github.com/rehypejs/rehype/blob/main/doc/plugins.md), and [remark plugin guide](https://github.com/remarkjs/remark/blob/main/doc/plugins.md).
