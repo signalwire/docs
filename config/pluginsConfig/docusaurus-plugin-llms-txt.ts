@@ -23,6 +23,7 @@ export const llmsTxtPlugin: PluginConfig = [
     
     // Global ordering - guides first, then methods/reference
     includeOrder: [
+      "/ai/**",
       "/swml/**"
     ],
     
