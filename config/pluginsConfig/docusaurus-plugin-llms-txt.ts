@@ -8,10 +8,10 @@
 */
 
 import { PluginConfig } from '@docusaurus/types';
-import { PluginOptions } from 'docusaurus-plugin-llms-txt';
+import { PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
 
 export const llmsTxtPlugin: PluginConfig = [
-  "docusaurus-plugin-llms-txt",
+  "@signalwire/docusaurus-plugin-llms-txt",
   {
     siteDescription: "SignalWire Documentation",
     siteTitle: "SignalWire Documentation",
