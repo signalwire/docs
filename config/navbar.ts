@@ -17,12 +17,18 @@ const navbar: NavbarItem[] = [
   {
     to: "/platform",
     label: "Platform",
-    position: "left",
+    position: "right",
     type: "dropdown",
     items: [
       {
         label: "Call Fabric",
         to: "/platform/call-fabric",
+      },
+      {
+        href: "https://signalwire.com/signin",
+        label: "SignalWire Space",
+        className: "dashboard-navbar-link",
+        "aria-label": "Open SignalWire Space",
       },
       {
         label: "Dashboard",
@@ -39,6 +45,26 @@ const navbar: NavbarItem[] = [
       {
         label: "Platform Basics",
         to: "/platform/basics",
+      },
+    ],
+  },
+  /// SWML Dropdown -------- ///
+  {
+    type: "dropdown",
+    label: "SWML",
+    position: "left", 
+    items: [
+      {
+        label: "SWML Guides",
+        to: "/swml/guides",
+      },
+      {
+        label: "Method Reference",
+        to: "/swml/reference",
+      },
+      {
+        label: "Agents SDK",
+        to: "/swml/agents-sdk",
       },
     ],
   },
@@ -201,14 +227,6 @@ const navbar: NavbarItem[] = [
         "aria-label": "Discord server",
       },
     ],
-  },
-
-  {
-    href: "https://signalwire.com/signin",
-    label: "Dashboard",
-    position: "right",
-    className: "dashboard-navbar-link",
-    "aria-label": "Dashboard",
   },
   {
     href: 'https://github.com/signalwire/docs',
