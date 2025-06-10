@@ -1,0 +1,5 @@
+- **Latency**: `<`100ms end-to-end for voice
+- **Jitter**: `<`30ms variation
+- **Packet Loss**: `<`0.1% under normal conditions
+- **Availability**: 99.999% uptime SLA
+- **Capacity**: Millions of concurrent connections 
