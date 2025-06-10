@@ -580,7 +580,7 @@ Provides web search capabilities using Google Custom Search API with web scrapin
 - `num_results` (default: 1): Number of search results to return
 - `delay` (default: 0): Delay in seconds between requests
 - `tool_name` (default: "web_search"): Custom name for the search tool
-- `no_results_message` (default: "I couldn't find any results for '{query}'. This might be due to a very specific query or temporary issues. Try rephrasing your search or asking about a different topic."): Custom message to return when no search results are found. Use `{query}` as a placeholder for the search query.
+- `no_results_message` (default: "I couldn't find any results for '\{query}'. This might be due to a very specific query or temporary issues. Try rephrasing your search or asking about a different topic."): Custom message to return when no search results are found. Use `\{query}` as a placeholder for the search query.
 
 **Multiple Instance Support:**
 The web_search skill supports multiple instances with different search engines and tool names, allowing you to search different data sources:
@@ -632,7 +632,7 @@ agent.add_skill("web_search", {
 agent.add_skill("web_search", {
     "api_key": "your-google-api-key",
     "search_engine_id": "your-search-engine-id",
-    "no_results_message": "Sorry, I couldn't find information about '{query}'. Please try a different search term."
+    "no_results_message": "Sorry, I couldn't find information about '\{query}'. Please try a different search term."
 })
 ```
 
@@ -685,7 +685,7 @@ Provides knowledge search capabilities using SignalWire DataSphere RAG stack.
 - `pos_to_expand` (optional): List of parts of speech for synonym expansion (e.g., ["NOUN", "VERB"])
 - `max_synonyms` (optional): Maximum number of synonyms to use for each word
 - `tool_name` (default: "search_knowledge"): Custom name for the search tool
-- `no_results_message` (default: "I couldn't find any relevant information for '{query}' in the knowledge base. Try rephrasing your question or asking about a different topic."): Custom message when no results found
+- `no_results_message` (default: "I couldn't find any relevant information for '\{query}' in the knowledge base. Try rephrasing your question or asking about a different topic."): Custom message when no results found
 
 **Multiple Instance Support:**
 The DataSphere skill supports multiple instances with different tool names, allowing you to search multiple knowledge bases:
@@ -719,7 +719,7 @@ agent.add_skill("datasphere", {
     "token": "my-token", 
     "document_id": "support-kb",
     "tool_name": "search_support",
-    "no_results_message": "I couldn't find support information about '{query}'. Try contacting our support team.",
+    "no_results_message": "I couldn't find support information about '\{query}'. Try contacting our support team.",
     "distance": 5.0
 })
 # Creates tool: search_support
@@ -745,7 +745,7 @@ Provides local document search capabilities using vector similarity and keyword 
 - `tags` (optional): List of tags to filter search results
 - `response_prefix` (optional): Text to prepend to all search responses
 - `response_postfix` (optional): Text to append to all search responses
-- `no_results_message` (default: "No information found for '{query}'"): Custom message when no results found
+- `no_results_message` (default: "No information found for '\{query}'"): Custom message when no results found
 
 **Multiple Instance Support:**
 The native vector search skill supports multiple instances with different indexes and tool names:
@@ -788,7 +788,7 @@ agent.add_skill("native_vector_search", {
     "index_file": "concepts.swsearch",
     "response_prefix": "Based on the comprehensive SDK guide:",
     "response_postfix": "Would you like more specific information?",
-    "no_results_message": "I couldn't find information about '{query}' in the concepts guide."
+    "no_results_message": "I couldn't find information about '\{query}' in the concepts guide."
 })
 ```
 
