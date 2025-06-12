@@ -1,0 +1,411 @@
+---
+slug: /sdks/reference/realtime-sdk/relay-v4/voice/callcollect
+---
+
+# CallCollect
+
+Represents a current or past collect session in a call. You can obtain instances of this class by starting at Collect with the following method:
+
+- [`Call.collect`](./voice-call.mdx#collect)
+
+#### Example
+
+In this example, we collect digits from the caller. Once the collect session is ended, we print the collected digits
+and hangup the call.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice;
+
+const call = await voiceClient.dialPhone({
+  from: "+YYYYYYYYYY",
+  to: "+XXXXXXXXXX",
+});
+
+// start Collect
+await call.collect({
+  partialResults: true,
+  sendStartOfInput: true,
+  digits: {
+    max: 5,
+    digitTimeout: 4,
+    terminators: "#*",
+  },
+  listen: {
+    onStarted: async () => {
+      console.log("Collect started");
+      await call.playTTS({
+        text: "Please enter your PIN"
+      });
+    },
+    onInputStarted: () => {
+      console.log("Collect input started");
+    },
+    onUpdated: (collect) => {
+      console.log("Collect updated:", collect.digits);
+    },
+    onEnded: async (collect) => {
+      console.log("Collect ended:", collect.result);
+      console.log("PIN collected:", collect.digits);
+      call.hangup();
+    },
+    onFailed: () => {
+      console.log("Collect failed")
+    }
+  }
+}).onStarted();
+```
+
+## **Properties**
+
+### confidence
+
+Confidence level for the speech recognition result (if [`type`](#type) is `"speech"`), from 0 to 100. For example, `83.2`.
+
+**Syntax:** `CallCollect.confidence()`
+
+**Returns:** `number`
+
+---
+
+### digits
+
+The digits that have been collected (if [`type`](#type) is `"digit"`). For example, `"12345"`.
+
+**Syntax:** `CallCollect.digits()`
+
+**Returns:** `string`
+
+---
+
+### id
+
+The unique id for this collect session.
+
+**Syntax:** `CallCollect.id()`
+
+**Returns:** `string`
+
+---
+
+### reason
+
+Alias for [`type`](#type), in case of errors. Use this field to check the reason of the error.
+
+**Syntax:** `CallCollect.reason()`
+
+**Returns:** `"no_match"` | `"no_input"` | `"error"`
+
+---
+
+### result
+
+A promise that resolves to the [`CallCollectResult`](#callingcallcollectresult) object when the collect session is ended
+and the result is available.
+
+**Syntax:** `CallCollect.result()`
+
+**Returns:** [`CallCollectResult`](#callingcallcollectresult)
+
+---
+
+### terminator
+
+The terminator used to complete the collect (if [`type`](#type) is `"digit"`). For example, `"#"`.
+
+**Syntax:** `CallCollect.terminator()`
+
+**Returns:** `string`
+
+---
+
+### text
+
+The text that has been collected (if [`type`](#type) is `"speech"`). For example, `"hello who's there"`.
+
+**Syntax:** `CallCollect.text()`
+
+**Returns:** `string`
+
+---
+
+### type
+
+The type of this collect session.
+
+**Syntax:** `CallCollect.type()`
+
+**Returns:** `"error"` | `"no_input"` | `"no_match"` | `"digit"` | `"speech"` | `"start_of_input"`
+
+---
+
+### state
+
+The state of this collect session. Only present when [`type`](#type) 
+is `"speech"` and the [`continuous`](./voice-call#voice_call_collect_parameters) parameter 
+is set to `true`. Otherwise, the collect state is always `"undefined"`.
+
+**Syntax:** `CallCollect.state()`
+
+**Returns:** `"collecting"` | `"finished"` | `"error"`
+
+
+---
+
+## **Methods**
+
+### ended
+
+▸ **ended**(): `Promise`\<[`CallCollect`](#)>
+
+Returns a promise that is resolved only after this collect finishes (or is stopped).
+
+#### Returns
+
+`Promise`\<[`CallCollect`](#)>
+
+A promise that resolves to the [`CallCollect`](#) object when the collect session is ended.
+
+#### Example
+
+```js
+const collect = await call.collect({
+  digits: {
+    max: 4,
+    digitTimeout: 10,
+    terminators: "#",
+  },
+  partialResults: true,
+  sendStartOfInput: true,
+}).onStarted();
+await collect.ended();
+```
+
+---
+
+### startInputTimers
+
+▸ **startInputTimers**(): `Promise`\<[`CallCollect`](#)>
+
+Start the `initialTimeout` timer on an active collect.
+
+#### Returns
+
+`Promise`\<[`CallCollect`](#)>
+
+A promise that resolves to the [`CallCollect`](#) object when the collect session `InputTimer` is started.
+
+
+#### Example
+
+```js
+const collect = await call.collect({
+  digits: {
+    max: 4,
+    digitTimeout: 10,
+    terminators: "#",
+  },
+  partialResults: true,
+  sendStartOfInput: true,
+  startInputTimers: false,
+}).onStarted();
+// You can add some logic before starting input timers.
+await collect.startInputTimers();
+```
+
+---
+
+### stop
+
+▸ **stop**(): `Promise`\<[`CallCollect`](#)>
+
+Stops the collect session.
+
+#### Returns
+
+`Promise`\<[`CallCollect`](#)>
+
+A promise that resolves to the [`CallCollect`](#) object when the collect session is stopped.
+
+#### Example
+
+```js
+const collect = await call.collect({
+  speech: {
+    endSilenceTimeout: 2,
+    speechTimeout: 10,
+    language: "en-US",
+    hints: ["sales", "support", "representative"]
+  },
+  partialResults: true,
+  sendStartOfInput: true
+}).onStarted();
+await collect.stop();
+```
+
+---
+
+## **Alias Types**
+
+### CallingCallCollectResult
+
+Ƭ **CallingCallCollectResult**: `Promise`\<[`CallCollect`](#)>
+
+The [result](#result) of the collect session.
+Depending on the [`type`](#type) of the collect session,
+the result will return different fields.
+
+
+#### Digit Collect Results
+
+The result of a collect session when [`type`](#type) is `"digit"`.
+
+#### Properties
+
+| Name                | Value     | Description                                  |
+|:--------------------|:----------|:---------------------------------------------|
+| `type`              | `"digit"` | The type of this collect session.            |
+| `params`            | `Object`  | The parameters of this collect session.      |
+| `params.digits`     | `string`  | The digits that have been collected.         |
+| `params.terminator` | `string`  | The terminator used to complete the collect. |
+
+---
+
+#### Speech Collect Results
+
+The result of a collect session when [`type`](#type) is `"speech"`.
+
+#### Properties
+
+| Name                | Value      | Description                                             |
+|:--------------------|:-----------|:--------------------------------------------------------|
+| `type`              | `"speech"` | The type of this collect session.                       |
+| `params`            | `Object`   | The parameters of this collect session.                 |
+| `params.text`       | `string`   | The text that has been collected.                       |
+| `params.confidence` | `number`   | The confidence level for the speech recognition result. |
+
+---
+
+#### Input Started Collect Results
+
+The result of a collect session when [`type`](#type) is `"input_started"`.
+
+#### Properties
+
+| Name   | Value             | Description                       |
+|:-------|:------------------|:----------------------------------|
+| `type` | `"input_started"` | The type of this collect session. |
+
+---
+
+#### No Input Collect Results
+
+The result of a collect session when [`type`](#type) is `"no_input"`.
+
+#### Properties
+
+| Name   | Value        | Description                       |
+|:-------|:-------------|:----------------------------------|
+| `type` | `"no_input"` | The type of this collect session. |
+
+---
+
+#### No Match Collect Results
+
+The result of a collect session when [`type`](#type) is `"no_match"`.
+
+#### Properties
+
+| Name   | Value        | Description                       |
+|:-------|:-------------|:----------------------------------|
+| `type` | `"no_match"` | The type of this collect session. |
+
+
+---
+
+
+#### Error Collect Results
+
+The result of a collect session when [`type`](#type) is `"error"`.
+
+#### Properties
+
+| Name   | Value     | Description                       |
+|:-------|:----------|:----------------------------------|
+| `type` | `"error"` | The type of this collect session. |
+
+
+---
+
+## **Events**
+
+### onStarted
+
+▸ **CallCollect.listen**(`{ onStarted: Callback }`)
+
+Emitted when the collect session is started. Your event handler will receive the [`CallCollect`](#) object.
+
+#### Parameters
+
+| Name      | Type               | Description                                  |
+|:----------|:-------------------|:---------------------------------------------|
+| `collect` | [`CallCollect`](#) | The `collect` object that emitted the event. |
+
+---
+
+### onInputStarted
+
+▸ **CallCollect.listen**(`{ onInputStarted: Callback }`)
+
+Emitted when the collect session starts receiving input. Your event handler will receive the [`CallCollect`](#) object.
+
+#### Parameters
+
+| Name      | Type               | Description                                  |
+|:----------|:-------------------|:---------------------------------------------|
+| `collect` | [`CallCollect`](#) | The `collect` object that emitted the event. |
+
+---
+
+### onUpdated
+
+▸ **CallCollect.listen**(`{ onUpdated: Callback }`)
+
+Emitted when the collect session is updated. Your event handler will receive the [`CallCollect`](#) object.
+
+#### Parameters
+
+| Name      | Type               | Description                                  |
+|:----------|:-------------------|:---------------------------------------------|
+| `collect` | [`CallCollect`](#) | The `collect` object that emitted the event. |
+
+---
+
+### onFailed
+
+▸ **CallCollect.listen**(`{ onFailed: Callback }`)
+
+Emitted when the collect session fails. Your event handler will receive the [`CallCollect`](#) object.
+
+#### Parameters
+
+| Name      | Type               | Description                                  |
+|:----------|:-------------------|:---------------------------------------------|
+| `collect` | [`CallCollect`](#) | The `collect` object that emitted the event. |
+
+---
+
+### onEnded
+
+▸ **CallCollect.listen**(`{ onEnded: Callback }`)
+
+Emitted when the collect session ends. Your event handler will receive the [`CallCollect`](#) object.
+
+#### Parameters
+
+| Name      | Type               | Description                                  |
+|:----------|:-------------------|:---------------------------------------------|
+| `collect` | [`CallCollect`](#) | The `collect` object that emitted the event. |

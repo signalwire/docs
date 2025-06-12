@@ -23,8 +23,8 @@ const clientSdksSidebar: SidebarsConfig = {
           label: "RELAY Browser SDK",
         },
         {
-          type: "ref",
-          id: "sdks/reference/realtime-sdk/realtime-sdk-reference-relay",
+          type: "link",
+          href: "/sdks/reference/realtime-sdk",
           label: "RELAY Realtime SDK (Node.js)",
         },
         {

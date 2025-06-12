@@ -17,7 +17,6 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 import homeSidebar from './home-sidebar';
 import clientSdksSidebar from './client-sdk-sidebar';
 import browserSdkTechRefSidebar from './relay-browser-sidebar';
-import realtimeSdkTechRefSidebar from './relay-realtime-sidebar';
 import apiSidebar from './rest-api-sidebar';
 import swmlTechRefSidebar from './swml-sidebar';
 import compatibilityAPI from './compatibility-api-sidebar';
@@ -27,7 +26,6 @@ const sidebars: SidebarsConfig = {
   ...homeSidebar,
   ...clientSdksSidebar,
   ...browserSdkTechRefSidebar,
-  ...realtimeSdkTechRefSidebar,
   ...apiSidebar,
   ...swmlTechRefSidebar,
   ...compatibilityAPI,

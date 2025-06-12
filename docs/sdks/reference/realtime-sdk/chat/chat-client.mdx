@@ -1,0 +1,451 @@
+---
+slug: /sdks/reference/realtime-sdk/relay-v4/chat/chat-client
+---
+
+# Client
+
+A [Chat](./index.mdx) client is used to listen for events on a channel and to publish messages into a channel.
+Members of a channel can also be retrieved and updated using a Chat client.
+
+## **Chat Client**
+### Setting up a Chat Client
+
+To create a `Chat` client, you will need to create a [`SignalWire Realtime-Client`](../realtime-client/index.mdx) first.
+After the `SignalWire Client` is created, you can access the `Chat` client using the `chat` namespace.
+
+#### Example
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+```
+
+---
+
+## **Methods**
+
+
+### getMemberState
+
+▸ **getMemberState**(`params`): `Promise<\{ channels: Record<string, ChatChannelState> \}>`
+
+Returns the states of a member in the specified channels.
+
+#### Parameters
+
+| Name               | Type                   | Description                                  |
+| :----------------- | :--------------------- | :------------------------------------------- |
+| `params`           | `Object`               | -                                            |
+| `params.channels?` | `string` \| `string[]` | Channels for which to get the state.         |
+| `params.memberId`  | `string`               | ID of the member for which to get the state. |
+
+#### Returns
+
+`Promise<\{ channels: Record<string, ChatChannelState> \}>`
+
+A promise that resolves to an object containing the states of the member in the specified channels.
+
+#### Example
+
+In this example, we fetch the state of the member `User1` in the channel
+`channel1` and print it to the console.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+let usesId = 'User1'; // Assumes a member with this id already exists and has joined the channel.
+
+const s = await chatClient.getMemberState({
+  channels: "channel1", // or a list of channels like: ["channel1", "channel2"]
+  memberId: usesId
+});
+
+console.log(`The state of ${usesId} is: ${JSON.stringify(s.channels.channel1.state, null, 2)}`);
+```
+
+---
+
+### getMembers
+
+▸ **getMembers**(`params`): `Promise`\<\{ `members:` [`ChatMemberEntity[]`](#chatmemberentity) }>
+
+Returns the list of members in the given channel.
+
+#### Parameters
+
+| Name             | Type     | Description                                       |
+| :--------------- | :------- | :------------------------------------------------ |
+| `params`         | `Object` | -                                                 |
+| `params.channel` | `string` | The channel for which to get the list of members. |
+
+#### Returns
+
+`Promise`\<\{ `members:` [`ChatMemberEntity[]`](#chatmemberentity) }>
+
+A promise that resolves to an object containing the list of members in the given channel.
+
+#### Example
+In this example, we fetch all the members in the channel `channel1` and print the
+number of members and the list of members to the console.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+const m = await chatClient.getMembers({ channel: "channel1" });
+
+console.log(`There are a total of ${m.members.length} members in channel1.
+The list of members are: ${m.members.map(m => m.id).join(", ")}`);
+```
+
+---
+
+### getMessages
+
+▸ **getMessages**(`params`): `Promise`\<\{ `cursor:` [`PaginationCursor`](#paginationcursor), `messages:` [`ChatMessageEntity[]`](#chatmessageentity) }>
+
+Returns the list of messages that were sent to the specified channel.
+
+#### Parameters
+
+| Name             | Type                                    | Description                                 |
+|:-----------------|:----------------------------------------|:--------------------------------------------|
+| `params`         | `Object`                                | -                                           |
+| `params.channel` | `string`                                | Channel for which to retrieve the messages. |
+| `params.cursor?` | [`PaginationCursor`](#paginationcursor) | Cursor for pagination.                      |
+
+#### Returns
+
+`Promise`\<\{ `cursor:` [`PaginationCursor`](#paginationcursor), `messages:` [`ChatMessageEntity[]`](#chatmessageentity) }>
+
+A promise that resolves to an object containing the list of messages that were sent to the specified channel.
+
+#### Example
+
+In this example, we fetch all the messages sent in the channel `channel1` and print them to the console.
+We use the cursor to fetch the next set of messages until the cursor is null, indicating that there are no more messages to fetch.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+let pageNumber = 1;
+let cursor = null;
+
+while (true) {
+  const m = await chatClient.getMessages({
+    channel: "channel1",
+    cursor: cursor ? { after: cursor } : undefined
+  });
+
+  console.log(`Page ${pageNumber}: fetched ${m.messages.length} messages
+  ${JSON.stringify(m.messages, null, 2)}`);
+
+  // Check if 'after' is null, indicating no more messages to fetch
+  if (!m.cursor.after) {
+    console.log("No more messages");
+    break;
+  }
+  // Update the cursor to fetch next set of messages
+  cursor = m.cursor.after;
+  pageNumber++;
+}
+```
+
+---
+
+### listen
+
+▸ **listen**(`{ event: Callback }`): `Promise`\<[`ChatEvents`](#events)>
+
+Listen for events on the specified channels.
+
+
+#### Parameters
+
+| Name              | Type       | Description                                                                                                         |
+| :---------------- | :--------- | :------------------------------------------------------------------------------------------------------------------ |
+| `params`          | `Object`   | Object containing the parameters of the method.                                                                     |
+| `params.channels` | `string[]` | List of channels to listen to.                                                                                      |
+| `params.EVENT`    | `Callback` | The event to listen to. List of events can be found [here](#events).<br />Example event: (E.g: `onMessageReceived`) |
+
+
+#### Returns
+
+`Promise`\<[`ChatEvents`](#events)>
+
+A promise that resolves to [`ChatEvents`](#events) object
+ that you can use to view the current state or results of the event.
+
+#### Example
+
+In this example, we listen for the `onMessageReceived` event on the channel
+`my-channel` and print the message to the console.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+await chatClient.listen({
+  channels: ["my-channel"],
+  onMessageReceived: (message) => {
+    console.log(message);
+  }
+});
+```
+
+---
+
+### publish
+
+▸ **publish**(`params`): `Promise<void>`
+
+Publish a message into the specified channel.
+
+#### Parameters
+
+| Name             | Type               | Description                                                                                 |
+| :--------------- | :----------------- | :------------------------------------------------------------------------------------------ |
+| `params`         | `Object`           | -                                                                                           |
+| `params.channel` | `string`           | Channel in which to send the message.                                                       |
+| `params.content` | `any`              | The message to send. This can be any JSON-serializable object or value.                     |
+| `params.meta?`   | `Record<any, any>` | Metadata associated with the message. There are no requirements on the content of metadata. |
+
+#### Returns
+
+`Promise<void>`
+
+#### Examples
+
+Publishing a message as a string:
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+await chatClient.publish({
+  channel: "my-channel",
+  content: "Hello, world."
+});
+```
+
+Publishing a message as an object:
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+await chatClient.publish({
+  channel: "my-channel",
+  content: {
+    field_one: "value_one",
+    field_two: "value_two"
+  }
+});
+```
+
+---
+
+
+### setMemberState
+
+▸ **setMemberState**(`params`): `Promise<void>`
+
+Sets a state object for a member, for the specified channels. The previous state object will be completely replaced.
+
+#### Parameters
+
+| Name              | Type                   | Description                                                              |
+| :---------------- | :--------------------- | :----------------------------------------------------------------------- |
+| `params`          | `Object`               | -                                                                        |
+| `params.channels` | `string` \| `string[]` | Channels for which to set the state.                                     |
+| `params.memberId` | `string`               | Id of the member to affect.                                              |
+| `params.state`    | `Record<any, any>`     | The state to set. There are no requirements on the content of the state. |
+
+#### Returns
+
+`Promise<void>`
+
+#### Example
+
+In this example, we set the state of the member `User1` in the channel `channel1` to
+`{ online: true, typing: false }`.
+We then fetch the state of the member and print it to the console.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const chatClient = client.chat;
+
+let usesId = 'User1'; // Assumes a member with this id already exists and has joined the channel.
+
+// set the member state
+await chatClient.setMemberState({
+  memberId: usesId,
+  channels: "channel1", // or a list of channels like: ["channel1", "channel2"]
+  state: {
+    online: true,
+    typing: false,
+  }
+});
+
+// get the member state
+const s = await chatClient.getMemberState({
+  channels: "channel1", // or a list of channels like: ["channel1", "channel2"]
+  memberId: usesId,
+});
+
+// print the state
+console.log(`The state of ${usesId} is: ${JSON.stringify(s.channels.channel1.state, null, 2)}`);
+```
+
+---
+
+
+## **Events**
+
+### onMemberJoined
+
+• **client.chat.listen**(`{ onMemberJoined: Callback }`)
+
+Emitted when a new member joins the chat. Your event handler will be called with an instance of [`ChatMember`](./chat-chatmember.mdx).
+
+#### Parameters
+
+| Name     | Type                                  |
+| :------- | :------------------------------------ |
+| `member` | [`ChatMember`](./chat-chatmember.mdx) |
+
+---
+
+### onMemberLeft
+
+• **client.chat.listen**(`{ onMemberLeft: Callback }`)
+
+Emitted when a member leaves the chat. Your event handler will be called with an instance of [`ChatMember`](./chat-chatmember.mdx).
+
+#### Parameters
+
+| Name     | Type                                  |
+| :------- | :------------------------------------ |
+| `member` | [`ChatMember`](./chat-chatmember.mdx) |
+
+---
+
+### onMemberUpdated
+
+• **client.chat.listen**(`{ onMemberUpdated: Callback }`)
+
+Emitted when a member updates its state. Your event handler will be called with an instance of [`ChatMember`](./chat-chatmember.mdx).
+
+#### Parameters
+
+| Name     | Type                                  |
+| :------- | :------------------------------------ |
+| `member` | [`ChatMember`](./chat-chatmember.mdx) |
+
+---
+
+### onMessageReceived
+
+• **client.chat.listen**(`{ onMessageReceived: Callback}`)
+
+Emitted when a message is received. Your event handler will be called with an instance of [`ChatMessage`](./chat-chatmessage.mdx).
+
+#### Parameters
+
+| Name      | Type                                    |
+| :-------- | :-------------------------------------- |
+| `message` | [`ChatMessage`](./chat-chatmessage.mdx) |
+
+---
+
+## **Type Aliases**
+
+### ChatMemberEntity
+
+An object representing a Chat Member with only the state properties of [`ChatMember`](./chat-chatmember.mdx).
+
+#### Properties
+
+• `Readonly` **channel**: `string`
+
+The channel of this member.
+
+• `Readonly` **id**: `string`
+
+The id of this member.
+
+• `Readonly` **state**: `Record<any,any>`
+
+The state of this member.
+
+---
+
+### ChatMessageEntity
+
+An object representing a Chat Message with only the state properties of [`ChatMessage`](./chat-chatmessage.mdx).
+
+#### Properties
+
+• `Readonly` **content**: `any`
+
+The content of this message.
+
+• `Readonly` **id**: `string`
+
+The id. of this message
+
+• `Readonly` **member**: [`ChatMember`](./chat-chatmember.mdx)
+
+The member which sent this message.
+
+• `Readonly` **meta?**: `any`
+
+Any metadata associated with this message.
+
+• `Readonly` **publishedAt**: `Date`
+
+The date and time at which this message was published.
+
+---
+
+### PaginationCursor
+
+This is a utility object that aids in pagination.
+It is specifically used in conjunction with the [getMessages](#getmessages) method.
+
+#### Properties
+
+• `Readonly` **after?**: `string`
+
+This property signifies the cursor for the subsequent page.
+
+• `Readonly` **before?**: `string`
+
+This property signifies the cursor for the preceding page.
+
+

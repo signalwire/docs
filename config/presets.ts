@@ -19,6 +19,9 @@ const presets: PresetConfig[] = [
         editUrl: "https://github.com/signalwire/docs/edit/main/",
         path: "docs",
         routeBasePath: "/",
+        exclude: [
+          "**/sdks/reference/realtime-sdk/**", // Exclude real-time SDK docs - They are versioned
+        ],
         sidebarPath: require.resolve("./sidebarsConfig"),
         docItemComponent: "@theme/ApiItem",
         sidebarItemsGenerator: sidebarGenerator,
