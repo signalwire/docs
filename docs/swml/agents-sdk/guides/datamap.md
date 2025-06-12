@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-guides-datamap
+slug: /agents-sdk/guides/datamap
 title: DataMap Guide
 sidebar_label: DataMap Guide
 --- 

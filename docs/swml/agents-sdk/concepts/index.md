@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-concepts
+slug: /agents-sdk/concepts
 title: AI Agents SDK Concepts
 sidebar_label: Core Concepts
 ---
@@ -20,9 +21,4 @@ Understand the fundamental concepts and architecture of the SignalWire AI Agents
 
 The SignalWire AI Agents SDK is built on a modular architecture that combines AI capabilities with web service functionality. Each agent is a standalone microservice that can handle requests, maintain state, and interact with external services.
 
-## Available Documentation
-
-- [Architecture Guide](./architecture)
-- [SWAIG Integration](./swaig-integration)
-- [DataMap System](./datamap-system)
-- [State Management](./state-management) 
+<DocCardList />

@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-skills-overview
+slug: /agents-sdk/skills
 title: Skills System
 sidebar_label: Overview
 --- 

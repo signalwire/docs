@@ -60,11 +60,11 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "Method Reference",
-        to: "/swml/reference",
+        to: "/swml/methods",
       },
       {
         label: "Agents SDK",
-        to: "/swml/agents-sdk",
+        to: "/agents-sdk",
       },
     ],
   },

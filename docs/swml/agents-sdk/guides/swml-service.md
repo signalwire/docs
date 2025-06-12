@@ -1,23 +1,12 @@
 ---
 id: agents-sdk-guides-swml-service
+slug: /agents-sdk/guides/swml-service
 title: SWML Service Guide
 sidebar_label: SWML Service
 --- 
 
 # SignalWire SWML Service Guide
 
-## Table of Contents
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [Basic Usage](#basic-usage)
-- [Centralized Logging System](#centralized-logging-system)
-- [SWML Document Creation](#swml-document-creation)
-- [Verb Handling](#verb-handling)
-- [Web Service Features](#web-service-features)
-- [Custom Routing Callbacks](#custom-routing-callbacks)
-- [Advanced Usage](#advanced-usage)
-- [API Reference](#api-reference)
-- [Examples](#examples)
 
 ## Introduction
 

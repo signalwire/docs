@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-skills-search
+slug: /agents-sdk/skills/search
 title: Search System
 sidebar_label: Search System
 --- 
@@ -8,19 +9,6 @@ sidebar_label: Search System
 
 The SignalWire Agents SDK includes a powerful local search system that provides DataSphere-compatible search functionality without external dependencies. This system uses advanced query preprocessing, local embeddings, and hybrid search techniques to enable agents to search through document collections offline.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Installation Options](#installation-options)
-- [Quick Start](#quick-start)
-- [Building Search Indexes](#building-search-indexes)
-- [Using the Search Skill](#using-the-search-skill)
-- [Local vs Remote Modes](#local-vs-remote-modes)
-- [Advanced Configuration](#advanced-configuration)
-- [CLI Reference](#cli-reference)
-- [API Reference](#api-reference)
-- [Examples](#examples)
-- [Troubleshooting](#troubleshooting)
 
 ## Overview
 

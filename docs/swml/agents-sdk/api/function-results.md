@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-reference-function-results
+slug: /agents-sdk/api/function-results
 title: Function Results Reference
 sidebar_label: Function Results
 --- 

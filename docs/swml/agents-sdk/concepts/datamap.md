@@ -1,8 +1,9 @@
 ---
 id: agents-sdk-concepts-datamap
+slug: /agents-sdk/concepts/datamap
 title: DataMap System
 sidebar_label: DataMap System
---- 
+---
 
 # DataMap Complete Guide: SWML Perspective and Development
 

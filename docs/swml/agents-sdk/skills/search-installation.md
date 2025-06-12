@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-skills-search-installation
+slug: /agents-sdk/skills/search-installation
 title: Search System Installation
 sidebar_label: Search Installation
 --- 

@@ -1,5 +1,6 @@
 ---
 id: agents-sdk-guides-cloud-functions
+slug: /agents-sdk/guides/cloud-functions
 title: Cloud Functions Guide
 sidebar_label: Cloud Functions
 --- 
