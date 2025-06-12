@@ -736,7 +736,7 @@ Provides local document search capabilities using vector similarity and keyword 
 - `tool_name` (default: "search_knowledge"): Custom name for the search tool
 - `description` (default: "Search the local knowledge base for information"): Tool description
 - `index_file` (optional): Path to local `.swsearch` index file
-- `remote_url` (optional): URL of remote search server (e.g., "http://localhost:8001")
+- `remote_url` (optional): URL of remote search server (e.g., `http://localhost:8001`)
 - `index_name` (default: "default"): Index name on remote server (for remote mode)
 - `build_index` (default: False): Auto-build index if missing
 - `source_dir` (optional): Source directory for auto-building index
