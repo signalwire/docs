@@ -6,7 +6,7 @@ export const realtimeSdkPlugin: PluginConfig = [
   "@docusaurus/plugin-content-docs",
   {
     id: "realtime-sdk",
-    path: "docs/sdks/reference/realtime-sdk",
+    path: "realtime-sdk-docs",
     routeBasePath: "sdks/reference/realtime-sdk",
     sidebarPath: require.resolve("../sidebarsConfig/relay-realtime-sidebar.ts"),
     editUrl: "https://github.com/signalwire/docs/edit/main/",
@@ -23,9 +23,14 @@ export const realtimeSdkPlugin: PluginConfig = [
       [require("../../plugins/remark-plugin-a11y-checker"), { stopOnError: false }],
       [require("../../plugins/remark-plugin-image-to-figure"), {}],
     ],
+    lastVersion: "current",
     versions: {
       current: {
         label: "v4 (Latest)",
+      },
+      "v3": {
+        label: "v3",
+        banner: 'none'
       },
     },
   } satisfies PluginOptions,

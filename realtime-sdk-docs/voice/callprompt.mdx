@@ -1,0 +1,276 @@
+---
+slug: /voice/call-prompt
+---
+
+# CallPrompt
+
+Represents a current or past prompting session in a call. 
+
+Obtain instances of this class by starting a Prompt with one of the following methods:
+
+- [`Call.prompt`](./voice-call.mdx#prompt)
+- [`Call.promptAudio`](./voice-call.mdx#promptaudio)
+- [`Call.promptRingtone`](./voice-call.mdx#promptringtone)
+- [`Call.promptTTS`](./voice-call.mdx#prompttts)
+
+#### Example
+
+Prompting for a PIN to be entered using the keypad, then waiting for the user to
+finish entering the PIN before proceeding with the next instructions.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+
+const call = await client.voice.dialPhone({
+  from: "+YYYYYYYYYY",
+  to: "+XXXXXXXXXX",
+});
+
+// Prompt for digits
+await call.promptTTS({
+  text: "Please enter your PIN",
+  digits: {
+    max: 5,
+    digitTimeout: 5,
+    terminators: "#*",
+  },
+  listen: {
+    onStarted: () => console.log("Prompt started"),
+    onUpdated: (event) => console.log("Prompt updated", event.result),
+    onEnded: async (event) => {
+      console.log("Prompt ended", event.result);
+      console.log("Users Pin", event.digits);
+      call.hangup();
+    },
+    onFailed: () => console.log("Prompt failed"),
+  }
+}).onStarted();
+```
+
+## **Properties**
+
+### confidence
+
+Confidence level for the speech recognition result (if [`type`](#type) is `"speech"`), from 0 to 100. For example, `83.2`.
+
+**Syntax:** `CallPrompt.confidence()`
+
+**Returns:** `number`
+
+---
+
+### digits
+
+The digits that have been collected (if [`type`](#type) is `"digit"`). For example, `"12345"`.
+
+**Syntax:** `CallPrompt.digits()`
+
+**Returns:** `string`
+
+---
+
+### id
+
+The unique id for this prompt.
+
+**Syntax:** `CallPrompt.id()`
+
+**Returns:** `string`
+
+---
+
+### reason
+
+Alias for [`type`](#type), in case of errors. Use this field to check the reason of the error.
+
+**Syntax:** `CallPrompt.reason()`
+
+**Returns:** `"no_match"` | `"no_input"` | `"error"`
+
+---
+
+### terminator
+
+The terminator used to complete the prompt (if [`type`](#type) is `"digit"`). For example, `"#"`.
+
+**Syntax:** `CallPrompt.terminator()`
+
+**Returns:** `string`
+
+---
+
+### text
+
+The text that has been collected (if [`type`](#type) is `"speech"`). For example, `"hello who's there"`.
+
+**Syntax:** `CallPrompt.text()`
+
+**Returns:** `string`
+
+---
+
+### type
+
+The type of this prompt.
+
+**Syntax:** `CallPrompt.type()`
+
+**Returns:** `"error"` | `"no_input"` | `"no_match"` | `"digit"` | `"speech"`
+
+
+---
+
+## **Methods**
+
+### ended
+
+▸ **ended**(): `Promise`\<[`CallPrompt`](#)>
+
+Returns a promise that is resolved only after this prompt finishes (or is stopped).
+
+#### Returns
+
+`Promise`\<[`CallPrompt`](#)>
+
+A promise that is resolves to [`CallPrompt`](#) when the prompt has been ended.
+
+#### Example
+
+```js
+const prompt = await call.promptTTS({
+  text: "Please enter your PIN",
+  digits: {
+    max: 5,
+    digitTimeout: 2,
+    terminators: "#*",
+  },
+});
+const { type, digits, terminator } = await prompt.ended();
+```
+
+---
+
+### setVolume
+
+▸ **setVolume**(`volume`): `Promise`\<[`CallPrompt`](#)>
+
+Changes the volume of the audio.
+
+#### Parameters
+
+| Name     | Type     | Description                           |
+|:---------|:---------|:--------------------------------------|
+| `volume` | `number` | Volume value between -40dB and +40dB. |
+
+#### Returns
+
+`Promise`\<[`CallPrompt`](#)>
+
+A promise that is resolves to [`CallPrompt`](#) when the volume is changed.
+
+#### Example
+
+```js
+const prompt = await call.promptTTS({
+  text: "Please enter your PIN",
+  digits: {
+    max: 5,
+    digitTimeout: 2,
+    terminators: "#*",
+  },
+});
+await prompt.setVolume(-20);
+```
+
+---
+
+### stop
+
+▸ **stop**(): `Promise`\<[`CallPrompt`](#)>
+
+Stops the prompt.
+
+#### Returns
+
+`Promise`\<[`CallPrompt`](#)>
+
+A promise that is resolves to [`CallPrompt`](#) when the prompt stops.
+
+#### Example
+
+```js
+const prompt = await call.promptTTS({
+  text: "Please enter your PIN",
+  digits: {
+    max: 5,
+    digitTimeout: 2,
+    terminators: "#*",
+  },
+});
+await prompt.stop();
+```
+
+---
+
+## **Events**
+
+### onStarted
+
+▸ **CallCollect.listen**(`{ onStarted: Callback }}`)
+
+Emitted when the prompt starts. Your event handler will receive an instance of `Promise`\<[`CallPrompt`](#)>.
+
+
+#### Parameters
+
+| Name     | Type                          | Description              |
+|:---------|:------------------------------|:-------------------------|
+| `prompt` | `Promise`\<[`CallPrompt`](#)> | The prompt that started. |
+
+---
+
+### onUpdated
+
+▸ **CallCollect.listen**(`{ onUpdated: Callback }}`)
+
+Emitted when the prompt is updated. Your event handler will receive an instance of `Promise`\<[`CallPrompt`](#)>.
+
+
+#### Parameters
+
+| Name     | Type                          | Description              |
+|:---------|:------------------------------|:-------------------------|
+| `prompt` | `Promise`\<[`CallPrompt`](#)> | The prompt that updated. |
+
+---
+
+### onFailed
+
+▸ **CallCollect.listen**(`{onFailed: Callback }}`)
+
+Emitted when the prompt fails. Your event handler will receive an instance of `Promise`\<[`CallPrompt`](#)>.
+
+
+#### Parameters
+
+| Name     | Type                          | Description             |
+|:---------|:------------------------------|:------------------------|
+| `prompt` | `Promise`\<[`CallPrompt`](#)> | The prompt that failed. |
+
+---
+
+### onEnded
+
+▸ **CallCollect.listen**(`{ onEnded: Callback }}`)
+
+Emitted when the prompt ends. Your event handler will receive an instance of `Promise`\<[`CallPrompt`](#)>.
+
+
+#### Parameters
+
+| Name     | Type                          | Description            |
+|:---------|:------------------------------|:-----------------------|
+| `prompt` | `Promise`\<[`CallPrompt`](#)> | The prompt that ended. |

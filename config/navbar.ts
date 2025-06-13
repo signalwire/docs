@@ -157,6 +157,11 @@ const navbar: NavbarItem[] = [
       },
     ],
   },
+  {
+    type: "docsVersionDropdown",
+    position: "right",
+    dropdownActiveClassDisabled: true,
+  },
 
   { to: "/blog", label: "Blog", position: "right" },
 
@@ -201,13 +206,6 @@ const navbar: NavbarItem[] = [
         "aria-label": "Discord server",
       },
     ],
-  },
-
-  {
-    type: "docsVersionDropdown",
-    position: "right",
-    docsPluginId: "realtime-sdk",
-    dropdownActiveClassDisabled: true,
   },
   {
     href: "https://signalwire.com/signin",

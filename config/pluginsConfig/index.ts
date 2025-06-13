@@ -28,7 +28,7 @@ const plugins: PluginConfig[] = [
   require.resolve("../../plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
   llmsTxtPlugin,
-  realtimeSdkPlugin,
+  realtimeSdkPlugin
 ];
 
 export default plugins;
