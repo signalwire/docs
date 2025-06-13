@@ -7,19 +7,6 @@ sidebar_label: Contexts
 
 # Contexts and Steps Guide
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Core Concepts](#core-concepts)
-- [Getting Started](#getting-started)
-- [API Reference](#api-reference)
-- [Navigation and Flow Control](#navigation-and-flow-control)
-- [Function Restrictions](#function-restrictions)
-- [Real-World Examples](#real-world-examples)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-- [Migration from POM](#migration-from-pom)
-
 ## Overview
 
 The **Contexts and Steps** system enhances traditional Prompt Object Model (POM) prompts in SignalWire AI agents by adding structured workflows on top of your base prompt. Instead of just defining a single prompt, you create workflows with explicit steps, navigation rules, and completion criteria.

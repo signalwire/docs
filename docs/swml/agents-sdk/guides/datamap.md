@@ -9,22 +9,6 @@ sidebar_label: DataMap Guide
 
 The DataMap system allows you to create SWAIG tools that integrate directly with REST APIs without requiring custom webhook endpoints. DataMap tools execute on the SignalWire server, making them simpler to deploy and manage than traditional webhook-based tools.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Basic Usage](#basic-usage)
-- [DataMap Builder Pattern](#datamap-builder-pattern)
-- [Processing Pipeline](#processing-pipeline)
-- [Variable Expansion](#variable-expansion)
-- [Webhook Configuration](#webhook-configuration)
-- [Array Processing with Foreach](#array-processing-with-foreach)
-- [Expression-Based Tools](#expression-based-tools)
-- [Error Handling](#error-handling)
-- [Helper Functions](#helper-functions)
-- [Real-World Examples](#real-world-examples)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-
 ## Overview
 
 DataMap tools provide a declarative way to define API integrations that run on SignalWire's infrastructure. Instead of creating webhook endpoints, you describe the API call and response processing using JSON configuration that gets executed serverlessly.

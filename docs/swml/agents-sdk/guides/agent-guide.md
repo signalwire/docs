@@ -7,32 +7,6 @@ sidebar_label: Agent Guide
 
 # SignalWire AI Agent Guide
 
-## Table of Contents
-- [Introduction](#introduction)
-- [Architecture Overview](#architecture-overview)
-- [Creating an Agent](#creating-an-agent)
-- [Prompt Building](#prompt-building)
-- [SWAIG Functions](#swaig-functions)
-- [Skills System](#skills-system)
-- [Multilingual Support](#multilingual-support)
-- [Agent Configuration](#agent-configuration)
-- [Dynamic Agent Configuration](#dynamic-agent-configuration)
-  - [Overview](#overview)
-  - [Setting Up Dynamic Configuration](#setting-up-dynamic-configuration)
-  - [EphemeralAgentConfig](#ephemeralagentconfig)
-  - [Request Data Access](#request-data-access)
-  - [Configuration Examples](#configuration-examples)
-  - [Use Cases](#use-cases)
-  - [Migration Guide](#migration-guide)
-  - [Best Practices](#best-practices)
-- [Advanced Features](#advanced-features)
-  - [State Management](#state-management)
-  - [SIP Routing](#sip-routing)
-  - [Custom Routing](#custom-routing)
-- [Prefab Agents](#prefab-agents)
-- [API Reference](#api-reference)
-- [Examples](#examples)
-
 ## Introduction
 
 The `AgentBase` class provides the foundation for creating AI-powered agents using the SignalWire AI Agent SDK. It extends the `SWMLService` class, inheriting all its SWML document creation and serving capabilities, while adding AI-specific functionality.
