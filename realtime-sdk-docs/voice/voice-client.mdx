@@ -1,0 +1,231 @@
+---
+title: "Client"
+sidebar_position: 1
+slug: /voice/client
+---
+
+You can use instances of this class to initiate or receive calls. Please see [Events](#events) for the full list of events you can subscribe to.
+
+## **Voice Client**
+
+### Setting up a Voice Client
+To create a `Voice` client, you will need to create a [`SignalWire Realtime-Client`](../realtime-client/index.mdx) first.
+After the `SignalWire Client` is created, you can access the `Voice` client using the `voice` namespace.
+
+
+#### Example
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice
+```
+
+---
+
+## **Methods**
+
+### dial
+
+▸ **dial**(`dialer`): `Promise`\<[`Call`](voice-call.mdx)>
+
+Makes an outbound Call and waits until it has been answered or hung up. This is an advanced method that lets you call multiple devices in parallel or series: for simpler use cases, see [dialPhone](#dialphone) and [dialSip](#dialsip).
+
+With this method you can specify a configuration of devices to call in series and/or in parallel: as soon as one device answers the call, the returned promise is resolved. You specify a configuration through a [VoiceDeviceBuilder](./voice-devicebuilder.md) object.
+
+#### Parameters
+
+| Name     | Type                                             | Description                                |
+|:---------|:-------------------------------------------------|:-------------------------------------------|
+| `dialer` | [`VoiceDeviceBuilder`](./voice-devicebuilder.md) | The Dialer specifying the devices to call. |
+
+#### Returns
+
+`Promise`\<[`Call`](voice-call.mdx)>
+
+A call object.
+
+#### Example
+
+Calls a phone number. If the number doesn't answer within 30 seconds, calls two different SIP endpoints in parallel.
+
+```js
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice
+
+const devices = new Voice.DeviceBuilder()
+  .add(Voice.DeviceBuilder.Phone({ from: "+XXXXXX", to: "+YYYYYY", timeout: 30 }))
+  .add([
+    Voice.DeviceBuilder.Sip({ from: "sip:aaa@bbb.cc", to: "sip:xxx@yyy.zz" }),
+    Voice.DeviceBuilder.Sip({ from: "sip:aaa@bbb.cc", to: "sip:ppp@qqq.rr" })
+  ]);
+
+try {
+  const call = await voiceClient.dial(devices);
+  console.log("Call answered", call);
+} catch (e) {
+  console.log("Call not answered", e);
+}
+```
+
+---
+
+### dialPhone
+
+▸ **dialPhone**(`params`): `Promise`\<[`Call`](voice-call.mdx)>
+
+Makes an outbound call to a PSTN number.
+
+#### Parameters
+
+| Name                        | Type     | Description                                                                                                                                                                                                                                               |
+| :-------------------------- | :------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `params`                    | `Object` | -                                                                                                                                                                                                                                                         |
+| `params.from?`              | `string` | The party the call is coming from. Must be a SignalWire number or SIP endpoint that you own.                                                                                                                                                              |
+| `params.maxPricePerMinute?` | `number` | The maximum price in USD acceptable for the call to be created. If the rate for the call is greater than this value, the call will not be created. If not set, all calls will be created. Price can have a maximum of four decimal places, i.e. `0.0075`. |
+| `params.timeout?`           | `number` | The time, in seconds, the call will ring before it is considered unanswered.                                                                                                                                                                              |
+| `params.to`                 | `string` | The party you are attempting to call.                                                                                                                                                                                                                     |
+| `params.listen?`            | `Object` | Object that contains Callbacks to listen for events.<br />List of Call events can be found [here](./voice-call.mdx#events).                                                                                                                               |
+
+#### Returns
+
+`Promise`\<[`Call`](voice-call.mdx)>
+
+A call object.
+
+#### Example
+
+```js
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice
+
+try {
+  const call = await voiceClient.dialPhone({
+    from: "+YYYYYYYYYY",
+    to: "+XXXXXXXXXX",
+    timeout: 30
+  });
+  console.log("Call answered.", call);
+} catch (e) {
+  console.log("Call not answered.", e);
+}
+```
+
+---
+
+### dialSip
+
+▸ **dialSip**(`params`): `Promise`\<[`Call`](voice-call.mdx)>
+
+Makes an outbound call to a SIP endpoint.
+
+#### Parameters
+
+| Name                        | Type                                   | Description                                                                                                                                                                                                                                               |
+| :-------------------------- | :------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `params`                    | `Object`                               | -                                                                                                                                                                                                                                                         |
+| `params.codecs?`            | `SipCodec[]`                           | Optional array of desired codecs in order of preference. Supported values are PCMU, PCMA, OPUS, G729, G722, VP8, H264. Default is parent leg codec(s).                                                                                                    |
+| `params.from`               | `string`                               | The party the call is coming from. Must be a SignalWire number or SIP endpoint that you own.                                                                                                                                                              |
+| `params.headers?`           | [`SipHeader`](./types.mdx#sipheader)[] | Array of [`SipHeader`](./types.mdx#sipheader) objects. Must be X- headers only, see example below.                                                                                                                                                        |
+| `params.maxPricePerMinute?` | `number`                               | The maximum price in USD acceptable for the call to be created. If the rate for the call is greater than this value, the call will not be created. If not set, all calls will be created. Price can have a maximum of four decimal places, i.e. `0.0075.` |
+| `params.timeout?`           | `number`                               | The time, in seconds, the call will ring before it is considered unanswered.                                                                                                                                                                              |
+| `params.to`                 | `string`                               | The party you are attempting to call.                                                                                                                                                                                                                     |
+| `params.webrtcMedia?`       | `boolean`                              | If true, WebRTC media is negotiated. Default is parent leg setting.                                                                                                                                                                                       |
+| `params.sessionTimeout?`    | `number`                               | Non-negative value, in seconds, to use for the SIP `Session-Expires` header. If `0` or unset, SignalWire will pick the default (typically `600`).                                                                                                         |
+| `params.listen?`            | `Object`                               | Object that contains Callbacks to listen for events.<br />List of Call events can be found [here](./voice-call.mdx#events).                                                                                                                               |
+
+
+#### Returns
+
+`Promise`\<[`Call`](voice-call.mdx)>
+
+A call object.
+
+#### Example
+
+```js
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice
+
+try {
+  const call = await voiceClient.dialSip({
+    from: "sip:xxx@yyy.zz",
+    to: "sip:ppp@qqq.rr",
+    timeout: 30,
+    headers: [
+      { name: "X-SomeKeyA", value: "SomeValueA" },
+      { name: "X-SomeKeyB", value: "SomeValueB" }
+    ]
+  });
+  console.log("Call answered.", call);
+} catch (e) {
+  console.log("Call not answered.", e);
+}
+```
+
+---
+
+
+### listen
+
+▸ **listen**(`{event: Callback }`): `Promise<Call Events>`
+
+Listens for Voice events.
+
+#### Parameters
+
+| Name            | Type       | Description                                                                                                      |
+|:----------------|:-----------|:-----------------------------------------------------------------------------------------------------------------|
+| `params`        | `Object`   | Object containing the parameters of the method.                                                                  |
+| `params.topics` | `string[]` | Topic to send the task to. Previously known as `"contexts"`.                                                     |
+| `params.EVENT`  | `Callback` | The event to listen to. List of events can be found [here](#events).<br />Example event: (E.g: `onCallReceived`) |
+
+
+#### Returns
+
+`Promise<Call Events>` - See [Call Events](#events) for the full list of events you can listen to.
+
+
+#### Example
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+const voiceClient = client.voice;
+
+await voiceClient.listen({
+  topics: ["office"],
+  onCallReceived: (call) => {
+    call.answer();
+    console.log("Call received", call);
+  }
+});
+```
+
+---
+
+## **Events**
+
+### onCallReceived {#oncallreceived}
+
+• **client.voice.listen**(`{ onCallReceived: Callback }`)
+
+Emitted when a call is received. Your event handler will be called with a [`Call`](./voice-call.mdx) object.
+
+#### Parameters
+
+| Name   | Type                       |
+|:-------|:---------------------------|
+| `call` | [`Call`](./voice-call.mdx) |

@@ -1,6 +1,6 @@
 import React from "react";
 
-export function GetListOfAvailableEventsDescription({ url, label }) {
+export function GetListOfAvailableEventsDescription({ url, label }: { url?: string | false; label?: string }) {
   if (url === false) {
     return "";
   }

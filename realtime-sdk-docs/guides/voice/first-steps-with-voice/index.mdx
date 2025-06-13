@@ -1,0 +1,216 @@
+---
+title: Making and Receiving Phone Calls
+slug: /guides/voice/first-steps-with-voice
+x-custom:
+  author: danieleds
+  tags:
+    - language:nodejs
+    - sdk:relayrealtime3
+    - sdk:relayrealtime4
+    - product:voice
+description: Learn how to get started with voice with the SignalWire Realtime SDK.
+sidebar_custom_props:
+  platform: javascript 
+---
+
+import Frame from "@site/src/components/Extras/Frame/Frame";
+
+# Making and Receiving Phone Calls
+
+import LangSwitchMessage from "@site/docs/_common/languageSwitcher.mdx";
+
+<LangSwitchMessage />
+
+This introductory guide will show you how to make and receive calls from your own Node.js application.
+
+## Obtaining and configuring a number
+
+[Log in](https://signalwire.com/signin) to your SignalWire Space. From the Phone Numbers section, you can [buy a new phone number](/platform/phone-numbers/getting-started/buying-a-phone-number). You will need at least one number to make and receive calls. After you have acquired a number, open its settings by clicking on "Edit Settings". Scroll down until you reach "Voice and Fax Settings", as shown in the next figure, and configure it to:
+
+<Language groupId="relay_version">
+  <LangItem value="relayv3">
+
+    - handle incoming calls using a Relay application,
+    - forward the call to the "office" Relay context
+
+  </LangItem>
+  <LangItem value="relayv4">
+
+    - handle incoming calls using a Relay application,
+    - forward the call to the "office" Relay topic
+
+  </LangItem>
+</Language>
+
+<Frame caption="Voice configuration setting for handling incoming calls.">
+
+![The Voice and Fax Settings pane.](@image/dashboard/relay/app-voice-handler.webP)
+
+</Frame>
+
+import TopicExplanation from "@site/docs/_common/context_topic.mdx";
+
+<TopicExplanation />
+
+## Installation of the SDK
+
+First, you need to obtain the [Realtime SDK](https://www.npmjs.com/package/@signalwire/realtime-api) from npm. From your terminal you can run the following command to install it:
+
+<Language groupId="relay_version">
+  <LangItem value="relayv3">
+
+```shell npm2yarn
+npm install --save @signalwire/realtime-api@~3
+```
+
+Then, include the package in JavaScript as follows:
+
+```js
+import { Voice } from "@signalwire/realtime-api";
+```
+
+  </LangItem>
+  <LangItem value="relayv4">
+
+```shell npm2yarn
+npm install --save @signalwire/realtime-api
+```
+
+Then, include the package in JavaScript as follows:
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+const voiceClient = client.voice;
+```
+
+  </LangItem>
+</Language>
+
+### Making your first call
+
+To make a call from Node.js you need to instantiate a Voice client, and then call one of its dialing methods.
+
+<Tabs groupId="relay_version" queryString>
+<TabItem value="relayv3" label="Relay V3">
+
+```js
+import { Voice } from "@signalwire/realtime-api";
+
+const client = new Voice.Client({
+  project: "your-project-id",
+  token: "your-api-token",
+  contexts: ["office"],
+});
+
+try {
+  const call = await client.dialPhone({
+    from: "+1xxx", // Must be a number in your SignalWire Space
+    to: "+1yyy",
+    timeout: 30,
+  });
+
+  console.log("The call has been answered!", call.id);
+} catch (e) {
+  console.error(e);
+}
+```
+
+We used the "office" context when initializing the Voice client. You use the `contexts` array in the Client constructor to indicate which group of calls you want to receive. For the moment we are not listening for incoming calls, to the context doesn't have any effect. Still, it will be useful for later, when we are going to listen for incoming calls.
+
+</TabItem>
+<TabItem value="relayv4" label="Relay V4">
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token",
+});
+
+const voiceClient = client.voice;
+
+try {
+  const call = await voiceClient.dialPhone({
+    from: "+1xxx", // Must be a number in your SignalWire Space
+    to: "+1yyy",
+    timeout: 30,
+  });
+
+  console.log("The call has been answered!", call.id);
+} catch (e) {
+  console.error(e);
+}
+```
+
+</TabItem>
+</Tabs>
+
+You also need to specify a Project ID and API token: find these in the API section of your space, as shown in the following figure. Make sure that your token has the "Voice" scope enabled.
+
+<Frame caption="You can find your Project ID and Token from the API tab in your SignalWire Space. Make sure your token has the 'Voice' scope enabled.">
+![the API tab, showing the Project ID, Space URL, and API Token.](@image/dashboard/credentials/api-credentials.webp)
+</Frame>
+
+## Receiving incoming calls
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+Once a Client is initialized, you can listen for incoming calls on the selected contexts (in our example, just "office"). For example:
+
+</LangItem>
+<LangItem value="relayv4">
+
+Once a Client is initialized, you can listen for incoming calls on the selected topics (in our example, just "office"). For example:
+
+</LangItem>
+</Language>
+
+<Tabs groupId="relay_version" queryString>
+<TabItem value="relayv3" label="Relay V3">
+
+```js
+client.on("call.received", async (call) => {
+  console.log("Call received:", call.id, call.from, call.to);
+
+  try {
+    await call.answer();
+    console.log("Inbound call answered");
+  } catch (error) {
+    console.error("Error answering inbound call", error);
+  }
+});
+```
+
+</TabItem>
+<TabItem value="relayv4" label="Relay V4">
+
+```javascript
+await voiceClient.listen({
+  topics: ["office"],
+  onCallReceived: async (call) => {
+    console.log("Call received:", call.id, call.from, call.to);
+
+    try {
+      await call.answer();
+      console.log("Inbound call answered");
+    } catch (error) {
+      console.error("Error answering inbound call", error);
+    }
+  },
+});
+```
+
+We used the "office" topic when listening to the voice client's events.
+The `topics` array is used only listen to the phone numbers that you have
+put in that specific topic from the SignalWire dashboard.
+
+</TabItem>
+</Tabs>
+
+Your event handler receives a call object, which you can use to answer the call, to access fields such as `call.from` and `call.to`, or to call additional methods (playing audio, prompting for input, transferring the call, etc.)
+
+## Next steps
+
+Congratulations! You can now make and receive calls with your Node.js application. You are now ready to explore the advanced guides in the Voice section from the left menu.

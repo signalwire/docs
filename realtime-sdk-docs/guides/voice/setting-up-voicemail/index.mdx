@@ -1,0 +1,337 @@
+---
+title: Setting Up Voicemail
+slug: /guides/voice/setting-up-voicemail
+x-custom:
+  tags:
+    - sdk:relayrealtime3
+    - sdk:relayrealtime4
+    - language:nodejs
+    - product:voice
+description: Learn how to record voicemails from your callers when you are unable to take the call.
+sidebar_custom_props:
+  platform: javascript
+---
+
+# Setting Up Voicemail
+
+import Frame from "@site/src/components/Extras/Frame/Frame";
+
+import LangSwitchMessage from "@site/docs/_common/languageSwitcher.mdx";
+
+<LangSwitchMessage />
+
+A popular and important use case is recording a voicemail from your callers when you are unable to speak with them. This guide will show how to do exactly that.
+
+In this guide we will see how to implement a voicemail using Node.js. This allows you the most flexibility in case you want to integrate voicemails with complex workflows.
+
+## Assigning a Phone Number to a Relay Context
+
+To handle calls using Node.js, you should first set up a phone number to handle incoming calls using a Relay application.
+
+Click the **Phone Numbers** tab on your lefthand side nav within your SignalWire Space, and click the specific number you would like to set up call forwarding on.
+If you don't have a number yet, now is the time to [buy one](/platform/phone-numbers/getting-started/buying-a-phone-number)!
+
+<Frame caption = "To configure your number to handle incoming calls with a Relay application, set 'Handle calls using' to 'Relay Application', then specify the name of a context (here we choose 'office').">
+
+![the Voice and Fax Settings pane.](@image/dashboard/relay/app-voice-handler.webP)
+
+</Frame>
+
+## Building the application
+
+Our phone number is now configured. Let's see how to build the voicemail with Node.js.
+
+### Installation
+
+First, you need to obtain the Realtime SDK. From your terminal you can run:
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+```shell npm2yarn
+npm install --save @signalwire/realtime-api@~3
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+```shell npm2yarn
+npm install --save @signalwire/realtime-api
+```
+
+</LangItem>
+</Language>
+
+This will install the Realtime SDK from npm into your project.
+
+### Code
+
+The first thing we need to do is to import the Realtime SDK and initialize a Voice client. We can do it like this:
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+```js
+import { Voice } from "@signalwire/realtime-api";
+
+const client = new Voice.Client({
+  project: "<project-id>",
+  token: "<api-token>",
+  contexts: ["office"],
+});
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "<project-id>",
+  token: "<api-token>",
+  topics: ["office"],
+});
+
+const voiceClient = client.voice;
+```
+
+</LangItem>
+</Language>
+
+We want to execute our logic whenever a call is received. Let's attach an
+event handler to the `call.received` event, from which we can answer the call
+and play a message:
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+```js
+client.on("call.received", async (call) => {
+  console.log("Got call", call.from, call.to);
+
+  await call.answer();
+
+  const tts = await call.playTTS({
+    text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+  });
+  await tts.waitForEnded();
+});
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+```js
+await voiceClient.listen({
+  topics: ["office"],
+  onCallReceived: async (call) => {
+    console.log("Got call", call.from, call.to);
+
+    await call.answer();
+
+    await call.playTTS({
+      text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+    });
+  },
+});
+```
+
+</LangItem>
+</Language>
+
+Right after playing the introduction message, we need to start recording. But
+before that, let's set up an event listener within the `call.received` handler
+which will notify us when the recording has ended:
+
+<Language groupId="relay_version">
+<LangItem value="relayv3">
+
+```js
+// inside the "call.received" event handler
+
+call.on("recording.ended", async (rec) => {
+  const tts = await call.playTTS({
+    text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
+  });
+  await tts.waitForEnded();
+
+  console.log("Recording URL:", rec.url);
+
+  await call.hangup();
+});
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+```js
+// inside the "call.received" event handler
+
+await call
+  .recordAudio({
+    listen: {
+      onEnded: async (rec) => {
+        console.log("Recording URL:", rec.url);
+        await call.playTTS({
+          text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
+        });
+        await call.hangup();
+      },
+    },
+  })
+  .onStarted();
+```
+
+</LangItem>
+</Language>
+
+We can finally start the recording. Since we also want the recording to be no
+more than 15 seconds long, we will set a timeout which will stop it if it didn't
+already end.
+
+<Language>
+<LangItem value="relayv3">
+
+```js
+const recording = await call.recordAudio({
+  endSilenceTimeout: 0,
+  terminators: "#",
+});
+
+// Stop the recording after 15 seconds.
+setTimeout(() => recording.stop(), 15000);
+```
+
+</LangItem>
+<LangItem value="relayv4">
+
+```js
+await call
+  .recordAudio({
+    endSilenceTimeout: 0,
+    terminators: "#",
+    listen: {
+      onStarted: async (recording) => {
+        // Stop the recording after 15 seconds.
+        setTimeout(() => recording.stop(), 15000);
+      },
+    },
+  })
+  .onStarted();
+```
+
+</LangItem>
+</Language>
+
+Putting all of the parts together, here is the full code:
+
+<details>
+<summary>index.js</summary>
+
+<Tabs groupId="relay_version" queryString>
+<TabItem value="relayv3" label="Relay V3">
+
+```js title="index.js"
+import { Voice } from "@signalwire/realtime-api";
+
+const client = new Voice.Client({
+  project: "<project-id>",
+  token: "<api-token>",
+  contexts: ["office"],
+});
+
+client.on("call.received", async (call) => {
+  console.log("Got call", call.from, call.to);
+
+  await call.answer();
+
+  const tts = await call.playTTS({
+    text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+  });
+  await tts.waitForEnded();
+
+  // Callback to be executed when the recording ends.
+  call.on("recording.ended", async (rec) => {
+    const tts = await call.playTTS({
+      text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
+    });
+    await tts.waitForEnded();
+
+    console.log("Recording URL:", rec.url);
+
+    await call.hangup();
+  });
+
+  const recording = await call.recordAudio({
+    endSilenceTimeout: 0,
+    terminators: "#",
+  });
+
+  // Stop the recording after 15 seconds.
+  setTimeout(() => recording.stop(), 15000);
+});
+
+console.log("Started.");
+```
+
+</TabItem>
+<TabItem value="relayv4" label="Relay V4">
+
+```js title="index.js"
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "<project-id>",
+  token: "<api-token>",
+  topics: ["office"],
+});
+
+const voiceClient = client.voice;
+
+await voiceClient.listen({
+  topics: ["office"],
+  onCallReceived: async (call) => {
+    console.log("Got call", call.from, call.to);
+
+    await call.answer();
+
+    await call.playTTS({
+      text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+    });
+
+    await call
+      .recordAudio({
+        endSilenceTimeout: 0,
+        terminators: "#",
+        beep: true,
+        listen: {
+          onStarted: async (recording) => {
+            setTimeout(() => recording.stop(), 15000);
+          },
+          onEnded: async (rec) => {
+            console.log("Recording URL:", rec.url);
+            await call.playTTS({
+              text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
+            });
+            await call.hangup();
+          },
+        },
+      })
+      .onStarted();
+  },
+});
+
+console.log("Started.");
+```
+
+</TabItem>
+</Tabs>
+
+</details>
+
+## Wrapping up
+
+The Realtime SDK allows you to build powerful applications with a simple API.
+You are not limited to phone calls: you can also control messaging, chat, video,
+and more. See all available options in the [Realtime SDK documentation](/sdks/reference/realtime-sdk/).
