@@ -4,9 +4,7 @@
   <div 
     className="col col--6">
 
-    Subscribers represent **registered end-users**, 
-    or internal account-holders, 
-    within the Call Fabric paradigm.
+    Subscribers are a special type of Resource that represent internal account-holders.
     
     Subscribers always use the `private` [context](/platform/call-fabric#contexts) by default, though `public` Aliases can be added.
 
