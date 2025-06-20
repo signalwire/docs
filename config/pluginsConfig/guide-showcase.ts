@@ -195,7 +195,7 @@ export const showcasePlugin: PluginConfig = [
         description: "",
         color: "#044CF6",
         reference: "Reference",
-        link: "/sdks/reference/realtime-sdk/v3/",
+        link: "/sdks/reference/realtime-sdk/v3/overview",
         category: "SDKs",
       },
       {

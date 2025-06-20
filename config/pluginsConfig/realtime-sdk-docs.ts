@@ -26,12 +26,17 @@ export const realtimeSdkPlugin: PluginConfig = [
     lastVersion: "current",
     versions: {
       current: {
-        label: "v4 (Latest)",
+        label: "v4",
+        banner: 'none'
       },
       "v3": {
         label: "v3",
         banner: 'none'
       },
+      "v2": {
+        label: "v2",
+        banner: 'unmaintained'
+      }
     },
   } satisfies PluginOptions,
 ];

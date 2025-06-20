@@ -1,15 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
-import {
-  useVersions,
-  useActiveDocContext,
-} from '@docusaurus/plugin-content-docs/client';
-import { useDocsPreferredVersion } from '@docusaurus/plugin-content-docs/client';
 import { translate } from '@docusaurus/Translate';
-import { useLocation } from '@docusaurus/router';
-import Link from '@docusaurus/Link';
+import { useVersions, useActiveDocContext } from '@docusaurus/plugin-content-docs/client';
+import { useDocsPreferredVersion } from '@docusaurus/plugin-content-docs/client';
 import type { GlobalVersion } from '@docusaurus/plugin-content-docs/client';
-import styles from './VersionBadgeDropdown.module.css';
+import NavbarItem from '@theme/NavbarItem';
+import { createVersionDropdownItems } from '../../utils/versionUtils';
+import '../../css/version-badge.css';
 
 type Props = {
   currentVersion: GlobalVersion;
@@ -17,81 +14,72 @@ type Props = {
 };
 
 export default function VersionBadgeDropdown({ currentVersion, pluginId }: Props): JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const versions = useVersions(pluginId);
   const { savePreferredVersionName } = useDocsPreferredVersion(pluginId);
-  const location = useLocation();
   const activeDocContext = useActiveDocContext(pluginId);
 
-  // Close dropdown when clicking outside
+  // Copy exact click-outside logic from DropdownNavbarItem
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+    const handleClickOutside = (
+      event: MouseEvent | TouchEvent | FocusEvent,
+    ) => {
+      if (
+        !dropdownRef.current ||
+        dropdownRef.current.contains(event.target as Node)
+      ) {
+        return;
       }
+      setShowDropdown(false);
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('focusin', handleClickOutside);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('focusin', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [dropdownRef]);
 
-  // Close dropdown on ESC key
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscKey);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
-  }, [isOpen]);
-
-  const getVersionMainDoc = (version: GlobalVersion) =>
-    version.docs.find((doc) => doc.id === version.mainDocId)!;
-
-  const getDocInVersion = (version: GlobalVersion) => {
-    const activeDoc = activeDocContext?.activeDoc;
-    if (!activeDoc) {
-      return getVersionMainDoc(version);
-    }
-    
-    // Try to find the same doc in the target version
-    const doc = version.docs.find((d) => d.id === activeDoc.id);
-    return doc ?? getVersionMainDoc(version);
-  };
+  // Create items using shared utility
+  const items = createVersionDropdownItems(
+    versions,
+    activeDocContext,
+    currentVersion,
+    savePreferredVersionName
+  );
 
   return (
-    <div className={styles.versionBadgeDropdown} ref={dropdownRef}>
+    <div
+      ref={dropdownRef}
+      className={clsx('dropdown', 'version-badge-dropdown-container', {
+        'dropdown--show': showDropdown,
+      })}>
+      {/* Original Docusaurus badge as trigger */}
       <button
-        className={clsx(
-          'badge badge--secondary',
-          styles.versionBadgeButton,
-          isOpen && styles.versionBadgeButtonActive
-        )}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
+        className="badge badge--secondary version-badge-trigger"
         aria-haspopup="true"
+        aria-expanded={showDropdown}
+        onClick={() => setShowDropdown(!showDropdown)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            setShowDropdown(!showDropdown);
+          }
+        }}
         aria-label={translate({
           id: 'theme.docs.versionBadge.label',
           message: 'Version: {version}',
           description: 'The label for the version badge dropdown button',
         }, { version: currentVersion.label })}
       >
-        <span className={styles.versionLabel}>Version: {currentVersion.label}</span>
+        <span>Version: {currentVersion.label}</span>
         <svg
-          className={clsx(styles.dropdownIcon, isOpen && styles.dropdownIconOpen)}
+          className={clsx('version-badge-dropdown-icon', showDropdown && 'version-badge-dropdown-icon-open')}
           width="12"
           height="12"
           viewBox="0 0 12 12"
@@ -108,44 +96,21 @@ export default function VersionBadgeDropdown({ currentVersion, pluginId }: Props
         </svg>
       </button>
 
-      {isOpen && (
-        <div className={styles.dropdown}>
-          <div className={styles.dropdownMenu}>
-            {versions.map((version) => {
-              const versionDoc = getDocInVersion(version);
-              const isActive = version.name === currentVersion.name;
-              
-              return (
-                <Link
-                  key={version.name}
-                  to={versionDoc.path}
-                  className={clsx(
-                    styles.dropdownItem,
-                    isActive && styles.dropdownItemActive
-                  )}
-                  onClick={() => {
-                    savePreferredVersionName(version.name);
-                    setIsOpen(false);
-                  }}
-                >
-                  <span className={styles.dropdownItemLabel}>
-                    {version.label}
-                  </span>
-                  {version.isLast && (
-                    <span className={styles.dropdownItemBadge}>
-                      {translate({
-                        id: 'theme.docs.versionBadge.latestVersion',
-                        message: 'Latest',
-                        description: 'The label for the latest version in dropdown',
-                      })}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Exact same dropdown menu structure as DropdownNavbarItem */}
+      <ul className="dropdown__menu">
+        {items.map((childItemProps, i) => (
+          <NavbarItem
+            isDropdownItem
+            activeClassName="dropdown__link--active"
+            {...childItemProps}
+            key={i}
+            onClick={() => {
+              childItemProps.onClick?.();
+              setShowDropdown(false);
+            }}
+          />
+        ))}
+      </ul>
     </div>
   );
 }
