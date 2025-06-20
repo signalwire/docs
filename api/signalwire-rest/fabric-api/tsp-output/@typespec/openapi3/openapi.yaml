@@ -1473,6 +1473,49 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SubscriberTokenRequest'
+  /subscribers/tokens/refresh:
+    post:
+      operationId: RefreshTokens_create
+      summary: Exchange a refresh token for a new subscriber access token
+      description: Exchanges a valid refresh token for a new subscriber access token and a new refresh token. The new access token is valid for 2 hours, and the new refresh token is valid for 2 hours and 5 minutes.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriberRefreshTokenResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            text/plain:
+              schema:
+                type: string
+                enum:
+                  - Not Found
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenStatusCode422'
+      tags:
+        - 'Subscribers: Tokens'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriberRefreshTokenRequest'
 security:
   - BasicAuth: []
 components:
@@ -3357,6 +3400,22 @@ components:
           type: boolean
           description: Whether the pronunciation replacement should ignore case.
       title: Pronounce object
+    RefreshTokenStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: token_expired
+            message: Token has expired.
+            attribute: refresh_token
+            url: https://developer.signalwire.com/rest/overview/error-codes#token_expired
     SIPEndpoint:
       type: object
       required:
@@ -4482,11 +4541,16 @@ components:
       type: object
       required:
         - token
+        - refresh_token
       properties:
         token:
           type: string
           description: Guest Token
           example: eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwiY2giOiJwdWMuc2lnbmFsd2lyZS5jb20iLCJ0eXAiOiJTQVQifQ..8O4EJs349q97jAcd.H4GNrC6gsWdz91ArWF9ce00Cm62iHfsrFRRUUGW3e96j9C3IphiJXvHYHTmD4qMt8czZ8cniF8c53vVAIZF-yBQibejiMxwnqW6KkLct2EJoPUf9g-wQwM0-lGGj9iPx_7yprkQekFK-7svkLcKlo1voZyavxIsWQlXByppmR_ospVx2u8jbAab0ZjKJNEnr1yPF9oNkyMAnkpkS8k8PwKaxUHBc5SGumKlexUjL3ixZDR6UOcbApVXxrB-DmQBs3otOT7hzME7oKvR-6Xy0XJ1pt4Of7MEzNBUK5Z5NMjtFiA8IqwDlNJz3I5gn8hbjSZwSMJHRJGx2DKpNKiu6fcd-3i2VwCpnKHaNUybMJ5gV3cTNfTFJQBSearCLv-7gMx6Gqy9FF_Hm2bGlfnjTQ9BCsCqXBkQ9EQD6yboi2uUhPyLmpzPqlrBc9ik0c3qR5ey5Jym_VnZXaT_S5NxjzIjLzvs33GOKiooGMsBWOm6mzTPcf398xaSErT4dF2wXwtZANou7Dt4BoTKa.DcLVYpma-iItaGhaOStu9A
+        refresh_token:
+          type: string
+          description: Refresh Token
+          example: eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwidHlwIjoiUmVmcmVzaCIsImNoIjoidGVzdHB1Yy5zaWduYWx3aXJlLmNvbSJ9..sHcQL_V1tZH2JEAh.FNKYe_49CazNthkgSphf-ov8_I2wGLGWKD6t2q7kiG0guBxBjGzpgD8Y-LM-Nu7ePRUg7Z6vBkKAvh3rjtZpkeXoRXobJ1lov9AO72l8tB9K9RLo-TnBxLDbh0BCDGWVBgGq8DOh9kzHz4Tot-_B8pHXY_bqXX5kC4UUszXCO9nhSi1a4rp6QMD_8b0Mm8pHDK9EtW8I-tfM0HPmXuPMuOnlft3hmZo3tiKN2CarWscveQPCGetufHfQJJssdHjjYup8USAX0gJM8dpsV7FpF9fxfpy4ZU7N9MJXgSYJM5cPrxpLLx3Lj291egob14jDkn7kZQpv7jbCtsGyYxC7HAi1FgGr_sw3AeGaf2esGCkaeE11MxL05_kwdiNYBSOaHqaY62kOzu5pIdfTKQekOogCS1fgiyBgisBZeSIEBWWF.neE9KnL5AzS165dXFXUqhQ
     SubscriberInviteTokenCreateRequest:
       type: object
       required:
@@ -4543,6 +4607,29 @@ components:
           format: uri
           description: Link to the next page
           example: https://{space_name}.signalwire.com/api/fabric/resources/subscribers?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+    SubscriberRefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          description: The refresh token previously issued alongside a subscriber access token. This token is used to request a new access token.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    SubscriberRefreshTokenResponse:
+      type: object
+      required:
+        - token
+        - refresh_token
+      properties:
+        token:
+          type: string
+          description: A newly generated subscriber access token, valid for 2 hours.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh_token:
+          type: string
+          description: A new refresh token, valid for 2 hours and 5 minutes.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     SubscriberRequest:
       type: object
       required:
@@ -4776,6 +4863,7 @@ components:
       required:
         - subscriber_id
         - token
+        - refresh_token
       properties:
         subscriber_id:
           allOf:
@@ -4787,6 +4875,11 @@ components:
             - $ref: '#/components/schemas/uuid'
           description: The token that is associated with the subscriber.
           example: eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwidHlwIjoiU0FUIn0..HahMYxqt4uI14qSH.daMTBR53lfEfEFiVAhr0pPSRqZhEod_YzavoG9-4ieiRQvl8GtP3FFNx0VLfkJqNcjUNbAaiKrEMnfOtCnQjiq1Kn0Iq90MYdM00QJ7cTaQ88vfbqdE92p-d4oDeg6z_vAsgrFgEobmrlDQndKxCWOD921iYxyLP0vqNaokN3kIM06iAWu_UpnTYEeR1l068xhK2xb6P9wbI2FDKFQoMgCdbjvABF7RRyaEzUoaQ5_Wj53YO6PFYuYcPbqMhdtvSSQiK3Nw6bFer2OfFs6s2RTukRGsocgC5Q7pwQwzYky-YgrPCb-pVAJajVSXUJrayvOi8-TeyCpICW4zTeJa5icZ380cWtafUH4rEB_FOJciJf0BCy48ajbz0NE121uBl2mqA1HE0_mQA53UqVjbrbE9hVOfnN4KpwOfULhIjx54tIekJQgG-aK2AYsLPCDNhuSpHvdwJcTM0Gzy3mS2veyaDV8q2qN5F_F9OThTQzcfy.AXzVNrJc_pGVPsticsVM0w
+        refresh_token:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Refresh token.
+          example: eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwidHlwIjoiUmVmcmVzaCIsImNoIjoidGVzdHB1Yy5zaWduYWx3aXJlLmNvbSJ9..sHcQL_V1tZH2JEAh.FNKYe_49CazNthkgSphf-ov8_I2wGLGWKD6t2q7kiG0guBxBjGzpgD8Y-LM-Nu7ePRUg7Z6vBkKAvh3rjtZpkeXoRXobJ1lov9AO72l8tB9K9RLo-TnBxLDbh0BCDGWVBgGq8DOh9kzHz4Tot-_B8pHXY_bqXX5kC4UUszXCO9nhSi1a4rp6QMD_8b0Mm8pHDK9EtW8I-tfM0HPmXuPMuOnlft3hmZo3tiKN2CarWscveQPCGetufHfQJJssdHjjYup8USAX0gJM8dpsV7FpF9fxfpy4ZU7N9MJXgSYJM5cPrxpLLx3Lj291egob14jDkn7kZQpv7jbCtsGyYxC7HAi1FgGr_sw3AeGaf2esGCkaeE11MxL05_kwdiNYBSOaHqaY62kOzu5pIdfTKQekOogCS1fgiyBgisBZeSIEBWWF.neE9KnL5AzS165dXFXUqhQ
     SubscriberTokenStatusCode422:
       type: object
       required:

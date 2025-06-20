@@ -4,6 +4,7 @@ import "./addresses";
 import "./subscribers";
 import "./subscriber-guest-token";
 import "./subscriber-invite-token";
+import "./subscriber-refresh-token";
 import "./swml-webhook";
 import "./swml-webhook-addresses";
 import "./ai-agent";
