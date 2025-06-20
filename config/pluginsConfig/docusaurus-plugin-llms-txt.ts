@@ -8,8 +8,8 @@
 */
 
 import { PluginConfig } from '@docusaurus/types';
-import { PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
-
+// @ts-ignore - ESM/CJS compatibility issue
+import type { PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
 export const llmsTxtPlugin: PluginConfig = [
   "@signalwire/docusaurus-plugin-llms-txt",
   {
@@ -56,6 +56,7 @@ export const llmsTxtPlugin: PluginConfig = [
       includeDocs: true,
       relativePaths: false,
       enableMarkdownFiles: true,
+      enableLlmsFullTxt: true,
       routeRules: [],
     }
   } satisfies PluginOptions
