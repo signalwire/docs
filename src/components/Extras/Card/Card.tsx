@@ -10,6 +10,10 @@ export interface CardPropsBase<T> {
    */
   title?: string;
   /**
+   * Description text displayed below the title.
+   */
+  description?: string;
+  /**
    * Icon next to the title.
    */
   titleIcon?: ReactNode;
@@ -48,6 +52,7 @@ export type CardProps<T extends ElementType> = CardPropsBase<T> &
 
 export function Card<T extends ElementType = "div">({
   title,
+  description,
   icon,
   image,
   className,
@@ -92,6 +97,11 @@ export function Card<T extends ElementType = "div">({
           <h2 className={`${styles.title} ${icon ? styles.titleWithIcon : ""}`}>
             {title} {titleIcon ? titleIcon : null}
           </h2>
+        )}
+        {description && (
+          <p className={styles.description}>
+            {description}
+          </p>
         )}
         <span className={`${styles.content} ${!title ? styles.contentNoTitle : ""}`}>
           {children}

@@ -127,7 +127,7 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "RELAY Realtime Server SDK",
-        to: "/sdks/reference/realtime-sdk/relay-v4",
+        to: "/sdks/reference/realtime-sdk/",
       },
       { type: "html", value: '<hr class="dropdown-separator">' },
       {
@@ -156,6 +156,11 @@ const navbar: NavbarItem[] = [
         to: "/sdks",
       },
     ],
+  },
+  {
+    type: "docsVersionDropdown",
+    position: "right",
+    dropdownActiveClassDisabled: true,
   },
 
   { to: "/blog", label: "Blog", position: "right" },
@@ -202,7 +207,6 @@ const navbar: NavbarItem[] = [
       },
     ],
   },
-
   {
     href: "https://signalwire.com/signin",
     label: "Dashboard",

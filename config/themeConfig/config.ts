@@ -19,6 +19,7 @@ const config: ThemeConfig = {
 
   footer: footerItems,
   docs: {
+    versionPersistence: "localStorage",
     sidebar: {
       autoCollapseCategories: true,
       hideable: true,
