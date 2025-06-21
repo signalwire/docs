@@ -3,10 +3,10 @@ title: Forwarding Texts to Email
 slug: /guides/messaging/forwarding-texts-to-email
 x-custom:
   ported_from_readme: true
-  repo: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS%20Relay%20V4
+  repo: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
   tags:
     - language:nodejs
-    - sdk:relayrealtime4
+    - sdk:relayrealtime3
     - product:messaging
 description: Learn how to forward texts to an email address using the SignalWire Realtime SDK.
 sidebar_custom_props:
@@ -14,8 +14,9 @@ sidebar_custom_props:
 ---
 
 [buy-one]: /platform/phone-numbers/getting-started/buying-a-phone-number
-[github-1]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS%20Relay%20V4
-[github-repo]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS%20Relay%20V4
+[github-1]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
+[github-repo-1]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
+[github-repo]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
 [mailgun-1]: https://www.mailgun.com/
 [mailgun-api-1]: https://www.mailgun.com/
 [navigating-your-signalwire-space-2]: /platform/dashboard/get-started/explore
@@ -45,7 +46,7 @@ To do so, go to the "Resources" section from your sidebar, and create a new Rela
 
 ![Relay Application resource selector with cXML highlighted.](@image/dashboard/resources/add-new-relay-application.png)
 
-When configuring the Relay Application, set the topic to "office" (to match what we have in the code).
+When configuring the Relay Application, set the context to "office" (to match what we have in the code).
 
 <NewLegacy />
 
@@ -66,7 +67,7 @@ want to configure. In the `Inbound Message Settings` section, assign your relay 
 You don't need to create a new resource for your call.
 
 Simply open the settings for the number you want to configure, and under "**Inbound Message Settings**", 
-choose to handle incoming messages using "Relay Application", and set the topic to "office" to match the code.
+choose to handle incoming messages using "Relay Application", and set the context to "office" to match the code.
 
 ![legacy UI relay application configuration](@image/dashboard/legacy/number-message-config-relay.png)
 
@@ -112,46 +113,42 @@ This code is quite simple. We will create a Node.js script, listen for incoming 
 Then we connect to the SignalWire RELAY Realtime API:
 
 ```javascript
-import "dotenv/config";
-import { SignalWire } from "@signalwire/realtime-api";
+require("dotenv").config();
+let { Messaging } = require("@signalwire/realtime-api");
 
-const swClient = await SignalWire({
+const swClient = new Messaging.Client({
   project: process.env.PROJECT_ID,
   token: process.env.API_TOKEN,
-  topics: ["office"],
+  contexts: ["office"],
 });
-
-let messageClient = swClient.messaging;
 ```
 
 Finally, we set an event listener for incoming SMS messages which will trigger a network call to Mailgun to send an email with the SMS message and details:
 
-```js
-await messageClient.listen({
-  topics: ["office"],
-  onMessageReceived: async (message) => {
-    let date = new Date().toISOString();
-    let body = message.body;
-    let from = message.from;
-    let to = message.to;
-    let media = message.media;
-    let data = {
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_TO,
-      subject: "Incoming Message to " + to,
-      text: `At ${date} you received a message from ${from} to ${to}. The message body was: '${body}'. The included media was: ${media}`,
-    };
+```javascript
+swClient.on("message.received", (message) => {
+  let date = new Date().toISOString();
+  let body = message.body;
+  let from = message.from;
+  let to = message.to;
+  let media = message.media;
+  let data = {
+    from: process.env.EMAIL_FROM,
+    to: process.env.EMAIL_TO,
+    subject: "Incoming Message to " + to,
+    text: `At ${date} you received a message from ${from} to ${to}. The message body was: '${body}'. 
+    The included media was: ${media}`,
+  };
 
-    mgClient.messages
-      .create(process.env.MAILGUN_DOMAIN, data)
-      .then((res) => {
-        console.log(data);
-        console.log(res);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  },
+  mgClient.messages
+    .create(process.env.MAILGUN_DOMAIN, data)
+    .then((res) => {
+      console.log(data);
+      console.log(res);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
 });
 ```
 
@@ -161,6 +158,6 @@ When dealing with SMS messages on a large scale, you may want to convert them in
 
 ### Resources
 
-- [GitHub Repo][github-repo]
+- [GitHub Repo][github-repo-1]
 - [Mailgun API][mailgun-api-1]
 - [RELAY Realtime SDK][relay-realtime-sdk-1]

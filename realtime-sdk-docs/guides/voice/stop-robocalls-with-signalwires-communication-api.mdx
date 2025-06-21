@@ -33,43 +33,11 @@ sidebar_custom_props:
 
 # Stopping Robocalls with a CAPTCHA - Node.js
 
-<Language groupId="relay_version">
-<LangItem value="relayv4">
-
 :::info This guide is using Relay V4
 
-This guide is available for Relay V2 and for Relay V4. You are currently viewing the guide for **Relay V4**. To switch to the older
-guide (which isn't maintained anymore), please use the selection field below:
-
-<LangSwitch
-  groupId="relay_version"
-  groupIds={[
-    { label: "Relay V4", value: "relayv4" },
-    { label: "Relay V2", value: "relayv2" },
-  ]}
-/>
+This guide demonstrates how to build a robocall protection service using the latest version of the SignalWire Realtime SDK.
 
 :::
-
-</LangItem>
-<LangItem value="relayv2">
-
-:::warning This guide is using the older, **unmaintained** Relay version
-
-Unless you have strong reason for using this version, please use the latest version instead.
-
-<LangSwitch
-  groupId="relay_version"
-  groupIds={[
-    { label: "Relay V4", value: "relayv4" },
-    { label: "Relay V2", value: "relayv2" },
-  ]}
-/>
-
-:::
-
-</LangItem>
-</Language>
 
 Robocalling and spam calls have been increasing in number over the past few years. Only in the US, there were 165.1 million robocalls placed in 2020, an average of 14.1 per person, including children and people who do not have a phone! SignalWire can help with its communication technology, which allows us to easily create a robocall protection service.
 
@@ -97,22 +65,6 @@ As with all SignalWire scripts, you will need your API credentials (**SignalWire
 
 The application uses [node-persist][node-persist], a simple file-based database, to keep track of flagged numbers and automatically reject calls. In a production application, you would maybe use a different database such as PostgreSQL. Every phone number is saved and remembered, so any callers who you want to receive calls from will automatically get through the second time they dial-in. Spammers, on the other hand, will just be sent to have a chat with Lenny!
 
-<Language groupId= "relay_version">
-<LangItem value="relayv2">
-
-Lastly, you will also need to have the [SignalWire Relay SDK][signalwire-relay-sdk] installed.
-
-:::caution Remember
-
-The application database is persistent, so you will have to remove the `.node-persist` folder in the directory to reset the database if you would like to test multiple times with the same number, or your call will be handled automatically as a spammer or a human depending on how you responded the first time.
-
-:::
-
-Find the code for this application on [GitHub][github]!
-
-</LangItem>
-<LangItem value="relayv4">
-
 Lastly, you will also need to have the [SignalWire Relay SDK][signalwire-relay-sdk-1] installed.
 
 :::caution Remember
@@ -122,9 +74,6 @@ The application database is persistent, so you will have to remove the `.node-pe
 :::
 
 Find the code for this application on [GitHub][github-1]!
-
-</LangItem>
-</Language>
 
 ## Configuring the Code
 
@@ -171,44 +120,6 @@ The possible paths that a call can take are defined in index.js in the form of a
              +---> LENNY ----+    (lenny.js)
 ```
 
-<Language groupId= "relay_version">
-<LangItem value="relayv2">
-
-Right after the application is started, we create a Relay Consumer to connect with SignalWire:
-
-```js
-const consumer = new RelayConsumer({
-  project: process.env.SIGNALWIRE_PROJECT_ID,
-  token: process.env.SIGNALWIRE_API_TOKEN,
-  contexts: [process.env.SIGNALWIRE_CONTEXT],
-
-  onIncomingCall: onIncomingCallHandler,
-});
-
-consumer.run();
-```
-
-Whenever someone calls a number which we have associated to the same context specified in `SIGNALWIRE_CONTEXT`, the Relay Consumer will call our `onIncomingCallHandler` function. In there, we first answer the call:
-
-```js
-const answerResult = await call.answer();
-```
-
-We start recording:
-
-```js
-const recordAction = await call.recordAsync({
-  direction: "both",
-  initial_timeout: 10,
-  end_silence_timeout: 0,
-  stereo: true,
-});
-console.log("Recording the call to " + recordAction.url);
-```
-
-</LangItem>
-<LangItem value="relayv4">
-
 Right after the application is started, we create a Relay Client to connect with SignalWire:
 
 ```js
@@ -249,9 +160,6 @@ await call
   .onStarted();
 ```
 
-</LangItem>
-</Language>
-
 And we go into the `START` state. From there, is the caller is not known yet (i.e., is not in our db), we will switch to the `CAPTCHA` state.
 
 ### The CAPTCHA
@@ -265,40 +173,6 @@ await call.playTTS({
 ```
 
 Then we generate two digits at random, and we prompt the user for the sum of those numbers:
-
-<Language groupId="relay_version">
-<LangItem value="relayv2">
-
-```js
-const digit1 = Math.floor(Math.random() * 10);
-const digit2 = Math.floor(Math.random() * 10);
-const expectedAnswer = digit1 + digit2;
-
-const result = await call.promptTTS({
-  type: "both", // Collect both digits and speech
-  digits_max: 2, // Max digits to collect
-  digit_timeout: 1.0, // Timeout in seconds between each digit
-  digits_terminators: "#", // DTMF digit that will end the recording
-  end_silence_timeout: 1.0, // How much silence to wait for end of speech.
-  speech_hints: ["denoise=true", ...Array(19).keys()], // Array of expected phrases to detect.
-  text: "What is " + digit1 + " plus " + digit2 + "?", // Our TTS prompt
-});
-```
-
-At this point the user will hear, for example: "What is 3 plus 9?". They can answer either by speaking, or by using the keypad. We find the answer in the `result` variable:
-
-```js
-if (result.result.trim() == expectedAnswer) {
-  await call.playTTS({
-    text: "That is correct. You are probably a human, enjoy your call!",
-  });
-  storage.set(call.from, { isHuman: true });
-  return true;
-}
-```
-
-</LangItem>
-<LangItem value="relayv4">
 
 ```js
 const digit1 = Math.floor(Math.random() * 10);
@@ -331,9 +205,6 @@ if (result.digits.trim() == expectedAnswer) {
   return true;
 }
 ```
-
-</LangItem>
-</Language>
 
 ### Transfering the Call
 

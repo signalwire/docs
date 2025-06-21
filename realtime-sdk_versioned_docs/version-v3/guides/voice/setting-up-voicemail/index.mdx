@@ -3,7 +3,7 @@ title: Setting Up Voicemail
 slug: /guides/voice/setting-up-voicemail
 x-custom:
   tags:
-    - sdk:relayrealtime4
+    - sdk:relayrealtime3
     - language:nodejs
     - product:voice
 description: Learn how to record voicemails from your callers when you are unable to take the call.
@@ -22,14 +22,14 @@ A popular and important use case is recording a voicemail from your callers when
 
 In this guide we will see how to implement a voicemail using Node.js. This allows you the most flexibility in case you want to integrate voicemails with complex workflows.
 
-## Assigning a Phone Number to a Relay Topic
+## Assigning a Phone Number to a Relay Context
 
 To handle calls using Node.js, you should first set up a phone number to handle incoming calls using a Relay application.
 
 Click the **Phone Numbers** tab on your lefthand side nav within your SignalWire Space, and click the specific number you would like to set up call forwarding on.
 If you don't have a number yet, now is the time to [buy one][buy-one]!
 
-<Frame caption = "To configure your number to handle incoming calls with a Relay application, set 'Handle calls using' to 'Relay Application', then specify the name of a topic (here we choose 'office').">
+<Frame caption = "To configure your number to handle incoming calls with a Relay application, set 'Handle calls using' to 'Relay Application', then specify the name of a context (here we choose 'office').">
 
 ![the Voice and Fax Settings pane.](@image/dashboard/relay/app-voice-handler.webP)
 
@@ -44,7 +44,7 @@ Our phone number is now configured. Let's see how to build the voicemail with No
 First, you need to obtain the Realtime SDK. From your terminal you can run:
 
 ```shell npm2yarn
-npm install --save @signalwire/realtime-api
+npm install --save @signalwire/realtime-api@~3
 ```
 
 This will install the Realtime SDK from npm into your project.
@@ -54,15 +54,13 @@ This will install the Realtime SDK from npm into your project.
 The first thing we need to do is to import the Realtime SDK and initialize a Voice client. We can do it like this:
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { Voice } from "@signalwire/realtime-api";
 
-const client = await SignalWire({
+const client = new Voice.Client({
   project: "<project-id>",
   token: "<api-token>",
-  topics: ["office"],
+  contexts: ["office"],
 });
-
-const voiceClient = client.voice;
 ```
 
 We want to execute our logic whenever a call is received. Let's attach an
@@ -70,38 +68,35 @@ event handler to the `call.received` event, from which we can answer the call
 and play a message:
 
 ```js
-await voiceClient.listen({
-  topics: ["office"],
-  onCallReceived: async (call) => {
-    console.log("Got call", call.from, call.to);
+client.on("call.received", async (call) => {
+  console.log("Got call", call.from, call.to);
 
-    await call.answer();
+  await call.answer();
 
-    await call.playTTS({
-      text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
-    });
-  },
+  const tts = await call.playTTS({
+    text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+  });
+  await tts.waitForEnded();
 });
 ```
 
-Right after playing the introduction message, we need to start recording. In Relay V4, we can set up event listeners directly in the recording call:
+Right after playing the introduction message, we need to start recording. But
+before that, let's set up an event listener within the `call.received` handler
+which will notify us when the recording has ended:
 
 ```js
 // inside the "call.received" event handler
 
-await call
-  .recordAudio({
-    listen: {
-      onEnded: async (rec) => {
-        console.log("Recording URL:", rec.url);
-        await call.playTTS({
-          text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
-        });
-        await call.hangup();
-      },
-    },
-  })
-  .onStarted();
+call.on("recording.ended", async (rec) => {
+  const tts = await call.playTTS({
+    text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
+  });
+  await tts.waitForEnded();
+
+  console.log("Recording URL:", rec.url);
+
+  await call.hangup();
+});
 ```
 
 We can finally start the recording. Since we also want the recording to be no
@@ -109,18 +104,13 @@ more than 15 seconds long, we will set a timeout which will stop it if it didn't
 already end.
 
 ```js
-await call
-  .recordAudio({
-    endSilenceTimeout: 0,
-    terminators: "#",
-    listen: {
-      onStarted: async (recording) => {
-        // Stop the recording after 15 seconds.
-        setTimeout(() => recording.stop(), 15000);
-      },
-    },
-  })
-  .onStarted();
+const recording = await call.recordAudio({
+  endSilenceTimeout: 0,
+  terminators: "#",
+});
+
+// Stop the recording after 15 seconds.
+setTimeout(() => recording.stop(), 15000);
 ```
 
 Putting all of the parts together, here is the full code:
@@ -129,47 +119,43 @@ Putting all of the parts together, here is the full code:
 <summary>index.js</summary>
 
 ```js title="index.js"
-import { SignalWire } from "@signalwire/realtime-api";
+import { Voice } from "@signalwire/realtime-api";
 
-const client = await SignalWire({
+const client = new Voice.Client({
   project: "<project-id>",
   token: "<api-token>",
-  topics: ["office"],
+  contexts: ["office"],
 });
 
-const voiceClient = client.voice;
+client.on("call.received", async (call) => {
+  console.log("Got call", call.from, call.to);
 
-await voiceClient.listen({
-  topics: ["office"],
-  onCallReceived: async (call) => {
-    console.log("Got call", call.from, call.to);
+  await call.answer();
 
-    await call.answer();
+  const tts = await call.playTTS({
+    text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+  });
+  await tts.waitForEnded();
 
-    await call.playTTS({
-      text: "Please leave a message with your name and number at the beep. Press the pound key when finished.",
+  // Callback to be executed when the recording ends.
+  call.on("recording.ended", async (rec) => {
+    const tts = await call.playTTS({
+      text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
     });
+    await tts.waitForEnded();
 
-    await call
-      .recordAudio({
-        endSilenceTimeout: 0,
-        terminators: "#",
-        beep: true,
-        listen: {
-          onStarted: async (recording) => {
-            setTimeout(() => recording.stop(), 15000);
-          },
-          onEnded: async (rec) => {
-            console.log("Recording URL:", rec.url);
-            await call.playTTS({
-              text: "Thank you for your message. A member of our team will contact you shortly. Goodbye!",
-            });
-            await call.hangup();
-          },
-        },
-      })
-      .onStarted();
-  },
+    console.log("Recording URL:", rec.url);
+
+    await call.hangup();
+  });
+
+  const recording = await call.recordAudio({
+    endSilenceTimeout: 0,
+    terminators: "#",
+  });
+
+  // Stop the recording after 15 seconds.
+  setTimeout(() => recording.stop(), 15000);
 });
 
 console.log("Started.");
