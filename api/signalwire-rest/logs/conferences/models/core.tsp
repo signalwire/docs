@@ -4,14 +4,12 @@
 
 model Conference {
   @doc("Unique identifier for the conference.")
-  id: string;
   @example("b9028451-b1d3-4690-b5d3-37b19d25f573")
+  id: string;
 
   @doc("Creation timestamp.")
-  created_at: string;
-
-  @doc("Last updated timestamp.")
-  updated_at: string;
+  @example(utcDateTime.fromISO("2025-03-11T01:49:49.630Z"))
+  created_at: utcDateTime;
 }
 
 model VideoRoomSessionConference extends Conference {
@@ -40,12 +38,12 @@ model VideoRoomSessionConference extends Conference {
   locked: boolean;
 
   @doc("Started at date of the conference.")
-  @example("2025-03-11T01:49:51.069Z")
-  started_at: string;
+  @example(utcDateTime.fromISO("2025-03-11T01:49:51.069Z"))
+  started_at: utcDateTime;
 
   @doc("Ended at date of the conference.")
-  @example("2025-03-11T01:50:55.752Z")
-  ended_at: string;
+  @example(utcDateTime.fromISO("2025-03-11T01:50:55.752Z"))
+  ended_at: utcDateTime;
 
   @doc("Total charge amount of the conference.")
   @example("0.0")
