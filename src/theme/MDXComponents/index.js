@@ -23,6 +23,7 @@ import { PreviewCardGroup, PreviewCard } from "../../components/Extras/PreviewCa
 import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 import ReleaseCard from "../../components/Blog/ReleaseCard";
 import Tables from "../../components/Tables";
+import APIBadge from "../../components/APIBadge";
 
 export default {
   ...MDXComponents,
@@ -59,5 +60,6 @@ export default {
   GuidesList,
   GuidesListMirror,
   ReleaseCard,
-  Tables
+  Tables,
+  APIBadge
 };
