@@ -1,0 +1,580 @@
+---
+title: The SignalWire Client
+sidebar_position: 0
+slug: /signalwire-client/client
+---
+
+[IncomingCallHandlers]: #incomingcallhandlers
+[access token]: /sdks/browser-sdk/signalwire-client#authentication
+
+# The SignalWire Client
+
+The SignalWire Client provides access to SignalWire's services on the browser. It provides
+methods to handle incoming calls, dial to addresses and to register devices for notifications.
+
+## **Instantiation**
+
+The SignalWire client is instantiated using the `SignalWire` function.
+If you're including the `@signalwire/js` dependency as a script in HTML,
+the `SignalWire` function is a property of the `SignalWire` global variable
+that the script sets. So you would call it as
+`window.SignalWire.SignalWire( ...params)` (or simply `SignalWire.SignalWire`).
+
+```html
+<script type="text/javascript" src="https://cdn.signalwire.com/@signalwire/js"></script>
+<script>
+  async function main() {
+    const client = await SignalWire.SignalWire({
+      token: "<TOKEN>",
+    });
+  }
+</script>
+```
+
+If you installed `@signalwire/js` from npm, use it as follows:
+
+```javascript
+import { SignalWire } from "@signalwire/js";
+
+async function main() {
+  const client = await SignalWire({
+    token: "<TOKEN>",
+  });
+}
+```
+
+If you want to use it in a React or a React Native project, we also have a community library
+which takes care of the React-specific implementation details. You can use the
+library directly by installing the `@signalwire-community/react` (for React)
+and the `@signalwire-community/react-native` (for React native) from npm.
+
+```jsx
+import { useSignalWire } from "@signalwire-community/react";
+
+export default function App() {
+  const client = useSignalWire({
+    token: "<TOKEN>",
+  });
+}
+```
+
+## **Parameters**
+
+▸ **SignalWire**(`options`): `Promise<SignalWireContract>`
+
+| Name                           | Type                     | Required? | Description                                                             |
+| :----------------------------- | :----------------------- | :-------- | :---------------------------------------------------------------------- |
+| **`options.token`**            | `string`                 | Required  | The [access token][access token] for the subscriber                                   |
+|                                |                          |           |
+| `options.rootElement`          | `HTMLElement`            | Optional  | The HTML container element where the SDK will display the video stream. |
+| `options.incomingCallHandlers` | [`IncomingCallHandlers`] | Optional  | Callback functions for when a call is received                          |
+| `options.userVariables`        | `Record<string, any>`    | Optional  | Arbitrary variables that are transparent to FreeSwitch                  |
+
+:::tip
+
+You can manage the DOM yourself by not specifying a `rootElement` here and using the [`buildVideoElement`](/sdks/browser-sdk/signalwire-client/utils#buildvideoelement) function instead.
+
+:::
+
+## **Example**
+
+The following code in demonstrate how you can instantiate a SignalWire client.
+The `token` is received through one of the [Authentication][access token]
+mechanisms discussed above.
+
+<Tabs>
+<TabItem label="Vanilla JS" value="vjs">
+
+```html
+<html>
+  <body>
+    <script type="text/javascript" src="https://cdn.signalwire.com/@signalwire/js"></script>
+
+    <script>
+      async function main() {
+        const client = await SignalWire.SignalWire({
+          token: "<TOKEN>",
+        });
+
+        const conversations = await client.conversation.getConversations();
+        console.log(conversations);
+
+        const addresses = await client.address.getAddresses();
+        console.log(addresses);
+      }
+      main();
+    </script>
+  </body>
+</html>
+```
+
+</TabItem>
+<TabItem label="React (community)" value="React">
+
+```jsx
+import { useSignalWire } from "@signalwire-community/react";
+
+// If you were using React Native, you'd import the same hook from
+// the package `@signalwire-community/react-native`. Like so:
+// import { useSignalWire } from "@signalwire-community/react-native";
+import { useEffect } from "react";
+
+export default function App() {
+  const client = useSignalWire({
+    token: "<TOKEN>",
+  });
+
+  useEffect(() => {
+    if (!client) return; // client is not initialized yet
+
+    async function log() {
+      const conversations = await client.conversation.getConversations();
+      console.log(conversations);
+
+      const addresses = await client.address.getAddresses();
+      console.log(addresses);
+    }
+    log(); //useEffect doesn't directly support async effects; thus a subfunction
+  }, [client]);
+
+  return <></>;
+}
+```
+
+</TabItem>
+
+</Tabs>
+
+## **Properties**
+
+### httpHost
+
+• `Readonly` **httpHost**: `string`
+
+Returns the URL of the host that the client will use to make HTTP requests (like querying the
+list of addresses or conversations).
+
+#### Example
+
+```javascript
+console.log(client.httpHost());
+// fabric.signalwire.com
+```
+
+## **Methods**
+
+### dial
+
+▸ **dial**(`{to: string, nodeId ?: string}`): `Promise<Call>`
+
+Dials to the address specified in the `to` parameter, and returns a `Call` object if successful.
+
+#### Parameters
+
+| Name          | Type          | Description                                                   |
+| :------------ | :------------ | :------------------------------------------------------------ |
+| `to`          | `string`      | The address of the subscriber to dial (like `/private/user1`) |
+| `rootElement` | `HTMLElement` | The HTML container element to inject the Call into.           |
+
+:::tip
+
+You can manage the DOM yourself by not specifying a `rootElement` here and using the [`buildVideoElement`](/sdks/browser-sdk/signalwire-client/utils#buildvideoelement) function instead.
+
+:::
+
+Also accepts all [CallOptions] parameters. The [CallOptions] parameters passed when `dial`ing will override any
+[CallOptions] parameters passed during [instantiation].
+
+For example: if the `rootElement` was set during [client instantiation](#instantiation),
+the video call will be injected into that container. But if a different `rootElement` is passed when invoking `dial`,
+the call is injected into that `rootElement`.
+
+[CallOptions]: #calloptions
+[Instantiation]: #instantiation
+
+#### Returns
+
+Promise to a Call object that describes the ongoing call, and provides handles for controlling it.
+
+### online
+
+▸ **online**(`options`): `Promise<Call>`
+
+Set the client to be online so it can receive call invites via WebRTC.
+The call invites can be accepted or rejected as per user input.
+
+#### Parameters
+
+| Name                           | Type                   | Description                                    |
+| :----------------------------- | :--------------------- | :--------------------------------------------- |
+| `options`                      | `object`               | -                                              |
+| `options.incomingCallHandlers` | [IncomingCallHandlers] | Callback functions for when a call is received |
+
+{/* #### Response */}
+
+{/* TODO: Document Call object */}
+
+#### Example
+
+```javascript
+// Receive calls using push notifications
+client.online({
+  incomingCallHandlers: {
+    all: __incomingCallHandler,
+  },
+});
+
+// Function to handle the incoming call notification and stores the invite
+window.__incomingCallHandler = (notification) => {
+  if (
+    !window.__invite ||
+    window.__invite.details.callID !== notification.invite.details.callID
+  ) {
+    // Store call invite
+    window.__invite = notification.invite;
+  }
+
+  // Trigger UI update here to convey the ringing state
+};
+
+// Function to answer the call
+window.answer = async () => {
+  // Accept the call invite
+  const call = await window.__invite.accept({
+    rootElement: document.getElementById("rootElement"),
+  });
+
+  // Trigger UI update here to convey the connected state
+};
+
+// Function to reject the call
+window.reject = async () => {
+  await window.__invite.reject();
+
+  // Trigger UI update here to convey the ready state
+};
+```
+
+### offline
+
+▸ **offline**(): `void`
+
+Set the client to be offline so it doesn't receive call invites via WebRTC.
+
+### getSubscriberInfo
+
+▸ **getSubscriberInfo**(): `void`
+
+Get information about the subscriber that is currently logged in.
+
+```js
+const client = SignalWire({token: /* the access token of the currently logged in user */})
+console.log(await client.getSubscriberInfo())
+```
+
+```json
+{
+  "id": "0bc4b6fe-f388-4a6b-bee3-56096e9420ac",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "display_name": "John Doe",
+  "job_title": "Engineer",
+  "time_zone": "PST",
+  "country": "US",
+  "region": "East",
+  "company_name": "Example Inc",
+  "push_notification_key": "bm90aGluZyBpbnRlcmVzdGluZyBoZXJlOyk=",
+  "app_settings": {
+    "display_name": "Cool Application",
+    "scopes": ["read", "write"]
+  }
+}
+```
+
+### registerDevice
+
+▸ **registerDevice**(`options`): `Promise<`[`Response`](#response-for-registerdevice-json)`>`
+
+Register a device for receiving SignalWire notifications related to the registering subscriber.
+
+#### Parameters
+
+| Name                  | Type                              | Description                                                                                |
+| :-------------------- | :-------------------------------- | :----------------------------------------------------------------------------------------- |
+| `options`             | `object`                          |
+| `options.deviceToken` | `string`                          | The token you receive from the device after getting notification permission from the user. |
+| `options.deviceType`  | `"iOS" \| "Android" \| "Desktop"` | The address type to filter for. Possible values: `subscriber`, `room`, `app`, `call`.      |
+
+#### Response for RegisterDevice (JSON)
+
+The method call returns a promise to a JSON object with the following fields:
+
+| Name                    | Type                              | Description                                                                                                                                   |
+| :---------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                    | `string`                          | ID of the current device registration. Use this when sending a request to unregister this device.                                             |
+| `device_token`          | `string`                          | Echo of the`options.deviceToken` option that was sent while registering.                                                                      |
+| `device_type`           | `"iOS" \| "Android" \| "Desktop"` | Echo of the `options.deviceType` option that was sent while registering.                                                                      |
+| `device_name`           | `null`                            | Not yet implemented                                                                                                                           |
+| `push_notification_key` | `string`                          | SignalWire only sends encrypted push notifications. When you receive them, use this key to decode them ([Details](/sdks/browser-sdk/signalwire-client/push-notifications)) |
+| `date_registered`       | `string`                          | The date string when the server registered this device                                                                                        |
+
+#### Example
+
+```javascript
+await client.registerDevice({ deviceToken: "XYZ", deviceType: "Desktop" });
+```
+
+```json
+{
+  "id": "222rr8b2-9070-4383-af17-e48b97e900a0",
+  "device_token": "XYZ",
+  "device_name": null,
+  "device_type": "Desktop",
+  "push_notification_key": "qMdif...fZzz",
+  "date_registered": "2024-02-27T12:46:42Z"
+}
+```
+
+### unregisterDevice
+
+▸ **registerDevice**(`{id:string}`): `Promise<{}>`
+
+Cancels the registration of the device mentioned by its ID.
+
+#### Parameters
+
+| Name | Type     | Description                                                                                        |
+| :--- | :------- | :------------------------------------------------------------------------------------------------- |
+| `id` | `string` | The ID of the device that you need to unregister. This ID is returned when registering the device. |
+
+#### Returns
+
+Returns empty object when successful. Throws error with the server's error when unsuccessful.
+
+#### Example
+
+```javascript
+const device = await client.registerDevice({ deviceToken: "XYZ", deviceType: "Desktop" });
+// commit `device.id` and `device.push_notification_key` to a persistent storage like localStorage or session or file
+// ...
+
+// When the time comes to "log out" or stop getting notifications:
+await client.unregisterDevice({ id: device.id });
+```
+
+### connect
+
+▸ **connect**()
+
+Connects to the WebSocket client. SignalWire manages the WebSocket connection
+automatically in most cases, so you'll only need to use `connect` in the rare edge
+cases when you need to manually manage the connection.
+
+### disconnect
+
+▸ **disconnect**()
+
+Disconnects from the WebSocket client. SignalWire manages the WebSocket connection
+automatically in most cases.
+
+#### Returns
+
+Nothing
+
+### handlePushNotification
+
+▸ **handlePushNotification**(`payload`): `Promise<Call>`
+
+Creates the call based on the push notification that the device received.
+
+Dials to the address specified in the `to` parameter, and returns a `Call` object if successful.
+If the `rootElement` was set during [client instantiation](#instantiation),
+the video call will be injected into that container.
+
+#### Parameters
+
+| Name      | Type     | Description                           |
+| :-------- | :------- | :------------------------------------ |
+| `payload` | `object` | The contents of the push notification |
+
+The exact format of Push Notification you receive will vary depending from
+Android to iOS to Web. But it will always contain the following information:
+
+| Name                   | Type     | Description                                                      |
+| :--------------------- | :------- | :--------------------------------------------------------------- |
+| `encryption_type`      | `string` | Type of encryption used (`'aes_256_gcm'` or `'none'`)            |
+| `notification_uuid`    | `string` | UUID of the push notification                                    |
+| `with_video`           | `string` | Indicates whether the call includes video (`"true" \| "false"`)  |
+| `incoming_caller_name` | `string` | Name of the incoming caller                                      |
+| `incoming_caller_id`   | `string` | ID of the incoming caller                                        |
+| `invite`               | `string` | Invitation (base 64 encoded, compressed, and possibly encrypted) |
+| `title`                | `string` | Title of the call                                                |
+| `type`                 | `string` | Type of notification (`'call_invite'`)                           |
+| `iv`                   | `string` | The initialization vector of the encryption (base 64)            |
+| `tag`                  | `string` | The tag info for the encryption (base 64)                        |
+| `version`              | `string` | The version of the push notification received                    |
+
+In addition to this, you are required to add a `decrypted` field which has the decrypted SDP invite.
+To decrypt the encrypted invite, use the encryption key that was sent while calling `registerDevice`
+method. The [Push Notifications](/sdks/browser-sdk/signalwire-client/push-notifications) reference goes through this in detail.
+
+#### Returns
+
+Promise to a JavaScript object with the following attributes:
+
+| Name           | Type     | Description                                                        |
+| :------------- | :------- | :----------------------------------------------------------------- |
+| `resultType`   | `string` | a resultType of `"inboundCall"` signifies that a call was received |
+| `resultObject` | `Call`   | The Call object                                                    |
+
+Unlike with the `dial` method, the `Call` object here has not been started.
+To accept and start the call, use `Call.answer()` and to reject the call, use `Call.hangup()`.
+
+### updateToken
+
+▸ **updateToken**(token:`string`): `Promise<void>`
+
+Update the auth token being used by the client.
+For example, in case when the old token is about to expire and you have
+refreshed the token through OAuth2.
+
+#### Parameters
+
+| Name    | Type     | Description                                        |
+| :------ | :------- | :------------------------------------------------- |
+| `token` | `string` | The new token that the client should start to use. |
+
+#### Returns
+
+Returns empty object when successful. Throws error with the server's error when unsuccessful.
+
+#### Example
+
+```javascript
+import { SignalWire } from "@signalwire/js";
+
+async function main() {
+  const client = await SignalWire({
+    token: "<TOKEN>",
+    onRefreshToken: () => {
+      let newToken = refreshToken(); // this function should refresh token as per OAuth2 protocol
+      client.updateToken(newToken);
+    },
+  });
+}
+```
+
+## **Namespaces**
+
+In addition to the ones listed above, certain additional properties and methods have been separated into their own namespaces for
+organization. This includes the [`Address`] namespace, the [`Conversation`] namespace and the [`Chat`] namespace.
+
+The namespaced methods and properties live inside their own separate objects, and can be accessed as demonstrated in the example below:
+
+```js
+client.address.getAddresses();
+client.chat.getMessages();
+client.conversation.getConversations();
+```
+
+[`Address`]: /sdks/browser-sdk/signalwire-client/client/address
+[`Chat`]: /sdks/browser-sdk/signalwire-client/client/chat
+[`Conversation`]: /sdks/browser-sdk/signalwire-client/client/conversation
+
+import DocCardList from "@theme/DocCardList";
+
+<DocCardList />
+
+## **Type Aliases**
+
+### IncomingCallHandlers
+
+Ƭ **IncomingCallHandlers**: `Object`
+
+Use this object to assign callback functions which get invoked when a call is received.
+
+| Name               | Type                                     | Required? | Description                                                                 |
+| :----------------- | :--------------------------------------- | :-------- | :-------------------------------------------------------------------------- |
+| `all`              | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Callback for calls received either as a push notification or from websocket |
+| `pushNotification` | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Callback for calls received via push notification (overrides `all`)         |
+| `websocket`        | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Callback for calls received via websocket (overrides `all`)                 |
+
+[`IncomingCallNotification`]: #incomingcallnotification
+
+### IncomingCallNotification
+
+Ƭ **IncomingCallNotification**: `Object`
+
+This is the type of object that is passed into the [IncomingCallHandlers] callback function with the description of the call and controls to accept or reject them.
+
+[IncomingCallHandlers]: #incomingcallhandlers
+
+| Name             | Type                                                        | Description                                      |
+| :--------------- | :---------------------------------------------------------- | :----------------------------------------------- |
+| `invite`         | object                                                      | -                                                |
+| `invite.details` | [IncomingInvite](#incominginvite)                           | The details of the invite.                       |
+| `invite.accept`  | `(`[`CallOptions`]`)=>Promise<`[`CallFabricRoomSession`]`>` | Invoke this function to accept the incoming call |
+| `invite.reject`  | `()=>Promise<void>`                                         | Invoke this function to reject the incoming call |
+
+[`CallOptions`]: #calloptions
+[`CallFabricRoomSession`]: #callfabricroomsession
+
+### IncomingInvite
+
+Ƭ **IncomingInvite**: `Object`
+
+| Name                | Type                                | Description                                                                 |
+| :------------------ | :---------------------------------- | :-------------------------------------------------------------------------- |
+| `source`            | `"websocket"`\|`"pushNotification"` |                                                                             |
+| `callID`            | `string`                            | Unique ID of the incoming call                                              |
+| `sdp`               | `string`                            | The encrypted payload documented in the [push notification payload] section |
+| `caller_id_name`    | `string`                            | Name of the caller                                                          |
+| `caller_id_number`  | `string`                            | ID or number of the caller                                                  |
+| `callee_id_name`    | `string`                            | Name of the callee                                                          |
+| `callee_id_number`  | `string`                            | ID or number of the callee                                                  |
+| `display_direction` | `string`                            | Direction of the call                                                       |
+| `nodeId`            | `string`                            | The node from where the call was received                                   |
+
+[push notification payload]: /sdks/browser-sdk/signalwire-client/push-notifications#payload
+
+### CallOptions
+
+Ƭ **CallOptions**: `Object`
+
+| Name            | Type                                   | Required? | Description                                                                                          |
+| :-------------- | :------------------------------------- | :-------- | :--------------------------------------------------------------------------------------------------- |
+| `rootElement`   | `HTMLElement`                          | Optional  | The HTML container element where the SDK will display the video stream.                              |
+| `audio`         | `boolean` \| [`MediaTrackConstraints`] | Optional  | Media track constraints for audio. Passing `true` uses browser defaults, and `false` disables audio. |
+| `video`         | `boolean` \| [`MediaTrackConstraints`] | Optional  | Media track constraints for video. Passing `true` uses browser defaults, and `false` disables video. |
+| `disableUdpIceServers` | `boolean`                      | Optional  | Disables the ICE UDP transport policy.                                                                      |
+| `userVariables` | `Record<string, any>`                  | Optional  | Arbitrary variables that are transparent to FreeSwitch                                               |
+
+[`MediaStreamConstraints`]: #mediastreamconstraints
+
+### MediaStreamConstraints
+
+Ƭ **MediaStreamConstraints**: `Object`
+
+| Name               | Type                                   | Required? | Description                                                                                          |
+| :----------------- | :------------------------------------- | :-------- | :--------------------------------------------------------------------------------------------------- |
+| `audio`            |                                        | Optional  | Media track constraints for audio. Passing `true` uses browser defaults, and `false` disables audio. |
+| `video`            | `boolean` \| [`MediaTrackConstraints`] | Optional  | Media track constraints for video. Passing `true` uses browser defaults, and `false` disables video. |
+| `peerIdentity`     | `string`                               | Optional  | Peer Identity                                                                                        |
+| `preferCurrentTab` | `boolean`                              | Optional  | Whether to prefer current tab for the call                                                           |
+
+[`MediaTrackConstraints`]: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+
+### CallFabricRoomSession
+
+Ƭ **CallFabricRoomSession**: `Object` extends [`RoomSession`]
+
+{/* TODO: Acutally extends CallFabricRoomSessionConnection. */}
+
+| Name     | Type                                   | Description                                                                                     |
+| :------- | :------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| `start`  | `()=>void`                             | Starts the call.                                                                                |
+| `answer` | `boolean` \| [`MediaTrackConstraints`] | Answers the call (only works if the CallFabricRoomSession was a result of an incoming call).    |
+| `hangup` | `(id?)=>void`                          | Ends the ongoing call by default. If the id of an `RTCPeer` is passed, hangs up that `RTCPeer`. |
+
+[`RoomSession`]: /sdks/browser-sdk/video/room-session

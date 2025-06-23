@@ -213,7 +213,7 @@ export const showcasePlugin: PluginConfig = [
         description: "",
         color: "#30f803",
         reference: "Reference",
-        link: "/sdks/relay-browser-sdk/",
+        link: "/sdks/browser-sdk/",
         category: "SDKs",
       },
       {

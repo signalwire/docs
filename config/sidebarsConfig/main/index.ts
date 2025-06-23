@@ -13,7 +13,7 @@
 
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 import homeSidebar from "./home-sidebar";
-import clientSdksSidebar from "./client-sdk-sidebar";
+import sdksSidebar from "./client-sdk-sidebar";
 import apiSidebar from "./rest-api-sidebar";
 import swmlTechRefSidebar from "./swml-sidebar";
 import compatibilityAPI from "./compatibility-api-sidebar";
@@ -21,7 +21,7 @@ import cantinaSidebar from "./cantina-sidebar";
 
 const mainSidebars: SidebarsConfig = {
     ...homeSidebar,
-    ...clientSdksSidebar,
+    ...sdksSidebar,
     ...apiSidebar,
     ...swmlTechRefSidebar,
     ...compatibilityAPI,

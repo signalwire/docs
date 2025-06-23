@@ -1,10 +1,10 @@
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
-const clientSdksSidebar: SidebarsConfig = {
-  clientSdksSidebar: [
+const sdksSidebar: SidebarsConfig = {
+  sdksSidebar: [
     {
       type: "category",
-      label: "Overview",
+      label: "SDKs",
       collapsible: false,
       collapsed: false,
       className: "menu-category",
@@ -19,13 +19,13 @@ const clientSdksSidebar: SidebarsConfig = {
       items: [
         {
           type: "link",
-          href: "/sdks/relay-browser-sdk",
+          href: "/sdks/browser-sdk",
           label: "RELAY Browser SDK",
         },
         {
           type: "link",
           href: "/sdks/relay-realtime-sdk",
-          label: "RELAY Realtime SDK (Node.js)",
+          label: "RELAY Realtime SDK",
         },
         {
           type: "doc",
@@ -38,57 +38,8 @@ const clientSdksSidebar: SidebarsConfig = {
           label: "SWML",
         },
       ],
-    },
-    {
-      type: "category",
-      label: "SDK Reference (previous versions)",
-      collapsible: false,
-      collapsed: false,
-      className: "menu-category",
-      items: [
-        {
-          type: "link",
-          label: "RELAY Browser SDK v2",
-          href: "https://docs.signalwire.com/reference/relay-sdk-js",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (React Native)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-react-native",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (C#)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-dotnet",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (Python)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-python",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (PHP)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-php",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (Go)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-go",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (Ruby)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-ruby",
-        },
-        {
-          type: "link",
-          label: "RELAY SDK (Node.js, deprecated)",
-          href: "https://docs.signalwire.com/reference/relay-sdk-nodejs",
-        },
-      ],
-    },
+    }
   ],
 };
 
-export default clientSdksSidebar;
+export default sdksSidebar;

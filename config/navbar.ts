@@ -123,7 +123,7 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "RELAY Browser SDK",
-        to: "/sdks/relay-browser-sdk/",
+        to: "/sdks/browser-sdk/",
       },
       {
         label: "RELAY Realtime Server SDK",

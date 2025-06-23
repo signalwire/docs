@@ -19,7 +19,7 @@ import { markdownPrinterPlugin } from "./markdown-printer";
 import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
 import { relayRealtimeSdkPlugin } from "./relay-realtime-sdk-docs";
-import { relayBrowserSdkPlugin } from "./relay-browser-sdk-docs";
+import { relayBrowserSdkPlugin } from "./browser-sdk-docs";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
