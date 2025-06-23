@@ -1,8 +1,8 @@
 ---
 id: agents-sdk-skills-search-installation
 slug: /sdks/agents-sdk/skills/search-installation
-title: Search System Installation
-sidebar_label: Search Installation
+title: Search Installation
+sidebar_label: Installation
 --- 
 
 # SignalWire Agents Search Installation Guide

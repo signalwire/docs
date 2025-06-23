@@ -1,11 +1,11 @@
 ---
 id: agents-sdk-guides-cli-testing
 slug: /sdks/agents-sdk/guides/cli-testing
-title: CLI Testing Guide
-sidebar_label: CLI Testing
+title: Test CLI
+sidebar_label: CLI reference
 --- 
 
-# SWAIG CLI Testing Tool Guide
+# Test CLI
 
 A comprehensive command-line tool for testing SignalWire AI Agents SWAIG functions and SWML generation locally with complete environment simulation and real API execution.
 
@@ -21,8 +21,6 @@ The tool automatically detects function types, provides appropriate execution en
 ## Key Features
 
 - **`--exec` Syntax**: Modern CLI-style function arguments
-- **Agent Auto-Selection**: Automatically chooses agent when only one exists in file
-- **Agent Discovery**: Lists available agents when no arguments provided
 - **Auto-Detection**: Automatically detects webhook vs DataMap functions - no manual flags needed
 - **Complete DataMap Simulation**: Full processing including URL templates, responses, and fallbacks
 - **SWML Testing**: Generate and test SWML documents with realistic fake call data
@@ -36,15 +34,6 @@ The tool automatically detects function types, provides appropriate execution en
 - **Verbose Debugging**: Detailed execution tracing for both function types
 - **Flexible Data Modes**: Choose between minimal, comprehensive, or custom post_data
 - **Serverless Environment Simulation**: Complete platform simulation for Lambda, CGI, Cloud Functions, and Azure Functions with environment variable management
-
-## Installation
-
-Install as part of the signalwire_agents package:
-
-```bash
-pip install -e .
-swaig-test --help
-```
 
 ## Quick Start
 

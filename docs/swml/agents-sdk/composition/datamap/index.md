@@ -1,74 +1,8 @@
----
-id: agents-sdk-architecture
-slug: /sdks/agents-sdk/concepts/architecture
-title: AI Agents SDK Architecture
-sidebar_label: Architecture
----
-
-# SignalWire AI Agents SDK Architecture
-
-## Overview
-
-The SignalWire AI Agents SDK provides a Python framework for building, deploying, and managing AI agents as microservices. These agents are self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform. The SDK simplifies the creation of custom AI agents by handling common functionality like HTTP routing, prompt management, and tool execution.
-
-## Core Components
-
-### Class Hierarchy
-
-The SDK is built around a clear class hierarchy:
-
-- **SWMLService**: The foundation class providing SWML document creation and HTTP service capabilities
-  - **AgentBase**: Extends SWMLService with AI agent-specific functionality
-    - **Custom Agent Classes**: User implementations like SimpleAgent
-    - **Prefab Agents**: Ready-to-use agent types for common scenarios
-
-### Key Components
-
-1. **SWML Document Management**
-   - Schema validation for SWML documents
-   - Dynamic SWML verb creation and validation
-   - Document rendering and serving
-
-2. **Prompt Object Model (POM)**
-   - Structured format for defining AI prompts
-   - Section-based organization (Personality, Goal, Instructions, etc.)
-   - Programmatic prompt construction and manipulation
-
-3. **SWAIG Function Framework**
-   - Tool definition and registration system
-   - Parameter validation using JSON schema
-   - Security tokens for function execution
-   - Handler registry for function execution
-
-4. **HTTP Routing**
-   - FastAPI-based web service
-   - Endpoint routing for SWML, SWAIG, and other services
-   - Custom routing callbacks for dynamic endpoint handling
-   - SIP request routing for voice applications
-   - Basic authentication
-
-5. **State Management**
-   - Session-based state tracking
-   - Persistence options (file system, memory)
-   - State lifecycle hooks (startup, hangup)
-
-6. **Prefab Agents**
-   - Ready-to-use agent implementations
-   - Customizable configurations
-   - Extensible designs for common use cases
-
-7. **Skills System**
-   - Modular skill architecture for extending agent capabilities
-   - Automatic skill discovery from directory structure
-   - Parameter-configurable skills for customization
-   - Dependency validation (packages and environment variables)
-   - Built-in skills (web_search, datetime, math)
-
-## DataMap Tools
+# DataMap
 
 The DataMap system provides a declarative approach to creating SWAIG tools that integrate with REST APIs without requiring custom webhook infrastructure. DataMap tools execute on SignalWire's server infrastructure, simplifying deployment and eliminating the need to expose webhook endpoints.
 
-### Architecture Overview
+## Architecture Overview
 
 DataMap tools follow a pipeline execution model on the SignalWire server:
 
@@ -84,7 +18,7 @@ graph LR
     D --> H[Template<br/>Rendering]
 ```
 
-### Core Components
+## Core Components
 
 1. **Builder Pattern**: Fluent interface for constructing data_map configurations
    ```python
@@ -109,7 +43,7 @@ graph LR
    - Global data: `${global_data.key}`
    - Metadata: `${meta_data.call_id}`
 
-### Tool Types
+## Tool Types
 
 The system supports different tool patterns:
 
@@ -138,7 +72,7 @@ The system supports different tool patterns:
    )
    ```
 
-### Integration with Agent Architecture
+## Integration with Agent Architecture
 
 DataMap tools integrate seamlessly with the existing agent architecture:
 
@@ -156,7 +90,7 @@ graph LR
 2. **Execution**: Tools run on SignalWire infrastructure, not agent servers
 3. **Response**: Results are returned to the agent as function responses
 
-### Configuration Architecture
+## Configuration Architecture
 
 DataMap configurations use a hierarchical structure:
 
@@ -184,7 +118,7 @@ This structure separates:
 - **Processing Logic**: Expressions, webhooks, array handling
 - **Output Definition**: Response templates and actions
 
-### Benefits and Trade-offs
+## Benefits and Trade-offs
 
 **Benefits:**
 - No webhook infrastructure required

@@ -1,14 +1,15 @@
 ---
 id: agents-sdk-skills-search
 slug: /sdks/agents-sdk/skills/search
-title: Search System
-sidebar_label: Search System
+title: About the vector search system
+sidebar_label: Guide
 --- 
 
 # Local Search System
 
-The SignalWire Agents SDK includes a powerful local search system that provides DataSphere-compatible search functionality without external dependencies. This system uses advanced query preprocessing, local embeddings, and hybrid search techniques to enable agents to search through document collections offline.
-
+The SignalWire Agents SDK includes a powerful local search system that provides 
+[DataSphere](/rest/signalwire-rest/guides/datasphere/curl-usage/)-compatible search functionality without external dependencies. 
+This system uses advanced query preprocessing, local embeddings, and hybrid search techniques to enable agents to search through document collections offline.
 
 ## Overview
 
