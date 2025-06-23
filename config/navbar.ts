@@ -13,62 +13,6 @@ const navbar: NavbarItem[] = [
   /// Guides -------- ///
   { to: "/guides", label: "Guides", position: "left" },
 
-  /// Platform Dropdown -------- ///
-  {
-    to: "/platform",
-    label: "Platform",
-    position: "right",
-    type: "dropdown",
-    items: [
-      {
-        label: "Call Fabric",
-        to: "/platform/call-fabric",
-      },
-      {
-        href: "https://signalwire.com/signin",
-        label: "SignalWire Space",
-        className: "dashboard-navbar-link",
-        "aria-label": "Open SignalWire Space",
-      },
-      {
-        label: "Dashboard",
-        to: "/platform/dashboard",
-      },
-      {
-        label: "Integrations",
-        to: "/platform/integrations",
-      },
-      {
-        label: "Phone Numbers",
-        to: "/platform/phone-numbers",
-      },
-      {
-        label: "Platform Basics",
-        to: "/platform/basics",
-      },
-    ],
-  },
-  /// SWML Dropdown -------- ///
-  {
-    type: "dropdown",
-    label: "SWML",
-    position: "left", 
-    items: [
-      {
-        label: "SWML Guides",
-        to: "/swml/guides",
-      },
-      {
-        label: "Method Reference",
-        to: "/swml/methods",
-      },
-      {
-        label: "Agents SDK",
-        to: "/sdks/agents-sdk",
-      },
-    ],
-  },
-
   /// Products Dropdown -------- ///
   {
     type: "dropdown",
@@ -146,6 +90,10 @@ const navbar: NavbarItem[] = [
       {
         label: "REST API",
         to: "/rest/signalwire-rest/overview/",
+      },
+      {
+        label: "Agents SDK (New!)",
+        to: "/sdks/agents-sdk",
       },
       {
         label: "RELAY Browser SDK",
@@ -228,6 +176,49 @@ const navbar: NavbarItem[] = [
       },
     ],
   },
+
+/// Platform Dropdown -------- ///
+{
+  to: "/platform",
+  label: "Platform",
+  position: "right",
+  type: "dropdown",
+  items: [
+    {
+      href: "https://signalwire.com/signin",
+      label: "SignalWire Space",
+      className: "dashboard-navbar-link",
+      "aria-label": "Open SignalWire Dashboard",
+    },
+    {
+      href: "https://status.signalwire.com",
+      label: "Platform Status",
+      "aria-label": "Platform Status",
+    },
+    { type: "html", value: '<hr class="dropdown-separator">' },
+    {
+      label: "Call Fabric",
+      to: "/platform/call-fabric",
+    },
+    {
+      label: "Dashboard Documentation",
+      to: "/platform/dashboard",
+    },
+    {
+      label: "Integrations",
+      to: "/platform/integrations",
+    },
+    {
+      label: "Phone Numbers",
+      to: "/platform/phone-numbers",
+    },
+    {
+      label: "Platform Basics",
+      to: "/platform/basics",
+    },
+  ],
+},
+
   {
     href: 'https://github.com/signalwire/docs',
     position: 'right',
