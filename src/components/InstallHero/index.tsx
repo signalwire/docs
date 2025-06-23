@@ -94,7 +94,7 @@ export default function InstallHero({
           )}
           {docsUrl && (
             <a href={docsUrl} className={styles.link} target="_blank" rel="noopener noreferrer">
-              <FaBook /> Documentation
+              <FaBook /> SDK Reference
             </a>
           )}
           {gettingStartedUrl && (
