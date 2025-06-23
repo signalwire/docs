@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-guides-agent
-slug: /agents-sdk/guides/agent-guide
+slug: /sdks/agents-sdk/guides/agent-guide
 title: Agent Guide
 sidebar_label: Agent Guide
 --- 
@@ -782,7 +782,7 @@ python -m signalwire_agents.cli.build_search ./knowledge \
     --verbose
 ```
 
-For complete documentation on the search system, see [Local Search System](/agents-sdk/skills/search).
+For complete documentation on the search system, see [Local Search System](/sdks/agents-sdk/skills/search).
 
 ### Skill Management
 
@@ -992,7 +992,7 @@ class DynamicSkillAgent(AgentBase):
 
 4. **Test skills in isolation**: Create simple test scripts to verify skill functionality
 
-For more detailed information about the skills system architecture and advanced customization, see the [Skills System Overview](/agents-sdk/skills).
+For more detailed information about the skills system architecture and advanced customization, see the [Skills System Overview](/sdks/agents-sdk/skills).
 
 ## Multilingual Support
 
@@ -2605,7 +2605,7 @@ swaig-test multi_agent_file.py --agent-class AgentA --simulate-serverless lambda
 swaig-test multi_agent_file.py --agent-class AgentB --simulate-serverless cgi --cgi-host example.com --exec function2
 ```
 
-For more detailed testing documentation, see the [CLI Testing Guide](/agents-sdk/guides/cli-testing).
+For more detailed testing documentation, see the [CLI Testing Guide](/sdks/agents-sdk/guides/cli-testing).
 
 ## Examples
 

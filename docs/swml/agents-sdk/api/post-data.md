@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-reference-post-data
-slug: /agents-sdk/api/post-data
+slug: /sdks/agents-sdk/api/post-data
 title: POST Data Reference
 sidebar_label: POST Data
 --- 

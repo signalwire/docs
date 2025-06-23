@@ -1,5 +1,5 @@
 ---
-slug: /agents-sdk/guides/developer-guide
+slug: /sdks/agents-sdk/guides/developer-guide
 ---
 
 - **Latency**: `<`100ms end-to-end for voice

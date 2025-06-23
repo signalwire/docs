@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-guides-cli-testing
-slug: /agents-sdk/guides/cli-testing
+slug: /sdks/agents-sdk/guides/cli-testing
 title: CLI Testing Guide
 sidebar_label: CLI Testing
 --- 

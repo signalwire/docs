@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-concepts-datamap
-slug: /agents-sdk/concepts/datamap
+slug: /sdks/agents-sdk/concepts/datamap
 title: DataMap System
 sidebar_label: DataMap System
 ---

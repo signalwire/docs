@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-concepts
-slug: /agents-sdk/concepts
+slug: /sdks/agents-sdk/concepts
 title: AI Agents SDK Concepts
 sidebar_label: Core Concepts
 ---

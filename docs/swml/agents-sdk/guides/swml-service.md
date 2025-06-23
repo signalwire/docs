@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-guides-swml-service
-slug: /agents-sdk/guides/swml-service
+slug: /sdks/agents-sdk/guides/swml-service
 title: SWML Service Guide
 sidebar_label: SWML Service
 --- 

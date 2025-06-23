@@ -64,7 +64,7 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "Agents SDK",
-        to: "/agents-sdk",
+        to: "/sdks/agents-sdk",
       },
     ],
   },

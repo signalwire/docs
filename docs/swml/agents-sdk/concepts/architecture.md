@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-architecture
-slug: /agents-sdk/concepts/architecture
+slug: /sdks/agents-sdk/concepts/architecture
 title: AI Agents SDK Architecture
 sidebar_label: Architecture
 ---

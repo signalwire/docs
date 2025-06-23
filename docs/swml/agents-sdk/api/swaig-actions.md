@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-reference-swaig-actions
-slug: /agents-sdk/api/swaig-actions
+slug: /sdks/agents-sdk/api/swaig-actions
 title: SWAIG Actions Reference
 sidebar_label: SWAIG Actions
 --- 

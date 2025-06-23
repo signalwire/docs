@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-skills-search
-slug: /agents-sdk/skills/search
+slug: /sdks/agents-sdk/skills/search
 title: Search System
 sidebar_label: Search System
 --- 
