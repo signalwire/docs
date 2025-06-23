@@ -4,7 +4,7 @@ const sdksSidebar: SidebarsConfig = {
   sdksSidebar: [
     {
       type: "category",
-      label: "SDKs",
+      label: "Overview",
       collapsible: false,
       collapsed: false,
       className: "menu-category",
@@ -20,23 +20,13 @@ const sdksSidebar: SidebarsConfig = {
         {
           type: "link",
           href: "/sdks/browser-sdk",
-          label: "RELAY Browser SDK",
+          label: "Browser SDK",
         },
         {
           type: "link",
           href: "/sdks/realtime-sdk",
-          label: "RELAY Realtime SDK",
-        },
-        {
-          type: "doc",
-          id: "sdks/reference/video-conference-appkit/index",
-          label: "Video Conference AppKit",
-        },
-        {
-          type: "ref",
-          id: "swml/get-started/index",
-          label: "SWML",
-        },
+          label: "Realtime SDK",
+        }
       ],
     }
   ],
