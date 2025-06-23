@@ -6,26 +6,21 @@
 *
 * Docusaurus technical reference: https://docusaurus.io/docs/sidebar
 *
-* This file is used to import all the sidebar configurations for the site.
-* Each sidebar configuration is imported from the sidebar files in the /config/sidebarsConfig folder.
-* These sidebar configurations are then added to the `sidebars` object.
-* The `sidebars` object is then exported at the bottom of the file.
-* The `sidebars` object is then imported into the `/config/presets.js` file. 
+* This file is used to import all the sidebar configurations for the main docs instance.
+* Each sidebar configuration is imported from the sidebar files in the main folder.
 */
 
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
-import homeSidebar from './home-sidebar';
-import clientSdksSidebar from './client-sdk-sidebar';
-import browserSdkTechRefSidebar from './relay-browser-sidebar';
-import apiSidebar from './rest-api-sidebar';
-import swmlTechRefSidebar from './swml-sidebar';
-import compatibilityAPI from './compatibility-api-sidebar';
-import cantinaSidebar from './cantina-sidebar';
+import homeSidebar from './main/home-sidebar';
+import clientSdksSidebar from './main/client-sdk-sidebar';
+import apiSidebar from './main/rest-api-sidebar';
+import swmlTechRefSidebar from './main/swml-sidebar';
+import compatibilityAPI from './main/compatibility-api-sidebar';
+import cantinaSidebar from './main/cantina-sidebar';
 
 const sidebars: SidebarsConfig = {
   ...homeSidebar,
   ...clientSdksSidebar,
-  ...browserSdkTechRefSidebar,
   ...apiSidebar,
   ...swmlTechRefSidebar,
   ...compatibilityAPI,

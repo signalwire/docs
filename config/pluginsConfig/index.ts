@@ -12,13 +12,14 @@
  * Docusaurus technical reference: https://docusaurus.io/docs/api/docusaurus-config#plugins
  */
 
-import { PluginConfig } from "@docusaurus/types";
+import { PluginConfig, PluginOptions } from "@docusaurus/types";
 import { openapiPlugin } from "./docusaurus-plugin-openapi-docs";
 import { sassPlugin } from "./sass";
 import { markdownPrinterPlugin } from "./markdown-printer";
 import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
-import { realtimeSdkPlugin } from "./realtime-sdk-docs";
+import { relayRealtimeSdkPlugin } from "./relay-realtime-sdk-docs";
+import { relayBrowserSdkPlugin } from "./relay-browser-sdk-docs";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
@@ -28,7 +29,8 @@ const plugins: PluginConfig[] = [
   require.resolve("../../plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
   llmsTxtPlugin,
-  realtimeSdkPlugin
+  relayRealtimeSdkPlugin,
+  relayBrowserSdkPlugin
 ];
 
 export default plugins;

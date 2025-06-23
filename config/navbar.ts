@@ -123,11 +123,11 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "RELAY Browser SDK",
-        to: "/sdks/reference/browser-sdk/",
+        to: "/sdks/relay-browser-sdk/",
       },
       {
         label: "RELAY Realtime Server SDK",
-        to: "/sdks/reference/realtime-sdk/",
+        to: "/sdks/relay-realtime-sdk/",
       },
       { type: "html", value: '<hr class="dropdown-separator">' },
       {
