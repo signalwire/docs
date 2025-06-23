@@ -186,7 +186,7 @@ export const showcasePlugin: PluginConfig = [
         description: "",
         color: "#9104f6",
         reference: "Reference",
-        link: "/sdks/relay-realtime-sdk/",
+        link: "/sdks/realtime-sdk/",
         category: "SDKs",
       },
       {
@@ -195,7 +195,7 @@ export const showcasePlugin: PluginConfig = [
         description: "",
         color: "#044CF6",
         reference: "Reference",
-        link: "/sdks/relay-realtime-sdk/v3",
+        link: "/sdks/realtime-sdk/v3",
         category: "SDKs",
       },
       {

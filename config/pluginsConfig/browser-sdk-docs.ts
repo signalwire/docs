@@ -2,7 +2,7 @@ import { PluginConfig, PluginOptions } from "@docusaurus/types";
 import sidebarGenerator from "../../plugins/SidebarGenerator";
 
 
-export const relayBrowserSdkPlugin: PluginConfig = [
+export const browserSdkPlugin: PluginConfig = [
   "@docusaurus/plugin-content-docs",
   {
     id: "browser-sdk",

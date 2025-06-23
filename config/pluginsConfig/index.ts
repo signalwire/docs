@@ -18,8 +18,8 @@ import { sassPlugin } from "./sass";
 import { markdownPrinterPlugin } from "./markdown-printer";
 import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
-import { relayRealtimeSdkPlugin } from "./relay-realtime-sdk-docs";
-import { relayBrowserSdkPlugin } from "./browser-sdk-docs";
+import { realtimeSdkPlugin } from "./realtime-sdk-docs";
+import { browserSdkPlugin } from "./browser-sdk-docs";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
@@ -29,8 +29,8 @@ const plugins: PluginConfig[] = [
   require.resolve("../../plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
   llmsTxtPlugin,
-  relayRealtimeSdkPlugin,
-  relayBrowserSdkPlugin
+  realtimeSdkPlugin,
+  browserSdkPlugin
 ];
 
 export default plugins;

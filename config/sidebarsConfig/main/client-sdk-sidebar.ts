@@ -24,7 +24,7 @@ const sdksSidebar: SidebarsConfig = {
         },
         {
           type: "link",
-          href: "/sdks/relay-realtime-sdk",
+          href: "/sdks/realtime-sdk",
           label: "RELAY Realtime SDK",
         },
         {

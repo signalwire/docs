@@ -127,7 +127,7 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "RELAY Realtime Server SDK",
-        to: "/sdks/relay-realtime-sdk/",
+        to: "/sdks/realtime-sdk/",
       },
       { type: "html", value: '<hr class="dropdown-separator">' },
       {

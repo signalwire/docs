@@ -4,7 +4,7 @@ const browserSdkSidebar: SidebarsConfig = {
   browserSdkSidebar: [
     {
       type: "category",
-      label: "Relay Browser SDK",
+      label: "Browser SDK",
       collapsible: false,
       className: "menu-category",
       items: [
