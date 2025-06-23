@@ -22,7 +22,7 @@ import apiSidebar from './rest-api-sidebar';
 import swmlTechRefSidebar from './swml-sidebar';
 import compatibilityAPI from './compatibility-api-sidebar';
 import cantinaSidebar from './cantina-sidebar';
-
+import freeswitchSidebar from './freeswitch';
 const sidebars: SidebarsConfig = {
   ...homeSidebar,
   ...clientSdksSidebar,
@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
   ...swmlTechRefSidebar,
   ...compatibilityAPI,
   ...cantinaSidebar,
+  ...freeswitchSidebar,
 };
 
 export default sidebars;
