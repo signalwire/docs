@@ -1,3 +1,7 @@
+---
+slug: /sdks/agents-sdk/datamap
+---
+
 # DataMap
 
 The DataMap system provides a declarative approach to creating SWAIG tools that integrate with REST APIs without requiring custom webhook infrastructure. DataMap tools execute on SignalWire's server infrastructure, simplifying deployment and eliminating the need to expose webhook endpoints.

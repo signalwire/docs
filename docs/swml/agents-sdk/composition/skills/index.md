@@ -280,7 +280,7 @@ python -m signalwire_agents.cli.build_search ./knowledge \
     --verbose
 ```
 
-For complete documentation on the search system, see [Local Search System](/sdks/agents-sdk/skills/search).
+For complete documentation on the search system, see [Local Search System](/sdks/agents-sdk/skills/vector-search).
 
 ### Skill Management
 

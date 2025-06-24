@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-concepts-contexts
-slug: /sdks/agents-sdk/concepts/contexts
+slug: /sdks/agents-sdk/contexts
 title: Contexts Guide
 sidebar_label: Contexts
 --- 

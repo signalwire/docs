@@ -312,7 +312,7 @@ swaig-test multi_agent_file.py --agent-class AgentA --simulate-serverless lambda
 swaig-test multi_agent_file.py --agent-class AgentB --simulate-serverless cgi --cgi-host example.com --exec function2
 ```
 
-For more detailed testing documentation, see the [CLI Testing Guide](/sdks/agents-sdk/guides/cli-testing).
+For more detailed testing documentation, see the [CLI Testing Guide](/sdks/agents-sdk/cli).
 
 ## Examples
 

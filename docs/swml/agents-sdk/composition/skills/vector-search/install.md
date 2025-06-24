@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-skills-search-installation
-slug: /sdks/agents-sdk/skills/search-installation
+slug: /sdks/agents-sdk/skills/vector-search/install
 title: Search Installation
 sidebar_label: Installation
 --- 

@@ -1,6 +1,6 @@
 ---
 id: agents-sdk-skills-search
-slug: /sdks/agents-sdk/skills/search
+slug: /sdks/agents-sdk/skills/vector-search/guide
 title: About the vector search system
 sidebar_label: Guide
 --- 
