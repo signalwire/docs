@@ -1,10 +1,11 @@
 import React, { ReactNode } from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.css';
-import { FaGithub, FaBook, FaRocket } from 'react-icons/fa';
+import { FaGithub, FaBook } from 'react-icons/fa';
 import { SiPypi } from 'react-icons/si';
 import { AlphaBadge, BetaBadge } from '../AlphaBetaBadges';
 import CodeBlock from '@theme/CodeBlock';
+import Link from '@docusaurus/Link';
 
 interface InstallHeroProps {
   title: string;
@@ -12,7 +13,6 @@ interface InstallHeroProps {
   language?: string;
   githubUrl?: string;
   docsUrl?: string;
-  gettingStartedUrl?: string;
   status?: 'stable' | 'beta' | 'alpha';
   pypiPackage?: string;
   className?: string;
@@ -25,7 +25,6 @@ export default function InstallHero({
   language = 'bash',
   githubUrl,
   docsUrl,
-  gettingStartedUrl,
   status = 'stable',
   pypiPackage,
   className,
@@ -93,14 +92,9 @@ export default function InstallHero({
             </a>
           )}
           {docsUrl && (
-            <a href={docsUrl} className={styles.link} target="_blank" rel="noopener noreferrer">
+            <Link to={docsUrl} className={styles.link}>
               <FaBook /> SDK Reference
-            </a>
-          )}
-          {gettingStartedUrl && (
-            <a href={gettingStartedUrl} className={styles.link} target="_blank" rel="noopener noreferrer">
-              <FaRocket /> Getting Started
-            </a>
+            </Link>
           )}
         </div>
       </div>
