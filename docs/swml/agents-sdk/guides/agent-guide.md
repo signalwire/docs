@@ -45,12 +45,6 @@ Here's how these components relate to each other:
 └─────────────┘
 ```
 
-
-
-
-
-
-
 ## API Reference
 
 ### Constructor Parameters
@@ -462,7 +456,7 @@ if __name__ == "__main__":
     main()
 ```
 
-
+{/*
 
 # Build index from the comprehensive concepts guide
 sw-search docs/signalwire_agents_concepts_guide.md --output concepts.swsearch
@@ -477,3 +471,5 @@ sw-search ./knowledge \
     --chunking-strategy sentence \
     --max-sentences-per-chunk 8 \
     --verbose
+
+*/}
