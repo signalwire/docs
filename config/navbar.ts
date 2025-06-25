@@ -220,6 +220,13 @@ const navbar: NavbarItem[] = [
 },
 
   {
+    href: "https://discord.com/invite/F2WNYTNjuF",
+    position: "right",
+    "aria-label": "Discord server",
+    className: "header-discord-link",
+  },
+
+  {
     href: 'https://github.com/signalwire/docs',
     position: 'right',
     className: 'header-github-link',
