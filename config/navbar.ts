@@ -185,8 +185,8 @@ const navbar: NavbarItem[] = [
   type: "dropdown",
   items: [
     {
-      href: "https://signalwire.com/signin",
-      label: "SignalWire Space",
+      href: "https://signalwire.com/signup",
+      label: "SignalWire Space (Signup)",
       className: "dashboard-navbar-link",
       "aria-label": "Open SignalWire Dashboard",
     },
@@ -218,6 +218,13 @@ const navbar: NavbarItem[] = [
     },
   ],
 },
+
+  {
+    href: "https://discord.com/invite/F2WNYTNjuF",
+    position: "right",
+    "aria-label": "Discord server",
+    className: "header-discord-link",
+  },
 
   {
     href: 'https://github.com/signalwire/docs',
