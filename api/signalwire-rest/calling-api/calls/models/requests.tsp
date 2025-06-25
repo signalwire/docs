@@ -27,9 +27,13 @@ alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
 @summary("Hangup call")
 model CallHangupRequest {
     @doc(uuidDescription)
+    @example(CallIdExample)
     id: uuid;
+
     @doc("The `calling.end` command is used to hang up a call.")
+    @example("calling.end")
     command: "calling.end";
+    
     @doc(paramsDescription)
     params: {
         @doc("Set the reason why the call was hung up.")
@@ -40,9 +44,13 @@ model CallHangupRequest {
 @summary("Hold call")
 model CallHoldRequest {
     @doc(uuidDescription)
+    @example(CallIdExample)
     id: uuid;
+
     @doc("The `calling.ai_hold` command is used to hold a call.")
+    @example("calling.ai_hold")
     command: "calling.ai_hold";
+
     @doc(paramsDescription)
     params: {}
 }
@@ -50,9 +58,13 @@ model CallHoldRequest {
 @summary("Unhold call")
 model CallUnholdRequest {
     @doc(uuidDescription)
+    @example(CallIdExample)
     id: uuid;
+
     @doc("The `calling.ai_unhold` command is used to unhold a call.")
+    @example("calling.ai_unhold")
     command: "calling.ai_unhold";
+
     @doc(paramsDescription)
     params: {};
 }
@@ -60,9 +72,13 @@ model CallUnholdRequest {
 @summary("Inject AI message")
 model CallAIMessageRequest {
     @doc(uuidDescription)
+    @example(CallIdExample)
     id: uuid;
+
     @doc("The `calling.ai_message` command is used to inject a message into the AI conversation.")
+    @example("calling.ai_message")
     command: "calling.ai_message";
+
     @doc(paramsDescription)
     params: {
         @doc("""
@@ -71,10 +87,14 @@ model CallAIMessageRequest {
         - `user`: Inject a message as if the caller said it. This would appear in the conversation history as coming from the caller, and the AI would respond to it as if the caller just spoke it.
         - `assistant`: Inject a message as if the AI said it. This would appear as an AI response in the conversation history. The AI would treat this as its own previous response when generating future replies.
         """)
+        @example("system")
         role: "system" | "user" | "assistant",
+
+
         @doc("""
         The text content that will be sent to the AI.
         """)
+        @example("You are now in expert mode. Provide detailed technical responses.")
         message_text: string
     }
 }
@@ -84,7 +104,10 @@ model CallAIMessageRequest {
 @summary("Create call")
 model CallCreateRequest {
     @doc("The `dial` command is used to create a new call.")
+    @example("dial")
     command: "dial";
+
+
     @doc(paramsDescription)
     params: CallCreateRequestAlias;
 }
@@ -171,31 +194,37 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
 }
 
 @summary("Update call")
+@oneOf
 union UpdateCurrentCallRequest {
     CallUpdateSWMLRequest;
     CallUpdateURLRequest;
 }
 
 union CallUpdateRequest {
+    UpdateCurrentCallRequest;
     CallHangupRequest;
     CallHoldRequest;
     CallUnholdRequest;
     CallAIMessageRequest;
-    UpdateCurrentCallRequest;
+}
+
+
+model CallUpdateRequestBase {
+    @doc(updateCommandDescription)
+    @example("update")
+    command: "update";
 }
 
 @summary("Update call (SWML)")
-model CallUpdateSWMLRequest {
-    @doc(updateCommandDescription)
-    command: "update";
+model CallUpdateSWMLRequest is CallUpdateRequestBase {
+
     @doc(paramsDescription)
     params: CallUpdateParamsSWML;
 }
 
 @summary("Update call (URL)")
-model CallUpdateURLRequest {
-    @doc(updateCommandDescription)
-    command: "update";
+model CallUpdateURLRequest is CallUpdateRequestBase {
+
     @doc(paramsDescription)
     params: CallUpdateParamsURL;
 }

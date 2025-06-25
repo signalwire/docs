@@ -18,7 +18,7 @@ const hangupCallExample = #{
 };
 
 const holdCallExample = #{
-  parameters: #{
+  request: #{
     id: callId,
     command: "calling.ai_hold",
     params: #{}
@@ -26,7 +26,7 @@ const holdCallExample = #{
 };
 
 const unholdCallExample = #{
-  parameters: #{
+  request: #{
     id: callId,
     command: "calling.ai_unhold", 
     params: #{}
@@ -34,7 +34,7 @@ const unholdCallExample = #{
 };
 
 const aiMessageExample = #{
-  parameters: #{
+  request: #{
     id: callId,
     command: "calling.ai_message",
     params: #{
@@ -45,7 +45,7 @@ const aiMessageExample = #{
 };
 
 const createCallExample = #{
-  parameters: #{
+  request: #{
     command: "dial",
     params: #{
       from: "+15551234567",
@@ -57,41 +57,14 @@ const createCallExample = #{
   }
 };
 
+
 const updateCallExample = #{
-  parameters: #{
-    id: callId,
+  request: #{
     command: "update",
     params: #{
-      swml: "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': {}},{ 'play': { 'urls': ['say:Thank you for calling. Goodbye!']}}]}}",
+      id: callId,
+      url: "https://example.com/swml",
       fallback_url: "https://example.com/fallback"
     }
-  }
-};
-
-// Example metadata for use with @opExample decorator
-const exampleMetadata = #{
-  hangupCall: #{
-    title: "Hangup active call",
-    description: "Terminate an active call by hanging up"
-  },
-  holdCall: #{
-    title: "Hold active call",
-    description: "Put an active AI call on hold, pausing the conversation"
-  },
-  unholdCall: #{
-    title: "Unhold active call", 
-    description: "Resume an AI call that was previously put on hold"
-  },
-  aiMessage: #{
-    title: "Inject AI message",
-    description: "Send a message to the AI conversation to modify behavior or add context"
-  },
-  createCall: #{
-    title: "Create new call",
-    description: "Initiate a new call using a webhook URL to handle call logic"
-  },
-  updateCall: #{
-    title: "Update active call",
-    description: "Modify an active call's behavior using new SWML instructions"
   }
 };
