@@ -12,7 +12,7 @@ paths:
     post:
       operationId: Calls_create
       summary: Create a Call
-      description: To create a new Call, you send a `POST` request to the Call resource with a payload including a `dial` command and additional nested `params`.
+      description: To create a new call, you send a `POST` request to the Call resource with a payload including a `dial` command and additional nested `params`.
       parameters: []
       responses:
         '201':
@@ -24,7 +24,7 @@ paths:
         '401':
           description: Access is unauthorized.
           content:
-            application/json:
+            text/plain:
               schema:
                 type: string
                 enum:
@@ -32,7 +32,7 @@ paths:
         '404':
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            text/plain:
               schema:
                 type: string
                 enum:
@@ -54,7 +54,7 @@ paths:
     put:
       operationId: Calls_update
       summary: Update a Call
-      description: To update an existing Call, you send a `PUT` request to the Call resource with a payload including an `update` command and additional nested `params`.
+      description: To update an existing call, you send a `PUT` request to the Call resource with a payload including a `command` and additional nested `params`.
       parameters: []
       responses:
         '200':
@@ -66,7 +66,7 @@ paths:
         '401':
           description: Access is unauthorized.
           content:
-            application/json:
+            text/plain:
               schema:
                 type: string
                 enum:
@@ -74,7 +74,7 @@ paths:
         '404':
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            text/plain:
               schema:
                 type: string
                 enum:
@@ -93,10 +93,57 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CallUpdateRequest'
+            examples:
+              Hangup call:
+                summary: Hangup call
+                description: Terminate an active call by hanging up
+                value:
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  command: calling.end
+                  params:
+                    reason: hangup
 security:
   - BasicAuth: []
 components:
   schemas:
+    CallAIMessageRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+        command:
+          type: string
+          enum:
+            - calling.ai_message
+          description: The `calling.ai_message` command is used to inject a message into the AI conversation.
+        params:
+          type: object
+          properties:
+            role:
+              type: string
+              enum:
+                - system
+                - user
+                - assistant
+              description: |-
+                The role that the message is from. Each role type has a different purpose and will influence how the AI will interpret the message.
+                - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it. This could change the AI's personality, add new constraints, provide context about the conversation, or give the AI information it should know going forward.
+                - `user`: Inject a message as if the caller said it. This would appear in the conversation history as coming from the caller, and the AI would respond to it as if the caller just spoke it.
+                - `assistant`: Inject a message as if the AI said it. This would appear as an AI response in the conversation history. The AI would treat this as its own previous response when generating future replies.
+            message_text:
+              type: string
+              description: The text content that will be sent to the AI.
+          required:
+            - role
+            - message_text
+          description: An object of parameters to that will be utilized by the active command.
+      title: Inject AI message
     CallCreate422Error:
       type: object
       required:
@@ -140,7 +187,7 @@ components:
           type: string
           description: Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.
           example: "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}"
-      title: Create a call with SWML
+      title: Create call (SWML)
     CallCreateParamsURL:
       type: object
       required:
@@ -170,7 +217,7 @@ components:
             The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
             Either `url` or `swml` must be included for a new call.
           example: https://example.com/swml
-      title: Create a call with a URL
+      title: Create call (URL)
     CallCreateRequest:
       type: object
       required:
@@ -181,10 +228,61 @@ components:
           type: string
           enum:
             - dial
+          description: The `dial` command is used to create a new call.
         params:
           anyOf:
             - $ref: '#/components/schemas/CallCreateParamsURL'
             - $ref: '#/components/schemas/CallCreateParamsSWML'
+          description: An object of parameters to that will be utilized by the active command.
+      title: Create call
+    CallHangupRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+        command:
+          type: string
+          enum:
+            - calling.end
+          description: The `calling.end` command is used to hang up a call.
+        params:
+          type: object
+          properties:
+            reason:
+              type: string
+              enum:
+                - hangup
+                - busy
+              description: Set the reason why the call was hung up.
+              example: hangup
+          description: An object of parameters to that will be utilized by the active command.
+      title: Hangup call
+    CallHoldRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+        command:
+          type: string
+          enum:
+            - calling.ai_hold
+          description: The `calling.ai_hold` command is used to hold a call.
+        params:
+          type: object
+          description: An object of parameters to that will be utilized by the active command.
+      title: Hold call
     CallResponse:
       type: object
       required:
@@ -260,6 +358,26 @@ components:
           items:
             $ref: '#/components/schemas/ChargeDetails'
           description: Details on charges associated with this call.
+    CallUnholdRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+        command:
+          type: string
+          enum:
+            - calling.ai_unhold
+          description: The `calling.ai_unhold` command is used to unhold a call.
+        params:
+          type: object
+          description: An object of parameters to that will be utilized by the active command.
+      title: Unhold call
     CallUpdate422Error:
       type: object
       required:
@@ -284,7 +402,7 @@ components:
       properties:
         id:
           type: string
-          description: The id of an existing call.
+          description: The unique identifying ID of a existing call.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         fallback_url:
           type: string
@@ -303,7 +421,7 @@ components:
           type: string
           description: Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.
           example: "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}"
-      title: Update a call with SWML
+      title: Update call (SWML)
     CallUpdateParamsURL:
       type: object
       required:
@@ -312,7 +430,7 @@ components:
       properties:
         id:
           type: string
-          description: The id of an existing call.
+          description: The unique identifying ID of a existing call.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         fallback_url:
           type: string
@@ -333,8 +451,15 @@ components:
             The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
             Either `url` or `swml` must be included for a new call.
           example: https://example.com/swml
-      title: Update a call with a URL
+      title: Update call (URL)
     CallUpdateRequest:
+      anyOf:
+        - $ref: '#/components/schemas/CallHangupRequest'
+        - $ref: '#/components/schemas/CallHoldRequest'
+        - $ref: '#/components/schemas/CallUnholdRequest'
+        - $ref: '#/components/schemas/CallAIMessageRequest'
+        - $ref: '#/components/schemas/UpdateCurrentCallRequest'
+    CallUpdateSWMLRequest:
       type: object
       required:
         - command
@@ -344,10 +469,28 @@ components:
           type: string
           enum:
             - update
+          description: The `update` command is used to update a existing call with a new dialplan.
         params:
-          oneOf:
-            - $ref: '#/components/schemas/CallUpdateParamsURL'
+          allOf:
             - $ref: '#/components/schemas/CallUpdateParamsSWML'
+          description: An object of parameters to that will be utilized by the active command.
+      title: Update call (SWML)
+    CallUpdateURLRequest:
+      type: object
+      required:
+        - command
+        - params
+      properties:
+        command:
+          type: string
+          enum:
+            - update
+          description: The `update` command is used to update a existing call with a new dialplan.
+        params:
+          allOf:
+            - $ref: '#/components/schemas/CallUpdateParamsURL'
+          description: An object of parameters to that will be utilized by the active command.
+      title: Update call (URL)
     ChargeDetails:
       type: object
       required:
@@ -384,10 +527,19 @@ components:
         url:
           type: string
           description: Link to developer resource for this error.
+    UpdateCurrentCallRequest:
+      anyOf:
+        - $ref: '#/components/schemas/CallUpdateSWMLRequest'
+        - $ref: '#/components/schemas/CallUpdateURLRequest'
+      title: Update call
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
   securitySchemes:
     BasicAuth:
       type: http
-      scheme: basic
+      scheme: Basic
 servers:
   - url: https://{space_name}.signalwire.com/api/calling
     description: Endpoint

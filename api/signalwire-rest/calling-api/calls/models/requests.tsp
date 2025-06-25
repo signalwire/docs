@@ -1,6 +1,5 @@
 import "@typespec/http";
 import "@typespec/openapi3";
-import "../../../"
 
 
 using TypeSpec.Http;
@@ -16,48 +15,77 @@ const CallSWMLURLExample = "https://example.com/swml";
 
 const CallIdExample = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
+const updateCommandDescription = "The `update` command is used to update a existing call with a new dialplan.";
+
+const uuidDescription = "The unique identifying ID of a existing call.";
+
+const paramsDescription = "An object of parameters to that will be utilized by the active command.";
+
 alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
 
-union CallingRequest {
-    CallCreateRequest;
-
-}
-
-
+@summary("Hangup call")
 model CallHangupRequest {
+    @doc(uuidDescription)
     id: uuid;
+    @doc("The `calling.end` command is used to hang up a call.")
     command: "calling.end";
+    @doc(paramsDescription)
     params: {
+        @doc("Set the reason why the call was hung up.")
+        @example("hangup")
         reason?: "hangup" | "busy"
     };
 }
-
+@summary("Hold call")
 model CallHoldRequest {
+    @doc(uuidDescription)
     id: uuid;
+    @doc("The `calling.ai_hold` command is used to hold a call.")
     command: "calling.ai_hold";
+    @doc(paramsDescription)
     params: {}
 }
 
+@summary("Unhold call")
 model CallUnholdRequest {
+    @doc(uuidDescription)
     id: uuid;
+    @doc("The `calling.ai_unhold` command is used to unhold a call.")
     command: "calling.ai_unhold";
+    @doc(paramsDescription)
     params: {};
 }
 
-model CallTransferRequest {
+@summary("Inject AI message")
+model CallAIMessageRequest {
+    @doc(uuidDescription)
     id: uuid;
-    command: "calling.transfer";
+    @doc("The `calling.ai_message` command is used to inject a message into the AI conversation.")
+    command: "calling.ai_message";
+    @doc(paramsDescription)
     params: {
+        @doc("""
+        The role that the message is from. Each role type has a different purpose and will influence how the AI will interpret the message.
+        - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it. This could change the AI's personality, add new constraints, provide context about the conversation, or give the AI information it should know going forward.
+        - `user`: Inject a message as if the caller said it. This would appear in the conversation history as coming from the caller, and the AI would respond to it as if the caller just spoke it.
+        - `assistant`: Inject a message as if the AI said it. This would appear as an AI response in the conversation history. The AI would treat this as its own previous response when generating future replies.
+        """)
+        role: "system" | "user" | "assistant",
+        @doc("""
+        The text content that will be sent to the AI.
+        """)
+        message_text: string
     }
-
 }
 
 
 
-
+@summary("Create call")
 model CallCreateRequest {
+    @doc("The `dial` command is used to create a new call.")
     command: "dial";
+    @doc(paramsDescription)
     params: CallCreateRequestAlias;
 }
 
@@ -81,7 +109,7 @@ model CallCreateParamsBase {
 
 }
 
-@summary("Create a call with a URL")
+@summary("Create call (URL)")
 model CallCreateParamsURL is CallCreateParamsBase {
     
     @doc("""
@@ -93,7 +121,7 @@ model CallCreateParamsURL is CallCreateParamsBase {
 
 }
 
-@summary("Create a call with SWML") 
+@summary("Create call (SWML)") 
 model CallCreateParamsSWML is CallCreateParamsBase {
     
     @doc("Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
@@ -101,9 +129,10 @@ model CallCreateParamsSWML is CallCreateParamsBase {
     swml: string;
 }
 
+@summary("Update call")
 model CallUpdateParamsBase {
 
-    @doc("The id of an existing call.")
+    @doc(uuidDescription)
     @example(CallIdExample)
     id: string;
 
@@ -121,7 +150,7 @@ model CallUpdateParamsBase {
 }
 
 
-@summary("Update a call with SWML") 
+@summary("Update call (SWML)") 
 model CallUpdateParamsSWML is CallUpdateParamsBase {
     
     @doc("Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
@@ -129,7 +158,7 @@ model CallUpdateParamsSWML is CallUpdateParamsBase {
     swml: string;
 }
 
-@summary("Update a call with a URL")
+@summary("Update call (URL)")
 model CallUpdateParamsURL is CallUpdateParamsBase {
     
     @doc("""
@@ -141,10 +170,34 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
 
 }
 
-model CallUpdateRequest {
+@summary("Update call")
+union UpdateCurrentCallRequest {
+    CallUpdateSWMLRequest;
+    CallUpdateURLRequest;
+}
+
+union CallUpdateRequest {
+    CallHangupRequest;
+    CallHoldRequest;
+    CallUnholdRequest;
+    CallAIMessageRequest;
+    UpdateCurrentCallRequest;
+}
+
+@summary("Update call (SWML)")
+model CallUpdateSWMLRequest {
+    @doc(updateCommandDescription)
     command: "update";
-    @oneOf
-    params: CallUpdateParamsURL | CallUpdateParamsSWML;
+    @doc(paramsDescription)
+    params: CallUpdateParamsSWML;
+}
+
+@summary("Update call (URL)")
+model CallUpdateURLRequest {
+    @doc(updateCommandDescription)
+    command: "update";
+    @doc(paramsDescription)
+    params: CallUpdateParamsURL;
 }
 
 
