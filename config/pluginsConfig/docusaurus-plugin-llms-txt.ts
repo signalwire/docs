@@ -54,10 +54,17 @@ export const llmsTxtPlugin: PluginConfig = [
       includeBlog: false,
       includePages: false,
       includeDocs: true,
+      includeVersionedDocs: false,
+      includeGeneratedIndex: false,
       relativePaths: false,
       enableMarkdownFiles: true,
       enableLlmsFullTxt: true,
-      routeRules: [],
+      routeRules: [
+        {
+          route: '/sdks/{realtime-sdk,browser-sdk}/**',
+          depth: 2
+        }
+      ]
     }
   } satisfies PluginOptions
 ];
