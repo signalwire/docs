@@ -1,5 +1,7 @@
 import "@typespec/http";
 import "@typespec/openapi3";
+import "../../../"
+
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -15,6 +17,43 @@ const CallSWMLURLExample = "https://example.com/swml";
 const CallIdExample = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
 alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
+
+
+union CallingRequest {
+    CallCreateRequest;
+
+}
+
+
+model CallHangupRequest {
+    id: uuid;
+    command: "calling.end";
+    params: {
+        reason?: "hangup" | "busy"
+    };
+}
+
+model CallHoldRequest {
+    id: uuid;
+    command: "calling.ai_hold";
+    params: {}
+}
+
+model CallUnholdRequest {
+    id: uuid;
+    command: "calling.ai_unhold";
+    params: {};
+}
+
+model CallTransferRequest {
+    id: uuid;
+    command: "calling.transfer";
+    params: {
+    }
+
+}
+
+
 
 
 model CallCreateRequest {
