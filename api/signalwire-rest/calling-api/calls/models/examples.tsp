@@ -44,20 +44,6 @@ const aiMessageExample = #{
   }
 };
 
-const createCallExample = #{
-  request: #{
-    command: "dial",
-    params: #{
-      from: "+15551234567",
-      to: "+15559876543", 
-      caller_id: "+15551234567",
-      url: "https://example.com/swml",
-      fallback_url: "https://example.com/fallback"
-    }
-  }
-};
-
-
 const updateCallExample = #{
   request: #{
     command: "update",

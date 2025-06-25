@@ -17,7 +17,6 @@ namespace CallingAPI.Calls {
 
         @summary("Create a Call")
         @doc("To create a new call, you send a `POST` request to the Call resource with a payload including a `dial` command and additional nested `params`.")
-        @opExample(#{parameters: createCallExample}, #{title: "Create new call", description: "Initiate a new call using a webhook URL to handle call logic"})
         create(@body request: CallCreateRequest):
         { @statusCode statusCode: 201; @body call: CallResponse; } |
         StatusCode401 |
