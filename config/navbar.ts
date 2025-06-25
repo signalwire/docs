@@ -185,8 +185,8 @@ const navbar: NavbarItem[] = [
   type: "dropdown",
   items: [
     {
-      href: "https://signalwire.com/signin",
-      label: "SignalWire Space",
+      href: "https://signalwire.com/signup",
+      label: "SignalWire Space (Signup)",
       className: "dashboard-navbar-link",
       "aria-label": "Open SignalWire Dashboard",
     },
