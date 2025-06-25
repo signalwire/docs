@@ -2146,6 +2146,6 @@ The tool provides flexible interfaces for development and testing of SignalWire 
 
 ## Related guides
 
-- **[Configuration guide](../configuration)**: Set up JSON configuration files for your agents
-- **[Security guide](../security)**: Configure HTTPS, authentication, and production security
+- **[Configuration guide](../get-started/configuration)**: Set up JSON configuration files for your agents
+- **[Security guide](../guides/security)**: Configure HTTPS, authentication, and production security
 - **[Agent guide](../guides/agent-guide)**: Build and customize SignalWire AI agents
