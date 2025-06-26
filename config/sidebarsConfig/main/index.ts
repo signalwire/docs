@@ -18,6 +18,7 @@ import apiSidebar from "./rest-api-sidebar";
 import swmlTechRefSidebar from "./swml-sidebar";
 import compatibilityAPI from "./compatibility-api-sidebar";
 import cantinaSidebar from "./cantina-sidebar";
+import agentsSdkSidebar from "./agents-sdk-sidebar";
 
 const mainSidebars: SidebarsConfig = {
     ...homeSidebar,
@@ -26,6 +27,7 @@ const mainSidebars: SidebarsConfig = {
     ...swmlTechRefSidebar,
     ...compatibilityAPI,
     ...cantinaSidebar,
+    ...agentsSdkSidebar,
   };
 
 export default mainSidebars;
