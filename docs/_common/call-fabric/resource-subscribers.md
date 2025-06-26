@@ -6,7 +6,7 @@
 
     Subscribers are a special type of Resource that represent internal account-holders.
     
-    Subscribers always use the `private` [context](/platform/call-fabric#contexts) by default, though `public` Aliases can be added.
+    Subscribers always use the `private` context by default, though `public` Aliases can be added.
 
     Subscribers can receive or initiate calls, messages, and other forms of interaction.
     
