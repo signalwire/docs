@@ -160,21 +160,9 @@ const navbar: NavbarItem[] = [
 
   /// Community Dropdown -------- ///
   {
-    type: "dropdown",
+    to: "https://signalwire.zohodesk.com/portal/en/community",
     label: "Community",
-    position: "right",
-    items: [
-      {
-        href: "https://signalwire.zohodesk.com/portal/en/community",
-        label: "Community Forum",
-        "aria-label": "Community forum",
-      },
-      {
-        href: "https://discord.com/invite/F2WNYTNjuF",
-        label: "Discord Server",
-        "aria-label": "Discord server",
-      },
-    ],
+    position: "right"
   },
 
 /// Platform Dropdown -------- ///
