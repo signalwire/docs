@@ -41,6 +41,49 @@ security:
   - BasicAuth: []
 components:
   schemas:
+    BaseConference:
+      type: object
+      required:
+        - project_id
+        - region
+        - name
+        - status
+        - max_size
+        - current_participants
+        - updated_at
+      properties:
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Project ID of the conference.
+          example: a77ce7d0-6ae8-4b33-a7a6-0bf1750d1e19
+        region:
+          type: string
+          description: Region of the conference.
+          example: us1
+        name:
+          type: string
+          description: Name of the conference.
+          example: conference
+        status:
+          type: string
+          description: Status of the conference.
+          example: in-progress
+        max_size:
+          type: integer
+          description: Maximum size of the conference.
+          example: 2
+        current_participants:
+          type: integer
+          description: Current participants in the conference.
+          example: 1
+        updated_at:
+          type: string
+          format: date-time
+          description: Updated timestamp.
+          example: '2025-03-12T01:49:49.630Z'
+      allOf:
+        - $ref: '#/components/schemas/Conference'
     ChargeDetails:
       type: object
       required:
@@ -60,7 +103,6 @@ components:
       required:
         - id
         - created_at
-        - type
       properties:
         id:
           type: string
@@ -71,12 +113,6 @@ components:
           format: date-time
           description: Creation timestamp.
           example: '2025-03-11T01:49:49.630Z'
-        type:
-          type: string
-          description: Discriminator property for Conference.
-      discriminator:
-        propertyName: type
-        mapping: {}
       description: Core conference object.
     ConferencesResponse:
       type: object
@@ -86,9 +122,37 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/VideoRoomSessionConference'
+            anyOf:
+              - $ref: '#/components/schemas/LamlConference'
+              - $ref: '#/components/schemas/RelayConference'
+              - $ref: '#/components/schemas/VideoRoomSessionConference'
           description: A list of conference logs.
       description: Response containing a list of conferences.
+    LamlConference:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseConference'
+    RelayConference:
+      type: object
+      required:
+        - recording_url
+        - recording_duration
+        - recording_file_size
+      properties:
+        recording_url:
+          type: string
+          description: Recording URL of the conference.
+          example: http://record.com
+        recording_duration:
+          type: integer
+          description: Recording duration of the conference.
+          example: 123
+        recording_file_size:
+          type: integer
+          description: Recording file size of the conference.
+          example: 12345
+      allOf:
+        - $ref: '#/components/schemas/BaseConference'
     VideoRoomSessionConference:
       type: object
       required:
@@ -150,6 +214,10 @@ components:
           description: Details on charges associated with this conference.
       allOf:
         - $ref: '#/components/schemas/Conference'
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
   securitySchemes:
     BasicAuth:
       type: http
