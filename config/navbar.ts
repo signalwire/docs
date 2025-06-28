@@ -97,11 +97,11 @@ const navbar: NavbarItem[] = [
       },
       {
         label: "RELAY Browser SDK",
-        to: "/sdks/reference/browser-sdk/",
+        to: "/sdks/browser-sdk/",
       },
       {
         label: "RELAY Realtime Server SDK",
-        to: "/sdks/reference/realtime-sdk/relay-v4",
+        to: "/sdks/realtime-sdk/",
       },
       { type: "html", value: '<hr class="dropdown-separator">' },
       {
@@ -130,6 +130,11 @@ const navbar: NavbarItem[] = [
         to: "/sdks",
       },
     ],
+  },
+  {
+    type: "docsVersionDropdown",
+    position: "right",
+    dropdownActiveClassDisabled: true,
   },
 
   { to: "/blog", label: "Blog", position: "right" },

@@ -1,0 +1,308 @@
+---
+title: Using Video with React Native
+slug: /guides/video/video-api-in-react-native
+x-custom:
+  ported_from_readme: true
+---
+
+
+Introduction
+------------
+
+If you want to build a video-conferencing application on mobile, you can integrate the Video API inside any React Native application. In particular, you can use the [JavaScript Video SDK](../../00-browser-sdk-reference.mdx) almost as you would on the web.
+
+
+:::info Looking for the Technical SDK Reference?
+
+Find it at the Browser SDK Reference [here](../../00-browser-sdk-reference.mdx).
+
+:::
+
+In this guide, we will show you how to integrate the Video API into your React Native application. As a reference, you can take a look at our [GitHub repository](https://github.com/signalwire/video-sdk-react-native-demo), which contains a demo videoconferencing application written in React Native. **Please note that currently the react-native support is experimental.** 
+
+If you just want to try out the demo application, follow the instructions in the [README file](https://github.com/signalwire/video-sdk-react-native-demo).
+
+
+:::info Prerequisites
+
+In this guide we will assume a basic knowledge about our [JavaScript Video SDK](/sdks/browser-sdk). If you want to know more about it, take a look at [Getting Started with the Video API](/video/getting-started/simple-video-demo) and then come back to follow this guide.
+
+We will also assume some basic knowledge about React Native.
+
+:::
+
+Creating the application
+------------------------
+
+We are going to create a new React Native application. If you don't already have one, from the shell run:
+
+```shell
+npx react-native init MyMobileVideoApp
+```
+
+This will create a folder, MyMobileVideoApp, with some boilerplate code.
+
+We need to install the following dependencies:
+
+- **@signalwire/js**: the SignalWire Video SDK
+- **react-native-webrtc**: WebRTC implementation for React Native
+- **react-native-get-random-values**: a compatibility dependency
+- **react-native-incall-manager**: to handle actions and events during a call as if it was a native one
+
+```shell
+cd MyMobileVideoApp
+yarn add @signalwire/js react-native-webrtc react-native-incall-manager
+```
+
+For **iOS**, we also need to install the native modules:
+
+```shell
+cd ios
+pod install
+```
+
+For **Android**, we need to increase the minSdkVersion from 21 to at least 24 (see [this upstream issue](https://github.com/react-native-webrtc/react-native-webrtc/issues/720)). To do that, open the file `android/build.gradle` and set `minSdkVersion = 24`.
+
+You can test the empty application with `npm run ios` or `npm run android`.
+
+Setting up the permissions
+--------------------------
+
+Before delving into the code, we are going to configure our iOS and Android applications to require permissions for the camera and for the microphone.
+
+#### iOS
+
+For iOS, open the file `ios/MyMobileVideoApp/Info.plist` and add the following entries right before `<key>NSLocationWhenInUseUsageDescription</key>`:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>Allow camera access so that others can see you during meetings</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Allow microphone access so that others can hear you during the meeting</string>
+```
+
+#### Android
+
+For Android, open the file `android/app/src/main/AndroidManifest.xml` and add the following entries:
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.BLUETOOTH" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+```
+
+Adding basic video functionality
+--------------------------------
+
+We are going to add some basic video functionality to the `App.js` component. First, we import the libraries:
+
+```javascript
+import 'react-native-get-random-values';  // this must be imported at the very
+                                          // top of the file, before any other
+                                          // import
+
+import * as SignalWire from '@signalwire/js';
+import { RTCView } from 'react-native-webrtc';
+import InCallManager from 'react-native-incall-manager';
+```
+
+Then, we add some state variables to our main component:
+
+```javascript
+const [stream, setStream] = React.useState(null);
+const [roomSession, setRoomSession] = React.useState(null);
+```
+
+The `stream` variable will hold a reference to the remote stream, while `roomSession` will contain the RoomSession object from which we can access methods such as `audioMute()` and `videoMute()`.
+
+Then, we are going to add to the template the WebRTC View in which the video stream will be displayed. Our template will be something like this, which also include a "Join" button:
+
+```jsx
+    <SafeAreaView>
+      <RTCView
+        streamURL={stream?.toURL?.()}
+        style={{
+          width: '100%',
+          height: 300,
+          backgroundColor: 'black'
+        }} />
+    </SafeAreaView>
+    <Button onPress={join} title="Join" />
+```
+
+The "Join" button depends on a function `join`. This is mostly standard Video SDK code, and looks like this:
+
+```javascript
+async function join() {
+  // We instantiate a room session. The user name and the room name are
+  // determined by the token.
+  const room = new SignalWire.Video.RoomSession({
+    token: '<YourVideoRoomToken>',
+    logLevel: 'silent'
+  })
+
+  // Store the room session object in the state of this component.
+  setRoomSession(room)
+
+  // Start the InCallManager to make the system know we are in a call.
+  InCallManager.start({ media: 'audio' });
+
+  // When we receive the event indicating that we have joined the session,
+  // take the remote stream object and store it in the state variable.
+  room.on('room.joined', params => {
+    console.debug('>> EVENT room.joined', params);
+    setStream(room.remoteStream);
+  });
+
+  // Actually join the room
+  await room.join()
+}
+```
+
+Note that we have left `<YourVideoRoomToken>` as a placeholder. To avoid over-complicating this guide, we will obtain a Video Room Token manually via cURL, and we will hardcode that into our component. In a real application, you would obtain the token from a remote server. Run from your shell the following cURL command to obtain the token:
+
+```shell
+curl --request POST \
+     --url 'https://your_space_id.signalwire.com/api/video/room_tokens' \
+     --user 'project_id:api_token' \
+     --header 'Content-Type: application/json' \
+     --data '{"user_name": "john", "room_name": "office"}'
+```
+
+Make sure to replace the placeholders `your_space_id`, `project_id`, and `api_token`, whose values you can find in your [SignalWire Space](https://signalwire.com/signin).
+
+It's time to compile. Try building the application: you should be able to join a room.
+
+<figure>
+        <img src="/readme-files/2ed9251-Screenshot_2021-10-11_at_19.07.29.webP" title="Screenshot 2021-10-11 at 19.07.29.webP" width="smart" height="auto" loading="lazy" alt="A screenshot showing the video application running in an iPhone simulator." />
+    <figcaption>
+    <p>The video application running in the iPhone simulator.</p>
+</figcaption>
+</figure>
+
+Leaving the room
+----------------
+
+We are now going to add a new button to leave the room. Let's add a `leave` function to leave the session and to perform some cleanup:
+
+```javascript
+async function leave() {
+  try {
+    await roomSession?.leave();
+    if (stream) {
+      stream.release();
+      setStream(null);
+      setRoomSession(null);
+      InCallManager.stop();
+    }
+  } catch (e) { }
+}
+```
+
+Then we can use the function in a new button:
+
+```jsx
+<Button onPress={leave} title="Leave" />
+```
+
+At this point, our whole component should look like this:
+
+```javascript
+import 'react-native-get-random-values';
+
+import React from 'react';
+import {
+  SafeAreaView,
+  Button,
+} from 'react-native';
+
+import * as SignalWire from '@signalwire/js';
+import { RTCView } from 'react-native-webrtc';
+import InCallManager from 'react-native-incall-manager';
+
+const App = () => {
+  const [stream, setStream] = React.useState(null);
+  const [roomSession, setRoomSession] = React.useState(null);
+
+  async function join() {
+    // We instantiate a room session. The user name and the room name are
+    // determined by the token.
+    const room = new SignalWire.Video.RoomSession({
+      token: '<YourVideoRoomToken>',
+      logLevel: 'silent'
+    })
+
+    // Store the room session object in the state of this component.
+    setRoomSession(room)
+
+    // Start the InCallManager to make the system know we are in a call.
+    InCallManager.start({ media: 'audio' });
+
+    // When we receive the event indicating that we have joined the session,
+    // take the remote stream object and store it in the state variable.
+    room.on('room.joined', params => {
+      console.debug('>> EVENT room.joined', params);
+      setStream(room.remoteStream);
+    });
+
+    // Actually join the room
+    await room.join()
+  }
+
+  async function leave() {
+    try {
+      await roomSession?.leave();
+      if (stream) {
+        stream.release();
+        setStream(null);
+        setRoomSession(null);
+        InCallManager.stop();
+      }
+    } catch (e) { }
+  }
+
+  return (
+    <SafeAreaView>
+      <RTCView
+        streamURL={stream?.toURL?.()}
+        style={{
+          width: '100%',
+          height: 300,
+          backgroundColor: 'black'
+        }} />
+      <Button onPress={join} title="Join" />
+      <Button onPress={leave} title="Leave" />
+    </SafeAreaView>
+  );
+};
+
+export default App;
+```
+
+Screen sharing
+--------------
+
+Screen sharing is also supported,
+but it requires several additional steps for both Android and iOS.
+Please refer to our GitHub repository [here](https://github.com/signalwire/video-sdk-react-native-demo) for up-to-date instructions
+on how to integrate screen sharing,
+and for a working example.
+
+Wrap up
+-------
+
+We have demonstrated step-by-step how to integrate the SignalWire JavaScript SDK into a React Native application. For more information on the usage of the JavaScript SDK, take a look at the following resources:
+
+- [API Reference](/sdks/browser-sdk)
+- [Getting Started with Video](/video/getting-started/simple-video-demo)
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

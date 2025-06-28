@@ -19,7 +19,7 @@ const presets: PresetConfig[] = [
         editUrl: "https://github.com/signalwire/docs/edit/main/",
         path: "docs",
         routeBasePath: "/",
-        sidebarPath: require.resolve("./sidebarsConfig"),
+        sidebarPath: require.resolve("./sidebarsConfig/main/index.ts"),
         docItemComponent: "@theme/ApiItem",
         sidebarItemsGenerator: sidebarGenerator,
         showLastUpdateTime: false,
