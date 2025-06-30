@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.css';
+// @ts-ignore
 import { FaGithub, FaBook } from 'react-icons/fa';
 import { SiPypi, SiNpm } from 'react-icons/si';
 import { AlphaBadge, BetaBadge } from '../AlphaBetaBadges';

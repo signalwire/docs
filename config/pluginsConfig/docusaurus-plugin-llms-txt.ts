@@ -61,7 +61,7 @@ export const llmsTxtPlugin: PluginConfig = [
       enableLlmsFullTxt: true,
       routeRules: [
         {
-          route: '/sdks/{realtime-sdk,browser-sdk}/**',
+          route: '/sdks/{realtime-sdk,browser-sdk,agents-sdk}/**',
           depth: 2
         }
       ]

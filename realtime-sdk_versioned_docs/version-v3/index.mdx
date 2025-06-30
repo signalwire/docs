@@ -3,113 +3,278 @@ title: "Relay Realtime SDK"
 sidebar_position: 0
 ---
 
-[chat]: /sdks/realtime-sdk/v3/chat
-[messaging]: /sdks/realtime-sdk/v3/messaging
-[pubsub]: /sdks/realtime-sdk/v3/pubsub
-[realtimeclient-2]: /sdks/realtime-sdk/v3/realtime-client
-[relay-v4-1]: /sdks/realtime-sdk
-[task]: /sdks/realtime-sdk/v3/task
-[upgrading-to-relay-v4]: /sdks/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3
-[video-client-1]: /sdks/realtime-sdk/v3/video/room-session
-[video]: /sdks/realtime-sdk/v3/video
-[voice]: /sdks/realtime-sdk/v3/voice
+import { SiNodedotjs } from "react-icons/si";
+import { MdCode, MdLibraryBooks } from "react-icons/md";
 
 # Overview
 
 :::caution
-The [RELAY v4][relay-v4-1] is the most up-to-date version of the Realtime Relay SDK.
-Consider reading the [Upgrading to Relay v4][upgrading-to-relay-v4] page to understand the benefits of
-[RELAY v4][relay-v4-1] and how to upgrade.
+The [RELAY v4](/sdks/realtime-sdk) is the most up-to-date version of the Realtime Relay SDK.
+Consider reading the [Upgrading to Relay v4](/sdks/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3) page to understand the benefits of
+[RELAY v4](/sdks/realtime-sdk) and how to upgrade.
 :::
 
-The SignalWire Realtime SDK v3 revolutionizes real-time communication by simplifying the creation
-and management of various communication services.
-Through the straightforward installation process and the initiation of a realtime client,
-developers can easily engage with `Video`, `Chat`, `Messaging`, `PubSub`, `Tasks`, and `Voice` functionalities.
-The transition to v3 emphasizes ease of use with product-specific constructors, eliminating the need for manual client creation,
-and offering an enhanced event-driven model for more intuitive interaction and control over communication services.
+<InstallHero
+  title="Realtime Server SDK"
+  titleIcon={<SiNodedotjs />}
+  installCommand="npm install @signalwire/realtime-api@~3"
+  docsUrl="/sdks/realtime-sdk/v3/technical-reference"
+  status="stable"
+  packages={[
+    {
+      githubUrl: "https://github.com/signalwire/signalwire-js",
+      type: "npm",
+      packageName: "@signalwire/realtime-api",
+    }
+  ]}
+/>
 
-## Installation
+The SignalWire Realtime SDK v3 is a Node.js server SDK that enables real-time communication through WebSocket connections. Built on an event-driven architecture, it provides dedicated namespaces for voice, video, messaging, chat, pub/sub, and task management.
 
-```bash npm2yarn
+## How It Works
+
+The SDK operates through a bidirectional WebSocket connection. When you call methods like `dial()` or `send()`, the SDK sends requests to SignalWire and returns promises with the results. Simultaneously, you can listen for real-time events like incoming calls or messages using the `.on()` method.
+
+## Getting Started
+
+<Steps>
+
+### Install the SDK
+
+```bash
 npm install @signalwire/realtime-api@~3
 ```
 
-## Get started
+### Create a Relay Application
 
-To get started, create a realtime client, for example with [Video.Client][video-client-1] and listen for events. For example:
+For Voice, Messaging, and Task namespaces, create a [Relay Application resource](/platform/call-fabric/resources/relay-applications) in your dashboard:
+
+1. Set a name for your application
+2. Choose a reference (e.g., "support", "sales") that matches your client's topics
+3. Assign [phone numbers](/platform/phone-numbers/getting-started/buying-a-phone-number#phone-number-configuration) or [SIP addresses](/platform/call-fabric/addresses) to route calls to this application
+
+### Set up authentication
+
+Get your project credentials from the [SignalWire Dashboard](/platform/dashboard/getting-started/your-signalwire-api-space):
+
+```javascript
+import { Voice } from "@signalwire/realtime-api";
+
+const client = new Voice.Client({
+  project: "your-project-id",
+  token: "your-api-token",
+  topics: ["support"]  // Must match your Relay Application reference
+});
+```
+
+### Test your setup
+
+Create a simple inbound call handler to test your setup:
+
+```javascript
+import { Voice } from "@signalwire/realtime-api";
+
+const client = new Voice.Client({
+  project: "your-project-id",
+  token: "your-api-token",
+  topics: ["support"]  // Must match your Relay Application reference
+});
+
+// Answer incoming calls and play a greeting
+client.on("call.received", async (call) => {
+  console.log("Incoming call from:", call.from);
+  
+  await call.answer();
+  await call.playTTS({ text: "Welcome to SignalWire!" });
+});
+
+console.log("Waiting for calls...");
+```
+
+Now call the SignalWire phone number or SIP address you assigned to your Relay Application in step 2. Your application will answer and play the greeting!
+
+</Steps>
+
+## Usage Examples
+
+<Tabs>
+<TabItem value="voice" label="Voice Calls" default>
+
+```javascript
+import { Voice } from "@signalwire/realtime-api";
+
+const voice = new Voice.Client({
+  project: "your-project-id",
+  token: "your-api-token",
+  topics: ["office"]
+});
+
+// Listen for incoming calls
+voice.on("call.received", async (call) => {
+  console.log("Incoming call from:", call.from);
+  await call.answer();
+  
+  // Play a greeting
+  await call.playTTS({ text: "Welcome to our office" });
+});
+
+// Make an outbound call
+const call = await voice.dialPhone({
+  to: "+1234567890",
+  from: "+0987654321"
+});
+```
+
+</TabItem>
+<TabItem value="messaging" label="SMS/MMS">
+
+```javascript
+import { Messaging } from "@signalwire/realtime-api";
+
+const messaging = new Messaging.Client({
+  project: "your-project-id",
+  token: "your-api-token",
+  topics: ["notifications"]
+});
+
+// Handle incoming messages
+messaging.on("message.received", (message) => {
+  console.log("Message from:", message.from);
+  console.log("Content:", message.body);
+});
+
+// Send a message
+await messaging.send({
+  to: "+1234567890",
+  from: "+0987654321",
+  body: "Your appointment is confirmed for tomorrow at 3pm"
+});
+```
+
+</TabItem>
+<TabItem value="video" label="Video Rooms">
 
 ```javascript
 import { Video } from "@signalwire/realtime-api";
 
 const video = new Video.Client({
-  project: "<project-id>",
-  token: "<project-token>",
+  project: "your-project-id",
+  token: "your-api-token"
 });
 
+// Monitor room events
 video.on("room.started", async (roomSession) => {
-  console.log("Room started");
-
-  roomSession.on("member.joined", async (member) => {
-    console.log(member);
+  console.log("Room started:", roomSession.name);
+  
+  roomSession.on("member.joined", (member) => {
+    console.log("Member joined:", member.name);
   });
 });
+
+// Get active room sessions
+const { roomSessions } = await video.getRoomSessions();
 ```
 
-## Namespaces
+</TabItem>
+<TabItem value="chat" label="Chat Applications">
 
-- [Chat][chat]
-- [Messaging][messaging]
-- [PubSub][pubsub]
-- [Task][task]
-- [Video][video]
-- [Voice][voice]
+```javascript
+import { Chat } from "@signalwire/realtime-api";
 
-## Classes
+const chat = new Chat.Client({
+  project: "your-project-id",
+  token: "your-api-token"
+});
 
-- [RealtimeClient][realtimeclient-2]
+// Listen for messages in conversations
+chat.on("message.received", (message) => {
+  console.log(`${message.member.name}: ${message.content}`);
+});
 
-## Functions
-
-### ~~createClient~~
-
-▸ `Const` **createClient**(`userOptions`): `Promise<RealtimeClient>` ⚠️ Deprecated. — See [RealtimeClient][realtimeclient-2] for more details.
-
-> ⚠️ Deprecated.
-> You no longer need to create the client manually. You can use the product constructors, like [Video.Client][video-client-1], to access the same functionality.
-
-Creates a real-time Client.
-
-#### Parameters
-
-| Name                    | Type                                                                      | Description                                                                                    |
-| :---------------------- | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------- |
-| `userOptions`           | `Object`                                                                  |                                                                                                |
-| `userOptions.logLevel?` | `"debug"` \| `"trace"` \| `"info"` \| `"warn"` \| `"error"` \| `"silent"` | logging level                                                                                  |
-| `userOptions.project?`  | `string`                                                                  | SignalWire project id, e.g. <code>a10d8a9f-2166-4e82-56ff-118bc3a4840f</code>                  |
-| `userOptions.token`     | `string`                                                                  | SignalWire project token, e.g. <code>PT9e5660c101cd140a1c93a0197640a369cf5f16975a0079c9</code> |
-
-#### Returns
-
-`Promise<RealtimeClient>` ⚠️ Deprecated. — See [RealtimeClient][realtimeclient-2] for more details.
-
-an instance of a real-time Client.
-
-#### Example
-
-```typescript
-const client = await createClient({
-  project: "<project-id>",
-  token: "<project-token>",
+// Send a chat message
+await chat.publish({
+  channel: "general",
+  content: "Hello team!"
 });
 ```
 
----
+</TabItem>
+<TabItem value="pubsub" label="PubSub Messaging">
 
-### getConfig
+```javascript
+import { PubSub } from "@signalwire/realtime-api";
 
-▸ `Const` **getConfig**(): `GlobalConfig`
+const pubsub = new PubSub.Client({
+  project: "your-project-id",
+  token: "your-api-token"
+});
 
-#### Returns
+// Subscribe to channels
+await pubsub.subscribe(["notifications", "updates"]);
 
-`GlobalConfig`
+// Listen for messages
+pubsub.on("message", (message) => {
+  console.log(`Channel: ${message.channel}`);
+  console.log(`Content: ${message.content}`);
+});
+
+// Publish a message
+await pubsub.publish({
+  channel: "notifications",
+  content: { alert: "System maintenance in 30 minutes" }
+});
+```
+
+</TabItem>
+<TabItem value="task" label="Task Management">
+
+```javascript
+import { Task } from "@signalwire/realtime-api";
+
+const task = new Task.Client({
+  project: "your-project-id",
+  token: "your-api-token",
+  topics: ["workers"]
+});
+
+// Listen for incoming tasks
+task.on("task.received", (payload) => {
+  console.log("Received task:", payload);
+  
+  // Process the task based on payload
+  if (payload.action === "send_email") {
+    console.log(`Sending email to ${payload.recipient}: ${payload.subject}`);
+    // Add your custom email sending logic here
+  }
+});
+
+// Send a task to workers
+await Task.send({
+  topic: "workers",
+  message: {
+    action: "send_email",
+    recipient: "user@example.com",
+    subject: "Welcome aboard!"
+  }
+});
+```
+
+</TabItem>
+</Tabs>
+
+## Explore the SDK
+
+<CardGroup>
+  <Card 
+    title="Technical Reference" 
+    description="Complete API documentation for all namespaces, classes, and methods"
+    href="/sdks/realtime-sdk/v3/technical-reference"
+    icon={<MdCode />}
+  />
+  <Card 
+    title="Guides & Examples" 
+    description="Step-by-step tutorials and practical examples to get you building quickly"
+    href="/sdks/realtime-sdk/v3/guides"
+    icon={<MdLibraryBooks />}
+  />
+</CardGroup>

@@ -4,7 +4,7 @@ const realtimeSdkTechRefSidebar: SidebarsConfig = {
   realtimeSdkTechRefSidebar: [
     {
       type: "category",
-      label: "Realtime SDK",
+      label: "Realtime Server SDK",
       collapsible: false,
       className: "menu-category",
       items: [
