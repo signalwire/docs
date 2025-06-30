@@ -1,6 +1,6 @@
 ---
 title: "MessagingSendResult"
-slug: ssaging/message-sendresult
+slug: /messaging/message-sendresult
 ---
 
 ## Properties
