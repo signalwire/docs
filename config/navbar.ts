@@ -160,21 +160,9 @@ const navbar: NavbarItem[] = [
 
   /// Community Dropdown -------- ///
   {
-    type: "dropdown",
+    to: "https://signalwire.zohodesk.com/portal/en/community",
     label: "Community",
-    position: "right",
-    items: [
-      {
-        href: "https://signalwire.zohodesk.com/portal/en/community",
-        label: "Community Forum",
-        "aria-label": "Community forum",
-      },
-      {
-        href: "https://discord.com/invite/F2WNYTNjuF",
-        label: "Discord Server",
-        "aria-label": "Discord server",
-      },
-    ],
+    position: "right"
   },
 
 /// Platform Dropdown -------- ///
@@ -185,8 +173,8 @@ const navbar: NavbarItem[] = [
   type: "dropdown",
   items: [
     {
-      href: "https://signalwire.com/signin",
-      label: "SignalWire Space",
+      href: "https://signalwire.com/signup",
+      label: "SignalWire Space (Signup)",
       className: "dashboard-navbar-link",
       "aria-label": "Open SignalWire Dashboard",
     },
@@ -218,6 +206,13 @@ const navbar: NavbarItem[] = [
     },
   ],
 },
+
+  {
+    href: "https://discord.com/invite/F2WNYTNjuF",
+    position: "right",
+    "aria-label": "Discord server",
+    className: "header-discord-link",
+  },
 
   {
     href: 'https://github.com/signalwire/docs',
