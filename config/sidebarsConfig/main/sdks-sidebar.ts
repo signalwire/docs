@@ -19,6 +19,11 @@ const sdksSidebar: SidebarsConfig = {
       items: [
         {
           type: "link",
+          href: "/sdks/agents-sdk",
+          label: "Agents SDK",
+        },
+        {
+          type: "link",
           href: "/sdks/browser-sdk",
           label: "Browser SDK",
         },
@@ -26,6 +31,11 @@ const sdksSidebar: SidebarsConfig = {
           type: "link",
           href: "/sdks/realtime-sdk",
           label: "Realtime SDK",
+        },
+        {
+          type: "link",
+          href: "/compatibility-api/sdks",
+          label: "Compatibility SDK",
         }
       ],
     }
