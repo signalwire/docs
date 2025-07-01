@@ -1,0 +1,303 @@
+---
+title: Weather Phone IVR
+slug: /guides/voice/weather-phone
+x-custom:
+  ported_from_readme: true
+  repo: https://github.com/signalwire/examples/tree/main/Voice/Weather%20Phone%20IVR%20-%20NodeJS
+description: Learn how to build a weather phone IVR application with the SignalWire Realtime SDK.
+sidebar_custom_props:
+  platform: javascript
+  github: https://github.com/signalwire/examples/tree/main/Voice/Weather%20Phone%20IVR%20-%20NodeJS
+---
+
+[17712093222-2]: tel:+17712093222
+[buying-a-phone-number-2]: /platform/phone-numbers/getting-started/buying-a-phone-number
+[call-1]: /sdks/realtime-sdk/voice/call
+[call-playtts-1]: /sdks/realtime-sdk/voice/call#playtts
+[call-prompt-1]: /sdks/realtime-sdk/voice/call#prompt
+[community-discord]: https://discord.com/invite/F2WNYTNjuF
+[connectphone-1]: /sdks/realtime-sdk/voice/call#connectphone
+[connectsip-1]: /sdks/realtime-sdk/voice/call#connectsip
+[create-a-signalwire-account-and-space]: https://m.signalwire.com/signups/new?s=1
+[device-builder]: /sdks/realtime-sdk/voice/device-builder
+[here-1]: https://github.com/signalwire/guides/tree/main/Voice/Weather%20Phone%20IVR%20-%20NodeJS
+[here]: https://m.signalwire.com/signups/new?s=1
+[navigating-your-signalwire-space]: /platform/dashboard/get-started/explore
+[project-id-and-api-token]: /platform/dashboard/get-started/explore
+[signalwire-realtime-api-1]: /sdks/realtime-sdk/
+[signalwire-realtime-sdk-reference-2]: /sdks/realtime-sdk/
+[signalwire-realtime-sdk-reference]: /sdks/realtime-sdk/voice/
+[the-github-repo]: https://github.com/signalwire/guides/tree/main/Voice/Weather%20Phone%20IVR%20-%20NodeJS
+[view-the-related-github-repository-to-explore-this-codebase]: https://github.com/signalwire/guides/tree/main/Voice/Weather%20Phone%20IVR%20-%20NodeJS
+[voice-client-s-1]: /sdks/realtime-sdk/voice/client
+
+import Frame from "@site/src/components/Extras/Frame/Frame";
+
+## Overview
+
+This code sample is a simple weather phone IVR application that uses the [SignalWire
+Realtime API][signalwire-realtime-api-1] to provide current weather report
+to the caller in Washington DC either as a phone call or text.
+
+In particular, this sample demonstrates how you can use the SignalWire realtime API to easily accomplish the following:
+
+- Making a phone call programmatically using your numbers
+- Waiting for, and programmatically receiving, phone calls to your numbers
+- Taking user input from their dial pad to select between actions
+- Connecting to a different phone call
+- Sending a text message to the caller
+- Playing audio, Text-to-Speech and ringtones through the phone
+
+The code we'll write is waiting for you at the other end.
+
+## Required Resources
+
+To be able to run this example, you will need a SignalWire account which you can create [here][here]. From your SignalWire Space, you need your SignalWire API credentials. If you need help finding these credentials, visit [Navigating your SignalWire Space][navigating-your-signalwire-space].
+
+Further, you'll need to get a number from SignalWire which will be used as the number for the IVR. You can get that from your SignalWire Dashboard. You can follow [Buying a Phone Number][buying-a-phone-number-2] if you need help.
+
+If you are planning to make or allow calls outside of the US from SignalWire numbers, please note that you'll have to manually enable it. Follow [Enabling International Outbound Voice & SMS]\(Enabling International Outbound Voice & SMS) guide for more information.
+
+To be able to run this project, you need to have Node.js and Node Package Manager (npm) installed.
+
+This sample code is available on GitHub
+[here][here-1].
+You can follow the README.md instructions to download and run the sample.
+
+## How to Run the Application
+
+1. Edit the settings of your phone number so that our code can handle it. The Relay Context you specify here needs to match the one you specify in the code later. In this case, we have used 'office'.
+
+<Frame caption="A screenshot of the Edit Settings page of a phone number in SignalWire. The number is set to accept incoming calls as Voice Calls, handle the calls using a Relay Application, and forward the call to a relay context called 'office'." >
+
+![the Edit Settings page of a phone number in SignalWire.](@image/dashboard/relay/app-voice-handler.webP)
+
+</Frame>
+
+2. Start by adding your Project ID and API credentials, and the phone number you bought to the `env.sample` file, in the format specified.
+3. Rename the `env.sample` file as `.env`.
+4. Run `yarn install` in the directory to download the required libraries.
+5. Run `node index.js` to start the program. If all went well, it should now be listening for phone calls to the number specified in `.env` file.
+
+Alternatively, if you want to use docker to run a container. Instead of doing `yarn install`, do the following instead:
+
+1. `docker build . -t weather-ivr` to build the container using the dockerfile already in the repo.
+2. `docker run -d weather-ivr` to run it.
+
+## Code
+
+The main code for this project lives in a single file: `index.js`, and from there we'll make and receive the phone call. Other than that, there are a few more files that we will briefly discuss:
+
+1. `.env.sample` file contains the format in which you will provide your SignalWire API credentials to the code. Copy this file to `.env` and provide your credentials. Please take care to not commit your `.env` file on GitHub, or make it public in any way.
+
+2. `package.json` lists out the dependencies that you will need to run the code. This includes the SignalWire Realtime SDK. When you run `npm install` or `yarn install`, the packages listed here will be downloaded and installed.
+
+[View the related GitHub Repository to explore this
+codebase.][view-the-related-github-repository-to-explore-this-codebase]
+
+### Abridged code sample
+
+```javascript
+const DC_WEATHER_PHONE = "+12025891212";
+const PHONE_NUMBER = process.env.PHONE_NUMBER;
+const REALTIME_CONFIG = {
+  project: process.env.PROJECT_ID,
+  token: process.env.API_TOKEN,
+  contexts: ["office"],
+};
+const { Voice, Messaging } = require("@signalwire/realtime-api");
+const messageClient = new Messaging.Client(REALTIME_CONFIG);
+const voiceClient = new Voice.Client(REALTIME_CONFIG);
+
+// How to call a number and play a song there.
+async function callWithRainDance(number) {
+  try {
+    let call = await voiceClient.dialPhone({
+      from: PHONE_NUMBER,
+      to: number,
+      timeout: 30,
+    });
+    const rainDance = await call.playAudio({
+      url: "https://swrooms.com/rain.mp3",
+    });
+    await rainDance.ended();
+    await call.hangup();
+  } catch (e) {
+    console.log("Call not answered.", e);
+  }
+}
+
+// How to wait for calls and how to answer them
+voiceClient.on("call.received", async (call) => {
+  console.log("Got call from", call.from, "to number", call.to);
+  await call.answer();
+
+  let welcomeSpeech = await call.playTTS({
+    text: "Hello! Welcome to Knee Rub's Weather Helpline.",
+    gender: "male",
+  });
+  await welcomeSpeech.ended();
+
+  const cmdPrompt = await call.promptTTS({
+    text: `Please enter 
+      1 for Washington weather, 
+      2 for washington weather message, 
+      3 to play rain dance, 
+      4 to send rain dance`,
+    digits: {
+      max: 1,
+      digitTimeout: 15,
+    },
+  });
+  let { digits } = await cmdPrompt.ended();
+
+  switch (digits) {
+    case "1": // We are going to dial a washington weather
+      // number and connect the call.
+      await call.connectPhone({
+        from: call.from,
+        to: DC_WEATHER_PHONE,
+        ringback: new Voice.Playlist().add(
+          Voice.Playlist.TTS({
+            text: "ring. ring. ring. ring. ring. ring. ring. ring",
+          })
+        ),
+      });
+      await call.waitUntilConnected();
+      break;
+
+    case "2": // We are going to query a weather API, find the weather of
+      // Washington, and message that weather to the user's number.
+      let weather = await getWeatherFromOpenWeatherMap("Washington DC");
+      let message = `Washington weather: ${
+        weather.weather[0].description
+      }. Temperature: ${(weather.main.temp - 273).toFixed(2)}°C`;
+
+      try {
+        await messageClient.send({
+          from: PHONE_NUMBER,
+          to: call.to,
+          body: message,
+        });
+      } catch (e) {
+        let pb = await call.playTTS({
+          text: "Sorry, Couldn't send the message.",
+        });
+        await pb.ended();
+      }
+      break;
+
+    case "3": // We are going to play a rain dance song hosted on our servers.
+      const rainDance = await call.playAudio({
+        url: "https://swrooms.com/rain.mp3",
+      });
+      await rainDance.ended();
+      break;
+
+    case "4": // We are going to ask for a phone number to dial and play a
+      // rain dance song to it.
+      const prompt = await call.promptTTS({
+        text: "Please enter your friend's number then dial #.",
+        digits: {
+          max: 15,
+          digitTimeout: 15,
+          terminators: "#",
+        },
+      });
+      const { digits } = await prompt.ended();
+
+      if (ise164("+" + digits)) {
+        callWithRainDance("+" + digits);
+      } else {
+        let pb = await call.playTTS({
+          text: "The number is invalid. Bye.",
+        });
+        await pb.ended();
+      }
+  }
+  await call.hangup(); // hang up
+});
+```
+
+As evident from the source code above, SignalWire Voice API makes it incredibly easy to write complex IVRs. You can get pretty far by using the [SignalWire Realtime SDK reference][signalwire-realtime-sdk-reference] and this code as a starting point.
+
+In case there's some confusion, here's a brief walkthrough anyway:
+
+### Installing the libraries
+
+Download the required SignalWire Realtime Libraries by using `npm install @signalwire/realtime-api@~3`. After you've done this, you can import required namespaces into your project using the following line:
+
+```javascript
+const { Voice, Messaging } = require("@signalwire/realtime-api");
+```
+
+### Instantiating Voice and Messaging client
+
+Using your [Project ID and API token][project-id-and-api-token], you can instantiate both Voice and Messaging Client.
+
+`contexts` parameter: Relay context allows you to treat a bunch of phone numbers as one, so that you can subscribe to and receive events (calls, messages etc) from your group of numbers at once. You can pick which numbers are in which Relay context from the SignalWire Dashboard. For this example, I've already set up my number to be in the `office` context (read [Buying a Phone Number][buying-a-phone-number-2] if you're unfamiliar with the process).
+
+```javascript
+const realtimeConfig = {
+  project: process.env.PROJECT_ID,
+  token: process.env.API_TOKEN,
+  contexts: ["office"],
+};
+
+const messageClient = new Messaging.Client(realtimeConfig);
+const voiceClient = new Voice.Client(realtimeConfig);
+```
+
+### Waiting for calls
+
+Once you've successfully instantiated your Realtime Clients, you can use them to register events pertaining to the context you've selected (like waiting for calls and messages to the numbers). In the example below, notice how easy it is to register event listener for incoming calls.
+
+```javascript
+console.log("Waiting for calls...");
+voiceClient.on("call.received", async (call) => {
+  console.log("Got call from", call.from, "to number", call.to);
+  await call.answer();
+  console.log("Inbound call answered");
+});
+```
+
+With this simple bit of code, as long as this program is running, the phone call to your number will automatically be received by this code.
+
+Of course, picking up the call is but the first step. Now you'll have to interact with the user. Simply use the [Call][call-1] object that is passed to the event listener as parameter to perform actions and listen for user input. Like maybe:
+
+1. making a robot say hello with [`call.playTTS`][call-playtts-1]
+2. taking in user input with [`call.prompt`][call-prompt-1]
+3. connecting the call to another phone call (like the Washington Weather Phone Number) with [`connectPhone`][connectphone-1] or [`connectSip`][connectsip-1]
+
+And more.
+
+### Making calls
+
+Making calls is even simpler. Use the [Voice Client's][voice-client-s-1] `dialPhone` and `dialSip` methods to make calls. In fact, if these are too simple for you, feel free to use the more general purpose `dial` method with [`Device Builder`][device-builder] to make series and parallel calls at once.
+
+```javascript
+// Call someone and play them a nice song.
+
+let call = await voiceClient.dialPhone({
+  from: PHONE_NUMBER,
+  to: "{NUMBER TO CALL IN E.164 FORMAT}",
+  timeout: 30,
+});
+const rainDance = await call.playAudio({
+  url: "https://cdn.signalwire.com/swml/April_Kisses.mp3",
+});
+await rainDance.ended();
+await call.hangup();
+```
+
+## Wrap up
+
+[The GitHub Repo][the-github-repo]
+
+[SignalWire RealTime SDK Reference][signalwire-realtime-sdk-reference-2]
+
+## Sign Up Here
+
+If you would like to test this example out, you can [create a SignalWire account and space][create-a-signalwire-account-and-space].
+
+Please feel free to reach out to us on our [Community Discord][community-discord] or create a Support ticket from your SignalWire Space if you need guidance!

@@ -4,69 +4,87 @@ sidebar_label: Technical reference
 slug: /video/conference/technical-reference
 ---
 
-# Technical Reference
+# Video Conference AppKit
 
-This is the list of parameters that you can configure in the code snippet of a Video Conference. 
-You can add these as parameters of the `SignalWire.AppKit.VideoConference` function, for example:
+AppKit allows you to include [Video Conferences](/video/conference) with
+prebuilt UI into your applications, in the form of Web Components.
 
-```js
-SignalWire.AppKit.VideoConference({
-  token: "vpt_6b96b7da83c56...",
-  userName: "your-custom-name",
-});
+## Installation
+
+```bash npm2yarn
+npm install @signalwire/app-kit
 ```
 
-**token**:  
-The Video Conference token to access the room. 
-Starts with `vpt_`.
+## &lt;sw-video-conference>
 
-**userName**:  
-A custom user name for the user joining the room. 
-Default: `undefined`.
+This component represents a Video Conference.
 
-**theme**:  
-To force a specific color scheme. 
-Allowed values are `'light' | 'dark' | 'auto'`.
+### Properties
 
-**audio**:  
-[Audio constraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints) to use for the devices. 
-Set to `false` if you don't want to use audio devices. 
-Default: `true`
+| Property           | Attribute       | Type                                                            | Description                                                                                                                                                                                                                        |
+| ------------------ | --------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `audio`            | `audio`         | [`MediaTrackConstraints`][media-track-constraints] \| `boolean` | [Audio constraints][media-track-constraints] to use for the devices. Set to `false` if you do not want to use audio devices. Default: `true`                                                                                       |
+| `chat`             | `chat`          | `boolean`                                                       | Set to `false` to disable the chat. Default: `true`                                                                                                                                                                                |
+| `devicePicker`     | `device-picker` | `boolean`                                                       | Set to `false` to allow only default devices to be used. If `false`, this will disable pre-join steps for device selection and remove the ability for the user to change devices after joining the room. Default: `true`           |
+| `memberList`       | `member-list`   | `boolean`                                                       | Set to `false` to disable the member list. Default: `true`                                                                                                                                                                         |
+| `setupRoomSession` | --              | `(roomSession: RoomSession) => void`                            | A callback which will be invoked as soon as a [`RoomSession`][room-session] object is ready. The [`RoomSession.join`][room-session-join] method will be called automatically _after_ executing this callback. Default: `undefined` |
+| `theme`            | `theme`         | `"auto" \| "dark" \| "light"`                                   | Set a specific color scheme. `Auto` will use the operating system's dark-mode setting. Default: `"auto"`                                                                                                                           |
+| `token`            | `token`         | `string`                                                        | The Video Conference token to access the room. Starts with `vpt_`. Default: `undefined`                                                                                                                                            |
+| `userName`         | `user-name`     | `string`                                                        | A custom user name for the user joining the room. Default: `""`                                                                                                                                                                    |
+| `video`            | `video`         | [`MediaTrackConstraints`][media-track-constraints] \| `boolean` | [Video constraints][media-track-constraints] to use for the devices. Set to `false` if you do not want to use video devices. Default: `true`                                                                                       |
+| `layouts`          | `layouts`       | `boolean`                                                       | Set to `false` to disable the layout selection. Default: `true`                                                                                                                                                                    |
 
-**video**:  
-[Video constraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints) to use for the devices. 
-Set to `false` if you don't want to use video devices. 
-Default: `true`
+:::info Using `setupRoomSession`
 
-**memberList**:  
-Set to `false` if you do not want to display the participant list. 
-Default: `true`
+Please note that the `setupRoomSession` callback function must be initialized before the component is rendered to the DOM. For an example, see it implemented below or with React in the blog [AppKit Integration with React](https://signalwire.com/blogs/developers/using-the-video-conference-app-kit-with-react).
 
-**chat**:  
-Set to `false` if you do not want to display the chat. 
-Default: `true`
+:::
 
-**layouts**:  
-Set to `false` if you do not want to display the layout selection. 
-Default: `true`
+### Examples
 
-**devicePicker**:  
-Set to `false` if you do not want the user to be able to change devices (e.g. camera device). 
-If `false`, this will hide the prejoin screen for device selection too. 
-Default: `true`
+#### Basic Instantiation
 
-**setupRoomSession**:  
-A callback which will be invoked when a RoomSession object is ready. 
-Please refer to the documentation for the 
-[JavaScript SDK](sdks/reference/browser-sdk/video/video-roomsession.mdx) 
-to get information on the available RoomSession methods. 
-Example:
+```html
+<sw-video-conference
+  token="vpt_ef2d...e1c"
+  user-name="guest"
+  chat
+  member-list
+  device-picker="false"
+/>
+```
+
+#### Extending with Custom Code
+
+You must initialize `setupRoomSession` before it is rendered to the DOM. In plain JavaScript, you can do this by using `createElement` on the `sw-video-conference` component before appending it to the document body.
 
 ```js
-SignalWire.AppKit.VideoConference({
-  token: "vpt_6b96b7da83c56...",
-  setupRoomSession: (roomSession) => {
-    console.log("roomSession ready");
-  },
-});
+import "@signalwire/app-kit";
+
+function addElement() {
+  const roomSession = document.createElement("sw-video-conference");
+
+  roomSession.setAttribute("token", "vpt_25e67aace53a906f8387f2f499e9d8dd");
+  roomSession.setAttribute("user-name", "Joe");
+  roomSession.setAttribute("device-picker", "false");
+  roomSession.setupRoomSession = (rs) => {
+    console.log("Setting up Room Session", rs);
+    rs.on("room.joined", (e) => {
+      console.log("Joined room:", e.room.display_name);
+      rs.videoMute();
+    });
+  };
+
+  document.getElementById("app").append(roomSession);
+}
+
+if (document.getElementById("app")) {
+  addElement();
+} else {
+  document.addEventListener("DOMContentLoaded", addElement);
+}
 ```
+
+[media-track-constraints]: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+[room-session]: /sdks/browser-sdk/video/room-session
+[room-session-join]: /sdks/browser-sdk/video/room-session#join
