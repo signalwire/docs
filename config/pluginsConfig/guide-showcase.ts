@@ -24,7 +24,7 @@ import fs from 'fs';
 
 const subHeaders = [
   "sdk:swml",
-  "sdk:relayrealtime",
+  //"sdk:relayrealtime",
   "sdk:relaybrowser",
   "sdk:compatibility",
 ];
