@@ -43,8 +43,8 @@ model BaseConference is Conference {
 @summary("cXML Conference")
 model CxmlConference is BaseConference {
   @doc("Type of the conference.")
-  @example("laml_conference")
-  type: "laml_conference";
+  @example("cxml_conference")
+  type: "cxml_conference";
 }
 
 @summary("Relay Conference")
