@@ -134,7 +134,7 @@ const apiSidebar: SidebarsConfig = {
               },
               type: "category",
               label: "Logs",
-              items: require("../../docs/rest/signalwire-rest/endpoints/logs/sidebar"),
+              items: require("../../../docs/rest/signalwire-rest/endpoints/logs/sidebar"),
             },
             {
               link: {

@@ -8,6 +8,7 @@ const { URL } = require('url');
 
 // Base URL for the Docker instance
 const BASE_URL = 'http://localhost';
+const MAP_FILE = '../provisioning/nginx/redirects.map';
 
 // Connection pool settings
 const httpAgent = new http.Agent({
@@ -201,7 +202,7 @@ async function testRedirect(fromPath, expectedTo) {
     }
 }
 
-async function testAllRedirects(redirectsMapPath = './provisioning/nginx/redirects.map', options = {}) {
+async function testAllRedirects(redirectsMapPath = MAP_FILE, options = {}) {
     const { quiet = false, batchSize = 20, delayBetweenBatches = 1000, verbose = false } = options;
     
     if (!quiet) {
@@ -398,7 +399,7 @@ async function testAllRedirects(redirectsMapPath = './provisioning/nginx/redirec
 // Export for use as module or run directly
 if (require.main === module) {
     const args = process.argv.slice(2);
-    let redirectsMapPath = './provisioning/nginx/redirects.map';
+    let redirectsMapPath = MAP_FILE;
     let quiet = false;
     let batchSize = 20;  // Increased default batch size
     let delayBetweenBatches = 1000;
@@ -429,7 +430,7 @@ Options:
   --help, -h          Show this help message
 
 Arguments:
-  redirects-map-path    Path to the redirects.map file (default: ./provisioning/nginx/redirects.map)
+  redirects-map-path    Path to the redirects.map file (default: ${MAP_FILE})
 
 Examples:
   node test-redirects.js

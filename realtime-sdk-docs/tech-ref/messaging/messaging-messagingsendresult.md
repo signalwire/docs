@@ -1,5 +1,5 @@
 ---
-slug: /messaging/messaging-send-result
+slug: /messaging/messaging-sendresult
 sidebar_label: MessagingSendResult
 ---
 
