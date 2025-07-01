@@ -22,7 +22,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireCallingRest: {
+      signalwireCallingApi: {
         specPath: "api/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/calling",        
         sidebarOptions: {
@@ -30,7 +30,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireChatRest: {
+      signalwireChatApi: {
         specPath: "api/signalwire-rest/chat-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/chat",
         sidebarOptions: {
@@ -38,7 +38,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireDatasphereRest: {
+      signalwireDatasphereApi: {
         specPath: "api/signalwire-rest/datasphere-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/datasphere",
         sidebarOptions: {
@@ -46,7 +46,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireFabricRest: {
+      signalwireFabricApi: {
         specPath: "api/signalwire-rest/fabric-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/fabric",
         sidebarOptions: {
@@ -54,7 +54,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireFaxRest: {
+      signalwireFaxApi: {
         specPath: "api/signalwire-rest/fax-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/fax",
         sidebarOptions: {
@@ -62,7 +62,15 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireMessagingRest: {
+      signalwireLogsApi: {
+        specPath: "api/signalwire-rest/logs-api/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/rest/signalwire-rest/endpoints/logs",
+        sidebarOptions: {
+          categoryLinkSource: "tag",
+          groupPathsBy: "tag",
+        },
+      },
+      signalwireMessagingApi: {
         specPath: "api/signalwire-rest/message-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/messaging",
         sidebarOptions: {
@@ -70,7 +78,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireProjectRest: {
+      signalwireProjectApi: {
         specPath: "api/signalwire-rest/project-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/project",
         sidebarOptions: {
@@ -78,7 +86,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwirePubSubRest: {
+      signalwirePubSubApi: {
         specPath: "api/signalwire-rest/pubsub-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/pubsub",
         sidebarOptions: {
@@ -86,7 +94,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireSpaceRest: {
+      signalwireSpaceApi: {
         specPath: "api/signalwire-rest/space-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/space",
         sidebarOptions: {
@@ -94,7 +102,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireVideoRest: {
+      signalwireVideoApi: {
         specPath: "api/signalwire-rest/video-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/video",
         sidebarOptions: {
@@ -102,7 +110,7 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireVoiceRest: {
+      signalwireVoiceApi: {
         specPath: "api/signalwire-rest/voice-api/_spec_.yaml",
         outputDir: "docs/rest/signalwire-rest/endpoints/voice",
         sidebarOptions: {

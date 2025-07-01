@@ -10,7 +10,7 @@ model Conference {
   created_at: utcDateTime;
 }
 
-model BaseConference extends Conference {
+model BaseConference is Conference {
   @doc("Project ID of the conference.")
   @example("a77ce7d0-6ae8-4b33-a7a6-0bf1750d1e19")
   project_id: uuid;
@@ -40,9 +40,20 @@ model BaseConference extends Conference {
   updated_at: utcDateTime;
 }
 
-model LamlConference extends BaseConference {}
+@summary("cXML Conference")
+model CxmlConference is BaseConference {
+  @doc("Type of the conference.")
+  @example("laml_conference")
+  type: "laml_conference";
+}
 
-model RelayConference extends BaseConference {
+@summary("Relay Conference")
+model RelayConference is BaseConference {
+
+  @doc("Type of the conference.")
+  @example("relay_conference")
+  type: "relay_conference";
+
   @doc("Recording URL of the conference.")
   @example("http://record.com")
   recording_url: string;
@@ -56,7 +67,8 @@ model RelayConference extends BaseConference {
   recording_file_size: integer;
 }
 
-model VideoRoomSessionConference extends Conference {
+@summary("Video Room Session")
+model VideoRoomSessionConference is Conference {
   @doc("Source of the conference.")
   @example("realtime_api")
   source: string;

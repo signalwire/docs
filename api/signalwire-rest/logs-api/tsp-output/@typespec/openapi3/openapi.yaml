@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Logs API
-  description: API to access logs.
+  description: API to manage and query log data for SignalWire.
   version: 0.0.0
 tags:
   - name: Conferences
@@ -41,9 +41,39 @@ security:
   - BasicAuth: []
 components:
   schemas:
-    BaseConference:
+    ChargeDetails:
       type: object
       required:
+        - description
+        - amount
+      properties:
+        description:
+          type: string
+          description: Description for this charge.
+          example: Tax
+        amount:
+          type: integer
+          description: Charged amount.
+          example: 60000
+    ConferencesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            anyOf:
+              - $ref: '#/components/schemas/CxmlConference'
+              - $ref: '#/components/schemas/RelayConference'
+              - $ref: '#/components/schemas/VideoRoomSessionConference'
+          description: A list of conference logs.
+      description: Response containing a list of conferences.
+    CxmlConference:
+      type: object
+      required:
+        - id
+        - created_at
         - project_id
         - region
         - name
@@ -51,7 +81,17 @@ components:
         - max_size
         - current_participants
         - updated_at
+        - type
       properties:
+        id:
+          type: string
+          description: Unique identifier for the conference.
+          example: b9028451-b1d3-4690-b5d3-37b19d25f573
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2025-03-11T01:49:49.630Z'
         project_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
@@ -82,27 +122,30 @@ components:
           format: date-time
           description: Updated timestamp.
           example: '2025-03-12T01:49:49.630Z'
-      allOf:
-        - $ref: '#/components/schemas/Conference'
-    ChargeDetails:
-      type: object
-      required:
-        - description
-        - amount
-      properties:
-        description:
+        type:
           type: string
-          description: Description for this charge.
-          example: Tax
-        amount:
-          type: integer
-          description: Charged amount.
-          example: 60000
-    Conference:
+          enum:
+            - laml_conference
+          description: Type of the conference.
+          example: laml_conference
+      description: Core conference object.
+      title: cXML Conference
+    RelayConference:
       type: object
       required:
         - id
         - created_at
+        - project_id
+        - region
+        - name
+        - status
+        - max_size
+        - current_participants
+        - updated_at
+        - type
+        - recording_url
+        - recording_duration
+        - recording_file_size
       properties:
         id:
           type: string
@@ -113,32 +156,42 @@ components:
           format: date-time
           description: Creation timestamp.
           example: '2025-03-11T01:49:49.630Z'
-      description: Core conference object.
-    ConferencesResponse:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          items:
-            anyOf:
-              - $ref: '#/components/schemas/LamlConference'
-              - $ref: '#/components/schemas/RelayConference'
-              - $ref: '#/components/schemas/VideoRoomSessionConference'
-          description: A list of conference logs.
-      description: Response containing a list of conferences.
-    LamlConference:
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/BaseConference'
-    RelayConference:
-      type: object
-      required:
-        - recording_url
-        - recording_duration
-        - recording_file_size
-      properties:
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: Project ID of the conference.
+          example: a77ce7d0-6ae8-4b33-a7a6-0bf1750d1e19
+        region:
+          type: string
+          description: Region of the conference.
+          example: us1
+        name:
+          type: string
+          description: Name of the conference.
+          example: conference
+        status:
+          type: string
+          description: Status of the conference.
+          example: in-progress
+        max_size:
+          type: integer
+          description: Maximum size of the conference.
+          example: 2
+        current_participants:
+          type: integer
+          description: Current participants in the conference.
+          example: 1
+        updated_at:
+          type: string
+          format: date-time
+          description: Updated timestamp.
+          example: '2025-03-12T01:49:49.630Z'
+        type:
+          type: string
+          enum:
+            - relay_conference
+          description: Type of the conference.
+          example: relay_conference
         recording_url:
           type: string
           description: Recording URL of the conference.
@@ -151,11 +204,13 @@ components:
           type: integer
           description: Recording file size of the conference.
           example: 12345
-      allOf:
-        - $ref: '#/components/schemas/BaseConference'
+      description: Core conference object.
+      title: Relay Conference
     VideoRoomSessionConference:
       type: object
       required:
+        - id
+        - created_at
         - source
         - type
         - url
@@ -167,6 +222,15 @@ components:
         - charge
         - charge_details
       properties:
+        id:
+          type: string
+          description: Unique identifier for the conference.
+          example: b9028451-b1d3-4690-b5d3-37b19d25f573
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp.
+          example: '2025-03-11T01:49:49.630Z'
         source:
           type: string
           description: Source of the conference.
@@ -212,8 +276,8 @@ components:
           items:
             $ref: '#/components/schemas/ChargeDetails'
           description: Details on charges associated with this conference.
-      allOf:
-        - $ref: '#/components/schemas/Conference'
+      description: Core conference object.
+      title: Video Room Session
     uuid:
       type: string
       format: uuid
