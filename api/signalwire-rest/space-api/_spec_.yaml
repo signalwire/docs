@@ -301,12 +301,16 @@ components:
       properties:
         self:
           type: string
+          example: /api/relay/rest/queues?page_number=0&page_size=50
         first:
           type: string
+          example: /api/relay/rest/queues?page_size=50
         next:
           type: string
+          example: /api/relay/rest/queues?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
         prev:
           type: string
+          example: /api/relay/rest/queues?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
     RecordingListResponse:
       type: object
       required:
@@ -450,12 +454,84 @@ components:
       type: string
       format: uuid
       description: Universal Unique Identifier.
+    Queue:
+      type: object
+      required:
+        - id
+        - project_id
+        - friendly_name
+        - uri
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: aae131db-214c-46f5-88b6-92004f8467cf
+        project_id:
+          type: string
+          format: uuid
+          example: c6c4679b-716a-456a-9e41-a03821005005
+        average_wait_time:
+          type: integer
+          format: int32
+          example: 0
+        current_size:
+          type: integer
+          format: int32
+          example: 0
+        date_created:
+          type: string
+          format: date-time
+          example: 2025-05-30T15:16:52Z
+        date_updated:
+          type: string
+          format: date-time
+          example: 2025-05-30T15:16:52Z
+        friendly_name:
+          type: string
+          example: test
+        max_size:
+          type: integer
+          format: int32
+          example: 5
+        uri:
+          type: string
+          format: uri
+          example: /api/relay/rest/queues/aae131db-214c-46f5-88b6-92004f8467cf
+    QueueListResponse:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Queue'
+        links:
+          $ref: '#/components/schemas/pagination'
+    UpdateQueueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Name 2
+        max_size:
+          type: integer
+          format: int32
+          example: 600
   parameters:
     RecordingPathID:
       name: id
       in: path
       required: true
       description: Unique ID of a Recording.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    QueuePathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of a Queue.
       schema:
         $ref: '#/components/schemas/uuid'
     
@@ -508,6 +584,7 @@ tags:
        3. When the phone is answered, we will read a six-digit code.
        4. To verify that you are the owner, take that number and submit it to the Validate Verifications Endpoint.
          * You have 5 attempts to enter the code correctly.
+  - name: Queues
 paths:
   /addresses:
     get:
@@ -9906,6 +9983,126 @@ paths:
                   - Not Found
       tags:
         - Recordings
+  /queues:
+    get:
+      tags:
+        - Queues
+      summary: List Queues
+      description: Returns a paginated list of queues.
+      responses:
+        '200':
+          description: A list of queues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueListResponse'
+    post:
+      tags:
+        - Queues
+      summary: Create a Queue
+      description: Creates a new queue.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueueRequest'
+      responses:
+        '201':
+          description: Queue created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '422':
+          $ref: '#/components/responses/422'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+  /queues/{id}:
+    get:
+      tags:
+        - Queues
+      summary: Retrieve a Queue
+      description: Returns information about a specific queue.
+      parameters:
+        - $ref: '#/components/parameters/QueuePathID'
+      responses:
+        '200':
+          description: Queue found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: Queue not found
+    put:
+      tags:
+        - Queues
+      summary: Update a Queue
+      description: Updates the properties of a specific queue.
+      parameters:
+        - $ref: '#/components/parameters/QueuePathID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueueRequest'
+      responses:
+        '200':
+          description: Queue updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '400':
+          $ref: '#/components/responses/400'
+        '422':
+          $ref: '#/components/responses/422'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+    delete:
+      tags:
+        - Queues
+      summary: Delete a Queue
+      description: Deletes a specific queue.
+      parameters:
+        - $ref: '#/components/parameters/QueuePathID'
+      responses:
+        '204':
+          $ref: '#/components/responses/204'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: Queue not found
   /queues/{queue_id}/members:
     get:
       operationId: listQueueMembers
