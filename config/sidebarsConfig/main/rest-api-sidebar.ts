@@ -127,6 +127,18 @@ const apiSidebar: SidebarsConfig = {
             {
               link: {
                 type: "generated-index",
+                title: "Logs",
+                description:
+                  "Below are the available Logs REST APIs categorized by their endpoints.",
+                slug: "/rest/signalwire-rest/endpoints/logs",
+              },
+              type: "category",
+              label: "Logs",
+              items: require("../../docs/rest/signalwire-rest/endpoints/logs/sidebar"),
+            },
+            {
+              link: {
+                type: "generated-index",
                 title: "Messaging",
                 description:
                   "Below are the available Messaging REST APIs categorized by their endpoints.",
