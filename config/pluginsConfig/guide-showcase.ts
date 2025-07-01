@@ -25,7 +25,7 @@ import fs from 'fs';
 const subHeaders = [
   "sdk:swml",
   "sdk:relayrealtime",
-  "sdk:relaybrowser3",
+  "sdk:relaybrowser",
   "sdk:compatibility",
 ];
 
@@ -177,6 +177,7 @@ export const showcasePlugin: PluginConfig = [
         link: "/swml",
         category: "SDKs",
       },
+      /*
       {
         name: "sdk:relayrealtime",
         label: "Relay Realtime SDK",
@@ -186,9 +187,10 @@ export const showcasePlugin: PluginConfig = [
         link: "/sdks/realtime-sdk/",
         category: "SDKs",
       },
+      */
       {
-        name: "sdk:relaybrowser3",
-        label: "Relay Browser SDK (v3)",
+        name: "sdk:relaybrowser",
+        label: "Relay Browser SDK",
         description: "",
         color: "#30f803",
         reference: "Reference",
