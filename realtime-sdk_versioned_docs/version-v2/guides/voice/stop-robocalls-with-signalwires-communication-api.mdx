@@ -3,11 +3,7 @@ slug: /guides/voice/stop-robocalls
 x-custom:
   ported_from_readme: true
   repo: https://github.com/signalwire/spam-call-filter-example
-  tags:
-    - language:nodejs
-    - product:voice
-    - sdk:relayrealtime
-description: Learn how to stop robocalls with the SignalWire Realtime SDK v4.
+description: Learn how to stop robocalls with the SignalWire Realtime SDK v2.
 sidebar_label: Stopping Robocalls
 sidebar_custom_props:
   platform: javascript
@@ -15,10 +11,8 @@ sidebar_custom_props:
 ---
 
 [captcha]: https://en.wikipedia.org/wiki/CAPTCHA
-[full-application-on-github-1]: https://github.com/signalwire/examples/tree/main/Voice/Lenny%20Spam%20Filter%20Relay%20v4
 [full-application-on-github]: https://github.com/signalwire/spam-call-filter-example
 [getting-started-with-relay]: https://github.com/signalwire/signalwire-guides/blob/master/intros/getting_started_relay.md
-[github-1]: https://github.com/signalwire/examples/tree/main/Voice/Lenny%20Spam%20Filter%20Relay%20v4
 [github]: https://github.com/signalwire/spam-call-filter-example
 [here-1]: https://signalwire.com
 [here]: https://signalwire.com/signup
@@ -26,11 +20,12 @@ sidebar_custom_props:
 [navigating-your-signalwire-space]: /platform/dashboard/get-started/explore
 [node-persist]: https://github.com/simonlast/node-persist
 [on-the-trial-mode-resource-page]: https://signalwire.com/resources/getting-started/trial-mode
+[relay-documentation]: /sdks/realtime-sdk/v2/language/nodejs
 [signalwire-101]: https://signalwire.com/resources/getting-started/signalwire-101
 [signalwire-relay-sdk]: /sdks/realtime-sdk/
 [the-getting-started-with-relay]: https://github.com/signalwire/signalwire-guides/blob/master/intros/getting_started_relay.md
 
-# Stopping Robocalls with a CAPTCHA - Node.js (Relay v4)
+# Stopping Robocalls with a CAPTCHA - Node.js (Relay v2)
 
 
 Robocalling and spam calls have been increasing in number over the past few years. Only in the US, there were 165.1 million robocalls placed in 2020, an average of 14.1 per person, including children and people who do not have a phone! SignalWire can help with its communication technology, which allows us to easily create a robocall protection service.
@@ -67,7 +62,7 @@ The application database is persistent, so you will have to remove the `.node-pe
 
 :::
 
-Find the code for this application on [GitHub][github-1]!
+Find the code for this application on [GitHub][github]!
 
 ## Configuring the Code
 
@@ -114,20 +109,19 @@ The possible paths that a call can take are defined in index.js in the form of a
              +---> LENNY ----+    (lenny.js)
 ```
 
-Right after the application is started, we create a Relay Client to connect with SignalWire:
+Right after the application is started, we create a Relay Consumer to connect with SignalWire:
 
 ```js
-const client = await SignalWire({
+const { RelayConsumer } = require('@signalwire/node');
+
+const consumer = new RelayConsumer({
   project: process.env.SIGNALWIRE_PROJECT_ID,
   token: process.env.SIGNALWIRE_API_TOKEN,
-  topics: [process.env.SIGNALWIRE_CONTEXT],
+  contexts: [process.env.SIGNALWIRE_CONTEXT],
+  onIncomingCall: onIncomingCallHandler,
 });
-const voiceClient = client.voice;
 
-await voiceClient.listen({
-  topics: [process.env.SIGNALWIRE_CONTEXT],
-  onCallReceived: onIncomingCallHandler,
-});
+consumer.run();
 ```
 
 Whenever someone calls a number which we have associated to the same topic specified in `SIGNALWIRE_CONTEXT`, the Relay Consumer will call our `onIncomingCallHandler` function. In there, we first answer the call:
@@ -139,19 +133,14 @@ await call.answer();
 We start recording:
 
 ```js
-await call
-  .recordAudio({
-    direction: "both",
-    initialTimeout: 10,
-    endSilenceTimeout: 0,
-    stereo: true,
-    listen: {
-      onStarted: (rec) => {
-        console.log("Recording the call to " + rec.url);
-      },
-    },
-  })
-  .onStarted();
+const recordResult = await call.record({
+  direction: "both",
+  initial_timeout: 10,
+  end_silence_timeout: 0,
+  stereo: true,
+});
+
+console.log("Recording the call to " + recordResult.url);
 ```
 
 And we go into the `START` state. From there, is the caller is not known yet (i.e., is not in our db), we will switch to the `CAPTCHA` state.
@@ -163,6 +152,7 @@ The CAPTCHA implementation can be found in the `captcha.js` file. In there, we f
 ```js
 await call.playTTS({
   text: "Hello! To complete your call, Please verify you are a human, by dialing or speaking the answer to this simple question.",
+  gender: "male"
 });
 ```
 
@@ -173,28 +163,26 @@ const digit1 = Math.floor(Math.random() * 10);
 const digit2 = Math.floor(Math.random() * 10);
 const expectedAnswer = digit1 + digit2;
 
-const result = await call
-  .promptTTS({
-    digits: { max: 2, digitTimeout: 10, terminators: "#" },
-    duration: 10,
-    speech: {
-      hints: ["denoise=true", ...Array(19).keys()], // Array of expected phrases to detect.
-      endSilenceTimeout: 2,
-    },
-    text: "What is " + digit1 + " plus " + digit2 + "?", // Our TTS prompt
-  })
-  .onEnded();
+const result = await call.promptTTS({
+  type: 'both',
+  digits_max: 2,
+  digits_timeout: 10,
+  digits_terminators: "#",
+  speech_timeout: 10,
+  speech_end_silence_timeout: 2,
+  text: "What is " + digit1 + " plus " + digit2 + "?",
+  gender: "male"
+});
 ```
 
 At this point the user will hear, for example: "What is 3 plus 9?". They can answer either by speaking, or by using the keypad. We find the answer in the `result` variable:
 
 ```js
-if (result.digits.trim() == expectedAnswer) {
-  await call
-    .playTTS({
-      text: "That is correct. You are probably a human, enjoy your call!",
-    })
-    .onEnded();
+if (result.digits.trim() == expectedAnswer || result.text.includes(expectedAnswer.toString())) {
+  await call.playTTS({
+    text: "That is correct. You are probably a human, enjoy your call!",
+    gender: "male"
+  });
   storage.set(call.from, { isHuman: true });
   return true;
 }
@@ -205,14 +193,18 @@ if (result.digits.trim() == expectedAnswer) {
 If the captcha is solved successfully, or if the caller is a known legitimate human, they are transferred to the real phone number. In `transfer.js`, you can see how to connect the currently active call (`call`) to our real phone number:
 
 ```js
-const dial = await call.connectPhone({
+const dial = await call.connect({
+  type: "phone", 
   to: destinationNumber,
   from: call.from,
-  timeout: 30,
+  timeout: 30
 });
 ```
 
-At this point the `dial` variable will have the nested call's description.
+At this point we have:
+
+- `call`, the original call, and
+- `dial.call`, the nested call to our real phone number
 
 Now comes the interesting part. Say that a human spammer has been able to get to this point. We want to let the user mark them as a spammer while they're speaking. We'll do that by dialing `**`. As soon as the user dials `**`, we hangup the nested phone call and connect the spammer to Lenny for an endless meaningless conversation.
 
@@ -221,20 +213,18 @@ First, we connect an event to detect the digits that the user dials:
 ```js
 // Detect if the user presses '**'. If so, mark caller as spammer.
 let dialed = "";
-dial.listen({
-  onDetectUpdated: async (detect) => {
-    if (detect.type === "digit") {
-      const digit = detect.result;
-      console.log("Dialed", digit);
-      dialed += digit;
+dial.call.on('detect.update', async (call, params) => {
+  if (params.detect.type === 'digit') {
+    const digit = params.detect.params.event;
+    console.log('Dialed', digit);
+    dialed += digit;
 
-      if (dialed.endsWith("**")) {
-        console.log("Marking as scammer");
-        await storage.set(call.from, { isHuman: true, isScammer: true });
-        dial.hangup(); // Hangup the nested call
-      }
+    if (dialed.endsWith('**')) {
+      console.log('Marking as scammer');
+      await storage.set(call.from, { isHuman: true, isScammer: true });
+      dial.call.hangup(); // Hangup the nested call
     }
-  },
+  }
 });
 ```
 
@@ -242,11 +232,10 @@ Then, we start the actual detection of the digits:
 
 ```js
 // Start the asynchronous detection
-await dial
-  .detectDigit({
-    timeout: 0,
-  })
-  .onStarted();
+await dial.call.detectAsync({
+  type: 'digit',
+  timeout: 0
+});
 ```
 
 The detection runs asynchronously while the user speaks.
@@ -266,24 +255,24 @@ Lenny consists in a sequence of audio files with the voice of a convincing old m
 How does Lenny know when to start speaking, so to avoid talking over the other person? Surprisingly, Lenny is quite simple. First, we simply play an audio (we pick audio files in sequence):
 
 ```js
-await call
-  .playAudio({
-    url: lennyConfig.soundBase + "/" + lennyConfig.responses[responseId],
-    volume: +20,
-  })
-  .onEnded();
+await call.playAudio({
+  url: lennyConfig.soundBase + "/" + lennyConfig.responses[responseId],
+  volume: 20
+});
 ```
 
 Then, in order to wait for whatever the other person is replying, we use `prompt` (the same function we used for the captcha), using as audio a light background noise:
 
 ```js
 await call.prompt({
-  speech: { endSilenceTimeout: 1.0 },
-  playlist: new Voice.Playlist().add(
-    Voice.Playlist.Audio({
-      url: lennyConfig.soundBase + "/" + lennyConfig.background,
-    })
-  ),
+  type: 'speech',
+  speech_end_silence_timeout: 1.0,
+  media: [
+    {
+      type: 'audio',
+      url: lennyConfig.soundBase + "/" + lennyConfig.background
+    }
+  ]
 });
 ```
 
@@ -291,7 +280,17 @@ And that's it!
 
 ## Conclusion
 
-Now you have a powerful and persistent way to prevent robocalls from hitting your personal phone or your businesses' phones, brought to you by the power of the SignalWire Communication APIs.
+Now you have a powerful and persistent way to prevent robocalls from hitting your personal phone or your businesses' phones, brought to you by the power of the SignalWire Communication APIs. To see a live demonstration of this application at work, feel free to watch our previous LIVEWire on it below.
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/gn7Z8xB58gc"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
 
 ## Get Started With SignalWire
 
@@ -299,4 +298,9 @@ You can sign up for a new SignalWire Space [here][here-1]! If you sign up for th
 
 You can find more information, including where to get your credentials and how to set up the phone number, in [the Getting Started with Relay][the-getting-started-with-relay] guide.
 
+Here are some other resources that may be helpful for you:
 
+- [**Full Application on GitHub**][full-application-on-github]
+- [Relay Documentation][relay-documentation]
+- [Getting Started with Relay][getting-started-with-relay]
+- [SignalWire 101][signalwire-101]

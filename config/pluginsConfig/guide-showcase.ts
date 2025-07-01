@@ -24,11 +24,8 @@ import fs from 'fs';
 
 const subHeaders = [
   "sdk:swml",
-  "sdk:relayrealtime3",
-  "sdk:relayrealtime4",
+  "sdk:relayrealtime",
   "sdk:relaybrowser3",
-  "sdk:relaybrowser2",
-  "sdk:relay",
   "sdk:compatibility",
 ];
 
@@ -181,30 +178,12 @@ export const showcasePlugin: PluginConfig = [
         category: "SDKs",
       },
       {
-        name: "sdk:relayrealtime4",
-        label: "Relay Realtime SDK (v4)",
+        name: "sdk:relayrealtime",
+        label: "Relay Realtime SDK",
         description: "",
         color: "#9104f6",
         reference: "Reference",
         link: "/sdks/realtime-sdk/",
-        category: "SDKs",
-      },
-      {
-        name: "sdk:relayrealtime3",
-        label: "Relay Realtime SDK (v3)",
-        description: "",
-        color: "#044CF6",
-        reference: "Reference",
-        link: "/sdks/realtime-sdk/v3",
-        category: "SDKs",
-      },
-      {
-        name: "sdk:relay",
-        label: "Relay SDK (v2)",
-        description: "",
-        color: "#9BB7FB",
-        reference: "Reference",
-        link: "/sdks",
         category: "SDKs",
       },
       {
@@ -214,15 +193,6 @@ export const showcasePlugin: PluginConfig = [
         color: "#30f803",
         reference: "Reference",
         link: "/sdks/browser-sdk/",
-        category: "SDKs",
-      },
-      {
-        name: "sdk:relaybrowser2",
-        label: "Relay Browser SDK (v2)",
-        description: "",
-        color: "#9BB7FB",
-        reference: "Reference",
-        link: "https://docs.signalwire.com/reference/relay-sdk-js",
         category: "SDKs",
       },
       {
