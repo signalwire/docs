@@ -233,6 +233,44 @@ components:
           required:
             - call_handler
             - call_relay_context
+    QueueMember:
+      type: object
+      properties:
+        call_id:
+          type: string
+          format: uuid
+          example: "596e2dea-a269-4765-a0b4-01b82d11c120"
+        date_enqueued:
+          type: string
+          format: date-time
+          description: When the queue member was last enqueued.
+          example: "2025-06-22T17:44:08.126Z"
+        position:
+          type: integer
+          description: Queue member position in the queue.
+          example: 2
+        uri:
+          type: string
+          description: The URL of this queue member.
+          example: "/api/relay/rest/queues/596e2dea-a269-4765-a0b4-01b82d11c120/members/596e2dea-a269-4765-a0b4-01b82d11c120"
+        wait_time:
+          type: integer
+          description: Wait time in seconds since the member was enqueued. If not yet enqueued, it will be null.
+          example: 172975
+        project_id:
+          type: string
+          description: The ID of the project associated with this queue member.
+          example: "d421473b-d696-449a-a1a1-4ddd83d2d0e5"
+        queue_id:
+          type: string
+          description: The ID of the queue associated with this queue member.
+          example: "596e2dea-a269-4765-a0b4-01b82d11c120"
+      required:
+      - call_id
+      - position
+      - uri
+      - project_id
+      - queue_id
     error:
       type: object
       properties:
@@ -263,12 +301,16 @@ components:
       properties:
         self:
           type: string
+          example: /api/relay/rest/queues?page_number=0&page_size=50
         first:
           type: string
+          example: /api/relay/rest/queues?page_size=50
         next:
           type: string
+          example: /api/relay/rest/queues?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
         prev:
           type: string
+          example: /api/relay/rest/queues?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
     RecordingListResponse:
       type: object
       required:
@@ -412,12 +454,84 @@ components:
       type: string
       format: uuid
       description: Universal Unique Identifier.
+    Queue:
+      type: object
+      required:
+        - id
+        - project_id
+        - friendly_name
+        - uri
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: aae131db-214c-46f5-88b6-92004f8467cf
+        project_id:
+          type: string
+          format: uuid
+          example: c6c4679b-716a-456a-9e41-a03821005005
+        average_wait_time:
+          type: integer
+          format: int32
+          example: 0
+        current_size:
+          type: integer
+          format: int32
+          example: 0
+        date_created:
+          type: string
+          format: date-time
+          example: 2025-05-30T15:16:52Z
+        date_updated:
+          type: string
+          format: date-time
+          example: 2025-05-30T15:16:52Z
+        friendly_name:
+          type: string
+          example: test
+        max_size:
+          type: integer
+          format: int32
+          example: 5
+        uri:
+          type: string
+          format: uri
+          example: /api/relay/rest/queues/aae131db-214c-46f5-88b6-92004f8467cf
+    QueueListResponse:
+      type: object
+      required:
+        - data
+        - links
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Queue'
+        links:
+          $ref: '#/components/schemas/pagination'
+    UpdateQueueRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Name 2
+        max_size:
+          type: integer
+          format: int32
+          example: 600
   parameters:
     RecordingPathID:
       name: id
       in: path
       required: true
       description: Unique ID of a Recording.
+      schema:
+        $ref: '#/components/schemas/uuid'
+    QueuePathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of a Queue.
       schema:
         $ref: '#/components/schemas/uuid'
     
@@ -470,6 +584,7 @@ tags:
        3. When the phone is answered, we will read a six-digit code.
        4. To verify that you are the owner, take that number and submit it to the Validate Verifications Endpoint.
          * You have 5 attempts to enter the code correctly.
+  - name: Queues
 paths:
   /addresses:
     get:
@@ -9868,3 +9983,276 @@ paths:
                   - Not Found
       tags:
         - Recordings
+  /queues:
+    get:
+      tags:
+        - Queues
+      summary: List Queues
+      description: Returns a paginated list of queues.
+      responses:
+        '200':
+          description: A list of queues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueListResponse'
+    post:
+      tags:
+        - Queues
+      summary: Create a Queue
+      description: Creates a new queue.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueueRequest'
+      responses:
+        '201':
+          description: Queue created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '422':
+          $ref: '#/components/responses/422'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+  /queues/{id}:
+    get:
+      tags:
+        - Queues
+      summary: Retrieve a Queue
+      description: Returns information about a specific queue.
+      parameters:
+        - $ref: '#/components/parameters/QueuePathID'
+      responses:
+        '200':
+          description: Queue found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: Queue not found
+    put:
+      tags:
+        - Queues
+      summary: Update a Queue
+      description: Updates the properties of a specific queue.
+      parameters:
+        - $ref: '#/components/parameters/QueuePathID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQueueRequest'
+      responses:
+        '200':
+          description: Queue updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Queue'
+        '400':
+          $ref: '#/components/responses/400'
+        '422':
+          $ref: '#/components/responses/422'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+    delete:
+      tags:
+        - Queues
+      summary: Delete a Queue
+      description: Deletes a specific queue.
+      parameters:
+        - $ref: '#/components/parameters/QueuePathID'
+      responses:
+        '204':
+          $ref: '#/components/responses/204'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - Unauthorized
+        '404':
+          description: Queue not found
+  /queues/{queue_id}/members:
+    get:
+      operationId: listQueueMembers
+      summary: List all members of a queue
+      description: |
+        Retrieves a list of all members currently in the queue.
+        #### Permissions
+        The API token must include the following scopes: _Voice_.
+      tags:
+        - Queue Members
+      parameters:
+        - name: queue_id
+          in: path
+          description: The unique identifier (ID) of the queue.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: string
+                        example: "/api/relay/rest/queues/596e2dea-a269-4765-a0b4-01b82d11c120/members?page_number=0&page_size=50"
+                      first:
+                        type: string
+                        example: "/api/relay/rest/queues/596e2dea-a269-4765-a0b4-01b82d11c120/members?page_size=50"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QueueMember'
+  /queues/{queue_id}/members/{id}:
+    get:
+      operationId: retrieveQueueMember
+      summary: Retrieve a queue member
+      description: |
+        Retrieves the details of a queue member.
+        #### Permissions
+        The API token must include the following scopes: _Voice_.
+      tags:
+        - Queue Members
+      parameters:
+        - name: queue_id
+          in: path
+          description: The unique identifier (ID) of the queue.
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          description: The unique identifier (ID) of the queue member.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMember'
+  /queues/{queue_id}/members/next:
+    get:
+      operationId: retrieveNextQueueMember
+      summary: Retrieve next member on the queue
+      description: |
+        Retrieves the details of next member on the queue.
+        #### Permissions
+        The API token must include the following scopes: _Voice_.
+      tags:
+        - Queue Members
+      parameters:
+        - name: queue_id
+          in: path
+          description: The unique identifier (ID) of the queue.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMember'
+  /queues/{queue_id}/members/dequeue:
+    post:
+      operationId: dequeueNextQueueMember
+      summary: Dequeue next member on the queue
+      description: |
+        Dequeues next member on the queue.
+        #### Permissions
+        The API token must include the following scopes: _Voice_.
+      tags:
+        - Queue Members
+      parameters:
+        - name: queue_id
+          in: path
+          description: The unique identifier (ID) of the queue.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMember'
+  /queues/{queue_id}/members/{id}/dequeue:
+    post:
+      operationId: dequeueQueueMember
+      summary: Dequeue member on the queue
+      description: |
+        Dequeues member on the queue.
+        #### Permissions
+        The API token must include the following scopes: _Voice_.
+      tags:
+        - Queue Members
+      parameters:
+        - name: queue_id
+          in: path
+          description: The unique identifier (ID) of the queue.
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          description: The unique identifier (ID) of the queue member.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueMember'
