@@ -63,6 +63,13 @@ const config: ThemeConfig = {
       scrollOffset: 0,
     },
   },
+
+  // Announcement bar configuration
+  announcementBar: {
+    id: 'cluecon_2025', // Unique ID for ClueCon announcement
+    content: '🎉 Join us at ClueCon 2025: A Developer Conference | August 4-7, 2025 | WebRTC, AI & Telephony | <a href="https://www.cluecon.com/" target="_blank" rel="noopener noreferrer">Learn More & Register</a>',
+    isCloseable: true, // Allow users to close the announcement
+  },
 };
 
 export default config;
