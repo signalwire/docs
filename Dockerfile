@@ -1,13 +1,33 @@
 FROM node:20 AS builder
 WORKDIR /app
-COPY . /app
+
+# Set memory limit for Node.js operations
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm run install-ci && npm run build
 
+# Copy root package files first for better caching
+COPY package*.json ./
+COPY .yarnrc* ./
 
+# Copy workspace package.json files for dependency resolution
+COPY website/package*.json ./website/
+COPY specs/package*.json ./specs/
+COPY tools/package*.json ./tools/
+
+# Copy source code (needed for postinstall build)
+COPY website ./website
+COPY specs ./specs
+COPY tools ./tools
+
+# Install dependencies and run postinstall (builds specs and website)
+RUN yarn install --frozen-lockfile
+
+# Switch to website directory for final output
+WORKDIR /app/website
+
+# Production stage
 FROM nginx
-COPY provisioning/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY provisioning/nginx/redirects.map /etc/nginx/redirects.map
-COPY --from=builder /app/build/ /usr/share/nginx/html
+COPY --from=builder /app/website/provisioning/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/website/provisioning/nginx/redirects.map /etc/nginx/redirects.map
+COPY --from=builder /app/website/build/ /usr/share/nginx/html
 
 EXPOSE 80

@@ -1,0 +1,172 @@
+---
+title: Voice XML
+slug: /compatibility-api/cxml/voice
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+SignalWire cXML is a set of actions defined in an XML document you can use to tell SignalWire what to do when you receive an incoming call or instructions for outbound calls.
+
+When a call is made to one of your SignalWire phone numbers, SignalWire looks up the SignalWire cXML document from the URL you configured and reads the instructions you provided to determine what to do.
+
+SignalWire cXML allows you to dynamically control what happens, responding with specific instructions based on the caller, time of day, incoming call, and much more.
+
+:::info
+
+Not making a call? Check out [Messaging XML](/messaging) for more details.
+:::
+
+### Request for XML
+
+SignalWire makes an HTTP request to your configured endpoint just like a regular web form submission (POST) or page load (GET). The request includes contextual information about the call, allowing you to respond dynamically and fluidly to the call to meet the needs of your application.
+
+You can configure the endpoint URL and HTTP Method in your phone number settings panel on your SignalWire Dashboard, or via the REST API.
+
+### Request Parameters
+
+SignalWire sends the following parameters, as either URL query parameters or POST parameters, to your endpoint when it receives a call:
+
+|       Parameter | Type   | Description                                                                                                                                                                                                                           |
+|----------------:|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|       `CallSid` | string | A unique identifier for the call.                                                                                                                                                                                          |
+|    `AccountSid` | string | The unique ID of the Account this call is associated with.                                                                                                                                                                 |
+|          `From` | string | The phone number that sent this call, in E.164 format.                                                                                                                                                                     |
+|            `To` | string | The phone number of the call recipient, in E.164 format.                                                                                                                                                                   |
+|    `CallStatus` | string | The status of the call. Can be one of the following values: ringing, in-progress, queued, failed, busy, no-answer, or completed.                                                                                           |
+|    `ApiVersion` | string | The version of the SignalWire API. Incoming calls use the API version placed on the number called. Outgoing calls use the version of the REST API request.                                                                 |
+|     `Direction` | string | An identifier to describe the direction of the call: <br /> **outbound-dial:** calls launched through the `<Dial>` verb <br /> **outbound-api:** calls launched through the REST API <br /> **inbound:** for inbound calls |
+| `ParentCallSid` | string | A unique identifier for the call that created this call.                                                                                                                                                                   |
+
+#### CallStatus Values
+
+The following are the possible **CallStatus** parameter values. These are also used in `<Dial>`'s **DialCallStatus**:
+
+|         Value |                                                                                   |
+|--------------:|-----------------------------------------------------------------------------------|
+|     `ringing` | The call is ringing.                                                              |
+| `in-progress` | The call was answered and is in progress.                                         |
+|      `queued` | The call is ready and in line to initiate.                                        |
+|      `failed` | The call could not be completed. Usually occurs when phone number does not exist. |
+|        `busy` | The caller encountered a busy signal.                                             |
+|   `no-answer` | The call ended without an answer.                                                 |
+|   `completed` | The call was answered and ended normally.                                         |
+|    `canceled` | The REST API canceled the call while it was ringing or queued.                    |
+
+### Responding to SignalWire
+
+An example of a SignalWire cXML document that reads a message to the caller before playing an audio file:
+
+<Tabs groupId="cxml-api">
+  <TabItem value="XML">
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Hello, World!</Say>
+    <Play>https://your-application.com/audio.mp3</Play>
+</Response>
+```
+
+  </TabItem>
+
+  <TabItem value="JavaScript">
+
+```javascript
+const { RestClient } = require("@signalwire/compatibility-api");
+const response = new RestClient.LaML.VoiceResponse();
+
+response.say("Hello, World!");
+response.play("https://your-application.com/audio.mp3");
+console.log(response.toString());
+```
+
+  </TabItem>
+
+  <TabItem value="C#">
+
+```csharp
+using Twilio.TwiML;
+using System;
+
+
+class Example
+{
+    static void Main()
+    {
+        var response = new VoiceResponse();
+        response.Say("Hello, World!");
+        response.Play(new Uri("https://your-application.com/audio.mp3"));
+
+        Console.WriteLine(response.ToString());;
+    }
+}
+```
+
+  </TabItem>
+
+  <TabItem value="Python">
+
+```python
+from signalwire.voice_response import VoiceResponse, Say, Play
+
+response = VoiceResponse()
+response.say('Hello, World!')
+response.play('https://your-application.com/audio.mp3')
+
+print(response)
+```
+
+  </TabItem>
+
+  <TabItem value="Ruby">
+
+```ruby
+require 'signalwire/sdk'
+
+response = Signalwire::Sdk::VoiceResponse.new do |response|
+  response.say(message: 'Hello World!')
+  response.play(url: 'https://your-application.com/audio.mp3')
+end
+
+puts response.to_s
+```
+
+  </TabItem>
+
+</Tabs>
+
+When a message comes into one of your SignalWire phone numbers, SignalWire makes an HTTP request to the URL endpoint you configured for that number. Your response to that request instructs SignalWire on what to do next.
+
+Responses to the HTTP request are in SignalWire cXML. SignalWire starts at the top of your Compatibility XML document and executes your XML commands in order, from top to bottom.
+
+:::tip
+
+SignalWire cXML verbs and their attributes are case-sensitive, so using `<play>`instead of `<Play>` will result in an error.
+
+:::
+
+#### Status Callbacks
+
+SignalWire can send your application callbacks at various lifecycle stages of your call. Status callbacks do not allow you to change the application execution directly, so callbacks do not have to respond with SignalWire cXML, but they allow your application to get updates as a call is happening.
+
+You should respond to any callbacks with a `200 OK` or `204 No Content`, otherwise you will see failures in your application log on SignalWire.
+
+The `StatusCallback` request contains the [Standard Request Parameters](#request-parameters) plus the following optional parameters:
+
+|           Parameter | Type    | Description                                                                                                                                       |
+| ------------------: | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+|     `ForwardedFrom` | string  | The number this call was forwarded from.                                                                                                          |
+|        `CallerName` | string  | The name of the caller. Only available if Caller ID lookup is enabled.                                                                            |
+|      `CallDuration` | integer | The duration, in seconds, of the finished call. Only present on the `completed` event.                                                            |
+|      `RecordingUrl` | string  | The URL of the recorded audio call.                                                                                                               |
+|      `RecordingSid` | string  | The unique identifier for the audio recording.                                                                                                    |
+| `RecordingDuration` | integer | The duration, in seconds, of the recording.                                                                                                       |
+|    `CallbackSource` | string  | The source of the status callback.                                                                                                                |
+|         `Timestamp` | string  | The timestamp, in RFC 2822 format, of when the event occurred.                                                                                    |
+|    `SequenceNumber` | integer | The order in which events occur. Starts at 0. Although events are fired in order, they each take time and may not appear in the order you expect. |
+|        `AudioInMos` | string  | The mean opinion score that helps to determine audio quality. The scale is from 1-5 with 1 being worst and 5 being best.                          |
+|          `HangupBy` | string  | A indicator of which number ended the call                                                                                                        |
+|   `HangupDirection` | string  | A indicator of which direction ended the call                                                                                                     |
+
+

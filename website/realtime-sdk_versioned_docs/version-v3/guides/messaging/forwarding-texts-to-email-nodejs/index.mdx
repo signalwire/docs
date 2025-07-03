@@ -1,0 +1,159 @@
+---
+title: Forwarding Texts to Email
+slug: /guides/messaging/forwarding-texts-to-email
+x-custom:
+  ported_from_readme: true
+  repo: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
+description: Learn how to forward texts to an email address using the SignalWire Realtime SDK.
+sidebar_custom_props:
+  platform: javascript
+---
+
+[buy-one]: /platform/phone-numbers/getting-started/buying-a-phone-number
+[github-1]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
+[github-repo-1]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
+[github-repo]: https://github.com/signalwire/guides/tree/main/Messaging/Forward%20Messages%20to%20Email%20-%20NodeJS
+[mailgun-1]: https://www.mailgun.com/
+[mailgun-api-1]: https://www.mailgun.com/
+[navigating-your-signalwire-space-2]: /platform/dashboard/get-started/explore
+[relay-realtime-sdk-1]: /sdks/realtime-sdk/
+[signalwire-s-relay-realtime-api]: /sdks/realtime-sdk/
+
+import NewLegacy from '/docs/main/_common/dashboard/_ui-accordion.mdx'
+
+# Forwarding Texts to Email
+
+This guide will show you how to write a webhook to handle incoming text messages to a SignalWire phone number and forward them to an email address.
+
+We will write a simple server that listens for a message event from SignalWire when an SMS is received, then uses Mailgun.js to send an email.
+
+## What You Need to Run This Code
+
+- You can find the full code for this application on
+[GitHub][github-1].
+- You will need a [Mailgun][mailgun-1] API key and Domain.
+- You will need your SignalWire credentials (i.e., Space URL, Project ID, and API token). If you need help finding these, please see [Navigating your SignalWire Space][navigating-your-signalwire-space-2].
+- You will also need to visit your SignalWire Space to set up your SignalWire phone number message handler.
+
+### Configuring the phone number
+
+First, we need to create a new Relay Application resource.
+To do so, go to the "Resources" section from your sidebar, and create a new Relay ApplicationResource.
+
+![Relay Application resource selector with cXML highlighted.](@image/dashboard/resources/add-new-relay-application.png)
+
+When configuring the Relay Application, set the context to "office" (to match what we have in the code).
+
+<NewLegacy />
+
+If you don't have a phone
+number yet, make sure to [buy one][buy-one]. You
+will need at least one number to receive messages.
+
+You can do that from the "Phone Numbers" section in the Sidebar. Go to the Settings page of the number you
+want to configure. In the `Inbound Message Settings` section, assign your relay application.
+
+![Assign Resource](@image/dashboard/phone-numbers/assign-resource-full.png)
+
+<Accordion 
+  title="If you're on the Legacy UI"
+  defaultOpen={false}
+>
+
+You don't need to create a new resource for your call.
+
+Simply open the settings for the number you want to configure, and under "**Inbound Message Settings**", 
+choose to handle incoming messages using "Relay Application", and set the context to "office" to match the code.
+
+![legacy UI relay application configuration](@image/dashboard/legacy/number-message-config-relay.png)
+
+</Accordion>
+
+:::info Note on Email Delivery Service
+
+Feel free to use the email delivery service of your choice. Our example will use Mailgun, but this implementation works just as well with other services. Just check their documentation for how to call their API.
+
+:::
+
+## How to Run the Application
+
+### Build and Run on Docker
+
+Start by building the image with `docker build -t smstoemail .` Then run the container with the command `docker run -it --rm -p 3000:3000 --name smstoemail --env-file .env smstoemail`.
+
+### Build and Run Natively
+
+If you would like to run it natively, clone the [GitHub repo][github-repo] and run it with `npm start` in your terminal.
+
+## Code Walkthrough
+
+Within the repo, we will work with two files:
+
+- `.env.sample` which will serve as a template for your `.env` file
+- `index.js` where you will find the main application code.
+
+### Set Your Environment Variables
+
+1. Copy from `.env.sample` and fill in your values.
+
+You will need a SignalWire phone number as well as your API Credentials (API Token, Space URL, and Project ID) from within the API tab of your SignalWire Space. If you need help finding these values, please see the [Navigating your SignalWire Space][navigating-your-signalwire-space-2] guide.
+
+You will also need your Credentials from the MailGun API.
+
+2. Save the filled-in file as `.env`.
+
+### The Application
+
+This code is quite simple. We will create a Node.js script, listen for incoming SMS messages with the [SignalWire's RELAY Realtime API][signalwire-s-relay-realtime-api], and send an email in response to each message event with Mailgun.js.
+
+Then we connect to the SignalWire RELAY Realtime API:
+
+```javascript
+require("dotenv").config();
+let { Messaging } = require("@signalwire/realtime-api");
+
+const swClient = new Messaging.Client({
+  project: process.env.PROJECT_ID,
+  token: process.env.API_TOKEN,
+  contexts: ["office"],
+});
+```
+
+Finally, we set an event listener for incoming SMS messages which will trigger a network call to Mailgun to send an email with the SMS message and details:
+
+```javascript
+swClient.on("message.received", (message) => {
+  let date = new Date().toISOString();
+  let body = message.body;
+  let from = message.from;
+  let to = message.to;
+  let media = message.media;
+  let data = {
+    from: process.env.EMAIL_FROM,
+    to: process.env.EMAIL_TO,
+    subject: "Incoming Message to " + to,
+    text: `At ${date} you received a message from ${from} to ${to}. The message body was: '${body}'. 
+    The included media was: ${media}`,
+  };
+
+  mgClient.messages
+    .create(process.env.MAILGUN_DOMAIN, data)
+    .then((res) => {
+      console.log(data);
+      console.log(res);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+```
+
+## Wrap Up
+
+When dealing with SMS messages on a large scale, you may want to convert them into a more manageable format. This guide has demonstrated one possibility by converting them to emails using a remarkable short script of code.
+
+### Resources
+
+- [GitHub Repo][github-repo-1]
+- [Mailgun API][mailgun-api-1]
+- [RELAY Realtime SDK][relay-realtime-sdk-1]
