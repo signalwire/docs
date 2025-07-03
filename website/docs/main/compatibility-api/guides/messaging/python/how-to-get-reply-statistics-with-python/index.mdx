@@ -1,0 +1,199 @@
+---
+slug: /compatibility-api/guides/messaging/python/how-to-get-reply-statistics-with-python
+sidebar_position: 20
+x-custom:
+  ported_from_readme: true
+  needs_review: True
+  tags: 
+    - language:python
+    - product:messaging
+---
+
+# Reply Statistics
+
+This guide will use the SignalWire Python SDK to get a list of owned DIDs, and compare inbound and outbound messages to provide statistics on reply rate.
+
+<figure>
+  <img className="img-600" src={require("./reply-stats.webp").default} alt="A screenshot of the resulting output. It reads: 'You sent 60 Messages. You received 11 Replies. 1 Unique User Replied. 0 Stop or other bad replies. Your reply rate is 18.332%." />
+  <figcaption>The resulting stats.</figcaption>
+</figure>
+
+## What do I need to run this?
+
+You will only need the [SignalWire Python SDK](/compatibility-api/sdks), and your SignalWire API credentials. If you aren't sure where to find your credentials, check out [this](/platform/dashboard/get-started/explore) guide on naviating your Space.
+
+## How do I run this code?
+
+### Check out the full code
+
+<details>
+  <summary>Full code example: Get reply statistics for SMS</summary>
+
+```python
+from signalwire.rest import Client as signalwire_client
+
+SIGNALWIRE_PROJECT_KEY =
+SIGNALWIRE_TOKEN = 
+SIGNALWIRE_SPACE = 
+client = signalwire_client(SIGNALWIRE_PROJECT_KEY, SIGNALWIRE_TOKEN, signalwire_space_url=SIGNALWIRE_SPACE)
+
+replydict={}
+uniquereplies=[]
+ournumbers=[]
+badsmsbody=["STOP","NO","UNSUBSCRIBE"]
+badsmsnumbers=[]
+sentmsgscount = 0
+
+response = client.incoming_phone_numbers.list()
+for sid in response:
+    ournumbers.append(sid.phone_number)
+
+response = client.messages.list()
+for message in response:
+    if message.from_ in ournumbers:
+        sentmsgscount = sentmsgscount+1
+    if message.body in badsmsbody:
+        badsmsnumbers.append(message.from_)
+    if message.from_ not in ournumbers and message.to in ournumbers:
+        if message.body not in badsmsbody and message.from_ not in uniquereplies:
+            uniquereplies.append(message.from_)
+        replydict[message.sid] = [message.from_,message.body]
+
+replycount = len(replydict)
+uniquecount = len(uniquereplies)
+badcount = len(badsmsnumbers)
+replypercent = (replycount/sentmsgscount)*100
+sentmsgscount = str(sentmsgscount)
+
+print ("You sent "+str(sentmsgscount)+ " messages")
+print("You recieved " + str(replycount) + " Replies")
+print(str(uniquecount) + " Unique User Replied")
+print(str(badcount)+ " Stop or other bad replies")
+print("Your reply rate is " + str(replypercent)+ "%")
+```
+
+</details>
+
+### Run Natively
+
+Run the app.py file in your python environment of choice.
+
+## Code Walkthrough
+
+The only file for this snippet will be an `app.py` file.
+
+### Into our application
+
+#### Setup
+
+First we will import our SignalWire python SDK to handle our requests to SignalWire.
+
+```python
+from signalwire.rest import Client as signalwire_client
+```
+
+Now we can use our SignalWire credentials to create a `client`
+
+```python
+client = signalwire_client(SIGNALWIRE_PROJECT_KEY, SIGNALWIRE_TOKEN, signalwire_space_url=SIGNALWIRE_SPACE)
+```
+
+Setting up our lists and dictionary variables for later use.
+
+`replydict` will take each message with the message SID as the key, and the message `from_` and `body` as a list of values.
+
+`uniqureplies` will be our filtered "good" replies list
+
+`ournumbers` will pull numbers from our project. this could be replaced with a list of phone numbers from a campaign to create a more granular overview of an account with multiple campaigns.
+
+`badsmsbody` is our list of "bad" words, these could be opt-out phrases, or any other replies you do not want to consider useful to count in your statistics
+
+`badsmsnumbers` is a list of the phone numbers who have sent "bad" replies.
+
+`sentmsgcount` will count the the outbound messages sent from `ournumbers`
+
+```python
+replydict={}
+uniquereplies=[]
+ournumbers=[]
+badsmsbody=["STOP","NO","UNSUBSCRIBE"]
+badsmsnumbers=[]
+sentmsgscount = 0
+```
+
+#### List ournumbers
+
+Now that we are done with our setup we can begin by populating our list of phone numbers.
+
+```python
+response = client.incoming_phone_numbers.list()
+for sid in response:
+    ournumbers.append(sid.phone_number)
+```
+
+#### List messages
+
+Then we can call a list of all messages. You could filter these messages by passing arguments to `client.messages.list()`.
+
+For each message we get from this call, we will check if the message is from one of `ournumbers`  
+and increment `sentmsgscount`
+
+Then we will check the message body and append bad messages to our `badsmsnumbers` list.
+
+Then, if the message is not from `ournumbers`, and is to `ournumbers`. We ensure that the message is not "bad", and is a unique entry to our `uniquereplies` list.  
+Additionally we will add all replies regardless of if they are unique to our `replydict`.
+
+```python
+response = client.messages.list()
+for message in response:
+    if message.from_ in ournumbers:
+        sentmsgscount = sentmsgscount+1
+    if message.body in badsmsbody and message.from_ not in ournumbers:
+        badsmsnumbers.append(message.from_)
+    if message.from_ not in ournumbers and message.to in ournumbers:
+        if message.body not in badsmsbody and message.from_ not in uniquereplies:
+            uniquereplies.append(message.from_)
+        replydict[message.sid] = [message.from_,message.body]
+```
+
+#### Data formatting
+
+Finally, we will do some calculations, and format our data so it can be printed to the console.
+
+```python
+replycount = len(replydict)
+uniquecount = len(uniquereplies)
+badcount = len(badsmsnumbers)
+replypercent = (replycount/sentmsgscount)*100
+sentmsgscount = str(sentmsgscount)
+
+print ("You sent "+str(sentmsgscount)+ " messages")
+print("You recieved " + str(replycount) + " Replies")
+print(str(uniquecount) + " Unique User Replied")
+print(str(badcount)+ " Stop or other bad replies")
+print("Your reply rate is " + str(replypercent)+ "%")
+```
+
+An example of output would be printed to the console like so:
+
+```output
+You sent 60 messages
+You recieved 11 Replies
+1 Unique User Replied
+0 Stop or other bad replies
+Your reply rate is 18.333333333333332%
+```
+
+## Wrapup
+
+This guide provides a basic application to gather statistics on sms replies using the SignalWire python SDK. While this is a basic implementation it can be a powerful tool to implement into more in-depth reporting systems for your SignalWire usage.
+
+### Resources
+
+[Python SignalWire SDK](/compatibility-api/sdks)
+
+## Sign Up Here
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

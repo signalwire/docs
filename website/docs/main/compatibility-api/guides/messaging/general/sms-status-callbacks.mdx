@@ -1,0 +1,400 @@
+---
+title: SMS Status Callbacks for Delivery Tracking
+slug: /compatibility-api/guides/messaging/general/sms-status-callbacks
+sidebar_position: 18
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags: 
+    - language:python
+    - language:nodejs
+    - sdk:compatibility
+    - product:messaging
+---
+
+## Overview
+
+This script utilizes SMS status callbacks to show a simple delivery status tracker that could begin running before a message campaign goes out and end when a message campaign ends. This tracker will log every message status event to the console and keep a record of any message failures. When the message campaign is complete and the app is ended, all the failures along with relevant information will be downloaded to CSV for later investigation. 
+
+You can learn more about SMS callbacks, all of the possible parameters you can use, and how to set them up in our [status callback mega guide](/compatibility-api/guides/signalwire-status-callbacks#sms-status-callbacks)!
+
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<details>
+  <summary>Full code example: SMS Status Callbacks</summary>
+
+<Tabs>
+
+<TabItem value="python" label="Python">
+
+```python
+from flask import Flask, request
+import logging
+import pandas as pd
+from signalwire.rest import Client as signalwire_client
+import atexit
+
+logging.basicConfig(level=logging.INFO)
+app = Flask(__name__)
+
+undeliveredArray = []
+
+def onExitApp(dataframe):
+    dataframe.to_csv('failedAndUndeliveredMessages.csv', index=False, encoding='utf-8')
+    print('SMS Callback App Exited')
+
+client = signalwire_client("ProjectID",
+                           "AuthToken",
+                           signalwire_space_url='YOUR_SPACE.signalwire.com')
+ 
+@app.route("/smsErrorTracker", methods=['POST'])
+def newest_message():
+    message_sid = request.values.get('MessageSid', None)
+    message_status = request.values.get('MessageStatus', None)
+    error_code = request.values.get('ErrorCode', None)
+    
+    logging.info('SID: {}, Status: {}, ErrorCode: {}'.format(message_sid, message_status, error_code))
+        
+    if (message_status == "undelivered" or message_status == "failed"):
+        message = client.messages(message_sid).fetch()
+         
+        undeliveredArray.append([message_sid, message_status, error_code, message.error_message, message.date_sent, message.to, message.from_, message.body])
+        df = pd.DataFrame(undeliveredArray, columns=('Message Sid', 'Message Status', 'Error Code', 'Error Message', 'Date Sent', 'To', 'From', 'Body')) 
+        print(df.to_string())
+        atexit.register(onExitApp, dataframe=df)
+         
+    return ('', 200)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+</TabItem>
+
+<TabItem value="node" label="Node">
+
+```js
+const dfd = require("danfojs");
+const fs = require("fs");
+const express = require("express");
+const { RestClient } = require('@signalwire/compatibility-api')
+
+var app = express();
+app.use(express.urlencoded());
+
+app.listen(3000, () => {
+    console.log("Server running on port 3000");
+});
+
+let undelivered_messages = [];
+
+process.stdin.resume();
+
+process.on('SIGINT', function () {
+    let undelivered_message_data = new dfd.DataFrame(undelivered_messages, {
+        columns: ['Message SID', 'Message Status', 'Error Code', 'Error Message', 'Date Sent', 'From', 'To', 'Body'],
+        config: {
+            tableDisplayConfig: {
+                columns: [
+                    { width: 1 },
+                    { width: 36 },
+                    { width: 14 },
+                    { width: 10},
+                    { width: 16 },
+                    { width: 16 },
+                    { width: 14 },
+                    { width: 14},
+                    { width: 36}
+                ],
+            },
+        },
+    });
+    
+    console.log("\n")
+    undelivered_message_data.print();
+    fs.writeFileSync("UndeliveredMessages.csv", dfd.toCSV(undelivered_message_data));
+    process.exit(0);
+});
+
+ const client = RestClient(
+     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", 
+     "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 
+     { signalwireSpaceUrl: "YOURSPACE.signalwire.com" })
+
+app.post("/smsErrorTracker", (req, res, next) => {
+    let message_sid = req.body.MessageSid;
+    let message_status = req.body.MessageStatus;
+    let error_code = req.body.ErrorCode;
+
+    console.log("SID: ", message_sid);
+    console.log("Status: ", message_status);
+    console.log("Error Code: ", error_code);
+    console.log("-------------------------------------------")
+
+    if (message_status == "undelivered" || message_status == "failed") {
+        try {
+            client.messages(message_sid).fetch().then((message) => {
+                undelivered_messages.push([
+                    message_sid, 
+                    message_status, 
+                    error_code, 
+                    message.errorMessage, 
+                    message.dateSent, 
+                    message.from,
+                    message.to,  
+                    message.body]);
+            });
+        } catch (error) {
+            console.log("ERROR: " + error)
+        }
+    }
+});
+```
+
+</TabItem>
+
+</Tabs>
+
+</details>
+
+Python
+------
+
+### What do I need to run this code?
+
+For this code to work, you will need to have the following libraries installed (click on their names to get installation instructions): 
+
+- [Flask](https://pypi.org/project/Flask/)
+- [logging](https://pypi.org/project/logging/)
+- [SignalWire Client](/compatibility-api/sdks)
+- atexit - standard library, there is no need to install it
+
+### How to Run Snippet?
+
+To run the application, execute `export FLASK_APP=SMSStatusCallbacks.py` then run `flask run`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+We will start by importing the necessary resources.
+
+```python
+from flask import Flask, request
+import logging
+import pandas as pd
+from signalwire.rest import Client as signalwire_client
+import atexit
+
+logging.basicConfig(level=logging.INFO)
+app = Flask(__name__)
+```
+
+#### Create an array to store message data
+
+`undeliveredArray` will be used to store all `undelivered` or `failed` messages as they come in.
+
+```python
+# create an empty array to keep track of all of our undelivered 
+# or failed messages during the time this app is run
+undeliveredArray = []
+```
+
+#### Prepare function to run when the app terminates
+
+When the messaging campaign is over and the Flask app is closed, the whole table will be exported to CSV so that failed/undelivered messages can be easily investigated.
+
+```python
+# define actions to take when flask app is closed 
+# export dataframe of all failed or undelivered 
+# messages to CSV with added detail 
+def onExitApp(dataframe):
+    dataframe.to_csv('failedAndUndeliveredMessages.csv', index=False, encoding='utf-8')
+    print('SMS Callback App Exited')
+```
+
+#### Instantiate the SignalWire Client
+
+```python
+# authenticate the SignalWire client
+client = signalwire_client("ProjectID",
+                           "AuthToken",
+                           signalwire_space_url='YOUR_SPACE.signalwire.com')
+```
+
+#### Handle message status callbacks
+
+While the app is running, it will log the status change event of every single message to the console with the following information: `MessageStatus`, `MessageSid`, and `ErrorCode`. This will happen for every outbound message in the same project that includes this script as the StatusCallback URL.
+
+When a message returns a status of failed or undelivered, it will be added to a table that keeps track of all unsuccessful messages along with their `MessageSid`, `MessageStatus`, `ErrorCode`, `ErrorMessage`, `DateSent`, `To`, `From`, and `Body`. After every failed/undelivered message, this table will be printed so the updated list can be seen.
+
+```python
+# define route for SMS status callbacks to be posted to 
+@app.route("/smsErrorTracker", methods=['POST'])
+def newest_message():
+    # get message sid, message status, and error code (if it exists) from callback parameters
+    # if they don't exist, set to None 
+    message_sid = request.values.get('MessageSid', None)
+    message_status = request.values.get('MessageStatus', None)
+    error_code = request.values.get('ErrorCode', None)
+    
+    # log every message that comes in to console 
+    logging.info('SID: {}, Status: {}, ErrorCode: {}'.format(message_sid, message_status, error_code))
+        
+    # if the message is undelivered or failed, use message SID to fetch additional data 
+    # about the failed message 
+    if (message_status == "undelivered" or message_status == "failed"):
+        message = client.messages(message_sid).fetch()
+        
+        # add identifying data from newest message to undelivered array 
+        undeliveredArray.append([message_sid, message_status, error_code, message.error_message, message.date_sent, message.to, message.from_, message.body])
+        # insert array into dataframe with columns for easier reading 
+        df = pd.DataFrame(undeliveredArray, columns=('Message Sid', 'Message Status', 'Error Code', 'Error Message', 'Date Sent', 'To', 'From', 'Body'))
+        # print dataframe to string for nicer formatting and set dataframe to our parameter in function for handling app exit 
+        print(df.to_string())
+        atexit.register(onExitApp, dataframe=df)
+        
+        # return 200OK 
+    return ('', 200)
+
+if __name__ == "__main__":
+    app.run()
+```
+
+Node.js
+-------
+
+### What do I need to run this code?
+
+We will need the following libraries (click their names to get instructions on how to install them):
+
+- [Danfo.js](https://www.npmjs.com/package/danfojs)
+- [fs](https://nodejs.org/api/fs.html) - there is no need to install this module, as it is part of the Node.js Core
+- [Express](https://www.npmjs.com/package/express)
+- [SignalWire REST Client](https://www.npmjs.com/package/@signalwire/compatibility-api)
+
+### How to Run Snippet?
+
+If you save this code snippet in a file called `SMSStatusCallbacks.js`, for example, you then need to run:  
+`node SMSStatusCallbacks.js`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries and start the server
+
+```javascript
+const dfd = require("danfojs");
+const fs = require("fs");
+const express = require("express");
+const { RestClient } = require('@signalwire/compatibility-api')
+
+var app = express();
+app.use(express.urlencoded());
+
+app.listen(3000, () => {
+    console.log("Server running on port 3000");
+});
+```
+
+#### Create an array to store message data
+
+`undelivered_messages` will be used to store all `undelivered` or `failed` messages as they come in.
+
+```javascript
+let undelivered_messages = [];
+```
+
+#### Prepare function to run when the app exits
+
+When we stop the application, and only when we stop it, we create a DataFrame based on the `undelivered_messages` (populated as new `undelivered` or `failed` messages come in). We also print it to the terminal and export it to a CSV file.
+
+```javascript
+process.stdin.resume();
+
+process.on('SIGINT', function () {
+    let undelivered_message_data = new dfd.DataFrame(undelivered_messages, {
+        columns: ['Message SID', 'Message Status', 'Error Code', 'Error Message', 'Date Sent', 'From', 'To', 'Body'],
+        config: {
+            tableDisplayConfig: {
+                columns: [
+                    { width: 1 },
+                    { width: 36 },
+                    { width: 14 },
+                    { width: 10},
+                    { width: 16 },
+                    { width: 16 },
+                    { width: 14 },
+                    { width: 14},
+                    { width: 36}
+                ],
+            },
+        },
+    });
+    
+    console.log("\n")
+    undelivered_message_data.print();
+    fs.writeFileSync("UndeliveredMessages.csv", dfd.toCSV(undelivered_message_data));
+    process.exit(0);
+});
+```
+
+#### Instantiate the SignalWire REST Client
+
+Here we load the REST Client, but we need to make sure to update the credentials with your own Project ID, Access Token, and Space URL.
+
+```javascript
+const client = RestClient(
+     "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX", 
+     "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 
+     { signalwireSpaceUrl: "YOURSPACE.signalwire.com" })
+```
+
+#### Handle all incoming message status callbacks
+
+Here we expose the `/smsErrorTracker` route. As new message status callbacks come in, we print the Message SID, Status, and Error Code to the terminal. Finally, if the message status is `undelivered` or `failed` we add it to  
+the `undelivered_messages` array.
+
+```javascript
+app.post("/smsErrorTracker", (req, res, next) => {
+    let message_sid = req.body.MessageSid;
+    let message_status = req.body.MessageStatus;
+    let error_code = req.body.ErrorCode;
+
+    console.log("SID: ", message_sid);
+    console.log("Status: ", message_status);
+    console.log("Error Code: ", error_code);
+    console.log("-------------------------------------------")
+
+    if (message_status == "undelivered" || message_status == "failed") {
+        try {
+            client.messages(message_sid).fetch().then((message) => {
+                undelivered_messages.push([
+                    message_sid, 
+                    message_status, 
+                    error_code, 
+                    message.errorMessage, 
+                    message.dateSent, 
+                    message.from,
+                    message.to,  
+                    message.body]);
+            });
+        } catch (error) {
+            console.log("ERROR: " + error)
+        }
+    }
+});
+```
+
+Wrap up
+-------
+
+If something ever goes wrong with your messaging traffic, using this snippet will keep you on top of things very quickly, and you will be able to investigate the problem or ask our Support team for help with the Message SIDs in question!
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!
