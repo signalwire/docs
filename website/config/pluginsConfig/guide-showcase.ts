@@ -32,7 +32,7 @@ const subHeaders = [
 const guideDescription = fs.readFileSync("./static/plugins/guides/index.mdx", "utf8");
 
 export const showcasePlugin: PluginConfig = [
-  "docusaurus-plugin-showcase",
+  require.resolve("../../src/plugins/docusaurus-plugin-showcase"),
   {
     title: "SignalWire Guide Showcase",
     description: guideDescription,

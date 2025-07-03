@@ -1,7 +1,6 @@
 // @ts-ignore
 import siteConfig from "@generated/docusaurus.config";
 
-const pluginName: string = "docusaurus-plugin-showcase";
 const plugins = siteConfig.plugins;
 
 
@@ -21,14 +20,14 @@ export interface PluginConfig {
 }
 
 function getPluginConfig(): PluginConfig {
-  // Search for the plugin in the plugins array
+  // Search for the plugin in the plugins array by checking if the path contains our plugin name
   const plugin = plugins.find((p: any) =>
-    Array.isArray(p) && p.length > 1 && typeof p[0] === 'string' && p[0] === pluginName
+    Array.isArray(p) && p.length > 1 && typeof p[0] === 'string' && p[0].includes('docusaurus-plugin-showcase')
   );
 
   // Check if the plugin was found and is an array
   if (!plugin || !Array.isArray(plugin)) {
-    throw new Error(`Plugin with name '${pluginName}' not found.`);
+    throw new Error(`Plugin containing 'docusaurus-plugin-showcase' not found.`);
   }
 
   // Return the plugin configuration
