@@ -4,7 +4,7 @@
 * Docusaurus technical reference: https://github.com/PaloAltoNetworks/docusaurus-openapi-docs
 */
 
-import { PluginConfig } from "@site/types/src/plugin";
+import { PluginConfig } from "@docusaurus/types";
 import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 import {PluginOptions} from "docusaurus-plugin-openapi-docs/src/types"
 
