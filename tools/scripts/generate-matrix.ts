@@ -1,4 +1,4 @@
-import { openapiPlugin } from '../website/config/pluginsConfig/docusaurus-plugin-openapi-docs';
+import { openapiPlugin } from '../../website/config/pluginsConfig/docusaurus-plugin-openapi-docs';
 import type { PluginOptions } from 'docusaurus-plugin-openapi-docs/src/types';
 import axios, { AxiosError } from 'axios';
 import * as fs from 'fs';
