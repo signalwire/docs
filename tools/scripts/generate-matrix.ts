@@ -248,10 +248,9 @@ async function main() {
 
     const matrix: Matrix = Object.entries(pluginConfig).map(([name, config]) => {
       // The plugin config paths are relative to the website directory (e.g., "../specs/...")
-      // When running from tools/scripts, resolve them relative to the project root
-      // Remove the "../" prefix and resolve from the project root
+      // Remove the "../" prefix since we're running from the project root
       const normalizedPath = config.specPath.replace(/^\.\.\//, '');
-      const resolvedPath = path.resolve(process.cwd(), '../../', normalizedPath);
+      const resolvedPath = path.resolve(process.cwd(), normalizedPath);
       return {
         name,
         path: resolvedPath
@@ -293,8 +292,7 @@ async function main() {
     // Process each spec with delay between requests
     for (const spec of matrix) {
       // Calculate relative path from the project root for display/GitHub URLs
-      const projectRoot = path.resolve(process.cwd(), '../../');
-      const relativePath = path.relative(projectRoot, spec.path);
+      const relativePath = path.relative(process.cwd(), spec.path);
       log(`\n🔄 Processing spec: ${relativePath}`);
       
       try {
