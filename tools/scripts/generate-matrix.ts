@@ -182,12 +182,12 @@ async function getFileFromMainBranch(filePath: string, repo: string): Promise<st
   }
 }
 
-async function evaluateSpecFromMainBranch(specPath: string, apiKey: string, repo: string): Promise<SpecScore | null> {
+async function evaluateSpecFromMainBranch(relativePath: string, apiKey: string, repo: string, fullPath: string): Promise<SpecScore | null> {
   try {
     log('\n   📥 Getting main branch version...');
     
     // Get content from main branch using GitHub raw URL
-    const mainContent = await getFileFromMainBranch(specPath, repo);
+    const mainContent = await getFileFromMainBranch(relativePath, repo);
     
     // If we couldn't get main content, return null
     if (!mainContent) {
@@ -196,7 +196,7 @@ async function evaluateSpecFromMainBranch(specPath: string, apiKey: string, repo
     }
     
     // Save current file content to compare
-    const currentContent = fs.readFileSync(specPath, 'utf8');
+    const currentContent = fs.readFileSync(fullPath, 'utf8');
     
     // Even if content is identical, we still want to evaluate for comparison
     if (currentContent === mainContent) {
@@ -206,7 +206,7 @@ async function evaluateSpecFromMainBranch(specPath: string, apiKey: string, repo
     }
     
     // Write main branch content to temp file
-    const tempPath = `${specPath}.main`;
+    const tempPath = `${fullPath}.main`;
     fs.writeFileSync(tempPath, mainContent);
     log(`   ✅ Wrote main branch content to temp file: ${tempPath}`);
     
@@ -246,10 +246,17 @@ async function main() {
       process.exit(1);
     }
 
-    const matrix: Matrix = Object.entries(pluginConfig).map(([name, config]) => ({
-      name,
-      path: config.specPath
-    }));
+    const matrix: Matrix = Object.entries(pluginConfig).map(([name, config]) => {
+      // The plugin config paths are relative to the website directory (e.g., "../specs/...")
+      // When running from tools/scripts, resolve them relative to the project root
+      // Remove the "../" prefix and resolve from the project root
+      const normalizedPath = config.specPath.replace(/^\.\.\//, '');
+      const resolvedPath = path.resolve(process.cwd(), '../../', normalizedPath);
+      return {
+        name,
+        path: resolvedPath
+      };
+    });
 
     if (!Array.isArray(matrix) || matrix.length === 0) {
       log('❌ No OpenAPI specs found in configuration');
@@ -285,7 +292,9 @@ async function main() {
 
     // Process each spec with delay between requests
     for (const spec of matrix) {
-      const relativePath = path.relative(process.cwd(), spec.path);
+      // Calculate relative path from the project root for display/GitHub URLs
+      const projectRoot = path.resolve(process.cwd(), '../../');
+      const relativePath = path.relative(projectRoot, spec.path);
       log(`\n🔄 Processing spec: ${relativePath}`);
       
       try {
@@ -303,7 +312,7 @@ async function main() {
         `);
         
         // Get scores from main branch
-        const mainScore = await evaluateSpecFromMainBranch(spec.path, apiKey, repo);
+        const mainScore = await evaluateSpecFromMainBranch(relativePath, apiKey, repo, spec.path);
         log(`   📊 Main branch scores: ${mainScore ? 'found' : 'not found'}`);
 
         // Log comparison details
