@@ -1,0 +1,88 @@
+---
+slug: /compatibility-api/guides/voice/general/queues
+sidebar_position: 6
+x-custom:
+  author: danieleds
+---
+
+# Queues
+
+If you've ever called any company's support or sales line, you have probably
+used a queue. Queueing is a crucial part of an IVR for any company to handle
+multiple callers at once. SignalWire makes it easy to store callers in a queue
+in the order that they called and then connect them to a live agent whenever
+it's their turn. This guide will show you how to implement queues using XML
+bins.
+
+## Queues with cXML
+
+We are going to define the instructions for forwarding instructions in an XML bin hosted on
+SignalWire. To create a new cXML bin, navigate to the "Resources" section from your sidebar. There, create
+a new script, and select the "cXML" option. 
+
+You will need to create three separate scripts, whose content is given below.
+
+First, to create a simple queue you need to use the
+[`<Enqueue>`](/compatibility-api/cxml/voice/enqueue) verb, which will
+place the incoming caller into a queue. You can create an XML bin with the
+following code and attach its URL to a phone number as the webhook for handling
+inbound calls. Refer to [Making and Receiving Phone Calls](/voice/getting-started/making-and-receiving-phone-calls#receiving-incoming-calls)
+for more information about connecting a bin to a phone number.
+
+```xml title="Enqueuing bin"
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>
+    Thank you for calling Best Quality Vacuum. 
+    Ed Galbraith is currently unavailable or speaking with other customers. 
+    Please stay on the line to speak with one of his representatives.
+  </Say>
+  <Enqueue>Best Quality Vacuum</Enqueue>
+</Response>
+```
+
+Then, we need a second bin which will allow an operator to dequeue calls. You
+can configure a secondary phone number to handle incoming calls using the
+following XML bin, so that operators can dial that phone number to start
+speaking with customers.
+
+```xml title="Dequeuing bin"
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Connecting to caller... The next voice you hear will be the customer.</Say>
+  <Dial>
+    <Queue url="https://example.signalwire.com/laml-bins/962230ad-10f5-485d-9bfa-458c7ae1213c">Best Quality Vacuum</Queue>
+  </Dial>
+</Response>
+```
+
+In this case, we used the
+[`<Queue>`](/compatibility-api/cxml/voice/queue-noun) noun to
+determine the destination to dial. Note that the name of the queue corresponds
+to the one used for the enqueqing bin: "Best Quality Vacuum". The `url`
+attribute points to a third XML bin, which contains instructions on how to
+handle each call in the queue as the caller is connected to the agent. In this
+case, we are going to play a short message:
+
+```xml title="User call bin"
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>
+    This call will be recorded for quality control and training. You will now
+    be connected to the next representative.
+  </Say>
+</Response>
+```
+
+That's it. Make sure to [configure your two phone numbers](/voice/getting-started/making-and-receiving-phone-calls#receiving-incoming-calls)
+to handle calls with respectively the enqueuing and dequeuing bin, and you will
+be able to test it.
+
+In this example we didn't actually start the recording of the call: to implement
+it, check out our guide about [recording calls](/voice/getting-started/recording-calls).
+
+## Conclusion
+
+XML bins offer a quick and easy way to get started with common use cases. If you are an advanced developer, or you need more
+flexibility and real-time control on your calls, you may be interested in our
+guide about how to [make and receive calls in Node.js](/sdks/realtime-sdk/guides/voice/first-steps-with-voice).

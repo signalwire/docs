@@ -1,0 +1,739 @@
+---
+title: Listing Messages Filtered by Multiple From Numbers
+slug: /compatibility-api/guides/messaging/general/how-to-list-messages-filtered-by-multiple-from-numbers
+sidebar_position: 11
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+Overview
+--------
+
+This code snippet will show how you can use the [List Messages API](/rest/compatibility-api/endpoints/list-messages) to return all messages with a specific list of From numbers.
+
+<details>
+  <summary>Full code example: List Messages Filtered by Multiple From Numbers</summary>
+
+<Tabs>
+  <TabItem value="python" label="Python">
+
+```python
+from datetime import datetime
+from signalwire.rest import Client as signalwire_client
+import pandas as pd
+
+client = signalwire_client("ProjectID", "AuthToken",
+                           signalwire_space_url='YOURSPACE.signalwire.com')
+
+from_numbers = ["+1xxxxxxxxxx", "+1xxxxxxxxxx", "+1xxxxxxxxxx", "+1xxxxxxxxxx"]
+d = []
+
+for number in from_numbers:
+    messages = client.messages.list(from_=number, date_sent_after=(datetime(2021, 10, 0o1)))
+    for record in messages:
+        d.append((record.from_, record.to, record.date_sent, record.status, record.sid, record.body, record.error_message))
+
+
+df = pd.DataFrame(d, columns=('From', 'To', 'Date', 'Status', 'MessageSID', 'Message Body', 'Error Message'))
+
+print('dataframe')
+print('\n')
+print(df)
+
+df.to_csv('Messages.csv', index=False, encoding='utf-8')
+```
+
+  </TabItem>
+
+  <TabItem value="node" label="Node">
+
+```js
+const dfd = require("danfojs");
+const fs = require('fs');
+const { RestClient } = require("@signalwire/compatibility-api");
+
+// TODO: Update with your credentials
+let space_url = "YOURSPACENAME.signalwire.com";
+let project_id = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX";
+let access_token = "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+const client = RestClient(
+    project_id, 
+    access_token, 
+    { signalwireSpaceUrl: space_url }
+);
+
+// TODO: Update number list
+const from_numbers = [
+    "+###########",
+    "+###########",
+    "+###########",
+    "+###########",
+];
+
+let data = [];
+
+Promise.all(
+    from_numbers.map((number) =>
+        client.messages
+            .list({
+                from: number,
+                dateSentAfter: new Date(Date.UTC(2022, 01, 01)),
+            })
+            .then((messages) =>
+                messages.forEach((message) => {
+                    data.push([
+                        message.from,
+                        message.to,
+                        message.dateSent,
+                        message.status,
+                        message.sid,
+                        message.body,
+                        message.errorMessage,
+                    ]);
+                })
+            )
+    )
+).then(() => {
+    let allData = new dfd.DataFrame(data, {
+        columns: [
+            "From",
+            "To",
+            "Date",
+            "Status",
+            "Message SID",
+            "Message Body",
+            "Error Message",
+        ],
+        config: {
+            tableDisplayConfig: {
+                columns: [
+                    { width: 1 },
+                    { width: 13 },
+                    { width: 13 },
+                    { width: 8 },
+                    { width: 9 },
+                    { width: 36 },
+                    { width: 30 },
+                    { width: 13 }
+                ],
+            }
+        }
+    });
+
+    allData.print();
+    fs.writeFileSync("Messages.csv", dfd.toCSV(allData));
+});
+```
+  </TabItem>
+
+  <TabItem value="php" label="PHP">
+
+```php
+<?php
+require __DIR__ .'/vendor/autoload.php';
+
+use SignalWire\Rest\Client;
+
+$client = new Client('YOUR-PROJECT-ID', 'YOUR-API-AUTH-TOKEN', array("signalwireSpaceUrl" => "YOUR-SPACE-URL.signalwire.com"));
+
+// TODO: Update this array with the from_numbers you need results for.
+$from_numbers = array("+1416XXXXXXX","+1417XXXXXXX","+1833XXXXXXX",);
+
+foreach($from_numbers as $number) {
+    // Can filter message by whatever parameters you need. This example is any message sent after January 1, 2022.
+    $messages = $client->messages->read([
+        "dateSentAfter" => "2022-01-01",
+    ]);
+}
+
+// Write Headers for output CSV.
+$header_fields = array('From', 'To', 'Date Sent', 'Status','Message SID', 'Body', 'Error Message');
+echo '"'.implode('","', $header_fields).'"'."\n";
+// Open File named Messages.csv
+$fp = fopen('Messages.csv', 'w');
+// Insert headers into output Messages.csv file.
+fputcsv($fp, $header_fields);
+// Write rows
+foreach ($messages as $message) {
+    $row = array(
+        $message->from,
+        $message->to,
+        $message->dateSent->format('Y-m-d H:i:s'),
+        $message->status,
+        $message->sid,
+        $message->body,
+        $message->errorMessage,
+    );
+    // Insert rows into CSV
+    fputcsv($fp, $row);
+    echo '"'.implode('","', $row).'"'."\n";
+}
+// close file
+fclose($fp);
+
+```
+
+  </TabItem>
+
+  <TabItem value="java" label="Java">
+
+```java
+import io.github.olajhidey.SignalWireClient;
+import io.github.olajhidey.model.message.Message;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class MessageFromNumber {
+
+    public static List<String[]> dataLines = new ArrayList<>();
+
+    public static SignalWireClient client() {
+        return new SignalWireClient("PROJECT-ID-KEY",
+                "API-TOKEN-KEY",
+                "SPACE-NAME");
+    }
+
+    public static void main(String[] args) {
+      
+				// List of from number to loop 
+        String[] listOfNumbers = {"", ""};
+
+      	// Return messages from the API
+        List<Message> messages = client().message().getMessages().messages;
+
+      // Header of the CSV file
+        dataLines.add(new String[]{"From", "To", "Date", "Status", "MessageSID"});
+
+      // Loop through multiple phone numbers
+        for (int i = 0; i < listOfNumbers.length ; i++) {
+
+          // Loop through the result from the APPI
+            for (int j = 0; j < messages.size(); j++) {
+
+              // If {from} number dataset equal to the from value in our API
+                if (Objects.equals(messages.get(j).from, listOfNumbers[i])){
+                    Message message = messages.get(j);
+                  
+                  // Add message to the dataLine Array that would be converted to CSV
+                    dataLines.add(new String[]{message.from, message.to, message.date_created, message.status, message.sid});
+                }
+            }
+        }
+
+        try{
+          // Create a populate the array into CSV
+            createAndPopulateCSV();
+        }catch (IOException exception){
+            exception.printStackTrace();
+        }
+
+    }
+  
+  // Helper method to convert stream of data to csv
+    public static String convertToCsv(String[] data) {
+        return Stream.of(data)
+                .map(MessagesList::escapeSpecialCharacters)
+                .collect(Collectors.joining(","));
+    }
+  
+		// Create a folder and name of file
+  	// Populate the file with the dataLine String
+    public static void createAndPopulateCSV() throws IOException {
+
+        // Auto-generate the name of the file
+        String filename = "message_result" + System.currentTimeMillis();
+
+        // Get the absolute path to the folder you would like to create in the project directory
+        File file = new File(Paths.get("csv").toAbsolutePath().toUri());
+
+        // if file doesn't exist. create a new folder
+        if (!file.exists()) {
+            boolean isFolder = file.mkdir();
+            if (isFolder){
+                System.out.println("New folder created!");
+            }else{
+                System.out.println("Couldn\'t create folder");
+            }
+        }
+
+        // create new csv file with the autogenerated name
+        File csvOutputFile = new File(Paths.get("csv").toAbsolutePath() + "\\" + filename);
+        try (PrintWriter printWriter = new PrintWriter(csvOutputFile)) {
+            dataLines.stream()
+                    .map(MessageFromNumber::convertToCsv)
+                    .forEach(printWriter::println); // Write item into the CSV file
+            System.out.println("Write operation done successfully!");
+        }
+
+    }
+  
+		// Helper class to manage the escape characters in our messages
+  	// while populating to CSV
+    public static String escapeSpecialCharacters(String data) {
+        String escapeData = data.replace("\\R", " ");
+        if (data.contains(",") || data.contains("\"")) {
+            data = data.replace("\"", "\"\"");
+            escapeData = "\"" + data + "\"";
+        }
+        return escapeData;
+    }
+
+}
+```
+
+  </TabItem>
+</Tabs>
+
+</details>
+
+Python
+------
+
+### What do I need to run this code?
+
+For the following code to work, you will need to have pandas, DateTime, and the SignalWire Python SDK installed. 
+
+Read about the different ways to [install pandas](https://pandas.pydata.org/docs/getting_started/install.html).
+
+Read about [DateTime and how to install using pip](https://pypi.org/project/DateTime/).
+
+Read about the [SignalWire Python SDK and how to install it](/compatibility-api/sdks).
+
+### Code Walkthrough
+
+We will start by importing the necessary resources. In this example, that is datetime, pandas, and the SignalWire Client. We also need to instantiate the SignalWire client using the project ID, auth token, and Space URL. 
+
+```python
+from datetime import datetime
+from signalwire.rest import Client as signalwire_client
+import pandas as pd
+
+client = signalwire_client("ProjectID", "AuthToken", signalwire_space_url = 'SpaceURL')
+```
+
+In this example, I have included how to filter by a starting date and multiple `from` numbers. DateSent is a DateTime object where the order for the arguments is Year, Month, Date, Hour, Minute, Seconds. You can leave hour, minute, and seconds at 0, unless you have a specific time of day you would like to filter by. 
+
+
+:::info Octal Literals in Some Python Versions
+
+For months Jan - September, A slight change was made because python version (3.9) does not support leading 0's in datetime anymore. You must use the 0o prefix for octal literals now. That is reflected below in the code. If your version doesn’t include that limitation, you can switch it back to 01 or whatever month you need.
+
+:::
+
+Next, we need to create two arrays. One will contain all of the `from` numbers that we want to filter by and the other will be an empty array used for storing message records in greater detail. 
+
+```python
+
+from_numbers = ["+1xxxxxxxxxx", "+1xxxxxxxxxx", "+1xxxxxxxxxx", "+1xxxxxxxxxx"]
+d = []
+
+```
+
+Now we will call the List Messages API on each of the `from` numbers by looping through the array. After the API has stored all the matching records, we will loop through them one by one to gather additional message details about each record and store it in the empty array `d` that we created above. 
+
+```python
+for number in from_numbers:
+    messages = client.messages.list(from_=number, date_sent_after=(datetime(2021, 10, 0o1)))
+    for record in messages:
+        d.append((record.from_, record.to, record.date_sent, record.status, record.sid, record.body, record.error_message))
+```
+
+You can expand this to include as many or as few parameters as you'd like. To see all of the parameters returned in the JSON response, you can view our API documentation here: [List Messages API](/rest/compatibility-api/endpoints/list-messages)
+
+Next, we will create a dataframe using pandas with column name headers. It's important to make sure that the order of the headers matches the order of the parameters you inserted into the array above. If you choose to add more or remove parameters, make sure to double-check that the order matches, or your data will be mismatched in the CSV. 
+
+Lastly, we will print the dataframe for debugging purposes and export it to csv. Using the parameter `index=False` turns off the indexing for each row. You can rename messages.csv to be as specific or general as you'd like. 
+
+```python
+df = pd.DataFrame(d, columns=('From', 'To', 'Date', 'Status', 'MessageSID', 'Message Body', 'Error Message'))
+
+print('dataframe')
+print('\n')
+print(df)
+
+df.to_csv('messages.csv', index=False, encoding='utf-8')
+```
+
+Node.js
+-------
+
+### What do I need to run this code?
+
+We will need the following libraries (click their names to get instructions on how to install them):
+
+- [Danfo.js](https://www.npmjs.com/package/danfojs)
+- [fs](https://nodejs.org/api/fs.html) - there is no need to install this module, as it is part of the Node.js Core
+- [SignalWire Rest Client](https://www.npmjs.com/package/@signalwire/compatibility-api)
+
+### How to Run Snippet?
+
+If you save this code snippet in a file called `listMessagesFilteredByNumbers.js`, for example, you then need to run:  
+`node listMessagesFilteredByNumbers.js`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+```javascript
+const dfd = require("danfojs");
+const fs = require('fs');
+const { RestClient } = require("@signalwire/compatibility-api");
+```
+
+#### Instantiate the SignalWire Rest Client
+
+In order for us to connect to SignalWire later on in the code using the Rest Client we first need to make sure we update `space_url`, `project_id`, and `access_token`.
+
+```javascript
+let space_url = "YOURSPACENAME.signalwire.com";
+let project_id = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX";
+let access_token = "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+const client = RestClient(
+    project_id, 
+    access_token, 
+    { signalwireSpaceUrl: space_url }
+);
+```
+
+#### Set the numbers to look for
+
+In this step we need to create two arrays: one will contain all of the `from` numbers that we want to filter by and the other will be an empty array used for storing message records in greater detail. 
+
+Make sure to update the `from_numbers` array with your list of numbers, in E.164 format.
+
+```javascript
+const from_numbers = [
+    "+###########",
+    "+###########",
+    "+###########",
+    "+###########",
+];
+
+let data = [];
+```
+
+#### Loop through all of the numbers
+
+For each of the numbers outlined in the previous step, we make use of the List Messages endpoint, through `client.messages.list`, and specify the `from` and `dateSentAfter` parameters.
+
+After we get the list of messages back, we push several fields to the `data` array.
+
+Only once all of the numbers have been parsed do we get all of the data passed to the `data` array, and create the `allData` DataFrame using it. Using DataFrames allows us to easily print all of the message data, as well as export it to a CSV file.
+
+```javascript
+Promise.all(
+    from_numbers.map((number) =>
+        client.messages
+            .list({
+                from: number,
+                dateSentAfter: new Date(Date.UTC(2022, 01, 01)),
+            })
+            .then((messages) =>
+                messages.forEach((message) => {
+                    data.push([
+                        message.from,
+                        message.to,
+                        message.dateSent,
+                        message.status,
+                        message.sid,
+                        message.body,
+                        message.errorMessage,
+                    ]);
+                })
+            )
+    )
+).then(() => {
+    let allData = new dfd.DataFrame(data, {
+        columns: [
+            "From",
+            "To",
+            "Date",
+            "Status",
+            "Message SID",
+            "Message Body",
+            "Error Message",
+        ],
+        config: {
+            tableDisplayConfig: {
+                columns: [
+                    { width: 1 },
+                    { width: 13 },
+                    { width: 13 },
+                    { width: 8 },
+                    { width: 9 },
+                    { width: 36 },
+                    { width: 30 },
+                    { width: 13 }
+                ],
+            }
+        }
+    });
+```
+
+#### Print the results
+
+Lastly, we print the `allData` DataFrame to the terminal, and create the `Messages.csv` file using it. 
+
+```javascript
+allData.print();
+fs.writeFileSync("Messages.csv", dfd.toCSV(allData));
+```
+
+PHP
+---
+
+### What do I need to run this code?
+
+For the following code to work, you will need to have the [SignalWire PHP SDK](/compatibility-api/sdks) installed.
+
+### How to Run Snippet?
+
+If you save this code snippet in a file called listMessagesFilteredByNumbers.php, for example, you then need to run:  
+`php listMessagesFilteredByNumbers.php`.
+
+### Code Walkthrough
+
+#### Load the necessary libraries
+
+We will start by importing the necessary resources. For PHP that involves only the SignalWire REST Client.
+
+```php
+use SignalWire\Rest\Client;
+```
+
+#### Instantiate the SignalWire Rest Client
+
+So that we can connect to SignalWire using this code, we need to instantiate the SignalWire client using the project ID, auth token, and Space URL. 
+
+```php
+$client = new Client('YOUR-PROJECT-ID', 'YOUR-API-AUTH-TOKEN', array("signalwireSpaceUrl" => "YOUR-SPACE-URL.signalwire.com"));
+```
+
+#### Set the from numbers to look for
+
+We need to create an array that will contain all of the `from` numbers that we want to filter by. The numbers listed within this array should be in E.164 format.
+
+```php
+// TODO: Update this array with the from_numbers you need results for.
+$from_numbers = array("+1416XXXXXXX","+1417XXXXXXX","+1833XXXXXXX",);
+```
+
+#### Loop through all of the numbers
+
+Now we will call the List Messages API on each of the `from` numbers by looping through the array. In this example, I have included how to filter by a starting date for the multiple `from` numbers. dateSentAfter is a DateTime object where the order for the arguments is Year, Month, Date, Hour, Minute, Seconds. You can leave hour, minute, and seconds at 0, unless you have a specific time of day you would like to filter by. The example is set to look for any messages sent after January 1, 2022. Feel free to comment out the dateSentAfter if it is not needed.
+
+```php
+foreach($from_numbers as $number) {
+    // Can filter message by whatever parameters you need. This example is any message sent after January 1, 2022.
+    $messages = $client->messages->read([
+        "dateSentAfter" => "2022-01-01",
+    ]);
+}
+```
+
+Next, we create an array of header row labels `$header_fields` to help organize our output file a bit. It's important to make sure that the order of the header labels matches the order of the parameters you insert into the next array we create. If you choose to add more or remove parameters, make sure to double-check that the order matches or your data will be mismatched in the CSV.   
+
+We also specify an output file `$fp` and open it for writing data.  You can rename Messages.csv to be as specific or general as you'd like. The header row labels we created are then pushed to this file.
+
+```php
+// Write Headers for output CSV.
+$header_fields = array('From', 'To', 'Date Sent', 'Status','Message SID', 'Body', 'Error Message');
+echo '"'.implode('","', $header_fields).'"'."\n";
+// Open File named Messages.csv
+$fp = fopen('Messages.csv', 'w');
+// Insert headers into output Messages.csv file.
+fputcsv($fp, $header_fields);
+```
+
+We'll now create an array `$row` to hold the parameters we want to output into our file.
+
+You can expand this to include as many or as few parameters as you'd like. To see all of the parameters returned in the JSON response, you can view our API documentation here: [List Messages API](/rest/compatibility-api/endpoints/list-messages)
+
+Lastly, we will push our array of parameters to the output CSV and close the output file. 
+
+```php
+foreach ($messages as $message) {
+    $row = array(
+        $message->from,
+        $message->to,
+        $message->dateSent->format('Y-m-d H:i:s'),
+        $message->status,
+        $message->sid,
+        $message->body,
+        $message->errorMessage,
+    );
+      // Insert rows into CSV
+    fputcsv($fp, $row);
+    echo '"'.implode('","', $row).'"'."\n";
+}
+// close file
+fclose($fp);
+```
+
+Java
+----
+
+### What do I need to run this code?
+
+For the following code to work, you will need to have a Maven project, The Java Wrapper Library and a Signalwire account.
+
+Read about how to get started with the Java Wrapper API [here](https://github.com/signalwire-community/compatibility-api-java)
+
+Read on how to create a Maven project with Intellij [here](https://www.jetbrains.com/help/idea/delegate-build-and-run-actions-to-maven.html#maven_reimport)
+
+** How to get API Credentials **
+
+The API also requires that you authenticate yourself using your Project ID, API Token, and Space URL. If you do not know where to find these values, check out our guide [here](/platform/dashboard/get-started/explore#api)!
+
+### How to Run Snippet?
+
+Assuming you've named your script `MessageFromNumber.java` you would need to do the following to run the `javac MessageFromNumber.java` then `java MessageFromNumber.java`.
+
+### Step by Step Code Walkthrough
+
+We also need to instantiate the SignalWire client using the project ID, auth token, and Space URL
+
+```java
+public static List<String[]> dataLines = new ArrayList<>();
+
+    public static SignalWireClient client() {
+        return new SignalWireClient("PROJECT-ID-KEY",
+                "API-TOKEN-KEY",
+                "SPACE-NAME");
+    }
+```
+
+ In the `main` method we need to get our messages the `client().message().getMessages().messages` method to populate messages from your SignalWire Space.
+
+```java
+// List of from number to loop 
+        String[] listOfNumbers = {"", ""};
+
+      	// Return messages from the API
+        List<Message> messages = client().message().getMessages().messages;
+
+      // Header of the CSV file
+        dataLines.add(new String[]{"From", "To", "Date", "Status", "MessageSID"});
+```
+
+We have an array `listOfNumbers` used to hold the list of From numbers we would be using to sort result from the API.
+
+Loop through the array of numbers while comparing each element with another **for **loop that does a comparison with result from the API with the number from our `listNumbers` array element . if `true` the element is added to the `dataLines` used to populate the CSV.
+
+```java
+// Loop through multiple phone numbers
+        for (int i = 0; i < listOfNumbers.length ; i++) {
+
+          // Loop through the result from the APPI
+            for (int j = 0; j < messages.size(); j++) {
+
+              // If {from} number dataset equal to the from value in our API
+                if (Objects.equals(messages.get(j).from, listOfNumbers[i])){
+                    Message message = messages.get(j);
+                  
+                  // Add message to the dataLine Array that would be converted to CSV
+                    dataLines.add(new String[]{message.from, message.to, message.date_created, message.status, message.sid});
+                }
+            }
+        }
+```
+
+Now that we have the list sorted with an Array holding the informations that need to be exported to a CSV we call the `createAndPopulateCSV` method which is an help method to create a csv file and write elements into the CSV file.
+
+```java
+try{
+          // Create a populate the array into CSV
+            createAndPopulateCSV();
+        }catch (IOException exception){
+            exception.printStackTrace();
+        }
+```
+
+For full Snippet on the Helper methods you can view the below snippets
+
+**createAndPopulateCSV Method**
+
+```java
+// Create a folder and name of file
+  	// Populate the file with the dataLine String
+    public static void createAndPopulateCSV() throws IOException {
+
+        // Auto-generate the name of the file
+        String filename = "message_result" + System.currentTimeMillis();
+
+        // Get the absolute path to the folder you would like to create in the project directory
+        File file = new File(Paths.get("csv").toAbsolutePath().toUri());
+
+        // if file doesn't exist. create a new folder
+        if (!file.exists()) {
+            boolean isFolder = file.mkdir();
+            if (isFolder){
+                System.out.println("New folder created!");
+            }else{
+                System.out.println("Couldn\'t create folder");
+            }
+        }
+
+        // create new csv file with the autogenerated name
+        File csvOutputFile = new File(Paths.get("csv").toAbsolutePath() + "\\" + filename);
+        try (PrintWriter printWriter = new PrintWriter(csvOutputFile)) {
+            dataLines.stream()
+                    .map(MessageFromNumber::convertToCsv)
+                    .forEach(printWriter::println); // Write item into the CSV file
+            System.out.println("Write operation done successfully!");
+        }
+
+    }
+  
+```
+
+**convertToCsv Method**
+
+```java
+ // Helper method to convert stream of data to csv
+    public static String convertToCsv(String[] data) {
+        return Stream.of(data)
+                .map(MessagesList::escapeSpecialCharacters)
+                .collect(Collectors.joining(","));
+    }
+```
+
+**escapeSpecialCharacters Method**
+
+```java
+  public static String escapeSpecialCharacters(String data) {
+        String escapeData = data.replace("\\R", " ");
+        if (data.contains(",") || data.contains("\"")) {
+            data = data.replace("\"", "\"\"");
+            escapeData = "\"" + data + "\"";
+        }
+        return escapeData;
+    }
+```
+
+Wrap up
+-------
+
+Our List Messages API makes it easy to get lots of detail on your messages, and combined with a few lines of code you can filter the results even more, print them in a more comprehensible way, and export to a CSV file for processing in a spreadsheet!
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

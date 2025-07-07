@@ -1,0 +1,268 @@
+---
+title: Listing Numbers to a CSV
+description: List all of the numbers in your SignalWire Project and export them to CSV
+slug: /compatibility-api/guides/general/phone-numbers/list-numbers-to-csv
+x-custom:
+  author: slamhaus, rsowald
+  tags:
+    - product:numbers
+    - product:voice
+    - language:python
+    - language:nodejs
+    - sdk:compatibility
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+## Overview
+
+This guide might be helpful to you if you need to separately store a list of all your SignalWire numbers within a project. You can use one or more of the following parameters to further filter your records and return only the specific information that you need: `FriendlyName`, `Origin`, `PhoneNumber`. In this example, we will be querying your project and returning all of the numbers in your project, limited by whatever parameters you choose to use. We will then take this data and insert it into a CSV for your records or further use.
+
+<details>
+  <summary>Full code example: Export Numbers to CSV</summary>
+
+<Tabs>
+<TabItem value="python" label="Python">
+
+```python
+from signalwire.rest import Client as signalwire_client
+import pandas as pd
+
+client = signalwire_client("ProjectID", "AuthToken", signalwire_space_url = 'SpaceUrl')
+
+# Lists all numbers on account
+incoming_phone_numbers = client.incoming_phone_numbers.list()
+
+# Sets up an empty array
+d = []
+
+# Appends incoming phone numbers into
+for record in incoming_phone_numbers:
+   d.append((record.phone_number, record.sid))
+
+print(d)
+
+# Puts message log array into dataframe with headers for easier reading.
+df = pd.DataFrame(d, columns=('Phone Number', 'PhoneNumberSID'))
+
+print('dataframe')
+print('\n')
+print(df)
+
+# Exports dataframe to csv, index=False turns off the indexing for each row
+df.to_csv('Numbers.csv', index=False, encoding='utf-8')
+```
+
+</TabItem>
+<TabItem value="javascript" label="JavaScript">
+
+```js
+const { RestClient } = require('@signalwire/compatibility-api');
+const fs = require('fs');
+const path = require('path');
+const csv = require('csv-parser');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+
+const client = new RestClient('ProjectID', 'AuthToken', { signalwireSpaceUrl: 'SpaceURL' })
+
+const getIncomingPhoneNumbers = async () => {
+  try {
+    const incomingPhoneNumbers = await client.incomingPhoneNumbers.list();
+    return incomingPhoneNumbers.map((record) => ({
+      phoneNumber: record.phoneNumber,
+      friendlyName: record.friendlyName,
+      phoneNumberSid: record.sid,
+      projectSid: record.accountSid
+    }));
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+const writeCsv = (data) => {
+  const filePath = path.join(__dirname, 'Numbers.csv');
+  const csvWriter = createCsvWriter({
+    path: filePath,
+    header: [
+      { id: 'phoneNumber', title: 'Phone Number' },
+      { id: 'friendlyName', title: 'Name' },
+      { id: 'phoneNumberSid', title: 'Phone Number SID' },
+      { id: 'projectSid', title: 'Project SID' }
+    ],
+    encoding: 'utf8',
+    append: false
+  });
+
+  csvWriter.writeRecords(data).then(() => {
+    console.log(`CSV file "${filePath}" has been created successfully.`);
+  }).catch((error) => {
+    console.error(`Failed to write CSV file "${filePath}".`, error);
+  });
+};
+
+const main = async () => {
+  const incomingPhoneNumbers = await getIncomingPhoneNumbers();
+  console.log('Data:', incomingPhoneNumbers);
+  writeCsv(incomingPhoneNumbers);
+};
+
+main();
+```
+
+</TabItem>
+</Tabs>
+
+
+</details>
+
+## Python
+
+### What tools do you need?
+
+You MUST have [pandas](https://pandas.pydata.org/) installed and imported for this to work. We use pandas to create the dataframe and export it to CSV.
+
+You must have the SignalWire Python SDK installed. You can install that using the instructions [here](/compatibility-api/sdks).
+
+### What do you need to replace in this code?
+
+- `ProjectID` - Your project ID is an alphanumeric string that tells the SignalWire SDK where to find your project.
+- `AuthToken` - Your Auth Token is an alphanumeric string that helps to authenticate your HTTP requests to SignalWire.
+- `SpaceURL` - Your Space URL is the domain of your Space, i.e. example.signalwire.com.
+
+You can find these credentials and create an API token if you need to within the [API tab of your SignalWire Space](https://my.signalwire.com?credentials).
+
+If you want to add a parameter that you can filter the numbers by, you can add it within `client.incoming_phone_numbers_list()`.
+
+### Code Walkthrough
+
+#### Load libraries and instantiate SignalWire Client
+
+```python
+from signalwire.rest import Client as signalwire_client
+import pandas as pd
+
+client = signalwire_client("ProjectID", "AuthToken", signalwire_space_url = 'SpaceUrl')
+```
+
+#### Fetch all numbers in your project and add them to an array
+
+```python
+incoming_phone_numbers = client.incoming_phone_numbers.list()
+
+# Sets up an empty array
+d = []
+
+# Appends incoming phone numbers into
+for record in incoming_phone_numbers:
+   d.append((record.phone_number, record.sid))
+
+print(d)
+```
+
+#### Create dataframe, print it, and export to CSV
+
+```python
+# Puts message log array into dataframe with headers for easier reading.
+df = pd.DataFrame(d, columns=('Phone Number', 'PhoneNumberSID'))
+
+print('dataframe')
+print('\n')
+print(df)
+
+# Exports dataframe to csv, index=False turns off the indexing for each row
+df.to_csv('Numbers.csv', index=False, encoding='utf-8')
+```
+
+## Node.js
+
+### What tools do you need?
+
+You MUST have [csv-parser](https://www.npmjs.com/package/csv-parser) and [csv-writer](https://www.npmjs.com/package/csv-writer) installed and imported for this to work. We will use them to parse and write data to a CSV.
+
+You must have the SignalWire Node.js SDK installed. You can install that using the instructions [here](/compatibility-api/sdks).
+
+### What do you need to replace in this code?
+
+- `ProjectID` - Your project ID is an alphanumeric string that tells the SignalWire SDK where to find your project.
+- `AuthToken` - Your Auth Token is an alphanumeric string that helps to authenticate your HTTP requests to SignalWire.
+- `SpaceURL` - Your Space URL is the domain of your Space, i.e. example.signalwire.com.
+
+You can find these credentials and create an API token if you need to within the [API tab of your SignalWire Space](https://my.signalwire.com?credentials).
+
+### Code Walkthrough
+
+#### Load modules and instantiate SignalWire Client
+
+```js
+const { RestClient } = require('@signalwire/compatibility-api');
+const fs = require('fs');
+const path = require('path');
+const csv = require('csv-parser');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+
+const client = new RestClient('ProjectID', 'AuthToken', { signalwireSpaceUrl: 'SpaceURL' })
+```
+
+#### Fetch all numbers in your project and add them to an array
+
+```js
+const getIncomingPhoneNumbers = async () => {
+  try {
+    const incomingPhoneNumbers = await client.incomingPhoneNumbers.list();
+    return incomingPhoneNumbers.map((record) => ({
+      phoneNumber: record.phoneNumber,
+      friendlyName: record.friendlyName,
+      phoneNumberSid: record.sid,
+      projectSid: record.accountSid
+    }));
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+```
+
+#### Create dataframe, print it, and write to CSV
+
+```js
+const writeCsv = (data) => {
+  const filePath = path.join(__dirname, 'Numbers.csv');
+  const csvWriter = createCsvWriter({
+    path: filePath,
+    header: [
+      { id: 'phoneNumber', title: 'Phone Number' },
+      { id: 'friendlyName', title: 'Name' },
+      { id: 'phoneNumberSid', title: 'Phone Number SID' },
+      { id: 'projectSid', title: 'Project SID' }
+    ],
+    encoding: 'utf8',
+    append: false
+  });
+
+  csvWriter.writeRecords(data).then(() => {
+    console.log(`CSV file "${filePath}" has been created successfully.`);
+  }).catch((error) => {
+    console.error(`Failed to write CSV file "${filePath}".`, error);
+  });
+};
+
+const main = async () => {
+  const incomingPhoneNumbers = await getIncomingPhoneNumbers();
+  console.log('Data:', incomingPhoneNumbers);
+  writeCsv(incomingPhoneNumbers);
+};
+
+main();
+```
+
+## More Guides
+
+If you are looking for more information about using SignalWire, browse guides for all of our products on the [Guides homepage](/guides).  
+
+## Sign Up Here
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!
