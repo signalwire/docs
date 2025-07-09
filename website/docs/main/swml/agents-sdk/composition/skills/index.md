@@ -3,7 +3,17 @@ id: agents-sdk-skills-overview
 slug: /sdks/agents-sdk/skills
 title: Skills
 sidebar_label: Skills
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # Skills
 

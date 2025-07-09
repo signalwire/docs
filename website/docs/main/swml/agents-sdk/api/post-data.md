@@ -3,7 +3,17 @@ id: agents-sdk-reference-post-data
 slug: /sdks/agents-sdk/api/post-data
 title: POST Data Reference
 sidebar_label: POST Data
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SignalWire SWAIG post_data Complete Reference
 

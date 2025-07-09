@@ -3,7 +3,17 @@ id: agents-sdk-guides-swml-service
 slug: /sdks/agents-sdk/guides/swml-service
 title: SWML Service Guide
 sidebar_label: SWML Service
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SignalWire SWML Service Guide
 

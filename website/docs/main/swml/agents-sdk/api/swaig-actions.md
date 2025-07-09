@@ -3,7 +3,17 @@ id: agents-sdk-reference-swaig-actions
 slug: /sdks/agents-sdk/api/swaig-actions
 title: SWAIG Actions Reference
 sidebar_label: SWAIG Actions
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SWAIG Actions Reference
 
