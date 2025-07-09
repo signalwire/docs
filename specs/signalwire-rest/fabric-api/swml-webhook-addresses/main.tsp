@@ -13,7 +13,7 @@ namespace FabricAPI.SWMLWebhookAddresses {
   @friendlyName("SWML Webhooks")
   interface SWMLWebhookAddresses {
     @summary("List SWML Webhook Addresses")
-    @doc("A list of SWML Webhook Addresses")
+    @doc("A list of SWML Webhook Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
     list(...SWMLWebhookIDPath):
       SWMLWebhookAddressListResponse |
       StatusCode401 |

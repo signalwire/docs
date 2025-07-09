@@ -56,7 +56,7 @@ namespace FabricAPI.SipGateways {
     @summary("List Fabric Addresses assigned to a SIP Gateway")
     @doc("Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.")
     @route("/{resource_id}/addresses")
-    readAddressesByResourceId(@path resource_id: string): 
+    readAddressesByResourceId(@example("3fa85f64-5717-4562-b3fc-2c963f66afa6") @path resource_id: string): 
       SipGatewayAddressListResponse |
       StatusCode401 |
       StatusCode404;

@@ -6,12 +6,14 @@ using TypeSpec.Http;
 
 model FabricSubscriberID {
   @doc("Unique ID of a Fabric Subscriber.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @path
   fabric_subscriber_id: uuid
 }
 
 model SIPEndpointID {
   @doc("Unique ID of a Sip Endpoint.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @path
   id: uuid
 }

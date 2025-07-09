@@ -7,13 +7,13 @@ namespace Types.StatusCodes {
   @error
   model StatusCode404 {
       @statusCode statusCode: 404;
-      @bodyRoot error: "Not Found"
+      error: "Not Found"
     }
 
   @error
   model StatusCode401 {
     @statusCode statusCode: 401;
-    @bodyRoot error: "Unauthorized"
+    error: "Unauthorized"
   }
 
   model StatusCode422Error {
@@ -44,7 +44,7 @@ namespace Types.StatusCodes {
 
   @error
   model StatusCode403 {
-    @statusCode statusCode: 401;
-    @bodyRoot error: "Forbidden"
+    @statusCode statusCode: 403;
+    error: "Forbidden"
   }
 
