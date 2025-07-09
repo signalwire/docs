@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ namespace FabricAPI.CXMLScripts {
     @summary("Create cXML Script")
     @doc("Creates a cXML Script")
     @post create(@body request: CXMLScriptCreateRequest):
-      { @statusCode statusCode: 201; @body cxml_script: CXMLScriptResponse; } |
+      { @statusCode statusCode: 200; @body cxml_script: CXMLScriptResponse; } |
       StatusCode401 |
       StatusCode404 |
       CXMLScriptCreateStatusCode422;

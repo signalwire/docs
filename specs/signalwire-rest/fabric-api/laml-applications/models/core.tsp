@@ -5,12 +5,15 @@ using TypeSpec.Http;
 model LamlApplicationPathID {
   @doc("Unique ID of a LAML Application.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
   @path
   id: uuid
 }
 
 model LamlApplicationID {
   @doc("Unique ID of a LAML Application.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
   laml_application_id: uuid
 }
 

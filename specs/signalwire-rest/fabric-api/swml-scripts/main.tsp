@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ namespace FabricAPI.SwmlScripts {
     @summary("Create SWML Script")
     @doc("Creates a SWML Script")
     @post create(@body request: SwmlScriptCreateRequest):
-      { @statusCode statusCode: 201; @body swml_script: SwmlScriptResponse; } |
+      { @statusCode statusCode: 200; @body swml_script: SwmlScriptResponse; } |
       StatusCode401 |
       StatusCode404 |
       SwmlScriptCreateStatusCode422;

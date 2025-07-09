@@ -4,6 +4,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
+import "./addresses";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -50,14 +51,6 @@ namespace FabricAPI.SipGateways {
     @doc("Deletes a SIP Gateway} by ID")
     @delete delete(...SipGatewayID):
       { @statusCode statusCode: 204; } |
-      StatusCode401 |
-      StatusCode404;
-
-    @summary("List Fabric Addresses assigned to a SIP Gateway")
-    @doc("Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.")
-    @route("/{resource_id}/addresses")
-    readAddressesByResourceId(@example("3fa85f64-5717-4562-b3fc-2c963f66afa6") @path resource_id: string): 
-      SipGatewayAddressListResponse |
       StatusCode401 |
       StatusCode404;
   }

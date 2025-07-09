@@ -6,6 +6,7 @@ using TypeSpec.Http;
 model SWMLWebhookID {
   @doc("Unique ID of a SWML Webhook.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
   @path
   id: uuid
 }
@@ -13,6 +14,7 @@ model SWMLWebhookID {
 model SWMLWebhook {
   @doc("Unique ID of the SWML Webhook.")
   @example("a87db7ed-8ebe-42e4-829f-8ba5a4152f54")
+  @format("uuid")
   id: uuid;
 
   @doc("Name of the SWML Webhook.")

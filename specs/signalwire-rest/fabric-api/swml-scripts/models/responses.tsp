@@ -3,10 +3,12 @@ import "./core.tsp";
 model SwmlScriptResponse {
   @doc("Unique ID of the SWML Script.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
+  @format("uuid")
   id: uuid;
 
   @doc("Unique ID of the Project.")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
+  @format("uuid")
   project_id: uuid;
 
   @doc("Display name of the SWML Script Fabric Resource")

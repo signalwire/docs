@@ -1,7 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi";
-import "./models/core.tsp";
-import "./models/responses.tsp";
+import "../_shared/fabric-address";
 import "../../types";
 
 using TypeSpec.Http;

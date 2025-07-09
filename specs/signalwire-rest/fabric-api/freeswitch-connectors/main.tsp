@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ namespace FabricAPI.FreeswitchConnectors {
     @summary("Create FreeSWITCH Connector")
     @doc("Creates a FreeSWITCH Connector")
     @post create(@body request: FreeswitchConnectorCreateRequest):
-      { @statusCode statusCode: 201; @body freeswitch_connector: FreeswitchConnectorResponse; } |
+      { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
       StatusCode401 |
       StatusCode404 |
       FreeswitchConnectorCreateStatusCode422;

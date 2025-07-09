@@ -4,6 +4,8 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
+import "./versions";
 import "../../types";
 
 using TypeSpec.Http;

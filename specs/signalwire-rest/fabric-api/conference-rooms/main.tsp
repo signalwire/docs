@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ namespace FabricAPI.ConferenceRooms {
     @summary("Create Conference Room")
     @doc("Creates a Conference Room")
     @post create(@body request: ConferenceRoomCreateRequest):
-      { @statusCode statusCode: 201; @body conference_room: ConferenceRoomResponse; } |
+      { @statusCode statusCode: 200; @body conference_room: ConferenceRoomResponse; } |
       StatusCode401 |
       StatusCode404 |
       ConferenceRoomCreateStatusCode422;

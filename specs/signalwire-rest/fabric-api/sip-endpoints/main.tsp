@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ namespace FabricAPI.SipEndpoints {
     @summary("Create SIP Endpoint")
     @doc("Creates a SIP Endpoint")
     @post create(@body request: SipEndpointCreateRequest):
-      { @statusCode statusCode: 201; @body sip_endpoint: SipEndpointResponse; } |
+      { @statusCode statusCode: 200; @body sip_endpoint: SipEndpointResponse; } |
       StatusCode401 |
       StatusCode404 |
       ResourceSipEndpointCreateStatusCode422;

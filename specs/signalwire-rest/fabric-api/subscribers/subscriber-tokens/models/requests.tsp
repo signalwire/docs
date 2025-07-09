@@ -12,6 +12,7 @@ model SubscriberTokenRequest {
 
     @doc("The ID of the application that the token is associated with.")
     @example("123e4567-e89b-12d3-a456-426614174000")
+    @format("uuid")
     application_id?: uuid;
 
     @doc("Set or update the subscriber's password. Omit this field or pass an empty string if you don't want to update the password.")

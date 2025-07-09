@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ namespace FabricAPI.RelayApplications {
     @summary("Create Relay Application")
     @doc("Creates a Relay Application")
     @post create(@body request: RelayApplicationCreateRequest):
-      { @statusCode statusCode: 201; @body relay_application: RelayApplicationResponse; } |
+      { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
       StatusCode401 |
       StatusCode404 |
       RelayApplicationCreateStatusCode422;

@@ -5,12 +5,15 @@ using TypeSpec.Http;
 model ConferenceRoomPathID {
   @doc("Unique ID of a Conference Room.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
   @path
   id: uuid
 }
 
 model ConferenceRoomID {
   @doc("Unique ID of a Conference Room.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
   conference_room_id: uuid
 }
 
