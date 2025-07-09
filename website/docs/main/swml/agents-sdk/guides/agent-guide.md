@@ -3,7 +3,17 @@ id: agents-sdk-guides-agent
 slug: /sdks/agents-sdk/guides/agent-guide
 title: Agent Guide
 sidebar_label: Agent Guide
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SignalWire AI Agent Guide
 
