@@ -3,7 +3,17 @@ id: agents-sdk-concepts-contexts
 slug: /sdks/agents-sdk/contexts
 title: Contexts Guide
 sidebar_label: Contexts
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # Contexts and Steps Guide
 

@@ -1,5 +1,14 @@
 ---
 slug: /sdks/agents-sdk/datamap
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
 ---
 
 # DataMap

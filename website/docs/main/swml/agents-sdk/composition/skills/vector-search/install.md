@@ -3,7 +3,17 @@ id: agents-sdk-skills-search-installation
 slug: /sdks/agents-sdk/skills/vector-search/install
 title: Search Installation
 sidebar_label: Installation
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SignalWire Agents Search Installation Guide
 
