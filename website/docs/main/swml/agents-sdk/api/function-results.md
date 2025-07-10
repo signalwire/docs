@@ -3,7 +3,17 @@ id: agents-sdk-reference-function-results
 slug: /sdks/agents-sdk/api/function-results
 title: Function Results Reference
 sidebar_label: Function Results
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SwaigFunctionResult Methods Reference
 

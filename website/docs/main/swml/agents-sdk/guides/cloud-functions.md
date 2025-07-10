@@ -3,7 +3,17 @@ id: agents-sdk-guides-cloud-functions
 slug: /sdks/agents-sdk/guides/cloud-functions
 title: Cloud Functions Guide
 sidebar_label: Cloud Functions
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # SignalWire AI Agents - Cloud Functions Deployment Guide
 
