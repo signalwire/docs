@@ -3,7 +3,17 @@ id: agents-sdk-skills-search
 slug: /sdks/agents-sdk/skills/vector-search/guide
 title: About the vector search system
 sidebar_label: Guide
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # Local Search System
 

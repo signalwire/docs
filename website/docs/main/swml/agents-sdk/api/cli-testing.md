@@ -3,7 +3,17 @@ id: agents-sdk-guides-cli-testing
 slug: /sdks/agents-sdk/cli
 title: Test CLI
 sidebar_label: CLI reference
---- 
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+ 
 
 # Test CLI
 

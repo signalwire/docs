@@ -4,6 +4,15 @@ slug: /sdks/agents-sdk/composition
 title: Agent composition
 sidebar_label: Overview
 sidebar_position: 0
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
 ---
 
 # Compose your agent
