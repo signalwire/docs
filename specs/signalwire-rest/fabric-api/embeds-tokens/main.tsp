@@ -22,6 +22,8 @@ namespace FabricAPI.EmbedsTokens {
         { @statusCode statusCode: 201; @body subscriber: EmbedsTokensResponse; } |
         StatusCode401 |
         StatusCode404 |
-        StatusCode403;
+        StatusCode403 |
+        EmbedTokenCreateStatusCode422 |
+        StatusCode500;
     }
 }

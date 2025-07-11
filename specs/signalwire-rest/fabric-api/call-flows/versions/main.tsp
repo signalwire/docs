@@ -8,8 +8,10 @@ import "../../../types";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
+
+
 @route("/resources/call_flow/{id}/versions")
-namespace FabricAPI.CallFlowVersions {
+namespace FabricAPI.CallFlow.Versions {
   @tag("Call Flows")
   interface CallFlowVersions {
     @summary("List Call Flow Versions")
@@ -17,7 +19,8 @@ namespace FabricAPI.CallFlowVersions {
     list(...CallFlowVersionPathID):
       CallFlowVersionListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Deploy a Call Flow Version")
     @doc("Deploys a specific version of a Call Flow.")
@@ -25,6 +28,7 @@ namespace FabricAPI.CallFlowVersions {
       { @statusCode statusCode: 201; @body response: CallFlowVersionDeployResponse; } |
       StatusCode401 |
       StatusCode404 |
-      StatusCode422;
+      StatusCode422 |
+      StatusCode500;
   }
 }

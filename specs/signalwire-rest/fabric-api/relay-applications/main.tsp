@@ -20,14 +20,16 @@ namespace FabricAPI.RelayApplications {
     list():
       RelayApplicationResponse[] |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get Relay Application")
     @doc("Returns a Relay Application by ID")
     read(...RelayApplicationPathID):
       { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create Relay Application")
     @doc("Creates a Relay Application")
@@ -35,7 +37,8 @@ namespace FabricAPI.RelayApplications {
       { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
       StatusCode401 |
       StatusCode404 |
-      RelayApplicationCreateStatusCode422;
+      RelayApplicationCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update Relay Application")
     @doc("Updates a Relay Application by ID")
@@ -43,13 +46,15 @@ namespace FabricAPI.RelayApplications {
       { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
       StatusCode401 |
       StatusCode404 |
-      RelayApplicationUpdateStatusCode422;
+      RelayApplicationUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete Relay Application")
     @doc("Deletes a Relay Application by ID")
     @delete delete(...RelayApplicationPathID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }

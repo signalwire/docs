@@ -20,14 +20,16 @@ namespace FabricAPI.AIAgents {
     list():
       AIAgentListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get AI Agent")
     @doc("Returns an AI Agent by ID")
     read(...AIAgentPathID):
       { @statusCode statusCode: 200; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create AI Agent")
     @doc("Creates an AI Agent")
@@ -35,7 +37,8 @@ namespace FabricAPI.AIAgents {
       { @statusCode statusCode: 201; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
       StatusCode404 |
-      AIAgentCreateStatusCode422;
+      AIAgentCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update AI Agent")
     @doc("Updates an AI Agent by ID")
@@ -43,14 +46,16 @@ namespace FabricAPI.AIAgents {
       { @statusCode statusCode: 200; @body ai_agent: AIAgentResponse; } |
       StatusCode401 |
       StatusCode404 |
-      AIAgentUpdateStatusCode422;
+      AIAgentUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete AI Agent")
     @doc("Deletes an AI Agent by ID")
     @delete delete(...AIAgentPathID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }
 

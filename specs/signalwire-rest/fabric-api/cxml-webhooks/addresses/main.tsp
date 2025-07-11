@@ -8,16 +8,17 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/cxml_webhooks/{cxml_webhook_id}/addresses")
-namespace FabricAPI.CXMLWebhookAddresses {
+namespace FabricAPI.CXMLWebhook.Addresses {
   @tag("cXML Webhook")
   @friendlyName("cXML Webhooks")
   interface CXMLWebhookAddresses {
     @summary("List cXML Webhook Addresses")
-    @doc("A list of cXML Webhook Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint returns a list of addresses associated with a specific cXML Webhook.")
     list(...CXMLWebhookIDPath):
       CXMLWebhookAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }
 

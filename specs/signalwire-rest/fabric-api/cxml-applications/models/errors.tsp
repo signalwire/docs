@@ -11,7 +11,7 @@ using Types.StatusCodes;
       url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter"
     }]
 })
-model LamlApplicationCreateStatusCode422 is StatusCode422;
+model CxmlApplicationCreateStatusCode422 is StatusCode422;
 
 @example(#{
     errors: #[#{
@@ -22,4 +22,4 @@ model LamlApplicationCreateStatusCode422 is StatusCode422;
       url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#invalid_parameter_value"
     }]
 })
-model LamlApplicationUpdateStatusCode422 is StatusCode422;
+model CxmlApplicationUpdateStatusCode422 is StatusCode422;

@@ -1,3 +1,5 @@
+import "../../_shared/enums.tsp";
+
 model CXMLWebhookCreateRequest {
   @doc("Name of the CXML Webhook.")
   @example("My CXML Webhook")
@@ -12,24 +14,24 @@ model CXMLWebhookCreateRequest {
   primary_request_url: string;
 
   @doc("Primary request method of the CXML Webhook.")
-  @example("GET")
-  primary_request_method?: "GET" | "POST" = "POST";
+  @example(UrlMethodType.Get)
+  primary_request_method?: UrlMethodType.Get | UrlMethodType.Post = UrlMethodType.Post;
 
   @doc("Fallback request url of the CXML Webhook.")
   @example("https://fallback.com")
   fallback_request_url?: string;
 
   @doc("Fallback request method of the CXML Webhook.")
-  @example("GET")
-  fallback_request_method?: "GET" | "POST" = "POST";
+  @example(UrlMethodType.Get)
+  fallback_request_method?: UrlMethodType.Get | UrlMethodType.Post = UrlMethodType.Post;
 
   @doc("Status callback url of the CXML Webhook.")
   @example("https://callback.com")
   status_callback_url?: string;
 
   @doc("Status callback method of the CXML Webhook.")
-  @example("POST")
-  status_callback_method?: "GET" | "POST" = "POST";
+  @example(UrlMethodType.Get)
+  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post = UrlMethodType.Post;
 }
 
 model CXMLWebhookUpdateRequest {
@@ -62,6 +64,6 @@ model CXMLWebhookUpdateRequest {
   status_callback_url?: string;
 
   @doc("Status callback method of the CXML Webhook.")
-  @example("POST")
-  status_callback_method?: "GET" | "POST" = "POST";
+  @example(UrlMethodType.Post)
+  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post  = UrlMethodType.Post;
 }

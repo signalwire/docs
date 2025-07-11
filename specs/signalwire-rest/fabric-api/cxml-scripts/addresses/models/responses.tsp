@@ -2,24 +2,30 @@ import "../../../_shared/fabric-address/models/core.tsp";
 import "../../../_shared/enums.tsp";
 import "../../../../types";
 
-using Types.StatusCodes;
 
 model CXMLScriptAddressListResponse {
   @doc("List of cXML Script Addresses")
-  @example(#[
-    #{
-      id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      name: "cxml-script-address",
-      display_name: "cXML Script Address",
-      type: DisplayTypes.App,
-      cover_url: "https://example.com/cover.jpg",
-      preview_url: "https://example.com/preview.jpg",
-      locked: false,
-      channel: #{
-        audio: "/external/cxml_script?channel=audio"
-      },
-      created_at: utcDateTime.fromISO("2023-01-01T12:00:00Z")
-    }
-  ])
-  data: FabricAddress[];
+  data: FabricAddressApp[];
+  @doc("Pagination links")
+  links: CXMLScriptAddressPaginationResponse;
 }
+
+model CXMLScriptAddressPaginationResponse {
+
+  @doc("Link of the current page")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&type=cxml_script")
+  self: url,
+
+  @doc("Link to the first page")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_size=50&type=cxml_script")
+  first: url,
+
+  @doc("Link to the next page")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=1&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
+  next: url,
+
+  @doc("Link to the previous page")
+  @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
+  prev?: url;
+    
+  }

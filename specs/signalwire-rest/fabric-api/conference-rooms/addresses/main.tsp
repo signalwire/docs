@@ -8,14 +8,15 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/conference_room/{id}/addresses")
-namespace FabricAPI.ConferenceRoomAddresses {
+namespace FabricAPI.ConferenceRoom.Addresses {
   @tag("Conference Rooms")
   interface ConferenceRoomAddresses {
     @summary("List Conference Room Addresses")
-    @doc("A list of Conference Room Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint returns a list of addresses associated with a specific Conference Room.")
     list(...ConferenceRoomAddressPathID):
       ConferenceRoomAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

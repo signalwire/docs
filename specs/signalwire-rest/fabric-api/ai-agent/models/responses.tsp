@@ -12,8 +12,8 @@ model AIAgentResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("external_laml_handler")
-  type: string;
+  @example("ai_agent")
+  type: "ai_agent";
 
   @doc("Date and time when the resource was created.")
   @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
@@ -44,4 +44,8 @@ model AIAgentPaginationResponse {
   @doc("Link to the next page")
   @example("https://{space_name}.signalwire.com/api/fabric/resources/ai_agents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
   next: url;
+
+  @doc("Link to the previous page")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  prev?: url;
 }

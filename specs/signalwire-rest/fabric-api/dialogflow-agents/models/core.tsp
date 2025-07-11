@@ -36,6 +36,7 @@ model DialogflowAgent {
 
   @doc("Dialogflow reference ID")
   @example("12345678-1234-1234-1234-1234567890ab")
+  @format("uuid")
   dialogflow_reference_id?: uuid;
 
   @doc("Dialogflow reference name")

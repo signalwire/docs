@@ -21,14 +21,16 @@ namespace FabricAPI.CallFlows {
     list():
       CallFlowResponse[] |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get Call Flow")
     @doc("Returns a Call Flow by ID")
     read(...CallFlowPathID):
       { @statusCode statusCode: 200; @body call_flow: CallFlowResponse; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create Call Flow")
     @doc("Creates a Call Flow")
@@ -36,7 +38,8 @@ namespace FabricAPI.CallFlows {
       { @statusCode statusCode: 201; @body call_flow: CallFlowResponse; } |
       StatusCode401 |
       StatusCode404 |
-      CallFlowCreateStatusCode422;
+      CallFlowCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update Call Flow")
     @doc("Updates a Call Flow by ID")
@@ -44,13 +47,15 @@ namespace FabricAPI.CallFlows {
       { @statusCode statusCode: 200; @body call_flow: CallFlowResponse; } |
       StatusCode401 |
       StatusCode404 |
-      CallFlowUpdateStatusCode422;
+      CallFlowUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete Call Flow")
     @doc("Deletes a Call Flow by ID")
     @delete delete(...CallFlowPathID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }

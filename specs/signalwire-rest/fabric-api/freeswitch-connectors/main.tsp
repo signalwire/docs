@@ -20,14 +20,16 @@ namespace FabricAPI.FreeswitchConnectors {
     list():
       FreeswitchConnectorResponse[] |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get FreeSWITCH Connector")
     @doc("Returns a FreeSWITCH Connector by ID")
     read(...FreeswitchConnectorPathID):
       { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create FreeSWITCH Connector")
     @doc("Creates a FreeSWITCH Connector")
@@ -35,7 +37,8 @@ namespace FabricAPI.FreeswitchConnectors {
       { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
       StatusCode401 |
       StatusCode404 |
-      FreeswitchConnectorCreateStatusCode422;
+      FreeswitchConnectorCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update FreeSWITCH Connector")
     @doc("Updates a FreeSWITCH Connector by ID")
@@ -43,13 +46,15 @@ namespace FabricAPI.FreeswitchConnectors {
       { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
       StatusCode401 |
       StatusCode404 |
-      FreeswitchConnectorUpdateStatusCode422;
+      FreeswitchConnectorUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete FreeSWITCH Connector")
     @doc("Deletes a FreeSWITCH Connector by ID")
     @delete delete(...FreeswitchConnectorPathID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }

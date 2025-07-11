@@ -9,7 +9,7 @@ import "./cxml-webhooks";
 import "./embeds-tokens";
 import "./addresses";
 import "./freeswitch-connectors";
-import "./laml-applications";
+import "./cxml-applications";
 import "./relay-applications";
 import "./resources";
 import "./sip-endpoints";

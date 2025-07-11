@@ -3,7 +3,6 @@ import "../../../../types";
 import "../../enums.tsp";
 
 using TypeSpec.Http;
-using TypeSpec.OpenAPI;
 
 model FabricAddressID {
   @doc("Unique ID of a FabricAddress.")
@@ -50,21 +49,29 @@ model FabricAddress {
 }
 
 @summary("Application Address")
-model FabricAddressApp extends FabricAddress {
+model FabricAddressApp {
+
+  ...OmitProperties<FabricAddress, "type">,
+
   @doc("Type of the Fabric Address which is an application.")
   @example(DisplayTypes.App)
   type: DisplayTypes.App;
 }
 
 @summary("Room Address")
-model FabricAddressRoom extends FabricAddress {
+model FabricAddressRoom {
+  ...OmitProperties<FabricAddress, "type">,
+
   @doc("Type of the Fabric Address which is a conference room.")
   @example(DisplayTypes.Room)
   type: DisplayTypes.Room;
 }
 
 @summary("Call Address")
-model FabricAddressCall extends FabricAddress {
+model FabricAddressCall {
+
+  ...OmitProperties<FabricAddress, "type">,
+
   @doc("Type of the Fabric Address which is a call.")
   @example(DisplayTypes.Call)
   type: DisplayTypes.Call;
@@ -72,9 +79,11 @@ model FabricAddressCall extends FabricAddress {
 }
 
 @summary("Subscriber Address")
-model FabricAddressSubscriber extends FabricAddress {
+model FabricAddressSubscriber {
+
+  ...OmitProperties<FabricAddress, "type">,
+  
   @doc("Type of the Fabric Address which is a subscriber.")
   @example(DisplayTypes.Subscriber)
   type: DisplayTypes.Subscriber;
 }
-

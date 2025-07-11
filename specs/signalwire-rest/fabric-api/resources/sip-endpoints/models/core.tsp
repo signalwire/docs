@@ -16,19 +16,36 @@ model ResourceSipEndpoint {
   @format("uuid")
   id: uuid;
 
-  @doc("The username for the SIP endpoint.")
+  @doc("The name for the SIP endpoint.")
   @example("sip_user")
-  username: string;
+  name: string;
 
-  @doc("The SIP address of the endpoint.")
-  @example("sip:user@example.com")
-  address: string;
+  @doc("The Resource type")
+  @example("room")
+  type: "room";
 
-  @doc("The creation timestamp.")
-  @example("2023-01-01T12:00:00Z")
-  created_at: string;
+  @doc("The cover URL for the SIP endpoint.")
+  @example("https://example.com/cover.jpg")
+  cover_url?: url;
 
-  @doc("The last update timestamp.")
-  @example("2023-01-01T12:00:00Z")
-  updated_at: string;
+
+  @doc("The preview URL for the SIP endpoint.")
+  @example("https://example.com/preview.jpg")
+  preview_url?: url;
+
+  channels: {
+
+    @doc("The SIP endpoint's address with video capabilities.")
+    @example("/public/reception?channel=video")
+    video: url;
+
+    @doc("The SIP endpoint's address with audio capabilities.")
+    @example("/public/reception?channel=audio")
+    audio: url;
+
+    @doc("The SIP endpoint's address with messaging capabilities.")
+    @example("/public/reception?channel=messaging")
+    messaging: url;
+  }
+
 }

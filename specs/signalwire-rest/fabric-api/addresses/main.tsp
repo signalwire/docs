@@ -32,6 +32,7 @@ namespace FabricAPI.FabricAddresses {
         @body fabric_address: FabricAddress;
       } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

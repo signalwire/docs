@@ -8,14 +8,15 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/cxml_scripts/{id}/addresses")
-namespace FabricAPI.CXMLScriptAddresses {
+namespace FabricAPI.CXMLScript.Addresses {
   @tag("cXML Scripts")
   interface CXMLScriptAddresses {
     @summary("List cXML Script Addresses")
-    @doc("A list of cXML Script Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint returns a list of addresses associated with a specific cXML Script.")
     list(...CXMLScriptAddressPathID):
       CXMLScriptAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

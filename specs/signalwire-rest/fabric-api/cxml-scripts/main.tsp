@@ -20,14 +20,16 @@ namespace FabricAPI.CXMLScripts {
     list():
       CXMLScriptResponse[] |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get cXML Script")
     @doc("Returns a cXML Script by ID")
     read(...CXMLScriptPathID):
       { @statusCode statusCode: 200; @body cxml_script: CXMLScriptResponse; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create cXML Script")
     @doc("Creates a cXML Script")
@@ -35,7 +37,8 @@ namespace FabricAPI.CXMLScripts {
       { @statusCode statusCode: 200; @body cxml_script: CXMLScriptResponse; } |
       StatusCode401 |
       StatusCode404 |
-      CXMLScriptCreateStatusCode422;
+      CXMLScriptCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update cXML Script")
     @doc("Updates a cXML Script by ID")
@@ -43,13 +46,15 @@ namespace FabricAPI.CXMLScripts {
       { @statusCode statusCode: 200; @body cxml_script: CXMLScriptResponse; } |
       StatusCode401 |
       StatusCode404 |
-      CXMLScriptUpdateStatusCode422;
+      CXMLScriptUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete cXML Script")
     @doc("Deletes a cXML Script by ID")
     @delete delete(...CXMLScriptPathID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }

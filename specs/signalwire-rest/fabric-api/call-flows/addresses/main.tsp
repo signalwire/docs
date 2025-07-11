@@ -8,14 +8,15 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/call_flow/{id}/addresses")
-namespace FabricAPI.CallFlowAddresses {
+namespace FabricAPI.CallFlow.Addresses {
   @tag("Call Flows")
   interface CallFlowAddresses {
     @summary("List Call Flow Addresses")
-    @doc("Returns a list of Call Flow addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint returns a list of addresses associated with a specific Call Flow.")
     list(...CallFlowAddressPathID):
       CallFlowAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

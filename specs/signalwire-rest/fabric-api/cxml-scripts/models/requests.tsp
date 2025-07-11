@@ -1,4 +1,5 @@
 import "./core.tsp";
+import "../../_shared/const.tsp";
 
 model CXMLScriptCreateRequest {
   @doc("Display name of the cXML Script")
@@ -6,12 +7,9 @@ model CXMLScriptCreateRequest {
   display_name: string;
 
   @doc("The cXML script contents")
-  @example("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>Hello World</Say></Response>")
+  @example(CXML_EXAMPLE)
   contents: string;
 
-  @doc("Optional description of the cXML script")
-  @example("Simple greeting script")
-  description?: string;
 }
 
 model CXMLScriptUpdateRequest {
@@ -20,10 +18,6 @@ model CXMLScriptUpdateRequest {
   display_name?: string;
 
   @doc("The cXML script contents")
-  @example("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>Hello World</Say></Response>")
+  @example(CXML_EXAMPLE)
   contents?: string;
-
-  @doc("Optional description of the cXML script")
-  @example("Simple greeting script")
-  description?: string;
 }

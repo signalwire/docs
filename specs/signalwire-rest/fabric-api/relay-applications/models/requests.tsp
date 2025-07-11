@@ -11,7 +11,7 @@ model RelayApplicationCreateRequest {
 
   @doc("Call status callback URL")
   @example("https://booking.com/callbacks")
-  call_status_callback_url: string;
+  call_status_callback_url?: string;
 }
 
 model RelayApplicationUpdateRequest {

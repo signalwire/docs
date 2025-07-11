@@ -10,15 +10,16 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/{id}/sip_endpoints")
-namespace FabricAPI.ResourceSipEndpoints {
+namespace FabricAPI.Resource.SipEndpoints {
   @tag("Resources")
   interface ResourceSipEndpoints {
-    @summary("Create Resource SIP Endpoint")
-    @doc("Creates a SIP Endpoint for a specific resource")
+    @summary("Assign a Resource as Call handler on a SIP endpoint")
+    @doc("Assigns a Resource as Call handler on a SIP endpoint. This is used to route calls to the Resource from a SIP endpoint.")
     @post create(...ResourceSipEndpointPathID, @body request: ResourceSipEndpointCreateRequest):
       { @statusCode statusCode: 200; @body sip_endpoint: ResourceSipEndpointResponse; } |
       StatusCode401 |
       StatusCode404 |
-      ResourceSubSipEndpointCreateStatusCode422;
+      ResourceSubSipEndpointCreateStatusCode422 |
+      StatusCode500;
   }
 }

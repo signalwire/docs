@@ -24,11 +24,11 @@ model FreeswitchConnector {
 
   @doc("Caller ID for the connector")
   @example("123456")
-  caller_id?: string;
+  caller_id?: string | null;
 
   @doc("Send as identifier")
   @example("123456")
-  send_as?: string;
+  send_as?: string | null;
 }
 
 model FreeswitchConnectorWithID {

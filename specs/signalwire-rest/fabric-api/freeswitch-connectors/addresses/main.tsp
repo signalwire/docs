@@ -12,10 +12,11 @@ namespace FabricAPI.FreeswitchConnectorAddresses {
   @tag("FreeSWITCH Connectors")
   interface FreeswitchConnectorAddresses {
     @summary("List FreeSWITCH Connector Addresses")
-    @doc("A list of FreeSWITCH Connector Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.")
     list(...FreeswitchConnectorAddressPathID):
       FreeswitchConnectorAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

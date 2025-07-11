@@ -40,11 +40,17 @@ namespace Types.StatusCodes {
 
       errors: StatusCode422Error[]
     }
-  }
 
-  @error
-  model StatusCode403 {
-    @statusCode statusCode: 403;
-    error: "Forbidden"
-  }
+    @error
+    model StatusCode403 {
+      @statusCode statusCode: 403;
+      error: "Forbidden"
+    }
+
+    @error
+    model StatusCode500 {
+      @statusCode statusCode: 500;
+      error: "Internal Server Error"
+    }
+}
 

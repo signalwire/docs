@@ -12,10 +12,11 @@ namespace FabricAPI.ResourceAddresses {
   @tag("Resources")
   interface ResourceAddresses {
     @summary("List Resource Addresses")
-    @doc("Returns a list of Resource addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint is used to retrieve addresses associated with a specific Resource.")
     list(...ResourceAddressPathID):
       ResourceAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

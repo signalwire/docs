@@ -19,14 +19,16 @@ namespace FabricAPI.DialogflowAgents {
     list():
       DialogflowAgentResponse[] |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get Dialogflow Agent")
     @doc("Returns a Dialogflow Agent by ID")
     read(...DialogflowAgentPathID):
       { @statusCode statusCode: 200; @body dialogflow_agent: DialogflowAgentResponse; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
 
     @summary("Update Dialogflow Agent")
@@ -35,13 +37,15 @@ namespace FabricAPI.DialogflowAgents {
       { @statusCode statusCode: 200; @body dialogflow_agent: DialogflowAgentResponse; } |
       StatusCode401 |
       StatusCode404 |
-      DialogflowAgentUpdateStatusCode422;
+      DialogflowAgentUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete Dialogflow Agent")
     @doc("Deletes a Dialogflow Agent by ID")
     @delete delete(...DialogflowAgentPathID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }

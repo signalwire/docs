@@ -1,12 +1,14 @@
 import "./core.tsp";
 
-model LamlApplicationResponse {
+model CxmlApplicationResponse {
   @doc("Unique ID of the LAML Application.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
+  @format("uuid")
   id: uuid;
 
   @doc("Unique ID of the Project.")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
+  @format("uuid")
   project_id: uuid;
 
   @doc("Display name of the LAML Application Fabric Resource")
@@ -14,8 +16,8 @@ model LamlApplicationResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("laml_application")
-  type: string;
+  @example("cxml_application")
+  type: "cxml_application";
 
   @doc("Date and time when the resource was created.")
   @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
@@ -26,9 +28,9 @@ model LamlApplicationResponse {
   updated_at: utcDateTime;
 
   @doc("LAML Application data.")
-  laml_application: LamlApplicationWithID;
+  cxml_application: CxmlApplication;
 }
 
-model LamlApplicationListResponse {
-  data: LamlApplicationResponse[];
+model CxmlApplicationListResponse {
+  data: CxmlApplicationResponse[];
 }

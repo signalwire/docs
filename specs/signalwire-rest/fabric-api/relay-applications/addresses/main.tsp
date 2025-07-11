@@ -8,14 +8,15 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/relay_applications/{id}/addresses")
-namespace FabricAPI.RelayApplicationAddresses {
+namespace FabricAPI.RelayApplication.Addresses {
   @tag("Relay Applications")
   interface RelayApplicationAddresses {
     @summary("List Relay Application Addresses")
-    @doc("A list of Relay Application Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoint returns a paginated list of addresses associated with a Relay Application.")
     list(...RelayApplicationAddressPathID):
       RelayApplicationAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

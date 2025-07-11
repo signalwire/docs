@@ -1,11 +1,14 @@
 import "../../../../types";
+import "../../../_shared/const.tsp";
 
-using Types.StatusCodes;
+
+
 
 model CallFlowVersion {
   @doc("The unique identifier of the version.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  id: string;
+  @format("uuid")
+  id: uuid;
 
   @doc("The version number.")
   @example("1.0.0")
@@ -30,21 +33,16 @@ model CallFlowVersion {
 
 model CallFlowVersionListResponse {
   @doc("List of Call Flow Versions")
-  @example(#[
-    #{
-      id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      version: "1.0.0",
-      created_at: "2023-01-01T12:00:00Z",
-      updated_at: "2023-01-01T12:00:00Z"
-    }
-  ])
   data: CallFlowVersion[];
+
+  links: CallFlowVersionsPaginationResponse;
 }
 
 model CallFlowVersionDeployResponse {
   @doc("The unique identifier of the deployed Call Flow Version.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  id: string;
+  @format("uuid")
+  id: uuid;
 
   @doc("The creation timestamp.")
   @example("2024-01-02T00:00:00Z")
@@ -63,6 +61,25 @@ model CallFlowVersionDeployResponse {
   flow_data?: string;
 
   @doc("SWML document for this version")
-  @example("{}")
+  @example(SWML_EXAMPLE)
   relayml?: string;
+}
+
+
+model CallFlowVersionsPaginationResponse {
+  @doc("Link of the current page")
+  @example("https://{space_name}.signalwire.com/api/fabric/call_flows/versions?page_number=0&page_size=50")
+  self: url;
+
+  @doc("Link to the first page")
+  @example("https://{space_name}.signalwire.com/api/fabric/call_flows/versions?page_number=0&page_size=50")
+  first: url;
+
+  @doc("Link to the next page")
+  @example("https://{space_name}.signalwire.com/api/fabric/call_flows/versions?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  next: url;
+
+  @doc("Link to the previous page")
+  @example("https://{space_name}.signalwire.com/api/fabric/call_flows/versions?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  prev?: url;
 }

@@ -1,4 +1,5 @@
 import "../../../types";
+import "../../_shared/const.tsp";
 
 using TypeSpec.Http;
 
@@ -27,7 +28,7 @@ model CallFlow {
   flow_data?: string;
 
   @doc("A SWML document. For more information on SWML, please go to https://developer.signalwire.com/swml")
-  @example("{}")
+  @example(SWML_EXAMPLE)
   relayml?: string;
 
   @doc("The current revision of the call flow. Every update must increase this number.")
