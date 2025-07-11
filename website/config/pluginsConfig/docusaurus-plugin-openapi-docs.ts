@@ -47,7 +47,7 @@ export const openapiPlugin: PluginConfig = [
         },
       },
       signalwireFabricApi: {
-        specPath: "../specs/signalwire-rest/fabric-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/fabric-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/fabric",
         sidebarOptions: {
           categoryLinkSource: "tag",

@@ -1,7 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi";
-import "./models/core.tsp";
-import "./models/responses.tsp";
+import "../_shared/fabric-address";
 import "../../types";
 
 using TypeSpec.Http;
@@ -15,7 +14,7 @@ namespace FabricAPI.FabricAddresses {
   interface FabricAddresses {
     @summary("List Fabric Addresses")
     @doc("""
-    A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) wich can be
+    A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
     generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).
     """)
     list():
@@ -25,7 +24,7 @@ namespace FabricAPI.FabricAddresses {
 
     @summary("Get Fabric Address")
     @doc("""
-    Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) wich can be
+    Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
     generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).
     """)
     read(...FabricAddressID): {
@@ -33,6 +32,7 @@ namespace FabricAPI.FabricAddresses {
         @body fabric_address: FabricAddress;
       } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

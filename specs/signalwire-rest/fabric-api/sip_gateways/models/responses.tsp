@@ -1,4 +1,6 @@
 import "../../../types";
+import "@typespec/openapi3";
+import "../../_shared/fabric-address";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -32,8 +34,8 @@ model SipGatewayCreateResponse {
   sip_gateway: SipGateway;
 }
 
-model SipGatewayUpdateResponse extends SipGatewayCreateResponse {}
-model SipGatewayResponse extends SipGatewayCreateResponse {}
+model SipGatewayUpdateResponse is SipGatewayCreateResponse {}
+model SipGatewayResponse is SipGatewayCreateResponse {}
 
 model SipGateway {
   @doc("Unique ID of the SIP Gateway.")
@@ -69,21 +71,10 @@ model SipGatewayListResponse {
   links: SipGatewayPaginationResponse;
 }
 
-model SipGatewayPaginationResponse {
-  @doc("Link of the current page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50")
-  self: url;
-
-  @doc("Link to the first page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50")
-  first: url;
-
-  @doc("Link to the next page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
-  next: url;
-}
-
-model SipGatewayAddressListResponse {
-  data: SipGatewayAddress[];
-  links: SipGatewayAddressPaginationResponse;
-}
+@example(#{
+  self: "https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50",
+  first: "https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50",
+  next: "https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca",
+  prev: "https://{space_name}.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca"
+})
+model SipGatewayPaginationResponse is FabricAddressPaginationResponse {}

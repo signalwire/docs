@@ -7,10 +7,10 @@ import "./models/errors.tsp";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@server("https://embeds.signalwire.com/api/fabric/", "Endpoint")
 // Define the API path for embeds
 @useAuth({ type: Http.AuthType.noAuth })
 @route("/embeds/tokens")
+@server("https://embeds.signalwire.com/api/fabric", "Embeds Endpoint")
 namespace FabricAPI.EmbedsTokens {
     @tag("Embeds Tokens")
     @friendlyName("Embeds Tokens")
@@ -22,6 +22,8 @@ namespace FabricAPI.EmbedsTokens {
         { @statusCode statusCode: 201; @body subscriber: EmbedsTokensResponse; } |
         StatusCode401 |
         StatusCode404 |
-        StatusCode403;
+        StatusCode403 |
+        EmbedTokenCreateStatusCode422 |
+        StatusCode500;
     }
 }

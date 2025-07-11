@@ -1,18 +1,22 @@
 import "@typespec/http";
 import "../types";
-import "./addresses";
-import "./subscribers";
-import "./subscriber-guest-token";
-import "./subscriber-invite-token";
-import "./subscriber-refresh-token";
-import "./swml-webhook";
-import "./swml-webhook-addresses";
 import "./ai-agent";
-import "./ai-agent-addresses";
+import "./dialogflow-agents";
+import "./call-flows";
+import "./conference-rooms";
+import "./cxml-scripts";
 import "./cxml-webhooks";
-import "./cxml-webhook-addresses";
 import "./embeds-tokens";
+import "./addresses";
+import "./freeswitch-connectors";
+import "./cxml-applications";
+import "./relay-applications";
+import "./resources";
+import "./sip-endpoints";
 import "./sip_gateways";
+import "./subscribers";
+import "./swml-scripts";
+import "./swml-webhook";
 
 
 using TypeSpec.Http;

@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./addresses";
 import "../../types";
 
 using TypeSpec.Http;
@@ -19,7 +20,8 @@ namespace FabricAPI.CXMLWebhooks {
     list():
       CXMLWebhookListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get cXML Webhook")
     @doc("Returns an cXML Webhook by ID")
@@ -28,7 +30,8 @@ namespace FabricAPI.CXMLWebhooks {
         @body cxml_webhook: CXMLWebhookResponse;
       } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create cXML Webhook")
     @doc("Creates an cXML Webhook")
@@ -36,7 +39,8 @@ namespace FabricAPI.CXMLWebhooks {
       { @statusCode statusCode: 201; @body cxml_webhook: CXMLWebhookResponse; } |
       StatusCode401 |
       StatusCode404 |
-      CXMLWebhookCreateStatusCode422;
+      CXMLWebhookCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update cXML Webhook")
     @doc("Updates an cXML Webhook by ID")
@@ -45,14 +49,16 @@ namespace FabricAPI.CXMLWebhooks {
     } |
       StatusCode401 |
       StatusCode404 |
-      CXMLWebhookUpdateStatusCode422;
+      CXMLWebhookUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete cXML Webhook")
     @doc("Deletes an cXML Webhook by ID")
     @delete delete(...CXMLWebhookID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }
 
