@@ -14,6 +14,7 @@ using Types.StatusCodes;
 namespace FabricAPI.SipEndpoints {
   @tag("SIP Endpoints")
   @friendlyName("SIP Endpoints")
+  @doc("SIP Endpoints API category.")
   interface SipEndpoints {
     @summary("List SIP Endpoints")
     @doc("A list of SIP Endpoints")

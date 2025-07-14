@@ -7,7 +7,6 @@ model SipEndpointCreateRequest {
 
 model SipEndpointUpdateRequest {
   @doc("Username for the SIP endpoint")
-  @minLength(8)
   @example("123456")
   username?: string;
 

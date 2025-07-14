@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "../../../_shared/enums.tsp";
 
 using TypeSpec.Http;
 
@@ -33,19 +34,6 @@ model ResourceSipEndpoint {
   @example("https://example.com/preview.jpg")
   preview_url?: url;
 
-  channels: {
-
-    @doc("The SIP endpoint's address with video capabilities.")
-    @example("/public/reception?channel=video")
-    video: url;
-
-    @doc("The SIP endpoint's address with audio capabilities.")
-    @example("/public/reception?channel=audio")
-    audio: url;
-
-    @doc("The SIP endpoint's address with messaging capabilities.")
-    @example("/public/reception?channel=messaging")
-    messaging: url;
-  }
+  channels: AddressChannel
 
 }
