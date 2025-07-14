@@ -15,7 +15,7 @@ export default function Home(): JSX.Element {
       <div className={clsx(styles.container, styles.card)}>
         <div className={styles.imageContainer}>
           <img
-            src={require("./sigmond-gif.gif").default}
+            src={require("./sigmond.webp").default}
             alt="Sigmond"
             className={styles.sigmondGif}
           />

@@ -20,6 +20,7 @@ import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
 import { realtimeSdkPlugin } from "./realtime-sdk-docs";
 import { browserSdkPlugin } from "./browser-sdk-docs";
+import { ogImagesPlugin } from "../ogImages/index";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
@@ -30,7 +31,8 @@ const plugins: PluginConfig[] = [
   ["plugin-image-zoom", {}],
   llmsTxtPlugin,
   realtimeSdkPlugin,
-  browserSdkPlugin
+  browserSdkPlugin,
+  ogImagesPlugin,
 ];
 
 export default plugins;
