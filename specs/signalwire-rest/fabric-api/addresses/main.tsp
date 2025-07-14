@@ -20,7 +20,8 @@ namespace FabricAPI.FabricAddresses {
     list():
       FabricAddressesResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get Fabric Address")
     @doc("""

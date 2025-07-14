@@ -28,9 +28,9 @@ model FreeswitchConnectorAddressListResponse {
 }
 
 @example(#{
-  self: "https://{space_name}.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50",
-  first: "https://{space_name}.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50",
-  next: "https://{space_name}.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca",
-  prev: "https://{space_name}.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca"
+  self: "https://example.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50",
+  first: "https://example.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50",
+  next: "https://example.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca",
+  prev: "https://example.signalwire.com/api/fabric/resources/freeswitch_connectors/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca"
 })
 model FreeswitchConnectorAddressPaginationResponse is FabricAddressPaginationResponse {}
