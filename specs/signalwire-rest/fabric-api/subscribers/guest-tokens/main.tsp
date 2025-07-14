@@ -19,6 +19,7 @@ namespace FabricAPI.SubscriberGuestTokens {
       { @statusCode statusCode: 201; @body subscriber_guest_token: SubscriberGuestTokenCreateResponse; } |
       StatusCode401 |
       StatusCode404 |
-      GuestTokenCreateStatusCode422;
+      GuestTokenCreateStatusCode422 |
+      StatusCode500;
   }
 }

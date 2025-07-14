@@ -19,7 +19,8 @@ namespace FabricAPI.Subscribers.SipEndpoints {
     list(...FabricSubscriberID):
       SubscriberSipEndpointListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get Subscriber SIP Endpoint")
     @doc("Returns a Subscriber Sip Endpoint by ID")
@@ -28,7 +29,8 @@ namespace FabricAPI.Subscribers.SipEndpoints {
         @body subscriber_sip_endpoint: SIPEndpoint;
       } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create Subscriber SIP Endpoint")
     @doc("Creates a Subscriber Sip Endpoint")
@@ -36,7 +38,8 @@ namespace FabricAPI.Subscribers.SipEndpoints {
       { @statusCode statusCode: 201; @body subscriber_sip_endpoint: SIPEndpoint; } |
       StatusCode401 |
       StatusCode404 |
-      SipEndpointCreateStatusCode422;
+      SipEndpointCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update Subscriber SIP Endpoint")
     @doc("Updates a Subscriber Sip Endpoint by ID")
@@ -45,13 +48,15 @@ namespace FabricAPI.Subscribers.SipEndpoints {
     } |
       StatusCode401 |
       StatusCode404 |
-      SipEndpointUpdateStatusCode422;
+      SipEndpointUpdateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete Subscriber SIP Endpoint")
     @doc("Deletes a Subscriber Sip Endpoint by ID")
     @delete delete(...SIPEndpointID, ...FabricSubscriberID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
     }
 }

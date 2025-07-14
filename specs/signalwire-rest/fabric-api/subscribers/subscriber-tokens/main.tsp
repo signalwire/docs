@@ -18,6 +18,7 @@ namespace FabricAPI.SubscriberTokens {
       SubscriberTokenResponse |
       StatusCode401 |
       StatusCode404 |
-      SubscriberTokenStatusCode422;
+      SubscriberTokenStatusCode422 |
+      StatusCode500;
   }
 }

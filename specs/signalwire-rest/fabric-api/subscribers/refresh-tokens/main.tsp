@@ -19,6 +19,7 @@ namespace FabricAPI.SubscriberRefreshTokens {
       { @statusCode statusCode: 201; @body subscriber_refresh_token: SubscriberRefreshTokenResponse; } |
       StatusCode401 |
       StatusCode404 |
-      RefreshTokenStatusCode422;
+      RefreshTokenStatusCode422 |
+      StatusCode500;
   }
 }

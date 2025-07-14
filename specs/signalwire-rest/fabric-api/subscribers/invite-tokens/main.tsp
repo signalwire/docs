@@ -19,6 +19,7 @@ namespace FabricAPI.SubscriberInviteTokens {
       { @statusCode statusCode: 201; @body subscriber_invite_token: SubscriberInviteTokenCreateResponse; } |
       StatusCode401 |
       StatusCode404 |
-      InviteTokenCreateStatusCode422;
+      InviteTokenCreateStatusCode422 |
+      StatusCode500;
   }
 }
