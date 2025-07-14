@@ -16,6 +16,7 @@ namespace FabricAPI.CxmlApplication.Addresses {
     list(...CxmlApplicationAddressPathID):
       CxmlApplicationAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

@@ -19,6 +19,7 @@ namespace FabricAPI.DomainApplications {
       { @statusCode statusCode: 200; @body domain_application: DomainApplicationResponse; } |
       StatusCode401 |
       StatusCode404 |
-      DomainApplicationCreateStatusCode422;
+      DomainApplicationCreateStatusCode422 |
+      StatusCode500;
   }
 }

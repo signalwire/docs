@@ -20,6 +20,7 @@ namespace FabricAPI.PhoneRoutes {
       { @statusCode statusCode: 200; @body phone_route: PhoneRouteResponse; } |
       StatusCode401 |
       StatusCode404 |
-      PhoneRouteCreateStatusCode422;
+      PhoneRouteCreateStatusCode422 |
+      StatusCode500;
   }
 }

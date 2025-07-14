@@ -19,7 +19,8 @@ namespace FabricAPI.SipGateways {
     list():
       SipGatewayListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Get SIP Gateway")
     @doc("Returns an SIP Gateway by ID")
@@ -28,7 +29,8 @@ namespace FabricAPI.SipGateways {
         @body sip_gateway: SipGatewayResponse;
       } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
 
     @summary("Create SIP Gateway")
     @doc("Creates a SIP Gateway that can be used to dial external SIP entities.")
@@ -36,7 +38,8 @@ namespace FabricAPI.SipGateways {
       { @statusCode statusCode: 201; @body sip_gateway: SipGatewayCreateResponse; } |
       StatusCode401 |
       StatusCode404 |
-      SipGatewayCreateStatusCode422;
+      SipGatewayCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Update SIP Gateway")
     @doc("Updates a SIP Gateway by ID")
@@ -45,13 +48,15 @@ namespace FabricAPI.SipGateways {
     } |
       StatusCode401 |
       StatusCode404 |
-      SipGatewayCreateStatusCode422;
+      SipGatewayCreateStatusCode422 |
+      StatusCode500;
 
     @summary("Delete SIP Gateway")
     @doc("Deletes a SIP Gateway} by ID")
     @delete delete(...SipGatewayID):
       { @statusCode statusCode: 204; } |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }
