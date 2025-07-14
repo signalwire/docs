@@ -1,4 +1,5 @@
 import "../../../types";
+import "../../../_globally_shared/enums.tsp";
 
 using TypeSpec.Http;
 
@@ -33,16 +34,16 @@ model SipEndpoint {
   send_as: string;
 
   @doc("Ciphers")
-  @example(#["AEAD_AES_256_GCM_8"])
-  ciphers: ("AEAD_AES_256_GCM_8" | "AES_256_CM_HMAC_SHA1_80" | "AES_CM_128_HMAC_SHA1_80" | "AES_256_CM_HMAC_SHA1_32" | "AES_CM_128_HMAC_SHA1_32")[];
+  @example(#[Ciphers.AEAD_AES_256_GCM_8])
+  ciphers: Ciphers[];
 
   @doc("Codecs")
-  @example(#["PCMU"])
-  codecs: ("PCMU" | "PCMA" | "G722" | "G729" | "OPUS" | "VP8" | "H264")[];
+  @example(#[Codecs.PCMU])
+  codecs: Codecs[];
 
   @doc("Encryption")
-  @example("optional")
-  encryption: "required" | "optional";
+  @example(Encryption.Required)
+  encryption: Encryption;
 
   @doc("Call handler")
   @example("laml_webhooks")
@@ -54,8 +55,8 @@ model SipEndpoint {
   call_request_url: string;
 
   @doc("Call request method")
-  @example("POST")
-  call_request_method: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_request_method: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Call fallback URL")
   @format("uri")
@@ -63,8 +64,8 @@ model SipEndpoint {
   call_fallback_url?: string;
 
   @doc("Call fallback method")
-  @example("POST")
-  call_fallback_method?: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_fallback_method?: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Call status callback URL")
   @format("uri")
@@ -72,8 +73,8 @@ model SipEndpoint {
   call_status_callback_url?: string;
 
   @doc("Call status callback method")
-  @example("POST")
-  call_status_callback_method?: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Call LAML application ID")
   @format("uuid")

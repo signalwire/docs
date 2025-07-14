@@ -24,7 +24,8 @@ namespace FabricAPI.Subscribers {
         list():
           SubscriberListResponse |
           StatusCode401 |
-          StatusCode404;
+          StatusCode404 |
+          StatusCode500;
 
         @summary("Create Subscriber")
         @post
@@ -32,13 +33,15 @@ namespace FabricAPI.Subscribers {
         { @statusCode statusCode: 201; @body subscriber: SubscriberResponse; } |
         StatusCode401 |
         StatusCode404 |
-        SubscriberCreateStatusCode422;
+        SubscriberCreateStatusCode422 |
+        StatusCode500;
 
         @summary("Get Subscriber")
         get(...SubscriberPathID):
         { @statusCode statusCode: 200; @body body: SubscriberResponse; } |
         StatusCode401 |
-        StatusCode404;
+        StatusCode404 |
+        StatusCode500;
 
         @summary("Update Subscriber")
         @put
@@ -46,13 +49,15 @@ namespace FabricAPI.Subscribers {
         { @statusCode statusCode: 200; @body body: SubscriberResponse; } |
         StatusCode401 |
         StatusCode404 |
-        SubscriberUpdateStatusCode422;
+        SubscriberUpdateStatusCode422 |
+        StatusCode500;
 
         @summary("Delete Subscriber")
         @delete
         delete(...SubscriberPathID):
         { @statusCode statusCode: 204; } |
         StatusCode401 |
-        StatusCode404;
+        StatusCode404 |
+        StatusCode500;
     }
 }

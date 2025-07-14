@@ -1,17 +1,15 @@
 import "./core.tsp";
+import "../../_shared/const.tsp";
 
 model SwmlScriptCreateRequest {
   @doc("Display name of the SWML Script")
   @example("Welcome Script")
-  display_name: string;
+  name: string;
 
-  @doc("The SWML script contents")
-  @example("{\"version\":\"1.0.0\",\"sections\":{\"main\":[{\"play\":{\"url\":\"https://example.com/welcome.mp3\"}}]}}")
+  @doc("The contents of the SWML script.")
+  @example(SWML_EXAMPLE)
   contents: string;
 
-  @doc("Optional description of the SWML script")
-  @example("Welcome message script")
-  description?: string;
 }
 
 model SwmlScriptUpdateRequest {
@@ -19,11 +17,8 @@ model SwmlScriptUpdateRequest {
   @example("Welcome Script")
   display_name?: string;
 
-  @doc("The SWML script contents")
-  @example("{\"version\":\"1.0.0\",\"sections\":{\"main\":[{\"play\":{\"url\":\"https://example.com/welcome.mp3\"}}]}}")
+  @doc("The contents of the SWML script.")
+  @example(SWML_EXAMPLE)
   contents?: string;
 
-  @doc("Optional description of the SWML script")
-  @example("Welcome message script")
-  description?: string;
 }

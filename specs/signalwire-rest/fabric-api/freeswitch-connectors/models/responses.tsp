@@ -1,4 +1,6 @@
 import "./core.tsp";
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 model FreeswitchConnectorResponse {
   @doc("Unique ID of the FreeSWITCH Connector.")
@@ -16,15 +18,15 @@ model FreeswitchConnectorResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("freeswitch_connector")
-  type: "freeswitch_connector";
+  @example(FabricResponseType.FreeswitchConnector)
+  type: FabricResponseType.FreeswitchConnector;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("FreeSWITCH Connector data.")

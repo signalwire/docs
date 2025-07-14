@@ -1,6 +1,7 @@
 import "@typespec/openapi3";
 import "../../../../types";
 import "../../enums.tsp";
+import "../../const.tsp";
 
 using TypeSpec.Http;
 
@@ -42,7 +43,7 @@ model FabricAddress {
   channel: AddressChannel;
 
   @doc("Fabric Address Creation Date.")
-  @example(utcDateTime.fromISO("2024-05-06T12:20-12Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   type: DisplayTypes;
@@ -82,7 +83,7 @@ model FabricAddressCall {
 model FabricAddressSubscriber {
 
   ...OmitProperties<FabricAddress, "type">,
-  
+
   @doc("Type of the Fabric Address which is a subscriber.")
   @example(DisplayTypes.Subscriber)
   type: DisplayTypes.Subscriber;

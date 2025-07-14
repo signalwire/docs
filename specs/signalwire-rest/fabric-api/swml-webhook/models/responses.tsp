@@ -1,3 +1,5 @@
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 
 model SWMLWebhookResponse {
@@ -16,15 +18,15 @@ model SWMLWebhookResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("swml_webhook")
-  type: string;
+  @example(FabricResponseType.SwmlWebhook)
+  type: FabricResponseType.SwmlWebhook;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("SWML Webhook data.")
@@ -48,4 +50,8 @@ model SWMLWebhookPaginationResponse {
   @doc("Link to the next page")
   @example("https://{space_name}.signalwire.com/api/fabric/resources/swml_webhooks?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
   next: url;
+
+  @doc("Link to the previous page")
+  @example("https://{space_name}.signalwire.com/api/fabric/resources/swml_webhooks?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  prev?: url
 }

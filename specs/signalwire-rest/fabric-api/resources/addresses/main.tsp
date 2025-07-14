@@ -8,7 +8,7 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/{id}/addresses")
-namespace FabricAPI.ResourceAddresses {
+namespace FabricAPI.Resource.Addresses {
   @tag("Resources")
   interface ResourceAddresses {
     @summary("List Resource Addresses")

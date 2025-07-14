@@ -1,4 +1,6 @@
 import "./core.tsp";
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 model RelayApplicationResponse {
   @doc("Unique ID of the Relay Application.")
@@ -16,15 +18,15 @@ model RelayApplicationResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("relay_application")
-  type: "relay_application";
+  @example(FabricResponseType.RelayApplication)
+  type: FabricResponseType.RelayApplication;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("Relay Application data.")

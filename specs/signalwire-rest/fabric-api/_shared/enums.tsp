@@ -42,6 +42,24 @@ enum HandleCallsUsing {
   ExternalUrl: "external_url",
 }
 
+enum FabricResponseType {
+  AiAgent: "ai_agent",
+  DialogflowAgent: "dialogflow_agent",
+  CallFlow: "call_flow",
+  SwmlWebhook: "swml_webhook",
+  FreeswitchConnector: "freeswitch_connector",
+  CxmlApplication: "cxml_application",
+  CxmlScript: "cxml_script",
+  CxmlWebhook: "cxml_webhook",
+  RelayApplication: "relay_application",
+  SipEndpoint: "sip_endpoint",
+  SipGateway: "sip_gateway",
+  Subscriber: "subscriber",
+  SwmlScript: "swml_script",
+  ConferenceRoom: "video_room",
+
+}
+
 union AddressChannel {
   AudioChannel,
   MessagingChannel,

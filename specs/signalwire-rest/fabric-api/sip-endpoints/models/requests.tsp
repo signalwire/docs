@@ -1,4 +1,5 @@
 import "./core.tsp";
+import "../../../_globally_shared/enums.tsp";
 
 model SipEndpointCreateRequest {
   ...SipEndpoint
@@ -6,11 +7,13 @@ model SipEndpointCreateRequest {
 
 model SipEndpointUpdateRequest {
   @doc("Username for the SIP endpoint")
+  @minLength(8)
   @example("123456")
   username?: string;
 
   @doc("Password for the SIP endpoint")
-  @example("123456")
+  @example("12345678")
+  @minLength(8)
   password?: string;
 
   @doc("Caller ID")
@@ -22,47 +25,44 @@ model SipEndpointUpdateRequest {
   send_as?: string;
 
   @doc("Ciphers")
-  @example(#["AEAD_AES_256_GCM_8"])
-  ciphers?: ("AEAD_AES_256_GCM_8" | "AES_256_CM_HMAC_SHA1_80" | "AES_CM_128_HMAC_SHA1_80" | "AES_256_CM_HMAC_SHA1_32" | "AES_CM_128_HMAC_SHA1_32")[];
+  @example(#[Ciphers.AEAD_AES_256_GCM_8])
+  ciphers?: Ciphers[];
 
   @doc("Codecs")
-  @example(#["PCMU"])
-  codecs?: ("PCMU" | "PCMA" | "G722" | "G729" | "OPUS" | "VP8" | "H264")[];
+  @example(#[Codecs.PCMU])
+  codecs?: Codecs[];
 
   @doc("Encryption")
-  @example("optional")
-  encryption?: "required" | "optional";
+  @example(Encryption.Required)
+  encryption?: Encryption;
 
   @doc("Call handler")
   @example("laml_webhooks")
   call_handler?: string;
 
   @doc("Call request URL")
-  @format("uri")
   @example("https://example.com/call_handler")
   call_request_url?: string;
 
   @doc("Call request method")
-  @example("POST")
-  call_request_method?: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_request_method?: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Call fallback URL")
-  @format("uri")
   @example("https://example.com/call_handler")
   call_fallback_url?: string;
 
   @doc("Call fallback method")
-  @example("POST")
-  call_fallback_method?: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_fallback_method?: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Call status callback URL")
-  @format("uri")
   @example("https://example.com/call_handler")
   call_status_callback_url?: string;
 
   @doc("Call status callback method")
-  @example("POST")
-  call_status_callback_method?: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Call LAML application ID")
   @format("uuid")
@@ -90,13 +90,12 @@ model SipEndpointUpdateRequest {
   call_dialogflow_agent_id?: uuid;
 
   @doc("Call relay script URL")
-  @format("uri")
   @example("https://example.com/relay_script")
   call_relay_script_url?: string;
 
   @doc("Call relay script method")
-  @example("POST")
-  call_relay_script_method?: "GET" | "POST";
+  @example(UrlMethodType.Post)
+  call_relay_script_method?: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Calling handler resource ID")
   @format("uuid")

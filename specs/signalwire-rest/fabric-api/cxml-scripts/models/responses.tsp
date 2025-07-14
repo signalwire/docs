@@ -1,4 +1,6 @@
 import "./core.tsp";
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 model CXMLScriptResponse {
   @doc("Unique ID of the cXML Script.")
@@ -16,15 +18,15 @@ model CXMLScriptResponse {
   name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("cxml_script")
-  type: "cxml_script";
+  @example(FabricResponseType.CxmlScript)
+  type: FabricResponseType.CxmlScript;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("cXML Script data.")

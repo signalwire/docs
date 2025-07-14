@@ -17,6 +17,7 @@ namespace FabricAPI.Subscribers.Addresses {
         @summary("List Subscriber Addresses")
         list(...SubscriberAddressID): SubscriberAddressesResponse[] |
         StatusCode401 |
-        StatusCode404;
+        StatusCode404 |
+        StatusCode500;
     }
 }

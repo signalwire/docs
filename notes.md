@@ -50,4 +50,23 @@ The endpoin ts will be organized by the `tag` they are set to.
 1. Couldnt get a ID to work with assinging a resource to a SIP endpoint
 2. Should `type` be `room`?
 
-### LEFT OFF AT RESOUCES
+
+## SIP Endpoints
+
+1. A lot of the `list` response propterties seem to be either conditional or dont actually exist.
+2. Default request body doesnt work due to call_handler supposedly not being a real property. Intentional?
+3. Can we split this into multiple request body objects, for the different resource types? (Create/Update)
+
+
+
+# Personal Note
+
+Go back to categories:
+
+1. SIP Endpoints
+
+
+2. Resources (All of it)
+
+
+3. SubScribers (and all of its tokens)

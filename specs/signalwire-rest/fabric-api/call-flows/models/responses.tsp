@@ -1,4 +1,6 @@
 import "./core.tsp";
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 model CallFlowResponse {
   @doc("Unique ID of the Call Flow.")
@@ -16,15 +18,15 @@ model CallFlowResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("call_flow")
-  type: "call_flow";
+  @example(FabricResponseType.CallFlow)
+  type: FabricResponseType.CallFlow;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("Call Flow data.")
@@ -38,7 +40,7 @@ model CallFlowVersionResponse {
   version: int32;
 
   @doc("Date and time when the version was created.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Call Flow data structure")
@@ -46,6 +48,6 @@ model CallFlowVersionResponse {
   flow_data?: string;
 
   @doc("SWML document for this version")
-  @example("{}")
+  @example(SWML_EXAMPLE)
   relayml?: string;
 }

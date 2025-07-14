@@ -31,7 +31,7 @@ model SWMLWebhook {
 
   @doc("Primary request method of the SWML Webhook.")
   @example(UrlMethodType.Get)
-  primary_request_method: UrlMethodType;
+  primary_request_method: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Fallback request url of the SWML Webhook.")
   @example("https://fallback.com")
@@ -39,7 +39,7 @@ model SWMLWebhook {
 
   @doc("Fallback request method of the SWML Webhook.")
   @example(UrlMethodType.Get)
-  fallback_request_method: UrlMethodType;
+  fallback_request_method: UrlMethodType.Get | UrlMethodType.Post;
 
   @doc("Status callback url of the SWML Webhook.")
   @example("https://callback.com")
@@ -47,5 +47,5 @@ model SWMLWebhook {
 
   @doc("Status callback method of the SWML Webhook.")
   @example(UrlMethodType.Post)
-  status_callback_method: UrlMethodType;
+  status_callback_method: UrlMethodType.Get | UrlMethodType.Post;
 }

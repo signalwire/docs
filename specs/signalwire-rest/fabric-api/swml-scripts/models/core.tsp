@@ -1,4 +1,5 @@
 import "../../../types";
+import "../../_shared/const.tsp";
 
 using TypeSpec.Http;
 
@@ -10,24 +11,22 @@ model SwmlScriptPathID {
   id: uuid
 }
 
-model SwmlScriptID {
+model SwmlScript {
   @doc("Unique ID of a SWML Script.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
-  swml_script_id: uuid
-}
+  id: uuid;
 
-model SwmlScript {
+
   @doc("The SWML script contents")
-  @example("{\"version\":\"1.0.0\",\"sections\":{\"main\":[{\"play\":{\"url\":\"https://example.com/welcome.mp3\"}}]}}")
+  @example(SWML_EXAMPLE)
   contents: string;
 
-  @doc("Optional description of the SWML script")
-  @example("Welcome message script")
-  description?: string;
-}
+  @doc("The url where the SWML script is hosted at.")
+  @example("https://example.com/swml_script")
+  request_url: url;
 
-model SwmlScriptWithID {
-  ...SwmlScriptID,
-  ...SwmlScript
+  @doc("The displayed name of the SWML scipt")
+  @example("Booking Assistant")
+  display_name: string
 }

@@ -17,6 +17,7 @@ namespace FabricAPI.SipGateways.Addresses {
     readAddressesByResourceId(...SipGatewayAddressRequest): 
       SipGatewayAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

@@ -8,14 +8,15 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/swml_scripts/{id}/addresses")
-namespace FabricAPI.SWMLScriptAddresses {
+namespace FabricAPI.SWMLScript.Addresses {
   @tag("SWML Scripts")
   interface SWMLScriptAddresses {
     @summary("List SWML Script Addresses")
-    @doc("A list of SWML Script Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).")
+    @doc("This endpoints returns a list of addresses associated with a specific SWML script.")
     list(...SWMLScriptAddressPathID):
       SWMLScriptAddressListResponse |
       StatusCode401 |
-      StatusCode404;
+      StatusCode404 |
+      StatusCode500;
   }
 }

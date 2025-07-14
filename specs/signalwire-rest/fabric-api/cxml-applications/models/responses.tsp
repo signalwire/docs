@@ -1,4 +1,6 @@
 import "./core.tsp";
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 model CxmlApplicationResponse {
   @doc("Unique ID of the LAML Application.")
@@ -16,15 +18,15 @@ model CxmlApplicationResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("cxml_application")
-  type: "cxml_application";
+  @example(FabricResponseType.CxmlApplication)
+  type: FabricResponseType.CxmlApplication;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-01-02T00:00:00Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("LAML Application data.")

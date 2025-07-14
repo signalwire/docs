@@ -5,6 +5,7 @@ model FabricAddressesResponse {
   links: FabricAddressPaginationResponse;
 }
 
+
 model FabricAddressPaginationResponse {
   @doc("Link of the current page")
   @example("https://{space_name}.signalwire.com/api/fabric/addresses?page_number=0&page_size=50")

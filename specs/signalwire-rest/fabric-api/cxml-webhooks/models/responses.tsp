@@ -1,3 +1,6 @@
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
+
 
 model CXMLWebhookResponse {
   @doc("Unique ID of the CXMLWebhook.")
@@ -15,15 +18,15 @@ model CXMLWebhookResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example("cxml_webhook")
-  type: "cxml_webhook";
+  @example(FabricResponseType.CxmlWebhook)
+  type: FabricResponseType.CxmlWebhook;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("CXMLWebhook data.")
