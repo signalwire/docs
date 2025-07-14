@@ -20,7 +20,7 @@ interface BrandingConfig {
 
 const branding: BrandingConfig = {
   title: "SignalWire Docs", // Set to the title of the site. This is added to the window title.
-  url: "https://imgtestsw.netlify.app", // Set to the URL of the site.
+  url: "https://developer.signalwire.com", // Set to the URL of the site.
   baseUrl: "/", // Set to the base URL of the site.
   favicon: "img/favicon.svg", // set in the 'static/img' folder
 
