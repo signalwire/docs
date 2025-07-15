@@ -13,6 +13,49 @@ import {
 import { defaultCanvasGenerator } from "./defaultCanvasGenerator.js";
 import { generateImageFileName, generateTitleFromPath } from "./utils.js";
 
+function decodeHtmlEntities(text: string): string {
+  const entities: { [key: string]: string } = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&#x27;": "'",
+    "&apos;": "'",
+  };
+
+  return text.replace(/&[#\w]+;/g, (match) => {
+    if (entities[match]) {
+      return entities[match];
+    }
+
+    // Handle numeric entities like &#39;
+    if (match.startsWith("&#") && match.endsWith(";")) {
+      const num = match.slice(2, -1);
+      if (num.startsWith("x")) {
+        // Hexadecimal
+        const code = parseInt(num.slice(1), 16);
+        return String.fromCharCode(code);
+      } else {
+        // Decimal
+        const code = parseInt(num, 10);
+        return String.fromCharCode(code);
+      }
+    }
+
+    return match;
+  });
+}
+
+function cleanTitle(title: string): string {
+  // Remove everything after the last pipe character
+  const lastPipeIndex = title.lastIndexOf("|");
+  if (lastPipeIndex !== -1) {
+    return title.substring(0, lastPipeIndex).trim();
+  }
+  return title;
+}
+
 async function extractMetadataFromHtml(
   routePath: string,
   outDir: string,
@@ -39,13 +82,18 @@ async function extractMetadataFromHtml(
 
     // Extract title from <title> tag
     const titleMatch = htmlContent.match(/<title[^>]*>(.*?)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].trim() : generateTitleFromPath(routePath);
+    const rawTitle = titleMatch
+      ? decodeHtmlEntities(titleMatch[1].trim())
+      : generateTitleFromPath(routePath);
+    const title = cleanTitle(rawTitle);
 
     // Extract description from meta description tag
     const descriptionMatch = htmlContent.match(
       /<meta[^>]*name="description"[^>]*content="([^"]*)"[^>]*>/i,
     );
-    const description = descriptionMatch ? descriptionMatch[1].trim() : "";
+    const description = descriptionMatch
+      ? decodeHtmlEntities(descriptionMatch[1].trim())
+      : "";
 
     // Generate og:image URL
     const imageFileName = generateImageFileName(routePath);
