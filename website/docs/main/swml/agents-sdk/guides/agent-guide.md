@@ -65,11 +65,9 @@ Here's how these components relate to each other:
 - `port`: Port to bind to (default: 3000)
 - `basic_auth`: Optional (username, password) tuple
 - `use_pom`: Whether to use POM for prompts (default: True)
-- `enable_state_tracking`: Enable conversation state (default: False)
-- `token_expiry_secs`: State token expiry time (default: 3600)
+- `token_expiry_secs`: Security token expiry time (default: 3600)
 - `auto_answer`: Auto-answer calls (default: True)
 - `record_call`: Record calls (default: False)
-- `state_manager`: Custom state manager (default: None)
 - `schema_path`: Optional path to schema.json file
 - `suppress_logs`: Whether to suppress structured logs (default: False)
 
