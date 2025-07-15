@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
+import "./resource";
 import "../../types";
 
 using TypeSpec.Http;

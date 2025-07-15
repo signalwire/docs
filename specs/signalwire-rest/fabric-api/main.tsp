@@ -17,6 +17,8 @@ import "./sip_gateways";
 import "./subscribers";
 import "./swml-scripts";
 import "./swml-webhook";
+import "./domain-applications";
+import "./phone-routes";
 
 
 using TypeSpec.Http;

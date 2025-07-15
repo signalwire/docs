@@ -24,6 +24,8 @@ tags:
   - name: 'Subscribers: Tokens'
   - name: SWML Scripts
   - name: SWML Webhook
+  - name: Domain Applications
+  - name: Phone Routes
 paths:
   /addresses:
     get:
@@ -2288,6 +2290,56 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SipEndpointCreateRequest'
+  /resources/sip_endpoints/resources/{id}/sip_endpoints:
+    post:
+      operationId: ResourceSipEndpoints_assign
+      summary: Assign a Resource to a SIP endpoint
+      description: |-
+        This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.
+        :::important
+        Currently only supports `calling` as a handler and automatically defaults to it.
+        :::
+      parameters:
+        - $ref: '#/components/parameters/ResourceSipEndpointPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceSipEndpointResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceSubSipEndpointCreateStatusCode422'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - SIP Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceSipEndpointAssignRequest'
   /resources/sip_endpoints/{id}:
     get:
       operationId: SipEndpoints_read
@@ -3593,9 +3645,13 @@ paths:
         - Resources
   /resources/{id}/domain_applications:
     post:
-      operationId: DomainApplications_create
-      summary: Create Domain Application
-      description: Creates a Domain Application for a specific resource
+      operationId: DomainApplications_assign
+      summary: Assign a resource as a call handler for a Domain Application.
+      description: |-
+        This endpoint assigns a specific resource to a Domain Application, allowing inbound calls to be handled by the resource.
+        :::important
+        Currently only supports `calling` as a handler and automatically defaults to it.
+        :::
       parameters:
         - $ref: '#/components/parameters/DomainApplicationPathID'
       responses:
@@ -3630,18 +3686,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
-        - Resources
+        - Domain Applications
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DomainApplicationCreateRequest'
+              $ref: '#/components/schemas/DomainApplicationAssignRequest'
   /resources/{id}/phone_routes:
     post:
-      operationId: PhoneRoutes_create
-      summary: Create Phone Route
-      description: Creates a Phone Route for a specific resource
+      operationId: PhoneRoutes_assign
+      summary: Assign a Resource to a Phone Route
+      description: This endpoint assigns a specific resource to a phone route, allowing inbound calls & messages to be handled by the resource.
       parameters:
         - $ref: '#/components/parameters/PhoneRoutePathID'
       responses:
@@ -3676,59 +3732,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
-        - Resources
+        - Phone Routes
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PhoneRouteCreateRequest'
-  /resources/{id}/sip_endpoints:
-    post:
-      operationId: ResourceSipEndpoints_create
-      summary: Assign a Resource as Call handler on a SIP endpoint
-      description: Assigns a Resource as Call handler on a SIP endpoint. This is used to route calls to the Resource from a SIP endpoint.
-      parameters:
-        - $ref: '#/components/parameters/ResourceSipEndpointPathID'
-      responses:
-        '200':
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResourceSipEndpointResponse'
-        '401':
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
-        '404':
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
-        '422':
-          description: Client error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ResourceSubSipEndpointCreateStatusCode422'
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
-      tags:
-        - Resources
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResourceSipEndpointCreateRequest'
+              $ref: '#/components/schemas/PhoneRouteAssignRequest'
   /subscriber/invites:
     post:
       operationId: InviteTokens_create
@@ -6647,21 +6657,17 @@ components:
         - call
         - subscriber
       description: DisplayTypes
-    DomainApplicationCreateRequest:
+    DomainApplicationAssignRequest:
       type: object
       required:
-        - name
-        - domain
+        - domain_application_id
       properties:
-        name:
-          type: string
-          description: The name of the domain application.
-          example: My Domain Application
-        domain:
-          type: string
-          description: The domain for the application.
-          example: example.com
-      title: Create domain application
+        domain_application_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The id of the domain application you wish to assign a resource to.
+          example: 993ed018-9e79-4e50-b97b-984bd5534095
     DomainApplicationCreateStatusCode422:
       type: object
       required:
@@ -6683,32 +6689,56 @@ components:
       required:
         - id
         - name
-        - domain
+        - display_name
+        - cover_url
+        - preview_url
+        - locked
+        - channel
         - created_at
-        - updated_at
+        - type
       properties:
         id:
           allOf:
             - $ref: '#/components/schemas/uuid'
           format: uuid
-          description: The unique identifier of the domain application.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          description: Unique ID of the Fabric Address.
+          example: 691af061-cd86-4893-a605-173f47afc4c2
         name:
           type: string
-          description: The name of the domain application.
-          example: My Domain Application
-        domain:
+          description: Name of the Fabric Address.
+          example: justice-league
+        display_name:
           type: string
-          description: The domain for the application.
-          example: example.com
+          description: Display name of the Fabric Address.
+          example: Justice League
+        cover_url:
+          type: string
+          description: Cover url of the Fabric Address.
+          example: https://coverurl.com
+        preview_url:
+          type: string
+          description: Preview url of the Fabric Address.
+          example: https://previewurl.com
+        locked:
+          type: boolean
+          description: Locks the Fabric Address. This is used to prevent the Fabric Address from accepting calls.
+          example: true
+        channel:
+          allOf:
+            - $ref: '#/components/schemas/AddressChannel'
+          description: Channels of the Fabric Address.
         created_at:
           type: string
-          description: The creation timestamp.
-          example: '2023-01-01T12:00:00Z'
-        updated_at:
+          format: date-time
+          description: Fabric Address Creation Date.
+          example: '2024-05-06T12:20:00Z'
+        type:
           type: string
-          description: The last update timestamp.
-          example: '2023-01-01T12:00:00Z'
+          enum:
+            - app
+          description: Type of the Fabric Address which is an application.
+          example: app
+      title: Application Address
     EmbedTokenCreateStatusCode422:
       type: object
       required:
@@ -7616,21 +7646,23 @@ components:
           format: uri
           description: Link to the next page
           example: https://example.signalwire.com/api/fabric/resources/subscribers/d369a402-7b43-4512-8735-9d5e1f387814/sip_endpoints?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
-    PhoneRouteCreateRequest:
+    PhoneRouteAssignRequest:
       type: object
       required:
-        - name
-        - phone_number
+        - phone_route_id
+        - handler
       properties:
-        name:
-          type: string
-          description: The name of the phone route.
-          example: My Phone Route
-        phone_number:
-          type: string
-          description: The phone number for the route.
-          example: '+15551234567'
-      title: Create phone route
+        phone_route_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The id of the phone route.
+          example: 691af061-cd86-4893-a605-173f47afc4c2
+        handler:
+          allOf:
+            - $ref: '#/components/schemas/UsedForType'
+          description: Indicates if the resource should be assigned to a `calling` or `messaging` handler.
+          example: calling
     PhoneRouteCreateStatusCode422:
       type: object
       required:
@@ -7652,32 +7684,56 @@ components:
       required:
         - id
         - name
-        - phone_number
+        - display_name
+        - cover_url
+        - preview_url
+        - locked
+        - channel
         - created_at
-        - updated_at
+        - type
       properties:
         id:
           allOf:
             - $ref: '#/components/schemas/uuid'
           format: uuid
-          description: The unique identifier of the phone route.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          description: Unique ID of the Fabric Address.
+          example: 691af061-cd86-4893-a605-173f47afc4c2
         name:
           type: string
-          description: The name of the phone route.
-          example: My Phone Route
-        phone_number:
+          description: Name of the Fabric Address.
+          example: justice-league
+        display_name:
           type: string
-          description: The phone number for the route.
-          example: '+15551234567'
+          description: Display name of the Fabric Address.
+          example: Justice League
+        cover_url:
+          type: string
+          description: Cover url of the Fabric Address.
+          example: https://coverurl.com
+        preview_url:
+          type: string
+          description: Preview url of the Fabric Address.
+          example: https://previewurl.com
+        locked:
+          type: boolean
+          description: Locks the Fabric Address. This is used to prevent the Fabric Address from accepting calls.
+          example: true
+        channel:
+          allOf:
+            - $ref: '#/components/schemas/AddressChannel'
+          description: Channels of the Fabric Address.
         created_at:
           type: string
-          description: The creation timestamp.
-          example: '2023-01-01T12:00:00Z'
-        updated_at:
+          format: date-time
+          description: Fabric Address Creation Date.
+          example: '2024-05-06T12:20:00Z'
+        type:
           type: string
-          description: The last update timestamp.
-          example: '2023-01-01T12:00:00Z'
+          enum:
+            - app
+          description: Type of the Fabric Address which is an application.
+          example: app
+      title: Application Address
     PlaybackBGAction:
       type: object
       required:
@@ -7996,7 +8052,7 @@ components:
           type: object
           additionalProperties: {}
           description: Resource-specific data
-    ResourceSipEndpointCreateRequest:
+    ResourceSipEndpointAssignRequest:
       type: object
       required:
         - sip_endpoint_id

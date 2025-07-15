@@ -1,4 +1,4 @@
-import "../../../../types";
+import "../../../types";
 
 using Types.StatusCodes;
 
@@ -6,9 +6,9 @@ using Types.StatusCodes;
     errors: #[#{
       type: "validation_error",
       code: "missing_required_parameter",
-      message: "name is required",
-      attribute: "name",
+      message: "phone_number is required",
+      attribute: "phone_number",
       url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter"
     }]
 })
-model DomainApplicationCreateStatusCode422 is StatusCode422;
+model PhoneRouteCreateStatusCode422 is StatusCode422;

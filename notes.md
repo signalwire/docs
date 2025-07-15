@@ -58,6 +58,11 @@ The endpoin ts will be organized by the `tag` they are set to.
 3. Can we split this into multiple request body objects, for the different resource types? (Create/Update)
 
 
+## Domain Applications
+
+1. What is the response `type`?
+
+
 
 # Personal Note
 

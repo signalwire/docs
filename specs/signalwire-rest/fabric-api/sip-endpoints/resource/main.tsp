@@ -10,12 +10,17 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/{id}/sip_endpoints")
-namespace FabricAPI.Resource.SipEndpoints {
-  @tag("Resources")
+namespace FabricAPI.SipEndpoints.Resource {
+  @tag("SIP Endpoints")
   interface ResourceSipEndpoints {
-    @summary("Assign a Resource as Call handler on a SIP endpoint")
-    @doc("Assigns a Resource as Call handler on a SIP endpoint. This is used to route calls to the Resource from a SIP endpoint.")
-    @post create(...ResourceSipEndpointPathID, @body request: ResourceSipEndpointCreateRequest):
+    @summary("Assign a Resource to a SIP endpoint")
+    @doc("""
+    This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.
+    :::important
+    Currently only supports `calling` as a handler and automatically defaults to it.
+    :::
+    """)
+    @post assign(...ResourceSipEndpointPathID, @body request: ResourceSipEndpointAssignRequest):
       { @statusCode statusCode: 200; @body sip_endpoint: ResourceSipEndpointResponse; } |
       StatusCode401 |
       StatusCode404 |

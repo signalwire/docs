@@ -5,9 +5,6 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
-import "./sip-endpoints";
-import "./domain-applications";
-import "./phone-routes";
 import "../../types";
 
 using TypeSpec.Http;
