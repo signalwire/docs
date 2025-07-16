@@ -29,5 +29,14 @@ model SwmlScript {
   @doc("The displayed name of the SWML scipt")
   @example("Booking Assistant")
   display_name: string;
+
+  @doc("URL to send status callbacks to")
+  @example("https://website.com/status")
+  @format("uri")
+  status_callback_url?: url;
+
+  @doc("HTTP method to use for status callbacks")
+  @example("POST")
+  status_callback_method?: "POST";
   
 }

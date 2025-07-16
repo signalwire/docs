@@ -10,6 +10,11 @@ model SwmlScriptCreateRequest {
   @example(SWML_EXAMPLE)
   contents: string;
 
+  @doc("URL to send status callbacks to")
+  @example("https://website.com/status")
+  @format("uri")
+  status_callback_url?: url;
+
 }
 
 model SwmlScriptUpdateRequest {
@@ -20,5 +25,10 @@ model SwmlScriptUpdateRequest {
   @doc("The contents of the SWML script.")
   @example(SWML_EXAMPLE)
   contents?: string;
+
+  @doc("URL to send status callbacks to")
+  @example("https://website.com/status")
+  @format("uri")
+  status_callback_url?: url;
 
 }
