@@ -146,7 +146,6 @@ using TypeSpec.OpenAPI;
 
 @info(#{
   title: "Call Fabric API",
-  summary: "The Fabric API holds a collection of endpoints that will help you in managing and creating your SignalWire Resources.",
   version: "1.0.0",
   contact: CONTACT_INFO,
   license: LICENSE_INFO,
