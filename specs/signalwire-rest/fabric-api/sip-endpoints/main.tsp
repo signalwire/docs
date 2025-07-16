@@ -7,13 +7,14 @@ import "./models/errors.tsp";
 import "./addresses";
 import "./resource";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/sip_endpoints")
 namespace FabricAPI.SipEndpoints {
-  @tag("SIP Endpoints")
+  @tag(SIP_ENDPOINTS_TAG)
   @friendlyName("SIP Endpoints")
   @doc("SIP Endpoints API category.")
   interface SipEndpoints {

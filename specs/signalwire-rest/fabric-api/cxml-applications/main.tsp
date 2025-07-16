@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/cxml_applications")
 namespace FabricAPI.CxmlApplications {
-  @tag("cXML Applications")
+  @tag(CXML_APPLICATIONS_TAG)
   @friendlyName("cXML Applications")
   interface CxmlApplications {
     @summary("List cXML Applications")

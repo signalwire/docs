@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/dialogflow_agents")
 namespace FabricAPI.DialogflowAgents {
-  @tag("AI Agents: Dialogflow")
+  @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgents {
     @summary("List Dialogflow Agents")
     @doc("A list of Dialogflow Agents")

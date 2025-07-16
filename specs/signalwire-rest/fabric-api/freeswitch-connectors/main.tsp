@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/freeswitch_connectors")
 namespace FabricAPI.FreeswitchConnectors {
-  @tag("FreeSWITCH Connectors")
+  @tag(FREESWITCH_CONNECTOR_TAG)
   @friendlyName("FreeSWITCH Connectors")
   interface FreeswitchConnectors {
     @summary("List FreeSWITCH Connectors")

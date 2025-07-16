@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources")
 namespace FabricAPI.Resources {
-  @tag("Resources")
+  @tag(RESOURCES_TAG)
   @friendlyName("Resources")
   interface Resources {
     @summary("List Resources")

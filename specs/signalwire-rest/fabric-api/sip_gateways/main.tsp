@@ -5,13 +5,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
 import "./addresses";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/sip_gateways")
 namespace FabricAPI.SipGateways {
-  @tag("SIP Gateway")
+  @tag(SIP_GATEWAY_TAG)
   @friendlyName("SIP Gateway")
   interface SipGateways {
     @summary("List SIP Gateways")

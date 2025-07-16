@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/relay_applications")
 namespace FabricAPI.RelayApplications {
-  @tag("Relay Applications")
+  @tag(RELAY_APPLICATION_TAG)
   @friendlyName("Relay Applications")
   interface RelayApplications {
     @summary("List Relay Applications")

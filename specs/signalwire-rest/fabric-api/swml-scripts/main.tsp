@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/swml_scripts")
 namespace FabricAPI.SwmlScripts {
-  @tag("SWML Scripts")
+  @tag(SWML_SCRIPTS_TAG)
   @friendlyName("SWML Scripts")
   interface SwmlScripts {
     @summary("List SWML Scripts")

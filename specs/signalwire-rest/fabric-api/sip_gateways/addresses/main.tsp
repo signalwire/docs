@@ -3,13 +3,14 @@ import "@typespec/openapi";
 import "../../../types";
 import "./models/responses.tsp";
 import "./models/requests.tsp";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/sip_gateways/{resource_id}/addresses")
 namespace FabricAPI.SipGateways.Addresses {
-  @tag("SIP Gateway")
+  @tag(SIP_GATEWAY_TAG)
   @friendlyName("SIP Gateway")
   interface RelayApplicationAddresses {
     @summary("List Fabric Addresses assigned to a SIP Gateway")

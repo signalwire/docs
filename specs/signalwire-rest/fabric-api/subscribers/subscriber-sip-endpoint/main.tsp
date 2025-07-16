@@ -5,13 +5,14 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../types";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/{fabric_subscriber_id}/sip_endpoints")
 namespace FabricAPI.Subscribers.SipEndpoints {
-  @tag("Subscribers: SIP Endpoints")
+  @tag(SUBSCRIBER_SIP_ENDPOINT_TAG)
   @friendlyName("SIP Endpoints")
   interface SubscriberSipEndpoint {
     @summary("List Subscriber SIP Endpoints")

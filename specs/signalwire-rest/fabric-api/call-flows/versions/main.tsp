@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../../types";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -12,7 +13,7 @@ using Types.StatusCodes;
 
 @route("/resources/call_flow/{id}/versions")
 namespace FabricAPI.CallFlow.Versions {
-  @tag("Call Flows")
+  @tag(CALL_FLOWS_TAG)
   interface CallFlowVersions {
     @summary("List Call Flow Versions")
     @doc("Returns a list of versions of a Call Flow.")

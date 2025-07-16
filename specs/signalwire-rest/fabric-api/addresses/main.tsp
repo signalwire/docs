@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/openapi";
 import "../_shared/fabric-address";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -9,7 +10,7 @@ using Types.StatusCodes;
 @useAuth(BearerAuth)
 @route("/addresses")
 namespace FabricAPI.FabricAddresses {
-  @tag("Fabric Address")
+  @tag(FABRIC_ADDRESS_TAG)
   @friendlyName("Fabric Address")
   interface FabricAddresses {
     @summary("List Fabric Addresses")

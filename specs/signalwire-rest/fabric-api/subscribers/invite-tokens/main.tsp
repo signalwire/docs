@@ -3,13 +3,14 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../types";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/subscriber/invites")
 namespace FabricAPI.SubscriberInviteTokens {
-  @tag("Subscribers: Tokens")
+  @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Invite Token")
   interface InviteTokens {
 
