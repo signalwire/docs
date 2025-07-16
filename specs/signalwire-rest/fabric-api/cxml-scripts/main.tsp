@@ -18,7 +18,7 @@ namespace FabricAPI.CXMLScripts {
     @summary("List cXML Scripts")
     @doc("A list of cXML Scripts")
     list():
-      CXMLScriptResponse[] |
+      CXMLScriptListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

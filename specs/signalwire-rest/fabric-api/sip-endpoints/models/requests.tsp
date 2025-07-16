@@ -6,98 +6,37 @@ model SipEndpointCreateRequest {
 }
 
 model SipEndpointUpdateRequest {
-  @doc("Username for the SIP endpoint")
-  @example("123456")
+
+  @doc("The username of the Sip Endpoint")
+  @example("User")
   username?: string;
-
-  @doc("Password for the SIP endpoint")
-  @example("12345678")
-  @minLength(8)
-  password?: string;
-
-  @doc("Caller ID")
-  @example("123456")
+  
+  @doc("The caller ID that will showup when dialing from this Sip Endpoint")
+  @example("123456789")
   caller_id?: string;
 
-  @doc("Send as")
-  @example("random")
+  @doc("The Sip username that will show up on the calle's side. Overrides the username.")
+  @example("Support")
   send_as?: string;
 
-  @doc("Ciphers")
-  @example(#[Ciphers.AEAD_AES_256_GCM_8])
+  @doc("Ciphers that can be enabled for calls on this Sip Endpoint.")
+  @example(#[Ciphers.AEAD_AES_256_GCM_8, Ciphers.AES_256_CM_HMAC_SHA1_32])
   ciphers?: Ciphers[];
 
-  @doc("Codecs")
-  @example(#[Codecs.PCMU])
+  @doc("Codecs that can be enabled for calls on this Sip Endpoint.")
+  @example(#[Codecs.G722, Codecs.PCMA, Codecs.PCMU, Codecs.VP8])
   codecs?: Codecs[];
 
-  @doc("Encryption")
-  @example(Encryption.Required)
-  encryption?: Encryption;
+  @doc("The set encryption type on the Sip Endpoint.")
+  @example(Encryption.Default)
+  encryption?: Encryption = Encryption.Default;
 
-  @doc("Call handler")
-  @example("laml_webhooks")
-  call_handler?: string;
+  @doc(callHandlerDescription)
+  @example(CallHandlerType.Default)
+  call_handler?: CallHandlerType;
 
-  @doc("Call request URL")
-  @example("https://example.com/call_handler")
-  call_request_url?: string;
-
-  @doc("Call request method")
-  @example(UrlMethodType.Post)
-  call_request_method?: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Call fallback URL")
-  @example("https://example.com/call_handler")
-  call_fallback_url?: string;
-
-  @doc("Call fallback method")
-  @example(UrlMethodType.Post)
-  call_fallback_method?: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Call status callback URL")
-  @example("https://example.com/call_handler")
-  call_status_callback_url?: string;
-
-  @doc("Call status callback method")
-  @example(UrlMethodType.Post)
-  call_status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Call LAML application ID")
-  @format("uuid")
+  @doc("If `call_handler` is set to `resource`, this field will contain the id of the set resouce. Will be `null` otherwise.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_laml_application_id?: uuid;
+  calling_handler_resource_id: uuid | null;
 
-  @doc("Call AI agent ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_ai_agent_id?: uuid;
-
-  @doc("Call flow ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_flow_id?: uuid;
-
-  @doc("Call flow version")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_flow_version?: uuid;
-
-  @doc("Call dialogflow agent ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_dialogflow_agent_id?: uuid;
-
-  @doc("Call relay script URL")
-  @example("https://example.com/relay_script")
-  call_relay_script_url?: string;
-
-  @doc("Call relay script method")
-  @example(UrlMethodType.Post)
-  call_relay_script_method?: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Calling handler resource ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  calling_handler_resource_id?: uuid;
 }

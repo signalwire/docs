@@ -11,14 +11,14 @@ model CallFlowPathID {
   id: uuid
 }
 
-model CallFlowID {
+
+model CallFlow {
+
   @doc("Unique ID of a Call Flow.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
-  id: uuid
-}
+  id: uuid;
 
-model CallFlow {
   @doc("The name of the Call Flow")
   @example("Booking Assistant")
   title: string;
@@ -34,9 +34,4 @@ model CallFlow {
   @doc("The current revision of the call flow. Every update must increase this number.")
   @example(1)
   document_version?: int32;
-}
-
-model CallFlowWithID {
-  ...CallFlowID,
-  ...CallFlow
 }

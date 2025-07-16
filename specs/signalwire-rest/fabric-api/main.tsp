@@ -19,6 +19,7 @@ import "./swml-scripts";
 import "./swml-webhook";
 import "./domain-applications";
 import "./phone-routes";
+import "../_globally_shared/const.tsp";
 
 
 using TypeSpec.Http;
@@ -27,7 +28,7 @@ using Types.StatusCodes;
 @service(#{
   title: "Call Fabric API",
 })
-@server("https://{space_name}.signalwire.com/api/fabric/", "Endpoint", {
+@server("https://{space_name}.${SERVER_URL}/fabric/", "Endpoint", {
   space_name: string = "{Your_Space_Name}";
 })
 @useAuth(BasicAuth)

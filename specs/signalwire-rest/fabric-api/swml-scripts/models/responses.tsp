@@ -34,5 +34,29 @@ model SwmlScriptResponse {
 }
 
 model SwmlScriptListResponse {
+  
+  @doc("An array of objects that contain a list of SWML Script data")
   data: SwmlScriptResponse[];
+
+  @doc("Object containing pagination links")
+  links: SwmlScriptPaginationresponse;
+}
+
+model SwmlScriptPaginationresponse {
+
+  @doc("Link to the current page")
+  @example("https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50&type=swml_script")
+  self: url;
+
+  @doc("Link to the first page")
+  @example("https://example.signalwire.com/api/fabric/resources/swml_scripts?page_size=50&type=swml_script")
+  first: url;
+
+  @doc("Link to the next page")
+  @example("https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=swml_script")
+  next?: url;
+
+  @doc("Link to the previous page")
+  @example("https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=swml_script")
+  prev?: url;
 }

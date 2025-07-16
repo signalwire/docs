@@ -18,7 +18,7 @@ namespace FabricAPI.FreeswitchConnectors {
     @summary("List FreeSWITCH Connectors")
     @doc("A list of FreeSWITCH Connectors")
     list():
-      FreeswitchConnectorResponse[] |
+      FreeswitchConnectorListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

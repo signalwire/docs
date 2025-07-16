@@ -18,7 +18,7 @@ namespace FabricAPI.ConferenceRooms {
     @summary("List Conference Rooms")
     @doc("Returns a list of conference rooms.")
     list():
-      ConferenceRoomResponse[] |
+      ConferenceRoomListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

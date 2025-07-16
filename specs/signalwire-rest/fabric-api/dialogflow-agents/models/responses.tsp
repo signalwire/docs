@@ -30,9 +30,34 @@ model DialogflowAgentResponse {
   updated_at: utcDateTime;
 
   @doc("Dialogflow Agent data.")
-  dialogflow_agent: DialogflowAgentWithID;
+  dialogflow_agent: DialogflowAgent;
 }
 
 model DialogflowAgentListResponse {
+
+  @doc("An array of objects that contain a list of Dialogflow Agent data")
   data: DialogflowAgentResponse[];
+
+  @doc("Object containing pagination links")
+  links: DialogFlowPaginationResponse;
+
+}
+
+model DialogFlowPaginationResponse {
+
+  @doc("Link to the current page")
+  @example("https://devspace.signalwire.com/api/fabric/resources/dialogflow_agents?page_number=0&page_size=50&type=dialogflow_agent")
+  self: url;
+
+  @doc("Link to the first page")
+  @example("https://devspace.signalwire.com/api/fabric/resources/dialogflow_agents?page_size=50&type=dialogflow_agent")
+  first: url;
+
+  @doc("Link to the next page")
+  @example("https://devspace.signalwire.com/api/fabric/resources/dialogflow_agents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=dialogflow_agent")
+  next?: url;
+
+  @doc("Link to the previous page")
+  @example("https://devspace.signalwire.com/api/fabric/resources/dialogflow_agents?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=dialogflow_agent")
+  prev?: url;
 }

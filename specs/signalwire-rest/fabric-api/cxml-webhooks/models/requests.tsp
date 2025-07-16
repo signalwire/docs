@@ -6,12 +6,12 @@ model CXMLWebhookCreateRequest {
   name?: string;
 
   @doc("Used for of the CXML Webhook.")
-  @example("calling")
-  used_for?: "calling" | "messaging" = "calling";
+  @example(UsedForType.Calling)
+  used_for?: UsedForType = UsedForType.Calling;
 
   @doc("Primary request url of the CXML Webhook.")
   @example("https://primary.com")
-  primary_request_url: string;
+  primary_request_url: url;
 
   @doc("Primary request method of the CXML Webhook.")
   @example(UrlMethodType.Get)
@@ -19,7 +19,7 @@ model CXMLWebhookCreateRequest {
 
   @doc("Fallback request url of the CXML Webhook.")
   @example("https://fallback.com")
-  fallback_request_url?: string;
+  fallback_request_url?: url;
 
   @doc("Fallback request method of the CXML Webhook.")
   @example(UrlMethodType.Get)
@@ -27,7 +27,7 @@ model CXMLWebhookCreateRequest {
 
   @doc("Status callback url of the CXML Webhook.")
   @example("https://callback.com")
-  status_callback_url?: string;
+  status_callback_url?: url;
 
   @doc("Status callback method of the CXML Webhook.")
   @example(UrlMethodType.Get)
@@ -40,28 +40,28 @@ model CXMLWebhookUpdateRequest {
   name?: string;
 
   @doc("Used for of the CXML Webhook.")
-  @example("calling")
-  used_for?: "calling" | "messaging" = "calling";
+  @example(UsedForType.Calling)
+  used_for?: UsedForType = UsedForType.Calling;
 
   @doc("Primary request url of the CXML Webhook.")
   @example("https://primary.com")
-  primary_request_url?: string;
+  primary_request_url?: url;
 
   @doc("Primary request method of the CXML Webhook.")
-  @example("GET")
-  primary_request_method?: "GET" | "POST" = "POST";
+  @example(UrlMethodType.Get)
+  primary_request_method?: UrlMethodType.Get | UrlMethodType.Post  = UrlMethodType.Post;
 
   @doc("Fallback request url of the CXML Webhook.")
   @example("https://fallback.com")
-  fallback_request_url?: string;
+  fallback_request_url?: url;
 
   @doc("Fallback request method of the CXML Webhook.")
-  @example("GET")
-  fallback_request_method?: "GET" | "POST" = "POST";
+  @example(UrlMethodType.Get)
+  fallback_request_method?: UrlMethodType.Get | UrlMethodType.Post  = UrlMethodType.Post;
 
   @doc("Status callback url of the CXML Webhook.")
   @example("https://callback.com")
-  status_callback_url?: string;
+  status_callback_url?: url;
 
   @doc("Status callback method of the CXML Webhook.")
   @example(UrlMethodType.Post)

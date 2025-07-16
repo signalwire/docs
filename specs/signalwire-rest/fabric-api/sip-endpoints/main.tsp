@@ -20,7 +20,7 @@ namespace FabricAPI.SipEndpoints {
     @summary("List SIP Endpoints")
     @doc("A list of SIP Endpoints")
     list():
-      SipEndpointResponse[] |
+      SipEndpointListResponse[] |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

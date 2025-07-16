@@ -8,7 +8,7 @@ import "../../../_globally_shared/enums.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-model SipGatewayCreateResponse {
+model SipGatewayResponse {
   @doc("Unique ID of the resource.")
   @example("0823a606-0aff-4c90-9eba-f88ba118fe05")
   @format("uuid")
@@ -39,8 +39,6 @@ model SipGatewayCreateResponse {
   sip_gateway: SipGateway;
 }
 
-model SipGatewayUpdateResponse is SipGatewayCreateResponse {}
-model SipGatewayResponse is SipGatewayCreateResponse {}
 
 model SipGateway {
   @doc("Unique ID of the SIP Gateway.")
@@ -70,8 +68,8 @@ model SipGateway {
 }
 
 model SipGatewayListResponse {
-  @doc("List of SIP Gateways.")
-  data: SipGatewayCreateResponse[];
+  @doc("An array of objects that contain a list of SIP Gateway data")
+  data: SipGatewayResponse[];
 
   @doc("Pagination links for the response.")
   links: SipGatewayPaginationResponse;
@@ -89,7 +87,7 @@ model SipGatewayPaginationResponse {
 
   @doc("Link to the next page of results")
   @example("https://example.signalwire.com/api/fabric/resources/sip_gateways?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
-  next: url;
+  next?: url;
 
   @doc("Link to the previous page of results")
   @example("https://example.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")

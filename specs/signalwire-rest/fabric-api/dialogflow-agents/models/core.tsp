@@ -10,14 +10,14 @@ model DialogflowAgentPathID {
   id: uuid
 }
 
-model DialogflowAgentID {
+
+model DialogflowAgent {
+
   @doc("Unique ID of a Dialogflow Agent.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
-  dialogflow_agent_id: uuid
-}
+  id: uuid;
 
-model DialogflowAgent {
   @doc("Whether to enable the 'say' feature")
   @example(true)
   say_enabled?: boolean;
@@ -42,9 +42,4 @@ model DialogflowAgent {
   @doc("Dialogflow reference name")
   @example("my dialogflow agent")
   dialogflow_reference_name?: string;
-}
-
-model DialogflowAgentWithID {
-  ...DialogflowAgentID,
-  ...DialogflowAgent
 }

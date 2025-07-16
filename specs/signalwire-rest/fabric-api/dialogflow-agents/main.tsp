@@ -17,7 +17,7 @@ namespace FabricAPI.DialogflowAgents {
     @summary("List Dialogflow Agents")
     @doc("A list of Dialogflow Agents")
     list():
-      DialogflowAgentResponse[] |
+      DialogflowAgentListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

@@ -18,7 +18,7 @@ namespace FabricAPI.Resources {
     @summary("List Resources")
     @doc("A list of Fabric Resources")
     list():
-      ResourceResponse[] |
+      ResourceListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

@@ -19,7 +19,7 @@ namespace FabricAPI.CallFlows {
     @summary("List Call Flows")
     @doc("A list of Call Flows")
     list():
-      CallFlowResponse[] |
+      CallFlowListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

@@ -4,9 +4,10 @@ import "../../../../types";
 
 
 model CXMLScriptAddressListResponse {
-  @doc("List of cXML Script Addresses")
+  @doc("An array of objects that contain a list of cXML Script Addresses")
   data: FabricAddressApp[];
-  @doc("Pagination links")
+
+  @doc("Object containing pagination links")
   links: CXMLScriptAddressPaginationResponse;
 }
 
@@ -22,7 +23,7 @@ model CXMLScriptAddressPaginationResponse {
 
   @doc("Link to the next page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=1&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
-  next: url,
+  next?: url,
 
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")

@@ -34,8 +34,8 @@ namespace FabricAPI.SipGateways {
 
     @summary("Create SIP Gateway")
     @doc("Creates a SIP Gateway that can be used to dial external SIP entities.")
-    @post create(...SipGatewayCreateRequest):
-      { @statusCode statusCode: 201; @body sip_gateway: SipGatewayCreateResponse; } |
+    @post create(...SipGatewayRequest):
+      { @statusCode statusCode: 201; @body sip_gateway: SipGatewayResponse; } |
       StatusCode401 |
       StatusCode404 |
       SipGatewayCreateStatusCode422 |
@@ -43,8 +43,8 @@ namespace FabricAPI.SipGateways {
 
     @summary("Update SIP Gateway")
     @doc("Updates a SIP Gateway by ID")
-    @patch(#{ implicitOptionality: true })  update(...SipGatewayID, ...SipGatewayUpdateRequest): {
-      @statusCode statusCode: 200; @body sip_gateway: SipGatewayUpdateResponse;
+    @patch(#{ implicitOptionality: true })  update(...SipGatewayID, ...SipGatewayRequest): {
+      @statusCode statusCode: 200; @body sip_gateway: SipGatewayResponse;
     } |
       StatusCode401 |
       StatusCode404 |

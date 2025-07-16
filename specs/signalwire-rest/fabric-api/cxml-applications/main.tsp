@@ -18,7 +18,7 @@ namespace FabricAPI.CxmlApplications {
     @summary("List cXML Applications")
     @doc("A list of cXML Applications")
     list():
-      CxmlApplicationResponse[] |
+      CxmlApplicationListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

@@ -20,7 +20,7 @@ model SIPEndpointID {
   id: uuid
 }
 
-model SIPEndpoint {
+model SubscriberSIPEndpoint {
   @doc("Unique ID of the Sip Endpoint.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
   id: uuid;
@@ -38,12 +38,12 @@ model SIPEndpoint {
   send_as: string;
 
   @doc("Ciphers of the Sip Endpoint.")
-  ciphers: CipherTypeArray;
+  ciphers: Ciphers[];
 
   @doc("Codecs of the Sip Endpoint.")
-  codecs: CodecTypeArray;
+  codecs: Codecs[];
 
   @doc("Encryption requirement of the Sip Endpoint.")
-  @example(EncryptionType.Optional)
-  encryption: EncryptionType;
+  @example(Encryption.Optional)
+  encryption: Encryption;
 }

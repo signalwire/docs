@@ -1,6 +1,6 @@
 import "../../../_globally_shared/enums.tsp";
 
-model SipGatewayCreateRequest {
+model SipGatewayRequest {
   @doc("Display name for the SIP Gateway.")
   @example("My SIP Gateway")
   name: string;
@@ -21,5 +21,3 @@ model SipGatewayCreateRequest {
   @example(#[Codecs.OPUS])
   codecs: Codecs[];
 }
-
-alias SipGatewayUpdateRequest = SipGatewayCreateRequest;

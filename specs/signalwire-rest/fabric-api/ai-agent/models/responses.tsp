@@ -30,28 +30,32 @@ model AIAgentResponse {
   updated_at: utcDateTime;
 
   @doc("AIAgent data.")
-  ai_agent: AIAgentWithID;
+  ai_agent: AIAgent;
 }
 
 model AIAgentListResponse {
+
+  @doc("An array of objects containing the list of AI Agent data.")
   data: AIAgentResponse[];
+
+  @doc("Object containing pagination links")
   links: AIAgentPaginationResponse;
 }
 
 model AIAgentPaginationResponse {
   @doc("Link of the current page")
-  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50")
+  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50&type=ai_agent")
   self: url;
 
   @doc("Link to the first page")
-  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50")
+  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50&type=ai_agent")
   first: url;
 
   @doc("Link to the next page")
-  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
-  next: url;
+  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=ai_agent")
+  next?: url;
 
   @doc("Link to the previous page")
-  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  @example("https://example.signalwire.com/api/fabric/resources/ai_agents?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=ai_agent")
   prev?: url;
 }

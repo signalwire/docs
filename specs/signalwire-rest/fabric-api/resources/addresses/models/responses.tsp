@@ -4,10 +4,10 @@ import "../../../../types";
 
 
 model ResourceAddressListResponse {
-  @doc("List of Resource Addresses")
+  @doc("An array opf objects that contain a list of Resource Addresses")
   data: FabricAddress[];
   
-  @doc("Pagination links")
+  @doc("Object containing pagination links")
   links: ResourceAddressPaginationResponse;
 }
 

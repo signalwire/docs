@@ -60,6 +60,7 @@ enum FabricResponseType {
 
 }
 
+
 union AddressChannel {
   AudioChannel,
   MessagingChannel,

@@ -28,5 +28,6 @@ model SwmlScript {
 
   @doc("The displayed name of the SWML scipt")
   @example("Booking Assistant")
-  display_name: string
+  display_name: string;
+  
 }

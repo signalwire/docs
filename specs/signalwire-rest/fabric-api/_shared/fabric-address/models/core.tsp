@@ -40,7 +40,7 @@ model FabricAddress {
   locked: boolean;
 
   @doc("Channels of the Fabric Address.")
-  channel: AddressChannel;
+  channels: AddressChannel;
 
   @doc("Fabric Address Creation Date.")
   @example(UTC_TIME_EXAMPLE)
@@ -54,7 +54,7 @@ model FabricAddressApp {
 
   ...OmitProperties<FabricAddress, "type">,
 
-  @doc("Type of the Fabric Address which is an application.")
+  @doc("The display type of a fabric address pointing to an application.")
   @example(DisplayTypes.App)
   type: DisplayTypes.App;
 }
@@ -63,7 +63,7 @@ model FabricAddressApp {
 model FabricAddressRoom {
   ...OmitProperties<FabricAddress, "type">,
 
-  @doc("Type of the Fabric Address which is a conference room.")
+  @doc("The display type of a fabric address pointing to a Conference Room.")
   @example(DisplayTypes.Room)
   type: DisplayTypes.Room;
 }
@@ -73,7 +73,7 @@ model FabricAddressCall {
 
   ...OmitProperties<FabricAddress, "type">,
 
-  @doc("Type of the Fabric Address which is a call.")
+  @doc("The display type of a fabric address pointing to call.")
   @example(DisplayTypes.Call)
   type: DisplayTypes.Call;
 
@@ -84,7 +84,7 @@ model FabricAddressSubscriber {
 
   ...OmitProperties<FabricAddress, "type">,
 
-  @doc("Type of the Fabric Address which is a subscriber.")
+  @doc("The display type of a fabric address pointing to a Subscriber.")
   @example(DisplayTypes.Subscriber)
   type: DisplayTypes.Subscriber;
 }

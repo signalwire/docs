@@ -10,14 +10,14 @@ model CXMLScriptPathID {
   id: uuid
 }
 
-model CXMLScriptID {
+
+model CXMLScript {
+
   @doc("Unique ID of a cXML Script.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
-  id: uuid
-}
+  id: uuid;
 
-model CXMLScript {
   @doc("The cXML script contents")
   @example("<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response><Say>Hello World</Say></Response>")
   contents: string;
@@ -50,9 +50,4 @@ model CXMLScript {
   @example(UrlMethodType.Post)
   status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
 
-}
-
-model CXMLScriptWithID {
-  ...CXMLScriptID,
-  ...CXMLScript
 }

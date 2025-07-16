@@ -18,7 +18,7 @@ namespace FabricAPI.SwmlScripts {
     @summary("List SWML Scripts")
     @doc("A list of SWML Scripts")
     list():
-      SwmlScriptResponse[] |
+      SwmlScriptListResponse[] |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

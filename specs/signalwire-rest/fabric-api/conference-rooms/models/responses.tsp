@@ -2,6 +2,19 @@ import "./core.tsp";
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
 
+
+model ConferenceRoomListResponse {
+
+
+  @doc("Object containing pagination links")
+  links: ConferenceRoomAddressPaginationResponse;
+
+  @doc("An array of objects containing the Conference Room data")
+  data: ConferenceRoomResponse[];
+ 
+}
+
+
 model ConferenceRoomResponse {
   @doc("Unique ID of the Conference Room.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
@@ -30,6 +43,28 @@ model ConferenceRoomResponse {
   updated_at: utcDateTime;
 
   @doc("Conference Room data.")
-  conference_room: ConferenceRoomWithID;
+  conference_room: ConferenceRoom;
 }
 
+
+
+model ConferenceRoomPagainationResponse {
+
+
+  @doc("Link of the current page")
+  @example("https://example.signalwire.com/api/fabric/resources/conference_rooms?page_number=0&page_size=50&type=conference_room")
+  self: url;
+
+  @doc("Link to the first page")
+  @example("https://example.signalwire.com/api/fabric/resources/conference_rooms?page_size=50&type=conference_room")
+  first: url;
+
+  @doc("Link to the next page")
+  @example("https://example.signalwire.com/api/fabric/resources/conference_rooms?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=conference_room")
+  next?: url;
+
+  @doc("Link to the previous page")
+  @example("https://example.signalwire.com/api/fabric/resources/conference_rooms?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=conference_room")
+  prev?: url;
+
+}

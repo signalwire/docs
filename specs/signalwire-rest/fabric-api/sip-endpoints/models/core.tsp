@@ -1,7 +1,17 @@
 import "../../../types";
 import "../../../_globally_shared/enums.tsp";
+import "../enums.tsp";
 
 using TypeSpec.Http;
+
+const callHandlerDescription = """
+Specify how the SIP endpoint will handle outbound calls. 
+These options will control if the call is simply passed to the destination or controlled by a resource.
+- **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
+- **passthrough**: Passes the call to the destination with no additional logic.
+- **block-pstn**: Passes the call to the destination while blocking PSTN destination.
+- **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
+""";
 
 model SipEndpointPathID {
   @doc("Unique ID of a SIP Endpoint.")
@@ -11,112 +21,42 @@ model SipEndpointPathID {
   id: uuid
 }
 
-model SipEndpointID {
-  @doc("Unique ID of a SIP Endpoint.")
-  sip_endpoint_id: uuid
-}
-
 model SipEndpoint {
-  @doc("Username for the SIP endpoint")
-  @example("123456")
+
+  @doc("The id of the Sip Endpoint")
+  @example("993ed018-9e79-4e50-b97b-984bd5534095")
+  @format("uuid")
+  id: uuid;
+
+  @doc("The username of the Sip Endpoint")
+  @example("User")
   username: string;
-
-  @doc("Password for the SIP endpoint")
-  @example("123456")
-  password: string;
-
-  @doc("Caller ID")
-  @example("123456")
+  
+  @doc("The caller ID that will showup when dialing from this Sip Endpoint")
+  @example("123456789")
   caller_id: string;
 
-  @doc("Send as")
-  @example("random")
+  @doc("The Sip username that will show up on the calle's side. Overrides the username.")
+  @example("Support")
   send_as: string;
 
-  @doc("Ciphers")
-  @example(#[Ciphers.AEAD_AES_256_GCM_8])
+  @doc("Ciphers that can be enabled for calls on this Sip Endpoint.")
+  @example(#[Ciphers.AEAD_AES_256_GCM_8, Ciphers.AES_256_CM_HMAC_SHA1_32])
   ciphers: Ciphers[];
 
-  @doc("Codecs")
-  @example(#[Codecs.PCMU])
+  @doc("Codecs that can be enabled for calls on this Sip Endpoint.")
+  @example(#[Codecs.G722, Codecs.PCMA, Codecs.PCMU, Codecs.VP8])
   codecs: Codecs[];
 
-  @doc("Encryption")
-  @example(Encryption.Required)
-  encryption: Encryption;
+  @doc("The set encryption type on the Sip Endpoint.")
+  @example(Encryption.Default)
+  encryption: Encryption = Encryption.Default;
 
-  @doc("Call handler")
-  @example("laml_webhooks")
-  call_handler: string;
+  @doc(callHandlerDescription)
+  @example(CallHandlerType.Default)
+  call_handler: CallHandlerType;
 
-  @doc("Call request URL")
-  @format("uri")
-  @example("https://example.com/call_handler")
-  call_request_url: string;
-
-  @doc("Call request method")
-  @example(UrlMethodType.Post)
-  call_request_method: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Call fallback URL")
-  @format("uri")
-  @example("https://example.com/call_handler")
-  call_fallback_url?: string;
-
-  @doc("Call fallback method")
-  @example(UrlMethodType.Post)
-  call_fallback_method?: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Call status callback URL")
-  @format("uri")
-  @example("https://example.com/call_handler")
-  call_status_callback_url?: string;
-
-  @doc("Call status callback method")
-  @example(UrlMethodType.Post)
-  call_status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
-
-  @doc("Call LAML application ID")
-  @format("uuid")
+  @doc("If `call_handler` is set to `resource`, this field expects the id of the set resouce. Will be `null` otherwise.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_laml_application_id?: uuid;
-
-  @doc("Call AI agent ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_ai_agent_id?: uuid;
-
-  @doc("Call flow ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_flow_id?: uuid;
-
-  @doc("Call flow version")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_flow_version?: uuid;
-
-  @doc("Call dialogflow agent ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  call_dialogflow_agent_id?: uuid;
-
-  @doc("Call relay script URL")
-  @format("uri")
-  @example("https://example.com/relay_script")
-  call_relay_script_url?: string;
-
-  @doc("Call relay script method")
-  @example("POST")
-  call_relay_script_method?: "GET" | "POST";
-
-  @doc("Calling handler resource ID")
-  @format("uuid")
-  @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  calling_handler_resource_id?: uuid;
-}
-
-model SipEndpointWithID {
-  ...SipEndpointID,
-  ...SipEndpoint
+  calling_handler_resource_id: uuid | null;
 }

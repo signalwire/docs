@@ -10,14 +10,13 @@ model ConferenceRoomPathID {
   id: uuid
 }
 
-model ConferenceRoomID {
+model ConferenceRoom {
+
   @doc("Unique ID of a Conference Room.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
-  conference_room_id: uuid
-}
+  id: uuid;
 
-model ConferenceRoom {
   @doc("Display name of the Conference Room")
   @example("Reception")
   display_name: string;
@@ -42,9 +41,4 @@ model ConferenceRoomConfig {
   @doc("Whether to enable audio")
   @example(true)
   audio?: boolean;
-}
-
-model ConferenceRoomWithID {
-  ...ConferenceRoomID,
-  ...ConferenceRoom
 }

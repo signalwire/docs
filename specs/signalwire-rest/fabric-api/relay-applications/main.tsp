@@ -18,7 +18,7 @@ namespace FabricAPI.RelayApplications {
     @summary("List Relay Applications")
     @doc("A list of Relay Applications")
     list():
-      RelayApplicationResponse[] |
+      RelayApplicationListResponse |
       StatusCode401 |
       StatusCode404 |
       StatusCode500;

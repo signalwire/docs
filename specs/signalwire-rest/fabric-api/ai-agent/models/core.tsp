@@ -13,14 +13,15 @@ model AIAgentPathID {
   id: uuid
 }
 
-model AIAgentID {
+
+
+model AIAgent {
+
   @doc("Unique ID of an AI Agent.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
-  agent_id: uuid
-}
+  agent_id: uuid;
 
-model AIAgent {
   @doc("Name of the AI Agent.")
   @example("My AI Agent")
   name: string;
@@ -48,7 +49,3 @@ model AIAgent {
   SWAIG?: SWAIG;
 }
 
-model AIAgentWithID {
-  ...AIAgentID,
-  ...AIAgent
-}

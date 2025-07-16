@@ -30,9 +30,34 @@ model RelayApplicationResponse {
   updated_at: utcDateTime;
 
   @doc("Relay Application data.")
-  relay_application: RelayApplicationWithID;
+  relay_application: RelayApplication;
 }
 
 model RelayApplicationListResponse {
+
+  @doc("An array of objects that contain a list of Relay Application data")
   data: RelayApplicationResponse[];
+
+  @doc("Object containing pagination links")
+  links: RelayApplicationAddressPaginationResponse;
+}
+
+
+model RelayApplicationPaginationResponse {
+
+  @doc("Link of the current page")
+  @example("https://example.signalwire.com/api/fabric/resources/relay_applications?page_number=0&page_size=50&type=relay_application")
+  self: url;
+
+  @doc("Link of the first page")
+  @example("https://example.signalwire.com/api/fabric/resources/relay_applications?page_size=50&type=relay_application")
+  first: url;
+
+  @doc("Link to the next page")
+  @example("https://example.signalwire.com/api/fabric/resources?page_number=1&page_size=50&page_token=PAc28a38e4-0ae7-49ab-9bf6-f41f1572e6e4&type=relay_application")
+  next?: url;
+
+  @doc("Link to the previous page")
+  @example("https://example.signalwire.com/api/fabric/resources?page_number=0&page_size=50&page_token=PAc28a38e4-0ae7-49ab-9bf6-f41f1572e6e4&type=relay_application")
+  prev?: url
 }
