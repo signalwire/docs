@@ -11,7 +11,7 @@ model SwmlScriptCreateRequest {
   contents: string;
 
   @doc("URL to send status callbacks to")
-  @example("https://website.com/status")
+  @example("https://example.com/status")
   @format("uri")
   status_callback_url?: url;
 
