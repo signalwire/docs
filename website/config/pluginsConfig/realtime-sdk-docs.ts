@@ -9,7 +9,7 @@ export const realtimeSdkPlugin: PluginConfig = [
     path: "docs/realtime-sdk",
     routeBasePath: "sdks/realtime-sdk",
     sidebarPath: require.resolve("../sidebarsConfig/realtime-sdk/index.ts"),
-    editUrl: "https://github.com/signalwire/docs/edit/main/",
+    editUrl: "https://github.com/signalwire/docs/edit/main/website",
     editCurrentVersion: true,
     breadcrumbs: true,
     docItemComponent: "@theme/ApiItem",
