@@ -6,17 +6,17 @@ import "./swaig";
 
 @summary("AI object")
 model AI {
-
   @doc("Create a new AI agent.")
   @summary("ai")
   ai: {
-
     @doc("""
-        A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script
-        or from the SWML `set_global_data` action. This data can be referenced `globally`.
-        All contained information can be accessed and expanded within the prompt - for example, by using a template string.
-        """)
-    global_data?: {...TypeSpec.Record<unknown>};
+      A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script
+      or from the SWML `set_global_data` action. This data can be referenced `globally`.
+      All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+      """)
+    global_data?: {
+      ...TypeSpec.Record<unknown>;
+    };
 
     @doc("An array of hints (as strings) to provide context to the dialogue.")
     @example(#["pizza", "pepperoni"])
@@ -44,4 +44,4 @@ model AI {
     @doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
     SWAIG?: SWAIG;
   };
-};
+}

@@ -11,5 +11,5 @@ model Output {
 
     @doc("A list of actions to be performed upon matching.")
     action?: Action[];
-  }
+  };
 }

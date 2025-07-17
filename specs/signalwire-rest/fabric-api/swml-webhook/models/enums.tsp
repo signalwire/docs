@@ -1,1 +1,1 @@
-import "./../../enums.tsp";
+import "../../_shared/enums.tsp";

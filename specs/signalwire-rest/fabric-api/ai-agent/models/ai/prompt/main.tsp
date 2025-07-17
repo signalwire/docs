@@ -17,9 +17,9 @@ model AIPromptBase {
   top_p?: float;
 
   @doc("""
-      Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0.
-      Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
-      """)
+    Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0.
+    Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
+    """)
   @minValue(0.0)
   @maxValue(1.0)
   confidence?: float;
@@ -38,12 +38,12 @@ model AIPromptBase {
 @summary("prompt")
 model AIPrompt is AIPromptBase {
   @doc("""
-  An object that defines the context steps for the AI. The context steps are used to define the flow of the conversation.
-  Every context object requires a `default` key, which is the default context to use at the beginning of the conversation.
-  Additionally, more context steps can be defined as any other key in the object.
-  """)
+    An object that defines the context steps for the AI. The context steps are used to define the flow of the conversation.
+    Every context object requires a `default` key, which is the default context to use at the beginning of the conversation.
+    Additionally, more context steps can be defined as any other key in the object.
+    """)
   contexts?: Contexts;
 }
 
 @summary("post_prompt")
-model AIPostPrompt is AIPromptBase {}
+model AIPostPrompt is AIPromptBase;

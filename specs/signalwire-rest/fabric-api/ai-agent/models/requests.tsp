@@ -1,7 +1,7 @@
 model AIAgentCreateRequest {
-  ...AIAgent
+  ...AIAgent;
 }
 
 model AIAgentUpdateRequest {
-  ...AIAgent
+  ...AIAgent;
 }

@@ -9,5 +9,7 @@ model SWAIGIncludes {
   url: string;
 
   @doc("")
-  meta_data?: {...TypeSpec.Record<unknown>};
+  meta_data?: {
+    ...TypeSpec.Record<unknown>;
+  };
 }

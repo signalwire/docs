@@ -7,16 +7,18 @@ using TypeSpec.Http;
 
 model AIAgentPathID {
   @doc("Unique ID of an AI Agent.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
   @path
-  id: uuid
-}
-
-model AIAgentID {
-  @doc("Unique ID of an AI Agent.")
-  agent_id: uuid
+  id: uuid;
 }
 
 model AIAgent {
+  @doc("Unique ID of an AI Agent.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
+  agent_id: uuid;
+
   @doc("Name of the AI Agent.")
   @example("My AI Agent")
   name: string;
@@ -42,9 +44,4 @@ model AIAgent {
 
   @doc("A JSON object to create user-defined functions/endpoints that can be executed during the dialogue.")
   SWAIG?: SWAIG;
-}
-
-model AIAgentWithID {
-  ...AIAgentID,
-  ...AIAgent
 }

@@ -19,20 +19,22 @@ model SWAIGFunction {
   active?: boolean;
 
   @doc("""
-      A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
-      This data can be referenced locally to the function.
-      All contained information can be accessed and expanded within the prompt - for example, by using a template string.
-      Default is not set.
-      """)
-  meta_data?: {...TypeSpec.Record<unknown>};
+    A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
+    This data can be referenced locally to the function.
+    All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+    Default is not set.
+    """)
+  meta_data?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
   @doc("Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.")
   meta_data_token?: string;
 
   @doc("""
-      An object containing properties to process or validate the input,
-      perform actions based on the input, or connect to external APIs or services in a serverless fashion.
-      """)
+    An object containing properties to process or validate the input,
+    perform actions based on the input, or connect to external APIs or services in a serverless fashion.
+    """)
   data_map?: DataMap;
 
   @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
