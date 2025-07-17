@@ -14,14 +14,14 @@ model CxmlApplicationPathID {
 
 model CxmlApplication {
 
-  @doc("Unique SID of the cXML Application.")
+  @doc("Unique ID of the cXML Application.")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
   @format("uuid")
-  sid: uuid;
+  id: uuid;
 
-  @doc("Account SID for the cXML Application")
+  @doc("Project ID for the cXML Application")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
-  account_sid: uuid;
+  project_id: uuid;
 
 
   @doc("Display name of the cXML Application")
