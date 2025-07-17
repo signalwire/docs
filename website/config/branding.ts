@@ -7,9 +7,8 @@
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration#navbar
  */
 
-import type { Navbar } from '@docusaurus/theme-common';
-import navbarItems from './navbar';
-
+import type { Navbar } from "@docusaurus/theme-common";
+import navbarItems from "./navbar";
 
 interface BrandingConfig {
   title: string;
@@ -25,7 +24,8 @@ const branding: BrandingConfig = {
   baseUrl: "/", // Set to the base URL of the site.
   favicon: "img/favicon.svg", // set in the 'static/img' folder
 
-  navbar: { // Read more about the navbar options at: https://docusaurus.io/docs/api/themes/configuration#navbar
+  navbar: {
+    // Read more about the navbar options at: https://docusaurus.io/docs/api/themes/configuration#navbar
     logo: {
       srcDark: "img/logo-dark.svg",
       alt: "SignalWire", // Set to the alt text of the logo.
@@ -35,7 +35,7 @@ const branding: BrandingConfig = {
     },
     hideOnScroll: false,
     items: navbarItems, // All navbar options can be modified at the /config/navbar.js file.
-  }
+  },
 };
 
-export default branding; 
+export default branding;
