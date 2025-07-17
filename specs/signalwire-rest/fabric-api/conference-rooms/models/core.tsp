@@ -22,15 +22,30 @@ model ConferenceRoom {
   @example("coffee_cafe")
   name: string;
 
+  @doc("The descrption of the Conference Room")
+  @example("This room is for coffee, no shop talk")
+  @maxLength(3000)
+  description: string;
+
   @doc("Display name of the Conference Room")
   @example("Reception")
   @maxLength(200)
   display_name: string;
 
-  @doc("The descrption of the Conference Room")
-  @example("This room is for coffee, no shop talk")
-  @maxLength(3000)
-  description: string;
+  @doc("Maximum number of members allowed in the conference room")
+  @example(30)
+  @minValue(0)
+  @maxValue(300)
+  max_members: int32;
+
+
+  @doc("The viudeo quality of the Conference Room.")
+  @example("1080p")
+  quality: "1080p" | "720p" = "720p";
+
+  @doc("The frames-per-second (fps) of the participants videos in the conference.")
+  @example(30)
+  fps: 30 | 20;
 
   @doc("The time users are allowed to start joining the conference. Joining before this time will result in failure to join the conference.")
   @example(UTC_TIME_EXAMPLE)
@@ -40,16 +55,6 @@ model ConferenceRoom {
   @example(UTC_TIME_EXAMPLE)
   join_until: utcDateTime | null;
 
-
-  @doc("Maximum number of members allowed in the conference room")
-  @example(30)
-  @minValue(0)
-  @maxValue(300)
-  max_members: int32;
-
-  @doc("The viudeo quality of the Conference Room.")
-  @example("1080p")
-  quality: "1080p" | "720p" = "720p";
 
   @doc("The time to remove all participants from the conference.")
   @example(UTC_TIME_EXAMPLE)
@@ -68,18 +73,6 @@ model ConferenceRoom {
   @example(true)
   record_on_start: boolean;
 
-  @doc("Enables live video room previews for the conference.")
-  @example(true)
-  enable_room_previews: boolean;
-
-  @doc("Metadata of the conference.")
-  @example(#{foo: "bar"})
-  meta: {...Record<unknown>};
-
-  @doc("Syncs the participants audio and video.")
-  @example(true)
-  sync_audio_video: boolean | null;
-
   @doc("Plays a tone when a participant joins or leaves the conference.")
   @example(true)
   tone_on_entry_and_exit: boolean;
@@ -91,6 +84,19 @@ model ConferenceRoom {
   @doc("Turns the participants video off when the participant joins the room if `true`.")
   @example(true)
   user_join_video_off: boolean;
+
+  @doc("Enables live video room previews for the conference.")
+  @example(true)
+  enable_room_previews: boolean;
+
+  @doc("Syncs the participants audio and video.")
+  @example(true)
+  sync_audio_video: boolean | null;
+
+  @doc("Metadata of the conference.")
+  @example(#{foo: "bar"})
+  meta: {...Record<unknown>};
+
 
   @doc("Indicator if the Conference Room will prioritize showing participants utilizing the hand raised feature.")
   @example(false)
