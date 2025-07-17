@@ -1,5 +1,6 @@
 import "../../../types";
 import "../../_shared/const.tsp";
+import "../../_shared/enums.tsp";
 
 using TypeSpec.Http;
 
@@ -36,7 +37,7 @@ model SwmlScript {
   status_callback_url?: url;
 
   @doc("HTTP method to use for status callbacks")
-  @example("POST")
-  status_callback_method?: "POST";
+  @example(UrlMethodType.Post)
+  status_callback_method?: UrlMethodType.Post;
   
 }
