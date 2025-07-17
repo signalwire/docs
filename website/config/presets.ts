@@ -16,7 +16,7 @@ const presets: PresetConfig[] = [
     "classic",
     {
       docs: {
-        editUrl: "https://github.com/signalwire/docs/edit/main/",
+        editUrl: "https://github.com/signalwire/docs/edit/main/website",
         path: "docs/main",
         routeBasePath: "/",
         sidebarPath: require.resolve("./sidebarsConfig/main/index.ts"),
