@@ -13,7 +13,7 @@ model CxmlApplicationResponse {
   @format("uuid")
   project_id: uuid;
 
-  @doc("Display name of the LAML Application Fabric Resource")
+  @doc("Display name of the cXML Application Fabric Resource")
   @example("Reception App")
   display_name: string;
 
