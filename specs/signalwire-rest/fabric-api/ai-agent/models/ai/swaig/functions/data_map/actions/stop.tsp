@@ -2,5 +2,5 @@
 model StopAction {
   @summary("stop")
   @doc("Whether to stop the conversation.")
-  stop: boolean,
+  stop: boolean;
 }

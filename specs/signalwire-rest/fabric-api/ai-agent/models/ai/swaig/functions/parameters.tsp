@@ -3,16 +3,16 @@ import "../../../../../../types";
 using TypeSpec.OpenAPI;
 
 enum StringFormat {
-  "date_time",
-  "time",
-  "date",
-  "duration",
-  "email",
-  "hostname",
-  "ipv4",
-  "ipv6",
-  "uri",
-  "uuid"
+  date_time,
+  time,
+  date,
+  duration,
+  email,
+  hostname,
+  ipv4,
+  ipv6,
+  uri,
+  uuid,
 }
 
 model FunctionParameters {
@@ -20,19 +20,20 @@ model FunctionParameters {
   type: "object";
 
   @doc("""
-      An object containing the property definitions that are passed to the function.
-
-      A property definition is a valid JSON schema type with dynamic property names, where:
-      - Keys: User-defined strings, that set the property names.
-      - Values: A valid property type, which can be one of the following: `string`, `integer`, `number`, `boolean`, `array`, `object`, or `null`.
-      """)
-  properties: {...TypeSpec.Record<SchemaType>};
+    An object containing the property definitions that are passed to the function.
+    
+    A property definition is a valid JSON schema type with dynamic property names, where:
+    - Keys: User-defined strings, that set the property names.
+    - Values: A valid property type, which can be one of the following: `string`, `integer`, `number`, `boolean`, `array`, `object`, or `null`.
+    """)
+  properties: {
+    ...TypeSpec.Record<SchemaType>;
+  };
 
   @doc("An array of required property names from the `properties` object.")
   @example(#["name1", "name2"])
   required?: string[];
 }
-
 
 @summary("Function Parameters Type Union")
 @oneOf
@@ -47,9 +48,8 @@ union SchemaType {
   OneOfProperty,
   AllOfProperty,
   AnyOfProperty,
-  ConstProperty
+  ConstProperty,
 }
-
 
 @doc("Base interface for all property types")
 model FunctionBaseProperty {
@@ -143,7 +143,6 @@ model AnyOfProperty {
   anyOf: SchemaType[];
 }
 
-
 @summary("Array Function Property")
 model ArrayProperty is FunctionBaseProperty {
   @doc("The type of parameter(s) the AI is passing to the function.")
@@ -162,10 +161,14 @@ model ObjectProperty is FunctionBaseProperty {
   type: "object";
 
   @doc("The default object value")
-  default?: {...TypeSpec.Record<unknown>};
+  default?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
   @doc("Nested properties")
-  properties?: {...TypeSpec.Record<SchemaType>};
+  properties?: {
+    ...TypeSpec.Record<SchemaType>;
+  };
 
   @doc("Required property names")
   @example(#["name1", "name2"])

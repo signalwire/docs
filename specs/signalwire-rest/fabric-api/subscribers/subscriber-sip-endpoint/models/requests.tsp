@@ -1,4 +1,5 @@
 import "@typespec/openapi3";
+import "../../../../_globally_shared/enums.tsp";
 
 using TypeSpec.OpenAPI;
 
@@ -20,12 +21,12 @@ model SubscriberSipEndpointRequest {
   send_as?: string;
 
   @doc("Ciphers of the Sip Endpoint.")
-  ciphers?: CipherTypeArray;
+  ciphers?: Ciphers[];
 
   @doc("Codecs of the Sip Endpoint.")
-  codecs?: CodecTypeArray;
+  codecs?: Codecs[];
 
   @doc("Encryption requirement of the Sip Endpoint.")
-  @example(EncryptionType.Optional)
-  encryption?: EncryptionType = EncryptionType.Default;
+  @example(Encryption.Optional)
+  encryption?: Encryption = Encryption.Default;
 }

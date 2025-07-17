@@ -1,5 +1,3 @@
-
-
 @summary("PlaybackBGAction object")
 model PlaybackBGAction {
   @doc("A JSON object containing the audio file to play.")
@@ -11,5 +9,5 @@ model PlaybackBGAction {
 
     @doc("Whether to wait for the audio file to finish playing before continuing. Default is `false`.")
     wait?: boolean;
-  },
+  };
 }

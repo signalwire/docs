@@ -9,11 +9,11 @@ using TypeSpec.OpenAPI;
 @summary("DataMap union")
 union DataMap {
   @doc("An object that defines the output of the SWAIG function.")
-  Output;
+  Output,
 
   @doc("An array of objects that define patterns and corresponding actions.")
-  Expression;
+  Expression,
 
   @doc("An array of objects that define external API calls.")
-  Webhook;
+  Webhook,
 }

@@ -46,13 +46,10 @@ model DocumentCreateRequestBase {
   @doc("Document tags.")
   @example(#["sports", "football", "game"])
   tags?: string[];
-
 }
-
 
 @summary("Sentence strategy")
 model DocumentCreateSentenceRequest extends DocumentCreateRequestBase {
-  
   @doc("Maximum number of sentences per chunk.")
   @example(40)
   max_sentences_per_chunk?: integer = 50;
@@ -86,7 +83,6 @@ model DocumentCreateSlidingRequest extends DocumentCreateRequestBase {
   overlap_size?: integer = 10;
 }
 
-
 @summary("Page strategy")
 model DocumentCreatePageRequest extends DocumentCreateRequestBase {
   @doc("Strategy for chunking the document")
@@ -96,20 +92,18 @@ model DocumentCreatePageRequest extends DocumentCreateRequestBase {
 
 @summary("Paragraph strategy")
 model DocumentCreateParagraphRequest extends DocumentCreateRequestBase {
-
   @doc("Strategy for chunking the document")
   @example(ChunkingStrategy.Paragraph)
   chunking_strategy?: ChunkingStrategy.Paragraph;
-} 
+}
 
 @oneOf
 union DocumentCreateRequest {
   DocumentCreateSentenceRequest,
   DocumentCreateSlidingRequest,
   DocumentCreatePageRequest,
-  DocumentCreateParagraphRequest
+  DocumentCreateParagraphRequest,
 }
-
 
 model DocumentUpdateRequest {
   @doc("Document tags.")

@@ -1,5 +1,4 @@
 @doc("Core conference object.")
-
 model Conference {
   @doc("Unique identifier for the conference.")
   @example("b9028451-b1d3-4690-b5d3-37b19d25f573")
@@ -49,7 +48,6 @@ model CxmlConference is BaseConference {
 
 @summary("Relay Conference")
 model RelayConference is BaseConference {
-
   @doc("Type of the conference.")
   @example("relay_conference")
   type: "relay_conference";

@@ -31,16 +31,18 @@ model Webhook {
       max?: integer;
 
       @doc("""
-          The values to append to the output_key.
-          Properties from the object can be referenced and added to the output_key by using the following syntax:
-          \${this.property_name}.
-          The `this` keyword is used to reference the current object in the array.
-          """)
+        The values to append to the output_key.
+        Properties from the object can be referenced and added to the output_key by using the following syntax:
+        \${this.property_name}.
+        The `this` keyword is used to reference the current object in the array.
+        """)
       append: string;
     };
 
     @doc("Any necessary headers for the API call.")
-    headers?: {...TypeSpec.Record<unknown>};
+    headers?: {
+      ...TypeSpec.Record<unknown>;
+    };
 
     @doc("The HTTP method (GET, POST, etc.) for the API call.")
     method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -49,11 +51,13 @@ model Webhook {
     input_args_as_params?: boolean;
 
     @doc("An object of any necessary parameters for the API call. The key is the parameter name and the value is the parameter value.")
-    params?: {...TypeSpec.Record<unknown>};
+    params?: {
+      ...TypeSpec.Record<unknown>;
+    };
 
     @doc("A string or array of strings that represent the `arguments` that are required to make the webhook request.")
     require_args?: string | string[];
 
     ...Output;
-  }[]
+  }[];
 }

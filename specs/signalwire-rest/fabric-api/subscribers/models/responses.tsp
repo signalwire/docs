@@ -1,4 +1,7 @@
 import "./core.tsp";
+import "../../_shared/fabric-address";
+import "../../_shared/const.tsp";
+import "../../_shared/enums.tsp";
 
 model SubscriberResponse {
   @doc("Unique ID of the request.")
@@ -14,14 +17,15 @@ model SubscriberResponse {
   display_name: string;
 
   @doc("Type of the resource.")
-  type: "subscriber";
+  @example(FabricResponseType.Subscriber)
+  type: FabricResponseType.Subscriber;
 
   @doc("Date and time when the resource was created.")
-  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
   @doc("Date and time when the resource was updated.")
-  @example(utcDateTime.fromISO("2024-10-17T14:14:53Z"))
+  @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
 
   @doc("Subscriber data.")
@@ -29,20 +33,27 @@ model SubscriberResponse {
 }
 
 model SubscriberListResponse {
+  @doc("An array of objects that contain a list of Subscriber data")
   data: SubscriberResponse[];
+
+  @doc("Object containing pagination links")
   links: SubscriberPaginationResponse;
 }
 
 model SubscriberPaginationResponse {
   @doc("Link of the current page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50")
+  @example("https://example.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50")
   self: url;
 
   @doc("Link to the first page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50")
+  @example("https://example.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50")
   first: url;
 
   @doc("Link to the next page")
-  @example("https://{space_name}.signalwire.com/api/fabric/resources/subscribers?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
-  next: url;
+  @example("https://example.signalwire.com/api/fabric/resources/subscribers?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  next?: url;
+
+  @doc("Link to the previous page")
+  @example("https://example.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  prev?: url;
 }
