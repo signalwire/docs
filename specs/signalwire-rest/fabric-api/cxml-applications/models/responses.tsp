@@ -3,7 +3,7 @@ import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
 
 model CxmlApplicationResponse {
-  @doc("Unique ID of the LAML Application.")
+  @doc("Unique ID of the cXML Application.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
   @format("uuid")
   id: uuid;
