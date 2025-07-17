@@ -9,7 +9,7 @@ export const browserSdkPlugin: PluginConfig = [
     path: "docs/browser-sdk",
     routeBasePath: "sdks/browser-sdk",
     sidebarPath: require.resolve("../sidebarsConfig/browser-sdk/index.ts"),
-    editUrl: "https://github.com/signalwire/docs/edit/main/",
+    editUrl: "https://github.com/signalwire/docs/edit/main/website",
     editCurrentVersion: true,
     docItemComponent: "@theme/ApiItem",
     sidebarItemsGenerator: sidebarGenerator,

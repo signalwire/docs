@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/conference_rooms")
 namespace FabricAPI.ConferenceRooms {
-  @tag("Conference Rooms")
+  @tag(CONFERENCE_ROOM_TAG)
   @friendlyName("Conference Rooms")
   interface ConferenceRooms {
     @summary("List Conference Rooms")

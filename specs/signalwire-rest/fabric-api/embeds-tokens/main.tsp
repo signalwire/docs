@@ -3,6 +3,7 @@ import "@typespec/http";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -12,7 +13,7 @@ using Types.StatusCodes;
 @route("/embeds/tokens")
 @server("https://embeds.signalwire.com/api/fabric", "Embeds Endpoint")
 namespace FabricAPI.EmbedsTokens {
-    @tag("Embeds Tokens")
+    @tag(EMBEDS_TOKENS_TAG)
     @friendlyName("Embeds Tokens")
     interface EmbedsTokens {
         @summary("Create Embeds Tokens")

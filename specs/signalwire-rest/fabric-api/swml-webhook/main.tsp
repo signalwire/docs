@@ -6,13 +6,17 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
+
+const TEST = "SWML_WEBHOOK";
+
 @route("/resources/swml_webhooks")
 namespace FabricAPI.SWMLWebhooks {
-  @tag("SWML Webhook")
+  @tag(SWML_WEBHOOK_TAG)
   @friendlyName("SWML Webhooks")
   interface SWMLWebhooks {
     @summary("List SWML Webhooks")

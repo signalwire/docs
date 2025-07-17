@@ -3,13 +3,14 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../types";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/subscribers/tokens/refresh")
 namespace FabricAPI.SubscriberRefreshTokens {
-  @tag("Subscribers: Tokens")
+  @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Refresh Token")
   interface RefreshTokens {
 

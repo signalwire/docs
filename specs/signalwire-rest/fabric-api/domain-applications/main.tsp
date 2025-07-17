@@ -5,13 +5,14 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/{id}/domain_applications")
 namespace FabricAPI.DomainApplications {
-  @tag("Domain Applications")
+  @tag(DOMAIN_APPLICATIONS_TAG)
   interface DomainApplications {
     @summary("Assign a resource as a call handler for a Domain Application.")
     @doc("""

@@ -5,13 +5,14 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../types";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/{id}/sip_endpoints")
 namespace FabricAPI.SipEndpoints.Resource {
-  @tag("SIP Endpoints")
+  @tag(SIP_ENDPOINTS_TAG)
   interface ResourceSipEndpoints {
     @summary("Assign a Resource to a SIP endpoint")
     @doc("""

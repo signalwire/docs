@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/cxml_webhooks")
 namespace FabricAPI.CXMLWebhooks {
-  @tag("cXML Webhook")
+  @tag(CXML_WEBHOOK_TAG)
   @friendlyName("cXML Webhooks")
   interface CXMLWebhooks {
     @summary("List cXML Webhooks")

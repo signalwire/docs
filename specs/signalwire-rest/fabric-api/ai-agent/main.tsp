@@ -6,13 +6,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/ai_agents")
 namespace FabricAPI.AIAgents {
-  @tag("AI Agents: Custom")
+  @tag(AI_CUSTOM_TAG)
   @friendlyName("AI Agent: Custom")
   interface AIAgents {
     @summary("List AI Agents")

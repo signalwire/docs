@@ -5,13 +5,14 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/{id}/phone_routes")
 namespace FabricAPI.PhoneRoutes {
-  @tag("Phone Routes")
+  @tag(PHONE_ROUTES_TAG)
   @friendlyName("Phone Routes")
   interface PhoneRoutes {
     @summary("Assign a Resource to a Phone Route")

@@ -7,13 +7,14 @@ import "./models/errors.tsp";
 import "./addresses";
 import "./versions";
 import "../../types";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/call_flows")
 namespace FabricAPI.CallFlows {
-  @tag("Call Flows")
+  @tag(CALL_FLOWS_TAG)
   @friendlyName("Call Flows")
   interface CallFlows {
     @summary("List Call Flows")

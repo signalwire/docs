@@ -3,13 +3,14 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../../types";
+import "../../tags.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/resources/swml_webhooks/{swml_webhook_id}/addresses")
 namespace FabricAPI.SWMLWebhookAddresses {
-  @tag("SWML Webhook")
+  @tag(SWML_WEBHOOK_TAG)
   @friendlyName("SWML Webhooks")
   interface SWMLWebhookAddresses {
     @summary("List SWML Webhook Addresses")
