@@ -2,13 +2,13 @@ import "./core.tsp";
 import "../../_shared/enums.tsp";
 
 model CxmlApplicationCreateRequest {
-  @doc("Display name of the LAML Application")
+  @doc("Display name of the cXML Application")
   @example("Reception App")
   display_name: string;
 
-  @doc("Account SID for the LAML Application")
+  @doc("Project ID for the cXML Application")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
-  account_sid?: uuid;
+  project_id?: uuid;
 
   @doc("URL to handle incoming calls")
   @example("https://example.com/voice/incoming")
@@ -60,11 +60,11 @@ model CxmlApplicationCreateRequest {
 }
 
 model CxmlApplicationUpdateRequest {
-  @doc("Display name of the LAML Application")
+  @doc("Display name of the cXML Application")
   @example("Reception App")
   display_name?: string;
 
-  @doc("Account SID for the LAML Application")
+  @doc("Project ID for the cXML Application")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
   @format("uuid")
   account_sid?: uuid;

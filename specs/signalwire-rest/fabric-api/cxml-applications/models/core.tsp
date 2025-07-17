@@ -4,7 +4,7 @@ import "../../_shared/enums.tsp";
 using TypeSpec.Http;
 
 model CxmlApplicationPathID {
-  @doc("Unique ID of a LAML Application.")
+  @doc("Unique ID of a cXML Application.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
@@ -12,14 +12,16 @@ model CxmlApplicationPathID {
 }
 
 model CxmlApplication {
-  @doc("Unique SID of the cXML Application.")
+
+  @doc("Unique ID of the cXML Application.")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
   @format("uuid")
-  sid: uuid;
+  id: uuid;
 
-  @doc("Account SID for the cXML Application")
+  @doc("Project ID for the cXML Application")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
-  account_sid: uuid;
+  project_id: uuid;
+
 
   @doc("Display name of the cXML Application")
   @example("Reception App")
