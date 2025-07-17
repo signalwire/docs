@@ -2,7 +2,7 @@ import "./core.tsp";
 import "../../_shared/enums.tsp";
 
 model CxmlApplicationCreateRequest {
-  @doc("Display name of the LAML Application")
+  @doc("Display name of the cXML Application")
   @example("Reception App")
   display_name: string;
 
