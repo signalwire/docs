@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "token_expired",
       message: "Token has expired.",
       attribute: "refresh_token",
-      url: "https://developer.signalwire.com/rest/overview/error-codes#token_expired"
+      url: "https://developer.signalwire.com/rest/overview/error-codes#token_expired",
     }
   ],
 })

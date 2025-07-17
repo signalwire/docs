@@ -13,5 +13,5 @@ model Expression {
     pattern: string;
 
     ...Output;
-  }[]
+  }[];
 }

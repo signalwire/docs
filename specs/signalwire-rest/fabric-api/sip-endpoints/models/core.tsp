@@ -5,24 +5,23 @@ import "../enums.tsp";
 using TypeSpec.Http;
 
 const callHandlerDescription = """
-Specify how the SIP endpoint will handle outbound calls. 
-These options will control if the call is simply passed to the destination or controlled by a resource.
-- **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
-- **passthrough**: Passes the call to the destination with no additional logic.
-- **block-pstn**: Passes the call to the destination while blocking PSTN destination.
-- **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
-""";
+  Specify how the SIP endpoint will handle outbound calls. 
+  These options will control if the call is simply passed to the destination or controlled by a resource.
+  - **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
+  - **passthrough**: Passes the call to the destination with no additional logic.
+  - **block-pstn**: Passes the call to the destination while blocking PSTN destination.
+  - **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
+  """;
 
 model SipEndpointPathID {
   @doc("Unique ID of a SIP Endpoint.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  id: uuid
+  id: uuid;
 }
 
 model SipEndpoint {
-
   @doc("The id of the Sip Endpoint")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
   @format("uuid")
@@ -31,7 +30,7 @@ model SipEndpoint {
   @doc("The username of the Sip Endpoint")
   @example("User")
   username: string;
-  
+
   @doc("The caller ID that will showup when dialing from this Sip Endpoint")
   @example("123456789")
   caller_id: string;

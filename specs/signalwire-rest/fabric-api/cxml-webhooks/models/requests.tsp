@@ -49,7 +49,7 @@ model CXMLWebhookUpdateRequest {
 
   @doc("Primary request method of the CXML Webhook.")
   @example(UrlMethodType.Get)
-  primary_request_method?: UrlMethodType.Get | UrlMethodType.Post  = UrlMethodType.Post;
+  primary_request_method?: UrlMethodType.Get | UrlMethodType.Post = UrlMethodType.Post;
 
   @doc("Fallback request url of the CXML Webhook.")
   @example("https://fallback.com")
@@ -57,7 +57,7 @@ model CXMLWebhookUpdateRequest {
 
   @doc("Fallback request method of the CXML Webhook.")
   @example(UrlMethodType.Get)
-  fallback_request_method?: UrlMethodType.Get | UrlMethodType.Post  = UrlMethodType.Post;
+  fallback_request_method?: UrlMethodType.Get | UrlMethodType.Post = UrlMethodType.Post;
 
   @doc("Status callback url of the CXML Webhook.")
   @example("https://callback.com")
@@ -65,5 +65,5 @@ model CXMLWebhookUpdateRequest {
 
   @doc("Status callback method of the CXML Webhook.")
   @example(UrlMethodType.Post)
-  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post  = UrlMethodType.Post;
+  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post = UrlMethodType.Post;
 }

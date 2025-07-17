@@ -57,12 +57,10 @@ enum FabricResponseType {
   Subscriber: "subscriber",
   SwmlScript: "swml_script",
   ConferenceRoom: "video_room",
-
 }
-
 
 union AddressChannel {
   AudioChannel,
   MessagingChannel,
-  VideoChannel
+  VideoChannel,
 }

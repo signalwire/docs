@@ -2,7 +2,6 @@ import "../../../_shared/fabric-address";
 import "../../../_shared/enums.tsp";
 import "../../../../types";
 
-
 model RelayApplicationAddressListResponse {
   @doc("An array of objects that contain a list of Relay Application Addresses")
   data: FabricAddressApp[];
@@ -12,7 +11,6 @@ model RelayApplicationAddressListResponse {
 }
 
 model RelayApplicationAddressPaginationResponse {
-
   @doc("Self link for the current page")
   @example("https://example.signalwire.com/api/fabric/resources/relay_applications/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&type=relay_application")
   self: string;

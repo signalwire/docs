@@ -15,9 +15,9 @@ namespace FabricAPI.CXMLScript.Addresses {
     @summary("List cXML Script Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific cXML Script.")
     list(...CXMLScriptAddressPathID):
-      CXMLScriptAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | CXMLScriptAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

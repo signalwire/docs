@@ -2,18 +2,13 @@ import "./core.tsp";
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
 
-
 model ConferenceRoomListResponse {
-
-
   @doc("Object containing pagination links")
   links: ConferenceRoomAddressPaginationResponse;
 
   @doc("An array of objects containing the Conference Room data")
   data: ConferenceRoomResponse[];
- 
 }
-
 
 model ConferenceRoomResponse {
   @doc("Unique ID of the Conference Room.")
@@ -46,11 +41,7 @@ model ConferenceRoomResponse {
   conference_room: ConferenceRoom;
 }
 
-
-
 model ConferenceRoomPagainationResponse {
-
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/conference_rooms?page_number=0&page_size=50&type=conference_room")
   self: url;
@@ -66,5 +57,4 @@ model ConferenceRoomPagainationResponse {
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/resources/conference_rooms?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=conference_room")
   prev?: url;
-
 }

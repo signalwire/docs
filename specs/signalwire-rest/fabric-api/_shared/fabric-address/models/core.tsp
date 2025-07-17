@@ -10,7 +10,7 @@ model FabricAddressID {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  id: uuid
+  id: uuid;
 }
 
 model FabricAddress {
@@ -51,8 +51,7 @@ model FabricAddress {
 
 @summary("Application Address")
 model FabricAddressApp {
-
-  ...OmitProperties<FabricAddress, "type">,
+  ...OmitProperties<FabricAddress, "type">;
 
   @doc("The display type of a fabric address pointing to an application.")
   @example(DisplayTypes.App)
@@ -61,7 +60,7 @@ model FabricAddressApp {
 
 @summary("Room Address")
 model FabricAddressRoom {
-  ...OmitProperties<FabricAddress, "type">,
+  ...OmitProperties<FabricAddress, "type">;
 
   @doc("The display type of a fabric address pointing to a Conference Room.")
   @example(DisplayTypes.Room)
@@ -70,19 +69,16 @@ model FabricAddressRoom {
 
 @summary("Call Address")
 model FabricAddressCall {
-
-  ...OmitProperties<FabricAddress, "type">,
+  ...OmitProperties<FabricAddress, "type">;
 
   @doc("The display type of a fabric address pointing to call.")
   @example(DisplayTypes.Call)
   type: DisplayTypes.Call;
-
 }
 
 @summary("Subscriber Address")
 model FabricAddressSubscriber {
-
-  ...OmitProperties<FabricAddress, "type">,
+  ...OmitProperties<FabricAddress, "type">;
 
   @doc("The display type of a fabric address pointing to a Subscriber.")
   @example(DisplayTypes.Subscriber)

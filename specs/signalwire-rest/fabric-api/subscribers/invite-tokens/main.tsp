@@ -13,14 +13,17 @@ namespace FabricAPI.SubscriberInviteTokens {
   @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Invite Token")
   interface InviteTokens {
-
     @summary("Create a Subscriber Invite Token")
     @doc("Creates a Subscriber Invite Token to be used for client-side API calls. The token is authorized using a subscriber's SAT (Subscriber Access Token)")
-    @post create(...SubscriberInviteTokenCreateRequest):
-      { @statusCode statusCode: 201; @body subscriber_invite_token: SubscriberInviteTokenCreateResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      InviteTokenCreateStatusCode422 |
-      StatusCode500;
+    @post
+    create(...SubscriberInviteTokenCreateRequest):
+      | {
+          @statusCode statusCode: 201;
+          @body subscriber_invite_token: SubscriberInviteTokenCreateResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | InviteTokenCreateStatusCode422
+      | StatusCode500;
   }
 }

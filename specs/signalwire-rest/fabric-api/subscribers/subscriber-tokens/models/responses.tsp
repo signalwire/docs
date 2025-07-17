@@ -1,3 +1,3 @@
 import "./core.tsp";
 
-model SubscriberTokenResponse is SubscriberToken {};
+model SubscriberTokenResponse is SubscriberToken;

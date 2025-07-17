@@ -12,18 +12,10 @@ const LICENSE_URL = "https://github.com/signalwire/docs/blob/main/LICENSE";
 
 const LICENSE_NAME = "MIT";
 
-
 const CONTACT_INFO = #{
-    name: CONTACT_NAME,
-
-    url: CONTACT_URL,
-
-    email: CONTACT_EMAIL
+  name: CONTACT_NAME,
+  url: CONTACT_URL,
+  email: CONTACT_EMAIL,
 };
 
-const LICENSE_INFO = #{
-    
-    name: LICENSE_NAME,
-
-    url: LICENSE_URL
-};
+const LICENSE_INFO = #{ name: LICENSE_NAME, url: LICENSE_URL };

@@ -1,7 +1,6 @@
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
 
-
 model CXMLWebhookResponse {
   @doc("Unique ID of the CXMLWebhook.")
   @example("a87db7ed-8ebe-42e4-829f-8ba5a4152f54")

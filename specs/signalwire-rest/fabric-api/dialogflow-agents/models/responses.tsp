@@ -34,17 +34,14 @@ model DialogflowAgentResponse {
 }
 
 model DialogflowAgentListResponse {
-
   @doc("An array of objects that contain a list of Dialogflow Agent data")
   data: DialogflowAgentResponse[];
 
   @doc("Object containing pagination links")
   links: DialogFlowPaginationResponse;
-
 }
 
 model DialogFlowPaginationResponse {
-
   @doc("Link to the current page")
   @example("https://devspace.signalwire.com/api/fabric/resources/dialogflow_agents?page_number=0&page_size=50&type=dialogflow_agent")
   self: url;

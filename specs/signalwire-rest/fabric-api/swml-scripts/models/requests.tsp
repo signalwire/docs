@@ -14,7 +14,6 @@ model SwmlScriptCreateRequest {
   @example("https://example.com/status")
   @format("uri")
   status_callback_url?: url;
-
 }
 
 model SwmlScriptUpdateRequest {
@@ -30,5 +29,4 @@ model SwmlScriptUpdateRequest {
   @example("https://example.com/status")
   @format("uri")
   status_callback_url?: url;
-
 }

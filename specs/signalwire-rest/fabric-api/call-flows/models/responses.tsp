@@ -2,49 +2,44 @@ import "./core.tsp";
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
 
-
-
 model CallFlowResponse {
   @doc("Unique ID of the Call Flow.")
-    @example("993ed018-9e79-4e50-b97b-984bd5534095")
-    @format("uuid")
-    id: uuid;
+  @example("993ed018-9e79-4e50-b97b-984bd5534095")
+  @format("uuid")
+  id: uuid;
 
-    @doc("Unique ID of the Project.")
-    @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
-    @format("uuid")
-    project_id: uuid;
+  @doc("Unique ID of the Project.")
+  @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
+  @format("uuid")
+  project_id: uuid;
 
-    @doc("Display name of the Call Flow Fabric Resource")
-    @example("Booking Assistant")
-    display_name: string;
+  @doc("Display name of the Call Flow Fabric Resource")
+  @example("Booking Assistant")
+  display_name: string;
 
-    @doc("Type of the Fabric Resource")
-    @example(FabricResponseType.CallFlow)
-    type: FabricResponseType.CallFlow;
+  @doc("Type of the Fabric Resource")
+  @example(FabricResponseType.CallFlow)
+  type: FabricResponseType.CallFlow;
 
-    @doc("Date and time when the resource was created.")
-    @example(UTC_TIME_EXAMPLE)
-    created_at: utcDateTime;
+  @doc("Date and time when the resource was created.")
+  @example(UTC_TIME_EXAMPLE)
+  created_at: utcDateTime;
 
-    @doc("Date and time when the resource was updated.")
-    @example(UTC_TIME_EXAMPLE)
-    updated_at: utcDateTime;
+  @doc("Date and time when the resource was updated.")
+  @example(UTC_TIME_EXAMPLE)
+  updated_at: utcDateTime;
 
-    @doc("Call Flow data.")
-    call_flow: CallFlow;
+  @doc("Call Flow data.")
+  call_flow: CallFlow;
 }
 
 model CallFlowListResponse {
-
   @doc("Object containing pagination links")
   links: CallFlowAddressPaginationResponse;
 
   @doc("An array of objects containing the CallFlow listing response")
   data: CallFlowResponse[];
-
 }
-
 
 model CallFlowVersionResponse {
   @doc("Version number of the Call Flow")
@@ -64,9 +59,7 @@ model CallFlowVersionResponse {
   relayml?: string;
 }
 
-
 model CallFlowPaginationResponse {
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/call_flows?page_number=0&page_size=50&type=call_flow")
   self: url;

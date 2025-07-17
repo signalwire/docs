@@ -34,7 +34,6 @@ model AIAgentResponse {
 }
 
 model AIAgentListResponse {
-
   @doc("An array of objects containing the list of AI Agent data.")
   data: AIAgentResponse[];
 

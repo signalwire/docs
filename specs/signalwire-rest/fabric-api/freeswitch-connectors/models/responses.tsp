@@ -34,17 +34,14 @@ model FreeswitchConnectorResponse {
 }
 
 model FreeswitchConnectorListResponse {
-
   @doc("Object containing pagination links")
   links: FreeswitchConectorPaginationResponse;
 
   @doc("An array of objects containing a list of FreeSWITCH connector data")
   data: FreeswitchConnectorResponse[];
-
 }
 
 model FreeswitchConectorPaginationResponse {
-
   @doc("The link of the current page")
   @example("https://devspace.signalwire.com/api/fabric/resources/freeswitch_connectors?page_number=0&page_size=50&type=freeswitch_connector")
   self: url;
@@ -60,5 +57,4 @@ model FreeswitchConectorPaginationResponse {
   @doc("The link of the previous page")
   @example("https://devspace.signalwire.com/api/fabric/resources/freeswitch_connectors?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=freeswitch_connector")
   prev?: url;
-
 }

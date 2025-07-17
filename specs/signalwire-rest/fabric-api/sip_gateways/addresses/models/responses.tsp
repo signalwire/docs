@@ -6,9 +6,7 @@ model SipGatewayAddressListResponse {
 
   @doc("Object containing pagination links")
   links: SipGatewayAddressPaginationResponse;
-
 }
-
 
 model SipGatewayAddressPaginationResponse {
   @doc("Link of the current page")

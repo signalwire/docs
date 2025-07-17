@@ -2,8 +2,7 @@ import "./core.tsp";
 import "../../../_shared/enums.tsp";
 
 model ResourceSipEndpointResponse {
-
-    @doc("The unique identifier of the SIP endpoint.")
+  @doc("The unique identifier of the SIP endpoint.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   id: uuid;
@@ -25,6 +24,5 @@ model ResourceSipEndpointResponse {
   preview_url: url | null;
 
   @doc("An object containing the resource addresses with the specified comunication channels")
-  channels: AddressChannel
-
+  channels: AddressChannel;
 }

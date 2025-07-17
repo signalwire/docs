@@ -16,10 +16,9 @@ namespace FabricAPI.CXMLWebhook.Addresses {
     @summary("List cXML Webhook Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific cXML Webhook.")
     list(...CXMLWebhookIDPath):
-      CXMLWebhookAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | CXMLWebhookAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
-

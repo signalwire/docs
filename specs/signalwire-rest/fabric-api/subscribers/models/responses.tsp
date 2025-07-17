@@ -33,7 +33,6 @@ model SubscriberResponse {
 }
 
 model SubscriberListResponse {
-  
   @doc("An array of objects that contain a list of Subscriber data")
   data: SubscriberResponse[];
 
@@ -42,7 +41,6 @@ model SubscriberListResponse {
 }
 
 model SubscriberPaginationResponse {
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50")
   self: url;
@@ -59,4 +57,3 @@ model SubscriberPaginationResponse {
   @example("https://example.signalwire.com/api/fabric/resources/subscribers?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
   prev?: url;
 }
-

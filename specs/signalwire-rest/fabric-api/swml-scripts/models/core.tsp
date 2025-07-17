@@ -9,7 +9,7 @@ model SwmlScriptPathID {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  id: uuid
+  id: uuid;
 }
 
 model SwmlScript {
@@ -17,7 +17,6 @@ model SwmlScript {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   id: uuid;
-
 
   @doc("The SWML script contents")
   @example(SWML_EXAMPLE)
@@ -39,5 +38,4 @@ model SwmlScript {
   @doc("HTTP method to use for status callbacks")
   @example(UrlMethodType.Post)
   status_callback_method?: UrlMethodType.Post;
-  
 }

@@ -34,16 +34,14 @@ model CxmlApplicationResponse {
 }
 
 model CxmlApplicationListResponse {
-
   @doc("An array of objects containing the list of cXML Application(s) data.")
   data: CxmlApplicationResponse[];
 
   @doc("Object containing pagination links")
-  links: CxmlApplicationPaginationResponse
+  links: CxmlApplicationPaginationResponse;
 }
 
 model CxmlApplicationPaginationResponse {
-
   @doc("Linmk to the current page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_applications?page_number=0&page_size=50&type=cxml_application")
   self: url;
@@ -59,5 +57,4 @@ model CxmlApplicationPaginationResponse {
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_applications?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=cxml_application")
   prev?: url;
-
 }

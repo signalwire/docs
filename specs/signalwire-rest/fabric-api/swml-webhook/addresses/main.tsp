@@ -16,10 +16,9 @@ namespace FabricAPI.SWMLWebhookAddresses {
     @summary("List SWML Webhook Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific SWML webhook.")
     list(...SWMLWebhookIDPath):
-      SWMLWebhookAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | SWMLWebhookAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
-

@@ -29,12 +29,10 @@ model ResourceSipEndpoint {
   @example("https://example.com/cover.jpg")
   cover_url?: url;
 
-
   @doc("The preview URL for the SIP endpoint.")
   @example("https://example.com/preview.jpg")
   preview_url?: url;
 
   @doc("An object containing the resource addresses with the specified comunication channels")
-  channels: AddressChannel
-
+  channels: AddressChannel;
 }

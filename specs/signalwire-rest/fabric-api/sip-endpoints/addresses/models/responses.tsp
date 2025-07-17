@@ -2,7 +2,6 @@ import "../../../_shared/fabric-address";
 import "../../../_shared/enums.tsp";
 import "../../../../types";
 
-
 model SipEndpointAddressListResponse {
   @doc("An array of objects that contain a list of SIP Endpoint Addresses")
   data: FabricAddressCall[];
@@ -12,7 +11,6 @@ model SipEndpointAddressListResponse {
 }
 
 model SipEndpointAddressPaginationResponse {
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/sip_endpoints/7ecfd15a-fb9a-45a4-9b89-c0740a44c593/addresses?page_number=0&page_size=50&type=sip_endpoint")
   self: url;

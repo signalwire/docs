@@ -19,7 +19,6 @@ import "../../conference-rooms";
 import "@typespec/http";
 import "@typespec/openapi3";
 
-
 using TypeSpec.OpenAPI;
 
 const RESPONSE_TYPE_DESC = "The type of Resource";
@@ -46,24 +45,20 @@ model ResourceResponseBase {
   @doc("Date and time when the resource was updated.")
   @example(UTC_TIME_EXAMPLE)
   updated_at: utcDateTime;
-
 }
 
 @summary("AI Agent")
 model ResourceResponseAI is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.AiAgent)
   type: FabricResponseType.AiAgent;
 
   @doc("An object containing the response data of the AI Agent")
   ai_agent: AIAgent;
-
 }
 
 @summary("Call Flow")
 model ResourceResponseCallFlow is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.CallFlow)
   type: FabricResponseType.CallFlow;
@@ -74,7 +69,6 @@ model ResourceResponseCallFlow is ResourceResponseBase {
 
 @summary("cXML Webhook")
 model ResourceResponseCXMLWebhook is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.CxmlWebhook)
   type: FabricResponseType.CxmlWebhook;
@@ -83,96 +77,78 @@ model ResourceResponseCXMLWebhook is ResourceResponseBase {
   cxml_webhook: CXMLWebhook;
 }
 
-
 @summary("cXML Script")
 model ResourceResponseCXMLScript is ResourceResponseBase {
-
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.CxmlScript)
   type: FabricResponseType.CxmlScript;
 
-
   @doc("An object containing the response data of the cXML Script")
   cxml_script: CXMLScript;
-
 }
 
 @summary("cXML Application")
 model ResourceResponseCXMLApplication is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.CxmlApplication)
   type: FabricResponseType.CxmlApplication;
 
   @doc("An object containing the response data of the cXML Application")
   cxml_application: CxmlApplication;
-
 }
 
 @summary("Dialogflow Agent")
 model ResourceResponseDialogFlowAgent is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.DialogflowAgent)
   type: FabricResponseType.DialogflowAgent;
 
   @doc("An object containing the response data of the Dialogflow Agent")
   dialogflow_agent: DialogflowAgent;
-
 }
 
 @summary("FreeSWITCH Connector")
 model ResourceResponseFSConnector is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.FreeswitchConnector)
   type: FabricResponseType.FreeswitchConnector;
 
   @doc("An object containing the response data of the FreeSWITCH Connector")
   freeswitch_connector: FreeswitchConnector;
-
 }
 
 @summary("Relay Application")
 model ResourceResponseRelayApp is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.RelayApplication)
   type: FabricResponseType.RelayApplication;
 
   @doc("An object containing the response data of the Relay Application")
   relay_application: RelayApplication;
-
 }
 
 @summary("SIP Endpoint")
 model ResourceResponseSipEndpoint is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.SipEndpoint)
   type: FabricResponseType.SipEndpoint;
-  
+
   @doc("An object containing the response data of the SIP Endpoint")
   sip_endpoint: SipEndpoint;
-
 }
 
 @summary("SIP Gateway")
 model ResourceResponseSipGateway is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.SipGateway)
   type: FabricResponseType.SipGateway;
 
   @doc("An object containing the response data of the SIP Gateway")
   sip_gateway: SipGateway;
-
 }
 
 @summary("Subscriber")
 model ResourceResponseSubscriber is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.Subscriber)
   type: FabricResponseType.Subscriber;
@@ -181,41 +157,34 @@ model ResourceResponseSubscriber is ResourceResponseBase {
   subscriber: Subscriber;
 }
 
-
 @summary("SWML Webhook")
 model ResourceResponseSWMLWebhook is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.SwmlWebhook)
   type: FabricResponseType.SwmlWebhook;
 
   @doc("An object containing the response data of the SWML Webhook")
   swml_webhook: SWMLWebhook;
-
 }
 
 @summary("SWML Script")
 model ResourceResponseSWMLScript is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.SwmlScript)
   type: FabricResponseType.SwmlScript;
 
   @doc("An object containing the response data of the SWML Script")
   swml_script: SwmlScript;
-
 }
 
 @summary("Conference Room")
 model ResourceResponseConferenceRoom is ResourceResponseBase {
-
   @doc(RESPONSE_TYPE_DESC)
   @example(FabricResponseType.SwmlScript)
   type: FabricResponseType.SwmlScript;
 
   @doc("An object containing the response data of the Conference Room")
   conference_room: ConferenceRoom;
-
 }
 
 @oneOf
@@ -233,13 +202,10 @@ union ResourceResponse {
   ResourceResponseSubscriber,
   ResourceResponseSWMLWebhook,
   ResourceResponseSWMLScript,
-  ResourceResponseConferenceRoom
-
+  ResourceResponseConferenceRoom,
 }
 
-
 model ResourceListResponse {
-
   @doc("An array of objects that contain a list of Resource data")
   data: ResourceResponse[];
 
@@ -248,7 +214,6 @@ model ResourceListResponse {
 }
 
 model ResourcePaginationResponse {
-
   @doc("The link to the current page")
   @example("https://devspace.signalwire.com/api/fabric/resources?page_number=0&page_size=50")
   self: url;

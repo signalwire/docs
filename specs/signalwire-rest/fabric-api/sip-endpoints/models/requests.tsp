@@ -2,15 +2,14 @@ import "./core.tsp";
 import "../../../_globally_shared/enums.tsp";
 
 model SipEndpointCreateRequest {
-  ...SipEndpoint
+  ...SipEndpoint;
 }
 
 model SipEndpointUpdateRequest {
-
   @doc("The username of the Sip Endpoint")
   @example("User")
   username?: string;
-  
+
   @doc("The caller ID that will showup when dialing from this Sip Endpoint")
   @example("123456789")
   caller_id?: string;
@@ -38,5 +37,4 @@ model SipEndpointUpdateRequest {
   @doc("If `call_handler` is set to `resource`, this field will contain the id of the set resouce. Will be `null` otherwise.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
   calling_handler_resource_id: uuid | null;
-
 }

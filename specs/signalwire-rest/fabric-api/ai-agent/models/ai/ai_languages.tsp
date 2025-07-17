@@ -26,5 +26,5 @@ model LanguagesWithFillers is LanguagesBase {
 
 @summary("languages")
 union Languages {
-  LanguagesWithFillers
+  LanguagesWithFillers,
 }

@@ -10,13 +10,10 @@ model AIAgentPathID {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  id: uuid
+  id: uuid;
 }
 
-
-
 model AIAgent {
-
   @doc("Unique ID of an AI Agent.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
@@ -48,4 +45,3 @@ model AIAgent {
   @doc("A JSON object to create user-defined functions/endpoints that can be executed during the dialogue.")
   SWAIG?: SWAIG;
 }
-

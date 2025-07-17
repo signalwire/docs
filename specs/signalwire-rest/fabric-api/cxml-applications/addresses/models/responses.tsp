@@ -11,7 +11,6 @@ model CxmlApplicationAddressListResponse {
 }
 
 model CxmlApplicationAddressPaginationResponse {
-
   @doc("Self link for the current page")
   @example("https://example.signalwire.com/api/fabric/resources/laml_applications/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&type=cxml_application")
   self: string;

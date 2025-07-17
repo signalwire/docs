@@ -15,9 +15,9 @@ namespace FabricAPI.Resource.Addresses {
     @summary("List Resource Addresses")
     @doc("This endpoint is used to retrieve addresses associated with a specific Resource.")
     list(...ResourceAddressPathID):
-      ResourceAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | ResourceAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

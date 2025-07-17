@@ -1,4 +1,4 @@
-import "./core.tsp"; 
+import "./core.tsp";
 import "../../_shared/const.tsp";
 import "../../_shared/enums.tsp";
 
@@ -42,7 +42,6 @@ model SipEndpointListResponse {
 }
 
 model SipEndpointPaginationResponse {
-
   @doc("Link to the current page")
   @example("https://example.signalwire.com/api/fabric/resources/sip_endpoints?page_number=0&page_size=50&type=sip_endpoint")
   self: url;

@@ -15,9 +15,9 @@ namespace FabricAPI.CxmlApplication.Addresses {
     @summary("List cXML Application Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific LaML Application.")
     list(...CxmlApplicationAddressPathID):
-      CxmlApplicationAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | CxmlApplicationAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

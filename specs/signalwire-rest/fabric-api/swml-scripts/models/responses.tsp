@@ -1,6 +1,6 @@
 import "./core.tsp";
-import  "../../_shared/enums.tsp";
-import  "../../_shared/const.tsp";
+import "../../_shared/enums.tsp";
+import "../../_shared/const.tsp";
 
 model SwmlScriptResponse {
   @doc("Unique ID of the SWML Script.")
@@ -34,7 +34,6 @@ model SwmlScriptResponse {
 }
 
 model SwmlScriptListResponse {
-  
   @doc("An array of objects that contain a list of SWML Script data")
   data: SwmlScriptResponse[];
 
@@ -43,7 +42,6 @@ model SwmlScriptListResponse {
 }
 
 model SwmlScriptPaginationresponse {
-
   @doc("Link to the current page")
   @example("https://example.signalwire.com/api/fabric/resources/swml_scripts?page_number=0&page_size=50&type=swml_script")
   self: url;

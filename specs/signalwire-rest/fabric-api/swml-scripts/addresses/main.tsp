@@ -15,9 +15,9 @@ namespace FabricAPI.SWMLScript.Addresses {
     @summary("List SWML Script Addresses")
     @doc("This endpoints returns a list of addresses associated with a specific SWML script.")
     list(...SWMLScriptAddressPathID):
-      SWMLScriptAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | SWMLScriptAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

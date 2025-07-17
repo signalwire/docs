@@ -12,14 +12,14 @@ model SWAIG {
   native_functions?: SWAIGNativeFunction[];
 
   @doc("""
-      An array of objects to include remote function signatures.
-      The object fields are url to specify where the remote functions are defined and functions which is an array of the function names as strings.
-      """)
+    An array of objects to include remote function signatures.
+    The object fields are url to specify where the remote functions are defined and functions which is an array of the function names as strings.
+    """)
   includes?: SWAIGIncludes[];
 
   @doc("""
-      An array of JSON objects to define functions that can be executed during the interaction with the AI. Default is not set.
-      The fields of this object are the six following.
-      """)
+    An array of JSON objects to define functions that can be executed during the interaction with the AI. Default is not set.
+    The fields of this object are the six following.
+    """)
   functions?: SWAIGFunction[];
 }

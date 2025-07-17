@@ -15,9 +15,9 @@ namespace FabricAPI.DialogflowAgent.Addresses {
     @summary("List Dialogflow Agent Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific Dialogflow Agent.")
     list(...DialogflowAgentAddressPathID):
-      DialogflowAgentAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | DialogflowAgentAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

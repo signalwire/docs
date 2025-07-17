@@ -9,9 +9,8 @@ scalar docid extends string;
 
 model PathID {
   @doc("Unique ID of a Document.")
-
   @path
-  id: docid
+  id: docid;
 }
 
 model ChunkPathID {

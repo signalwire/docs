@@ -15,10 +15,10 @@ namespace FabricAPI.SipGateways.Addresses {
   interface RelayApplicationAddresses {
     @summary("List Fabric Addresses assigned to a SIP Gateway")
     @doc("Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.")
-    readAddressesByResourceId(...SipGatewayAddressRequest): 
-      SipGatewayAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+    readAddressesByResourceId(...SipGatewayAddressRequest):
+      | SipGatewayAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

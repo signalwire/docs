@@ -18,46 +18,57 @@ namespace FabricAPI.SipGateways {
     @summary("List SIP Gateways")
     @doc("Returns a paginated list of SIP Gateways for the authenticated project.")
     list():
-      SipGatewayListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | SipGatewayListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Get SIP Gateway")
     @doc("Returns an SIP Gateway by ID")
-    read(...SipGatewayID): {
-        @statusCode statusCode: 200;
-        @body sip_gateway: SipGatewayResponse;
-      } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+    read(...SipGatewayID):
+      | {
+          @statusCode statusCode: 200;
+          @body sip_gateway: SipGatewayResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Create SIP Gateway")
     @doc("Creates a SIP Gateway that can be used to dial external SIP entities.")
-    @post create(...SipGatewayRequest):
-      { @statusCode statusCode: 201; @body sip_gateway: SipGatewayResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      SipGatewayCreateStatusCode422 |
-      StatusCode500;
+    @post
+    create(...SipGatewayRequest):
+      | {
+          @statusCode statusCode: 201;
+          @body sip_gateway: SipGatewayResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | SipGatewayCreateStatusCode422
+      | StatusCode500;
 
     @summary("Update SIP Gateway")
     @doc("Updates a SIP Gateway by ID")
-    @patch(#{ implicitOptionality: true })  update(...SipGatewayID, ...SipGatewayRequest): {
-      @statusCode statusCode: 200; @body sip_gateway: SipGatewayResponse;
-    } |
-      StatusCode401 |
-      StatusCode404 |
-      SipGatewayCreateStatusCode422 |
-      StatusCode500;
+    @patch(#{ implicitOptionality: true })
+    update(...SipGatewayID, ...SipGatewayRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body sip_gateway: SipGatewayResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | SipGatewayCreateStatusCode422
+      | StatusCode500;
 
     @summary("Delete SIP Gateway")
     @doc("Deletes a SIP Gateway} by ID")
-    @delete delete(...SipGatewayID):
-      { @statusCode statusCode: 204; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+    @delete
+    delete(...SipGatewayID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

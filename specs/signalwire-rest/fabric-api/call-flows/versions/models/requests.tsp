@@ -6,7 +6,7 @@ using TypeSpec.OpenAPI;
 @oneOf
 union CallFlowVersionDeployRequest {
   CallFlowVersionDeployByDocumentVersion,
-  CallFlowVersionDeployByVersionId;
+  CallFlowVersionDeployByVersionId,
 }
 
 @summary("Deploy by document version")

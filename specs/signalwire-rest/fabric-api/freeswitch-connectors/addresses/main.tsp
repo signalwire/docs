@@ -15,9 +15,9 @@ namespace FabricAPI.FreeswitchConnectorAddresses {
     @summary("List FreeSWITCH Connector Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.")
     list(...FreeswitchConnectorAddressPathID):
-      FreeswitchConnectorAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | FreeswitchConnectorAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

@@ -15,9 +15,9 @@ namespace FabricAPI.CallFlow.Addresses {
     @summary("List Call Flow Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific Call Flow.")
     list(...CallFlowAddressPathID):
-      CallFlowAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | CallFlowAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

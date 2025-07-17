@@ -15,9 +15,9 @@ namespace FabricAPI.RelayApplication.Addresses {
     @summary("List Relay Application Addresses")
     @doc("This endpoint returns a paginated list of addresses associated with a Relay Application.")
     list(...RelayApplicationAddressPathID):
-      RelayApplicationAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | RelayApplicationAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

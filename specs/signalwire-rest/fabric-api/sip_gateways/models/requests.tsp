@@ -14,7 +14,7 @@ model SipGatewayRequest {
   encryption: Encryption;
 
   @doc("List of supported SIP ciphers.")
-  @example(#[ Ciphers.AEAD_AES_256_GCM_8, Ciphers.AES_256_CM_HMAC_SHA1_80 ])
+  @example(#[Ciphers.AEAD_AES_256_GCM_8, Ciphers.AES_256_CM_HMAC_SHA1_80])
   ciphers: Ciphers[];
 
   @doc("List of supported codecs for media transmission.")

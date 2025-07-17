@@ -1,7 +1,6 @@
 import "../../../_shared/fabric-address";
 
 model SWMLWebhookAddressListResponse {
-  
   @doc("An array of objects that contain a list of SWML Webhook Addresses")
   data: FabricAddressApp[];
 
@@ -10,7 +9,6 @@ model SWMLWebhookAddressListResponse {
 }
 
 model SWMLWebhookAddressPaginationResponse {
-
   @doc("Link of the current paghe")
   @example("https://example.signalwire.com/api/fabric/resources/swml_webhooks/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&type=swml_webhook")
   self: url;

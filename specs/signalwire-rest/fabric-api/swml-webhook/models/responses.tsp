@@ -1,7 +1,6 @@
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
 
-
 model SWMLWebhookResponse {
   @doc("Unique ID of the SWML Webhook.")
   @example("a87db7ed-8ebe-42e4-829f-8ba5a4152f54")
@@ -34,7 +33,6 @@ model SWMLWebhookResponse {
 }
 
 model SWMLWebhookListResponse {
-
   @doc("An array of objects that contain a list of SWML Webhook data")
   data: SWMLWebhookResponse[];
 
@@ -57,5 +55,5 @@ model SWMLWebhookPaginationResponse {
 
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/resources/swml_webhooks?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca&type=swml_webhook")
-  prev?: url
+  prev?: url;
 }

@@ -8,12 +8,10 @@ model CallFlowPathID {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  id: uuid
+  id: uuid;
 }
 
-
 model CallFlow {
-
   @doc("Unique ID of a Call Flow.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")

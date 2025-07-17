@@ -1,7 +1,6 @@
 import "../../../_shared/fabric-address";
 
 model AIAgentAddressListResponse {
-  
   @doc("An array of objects containing the address data")
   data: FabricAddressApp[];
 
@@ -9,8 +8,7 @@ model AIAgentAddressListResponse {
   links: AIAddressPaginationResponse;
 }
 
-model AIAddressPaginationResponse  {
-
+model AIAddressPaginationResponse {
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/ai_agents/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&type=ai_agent")
   self: url;

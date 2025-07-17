@@ -15,9 +15,6 @@ namespace LogsAPI.Conferences {
   interface Conferences {
     @summary("List Conferences")
     @doc("A list of Conferences.")
-    list():
-      ConferencesResponse |
-      StatusCode401 |
-      StatusCode404;
+    list(): ConferencesResponse | StatusCode401 | StatusCode404;
   }
 }

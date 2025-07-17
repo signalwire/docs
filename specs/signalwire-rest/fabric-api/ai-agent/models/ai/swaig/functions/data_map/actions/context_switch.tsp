@@ -10,10 +10,10 @@ model ContextSwitchAction {
     consolidate?: boolean;
 
     @doc("""
-        A string serving as simulated user input for the AI Agent.
-        During a context_switch in the AI's prompt, the user_prompt offers the AI pre-established context or guidance.
-        Default is not set
-        """)
+      A string serving as simulated user input for the AI Agent.
+      During a context_switch in the AI's prompt, the user_prompt offers the AI pre-established context or guidance.
+      Default is not set
+      """)
     user_prompt?: string;
-  }
+  };
 }

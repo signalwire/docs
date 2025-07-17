@@ -31,13 +31,9 @@ model CXMLScriptResponse {
 
   @doc("cXML Script data.")
   cxml_script: CXMLScript;
-
 }
 
-
-
 model CXMLScriptListResponse {
-
   @doc("An array of objects containing a list of cXML Script data")
   data: CXMLScriptResponse[];
 
@@ -45,9 +41,7 @@ model CXMLScriptListResponse {
   links: CXMLScriptAddressPaginationResponse;
 }
 
-
 model CXMLScriptPaginationResponse {
-
   @doc("Link to the current page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&type=cxml_script")
   self: url;
@@ -63,5 +57,4 @@ model CXMLScriptPaginationResponse {
   @doc("Link to the previous page")
   @example("https://devspace.signalwire.com/api/fabric/resources/cxml_scripts?page_number=0&page_size=50&page_token=PA08cdad0c-e7e6-4a75-8244-902524f38d55&type=cxml_script")
   prev?: url;
-
 }

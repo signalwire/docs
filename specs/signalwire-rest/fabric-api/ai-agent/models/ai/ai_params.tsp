@@ -5,9 +5,10 @@ scalar IntegerOrZero extends integer;
 @summary("Direction enum")
 enum Direction {
   @doc("Sets the direction of the call to `inbound` for the assistant.")
-  "inbound",
+  inbound,
+
   @doc("Sets the direction of the call to `outbound` for the assistant.")
-  "outbound"
+  outbound,
 }
 
 @summary("params object")
@@ -21,7 +22,7 @@ model AIParams {
   ai_volume?: integer;
 
   @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values from `10,000` - `600,000`. Set to `0` to disable.")
-  attention_timeout?: (IntegerOrZero | 0);
+  attention_timeout?: IntegerOrZero | 0;
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
@@ -41,9 +42,9 @@ model AIParams {
   background_file_volume?: integer;
 
   @doc("""
-      Takes a string, including a regular expression, defining barge behavior.
-      For example, this param can direct the AI to stop when the word 'hippopotomus' is input.
-      """)
+    Takes a string, including a regular expression, defining barge behavior.
+    For example, this param can direct the AI to stop when the word 'hippopotomus' is input.
+    """)
   @example("Cancel order")
   barge_match_string?: string;
 
@@ -110,9 +111,9 @@ model AIParams {
   inactivity_timeout?: integer;
 
   @doc("""
-      Check for input function with check_for_input.
-      Example use case: Feeding an inbound SMS to AI on a voice call, eg., for collecting an email address or other complex information.
-      """)
+    Check for input function with check_for_input.
+    Example use case: Feeding an inbound SMS to AI on a voice call, eg., for collecting an email address or other complex information.
+    """)
   input_poll_freq?: string;
 
   @doc("When enabled, barges agent upon any sound interruption longer than 1 second.")
@@ -135,10 +136,10 @@ model AIParams {
   outbound_attention_timeout?: integer;
 
   @doc("""
-      Send a summary of the conversation after the call ends.
-      This requires a `post_url` to be set in the ai parameters and the `conversation_id` defined below.
-      This eliminates the need for a `post_prompt` in the ai parameters.
-      """)
+    Send a summary of the conversation after the call ends.
+    This requires a `post_url` to be set in the ai parameters and the `conversation_id` defined below.
+    This eliminates the need for a `post_prompt` in the ai parameters.
+    """)
   save_conversation?: boolean;
 
   @doc("Allows tweaking any of the indicated settings, such as `barge_match_string`, using the returned SWML from the SWAIG function.")

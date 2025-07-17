@@ -1,9 +1,6 @@
 import "../../../../types";
 import "../../../_shared/const.tsp";
 
-
-
-
 model CallFlowVersion {
   @doc("The unique identifier of the version.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
@@ -64,7 +61,6 @@ model CallFlowVersionDeployResponse {
   @example(SWML_EXAMPLE)
   relayml?: string;
 }
-
 
 model CallFlowVersionsPaginationResponse {
   @doc("Link of the current page")

@@ -39,7 +39,6 @@ model SipGatewayResponse {
   sip_gateway: SipGateway;
 }
 
-
 model SipGateway {
   @doc("Unique ID of the SIP Gateway.")
   @example("cce59cad-104d-4c28-ada4-98cfd102ae09")
@@ -76,7 +75,6 @@ model SipGatewayListResponse {
 }
 
 model SipGatewayPaginationResponse {
-
   @doc("Link to the current page of results")
   @example("https://example.signalwire.com/api/fabric/resources/sip_gateways?page_number=0&page_size=50")
   self: url;

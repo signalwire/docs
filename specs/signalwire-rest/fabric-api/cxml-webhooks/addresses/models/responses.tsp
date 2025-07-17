@@ -6,7 +6,6 @@ model CXMLWebhookAddressListResponse {
 }
 
 model CXMLWebhookAddressPaginationResponse {
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/cxml_webhooks/a87db7ed-8ebe-42e4-829f-8ba5a4152f54/addresses?page_number=0&page_size=50&type=cxml_webhook")
   self: url;

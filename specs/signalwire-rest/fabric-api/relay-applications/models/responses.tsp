@@ -34,7 +34,6 @@ model RelayApplicationResponse {
 }
 
 model RelayApplicationListResponse {
-
   @doc("An array of objects that contain a list of Relay Application data")
   data: RelayApplicationResponse[];
 
@@ -42,9 +41,7 @@ model RelayApplicationListResponse {
   links: RelayApplicationAddressPaginationResponse;
 }
 
-
 model RelayApplicationPaginationResponse {
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/relay_applications?page_number=0&page_size=50&type=relay_application")
   self: url;
@@ -59,5 +56,5 @@ model RelayApplicationPaginationResponse {
 
   @doc("Link to the previous page")
   @example("https://example.signalwire.com/api/fabric/resources?page_number=0&page_size=50&page_token=PAc28a38e4-0ae7-49ab-9bf6-f41f1572e6e4&type=relay_application")
-  prev?: url
+  prev?: url;
 }

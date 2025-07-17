@@ -2,7 +2,6 @@ import "./core.tsp";
 import "./enums.tsp";
 
 model ConferenceRoomCreateRequest {
-
   @doc("The name of the Conference Room")
   @example("coffee_cafe")
   name: string;
@@ -24,7 +23,6 @@ model ConferenceRoomCreateRequest {
   @doc("The time users are allowed to until the conference is locked. Attempting to join the conference after the set time will result in failure to join the conference.")
   @example(UTC_TIME_EXAMPLE)
   join_until?: utcDateTime;
-
 
   @doc("Maximum number of members allowed in the conference room")
   @example(30)
@@ -58,8 +56,10 @@ model ConferenceRoomCreateRequest {
   enable_room_previews: boolean;
 
   @doc("Metadata of the conference.")
-  @example(#{foo: "bar"})
-  meta?: {...Record<unknown>};
+  @example(#{ foo: "bar" })
+  meta?: {
+    ...Record<unknown>;
+  };
 
   @doc("Syncs the participants audio and video.")
   @example(true)
@@ -76,11 +76,9 @@ model ConferenceRoomCreateRequest {
   @doc("Turns the participants video off when the participant joins the room if `true`.")
   @example(true)
   user_join_video_off?: boolean;
-
 }
 
 model ConferenceRoomUpdateRequest {
-
   @doc("The name of the Conference Room")
   @example("coffee_cafe")
   name?: string;
@@ -102,7 +100,6 @@ model ConferenceRoomUpdateRequest {
   @doc("The time users are allowed to until the conference is locked. Attempting to join the conference after the set time will result in failure to join the conference.")
   @example(UTC_TIME_EXAMPLE)
   join_until?: utcDateTime;
-
 
   @doc("Maximum number of members allowed in the conference room")
   @example(30)
@@ -136,8 +133,10 @@ model ConferenceRoomUpdateRequest {
   enable_room_previews: boolean;
 
   @doc("Metadata of the conference.")
-  @example(#{foo: "bar"})
-  meta?: {...Record<unknown>};
+  @example(#{ foo: "bar" })
+  meta?: {
+    ...Record<unknown>;
+  };
 
   @doc("Syncs the participants audio and video.")
   @example(true)
@@ -154,5 +153,4 @@ model ConferenceRoomUpdateRequest {
   @doc("Turns the participants video off when the participant joins the room if `true`.")
   @example(true)
   user_join_video_off?: boolean;
- 
 }

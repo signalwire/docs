@@ -19,43 +19,57 @@ namespace FabricAPI.SwmlScripts {
     @summary("List SWML Scripts")
     @doc("A list of SWML Scripts")
     list():
-      SwmlScriptListResponse[] |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | SwmlScriptListResponse[]
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Get SWML Script")
     @doc("Returns a SWML Script by ID")
     read(...SwmlScriptPathID):
-      { @statusCode statusCode: 200; @body swml_script: SwmlScriptResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | {
+          @statusCode statusCode: 200;
+          @body swml_script: SwmlScriptResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Create SWML Script")
     @doc("Creates a SWML Script")
-    @post create(@body request: SwmlScriptCreateRequest):
-      { @statusCode statusCode: 200; @body swml_script: SwmlScriptResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      SwmlScriptCreateStatusCode422 |
-      StatusCode500;
+    @post
+    create(@body request: SwmlScriptCreateRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body swml_script: SwmlScriptResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | SwmlScriptCreateStatusCode422
+      | StatusCode500;
 
     @summary("Update SWML Script")
     @doc("Updates a SWML Script by ID")
-    @put update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
-      { @statusCode statusCode: 200; @body swml_script: SwmlScriptResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      SwmlScriptUpdateStatusCode422 |
-      StatusCode500;
+    @put
+    update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body swml_script: SwmlScriptResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | SwmlScriptUpdateStatusCode422
+      | StatusCode500;
 
     @summary("Delete SWML Script")
     @doc("Deletes a SWML Script by ID")
-    @delete delete(...SwmlScriptPathID):
-      { @statusCode statusCode: 204; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
-    }
+    @delete
+    delete(...SwmlScriptPathID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+  }
 }

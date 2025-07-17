@@ -15,10 +15,9 @@ namespace FabricAPI.AIAgent.Addresses {
     @summary("List AI Agent Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific AI Agent.")
     list(...AIAgentIDPath):
-      AIAgentAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | AIAgentAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
-

@@ -7,13 +7,12 @@ using Types.StatusCodes;
 model CallFlowAddressListResponse {
   @doc("An array of objects containing a list of Call Flow Addresses")
   data: FabricAddressApp[];
-  
+
   @doc("Object containing pagination links")
   links: CallFlowAddressPaginationResponse;
 }
 
 model CallFlowAddressPaginationResponse {
-
   @doc("Link of the current page")
   @example("https://example.signalwire.com/api/fabric/resources/016e5773-c197-4446-bcc2-9c48f14e2d0a/addresses?page_number=0&page_size=50&type=call_flow")
   self: url;

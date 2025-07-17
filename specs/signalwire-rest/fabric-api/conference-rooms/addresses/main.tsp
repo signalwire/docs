@@ -15,9 +15,9 @@ namespace FabricAPI.ConferenceRoom.Addresses {
     @summary("List Conference Room Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific Conference Room.")
     list(...ConferenceRoomAddressPathID):
-      ConferenceRoomAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | ConferenceRoomAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

@@ -19,43 +19,60 @@ namespace FabricAPI.FreeswitchConnectors {
     @summary("List FreeSWITCH Connectors")
     @doc("A list of FreeSWITCH Connectors")
     list():
-      FreeswitchConnectorListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | FreeswitchConnectorListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Get FreeSWITCH Connector")
     @doc("Returns a FreeSWITCH Connector by ID")
     read(...FreeswitchConnectorPathID):
-      { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | {
+          @statusCode statusCode: 200;
+          @body freeswitch_connector: FreeswitchConnectorResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Create FreeSWITCH Connector")
     @doc("Creates a FreeSWITCH Connector")
-    @post create(@body request: FreeswitchConnectorCreateRequest):
-      { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      FreeswitchConnectorCreateStatusCode422 |
-      StatusCode500;
+    @post
+    create(@body request: FreeswitchConnectorCreateRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body freeswitch_connector: FreeswitchConnectorResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | FreeswitchConnectorCreateStatusCode422
+      | StatusCode500;
 
     @summary("Update FreeSWITCH Connector")
     @doc("Updates a FreeSWITCH Connector by ID")
-    @put update(...FreeswitchConnectorPathID, @body request: FreeswitchConnectorUpdateRequest):
-      { @statusCode statusCode: 200; @body freeswitch_connector: FreeswitchConnectorResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      FreeswitchConnectorUpdateStatusCode422 |
-      StatusCode500;
+    @put
+    update(
+      ...FreeswitchConnectorPathID,
+      @body request: FreeswitchConnectorUpdateRequest,
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body freeswitch_connector: FreeswitchConnectorResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | FreeswitchConnectorUpdateStatusCode422
+      | StatusCode500;
 
     @summary("Delete FreeSWITCH Connector")
     @doc("Deletes a FreeSWITCH Connector by ID")
-    @delete delete(...FreeswitchConnectorPathID):
-      { @statusCode statusCode: 204; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
-    }
+    @delete
+    delete(...FreeswitchConnectorPathID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+  }
 }

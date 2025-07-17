@@ -3,14 +3,16 @@ import "../../../types/status-codes";
 using Types.StatusCodes;
 
 @example(#{
-    errors: #[#{
+  errors: #[
+    #{
       type: "validation_error",
       code: "http_url_required",
       message: "This value must be an HTTP or HTTPS URL.",
       attribute: "status_callback_url",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#http_url_required"
-    }],
-  })
-  model CXMLWebhookCreateStatusCode422 is StatusCode422;
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#http_url_required",
+    }
+  ],
+})
+model CXMLWebhookCreateStatusCode422 is StatusCode422;
 
-  model CXMLWebhookUpdateStatusCode422 is CXMLWebhookCreateStatusCode422;
+model CXMLWebhookUpdateStatusCode422 is CXMLWebhookCreateStatusCode422;

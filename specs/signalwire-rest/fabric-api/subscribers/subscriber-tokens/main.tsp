@@ -16,10 +16,10 @@ namespace FabricAPI.SubscriberTokens {
     @summary("Create Subscriber Token")
     @doc("Create a Subscriber Token")
     create(...SubscriberTokenRequest):
-      SubscriberTokenResponse |
-      StatusCode401 |
-      StatusCode404 |
-      SubscriberTokenStatusCode422 |
-      StatusCode500;
+      | SubscriberTokenResponse
+      | StatusCode401
+      | StatusCode404
+      | SubscriberTokenStatusCode422
+      | StatusCode500;
   }
 }

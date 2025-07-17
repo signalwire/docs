@@ -15,9 +15,9 @@ namespace FabricAPI.SipEndpoint.Addresses {
     @summary("List SIP Endpoint Addresses")
     @doc("A list of SIP Endpoint Addresses.")
     list(...SipEndpointAddressPathID):
-      SipEndpointAddressListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | SipEndpointAddressListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

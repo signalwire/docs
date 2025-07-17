@@ -19,43 +19,60 @@ namespace FabricAPI.RelayApplications {
     @summary("List Relay Applications")
     @doc("A list of Relay Applications")
     list():
-      RelayApplicationListResponse |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | RelayApplicationListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Get Relay Application")
     @doc("Returns a Relay Application by ID")
     read(...RelayApplicationPathID):
-      { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
+      | {
+          @statusCode statusCode: 200;
+          @body relay_application: RelayApplicationResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @summary("Create Relay Application")
     @doc("Creates a Relay Application")
-    @post create(@body request: RelayApplicationCreateRequest):
-      { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      RelayApplicationCreateStatusCode422 |
-      StatusCode500;
+    @post
+    create(@body request: RelayApplicationCreateRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body relay_application: RelayApplicationResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | RelayApplicationCreateStatusCode422
+      | StatusCode500;
 
     @summary("Update Relay Application")
     @doc("Updates a Relay Application by ID")
-    @put update(...RelayApplicationPathID, @body request: RelayApplicationUpdateRequest):
-      { @statusCode statusCode: 200; @body relay_application: RelayApplicationResponse; } |
-      StatusCode401 |
-      StatusCode404 |
-      RelayApplicationUpdateStatusCode422 |
-      StatusCode500;
+    @put
+    update(
+      ...RelayApplicationPathID,
+      @body request: RelayApplicationUpdateRequest,
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body relay_application: RelayApplicationResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | RelayApplicationUpdateStatusCode422
+      | StatusCode500;
 
     @summary("Delete Relay Application")
     @doc("Deletes a Relay Application by ID")
-    @delete delete(...RelayApplicationPathID):
-      { @statusCode statusCode: 204; } |
-      StatusCode401 |
-      StatusCode404 |
-      StatusCode500;
-    }
+    @delete
+    delete(...RelayApplicationPathID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+  }
 }

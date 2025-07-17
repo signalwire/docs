@@ -7,12 +7,10 @@ model ConferenceRoomPathID {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  id: uuid
+  id: uuid;
 }
 
-
 model ConferenceRoom {
-
   @doc("The unique id of the Conference Room")
   @example("1bd571e4-5ea4-4a70-a3c8-2bab5d20e754")
   @format("uuid")
@@ -38,7 +36,6 @@ model ConferenceRoom {
   @maxValue(300)
   max_members: int32;
 
-
   @doc("The viudeo quality of the Conference Room.")
   @example("1080p")
   quality: "1080p" | "720p" = "720p";
@@ -54,7 +51,6 @@ model ConferenceRoom {
   @doc("The time users are allowed to until the conference is locked. Attempting to join the conference after the set time will result in failure to join the conference.")
   @example(UTC_TIME_EXAMPLE)
   join_until: utcDateTime | null;
-
 
   @doc("The time to remove all participants from the conference.")
   @example(UTC_TIME_EXAMPLE)
@@ -94,12 +90,12 @@ model ConferenceRoom {
   sync_audio_video: boolean | null;
 
   @doc("Metadata of the conference.")
-  @example(#{foo: "bar"})
-  meta: {...Record<unknown>};
-
+  @example(#{ foo: "bar" })
+  meta: {
+    ...Record<unknown>;
+  };
 
   @doc("Indicator if the Conference Room will prioritize showing participants utilizing the hand raised feature.")
   @example(false)
-  prioritize_handraise: boolean; 
-
+  prioritize_handraise: boolean;
 }
