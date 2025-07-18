@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { useWindowSize } from '@site/src/utils/hooks/useWindowSize';
+import { useWindowSize } from '../../utils/hooks/useWindowSize';
 
 
 // Import Material Web components
