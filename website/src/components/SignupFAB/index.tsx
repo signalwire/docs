@@ -1,11 +1,11 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
+import { useWindowSize } from '@site/src/utils/hooks/useWindowSize';
 
 
 // Import Material Web components
 import '@material/web/fab/fab.js';
 import '@material/web/icon/icon.js';
-import { IconType } from 'react-icons/lib';
 
 // TypeScript declarations for web components
 declare global {
@@ -19,22 +19,11 @@ declare global {
 }
 
 const SignupFABModern: React.FC = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const windowSize = useWindowSize();
+  const isMobile = windowSize === 'mobile';
 
   useEffect(() => {
     console.log('Modern SignupFAB component mounted');
-    
-    // Check if mobile on mount and window resize
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-    };
   }, []);
 
   const handleClick = () => {
