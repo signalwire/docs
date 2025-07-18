@@ -1,11 +1,11 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { MdOutlineLogin } from "react-icons/md";
 
 
 // Import Material Web components
 import '@material/web/fab/fab.js';
 import '@material/web/icon/icon.js';
+import { IconType } from 'react-icons/lib';
 
 // TypeScript declarations for web components
 declare global {
@@ -50,9 +50,7 @@ const SignupFABModern: React.FC = () => {
       title="Get started with a free trial of the SignalWire platform"
       onClick={handleClick}
     >
-      <md-icon slot="icon">
-        {(MdOutlineLogin as any)()}
-      </md-icon>
+      <md-icon slot="icon"><span className="material-icons">home</span></md-icon>
     </md-fab>
   );
 };
