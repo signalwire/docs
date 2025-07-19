@@ -10,6 +10,7 @@ import { Language, LangItem } from "../../components/Language/Language";
 import LangSwitch from "../../components/Language/LangSwitch";
 import { AlphaBadge, BetaBadge } from "../../components/AlphaBetaBadges";
 import { APITable, APITableRow } from "../../components/APITable";
+import { SharedTable } from "../../components/SharedTable";
 import { UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
@@ -43,6 +44,7 @@ export default {
 
   APITable,
   APITableRow,
+  SharedTable,
 
   Card,
   CardGroup,
