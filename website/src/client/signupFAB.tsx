@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import SignupFABModern from '../components/SignupFAB';
+import styles from '../components/SignupFAB/styles.module.scss';
 
 // Only run in browser environment
 if (ExecutionEnvironment.canUseDOM) {
@@ -20,7 +21,7 @@ if (ExecutionEnvironment.canUseDOM) {
     
     // Create container for the FAB
     const fabContainer = document.createElement('div');
-    fabContainer.id = 'signup-fab-container';
+    fabContainer.className = styles.container;
     document.body.appendChild(fabContainer);
 
     console.log('FAB container created and appended');
@@ -31,7 +32,7 @@ if (ExecutionEnvironment.canUseDOM) {
     
     // Add visible class after page load
     const addVisibleClass = () => {
-      fabContainer.classList.add('visible');
+      fabContainer.classList.add(styles.visible);
     };
     
     if (document.readyState === 'complete') {
