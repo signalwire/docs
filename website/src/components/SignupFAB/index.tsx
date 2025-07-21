@@ -21,7 +21,6 @@ declare global {
 
 const SignupFABModern: React.FC = () => {
   const windowSize = useWindowSize();
-  const isMobile = windowSize === 'mobile';
 
   useEffect(() => {
     console.log('Modern SignupFAB component mounted');
@@ -34,13 +33,11 @@ const SignupFABModern: React.FC = () => {
   return (
     <md-fab
       variant="surface"
-      size={isMobile ? "medium" : "large"}
-      label={isMobile ? "" : "Sign Up"}
+      label="Sign Up"
       aria-label="Get started with a free trial of the SignalWire platform"
       title="Get started with a free trial of the SignalWire platform"
       onClick={handleClick}
     >
-      <md-icon slot="icon"><span className="material-icons">home</span></md-icon>
     </md-fab>
   );
 };
