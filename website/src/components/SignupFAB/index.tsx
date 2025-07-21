@@ -6,7 +6,6 @@ import styles from './styles.module.scss';
 
 // Import Material Web components
 import '@material/web/fab/fab.js';
-import '@material/web/icon/icon.js';
 
 // TypeScript declarations for web components
 declare global {
