@@ -53,6 +53,9 @@ const config: Config = {
 
   stylesheets: stylesheets, // stylesheets of the site. All stylesheet options can be modified at the /config/stylesheets.js file.
   scripts: scripts, // scripts of the site. All script options can be modified at the /config/includedScripts.ts file.
+  clientModules: [
+    require.resolve('./src/client/signupFAB.tsx'),
+  ],
 };
 
 export default config; 
