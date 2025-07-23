@@ -12,10 +12,12 @@ These addresses can be changed or deleted later as needed.
 
 Each **Resource Address** has two components:
 
-- **Context**: A identifier that indicates the container in which the resource is located.
-- **Name**: The name is the unique identifier for the resource.
+- **Context**: Idenitifies the path of the address. Currently can be a `public` or `private`.
+- **Name**: By default the name of the address will be the name of the resource, however,
+  a user can also change or add a `alias` of an address.
 
 For example, the address for an `AI Agent` resource named `Alice-AI` in the `public` context would be `/public/Alice-AI`.
+If you were to change the `alias` to `John-AI` the address would become `/public/John-AI`. 
 
 
 :::tip
