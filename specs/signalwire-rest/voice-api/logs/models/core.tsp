@@ -1,6 +1,7 @@
 import "@typespec/http";
 import "../../../types";
 import "../../const.tsp";
+import "../../enums.tsp";
 
 using TypeSpec.Http;
 
@@ -40,8 +41,8 @@ model VoiceLog {
   direction: "inbound" | "outbound";
 
   @doc("The status of the voice activity.")
-  @example("ended")
-  status: string;
+  @example(VoiceLogStatus.completed)
+  status: VoiceLogStatus;
 
   @doc("The duration of the voice activity in seconds.")
   @example(9)
@@ -56,12 +57,12 @@ model VoiceLog {
   billing_ms: int32;
 
   @doc("Source of this log entry.")
-  @example("laml")
-  source: string;
+  @example(VoiceSources.realtime_api)
+  source: VoiceSources;
 
   @doc("Type of this log entry.")
-  @example("laml_call")
-  type: string;
+  @example(VoiceType.relay_sip_call)
+  type: VoiceType;
 
   @doc("URL for the resource associated with this log entry (if available).")
   @example(null)
