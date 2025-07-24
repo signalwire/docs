@@ -138,6 +138,7 @@ const navbar: NavbarItem[] = [
   },
 
   { to: "/blog", label: "Blog", position: "right" },
+  { to: "/changelog", label: "Changelog", position: "right" },
 
   /// Support Dropdown -------- ///
   {
