@@ -1,3 +1,5 @@
+// Spec Info Area
+
 const SERVER_URL = "signalwire.com/api";
 
 const TERMS_OF_SERVICE = "https://signalwire.com/legal/signalwire-cloud-agreement";
@@ -19,3 +21,9 @@ const CONTACT_INFO = #{
 };
 
 const LICENSE_INFO = #{ name: LICENSE_NAME, url: LICENSE_URL };
+
+// Commonly shared Const
+
+const UTC_TIME_EXAMPLE = utcDateTime.fromISO("""
+  2024-05-06T12:20:00Z
+  """);

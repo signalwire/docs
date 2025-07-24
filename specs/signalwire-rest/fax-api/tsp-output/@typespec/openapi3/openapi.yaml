@@ -1,0 +1,454 @@
+openapi: 3.0.0
+info:
+  title: Fax API
+  version: 1.0.0
+  contact:
+    name: SignalWire
+    url: https://support.signalwire.com/portal/en/newticket?departmentId=1029313000000006907&layoutId=1029313000000074011
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://github.com/signalwire/docs/blob/main/LICENSE
+  termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
+  description: An API to programmatically access information about SignalWire fax activity.
+externalDocs:
+  url: https://developers.signalwire.com
+  description: Find more information about this and other SignalWire APIs.
+tags:
+  - name: Logs
+    description: Endpoints related to accessing fax logs
+    externalDocs:
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/fax
+      description: Developer documentation on Fax API endpoints
+paths:
+  /logs:
+    get:
+      operationId: Logs_list
+      summary: List Logs
+      description: |-
+        List the available logs.
+
+        #### Permissions
+        The API token must include the following scopes: _Fax_.
+      parameters:
+        - $ref: '#/components/parameters/LogListRequest.include_deleted'
+        - $ref: '#/components/parameters/LogListRequest.created_before'
+        - $ref: '#/components/parameters/LogListRequest.created_on'
+        - $ref: '#/components/parameters/LogListRequest.created_after'
+        - $ref: '#/components/parameters/LogListRequest.page_size'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaxLogsListStatusCode422'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Logs
+  /logs/{id}:
+    get:
+      operationId: Logs_read
+      summary: Find a Log by ID
+      description: |-
+        Find a log by ID.
+
+        #### Permissions
+        The API token must include the following scopes: _Fax_.
+      parameters:
+        - $ref: '#/components/parameters/LogPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Logs
+security:
+  - BasicAuth: []
+components:
+  parameters:
+    LogListRequest.created_after:
+      name: created_after
+      in: query
+      required: false
+      description: Return logs for activity after this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.created_before:
+      name: created_before
+      in: query
+      required: false
+      description: Return logs for activity prior to this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.created_on:
+      name: created_on
+      in: query
+      required: false
+      description: Return logs for activity on this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.include_deleted:
+      name: include_deleted
+      in: query
+      required: false
+      description: Include logs for deleted activity.
+      schema:
+        type: boolean
+      explode: false
+    LogListRequest.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+      explode: false
+    LogPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the log
+      schema:
+        $ref: '#/components/schemas/uuid'
+        format: uuid
+  schemas:
+    ChargeDetail:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Description for this charge.
+          example: ''
+        charge:
+          type: number
+          format: double
+          description: Charged amount.
+    FaxLog:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - status
+        - direction
+        - source
+        - type
+        - created_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log
+        from:
+          type: string
+          description: The origin phone number in E.164 format.
+          example: '+12065551212'
+        to:
+          type: string
+          description: The destination phone number in E.164 format.
+          example: '+12065553434'
+        status:
+          type: string
+          description: The status of this fax call.
+          example: completed
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+          description: The direction of this fax call.
+          example: outbound
+        source:
+          type: string
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          description: Type of this log entry.
+          example: laml_call
+        url:
+          type: string
+          format: uri
+          description: URL for the associated fax resource with this log entry (if available)
+        remote_station:
+          type: string
+        charge:
+          type: number
+          format: double
+          description: The amount charge for this fax request.
+          example: 0.01
+        number_of_pages:
+          type: integer
+          format: int32
+          description: The number of pages the fax document contained.
+          example: 2
+        quality:
+          type: string
+          enum:
+            - fine
+            - standard
+            - superfine
+          description: The quality that was set when the fax document was sent.
+          example: fine
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the fax was created.
+          example: '2024-05-06T12:20:00Z'
+        error_code:
+          type: string
+          description: Error code for this resource (if available).
+          example: '34004'
+        error_message:
+          type: string
+          description: The description of this error (if available).
+          example: The call dropped prematurely
+    FaxLogsListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: invalid_parameter
+            message: Name must be present
+            attribute: name
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
+    LogListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LogPaginationResponse'
+          description: Object containing pagination links
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FaxLog'
+          description: Array of log data
+    LogPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          example: https://example.signalwire.com/api/fax/logs?page_number=0&page_size=50
+        first:
+          type: string
+          example: https://example.signalwire.com/api/fax/logs?page_size=50
+        next:
+          type: string
+          example: https://example.signalwire.com/api/fax/logs?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+        prev:
+          type: string
+          example: https://example.signalwire.com/api/fax/logs?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+    LogResponse:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - status
+        - direction
+        - source
+        - type
+        - created_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log
+        from:
+          type: string
+          description: The origin phone number in E.164 format.
+          example: '+12065551212'
+        to:
+          type: string
+          description: The destination phone number in E.164 format.
+          example: '+12065553434'
+        status:
+          type: string
+          description: The status of this fax call.
+          example: completed
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+          description: The direction of this fax call.
+          example: outbound
+        source:
+          type: string
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          description: Type of this log entry.
+          example: laml_call
+        url:
+          type: string
+          format: uri
+          description: URL for the associated fax resource with this log entry (if available)
+        remote_station:
+          type: string
+        charge:
+          type: number
+          format: double
+          description: The amount charge for this fax request.
+          example: 0.01
+        number_of_pages:
+          type: integer
+          format: int32
+          description: The number of pages the fax document contained.
+          example: 2
+        quality:
+          type: string
+          enum:
+            - fine
+            - standard
+            - superfine
+          description: The quality that was set when the fax document was sent.
+          example: fine
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the fax was created.
+          example: '2024-05-06T12:20:00Z'
+        error_code:
+          type: string
+          description: Error code for this resource (if available).
+          example: '34004'
+        error_message:
+          type: string
+          description: The description of this error (if available).
+          example: The call dropped prematurely
+    Types.StatusCodes.StatusCode401:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Unauthorized
+    Types.StatusCodes.StatusCode404:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Not Found
+    Types.StatusCodes.StatusCode422Error:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - attribute
+        - url
+      properties:
+        type:
+          type: string
+          description: Error type.
+        code:
+          type: string
+          description: Error code.
+        message:
+          type: string
+          description: Error details.
+        attribute:
+          type: string
+          description: Request parameter associated with this error.
+        url:
+          type: string
+          description: Link to developer resource for this error.
+    Types.StatusCodes.StatusCode500:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal Server Error
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: Basic
+servers:
+  - url: https://{space_name}.signalwire.com/api/fax
+    description: Endpoint
+    variables:
+      space_name:
+        default: '{Your_Space_Name}'
