@@ -1,0 +1,461 @@
+openapi: 3.0.0
+info:
+  title: Voice API
+  description: An API to programmatically access information about SignalWire Voice activity.
+  version: 0.0.0
+tags:
+  - name: Logs
+paths:
+  /logs:
+    get:
+      operationId: Logs_list
+      summary: List Logs
+      description: |-
+        List the available logs.
+
+        #### Permissions
+
+        The API token must include the following scopes: _Voice_.
+      parameters:
+        - $ref: '#/components/parameters/LogListRequest.include_deleted'
+        - $ref: '#/components/parameters/LogListRequest.created_before'
+        - $ref: '#/components/parameters/LogListRequest.created_on'
+        - $ref: '#/components/parameters/LogListRequest.created_after'
+        - $ref: '#/components/parameters/LogListRequest.page_size'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceLogsListStatusCode422'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Logs
+  /logs/{id}:
+    get:
+      operationId: Logs_retrieve
+      summary: Find a Log by ID
+      description: |-
+        Find a log by ID.
+
+        #### Permissions
+
+        The API token must include the following scopes: _Voice_.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogRetrieveResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Logs
+security:
+  - BasicAuth: []
+components:
+  parameters:
+    LogListRequest.created_after:
+      name: created_after
+      in: query
+      required: false
+      description: Return logs for activity after this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.created_before:
+      name: created_before
+      in: query
+      required: false
+      description: Return logs for activity prior to this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.created_on:
+      name: created_on
+      in: query
+      required: false
+      description: Return logs for activity on this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.include_deleted:
+      name: include_deleted
+      in: query
+      required: false
+      description: Include logs for deleted activity.
+      schema:
+        type: boolean
+      explode: false
+    LogListRequest.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+      explode: false
+  schemas:
+    ChargeDetail:
+      type: object
+      required:
+        - description
+        - charge
+      properties:
+        description:
+          type: string
+          description: Description for this charge.
+          example: Text to Speech
+        charge:
+          type: number
+          format: double
+          description: Charged amount.
+          example: 0.121176
+      description: Details on charges associated with this log.
+    LogListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LogPaginationResponse'
+          description: Pagination links
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoiceLog'
+          description: Array of voice log entries
+      description: Response model for voice log list endpoint
+    LogPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          example: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50
+        first:
+          type: string
+          example: https://example.signalwire.com/api/voice/logs?page_size=50
+        next:
+          type: string
+          example: https://example.signalwire.com/api/voice/logs?page_number=1&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7
+        prev:
+          type: string
+          example: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7
+      description: Pagination links for voice log list responses
+    LogRetrieveResponse:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - direction
+        - status
+        - duration
+        - duration_ms
+        - billing_ms
+        - source
+        - type
+        - url
+        - charge
+        - charge_details
+        - created_at
+        - parent_id
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log.
+        from:
+          type: string
+          description: The origin phone number.
+          example: '+12065551212'
+        to:
+          type: string
+          description: The destination phone number.
+          example: '+12065553434'
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+          description: The direction of the voice activity.
+          example: inbound
+        status:
+          type: string
+          description: The status of the voice activity.
+          example: ended
+        duration:
+          type: integer
+          format: int32
+          description: The duration of the voice activity in seconds.
+          example: 9
+        duration_ms:
+          type: integer
+          format: int32
+          description: The duration of the voice activity in milliseconds.
+          example: 9638
+        billing_ms:
+          type: integer
+          format: int32
+          description: The billable duration of the voice activity in seconds.
+          example: 60
+        source:
+          type: string
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          description: Type of this log entry.
+          example: laml_call
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL for the resource associated with this log entry (if available).
+          example: null
+        charge:
+          type: number
+          format: double
+          description: The charge in dollars.
+          example: 0.01
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+          example: []
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the call entry was created.
+          example: '2024-05-06T12:20:00Z'
+        parent_id:
+          type: string
+          nullable: true
+          description: Parent log identifier for related call entries.
+          example: null
+      description: Response model for voice log retrieve endpoint
+    Types.StatusCodes.StatusCode401:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Unauthorized
+    Types.StatusCodes.StatusCode404:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Not Found
+    Types.StatusCodes.StatusCode422Error:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - attribute
+        - url
+      properties:
+        type:
+          type: string
+          description: Error type.
+        code:
+          type: string
+          description: Error code.
+        message:
+          type: string
+          description: Error details.
+        attribute:
+          type: string
+          description: Request parameter associated with this error.
+        url:
+          type: string
+          description: Link to developer resource for this error.
+    Types.StatusCodes.StatusCode500:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal Server Error
+    VoiceLog:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - direction
+        - status
+        - duration
+        - duration_ms
+        - billing_ms
+        - source
+        - type
+        - url
+        - charge
+        - charge_details
+        - created_at
+        - parent_id
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log.
+        from:
+          type: string
+          description: The origin phone number.
+          example: '+12065551212'
+        to:
+          type: string
+          description: The destination phone number.
+          example: '+12065553434'
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+          description: The direction of the voice activity.
+          example: inbound
+        status:
+          type: string
+          description: The status of the voice activity.
+          example: ended
+        duration:
+          type: integer
+          format: int32
+          description: The duration of the voice activity in seconds.
+          example: 9
+        duration_ms:
+          type: integer
+          format: int32
+          description: The duration of the voice activity in milliseconds.
+          example: 9638
+        billing_ms:
+          type: integer
+          format: int32
+          description: The billable duration of the voice activity in seconds.
+          example: 60
+        source:
+          type: string
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          description: Type of this log entry.
+          example: laml_call
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL for the resource associated with this log entry (if available).
+          example: null
+        charge:
+          type: number
+          format: double
+          description: The charge in dollars.
+          example: 0.01
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+          example: []
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the call entry was created.
+          example: '2024-05-06T12:20:00Z'
+        parent_id:
+          type: string
+          nullable: true
+          description: Parent log identifier for related call entries.
+          example: null
+      description: Voice log entry with all activity details
+    VoiceLogsListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: invalid_parameter
+            message: Parameter value is invalid
+            attribute: page_size
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: Basic
+servers:
+  - url: https://{space_name}.signalwire.com/api/voice
+    description: Endpoint
+    variables:
+      space_name:
+        default: YOUR_SPACE
