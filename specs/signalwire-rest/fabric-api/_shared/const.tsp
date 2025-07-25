@@ -7,4 +7,3 @@ const SWML_EXAMPLE = """
 const CXML_EXAMPLE = """
   <?xml version="1.0" encoding="UTF-8"?><Response><Say>Hello World</Say></Response>
   """;
-

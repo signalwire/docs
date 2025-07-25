@@ -17,22 +17,30 @@ namespace FaxAPI.Logs {
   interface Logs {
     @summary("List Logs")
     @doc("""
-    List the available logs.
-    
-    #### Permissions 
-    
-    The API token must include the following scopes: _Fax_.
-    """)
-    list(...LogListRequest): LogListResponse | StatusCode401 | FaxLogsListStatusCode422 | StatusCode500;
+      List the available logs.
+      
+      #### Permissions 
+      
+      The API token must include the following scopes: _Fax_.
+      """)
+    list(...LogListRequest):
+      | LogListResponse
+      | StatusCode401
+      | FaxLogsListStatusCode422
+      | StatusCode500;
 
     @summary("Find a Log by ID")
     @doc("""
-    Find a log by ID.
-    
-    #### Permissions
-    
-    The API token must include the following scopes: _Fax_.
-    """)
-    read(...LogPathID): LogResponse | StatusCode401 | StatusCode404 | StatusCode500;
+      Find a log by ID.
+      
+      #### Permissions
+      
+      The API token must include the following scopes: _Fax_.
+      """)
+    read(...LogPathID):
+      | LogResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

@@ -12,7 +12,7 @@ model LogPathID {
 
 model ChargeDetail {
   @doc("Description for this charge.")
-  @example("")
+  @example("Outbound Fax Minutes")
   description?: string;
 
   @doc("Charged amount.")
@@ -34,7 +34,16 @@ model FaxLog {
 
   @doc("The status of this fax call.")
   @example("completed")
-  status: string;
+  status:
+    | "queued"
+    | "initiated"
+    | "ringing"
+    | "in-progress"
+    | "busy"
+    | "failed"
+    | "no-answer"
+    | "canceled"
+    | "completed";
 
   @doc("The direction of this fax call.")
   @example("outbound")
@@ -42,16 +51,19 @@ model FaxLog {
 
   @doc("Source of this log entry.")
   @example("laml")
-  source: string;
+  source: "laml";
 
   @doc("Type of this log entry.")
   @example("laml_call")
-  type: string;
+  type: "laml_call";
 
   @doc("URL for the associated fax resource with this log entry (if available)")
-  url?: url;
+  @example("https://example.com/fax")
+  url?: url | null;
 
-  remote_station?: string;
+  @doc("Represents a customer hosted Fax server")
+  @example(null)
+  remote_station?: string | null;
 
   @example(0.01)
   @doc("The amount charge for this fax request.")

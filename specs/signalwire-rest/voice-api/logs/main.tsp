@@ -12,35 +12,35 @@ using Types.StatusCodes;
 namespace VoiceAPI.Logs {
   @tag(VOICE_LOGS_TAG)
   @route("/logs")
-    @doc("""
-      List the available logs.
-      
-      #### Permissions
-      
-      The API token must include the following scopes: _Voice_.
-      """)
-    @summary("List Logs")
-    @get
-    op list(...LogListRequest):
-      | LogListResponse
-      | StatusCode401
-      | VoiceLogsListStatusCode422
-      | StatusCode500;
+  @doc("""
+    List the available logs.
+    
+    #### Permissions
+    
+    The API token must include the following scopes: _Voice_.
+    """)
+  @summary("List Logs")
+  @get
+  op list(...LogListRequest):
+    | LogListResponse
+    | StatusCode401
+    | VoiceLogsListStatusCode422
+    | StatusCode500;
 
+  @doc("""
+    Find a log by ID.
+    
+    #### Permissions
+    
+    The API token must include the following scopes: _Voice_.
+    """)
+  @summary("Find a Log by ID")
+  @get
+  op retrieve(
+    @path
     @doc("""
-      Find a log by ID.
-      
-      #### Permissions
-      
-      The API token must include the following scopes: _Voice_.
+      Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.
       """)
-    @summary("Find a Log by ID")
-    @get
-    op retrieve(
-      @path
-      @doc("""
-        Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.
-        """)
-      id: uuid,
-    ): LogRetrieveResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    id: uuid,
+  ): LogRetrieveResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }

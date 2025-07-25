@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "@typespec/openapi3";
+import "@typespec/openapi";
 import "../types";
 import "./logs";
 import "../_globally_shared/const.tsp";
@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(LOGS_TAG, LOGS_TAG_METADATA)
 @service(#{ title: "Fax API" })
 @externalDocs(
-  "https://developers.signalwire.com",
+  "https://developers.signalwire.com/rest/signalwire-rest/endpoints/fax",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{
@@ -25,6 +25,8 @@ using TypeSpec.OpenAPI;
   "https://{space_name}.${SERVER_URL}/fax",
   "Endpoint",
   {
+    @doc(SERVER_URL_DESCRIPTION)
+    @example("example")
     space_name: string = "{Your_Space_Name}",
   }
 )

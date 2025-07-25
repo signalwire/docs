@@ -11,7 +11,6 @@ import "../tags.tsp";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-
 @route("/resources/swml_webhooks")
 namespace FabricAPI.SWMLWebhooks {
   @tag(SWML_WEBHOOK_TAG)

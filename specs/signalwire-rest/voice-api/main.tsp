@@ -8,10 +8,7 @@ import "./tags.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-
-
 @tagMetadata(VOICE_LOGS_TAG, VOICE_LOGS_TAG_METADATA)
-
 @externalDocs(
   "https://developer.signalwire.com/rest/signalwire-rest/endpoints/voice",
   "The Voice API holds a collection of endpoints that will help you find voice related logs."
