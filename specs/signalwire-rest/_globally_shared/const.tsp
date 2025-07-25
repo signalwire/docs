@@ -2,6 +2,8 @@
 
 const SERVER_URL = "signalwire.com/api";
 
+const SERVER_URL_DESCRIPTION = "The domain of the users SignalWire space.";
+
 const TERMS_OF_SERVICE = "https://signalwire.com/legal/signalwire-cloud-agreement";
 
 const CONTACT_NAME = "SignalWire";

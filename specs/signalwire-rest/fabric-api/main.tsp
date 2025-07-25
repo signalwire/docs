@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "@typespec/openapi3";
+import "@typespec/openapi";
 import "../types";
 import "./ai-agent";
 import "./dialogflow-agents";
@@ -47,6 +47,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(CONFERENCE_ROOM_TAG, CONFERENCE_ROOM_TAG_METADATA)
 @tagMetadata(DOMAIN_APPLICATIONS_TAG, DOMAIN_APPLICATIONS_TAG_METADATA)
 @tagMetadata(PHONE_ROUTES_TAG, PHONE_ROUTES_TAG_METADATA)
+
 @service(#{ title: "Call Fabric API" })
 @externalDocs(
   "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric",
@@ -63,6 +64,8 @@ using TypeSpec.OpenAPI;
   "https://{space_name}.${SERVER_URL}/fabric/",
   "Endpoint",
   {
+    @doc(SERVER_URL_DESCRIPTION)
+    @example("example")
     space_name: string = "{Your_Space_Name}",
   }
 )
