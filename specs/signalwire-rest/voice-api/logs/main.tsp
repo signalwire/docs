@@ -9,10 +9,9 @@ import "./models/errors.tsp";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-namespace VoiceAPI {
-  @tag(LOGS_TAG)
+namespace VoiceAPI.Logs {
+  @tag(VOICE_LOGS_TAG)
   @route("/logs")
-  namespace Logs {
     @doc("""
       List the available logs.
       
@@ -44,5 +43,4 @@ namespace VoiceAPI {
         """)
       id: uuid,
     ): LogRetrieveResponse | StatusCode401 | StatusCode404 | StatusCode500;
-  }
 }
