@@ -55,7 +55,7 @@ export const openapiPlugin: PluginConfig = [
         },
       },
       signalwireFaxApi: {
-        specPath: "../specs/signalwire-rest/fax-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/fax-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/fax",
         sidebarOptions: {
           categoryLinkSource: "tag",
@@ -111,7 +111,7 @@ export const openapiPlugin: PluginConfig = [
         },
       },
       signalwireVoiceApi: {
-        specPath: "../specs/signalwire-rest/voice-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/voice-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/voice",
         sidebarOptions: {
           categoryLinkSource: "tag",
