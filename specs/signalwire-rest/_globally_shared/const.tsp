@@ -19,3 +19,5 @@ const CONTACT_INFO = #{
 };
 
 const LICENSE_INFO = #{ name: LICENSE_NAME, url: LICENSE_URL };
+
+const SERVER_URL_DESCRIPTION = "The domain of the users SignalWire space.";
