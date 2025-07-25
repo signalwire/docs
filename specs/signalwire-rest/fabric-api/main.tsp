@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "@typespec/openapi3";
+import "@typespec/openapi";
 import "../types";
 import "./ai-agent";
 import "./dialogflow-agents";
@@ -63,6 +63,8 @@ using TypeSpec.OpenAPI;
   "https://{space_name}.${SERVER_URL}/fabric/",
   "Endpoint",
   {
+    @doc(SERVER_URL_DESCRIPTION)
+    @example("example")
     space_name: string = "{Your_Space_Name}",
   }
 )

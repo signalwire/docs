@@ -12,7 +12,6 @@ model CxmlApplicationPathID {
 }
 
 model CxmlApplication {
-
   @doc("Unique ID of the cXML Application.")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
   @format("uuid")
@@ -21,7 +20,6 @@ model CxmlApplication {
   @doc("Project ID for the cXML Application")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
   project_id: uuid;
-
 
   @doc("Display name of the cXML Application")
   @example("Reception App")
