@@ -27,6 +27,7 @@ namespace VoiceAPI.Logs {
     | VoiceLogsListStatusCode422
     | StatusCode500;
 
+  @tag(VOICE_LOGS_TAG)
   @doc("""
     Find a log by ID.
     
