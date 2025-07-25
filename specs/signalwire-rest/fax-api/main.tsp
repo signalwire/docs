@@ -8,21 +8,21 @@ import "./tags.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-@tagMetadata(VOICE_LOGS_TAG, VOICE_LOGS_TAG_METADATA)
+@tagMetadata(LOGS_TAG, LOGS_TAG_METADATA)
+@service(#{ title: "Fax API" })
 @externalDocs(
-  "https://developer.signalwire.com/rest/signalwire-rest/endpoints/voice",
-  "The Voice API holds a collection of endpoints that will help you find voice related logs."
+  "https://developers.signalwire.com/rest/signalwire-rest/endpoints/fax",
+  "Find more information about this and other SignalWire APIs."
 )
 @info(#{
-  title: "Voice API",
+  title: "Fax API",
   version: "1.0.0",
   contact: CONTACT_INFO,
   license: LICENSE_INFO,
   termsOfService: TERMS_OF_SERVICE,
 })
-@service(#{ title: "Voice API" })
 @server(
-  "https://{space_name}.${SERVER_URL}/voice",
+  "https://{space_name}.${SERVER_URL}/fax",
   "Endpoint",
   {
     @doc(SERVER_URL_DESCRIPTION)
@@ -31,5 +31,5 @@ using TypeSpec.OpenAPI;
   }
 )
 @useAuth(BasicAuth)
-@doc("An API to programmatically access information about SignalWire Voice activity.")
-namespace VoiceAPI;
+@doc("An API to programmatically access information about SignalWire fax activity.")
+namespace FaxAPI;

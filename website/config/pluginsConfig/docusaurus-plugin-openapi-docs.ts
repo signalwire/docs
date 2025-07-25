@@ -55,7 +55,7 @@ export const openapiPlugin: PluginConfig = [
         },
       },
       signalwireFaxApi: {
-        specPath: "../specs/signalwire-rest/fax-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/fax-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/fax",
         sidebarOptions: {
           categoryLinkSource: "tag",
