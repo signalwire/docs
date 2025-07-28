@@ -11,7 +11,10 @@ keywords:
   - python
 tags:
   - agents-sdk
+  - api
+  - methods
   - python
+  - reference
 ---
  
 
