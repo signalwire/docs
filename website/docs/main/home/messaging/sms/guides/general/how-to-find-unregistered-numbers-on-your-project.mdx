@@ -1,0 +1,125 @@
+---
+title: Finding Unregistered Numbers in a Project
+slug: /messaging/guides/general/how-to-find-unregistered-numbers-on-your-project
+sidebar_position: 5
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags: 
+    - language:python
+    - product:messaging
+description: A script to compare all the numbers in your project with a CSV of registered numbers.
+sidebar_custom_props: 
+    platform: python
+
+---
+
+## Overview
+
+When you have hundreds or even thousands of numbers in your project, it can be painstaking to try and find out which ones are registered and which are not. However, this process is **essential** to ensure your messages are not blocked for coming from unregistered numbers. This script makes it easy to compare all the numbers in your project with a CSV of registered numbers. If you don't have a CSV of your registered numbers, [this snippet](/rest/signalwire-rest/guides/campaign-registry/list-phone-numbers-assigned-to-a-specific-campaign) can help you accomplish that! 
+
+What do I need to run this code?
+--------------------------------
+
+<details>
+  <summary>Full code example: How to Compare All Project Numbers with Registered Numbers</summary>
+
+```python
+from signalwire.rest import Client as signalwire_client
+import csv
+
+SpaceURL = ''
+projectID = ""
+authToken = ""
+PathToCSV = 'FileName.csv'
+
+client = signalwire_client(projectID, authToken, signalwire_space_url=SpaceURL)
+
+incoming_phone_numbers = client.incoming_phone_numbers.list()
+print("Total Numbers -- " + str(len(incoming_phone_numbers)))
+
+results = []
+unregistered = []
+
+with open(PathToCSV, 'r', encoding='utf-8-sig') as csvfile:
+    reader = csv.reader(csvfile)
+    for row in reader:
+        if "+" not in row[0]:
+            results.append("+" + row[0])
+        else:
+            results.append(row[0])
+
+for record in incoming_phone_numbers:
+    if record.phone_number in results:
+        continue
+    else:
+        print('unregistered number --' + record.phone_number)
+        unregistered.append(record.phone_number)
+
+print(unregistered)
+```
+
+</details>
+
+You will need your API credentials as well as a CSV of your registered numbers. You can [find your API credentials](/platform/dashboard/get-started/explore#api) in the API tab of your SignalWire Space!
+
+How to Run Application
+----------------------
+
+This application is very simple! We will first define our `SpaceURL`, `projectID`, `authToken`, and `pathToCSV` variables to be used throughout the code. 
+
+```python
+from signalwire.rest import Client as signalwire_client
+import csv
+
+# define your variables here so they don't need to be hardcoded
+SpaceURL = ''
+projectID = ""
+authToken = ""
+PathToCSV = 'folder/FileName.csv'
+```
+
+We will use the authentication variables we just defined to instantiate the SignalWire Client and list all phone numbers in the project.
+
+```python
+# authenticate client 
+client = signalwire_client(projectID, authToken, signalwire_space_url=SpaceURL)
+
+# List and print all numbers on account
+incoming_phone_numbers = client.incoming_phone_numbers.list()
+print("Total Numbers -- " + str(len(incoming_phone_numbers)))
+```
+
+We are going to have to keep track of both unregistered and registered numbers, so we will create two lists to store the data. Now that we have a `results` array, we will loop through the CSV using `csv.reader` and append each number. If a number is not already in E164 format, we will modify it before appending to `results`. 
+
+```python
+# Open CSV file with registered numbers
+with open(PathToCSV, 'r', encoding='utf-8-sig') as csvfile:
+    reader = csv.reader(csvfile)
+    # Change to E164 format if it's not already in that format
+    for row in reader:
+        if "+" not in row[0]:
+            results.append("+" + row[0])
+        else:
+            results.append(row[0])
+```
+
+We have now arrived at the last step, **I told you it was easy**! All we have to do now is loop through the numbers on the project that we pulled from the API earlier and check each number to see if it exists in `results`. If it does, then it is already registered, and therefore needs no attention. If not, we will add the number to the `unregistered` list. Once we have finished, we will print all of the unregistered numbers. If they are toll-free, they are safe to ignore! Any local numbers with messaging destined to US numbers on this `unregistered` list should be added to a campaign to use them for messaging. 
+
+```python
+for record in incoming_phone_numbers:
+    if record.phone_number in results:
+        continue
+    else:
+        print('unregistered number --' + record.phone_number)
+        unregistered.append(record.phone_number)
+
+print(unregistered)
+```
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

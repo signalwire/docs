@@ -1,0 +1,206 @@
+---
+slug: /swml/methods/ai/prompt/contexts
+title: prompt.contexts
+description: An object that defines the context steps for the AI. The contexts are used to define the flow of the conversation.
+tags: ['swml']
+---
+
+import SupportedLanguageCodes from '../../../_sharedtables/supported_langauge_codes.mdx';
+
+[steps_object]: /swml/methods/ai/prompt/contexts/steps
+[contexts_parameters]: #contexts-parameters
+[context_object]: #context-object
+
+Contexts allow you to create structured conversation flows with multiple specialized paths. Each context represents a distinct conversation mode with its own steps, memory settings, and transition logic.
+
+Every contexts object requires a `default` key, which serves as the entry point for the conversation. You can define additional contexts as custom keys alongside `default`.
+
+| Name                                                     | Type     | Default | Description                                                             |
+|:---------------------------------------------------------|:---------|:--------|:------------------------------------------------------------------------|
+| `contexts`<span className="optional-arg">Optional</span> | `object` | -       | An object that accepts the [`contexts parameters`][contexts_parameters]. |
+
+## contexts Parameters
+
+| Name                                                          | Type     | Default | Description                                                                                                                                                                                                                                                                                                             |
+|:--------------------------------------------------------------|:---------|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `default`<span className="required-arg">Required</span>       | `object` | -       | The default context to use at the beginning of the conversation. This object accepts the [`context object`][context_object].                                                                                                                                                                                           |
+| `[key: string]`<span className="optional-arg">Optional</span> | `object` | -       | Additional contexts to define specialized conversation flows. The key is user-defined and can be any string (e.g., `support`, `sales`, `billing`).<br/> These contexts can be accessed from the `default` context or any other user-defined context.<br/> Each value is a [`context object`][context_object]. |
+
+## context object
+
+Each context (both `default` and custom contexts) is configured using a context object with the following properties:
+
+| Name                                                     | Type        | Default   | Description                                                                                                                         |
+|:---------------------------------------------------------|:------------|:----------|:------------------------------------------------------------------------------------------------------------------------------------|
+| [`steps`][steps_object] <span className="required-arg">Required</span>                                                  | `object[]`  | -         | An array of [step objects][steps_object] that define the conversation flow for this context. Steps execute sequentially unless otherwise specified.                                                 |
+| `isolated`<span className="optional-arg">Optional</span> | `boolean`   | `false`   | When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation.                    |
+| `enter_fillers`<span className="optional-arg">Optional</span> | `object[]` | -         | Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.                                  |
+| `exit_fillers`<span className="optional-arg">Optional</span>  | `object[]` | -         | Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.                                   |
+
+### Context Transition Fillers
+
+The `enter_fillers` and `exit_fillers` properties enhance user experience by providing natural language transitions between contexts. These fillers play automatically during context transitions, support multiple languages, and are randomly selected from provided options to help maintain conversational flow.
+
+#### Filler Structure
+
+| Language Code | Type | Description |
+|:--------------|:-----|:------------|
+| `[key: string]` | `string[]` | An array of filler phrases for the specified language. The key must be a valid [language code](#supported-language-codes). One phrase is randomly selected during transitions. |
+
+#### Supported Language Codes
+
+<SupportedLanguageCodes />
+
+## Examples
+
+### Basic Context Structure
+
+Here's a simple example showing the context structure with transition fillers:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You are a helpful assistant that can switch between different expertise areas.
+          contexts:
+            default:
+              steps:
+                - name: greeting
+                  text: Greet the user and ask what they need help with. If they need technical support, transfer them to the support context.
+                  valid_contexts:
+                    - support
+            support:
+              isolated: true  # Reset conversation history when entering support mode
+              enter_fillers:
+                - en-US: ["Switching to technical support", "Let me connect you with support"]
+                  es-ES: ["Cambiando a soporte técnico", "Permítame conectarlo con soporte"]
+              exit_fillers:
+                - en-US: ["Leaving support mode", "Returning to main menu"]
+                  es-ES: ["Saliendo del modo de soporte", "Volviendo al menú principal"]
+              steps:
+                - name: troubleshoot
+                  text: Help the user troubleshoot their technical issue. When finished, ask if they need anything else or want to return to the main menu.
+                  valid_contexts:
+                    - default
+```
+
+### Advanced Multi-Context Example
+
+This comprehensive example demonstrates multiple contexts with different AI personalities, voice settings, and specialized knowledge domains:
+
+
+```yaml andJson
+sections:
+  main:
+    - ai:
+        hints:
+          - StarWars
+          - StarTrek
+        languages:
+          - name: Ryan-English
+            voice: elevenlabs.patrick
+            code: en-US
+          - name: Luke-English
+            voice: elevenlabs.fin
+            code: en-US
+          - name: Spock-English
+            voice: elevenlabs.charlie
+            code: en-US
+        prompt:
+          text: Help the user transfer to the Star Wars or Star Trek expert.
+          contexts:
+            default:
+              steps:
+                - name: start
+                  text: |+
+                    Your name is Ryan. You are a receptionist. Your only purpose is to change the context to starwars or startrek.
+                  step_criteria: |+
+                    Introduce yourself as Ryan.
+                    Ask the user if he would like to talk to a star wars or star trek expert until they provide an adequate answer.
+                - name: transfer
+                  text: You will now successfully transfer the user to the Star Wars or Star Trek expert.
+                  step_criteria: If the user has chosen a valid context, transfer them to the appropriate expert.
+                  valid_contexts:
+                    - starwars
+                    - startrek
+            starwars:
+              steps:
+                - name: start
+                  text: |+
+                    The user has been transferred to the Star Wars expert.
+                    Until told otherwise, your name is Luke. Change the language to Luke-English.
+                    Your current goal is to get the user to tell you their name.
+                    Unless told otherwise, refer to the user as 'Padawan {users_name}'.
+                  step_criteria: |+
+                    Introduce yourself as Luke, the Star Wars expert.
+                    The user must tell you their name if they only say one word assume that is their name.
+                - name: question
+                  text: |+
+                    Your goal is to get the user to choose one of the following options.
+                    - Jedi Order (advance to jedi_order step)
+                    - The ways of the Force (advance to force step)
+                    - Talk to the star trek expert. (change context to startrek)
+                  step_criteria: +|
+                    The user must provide a valid answer to continue.
+                    Refer to the user as 'Padawan {users_name}' for the rest of the conversation.
+                  valid_steps:
+                    - jedi_order
+                    - force
+                  valid_contexts:
+                    - startrek
+                - name: jedi_order
+                  text: |+
+                    Limit the topic to the Jedi Order.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+                - name: force
+                  text: |+
+                    Limit the topic to the force.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+            startrek:
+              steps:
+                - name: start
+                  text: |+
+                    The user has been transferred to the Star Trek expert.
+                    Until told otherwise, your name is Spok. Change the language to Spok-English.
+                    Your current goal is to get the user to tell you their name.
+                    Unless told otherwise, refer to the user as 'Ensign {users_name}'.
+                  step_criteria: |+
+                    Introduce yourself as Spok, the Star Trek expert.
+                    The user must tell you their name if they only say one word assume that is their name.
+                - name: question
+                  text: |+
+                    Your goal is to get the user to choose one of the following options.
+                    - Vulcan Culture (advance to vulcan_culture step)
+                    - Federation (advance to federation step)
+                    - Talk to the star wars expert. (change context to starwars)
+                  step_criteria: +|
+                    The user must provide a valid answer to continue.
+                    Refer to the user as 'Ensign {users_name}' for the rest of the conversation.
+                  valid_steps:
+                    - vulcan_culture
+                    - federation
+                  valid_contexts:
+                    - starwars
+                - name: vulcan_culture
+                  text: |+
+                    Limit the topic to Vulcan Culture.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+                - name: federation
+                  text: |+
+                    Limit the topic to the Federation of Planets.
+                    Inform the user they can say they want to change the topic at any time, if they do move to the question step.
+                  step_criteria: The user says they want to change the topic.
+                  valid_steps:
+                    - question
+```

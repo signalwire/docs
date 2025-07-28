@@ -1,0 +1,492 @@
+---
+title: <Pay>
+slug: /compatibility-api/cxml/voice/pay
+---
+
+
+
+## Overview
+
+The `<Pay>` verb enables secure payment processing during voice calls. When implemented in your voice application,
+it handles the complete payment flow including data collection, validation, and processing through your configured payment gateway.
+
+The `<Pay>` verb also has two nouns that are embedded within it:
+- [`<Parameter>`](/compatibility-api/cxml/voice/pay/parameter): Pass custom parameters to your payment processor.
+- [`<Prompt>`](/compatibility-api/cxml/voice/pay/prompt): Customize the prompts used during payment collection.
+
+## Core Functionality
+
+- Secure payment information collection
+- Real-time payment processing
+- Payment method tokenization
+- Multi-currency support
+- Automated retry handling
+- Status tracking via webhooks
+
+---
+
+## Transaction Types
+
+The `<Pay>` verb supports two primary transaction types: immediate charges and tokenization.
+
+### Immediate Charges
+When you need to process a payment right away, use an immediate charge transaction. This collects the payment details and processes the transaction in one step.
+
+To execute an immediate charge:
+```xml
+<Pay chargeAmount="25.00"/>
+```
+Setting any positive value for `chargeAmount` initiates an immediate charge transaction.
+
+### Tokenization
+Tokenization allows you to securely store payment information for future use. Instead of processing a payment, it generates a secure token that represents the payment method. This is particularly useful for:
+- Subscription services
+- Recurring billing
+
+To tokenize payment information:
+```xml
+<Pay chargeAmount="0"/>
+```
+
+You can also omit the `chargeAmount` attribute entirely:
+
+:::note
+The actual token is provided & stored by your payment processor, which can be used for future transactions without requiring customers
+to re-enter their payment details. This may differ depending on the payment processor you are using.
+:::
+
+---
+
+## Attributes
+
+| Attribute | Allowed Values | Default | Description |
+|-----------|---------------|----------|-------------|
+| `input`<span className="optional-arg">optional</span> | `dtmf` | `dtmf` | The only supported input method for payment data collection. All captured digits are automatically redacted in logs. |
+| `action`<span className="optional-arg">optional</span> | An absolute URL | Current cXML document URL | HTTPS endpoint that receives POST requests after payment completion. Must be HTTPS. Response determines next cXML instructions. For tokenization, receives `PaymentToken` and `ProfileId`. For charges, receives `PaymentConfirmationCode`. |
+| `statusCallback`<span className="optional-arg">optional</span> | An absolute URL | - | HTTPS endpoint that receives real-time payment status updates via POST requests. Includes details about current payment stage, errors, and attempt counts.<br /> See [Status Callback Parameters](#statuscallback-request-parameters) for more details. |
+| `paymentMethod`<span className="optional-arg">optional</span> | `credit-card` | `credit-card` | Determines payment collection flow. Credit card flow captures card number, expiration, security code, and postal code. ACH flow captures routing and account numbers. |
+| `paymentConnectorUrl`<span className="required-arg">required</span> | An absolute URL | - | The URL to which to POST the encrypted payment data. |
+| `timeout`<span className="optional-arg">optional</span> | A positive integer greater than `3` seconds. | `5` | Number of seconds to wait for the next digit input before timing out. Applies to all input collection stages. |
+| `maxAttempts`<span className="optional-arg">optional</span> | `1`, `2`, `3` | `1` | Maximum number of retry attempts when timeout occurs or invalid data is received. Payment flow terminates after `maxAttempts` is reached. |
+| `securityCode`<span className="required-arg">required</span> | `true`, `false` | `true` | Controls whether CVV/security code collection is required. When `false`, skips security code collection. |
+| `postalCode`<span className="optional-arg">optional</span> | `true`, `false`, or a String value | `true` | Controls postal code collection.<ul><li>**When `false`**: Skips collection for postal code.</li><li>**When `true`**: Prompts the user for collection.</li><li>**When a String value**: Uses provided value without needing to collect the postal code from the user.</li></ul> |
+| `minPostalCodeLength`<span className="required-arg">required</span> | positive integer | - | Minimum required length for postal code input. Used for input validation. |
+| `tokenType`<span className="optional-arg">optional</span> | `one-time`, `reusable` | `reusable` | Determines token persistence. One-time for single use, reusable for recurring use. Payment-method specific to certain processors. |
+| `chargeAmount`<span className="optional-arg">optional</span> | decimal (0-1,000,000) | - | Amount to charge. Set to 0 or omit for tokenization only. Must be between 0 and 1,000,000. |
+| `currency`<span className="optional-arg">optional</span> | A String value of a three-letter currency code. `usd` is the only value accepted right now. | `usd` | Three-letter currency code (e.g., `usd`, `eur`, `gbp`). Must be supported by selected payment connector. |
+| `language`<span className="optional-arg">optional</span> | [See language list](#language-support) | `en-us` | Controls prompt language. Supports `en-AU`, `en-CA`, `en-GB`, `en-IN`, `en-US` for all payments. Additional `es-ES`, `es-MX`, `fr-CA`, `fr-FR`, `de-DE`, `it-IT` for credit card only. |
+| `description`<span className="optional-arg">optional</span> | A String value. | - | Transaction description passed to payment processor. Appears in transaction records. |
+| `validCardTypes`<span className="optional-arg">optional</span> | `visa`, `mastercard`, `amex`, `maestro`, `discover`, `optima`, `jcb`, `diners-club`, `enroute` | `visa mastercard amex` | Space-separated list of accepted card types. Validates card number against specified types. |
+
+---
+
+## Webhook Request Parameters
+
+### `paymentConnectorUrl` Request Parameters
+
+When a transaction is completed, SignalWire will `POST` to your `paymentConnectorUrl` URL. Based on the [transaction type](#transaction-types), 
+the body of the request will contain the below parameters:
+
+:::important Response from `paymentConnectorUrl`
+A valid response from your `paymentConnectorUrl` must be provided to indicate the success or failure of the transaction.
+More information can be found in the [Webhook Response](#paymentconnectorurl-response) section.
+:::
+
+<Tabs>
+<TabItem value="standard" label="Standard Credit Card Payment">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `transaction_id` | String | Unique identifier for the transaction |
+| `method` | String | Payment method (`credit-card`) |
+| `cardnumber` | String | Customer's credit card number |
+| `cvv` | String | Card security code |
+| `postal_code` | String | Billing postal code |
+| `description` | String | Transaction description |
+| `chargeAmount` | Decimal | Amount to charge |
+| `expiry_month` | String | Card expiration month (2 digits) |
+| `expiry_year` | String | Card expiration year (2 digits) |
+| `currency_code` | String | Three-letter currency code |
+| `parameters` | Object | Custom key-value parameters |
+
+
+#### Example
+
+```json
+{
+  "transaction_id":"id",
+  "method":"credit-card",
+  "cardnumber":"1234123412341234",
+  "cvv":"123",
+  "postal_code":"12345",
+  "description":"renew plan",
+  "chargeAmount":123.45,
+  "expiry_month":"01",
+  "expiry_year":"38",
+  "currency_code":"USD",
+  "parameters":{
+    "custom1":"value1"
+  }
+}
+```
+
+</TabItem>
+<TabItem value="tokenized" label="Tokenized Credit Card Payment">
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `transaction_id` | String | Unique identifier for the transaction |
+| `cardnumber` | String | Customer's credit card number |
+| `cvv` | String | Card security code |
+| `postal_code` | String | Billing postal code |
+| `description` | String | Transaction description |
+| `amount` | Decimal | Set to 0 for tokenization |
+| `token_type` | String | Token persistence (`reusable` or `one-time`) |
+| `expiry_month` | String | Card expiration month (2 digits) |
+| `expiry_year` | String | Card expiration year (2 digits) |
+| `currency_code` | String | Three-letter currency code |
+| `parameters` | Object | Custom key-value parameters |
+
+
+
+#### Example
+
+```json
+{
+  "transaction_id":"id",
+  "cardnumber":"1234123412341234",
+  "cvv":"123",
+  "postal_code":"12345",
+  "description":"save card",
+  "amount":0,
+  "token_type":"reusable",
+  "expiry_month":"01",
+  "expiry_year":"38",
+  "currency_code":"USD",
+  "parameters":{
+    "custom1":"value1"
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+
+---
+
+### `action` Request Parameters
+
+When a transaction is completed, SignalWire will `POST` to your `action` URL. The body of the request will contain the [standard request parameters](/compatibility-api/cxml/voice#request-parameters)
+as well as the following parameters:
+
+:::important Response from `action` URL
+A valid cXML response must be provided if the `action` URL is provided. More information can be found in the [Webhook Response](#action-response) section.
+:::
+
+
+| Parameter | Description |
+|-----------|-------------|
+| `Result` | Final outcome of the payment attempt. The possible values can be seen in the [Result Values](#result-values) table. |
+| `ProfileId` | Customer profile identifier from payment processor |
+| `PaymentToken` | Tokenized payment method reference |
+| `PaymentConfirmationCode` | Transaction confirmation code |
+| `PaymentMethod` | Type of payment method used |
+| `PaymentCardNumber` | Masked card number (last 4 digits visible) |
+| `PaymentCardType` | Card brand (visa, mastercard, etc.) |
+| `ExpirationDate` | Card expiration in MMYY format |
+| `SecurityCode` | Masked security code |
+| `PaymentCardPostalCode` | Postal code provided |
+| `BankAccountNumber` | Masked bank account number |
+| `BankRoutingNumber` | Bank routing number |
+| `PaymentError` | Detailed error information |
+| `PayErrorCode` | Numeric error reference |
+| `ConnectorError` | Raw processor error details |
+
+#### Result Values
+
+| Value | Description |
+|-------|-------------|
+| `success` | Payment processed successfully |
+| `too-many-failed-attempts` | Maximum retry attempts reached |
+| `payment-connector-error` | Gateway communication failure |
+| `caller-interrupted-with-star` | User canceled with * key |
+| `caller-hung-up` | Call terminated by user |
+| `validation-error` | Invalid parameter provided |
+| `internal-error` | System processing error |
+
+---
+
+### `statusCallback` Request Parameters
+
+When a status change occurs, the following parameters are sent to your statusCallback URL:
+
+| Parameter | Description |
+|-----------|-------------|
+| `For` | Indicates the present phase of the `<Pay>` request. The table below outlines the potential values. Possible values can be seen in the [For Values](#for-values) table. |
+| `ErrorType` | Specifies the nature of the error encountered (if any). Refer to the table below for detailed error type descriptions. The possible values can be seen in the [Error Types](#error-types) table. |
+| `Attempt` | Current attempt number |
+| `PaymentMethod` | Type of payment being processed |
+| `PaymentCardNumber` | Masked card number |
+| `PaymentCardType` | Type of card provided |
+| `SecurityCode` | Masked security code |
+| `ExpirationDate` | Card expiration date |
+| `PaymentCardPostalCode` | Postal code provided |
+
+#### Status Callback Events
+
+| Event | Description |
+|-------|-------------|
+| `payment-card-number` | Collecting card number |
+| `expiration-date` | Collecting expiration date |
+| `security-code` | Collecting CVV/security code |
+| `postal-code` | Collecting postal code |
+| `bank-routing-number` | Collecting routing number |
+| `bank-account-number` | Collecting account number |
+| `payment-processing` | Processing transaction |
+
+
+#### For Values
+
+| Value | Description |
+|-------|-------------|
+| `payment-card-number` | Requesting the customer's credit or debit card details |
+| `expiration-date` | Requesting the expiration date of the customer's payment card |
+| `security-code` | Requesting the security code (CVV) of the customer's payment card |
+| `postal-code` | Requesting the postal code linked to the customer's payment card |
+| `payment-processing` | Executing the payment transaction |
+
+
+#### Error Types
+
+| Error | Description |
+|-------|-------------|
+| `input-timeout` | User input timeout |
+| `invalid-card-number` | Failed card validation |
+| `invalid-card-type` | Unsupported card type |
+| `invalid-date` | Invalid expiration date |
+| `invalid-security-code` | Invalid CVV format |
+| `invalid-postal-code` | Invalid postal code format |
+| `invalid-bank-routing-number` | Invalid routing number |
+| `invalid-bank-account-number` | Invalid account number |
+| `session-in-progress` | Concurrent session attempt |
+
+---
+
+## Webhook Response
+
+### `paymentConnectorUrl` Response
+
+The response from your `paymentConnectorUrl` is used to inform if the transaction was successful or not.
+
+
+#### Successful Transaction
+
+When a transaction is successful, the webhook should respond with one of the following formats (depending on the transaction type):
+
+<Tabs>
+<TabItem value="standard" label="Successful Standard Credit Card Payment">
+
+```json
+{
+  "charge_id":"charge_id",
+  "error_code":null,
+  "error_message":null
+}
+```
+</TabItem>
+<TabItem value="tokenized" label="Successful Tokenized Credit Card Payment">
+
+```json
+{
+  "token_id":"token_id",
+  "error_code":null,
+  "error_message":null
+}
+```
+</TabItem>
+</Tabs>
+
+#### Unsuccessful Transaction
+
+When a transaction is unsuccessful (declined by the payment processor), the webhook should respond with the following format:
+
+<Tabs>
+<TabItem value="standard" label="Declined Standard Credit Card Payment">
+
+```json
+{
+  "charge_id": null,
+  "error_code": "some error code",
+  "error_message": "some error message"
+}
+```
+</TabItem>
+<TabItem value="tokenized" label="Declined Tokenized Credit Card Payment">
+
+```json
+{
+  "token_id": null,
+  "error_code": "some error code",
+  "error_message": "some error message"
+}
+```
+</TabItem>
+</Tabs>
+
+---
+
+### `action` Response
+
+When a transaction is completed, SignalWire will `POST` to your `action` URL. The response should return valid cXML for the
+next step in your application.
+
+
+#### Example
+
+```xml
+<Response>
+  <Say>Thank you for your payment. Your transaction has been completed.</Say>
+  <Hangup/>
+</Response>
+```
+
+
+---
+
+## Language Support
+
+The `language` attribute controls the language of automated prompts during payment collection.
+
+:::note
+You can customize prompt messages in any language using the [`<Prompt>`](/compatibility-api/cxml/voice/pay/prompt) noun, regardless of the selected `language` attribute.
+:::
+
+
+### Credit Card Payments
+
+All credit card payments support the following languages:
+
+#### English Variants
+- en-AU (Australian English)
+- en-CA (Canadian English) 
+- en-GB (British English)
+- en-IN (Indian English)
+- en-US (American English)
+
+#### Additional Languages
+- es-ES (European Spanish)
+- es-MX (Mexican Spanish)
+- fr-CA (Canadian French)
+- fr-FR (European French)
+- de-DE (German)
+- it-IT (Italian)
+
+---
+
+## Examples
+
+
+### Simple payment collection:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Please enter your payment information</Say>
+    <Pay chargeAmount="20.45"/>
+</Response>
+```
+
+### Payment with status tracking:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Please enter your payment information</Say>
+    <Pay 
+        chargeAmount="20.45"
+        action="https://your-callback-url.example.com/pay"
+        statusCallback="https://your-callback-url.example.com/status"
+    />
+</Response>
+```
+
+### Basic tokenization:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Please enter your card information to save for future use</Say>
+    <Pay 
+        tokenType="reusable"
+        chargeAmount="0"
+    />
+</Response>
+```
+
+### Tokenization with validation:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Please enter your card information</Say>
+    <Pay 
+        tokenType="reusable"
+        chargeAmount="0"
+        validCardTypes="visa mastercard"
+        securityCode="true"
+        postalCode="true"
+    />
+</Response>
+```
+
+
+### Custom retry logic:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Please enter your payment information</Say>
+    <Pay 
+        chargeAmount="75.00"
+        maxAttempts="3"
+        timeout="10"
+    />
+</Response>
+```
+
+### International payment:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say>Por favor, ingrese su información de pago</Say>
+    <Pay 
+        chargeAmount="100.00"
+        currency="mxn"
+        language="es-MX"
+        description="Mexican peso transaction"
+    />
+</Response>
+```
+
+### Example with custom parameters and prompts
+
+```xml
+<Response>
+<Pay chargeAmount="123.45" paymentConnectorUrl="https://example.com/accept-payment" description="renew plan">
+  <Parameter name="custom1" value="value1"/>
+  <Prompt name="payment-card-number" attempt="1"><Say>Let's collect your payment information. Please enter your credit card number</Say></Prompt>
+  <Prompt name="payment-card-number" attempt="2 3"><Say>Please enter your credit card number</Say></Prompt>
+  <Prompt for="security-code" cardType="amex"><Say>Please enter your credit card’s security code. It's the 4 digits located on the front of your card. </Say></Prompt>
+</Pay>
+</Pay>
+</Response>
+```
+
+## Security Best Practices
+
+1. Always use HTTPS for callback URLs
+2. Implement webhook validation
+3. Monitor payment status callbacks
+4. Handle errors gracefully
+5. Store tokens securely
+6. Use appropriate timeout values
+7. Implement proper error handling
+8. Validate all inputs
+9. Monitor transaction patterns
+10. Keep payment connector configurations secure

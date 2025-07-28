@@ -1,0 +1,62 @@
+---
+title: request
+slug: /swml/methods/request
+description: Send a HTTP request to a remote URL.
+tags: ['swml']
+---
+
+Send a GET, POST, PUT, or DELETE request to a remote URL.
+
+| Name                                                    | Type     | Default | Description                                                          |
+|:--------------------------------------------------------|:---------|:--------|:---------------------------------------------------------------------|
+| `request`<span className="required-arg">Required</span> | `object` | -       | An object containing the [`request parameters`](#request-parameters) |
+
+## **request Parameters**
+
+| Name                                                            | Type                 | Default       | Description                                                                                                                                                 |
+|:----------------------------------------------------------------|:---------------------|:--------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `url`<span className="required-arg">Required</span>             | `string`             | -             | URL to send the HTTPS request to. Authentication can also be set in the url in the format of `username:password@url`.                                       |
+| `method`<span className="required-arg">Required</span>          | `string`             | -             | Request type. `GET`\|`POST`\|`PUT`\|`DELETE`                                                                                                                |
+| `headers`<span className="optional-arg">Optional</span>         | `object`             | -             | Object containing HTTP headers to set. Valid header values are `Accept`, `Authorization`, `Content-Type`, `Range`, and custom `X-` headers                  |
+| `body`<span className="optional-arg">Optional</span>            | `string` \| `object` | -             | Request body. `Content-Type` header should be explicitly set, but if not set, the most likely type will be set based on the first non-whitespace character. |
+| `connect_timeout`<span className="optional-arg">Optional</span> | `number`             | `5.0` seconds | Maximum time in seconds to wait for a connection                                                                                                            |
+| `timeout`<span className="optional-arg">Optional</span>         | `number`             | `5.0` seconds | Maximum time in seconds to wait for a response                                                                                                              |
+| `save_variables`<span className="optional-arg">Optional</span>  | `boolean`            | `false`       | Store parsed JSON response as variables                                                                                                                     |
+
+## **Variables**
+
+Set by the method:
+
+- **request_url:** (out) URL the request was sent to.
+- **request_result:** (out) `success` | `failed`.
+- **return_value:** (out) The same value as the `request_result`.
+- **request_response_code:** (out) HTTP response code from the request.
+- **request_response_headers.`<header name lowercase>`:** (out) HTTP response headers. Header names should be normalized to lowercase and trimmed of whitespace. A maximum of 64 headers are saved. Ex: `%{request_response_headers.content-type}`.
+- **request_response_body:** (out) Raw HTTP response body. This is limited to 64KB.
+- **request_response.`<object_field>`:** (out) Variables saved from the response if `save_variables` is true and parsed as JSON.
+
+For example, if the server responds with the following JSON:
+
+```JSON
+  { "status": "created", "time": "2 seconds ago", "number": { "home": "n/a" } }
+```
+
+The variables `request_response.status`, `request_response.time`, and `request_response.number.home` are set.
+
+## **Examples**
+
+### Making a GET Request
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - request:
+        url: 'https://jsonplaceholder.typicode.com/todos/1'
+        method: GET
+        save_variables: true
+        timeout: 10
+    - play:
+        url: 'say: the title is: %{request_response.title}'
+```

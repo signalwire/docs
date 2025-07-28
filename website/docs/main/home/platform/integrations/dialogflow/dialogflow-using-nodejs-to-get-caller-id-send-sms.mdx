@@ -1,0 +1,183 @@
+---
+title: Caller ID & Sending SMS via Dialogflow
+description: How to use nodeJS to get the caller ID information using the
+  DialogFlow fulfillment libraries and how to send SMS using nodeJS
+slug: /platform/integrations/dialogflow/dialogflow-using-nodejs-to-get-caller-id-send-sms
+x-custom:
+  ported_from_readme: true
+---
+
+Generally, DialogFlow is not an SMS interactive platform, but it is more designed for accepting incoming audio, and making machine learning decisions based on audio input.
+
+However, DialogFlow can interact with NodeJS, and therefore can utilize SignalWire’s NodeJS libraries. DialogFlow is able to send outbound GET/POST requests, but in order to enable this, a credit card must be on file in the DialogFlow account (the pay-as-you-go plan is a good option)
+
+By default, Google does not allow outbound requests outside of the Google network to enable outbound API calls to other platforms unless on a paid plan and have a credit card on file for charges. High thresholds must be passed before being billed (charged) as there are a certain amount of requests that are allowed for free. Therefore, during testing, charges should not be accumulated from DialogFlow but be sure to research this fully as SignalWire isn’t responsible for any additional charges acquired while using the DialogFlow interface and making additional outbound requests.
+
+Some things to keep in mind:
+
+- SignalWire appears to be able to send calls to Dialogflow then get audio input from the user, make decisions and then send an outgoing SMS during the ‘fulfillment’ stage
+- Once calls leave SignalWire and go to DialogFlow, the call is not able to return back to SignalWire and it will end in DialogFlow.
+
+After setting up intents and entities to gather info from the customer, the call then goes to a fulfillment webhook. In the fulfillment area on "Inline Editor" in the "packages.json" add the SignalWire library.
+
+**Full contents of example Fulfillment inline editor "package.json"**
+
+```json
+{
+  "name": "dialogflowFirebaseFulfillment",
+  "description": "This is the default fulfillment for a Dialogflow agents using Cloud Functions for Firebase",
+  "version": "0.0.1",
+  "private": true,
+  "license": "Apache Version 2.0",
+  "author": "Google Inc.",
+  "engines": {
+    "node": "8"
+  },
+  "scripts": {
+    "start": "firebase serve --only functions:dialogflowFirebaseFulfillment",
+    "deploy": "firebase deploy --only functions:dialogflowFirebaseFulfillment"
+  },
+  "dependencies": {
+    "actions-on-google": "^2.2.0",
+    "firebase-admin": "^5.13.1",
+    "firebase-functions": "^2.0.2",
+    "dialogflow": "^0.6.0",
+    "dialogflow-fulfillment": "^0.5.0",
+    "@signalwire/compatibility-api": "^3.0.2",
+    "https": "^1.0.0",
+    "util": "^0.12.2"
+  }
+}
+```
+
+This SignalWire dependency declaration will allow GET and POST requests using the SignalWire XML library. So essentially follow-up SMS messages could be sent to customers after the call to DialogFlow has been fulfilled (as seen in the index.js file below).
+
+<br />
+**Full contents of example Fulfillment inline editor "index.js"**
+
+```javascript
+"use strict";
+
+const functions = require("firebase-functions");
+const { WebhookClient } = require("dialogflow-fulfillment");
+const { Card, Suggestion } = require("dialogflow-fulfillment");
+const util = require("util");
+const { RestClient } = require("@signalwire/compatibility-api");
+const clientRest = RestClient("f3dfXXX", "PTXXX", {
+  signalwireSpaceUrl: "joshebosh.signalwire.com",
+});
+
+process.env.DEBUG = "dialogflow:debug"; // enables lib debugging statements
+
+exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+  const agent = new WebhookClient({ request, response });
+  console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
+  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  console.log('SignalWire Object: ' + util.inspect(request.body.originalDetectIntentRequest, false, null, false));
+  console.log('SignalWire To Number: ' + util.inspect(request.body.originalDetectIntentRequest.payload.signalwire.to, false, null, false));
+  console.log('SignalWire From Number: ' + util.inspect(request.body.originalDetectIntentRequest.payload.signalwire.from, false, null, false));
+  console.log('Telephony CID Number: ' + util.inspect(request.body.originalDetectIntentRequest.payload.telephony.caller_id, false, null, false));
+  function welcome(agent) {
+    agent.add(`Welcome to my agent!`);
+  }
+  function fallback(agent) {
+    agent.add(`I didn't understand`);
+    agent.add(`I'm sorry, can you try again?`);
+  }
+  function CIDHandler(agent) {
+      console.log("joshebosh reached the CIDHander function");
+      console.log("agent:\n" + util.inspect(agent, false, null, true));
+      console.log("agent.parameters:\n" + util.inspect(agent.parameters));
+      clientRest.messages
+        .create({
+          body:
+            "Signalwire Payload:\n" +
+            JSON.stringify(request.body.originalDetectIntentRequest) +
+            "\n\nDialogflow Agent Parameters:\n" +
+            JSON.stringify(agent.parameters),
+          to: request.body.originalDetectIntentRequest.payload.signalwire.from, // Send SMS to this number
+          from: request.body.originalDetectIntentRequest.payload.signalwire.to, // From a valid SignalWire number
+        })
+        .then((message) => {
+          console.log("Message ID: " + message.sid);
+        })
+        .catch(console.error);
+    }
+
+    // Run the proper function handler based on the matched Dialogflow intent name
+    let intentMap = new Map();
+    intentMap.set("Default Welcome Intent", welcome);
+    intentMap.set("Default Fallback Intent", fallback);
+    intentMap.set("caller id", CIDHandler);
+    agent.handleRequest(intentMap);
+  }
+);
+```
+
+**As per the SignalWire docs, setup the credentials for the library:**
+
+```javascript
+const { RestClient } = require("@signalwire/compatibility-api");
+const clientRest = RestClient("f3dffdbf-XXX", "PTXXX", {
+  signalwireSpaceUrl: "EXAMPLE-SPACE.signalwire.com",
+});
+```
+
+**Then near the bottom is the intent handler declared for the "caller id" intent which point to "CIDhandler" function:**
+
+```javascript
+intentMap.set("caller id", CIDHandler);
+```
+
+**Then somewhere in the middle is the “CIDHandler” function which is responsible for sending out an SMS including the payload, and agent parameters:**
+
+```javascript
+function CIDHandler(agent) {
+  console.log("joshebosh reached the CIDHander function");
+  console.log("agent:\n" + util.inspect(agent, false, null, true));
+  console.log("agent.parameters:\n" + util.inspect(agent.parameters));
+
+  clientRest.messages
+    .create({
+      body:
+        "SignalWire Payload:\n" +
+        JSON.stringify(request.body.originalDetectIntentRequest) +
+        "\n\nDialogflow Agent Parameters:\n" +
+        JSON.stringify(agent.parameters),
+      to: request.body.originalDetectIntentRequest.payload.signalwire.from, // Send SMS to this number
+      from: request.body.originalDetectIntentRequest.payload.signalwire.to, // From a valid SignalWire number
+    })
+    .then((message) => {
+      console.log("Message ID: " + message.sid);
+    })
+    .catch(console.error);
+}
+```
+
+This caller id object is being used to send SMS back to the original caller. Within the create message object, the "from" object contains the number used to send confirmation "to". Check out how this "to" is formatted in the code above.
+
+```javascript
+to: request.body.originalDetectIntentRequest.payload.signalwire.from;
+```
+
+Use the original SignalWire number that was dialed as the number so that it appears "to" be sending the SMS "from" a valid SignalWire number on the account. Looks at how the "from" parameter was defined to perform this.
+
+```javascript
+from: request.body.originalDetectIntentRequest.payload.signalwire.to;
+```
+
+Finally for this tutorial purposes, include both the SignalWire caller id object, and the agent derived response parameters in the body of the text message. Notice what this looks like for the "body" parameter that was in the above code.
+
+```javascript
+body: "SignalWire Payload:\n" +
+  JSON.stringify(request.body.originalDetectIntentRequest) +
+  "\n\nDialogflow Agent Parameters:\n" +
+  JSON.stringify(agent.parameters);
+```
+
+## Sign Up Here
+
+If you would like to test this example out, you can create a SignalWire account and Space 
+[here](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

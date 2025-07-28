@@ -1,0 +1,248 @@
+---
+title: List assigned phone numbers from all campaigns
+description: Using SignalWire's Campaign Registry APIs, this snippet will find
+  all of your phone number assignments, format a data table, and compile details
+  to help you manage all of your numbers.
+slug: /rest/signalwire-rest/guides/campaign-registry/list-all-campaign-number-assignments-to-csv
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags:
+    - language:python
+    - product:messaging
+sidebar_custom_props:
+    platform: python
+---
+
+# List assigned phone numbers from all campaigns
+
+<details>
+  <summary>Full code example: Export Messaging Campaign Number Assignments to CSV</summary>
+
+```python
+import requests
+from requests.auth import HTTPBasicAuth
+import pandas as pd
+
+# define your variables here to reuse throughout code
+SpaceURL = 'EXAMPLE.signalwire.com'
+projectID = "XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+authToken = "PTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+host = f"https://{SpaceURL}"
+all_campaign_numbers = []
+
+
+# list all of our brands
+response = requests.get(f"https://{SpaceURL}/api/relay/rest/registry/beta/brands",
+                             headers={
+                                 "Accept": "application/json",
+                                 "Content-Type": "application/json"},
+                             auth=HTTPBasicAuth(projectID, authToken)).json()
+brands = response['data']
+
+while "next" in response['links'].keys():
+     response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+     brands.extend(response['data'])
+
+print(f"You have {len(brands)} brands!")
+
+# loop through each brand and check for its campaigns
+for brand in brands:
+    brand_sid = brand['id']
+    brand_ID = brand['csp_brand_reference']
+
+    # list campaigns for this brand
+    response = requests.get(f"https://{SpaceURL}/api/relay/rest/registry/beta/brands/{brand_sid}/campaigns",
+                            headers={
+                                "Accept": "application/json",
+                                "Content-Type": "application/json"},
+                            auth=HTTPBasicAuth(projectID, authToken)).json()
+
+    # view campaigns
+    campaigns = response['data']
+
+    # add pagination
+    while "next" in response['links'].keys():
+        response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+        campaigns.extend(response['data'])
+
+    print(f"You have {len(campaigns)} campaigns in the brand {brand_ID}!")
+
+    for campaign in campaigns:
+        campaignSID = campaign['id']
+        campaignID = campaign['csp_campaign_reference']
+        campaignName = campaign['name']
+
+        # loop through campaigns and list campaign numbers
+        url = f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignSID}/numbers?page_size=1000"
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload,
+                                    auth=HTTPBasicAuth(projectID, authToken)).json()
+        campaignNumbers = response['data']
+
+        while "next" in response['links'].keys():
+            response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+            campaignNumbers.extend(response['data'])
+
+        print(f"There are {len(campaignNumbers)} total numbers in campaign {campaignID}.")
+
+        # loop through each campaign number
+        for number in campaignNumbers:
+            numberID = number['phone_number']['id']
+            tn = number['phone_number']['number']
+            numberState = number['state']
+            addToCampaignDate =number['created_at']
+
+            all_campaign_numbers.append([brand_sid, brand_ID, campaignSID, campaignID, numberID, tn, numberState, addToCampaignDate])
+
+
+# create dataframe
+df = pd.DataFrame(all_campaign_numbers, columns=('Brand SID', 'Brand ID', 'Campaign SID', 'Campaign ID', 'Number SID', 'Number', 'Number State', 'Date Added to Campaign'))
+print(df.to_string())
+
+df.to_csv('AllSpaceCampaigns.csv', index=False, encoding='utf-8')
+```
+
+</details>
+
+What are we going to do?
+------------------------
+
+This snippet incorporates SignalWire's [Campaign Registry API Endpoint](/rest/signalwire-rest/endpoints/space/list-brands) to list all number assignments for your SignalWire Space.
+You can then build a data frame with any information that you may need for better monitoring of your numbers.
+
+The [List Phone Number Assignments Endpoint](/rest/signalwire-rest/endpoints/space/list-number-assignments)
+gives the capability of retrieving all assignments for the Brands and Campaigns created through your Space. 
+
+In order to create a data table of phone number information, this application will begin by listing out all brands for your Space. 
+Once all brands for your Space are listed, the code will dig through each of these brands to find the campaigns that are associated with them. 
+Once all campaigns are listed, the next step is to search through all of these campaigns for their number assignments.
+
+After all of the numbers have been listed, it is fairly simple to fill in the project ID, campaign ID, and the association status of each number listed. 
+Then, the only thing left to do is combine it all into a data table and export it to a .csv file.
+
+What you need to run the code
+-----------------------------
+
+For the following code to work, you will need to have pandas and requests installed. 
+
+Read about the different ways to install pandas [here](https://pandas.pydata.org/docs/getting_started/install.html).
+
+Read about requests and how to install using pip [here](https://pypi.org/project/requests/).
+
+What variables change?
+----------------------
+
+`projectID` - Your project ID is an alphanumeric string that tells the API endpoint where to find your project. 
+You can find this in an easily copyable format by going to your SignalWire Portal and click the API tab on the left-hand side.  
+
+`authToken` - Your Auth Token is an alphanumeric string that helps to authenticate your HTTP requests to SignalWire. 
+You can create this (if you haven’t already) or copy this in an easily copyable format by going to your SignalWire Portal and clicking the API tab. 
+If you have not created an API token, press the blue new button. If you have, click show and copy the string. 
+
+`SpaceURL` - Your Space URL is the domain of your Space, i.e. example.signalwire.com. 
+This can also be found in an easily copyable format within the API tab in your SignalWire Space.
+
+The Code
+--------
+
+```python
+import requests
+from requests.auth import HTTPBasicAuth
+import pandas as pd
+
+# define your variables here to reuse throughout code
+SpaceURL = 'EXAMPLE.signalwire.com'
+projectID = "XXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+authToken = "PTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+host = f"https://{SpaceURL}"
+all_campaign_numbers = []
+
+# list all of our brands
+response = requests.get(f"https://{SpaceURL}/api/relay/rest/registry/beta/brands",
+                             headers={
+                                 "Accept": "application/json",
+                                 "Content-Type": "application/json"},
+                             auth=HTTPBasicAuth(projectID, authToken)).json()
+brands = response['data']
+
+while "next" in response['links'].keys():
+     response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+     brands.extend(response['data'])
+
+print(f"You have {len(brands)} brands!")
+
+# loop through each brand and check for its campaigns
+for brand in brands:
+    brand_sid = brand['id']
+    brand_ID = brand['csp_brand_reference']
+
+    # list campaigns for this brand
+    response = requests.get(f"https://{SpaceURL}/api/relay/rest/registry/beta/brands/{brand_sid}/campaigns",
+                            headers={
+                                "Accept": "application/json",
+                                "Content-Type": "application/json"},
+                            auth=HTTPBasicAuth(projectID, authToken)).json()
+
+    # view campaigns
+    campaigns = response['data']
+
+    # add pagination
+    while "next" in response['links'].keys():
+        response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+        campaigns.extend(response['data'])
+
+    print(f"You have {len(campaigns)} campaigns in the brand {brand_ID}!")
+
+    for campaign in campaigns:
+        campaignSID = campaign['id']
+        campaignID = campaign['csp_campaign_reference']
+        campaignName = campaign['name']
+
+        # loop through campaigns and list campaign numbers
+        url = f"https://{SpaceURL}/api/relay/rest/registry/beta/campaigns/{campaignSID}/numbers?page_size=1000"
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload,
+                                    auth=HTTPBasicAuth(projectID, authToken)).json()
+        campaignNumbers = response['data']
+
+        while "next" in response['links'].keys():
+            response = requests.get(host + response['links']['next'], auth=HTTPBasicAuth(projectID, authToken)).json()
+            campaignNumbers.extend(response['data'])
+
+        print(f"There are {len(campaignNumbers)} total numbers in campaign {campaignID}.")
+
+        # loop through each campaign number
+        for number in campaignNumbers:
+            numberID = number['phone_number']['id']
+            tn = number['phone_number']['number']
+            numberState = number['state']
+            addToCampaignDate =number['created_at']
+
+            all_campaign_numbers.append([brand_sid, brand_ID, campaignSID, campaignID, numberID, tn, numberState, addToCampaignDate])
+
+
+# create dataframe
+df = pd.DataFrame(all_campaign_numbers, columns=('Brand SID', 'Brand ID', 'Campaign SID', 'Campaign ID', 'Number SID', 'Number', 'Number State', 'Date Added to Campaign'))
+print(df.to_string())
+
+df.to_csv('AllSpaceCampaigns.csv', index=False, encoding='utf-8')
+```
+
+Output
+------
+
+<figure>
+  <img className="img-800" src={require("./brand-table.webp").default} alt="A screenshot of a table organizing values by Brand SID, Brand ID, Campaign SID, Campaign ID, Number SID, Number, Number State, and Date Added." />
+</figure>
+
+Comments
+--------
+
+This snippet introduced how to use the data given by the [SignalWire Campaign Registry API Endpoints](/rest/signalwire-rest/endpoints/space/list-brands) to list out the phone numbers assigned to each campaign in your Space.
+We learned how to list brands, list campaigns, and also list the number assignments. 
+Lastly, through the usage of the _pandas package_, all of this data was formatted in a table and exported to CSV format.

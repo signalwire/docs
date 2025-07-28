@@ -1,0 +1,236 @@
+---
+title: Releasing Numbers
+description: This code snippet will filter all numbers by a certain area code or
+  sequence and then return all the numbers that match. Once you review the
+  numbers that it prints out, you can uncomment the delete line and run it again
+  to release the numbers all at once.
+slug: /compatibility-api/guides/general/phone-numbers/release-numbers
+x-custom:
+  ported_from_readme: true
+  needs_review: true
+  tags:
+    - product:numbers
+    - language:python
+    - language:ruby
+    - sdk:compatibility
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Overview
+--------
+
+At some point, you may need to release a large quantity of numbers in order to purchase new ones. This can be tedious to delete one by one, so this example shows one way that you can release numbers in bulk with ease.
+
+
+<details>
+  <summary>Full code example: Release Numbers</summary>
+
+<Tabs>
+
+<TabItem value="python" label="Python">
+
+```python
+from signalwire.rest import Client as signalwire_client
+
+# TODO: Update with your own credentials
+project_id = "XXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+access_token = "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+space_url = "YOURSPACENAME.signalwire.com"
+
+client = signalwire_client(
+                        project_id, 
+                        access_token, 
+                        signalwire_space_url = space_url)
+
+print('Would you like to delete all numbers with a specific area code? If so, enter it now. If not, press Enter to skip.: ')
+area_choice = input()
+
+print('Would you like to delete all numbers that contain a specific string? If so, enter it now. If not, press Enter to skip.: ')
+contain_phrase_choice = input()
+
+phone_numbers = client.incoming_phone_numbers.list()
+filtered_numbers_list = []
+
+if area_choice != "" or contain_phrase_choice != "":
+    for numberData in phone_numbers:
+        if numberData.phone_number.find(area_choice) != -1 and numberData.phone_number.find(contain_phrase_choice) != -1:
+            filtered_numbers_list.append(numberData)
+
+print("Total Numbers -- " + str(len(filtered_numbers_list)))
+for numberData in filtered_numbers_list:
+    print("Deleting number -- " + numberData.phone_number)
+    # TODO: Uncomment the next line to activate deleting the numbers
+    # client.incoming_phone_numbers(numberData.sid).delete()
+```
+
+</TabItem>
+
+<TabItem value="ruby" label="Ruby">
+
+```ruby
+require 'signalwire/sdk'
+@client = Signalwire::REST::Client.new 'PROJECT_ID', 'AUTH_TOKEN', signalwire_space_url: "example.signalwire.com"
+substring = "DELETE"
+incoming_phone_numbers = @client.incoming_phone_numbers.list
+incoming_phone_numbers.each do |record|
+          puts record.friendly_name
+          if (record.friendly_name.match(/#{substring}/))
+                  puts "deleting number with sid #{record.sid} "
+                  # @client.incoming_phone_numbers(record.sid).delete
+                 end
+end
+```
+
+</TabItem>
+
+</Tabs>
+
+</details>
+
+What are we going to do?
+------------------------
+
+Using this code snippet we will search through all of the numbers on your account and return/release those with a specific area code or sequence in their name.
+
+Python
+------
+
+### What do you need to run this code?
+
+For this code, the SignalWire Python SDK will need to be installed.  It can be accessed here: [SignalWire Documentation](/compatibility-api/sdks).
+
+### What do you need to replace in this code?
+
+`project_id` - Your project ID is an alphanumeric string that tells the SignalWire SDK where to find your project. You can find this in an easily copyable format by going to your  
+SignalWire Portal and clicking the API tab on the left hand side.  
+
+`access_token` - Your Auth Token is an alphanumeric string that helps to authenticate your HTTP requests to SignalWire. You can create this (if you haven’t already) or copy this in an easily copyable format by going to your SignalWire Portal and clicking the API tab. If you have not created an API token, press the blue new button. If you have, click show and copy the string. 
+
+`space_url` - Your Space URL is the domain of your Space, i.e. example.signalwire.com. This can also be found in an easily copyable format within the API tab in your SignalWire Space.  
+You will need to replace the area code with that of the area code that you want to release from your account. 
+
+### Code Walkthrough
+
+#### Instantiate SignalWire Client
+
+```python
+from signalwire.rest import Client as signalwire_client
+
+# TODO: Update with your own credentials
+project_id = "XXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+access_token = "PTxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+space_url = "YOURSPACENAME.signalwire.com"
+
+client = signalwire_client(
+                        project_id, 
+                        access_token, 
+                        signalwire_space_url = space_url)
+```
+
+#### Prompt for filtering preferences
+
+Here we ask the user for a specific area code or sequence to look for in the numbers list. These choices will be used in a bit, to filter through all of the phone numbers we get back.
+
+```python
+print('Would you like to delete all numbers with a specific area code? If so, enter it now. If not, press Enter to skip.: ')
+area_choice = input()
+
+print('Would you like to delete all numbers that contain a specific string? If so, enter it now. If not, press Enter to skip.: ')
+contain_phrase_choice = input()
+```
+
+#### Get the list of numbers and filter them
+
+We use the List Incoming Phone Numbers API to get the list of phone numbers in our SignalWire Project, and then look for all numbers than contain either the area code or number sequence the user selected, to add them to `filtered_numbers_list`.  
+Lastly, we print the total amount of numbers. 
+
+```python
+phone_numbers = client.incoming_phone_numbers.list()
+filtered_numbers_list = []
+
+if area_choice != "" or contain_phrase_choice != "":
+    for numberData in phone_numbers:
+        if numberData.phone_number.find(area_choice) != -1 and numberData.phone_number.find(contain_phrase_choice) != -1:
+            filtered_numbers_list.append(numberData)
+
+print("Total Numbers -- " + str(len(filtered_numbers_list)))
+```
+
+#### Complete Deletion
+
+Lastly, we go through the `filtered_numbers_list`, and print a confirmation string of the numbers that will be deleted. Since this is not reversible, only after making sure the list of numbers is correct should we uncomment the last line, that actually connects to SignalWire's Rest Client and makes the request to delete each number.
+
+```python
+for numberData in filtered_numbers_list:
+    print("Deleting number -- " + numberData.phone_number)
+    # TODO: Uncomment the next line to activate deleting the numbers
+    # client.incoming_phone_numbers(numberData.sid).delete()
+```
+
+Ruby
+----
+
+### What do you need to run this code?
+
+You will need the [SignalWire Ruby SDK](/compatibility-api/sdks)
+
+### What do you need to replace in this code?
+
+What variables change  
+`PROJECTID `- Your project ID is an alphanumeric string that tells the SignalWire SDK where to find your project. You can find this in an easily copyable format by going to your  SignalWire Portal and clicking the API tab on the left-hand side.
+
+`TOKEN` - Your Auth Token is an alphanumeric string that helps to authenticate your HTTP requests to SignalWire. You can create this (if you haven’t already) or copy this in an easily copyable format by going to your SignalWire Portal and clicking the API tab. If you have not created an API token, press the blue new button. If you have, click show and copy the string.
+
+`YOURSPACENAME.signalwire.com` - Your Space URL is the domain of your Space, i.e. example.signalwire.com. This can also be found in an easily copyable format within the API tab in your SignalWire Space.
+
+`substring` - You will need to change the keyword in this script to whatever keyword you want the script to search your numbers for.
+
+### Code Walkthrough
+
+Here is an example of a Ruby script to be used to delete numbers that contain a specific word (delete all numbers whose names contain the word “DELETE” for example).
+
+#### Instantiate SignalWire Client
+
+```ruby
+require 'signalwire/sdk'
+@client = Signalwire::REST::Client.new 'PROJECTID', 'TOKEN', signalwire_space_url: "YOURSPACENAME.signalwire.com"
+```
+
+#### Get the list of numbers and select the substring filter to use
+
+We select the `substring` to use when filtering through the numbers list, and use the List Incoming Phone Numbers API to get the actual list of phone numbers in our SignalWire Project.
+
+```ruby
+substring = "DELETE"
+incoming_phone_numbers = @client.incoming_phone_numbers.list
+```
+
+#### Loop through the list of numbers and delete them
+
+Lastly, we look through the list of numbers and only create the delete request for the ones where the substring selected in the previous step exists in the number.  
+Since this is not reversible, only after making sure the list of numbers is correct should we uncomment line number 5, that actually connects to SignalWire's Rest Client and makes the request to delete each number.
+
+```ruby
+incoming_phone_numbers.each do |record|
+          puts record.friendly_name
+          if (record.friendly_name.match(/#{substring}/))
+                  puts "deleting number with sid #{record.sid} "
+                  # @client.incoming_phone_numbers(record.sid).delete
+                 end
+end
+```
+
+Getting Started Guide
+---------------------
+
+If you are looking for more information about using SignalWire, refer to our [Getting Started](/platform/dashboard/getting-started/signing-up-for-a-space) guide.  
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!
+
+Sign Up Here
+------------
+
+If you would like to test this example out, [create a SignalWire account and Space](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

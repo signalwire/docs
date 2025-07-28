@@ -1,0 +1,128 @@
+---
+slug: /sdks/agents-sdk/create
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+
+# Initialize
+
+## Create an Agent
+
+To create an agent, extend the `AgentBase` class and define your agent's behavior:
+
+```python
+from signalwire_agents import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(
+            name="my-agent",
+            route="/agent",
+            host="0.0.0.0",
+            port=3000,
+            use_pom=True  # Enable Prompt Object Model
+        )
+        
+        # Define agent personality and behavior
+        self.prompt_add_section("Personality", body="You are a helpful and friendly assistant.")
+        self.prompt_add_section("Goal", body="Help users with their questions and tasks.")
+        self.prompt_add_section("Instructions", bullets=[
+            "Answer questions clearly and concisely",
+            "If you don't know, say so",
+            "Use the provided tools when appropriate"
+        ])
+        
+        # Add a post-prompt for summary
+        self.set_post_prompt("Please summarize the key points of this conversation.")
+```
+
+## Run Agent
+
+The SignalWire AI Agent SDK provides a `run()` method that automatically detects the execution environment and configures the agent appropriately. 
+This method works across all deployment modes:
+
+### Deployment with `run()`
+
+```python
+def main():
+    agent = MyAgent()
+    
+    print("Starting agent server...")
+    print("Note: Works in any deployment mode (server/CGI/Lambda)")
+    agent.run()  # Auto-detects environment
+
+if __name__ == "__main__":
+    main()
+```
+
+The `run()` method automatically detects and configures for:
+
+- **HTTP Server**: When run directly, starts an HTTP server
+- **CGI**: When CGI environment variables are detected, operates in CGI mode  
+- **AWS Lambda**: When Lambda environment is detected, configures for serverless execution
+
+### Deployment Modes
+
+#### HTTP Server Mode
+When run directly (e.g., `python my_agent.py`), the agent starts an HTTP server:
+
+```python
+# Automatically starts HTTP server when run directly
+agent.run()
+```
+
+#### CGI Mode  
+When CGI environment variables are present, operates in CGI mode with clean HTTP output:
+
+```python
+# Same code - automatically detects CGI environment
+agent.run()
+```
+
+#### AWS Lambda Mode
+When AWS Lambda environment is detected, configures for serverless execution:
+
+```python
+# Same code - automatically detects Lambda environment  
+agent.run()
+```
+
+### Environment Detection
+
+The SDK automatically detects the execution environment:
+
+| Environment | Detection Method | Behavior |
+|-------------|------------------|----------|
+| **HTTP Server** | Default when no serverless environment detected | Starts FastAPI server on specified host/port |
+| **CGI** | `GATEWAY_INTERFACE` environment variable present | Processes single CGI request and exits |
+| **AWS Lambda** | `AWS_LAMBDA_FUNCTION_NAME` environment variable | Handles Lambda event/context |
+| **Google Cloud** | `FUNCTION_NAME` or `K_SERVICE` variables | Processes Cloud Function request |
+| **Azure Functions** | `AZURE_FUNCTIONS_*` variables | Handles Azure Function request |
+
+### Logging Configuration
+
+The SDK includes a central logging system that automatically configures based on the deployment environment:
+
+```python
+# Logging is automatically configured based on environment
+# No manual setup required in most cases
+
+# Optional: Override logging mode via environment variable
+# SIGNALWIRE_LOG_MODE=off      # Disable all logging
+# SIGNALWIRE_LOG_MODE=stderr   # Log to stderr
+# SIGNALWIRE_LOG_MODE=default  # Use default logging
+# SIGNALWIRE_LOG_MODE=auto     # Auto-detect (default)
+```
+
+The logging system automatically:
+- **CGI Mode**: Sets logging to 'off' to avoid interfering with HTTP headers
+- **Lambda Mode**: Configures appropriate logging for serverless environment
+- **Server Mode**: Uses structured logging with timestamps and levels
+- **Debug Mode**: Enhanced logging when debug flags are set

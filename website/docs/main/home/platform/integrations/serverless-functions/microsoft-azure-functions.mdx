@@ -1,0 +1,143 @@
+---
+title: Microsoft Azure Functions
+slug: /platform/integrations/serverless-functions/microsoft-azure-functions
+x-custom:
+  ported_from_readme: true
+---
+
+This guide explains how to leverage the SignalWire Compatibility API and the Node.Js SDK in [Azure Function Apps](https://docs.microsoft.com/en-us/azure/azure-functions/functions-overview).
+
+## What is Azure Functions?
+
+Azure Functions is a serverless solution that allows you to write less code, maintain less infrastructure, and save on costs. Instead of deploying and maintaining personal servers, the cloud infrastructure provides all the up-to-date resources needed to keep your applications running.
+
+This guide will create two endpoints using SignalWire's Node.Js SDK to use in your Azure Function Apps:
+
+- `SendSMS` sends a message to a `receiver` parameter
+- `SendVoice` initializes a phone call to a `receiver` parameter
+
+## What do I need to run this code?
+
+- First, you should be familiar with the [Azure Function HTTP tutorial](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-node).
+- Then, see the full project repo on [GitHub](https://github.com/signalwire/guides/tree/main/Integrations/SignalWire%20API%20on%20Azure%20Function%20-%20NodeJS).
+- Be familiar with the [SignalWire compatibility API for SMS](/rest/compatibility-api/endpoints/create-message)
+- Finally, install the [SignalWire Node.js SDK](https://www.npmjs.com/package/@signalwire/compatibility-api).
+
+The API also requires that you authenticate yourself using your Project ID, API Token, and Space URL. If you do not know where to find these values, check out our guide to [Navigating your SignalWire Space](/platform/dashboard/get-started/explore)!
+
+## Code Walkthrough
+
+This guide consists of two functions we will name `SendSMS` and `SendVoice`.
+
+### SendSMS
+
+The `SendSMS` function makes use of the SignalWire compatibility API to send SMS with the Azure Function HttpTrigger using the provided variables `receiver` and `from`.
+
+```javascript
+require("dotenv").config();
+const axios = require("axios");
+
+// PROJECT_ID and API_TOKEN are environment variables added in Configuration found in
+// Azure Functions Application settings. Find these in your SignalWire Space
+
+const projectID = process.env.PROJECT_ID;
+const token = process.env.API_TOKEN;
+const spaceURL = process.env.SPACE_URL;
+
+// Initialize the auth object for authentication when making a call to SignalWire API
+const auth = {
+  username: projectID,
+  password: token,
+};
+
+// API url name to make our POST call to
+const apiUrl = `https://${spaceURL}/api/laml/2010-04-01/Accounts/${projectID}/Messages`;
+
+module.exports = async function (context, req) {
+  context.log("JavaScript HTTP trigger function processed a request.");
+
+  // Get the receiver, sender and message params from the body
+  // It makes use of the destructuring in Node.Js
+  const { receiver, sender, message } = req.body;
+  // An empty object to save the response from axios
+  let responseMessage = null;
+
+  // Axios call to the SignalWire API
+  await axios
+    .post(
+      apiUrl,
+      {
+        To: receiver,
+        From: sender,
+        Body: message,
+      },
+      { auth }
+    )
+    .then(
+      (response) => {
+        // appending response from the axios call to the {responseMessage} object
+        responseMessage = response.data;
+      },
+      (error) => {
+        console.log(error.message);
+      }
+    );
+  // return the response of the axios call in a json format
+  context.res = {
+    body: responseMessage,
+  };
+};
+```
+
+### SendVoice
+
+The SendVoice function makes use of the SignalWire Node SDK to place calls using the Azure Function HttpTrigger.
+
+```javascript
+require("dotenv").config();
+const { RestClient } = require("@signalwire/compatibility-api");
+
+const username = process.env.PROJECT_ID;
+const token = process.env.API_TOKEN;
+const spaceURL = process.env.SPACE_URL;
+
+const client = RestClient(username, token, { signalwireSpaceUrl: spaceURL });
+
+module.exports = async function (context, req) {
+  context.log("JavaScript HTTP trigger function processed a request.");
+
+  const { receiver, sender, callUrl } = req.body;
+
+  let responseBody = {};
+
+  await client.calls.create({ to: receiver, from: sender, url: callUrl }).then(
+    (response) => {
+      responseBody = response;
+    },
+    (error) => {
+      responseBody = error.message;
+    }
+  );
+
+  context.res = {
+    // status: 200, /* Defaults to 200 */
+    body: responseBody,
+  };
+};
+```
+
+## Wrap up
+
+This guide demonstrates how to place a call and send an SMS using SignalWire Compatibility API and SignalWire NodeJs SDK in an Azure environment. Importing this code into your Azure Function App will enable you to leverage the power of SignalWire's APIs in your cloud environments.
+
+## Required Resources
+
+- [SignalWire Compatibility API Message Reference](/rest/compatibility-api/endpoints/create-message)
+- [The Azure HTTP function Tutorial](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-vs-code-node)
+- [SignalWire Node.js SDK](https://www.npmjs.com/package/@signalwire/compatibility-api)
+
+## Sign Up Here
+
+If you would like to test this example out, you can create a SignalWire account and Space [here](https://m.signalwire.com/signups/new?s=1).
+
+Please feel free to reach out to us on our [Community Discord](https://discord.com/invite/F2WNYTNjuF) or create a Support ticket if you need guidance!

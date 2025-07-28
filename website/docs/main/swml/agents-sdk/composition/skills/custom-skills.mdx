@@ -1,0 +1,86 @@
+---
+sidebar_label: Custom skills
+sidebar_position: 9
+slug: /sdks/agents-sdk/skills/custom
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+
+# Custom Skills
+
+Create a new skill by extending `SkillBase` with parameter support:
+
+```python
+# signalwire_agents/skills/my_skill/skill.py
+from signalwire_agents.core.skill_base import SkillBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+class MyCustomSkill(SkillBase):
+    SKILL_NAME = "my_skill"
+    SKILL_DESCRIPTION = "Does something awesome with configurable parameters"
+    SKILL_VERSION = "1.0.0"
+    REQUIRED_PACKAGES = ["requests"]  # Optional
+    REQUIRED_ENV_VARS = ["API_KEY"]   # Optional
+    
+    def setup(self) -> bool:
+        """Initialize the skill with parameters"""
+        if not self.validate_env_vars() or not self.validate_packages():
+            return False
+            
+        # Use parameters with defaults
+        self.max_items = self.params.get('max_items', 10)
+        self.timeout = self.params.get('timeout', 30)
+        self.retry_count = self.params.get('retry_count', 3)
+        
+        return True
+        
+    def register_tools(self) -> None:
+        """Register SWAIG tools with the agent"""
+        self.agent.define_tool(
+            name="my_function",
+            description=f"Does something cool (max {self.max_items} items)",
+            parameters={
+                "input": {
+                    "type": "string",
+                    "description": "Input parameter"
+                }
+            },
+            handler=self._my_handler
+        )
+    
+    def _my_handler(self, args, raw_data):
+        """Handle the tool call using configured parameters"""
+        # Use self.max_items, self.timeout, self.retry_count in your logic
+        return SwaigFunctionResult(f"Processed with max_items={self.max_items}")
+        
+    def get_hints(self):
+        """Speech recognition hints"""
+        return ["custom", "skill", "awesome"]
+        
+    def get_prompt_sections(self):
+        """Prompt sections to add to agent"""
+        return [{
+            "title": "Custom Capability",
+            "body": f"You can do custom things with my_skill (configured for {self.max_items} items)."
+        }]
+```
+
+The skill will be automatically discovered and available as:
+```python
+# Use defaults
+agent.add_skill("my_skill")
+
+# Use custom parameters
+agent.add_skill("my_skill", {
+    "max_items": 20,
+    "timeout": 60,
+    "retry_count": 5
+})
+```

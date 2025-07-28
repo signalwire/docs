@@ -1,0 +1,627 @@
+---
+slug: /sdks/agents-sdk/dynamic-config
+keywords:
+  - SignalWire
+  - agents
+  - sdk
+  - ai
+  - python
+tags:
+  - agents-sdk
+  - python
+---
+
+# Dynamic configuration
+
+Dynamic agent configuration allows you to configure agents per-request based on parameters from the HTTP request (query parameters, body data, headers). This enables powerful patterns like multi-tenant applications, A/B testing, personalization, and localization.
+
+## Overview
+
+There are two main approaches to agent configuration:
+
+## Static Configuration (Traditional)
+```python
+class StaticAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="static-agent")
+        
+        # Configuration happens once at startup
+        self.add_language("English", "en-US", "rime.spore:mistv2")
+        self.set_params({"end_of_speech_timeout": 500})
+        self.prompt_add_section("Role", "You are a customer service agent.")
+        self.set_global_data({"service_level": "standard"})
+```
+
+**Pros**: Simple, fast, predictable
+**Cons**: Same behavior for all users, requires separate agents for different configurations
+
+## Dynamic Configuration
+```python
+class DynamicAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="dynamic-agent")
+        
+        # No static configuration - set up dynamic callback instead
+        self.set_dynamic_config_callback(self.configure_per_request)
+    
+    def configure_per_request(self, query_params, body_params, headers, agent):
+        # Configuration happens fresh for each request
+        tier = query_params.get('tier', 'standard')
+        
+        if tier == 'premium':
+            agent.add_language("English", "en-US", "rime.spore:mistv2")
+            agent.set_params({"end_of_speech_timeout": 300})  # Faster
+            agent.prompt_add_section("Role", "You are a premium customer service agent.")
+            agent.set_global_data({"service_level": "premium"})
+        else:
+            agent.add_language("English", "en-US", "rime.spore:mistv2")
+            agent.set_params({"end_of_speech_timeout": 500})  # Standard
+            agent.prompt_add_section("Role", "You are a customer service agent.")
+            agent.set_global_data({"service_level": "standard"})
+```
+
+**Pros**: Highly flexible, single agent serves multiple configurations, enables advanced use cases
+**Cons**: Slightly more complex, configuration overhead per request
+
+## Setting Up Dynamic Configuration
+
+Use the `set_dynamic_config_callback()` method to register a callback function that will be called for each request:
+
+```python
+class MyDynamicAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent", route="/agent")
+        
+        # Register the dynamic configuration callback
+        self.set_dynamic_config_callback(self.configure_agent_dynamically)
+    
+    def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+        """
+        This method is called for every request to configure the agent
+        
+        Args:
+            query_params (dict): Query string parameters from the URL
+            body_params (dict): Parsed JSON body from POST requests
+            headers (dict): HTTP headers from the request
+            agent (EphemeralAgentConfig): Configuration object with familiar methods
+        """
+        # Your dynamic configuration logic here
+        pass
+```
+
+The callback function receives four parameters:
+- **query_params**: Dictionary of URL query parameters
+- **body_params**: Dictionary of parsed JSON body (empty for GET requests)
+- **headers**: Dictionary of HTTP headers
+- **agent**: EphemeralAgentConfig object for configuration
+
+## EphemeralAgentConfig
+
+The `agent` parameter in your callback is an `EphemeralAgentConfig` object that provides the same familiar methods as `AgentBase`, but applies them per-request:
+
+## Language Configuration
+```python
+# Add languages with voice configuration
+agent.add_language("English", "en-US", "rime.spore:mistv2")
+agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
+```
+
+## Prompt Building
+```python
+# Add prompt sections
+agent.prompt_add_section("Role", "You are a helpful assistant.")
+agent.prompt_add_section("Guidelines", bullets=[
+    "Be professional and courteous",
+    "Provide accurate information",
+    "Ask clarifying questions when needed"
+])
+
+# Set raw prompt text
+agent.set_prompt_text("You are a specialized AI assistant...")
+
+# Set post-prompt for summary
+agent.set_post_prompt("Summarize the key points of this conversation.")
+```
+
+## AI Parameters
+```python
+# Configure AI behavior
+agent.set_params({
+    "end_of_speech_timeout": 300,
+    "attention_timeout": 20000,
+    "background_file_volume": -30
+})
+```
+
+## Global Data
+```python
+# Set data available to the AI
+agent.set_global_data({
+    "customer_tier": "premium",
+    "features_enabled": ["advanced_support", "priority_queue"],
+    "session_info": {"start_time": "2024-01-01T00:00:00Z"}
+})
+
+# Update existing global data
+agent.update_global_data({"additional_info": "value"})
+```
+
+## Speech Recognition Hints
+```python
+# Add hints for better speech recognition
+agent.add_hints(["SignalWire", "SWML", "API", "technical"])
+agent.add_pronunciation("API", "A P I")
+```
+
+## Function Configuration
+```python
+# Set native functions
+agent.set_native_functions(["transfer", "hangup"])
+
+# Add function includes
+agent.add_function_include(
+    url="https://api.example.com/functions",
+    functions=["get_account_info", "update_profile"]
+)
+```
+
+## Request Data Access
+
+Your callback function receives detailed information about the incoming request:
+
+## Query Parameters
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    # Extract query parameters
+    tier = query_params.get('tier', 'standard')
+    language = query_params.get('language', 'en')
+    customer_id = query_params.get('customer_id')
+    debug = query_params.get('debug', '').lower() == 'true'
+    
+    # Use parameters for configuration
+    if tier == 'premium':
+        agent.set_params({"end_of_speech_timeout": 300})
+    
+    if customer_id:
+        agent.set_global_data({"customer_id": customer_id})
+
+# Request: GET /agent?tier=premium&language=es&customer_id=12345&debug=true
+```
+
+## POST Body Parameters
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    # Extract from POST body
+    user_profile = body_params.get('user_profile', {})
+    preferences = body_params.get('preferences', {})
+    
+    # Configure based on profile
+    if user_profile.get('language') == 'es':
+        agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
+    
+    if preferences.get('voice_speed') == 'fast':
+        agent.set_params({"end_of_speech_timeout": 200})
+
+# Request: POST /agent with JSON body:
+# {
+#   "user_profile": {"language": "es", "region": "mx"},
+#   "preferences": {"voice_speed": "fast", "tone": "formal"}
+# }
+```
+
+## HTTP Headers
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    # Extract headers
+    user_agent = headers.get('user-agent', '')
+    auth_token = headers.get('authorization', '')
+    locale = headers.get('accept-language', 'en-US')
+    
+    # Configure based on headers
+    if 'mobile' in user_agent.lower():
+        agent.set_params({"end_of_speech_timeout": 400})  # Longer for mobile
+    
+    if locale.startswith('es'):
+        agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
+```
+
+## Configuration Examples
+
+## Simple Multi-Tenant Configuration
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    tenant = query_params.get('tenant', 'default')
+    
+    # Tenant-specific configuration
+    if tenant == 'healthcare':
+        agent.add_language("English", "en-US", "rime.spore:mistv2")
+        agent.prompt_add_section("Compliance", 
+            "Follow HIPAA guidelines and maintain patient confidentiality.")
+        agent.set_global_data({
+            "industry": "healthcare",
+            "compliance_level": "hipaa"
+        })
+    elif tenant == 'finance':
+        agent.add_language("English", "en-US", "rime.spore:mistv2")
+        agent.prompt_add_section("Compliance",
+            "Follow financial regulations and protect sensitive data.")
+        agent.set_global_data({
+            "industry": "finance", 
+            "compliance_level": "pci"
+        })
+```
+
+## Language and Localization
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    language = query_params.get('language', 'en')
+    region = query_params.get('region', 'us')
+    
+    # Configure language and voice
+    if language == 'es':
+        if region == 'mx':
+            agent.add_language("Spanish (Mexico)", "es-MX", "rime.spore:mistv2")
+        else:
+            agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
+        
+        agent.prompt_add_section("Language", "Respond in Spanish.")
+    elif language == 'fr':
+        agent.add_language("French", "fr-FR", "rime.alois")
+        agent.prompt_add_section("Language", "Respond in French.")
+    else:
+        agent.add_language("English", "en-US", "rime.spore:mistv2")
+    
+    # Regional customization
+    agent.set_global_data({
+        "language": language,
+        "region": region,
+        "currency": "USD" if region == "us" else "EUR" if region == "eu" else "MXN"
+    })
+```
+
+## A/B Testing Configuration
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    # Determine test group (could be from query param, user ID hash, etc.)
+    test_group = query_params.get('test_group', 'A')
+    
+    if test_group == 'A':
+        # Control group - standard configuration
+        agent.set_params({"end_of_speech_timeout": 500})
+        agent.prompt_add_section("Style", "Use a standard conversational approach.")
+        agent.set_global_data({"test_group": "A", "features": ["basic"]})
+    else:
+        # Test group B - experimental features
+        agent.set_params({"end_of_speech_timeout": 300})
+        agent.prompt_add_section("Style", 
+            "Use an enhanced, more interactive conversational approach.")
+        agent.set_global_data({"test_group": "B", "features": ["basic", "enhanced"]})
+```
+
+## Customer Tier-Based Configuration
+```python
+def configure_agent_dynamically(self, query_params, body_params, headers, agent):
+    customer_id = query_params.get('customer_id')
+    tier = query_params.get('tier', 'standard')
+    
+    # Base configuration
+    agent.add_language("English", "en-US", "rime.spore:mistv2")
+    
+    # Tier-specific configuration
+    if tier == 'enterprise':
+        agent.set_params({
+            "end_of_speech_timeout": 200,  # Fastest response
+            "attention_timeout": 30000     # Longest attention span
+        })
+        agent.prompt_add_section("Service Level",
+            "You provide white-glove enterprise support with priority handling.")
+        features = ["all_features", "dedicated_support", "custom_integration"]
+    elif tier == 'premium':
+        agent.set_params({
+            "end_of_speech_timeout": 300,
+            "attention_timeout": 20000
+        })
+        agent.prompt_add_section("Service Level",
+            "You provide premium support with enhanced features.")
+        features = ["premium_features", "priority_support"]
+    else:
+        agent.set_params({
+            "end_of_speech_timeout": 500,
+            "attention_timeout": 15000
+        })
+        agent.prompt_add_section("Service Level",
+            "You provide standard customer support.")
+        features = ["basic_features"]
+    
+    # Set global data
+    global_data = {"tier": tier, "features": features}
+    if customer_id:
+        global_data["customer_id"] = customer_id
+    agent.set_global_data(global_data)
+```
+
+## Use Cases
+
+## Multi-Tenant SaaS Applications
+Perfect for SaaS platforms where each customer needs different agent behavior:
+
+```python
+# Different tenants get different capabilities
+# /agent?tenant=acme&industry=healthcare
+# /agent?tenant=globex&industry=finance
+```
+
+Benefits:
+- Single agent deployment serves all customers
+- Tenant-specific branding and behavior
+- Industry-specific compliance and terminology
+- Custom feature sets per subscription level
+
+## A/B Testing and Experimentation
+Test different agent configurations with real users:
+
+```python
+# Split traffic between different configurations
+# /agent?test_group=A  (control)
+# /agent?test_group=B  (experimental)
+```
+
+Benefits:
+- Compare agent performance metrics
+- Test new features with subset of users
+- Gradual rollout of improvements
+- Data-driven optimization
+
+## Personalization and User Preferences
+Adapt agent behavior to individual user preferences:
+
+```python
+# Personalized based on user profile
+# /agent?user_id=123&voice_speed=fast&formality=casual
+```
+
+Benefits:
+- Improved user experience
+- Accessibility support (voice speed, etc.)
+- Cultural and linguistic adaptation
+- Learning from user interactions
+
+## Geographic and Cultural Localization
+Adapt to different regions and cultures:
+
+```python
+# Location-based configuration
+# /agent?country=mx&language=es&timezone=America/Mexico_City
+```
+
+Benefits:
+- Local language and dialect support
+- Cultural appropriateness
+- Regional business practices
+- Time zone aware responses
+
+## Migration Guide
+
+## Converting Static Agents to Dynamic
+
+**Step 1: Move Configuration to Callback**
+
+Before (Static):
+```python
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        
+        # Static configuration
+        self.add_language("English", "en-US", "rime.spore:mistv2")
+        self.set_params({"end_of_speech_timeout": 500})
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+        self.set_global_data({"version": "1.0"})
+```
+
+After (Dynamic):
+```python
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        
+        # Set up dynamic configuration
+        self.set_dynamic_config_callback(self.configure_agent)
+    
+    def configure_agent(self, query_params, body_params, headers, agent):
+        # Same configuration, but now dynamic
+        agent.add_language("English", "en-US", "rime.spore:mistv2")
+        agent.set_params({"end_of_speech_timeout": 500})
+        agent.prompt_add_section("Role", "You are a helpful assistant.")
+        agent.set_global_data({"version": "1.0"})
+```
+
+**Step 2: Add Parameter-Based Logic**
+
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    # Start with base configuration
+    agent.add_language("English", "en-US", "rime.spore:mistv2")
+    agent.prompt_add_section("Role", "You are a helpful assistant.")
+    
+    # Add parameter-based customization
+    timeout = int(query_params.get('timeout', '500'))
+    agent.set_params({"end_of_speech_timeout": timeout})
+    
+    version = query_params.get('version', '1.0')
+    agent.set_global_data({"version": version})
+```
+
+**Step 3: Test Both Approaches**
+
+You can support both static and dynamic patterns during migration:
+
+```python
+class MyAgent(AgentBase):
+    def __init__(self, use_dynamic=False):
+        super().__init__(name="my-agent")
+        
+        if use_dynamic:
+            self.set_dynamic_config_callback(self.configure_agent)
+        else:
+            # Keep static configuration for backward compatibility
+            self._setup_static_config()
+    
+    def _setup_static_config(self):
+        # Original static configuration
+        self.add_language("English", "en-US", "rime.spore:mistv2")
+        # ... rest of static config
+    
+    def configure_agent(self, query_params, body_params, headers, agent):
+        # New dynamic configuration
+        # ... dynamic config logic
+```
+
+## Best Practices
+
+## Performance Considerations
+
+1. **Keep Callbacks Lightweight**
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    # Good: Simple parameter extraction and configuration
+    tier = query_params.get('tier', 'standard')
+    agent.set_params(TIER_CONFIGS[tier])
+    
+    # Avoid: Heavy computation or external API calls
+    # customer_data = expensive_api_call(customer_id)  # Don't do this
+```
+
+2. **Cache Configuration Data**
+```python
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        
+        # Pre-compute configuration templates
+        self.tier_configs = {
+            'basic': {'end_of_speech_timeout': 500},
+            'premium': {'end_of_speech_timeout': 300},
+            'enterprise': {'end_of_speech_timeout': 200}
+        }
+        
+        self.set_dynamic_config_callback(self.configure_agent)
+    
+    def configure_agent(self, query_params, body_params, headers, agent):
+        tier = query_params.get('tier', 'basic')
+        agent.set_params(self.tier_configs[tier])
+```
+
+3. **Use Default Values**
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    # Always provide defaults
+    language = query_params.get('language', 'en')
+    tier = query_params.get('tier', 'standard')
+    
+    # Handle invalid values gracefully
+    if language not in ['en', 'es', 'fr']:
+        language = 'en'
+```
+
+## Security Considerations
+
+1. **Validate Input Parameters**
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    # Validate and sanitize inputs
+    tier = query_params.get('tier', 'standard')
+    if tier not in ['basic', 'premium', 'enterprise']:
+        tier = 'basic'  # Safe default
+    
+    # Validate numeric parameters
+    try:
+        timeout = int(query_params.get('timeout', '500'))
+        timeout = max(100, min(timeout, 2000))  # Clamp to reasonable range
+    except ValueError:
+        timeout = 500  # Safe default
+```
+
+2. **Protect Sensitive Configuration**
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    # Don't expose internal configuration via parameters
+    # Bad: agent.set_global_data({"api_key": query_params.get('api_key')})
+    
+    # Good: Use internal mapping for call-related data only
+    customer_id = query_params.get('customer_id')
+    if customer_id and self.is_valid_customer(customer_id):
+        # Store call-related customer info, NOT sensitive credentials
+        agent.set_global_data({
+            "customer_id": customer_id,
+            "customer_tier": self.get_customer_tier(customer_id),
+            "account_type": "premium"
+        })
+```
+
+3. **Rate Limiting for Complex Configurations**
+```python
+from functools import lru_cache
+
+class MyAgent(AgentBase):
+    @lru_cache(maxsize=100)
+    def get_customer_config(self, customer_id):
+        # Cache expensive lookups
+        return self.database.get_customer_settings(customer_id)
+    
+    def configure_agent(self, query_params, body_params, headers, agent):
+        customer_id = query_params.get('customer_id')
+        if customer_id:
+            config = self.get_customer_config(customer_id)
+            agent.set_global_data(config)
+```
+
+## Error Handling
+
+1. **Graceful Degradation**
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    try:
+        # Try custom configuration
+        self.apply_custom_config(query_params, agent)
+    except Exception as e:
+        # Log error but don't fail the request
+        self.log.error("config_error", error=str(e))
+        
+        # Fall back to default configuration
+        self.apply_default_config(agent)
+```
+
+2. **Configuration Validation**
+```python
+def configure_agent(self, query_params, body_params, headers, agent):
+    # Validate required parameters
+    if not query_params.get('tenant'):
+        agent.set_global_data({"error": "Missing tenant parameter"})
+        return
+    
+    # Validate configuration makes sense
+    language = query_params.get('language', 'en')
+    region = query_params.get('region', 'us')
+    
+    if language == 'es' and region == 'us':
+        # Adjust for Spanish speakers in US
+        agent.add_language("Spanish (US)", "es-US", "rime.spore:mistv2")
+```
+
+Dynamic agent configuration is a powerful feature that enables sophisticated, multi-tenant AI applications while maintaining the familiar AgentBase API. Start with simple parameter-based configuration and gradually add more complex logic as your use cases evolve.
+
+### Examples
+
+For working examples of dynamic agent configuration, see these files in the `examples` directory:
+
+- **`simple_static_agent.py`**: Traditional static configuration approach
+- **`simple_dynamic_agent.py`**: Same agent but using dynamic configuration
+- **`simple_dynamic_enhanced.py`**: Enhanced version that actually uses request parameters
+- **`comprehensive_dynamic_agent.py`**: Advanced multi-tier, multi-industry dynamic agent
+- **`custom_path_agent.py`**: Dynamic agent with custom routing path
+- **`multi_agent_server.py`**: Multiple specialized dynamic agents on one server
+
+These examples demonstrate the progression from static to dynamic configuration and show real-world use cases like multi-tenant applications, A/B testing, and personalization.
+
+For more examples, see the `examples` directory in the SignalWire AI Agent SDK repository. 

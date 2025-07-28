@@ -1,0 +1,102 @@
+---
+slug: /voice/getting-started/how-to-set-up-voicemail
+sidebar_position: 3
+description: Set up voice-mail on a number using simple cXML
+---
+
+# Setting Up Voicemail
+
+A popular and important use case is recording a voicemail from your callers when you are unable to speak with them. This guide will show how to do exactly that.
+
+## cXML for Voicemail
+
+We are going to implement voicemail in an cXML bin hosted on SignalWire. 
+First, to create a new cXML bin, navigate to the "Resources" section from your sidebar. There, create
+a new Script, and select the "cXML" option. 
+
+Create a new cXML script, and paste the following XML in it:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>
+    Please leave a message with your name and number at the beep. Press the
+    pound key when finished.
+  </Say>
+  <Record action="https://<URL-To-Hangup-Bin>" maxLength="15" finishOnKey="#" />
+</Response>
+```
+
+We will update the `URL-To-Hangup-Bin` part later, once we create that script.
+
+The cXML uses the [&lt;Say>] verb to play 
+the voicemail prompt to a caller and [&lt;Record>] to record a message.
+In the [&lt;Record>] verb, we will also specify a max length of seconds for the recording 
+and a key that when pressed will execute a new document of instructions. If you do not specify an action URL within the 
+[&lt;Record>] verb, the recording prompt will loop over and over.
+
+
+Take a moment to notice the `action` attribute for [&lt;Record>]. We would like to play a 
+message right after the recording ends, but adding a [&lt;Say>] verb below 
+[&lt;Record>] will not wait for the recording to finish.
+The `action` attribute allows us to specify the URL of a different script which should be executed _right after the recording ends_: 
+we will use this to play a closing message and hang up the call with [&lt;Hangup>].
+
+For this reason we also need another script, which will be executed after the recording in the first one terminates. This second script will 
+play a short prompt advising the caller that they will be contacted and then it will hang up the call. Even though this script is 
+simple, it's very important to hang up to avoid looping calls after a recording!
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say>Thank you for your message. A member of our team will contact you shortly. Goodbye!</Say>
+  <Hangup/>
+</Response>
+```
+
+Save this new cXML script. You will be taken to the script's details page. There, take note of the Request URL of the script. It should
+look something like `https://<space-name>.signalwire.com/laml-bins/<script-id>`.
+
+Go back to the first script and update the "action" URL in 
+[&lt;Record>] to point to the second script!
+
+[&lt;Record>]:/compatibility-api/cxml/voice/record
+[&lt;Hangup>]:/compatibility-api/cxml/voice/hangup
+[&lt;Say>]:/compatibility-api/cxml/voice/say
+
+
+## How to Assign the cXML to a SignalWire Phone Number
+
+If you are not familiar with webhooks, 
+read our [advanced guide to configuring webhooks](/platform/phone-numbers/guides/how-to-configure-your-webhook) 
+for more information.
+
+Click the **Phone Numbers** tab on your sidebar within your SignalWire Space, 
+and click the specific number you would like to set up voicemail on. 
+If you don't have a number yet, now is the time to [buy one](/platform/phone-numbers/getting-started/buying-a-phone-number)!
+
+Edit the settings of your selected number, and assign the voicemail cXML you made to
+the Inbound Call Settings.
+
+![Assign Resource to Phone number.](@image/dashboard/phone-numbers/assign-resource-voice.png)
+
+import NewLegacy from '/docs/main/_common/dashboard/_ui-accordion.mdx'
+
+<NewLegacy />
+
+If you're still on **Legacy UI**, refer to [Making and Receiving Phone Calls](../making-and-receiving-phone-calls/index.mdx) for detailed instructions.
+
+## How to Access the Recordings
+
+You can view, listen to, and download all your recordings in the Storage section of your SignalWire Space. From the sidebar, navigate to **Storage** > **Recordings**.
+
+You can also [access recordings via our  REST API](/rest/compatibility-api/endpoints/retrieve-recording).
+
+### Wrapping up
+
+We have seen how to build a basic voicemail using cXML bins. In
+particular, we showed how to chain two bins together: we set up our first bin to
+execute the second one after the recording finished.
+
+If you need more flexibility, you can implement the same application using Node.js:
+take a look at [how to set up a voicemail using Node.js](/sdks/realtime-sdk/guides/voice/setting-up-voicemail).
