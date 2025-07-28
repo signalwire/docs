@@ -39,7 +39,7 @@ model MessageLog {
 
   @doc("The status of the message.")
   @example("failed")
-  status: string;
+  status: "sent" | "recieved" | "undelivered" | "failed";
 
   @doc("The direction of the message.")
   @example("inbound")
