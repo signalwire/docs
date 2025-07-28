@@ -42,7 +42,7 @@ model MessageLog {
   status:
     | "queued"
     | "initiated"
-    | "deliverd"
+    | "delivered"
     | "sent"
     | "recieved"
     | "undelivered"
