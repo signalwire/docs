@@ -25,7 +25,7 @@ namespace MessageAPI.Logs {
     list(...LogListRequest):
       | LogListResponse
       | StatusCode401
-      | StatusCode422
+      | MessageLogsListStatusCode422
       | StatusCode500;
 
     @summary("Find a Log by ID")

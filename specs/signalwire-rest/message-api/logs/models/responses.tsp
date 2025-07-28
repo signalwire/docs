@@ -1,6 +1,5 @@
 import "./core.tsp";
 
-@doc("Pagination links for message log list responses")
 model LogPaginationResponse {
   @doc("URL to current page")
   @example("https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50")
@@ -11,17 +10,16 @@ model LogPaginationResponse {
   first: string;
 
   @doc("URL to next page (if available)")
-  @example("https://example.signalwire.com/api/messaging/logs?page_number=1&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7")
+  @example("https://example.signalwire.com/api/messaging/logs?page_number=1&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff")
   next?: string;
 
   @doc("URL to previous page (if available)")
-  @example("https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7")
+  @example("https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff")
   prev?: string;
 }
 
-@doc("Response model for message log list endpoint")
 model LogListResponse {
-  @doc("Pagination links")
+  @doc("Object containing pagination links")
   links: LogPaginationResponse;
 
   @doc("Array of message log entries")

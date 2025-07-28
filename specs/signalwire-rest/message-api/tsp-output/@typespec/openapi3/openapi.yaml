@@ -18,7 +18,7 @@ tags:
   - name: Logs
     description: Endpoints related to accessing message logs
     externalDocs:
-      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/message
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/messaging
       description: Developer documentation on Message API endpoints
 paths:
   /logs:
@@ -55,7 +55,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode422'
+                $ref: '#/components/schemas/MessageLogsListStatusCode422'
         '500':
           description: Server error
           content:
@@ -166,12 +166,12 @@ components:
         description:
           type: string
           description: Description for this charge.
-          example: SMS Message
+          example: Inbound SMS
         charge:
           type: number
           format: double
           description: Charged amount.
-          example: 0.01
+          example: 0.00415
       description: Details on charges associated with this log.
     LogListResponse:
       type: object
@@ -182,13 +182,12 @@ components:
         links:
           allOf:
             - $ref: '#/components/schemas/LogPaginationResponse'
-          description: Pagination links
+          description: Object containing pagination links
         data:
           type: array
           items:
             $ref: '#/components/schemas/MessageLog'
           description: Array of message log entries
-      description: Response model for message log list endpoint
     LogPaginationResponse:
       type: object
       required:
@@ -206,12 +205,11 @@ components:
         next:
           type: string
           description: URL to next page (if available)
-          example: https://example.signalwire.com/api/messaging/logs?page_number=1&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7
+          example: https://example.signalwire.com/api/messaging/logs?page_number=1&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff
         prev:
           type: string
           description: URL to previous page (if available)
-          example: https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7
-      description: Pagination links for message log list responses
+          example: https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff
     LogRetrieveResponse:
       type: object
       required:
@@ -237,35 +235,48 @@ components:
         from:
           type: string
           description: The origin phone number.
-          example: '+12065551212'
+          example: '+12077447397'
         to:
           type: string
           description: The destination phone number.
-          example: '+12065553434'
+          example: '+12029921413'
         status:
           type: string
           description: The status of the message.
-          example: sent
+          example: failed
         direction:
           type: string
+          enum:
+            - inbound
+            - outbound
           description: The direction of the message.
           example: inbound
         kind:
           type: string
+          enum:
+            - sms
+            - mms
           description: The kind of message.
           example: sms
         source:
           type: string
+          enum:
+            - realtime_api
+            - laml
           description: Source of this log entry.
           example: laml
         type:
           type: string
+          enum:
+            - relay_message
+            - laml_message
           description: Type of this log entry.
-          example: laml_message
+          example: relay_message
         url:
           type: string
+          format: uri
           description: URL for the resource associated with this log entry (if available).
-          example: https://example.signalwire.com/api/laml/Messages/SMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
         number_of_segments:
           type: integer
           format: int32
@@ -275,13 +286,12 @@ components:
           type: number
           format: double
           description: The charge in dollars.
-          example: 0.01
+          example: 0
         charge_details:
           type: array
           items:
             $ref: '#/components/schemas/ChargeDetail'
           description: Details on charges associated with this log.
-          example: []
         created_at:
           type: string
           format: date-time
@@ -313,35 +323,48 @@ components:
         from:
           type: string
           description: The origin phone number.
-          example: '+12065551212'
+          example: '+12077447397'
         to:
           type: string
           description: The destination phone number.
-          example: '+12065553434'
+          example: '+12029921413'
         status:
           type: string
           description: The status of the message.
-          example: sent
+          example: failed
         direction:
           type: string
+          enum:
+            - inbound
+            - outbound
           description: The direction of the message.
           example: inbound
         kind:
           type: string
+          enum:
+            - sms
+            - mms
           description: The kind of message.
           example: sms
         source:
           type: string
+          enum:
+            - realtime_api
+            - laml
           description: Source of this log entry.
           example: laml
         type:
           type: string
+          enum:
+            - relay_message
+            - laml_message
           description: Type of this log entry.
-          example: laml_message
+          example: relay_message
         url:
           type: string
+          format: uri
           description: URL for the resource associated with this log entry (if available).
-          example: https://example.signalwire.com/api/laml/Messages/SMxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
         number_of_segments:
           type: integer
           format: int32
@@ -351,19 +374,34 @@ components:
           type: number
           format: double
           description: The charge in dollars.
-          example: 0.01
+          example: 0
         charge_details:
           type: array
           items:
             $ref: '#/components/schemas/ChargeDetail'
           description: Details on charges associated with this log.
-          example: []
         created_at:
           type: string
           format: date-time
           description: Date and time when the message entry was created.
           example: '2024-05-06T12:20:00Z'
       description: Message log entry with all activity details
+    MessageLogsListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: datetime_required
+            message: This value must be a DateTime
+            attribute: created_before
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#datetime_required
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -382,15 +420,6 @@ components:
           type: string
           enum:
             - Not Found
-    Types.StatusCodes.StatusCode422:
-      type: object
-      required:
-        - errors
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
     Types.StatusCodes.StatusCode422Error:
       type: object
       required:

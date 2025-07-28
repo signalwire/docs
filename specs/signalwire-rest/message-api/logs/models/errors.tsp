@@ -1,12 +1,16 @@
-import "../../../types/status-codes/main.tsp";
+import "../../../types/status-codes";
 
 using Types.StatusCodes;
 
-// Using standard status codes from shared types
-// - StatusCode401: Unauthorized
-// - StatusCode404: Not Found (for retrieve endpoint)
-// - StatusCode422: Unprocessable Entity (for invalid parameters)
-// - StatusCode500: Internal Server Error
-
-// No custom error models needed for Message API
-// All error responses use standard HTTP status codes
+@example(#{
+  errors: #[
+    #{
+      type: "validation_error",
+      code: "datetime_required",
+      message: "This value must be a DateTime",
+      attribute: "created_before",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#datetime_required",
+    }
+  ],
+})
+model MessageLogsListStatusCode422 is StatusCode422;
