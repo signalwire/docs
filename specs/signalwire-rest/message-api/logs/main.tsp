@@ -10,8 +10,8 @@ using TypeSpec.Http;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace VoiceAPI.Logs {
-  @tag(VOICE_LOGS_TAG)
+namespace MessageAPI.Logs {
+  @tag(MESSAGE_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
     @summary("List Logs")
@@ -20,12 +20,12 @@ namespace VoiceAPI.Logs {
       
       #### Permissions
       
-      The API token must include the following scopes: _Voice_.
+      The API token must include the following scopes: _Messaging_.
       """)
     list(...LogListRequest):
       | LogListResponse
       | StatusCode401
-      | VoiceLogsListStatusCode422
+      | StatusCode422
       | StatusCode500;
 
     @summary("Find a Log by ID")
@@ -34,7 +34,7 @@ namespace VoiceAPI.Logs {
       
       #### Permissions
       
-      The API token must include the following scopes: _Voice_.
+      The API token must include the following scopes: _Messaging_.
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
