@@ -183,7 +183,8 @@ function main() {
   console.log(`Found ${files.length} files to process\n`);
   
   let updatedCount = 0;
-  let skippedCount = 0;
+  let alreadyUpToDateCount = 0;
+  let noConfigCount = 0;
   let errorCount = 0;
   
   // Process each file
@@ -198,19 +199,24 @@ function main() {
       updatedCount++;
     } else if (result.reason === 'No new tags to add') {
       console.log('- Skipped (already has all required tags)');
-      skippedCount++;
-    } else {
+      alreadyUpToDateCount++;
+    } else if (result.reason === 'No matching path configuration found' || result.reason === 'No tags configured for this path') {
       console.log(`- Skipped (${result.reason})`);
-      skippedCount++;
+      noConfigCount++;
+    } else {
+      console.log(`- Error (${result.reason})`);
+      errorCount++;
     }
   });
   
   // Summary
   console.log('\n=== Summary ===');
-  console.log(`Total files processed: ${files.length}`);
-  console.log(`Files updated: ${updatedCount}`);
-  console.log(`Files skipped: ${skippedCount}`);
-  console.log(`Errors: ${errorCount}`);
+  console.log(`Total files found: ${files.length}`);
+  console.log(`Files updated with new tags: ${updatedCount}`);
+  console.log(`Files already up-to-date: ${alreadyUpToDateCount}`);
+  console.log(`Files with no matching config: ${noConfigCount}`);
+  console.log(`Files with errors: ${errorCount}`);
+  console.log(`\nProcessed: ${updatedCount + alreadyUpToDateCount} of ${files.length} files with valid configs`);
   console.log('\nDone!');
 }
 
