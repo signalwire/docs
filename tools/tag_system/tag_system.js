@@ -15,7 +15,7 @@ try {
     // Fallback to a basic JavaScript config if TypeScript not available
     console.warn('TypeScript not available, using default configuration');
     config = {
-      startingDir: '../../website/docs/main',
+      startingDirs: ['../../website/docs/main'],
       allowedExtensions: ['.md', '.mdx'],
       pathTags: {
         '/home/swml': ['swml', 'signalml'],
@@ -28,17 +28,19 @@ try {
   process.exit(1);
 }
 
-// Resolve the starting directory
-const STARTING_DIR = path.resolve(__dirname, config.startingDir);
+// Resolve the starting directories
+const STARTING_DIRS = config.startingDirs.map(dir => path.resolve(__dirname, dir));
 
 // ========================================
 // Helper Functions
 // ========================================
 
-// Check if directory exists
-if (!fs.existsSync(STARTING_DIR)) {
-  console.error(`Error: Starting directory does not exist: ${STARTING_DIR}`);
-  process.exit(1);
+// Check if directories exist
+for (const dir of STARTING_DIRS) {
+  if (!fs.existsSync(dir)) {
+    console.error(`Error: Starting directory does not exist: ${dir}`);
+    process.exit(1);
+  }
 }
 
 // Function to check if a file/folder should be skipped
@@ -82,7 +84,22 @@ function findAllowedFiles(dir, files = []) {
 
 // Function to find the best matching path for a file with recursive inheritance
 function findMatchingPath(filePath) {
-  const relativePath = path.relative(STARTING_DIR, path.dirname(filePath));
+  // Find which starting directory this file belongs to
+  let relativePath = '';
+  let startingDir = '';
+  
+  for (const dir of STARTING_DIRS) {
+    if (filePath.startsWith(dir)) {
+      relativePath = path.relative(dir, path.dirname(filePath));
+      startingDir = dir;
+      break;
+    }
+  }
+  
+  if (!startingDir) {
+    return null; // File doesn't belong to any starting directory
+  }
+  
   const normalizedPath = '/' + relativePath.replace(/\\/g, '/');
   
   // Find all matching paths (paths that the current path starts with)
@@ -173,14 +190,20 @@ function updateFileFrontMatter(filePath) {
 
 function main() {
   console.log('=== Tag System Tool ===\n');
-  console.log('Starting directory:', STARTING_DIR);
+  console.log('Starting directories:', STARTING_DIRS.length);
+  STARTING_DIRS.forEach((dir, i) => console.log(`  ${i + 1}. ${dir}`));
   console.log('Allowed extensions:', config.allowedExtensions.join(', '));
   console.log('Configured paths:', Object.keys(config.pathTags).length);
   console.log('\nSearching for files...\n');
   
-  // Find all files
-  const files = findAllowedFiles(STARTING_DIR);
-  console.log(`Found ${files.length} files to process\n`);
+  // Find all files from all starting directories
+  let allFiles = [];
+  STARTING_DIRS.forEach(dir => {
+    const files = findAllowedFiles(dir);
+    allFiles = allFiles.concat(files);
+  });
+  
+  console.log(`Found ${allFiles.length} files to process\n`);
   
   let updatedCount = 0;
   let alreadyUpToDateCount = 0;
@@ -188,9 +211,16 @@ function main() {
   let errorCount = 0;
   
   // Process each file
-  files.forEach((filePath, index) => {
-    const relativePath = path.relative(STARTING_DIR, filePath);
-    process.stdout.write(`[${index + 1}/${files.length}] Processing ${relativePath}... `);
+  allFiles.forEach((filePath, index) => {
+    // Find the most appropriate starting directory for relative path display
+    let relativePath = filePath;
+    for (const dir of STARTING_DIRS) {
+      if (filePath.startsWith(dir)) {
+        relativePath = path.relative(dir, filePath);
+        break;
+      }
+    }
+    process.stdout.write(`[${index + 1}/${allFiles.length}] Processing ${relativePath}... `);
     
     const result = updateFileFrontMatter(filePath);
     
@@ -211,12 +241,12 @@ function main() {
   
   // Summary
   console.log('\n=== Summary ===');
-  console.log(`Total files found: ${files.length}`);
+  console.log(`Total files found: ${allFiles.length}`);
   console.log(`Files updated with new tags: ${updatedCount}`);
   console.log(`Files already up-to-date: ${alreadyUpToDateCount}`);
   console.log(`Files with no matching config: ${noConfigCount}`);
   console.log(`Files with errors: ${errorCount}`);
-  console.log(`\nProcessed: ${updatedCount + alreadyUpToDateCount} of ${files.length} files with valid configs`);
+  console.log(`\nProcessed: ${updatedCount + alreadyUpToDateCount} of ${allFiles.length} files with valid configs`);
   console.log('\nDone!');
 }
 

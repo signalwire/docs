@@ -8,8 +8,12 @@ const mustache = require("mustache");
 // CONFIGURATION
 // ========================================
 
-// Default starting directory (relative to script location)
-const DEFAULT_STARTING_DIR = "../../website/docs/main";
+// Default starting directories (relative to script location)
+const DEFAULT_STARTING_DIRS = [
+  "../../website/docs/main",
+  "../../website/docs/browser-sdk", 
+  "../../website/docs/realtime-sdk"
+];
 
 // Default depth limit (5 levels deep, -1 for unlimited)
 const DEFAULT_DEPTH = 5;
@@ -81,12 +85,12 @@ function getNextConfigFilename(baseDir) {
 }
 
 // Function to generate TypeScript config template using mustache
-function generateConfigTemplate(directories, startingDir) {
+function generateConfigTemplate(directories, startingDirs) {
   const templatePath = path.join(__dirname, 'config_template.ts');
   const templateContent = fs.readFileSync(templatePath, 'utf8');
   
   const data = {
-    startingDir: startingDir,
+    startingDirs: startingDirs,
     directories: directories.map(dir => ({ path: dir }))
   };
   
@@ -100,7 +104,7 @@ function generateConfigTemplate(directories, startingDir) {
 function main() {
   // Parse command line arguments
   const args = process.argv.slice(2);
-  let startingDirArg = DEFAULT_STARTING_DIR;
+  let startingDirsArg = DEFAULT_STARTING_DIRS;
   let depth = DEFAULT_DEPTH;
 
   // Parse arguments
@@ -134,38 +138,45 @@ Examples:
 `);
       process.exit(0);
     } else if (!arg.startsWith("--")) {
-      // Assume it's a directory path
-      startingDirArg = arg;
+      // For now, ignore additional directory arguments - use defaults
+      console.warn(`Warning: Custom directories not supported yet. Using defaults.`);
     }
   }
 
-  // Resolve the starting directory
-  const startingDir = path.resolve(__dirname, startingDirArg);
+  // Resolve the starting directories
+  const startingDirs = startingDirsArg.map(dir => path.resolve(__dirname, dir));
 
   console.log("=== Config Template Generator ===\\n");
-  console.log("Starting directory:", startingDir);
+  console.log("Starting directories:", startingDirs.length);
+  startingDirs.forEach((dir, i) => console.log(`  ${i + 1}. ${dir}`));
   console.log("Max depth:", depth === -1 ? "unlimited" : depth);
 
-  // Check if directory exists
-  if (!fs.existsSync(startingDir)) {
-    console.error(`Error: Starting directory does not exist: ${startingDir}`);
-    process.exit(1);
+  // Check if directories exist
+  for (const dir of startingDirs) {
+    if (!fs.existsSync(dir)) {
+      console.error(`Error: Starting directory does not exist: ${dir}`);
+      process.exit(1);
+    }
   }
 
   console.log("\\nScanning directories...\\n");
 
-  // Find all directories
-  const directories = findDirectories(startingDir, 0, depth);
+  // Find all directories from all starting directories
+  let allDirectories = [];
+  startingDirs.forEach(dir => {
+    const dirs = findDirectories(dir, 0, depth);
+    allDirectories = allDirectories.concat(dirs);
+  });
 
-  // Sort directories alphabetically
-  directories.sort();
+  // Sort directories alphabetically and remove duplicates
+  allDirectories = [...new Set(allDirectories)].sort();
 
-  console.log(`Found ${directories.length} directories:`);
-  directories.forEach((dir) => console.log(`  ${dir}`));
+  console.log(`Found ${allDirectories.length} directories:`);
+  allDirectories.forEach((dir) => console.log(`  ${dir}`));
 
   // Generate config template
   console.log("\\nGenerating config template...");
-  const template = generateConfigTemplate(directories, startingDirArg);
+  const template = generateConfigTemplate(allDirectories, startingDirsArg);
 
   // Get next available filename
   const outputFile = getNextConfigFilename(__dirname);

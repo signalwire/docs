@@ -1,12 +1,16 @@
 export interface TagConfig {
-  startingDir: string;
+  startingDirs: string[];
   allowedExtensions: string[];
   pathTags: Record<string, string[]>;
 }
 
 export const config: TagConfig = {
-  // Starting directory for the tag system
-  startingDir: '{{{startingDir}}}',
+  // Starting directories for the tag system
+  startingDirs: [
+{{#startingDirs}}
+    '{{{.}}}',
+{{/startingDirs}}
+  ],
   
   // File extensions to process
   allowedExtensions: ['.md', '.mdx'],

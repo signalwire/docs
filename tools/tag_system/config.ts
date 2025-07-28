@@ -1,12 +1,16 @@
 export interface TagConfig {
-  startingDir: string;
+  startingDirs: string[];
   allowedExtensions: string[];
   pathTags: Record<string, string[]>;
 }
 
 export const config: TagConfig = {
-  // Starting directory for the tag system
-  startingDir: '../../website/docs/main',
+  // Starting directories for the tag system
+  startingDirs: [
+    '../../website/docs/main',
+    '../../website/docs/browser-sdk', 
+    '../../website/docs/realtime-sdk'
+  ],
   
   // File extensions to process
   allowedExtensions: ['.md', '.mdx'],
@@ -184,6 +188,17 @@ export const config: TagConfig = {
     '/swml/methods/live_translate/action': ['actions', 'callbacks'], 
     '/swml/methods/pay': ['payments', 'billing', 'credit-card'], 
     '/swml/methods/pay/parameters': ['parameters', 'configuration'], 
-    '/swml/methods/pay/prompts': ['prompts', 'user-input'], 
+    '/swml/methods/pay/prompts': ['prompts', 'user-input'],
+    
+    // Browser SDK paths
+    '/browser-sdk': ['browser-sdk', 'javascript', 'webrtc', 'client-side'],
+    '/browser-sdk/guides': ['guides', 'tutorials'],
+    '/browser-sdk/tech-ref': ['api-reference', 'technical-reference'],
+    
+    // Realtime SDK paths  
+    '/realtime-sdk': ['realtime-sdk', 'javascript', 'websockets', 'real-time'],
+    '/realtime-sdk/guides': ['guides', 'tutorials'],
+    '/realtime-sdk/tech-ref': ['api-reference', 'technical-reference'],
+    '/realtime-sdk/language': ['language-bindings', 'client-libraries'],
   }
 };
