@@ -21,7 +21,6 @@ export interface TablesProps {
    * Optional caption for the table
    */
   caption?: string;
-
 }
 
 function extractTables(node: ReactNode): React.ReactElement[] {
