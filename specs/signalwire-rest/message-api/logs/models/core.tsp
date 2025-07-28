@@ -39,11 +39,23 @@ model MessageLog {
 
   @doc("The status of the message.")
   @example("failed")
-  status: "sent" | "recieved" | "undelivered" | "failed";
+  status:
+    | "queued"
+    | "initiated"
+    | "deliverd"
+    | "sent"
+    | "recieved"
+    | "undelivered"
+    | "failed";
 
   @doc("The direction of the message.")
   @example("inbound")
-  direction: "inbound" | "outbound";
+  direction:
+    | "inbound"
+    | "outbound"
+    | "outbound-api"
+    | "outbound-call"
+    | "outbound-reply";
 
   @doc("The kind of message.")
   @example("sms")
