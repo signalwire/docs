@@ -11,7 +11,9 @@ keywords:
   - ai
   - python
 tags:
+  - agent-building
   - agents-sdk
+  - composition
   - python
 ---
 

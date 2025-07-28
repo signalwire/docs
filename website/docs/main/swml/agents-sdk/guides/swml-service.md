@@ -11,7 +11,9 @@ keywords:
   - python
 tags:
   - agents-sdk
+  - guides
   - python
+  - tutorials
 ---
  
 

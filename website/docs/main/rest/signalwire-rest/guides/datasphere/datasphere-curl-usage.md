@@ -1,8 +1,15 @@
 ---
 title: Use the Datasphere API with curl - A step-by-step guide
-description: Interact with the Datasphere API with curl. Use different chunking strategies such as `page`, `sentence`, `paragraph`, and `sliding`, and filter results with powerful query options.
+description: >-
+  Interact with the Datasphere API with curl. Use different chunking strategies
+  such as `page`, `sentence`, `paragraph`, and `sliding`, and filter results
+  with powerful query options.
 sidebar_label: Essential operations with curl
 slug: /rest/signalwire-rest/guides/datasphere/curl-usage
+tags:
+  - analytics
+  - data
+  - datasphere
 ---
 
 # Use the Datasphere API with `curl`
