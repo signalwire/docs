@@ -71,7 +71,7 @@ export const openapiPlugin: PluginConfig = [
         },
       },
       signalwireMessagingApi: {
-        specPath: "../specs/signalwire-rest/message-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/message-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/messaging",
         sidebarOptions: {
           categoryLinkSource: "tag",

@@ -5,9 +5,10 @@ import "../../enums.tsp";
 
 using TypeSpec.Http;
 
-@doc("Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.")
 model LogPathID {
   @format("uuid")
+  @path
+  @doc("Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.")
   id: uuid;
 }
 
