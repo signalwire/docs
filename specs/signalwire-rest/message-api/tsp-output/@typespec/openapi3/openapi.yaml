@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Voice API
+  title: Message API
   version: 1.0.0
   contact:
     name: SignalWire
@@ -10,16 +10,16 @@ info:
     name: MIT
     url: https://github.com/signalwire/docs/blob/main/LICENSE
   termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
-  description: An API to programmatically access information about SignalWire Voice activity.
+  description: An API to programmatically access information about SignalWire Message activity.
 externalDocs:
-  url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/voice
-  description: The Voice API holds a collection of endpoints that will help you find voice related logs.
+  url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/messaging
+  description: Find more information about this and other SignalWire APIs.
 tags:
   - name: Logs
-    description: Endpoints related to accessing voice logs
+    description: Endpoints related to accessing message logs
     externalDocs:
-      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/voice
-      description: Developer documentation on Voice API endpoints
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/messaging/logs
+      description: Developer documentation on Message API endpoints
 paths:
   /logs:
     get:
@@ -30,7 +30,7 @@ paths:
 
         #### Permissions
 
-        The API token must include the following scopes: _Voice_.
+        The API token must include the following scopes: _Messaging_.
       parameters:
         - $ref: '#/components/parameters/LogListRequest.include_deleted'
         - $ref: '#/components/parameters/LogListRequest.created_before'
@@ -55,7 +55,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoiceLogsListStatusCode422'
+                $ref: '#/components/schemas/MessageLogsListStatusCode422'
         '500':
           description: Server error
           content:
@@ -73,7 +73,7 @@ paths:
 
         #### Permissions
 
-        The API token must include the following scopes: _Voice_.
+        The API token must include the following scopes: _Messaging_.
       parameters:
         - $ref: '#/components/parameters/LogPathID'
       responses:
@@ -152,7 +152,7 @@ components:
       name: id
       in: path
       required: true
-      description: Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.
+      description: Unique ID of the log.
       schema:
         $ref: '#/components/schemas/uuid'
         format: uuid
@@ -166,12 +166,12 @@ components:
         description:
           type: string
           description: Description for this charge.
-          example: Text to Speech
+          example: Inbound SMS
         charge:
           type: number
           format: double
           description: Charged amount.
-          example: 0.121176
+          example: 0.00415
       description: Details on charges associated with this log.
     LogListResponse:
       type: object
@@ -182,13 +182,12 @@ components:
         links:
           allOf:
             - $ref: '#/components/schemas/LogPaginationResponse'
-          description: Pagination links
+          description: Object containing pagination links
         data:
           type: array
           items:
-            $ref: '#/components/schemas/VoiceLog'
-          description: Array of voice log entries
-      description: Response model for voice log list endpoint
+            $ref: '#/components/schemas/MessageLog'
+          description: Array of message log entries
     LogPaginationResponse:
       type: object
       required:
@@ -197,35 +196,36 @@ components:
       properties:
         self:
           type: string
-          example: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50
+          description: URL to current page
+          example: https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50
         first:
           type: string
-          example: https://example.signalwire.com/api/voice/logs?page_size=50
+          description: URL to first page
+          example: https://example.signalwire.com/api/messaging/logs?page_size=50
         next:
           type: string
-          example: https://example.signalwire.com/api/voice/logs?page_number=1&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7
+          description: URL to next page (if available)
+          example: https://example.signalwire.com/api/messaging/logs?page_number=1&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff
         prev:
           type: string
-          example: https://example.signalwire.com/api/voice/logs?page_number=0&page_size=50&page_token=PA2fa20774-64a1-41d3-a88a-1c61f563d0e7
-      description: Pagination links for voice log list responses
+          description: URL to previous page (if available)
+          example: https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff
     LogRetrieveResponse:
       type: object
       required:
         - id
         - from
         - to
-        - direction
         - status
-        - duration
-        - duration_ms
-        - billing_ms
+        - direction
+        - kind
         - source
         - type
         - url
+        - number_of_segments
         - charge
         - charge_details
         - created_at
-        - parent_id
       properties:
         id:
           allOf:
@@ -235,76 +235,195 @@ components:
         from:
           type: string
           description: The origin phone number.
-          example: '+12065551212'
+          example: '+12077447397'
         to:
           type: string
           description: The destination phone number.
-          example: '+12065553434'
+          example: '+12029921413'
+        status:
+          type: string
+          enum:
+            - queued
+            - initiated
+            - delivered
+            - sent
+            - recieved
+            - undelivered
+            - failed
+          description: The status of the message.
+          example: failed
         direction:
           type: string
           enum:
             - inbound
             - outbound
-          description: The direction of the voice activity.
+            - outbound-api
+            - outbound-call
+            - outbound-reply
+          description: The direction of the message.
           example: inbound
-        status:
-          allOf:
-            - $ref: '#/components/schemas/VoiceLogStatus'
-          description: The status of the voice activity.
-          example: completed
-        duration:
-          type: integer
-          format: int32
-          description: The duration of the voice activity in seconds.
-          example: 9
-        duration_ms:
-          type: integer
-          format: int32
-          description: The duration of the voice activity in milliseconds.
-          example: 9638
-        billing_ms:
-          type: integer
-          format: int32
-          description: The billable duration of the voice activity in seconds.
-          example: 60
+        kind:
+          type: string
+          enum:
+            - sms
+            - mms
+          description: The kind of message.
+          example: sms
         source:
-          allOf:
-            - $ref: '#/components/schemas/VoiceSources'
+          type: string
+          enum:
+            - realtime_api
+            - laml
           description: Source of this log entry.
-          example: realtime_api
+          example: laml
         type:
-          allOf:
-            - $ref: '#/components/schemas/VoiceType'
+          type: string
+          enum:
+            - relay_message
+            - laml_message
           description: Type of this log entry.
-          example: relay_sip_call
+          example: relay_message
         url:
           type: string
           format: uri
-          nullable: true
           description: URL for the resource associated with this log entry (if available).
-          example: null
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
+        number_of_segments:
+          type: integer
+          format: int32
+          description: The number of segments.
+          example: 1
         charge:
           type: number
           format: double
           description: The charge in dollars.
-          example: 0.01
+          example: 0
         charge_details:
           type: array
           items:
             $ref: '#/components/schemas/ChargeDetail'
           description: Details on charges associated with this log.
-          example: []
         created_at:
           type: string
           format: date-time
-          description: Date and time when the call entry was created.
+          description: Date and time when the message entry was created.
           example: '2024-05-06T12:20:00Z'
-        parent_id:
+      description: Response model for message log retrieve endpoint
+    MessageLog:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - status
+        - direction
+        - kind
+        - source
+        - type
+        - url
+        - number_of_segments
+        - charge
+        - charge_details
+        - created_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log.
+        from:
           type: string
-          nullable: true
-          description: Parent log identifier for related call entries.
-          example: null
-      description: Response model for voice log retrieve endpoint
+          description: The origin phone number.
+          example: '+12077447397'
+        to:
+          type: string
+          description: The destination phone number.
+          example: '+12029921413'
+        status:
+          type: string
+          enum:
+            - queued
+            - initiated
+            - delivered
+            - sent
+            - recieved
+            - undelivered
+            - failed
+          description: The status of the message.
+          example: failed
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+            - outbound-api
+            - outbound-call
+            - outbound-reply
+          description: The direction of the message.
+          example: inbound
+        kind:
+          type: string
+          enum:
+            - sms
+            - mms
+          description: The kind of message.
+          example: sms
+        source:
+          type: string
+          enum:
+            - realtime_api
+            - laml
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          enum:
+            - relay_message
+            - laml_message
+          description: Type of this log entry.
+          example: relay_message
+        url:
+          type: string
+          format: uri
+          description: URL for the resource associated with this log entry (if available).
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
+        number_of_segments:
+          type: integer
+          format: int32
+          description: The number of segments.
+          example: 1
+        charge:
+          type: number
+          format: double
+          description: The charge in dollars.
+          example: 0
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the message entry was created.
+          example: '2024-05-06T12:20:00Z'
+      description: Message log entry with all activity details
+    MessageLogsListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: datetime_required
+            message: This value must be a DateTime
+            attribute: created_before
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#datetime_required
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -356,153 +475,6 @@ components:
           type: string
           enum:
             - Internal Server Error
-    VoiceLog:
-      type: object
-      required:
-        - id
-        - from
-        - to
-        - direction
-        - status
-        - duration
-        - duration_ms
-        - billing_ms
-        - source
-        - type
-        - url
-        - charge
-        - charge_details
-        - created_at
-        - parent_id
-      properties:
-        id:
-          allOf:
-            - $ref: '#/components/schemas/uuid'
-          format: uuid
-          description: A unique identifier for the log.
-        from:
-          type: string
-          description: The origin phone number.
-          example: '+12065551212'
-        to:
-          type: string
-          description: The destination phone number.
-          example: '+12065553434'
-        direction:
-          type: string
-          enum:
-            - inbound
-            - outbound
-          description: The direction of the voice activity.
-          example: inbound
-        status:
-          allOf:
-            - $ref: '#/components/schemas/VoiceLogStatus'
-          description: The status of the voice activity.
-          example: completed
-        duration:
-          type: integer
-          format: int32
-          description: The duration of the voice activity in seconds.
-          example: 9
-        duration_ms:
-          type: integer
-          format: int32
-          description: The duration of the voice activity in milliseconds.
-          example: 9638
-        billing_ms:
-          type: integer
-          format: int32
-          description: The billable duration of the voice activity in seconds.
-          example: 60
-        source:
-          allOf:
-            - $ref: '#/components/schemas/VoiceSources'
-          description: Source of this log entry.
-          example: realtime_api
-        type:
-          allOf:
-            - $ref: '#/components/schemas/VoiceType'
-          description: Type of this log entry.
-          example: relay_sip_call
-        url:
-          type: string
-          format: uri
-          nullable: true
-          description: URL for the resource associated with this log entry (if available).
-          example: null
-        charge:
-          type: number
-          format: double
-          description: The charge in dollars.
-          example: 0.01
-        charge_details:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChargeDetail'
-          description: Details on charges associated with this log.
-          example: []
-        created_at:
-          type: string
-          format: date-time
-          description: Date and time when the call entry was created.
-          example: '2024-05-06T12:20:00Z'
-        parent_id:
-          type: string
-          nullable: true
-          description: Parent log identifier for related call entries.
-          example: null
-      description: Voice log entry with all activity details
-    VoiceLogStatus:
-      type: string
-      enum:
-        - queued
-        - initiated
-        - ringing
-        - in-progress
-        - busy
-        - failed
-        - no-answer
-        - canceled
-        - completed
-        - ended
-        - answered
-        - created
-        - ending
-        - joined
-    VoiceLogsListStatusCode422:
-      type: object
-      required:
-        - errors
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
-      example:
-        errors:
-          - type: validation_error
-            code: invalid_parameter
-            message: Parameter value is invalid
-            attribute: page_size
-            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
-    VoiceSources:
-      type: string
-      enum:
-        - dialogflow
-        - laml
-        - realtime_api
-    VoiceType:
-      type: string
-      enum:
-        - dialogflow_call
-        - laml_call
-        - agora_call
-        - relay_pstn_call
-        - relay_sip_call
-        - relay_webrtc_call
-        - video_room_pstn_leg
-        - video_room_sip_leg
     uuid:
       type: string
       format: uuid
@@ -512,7 +484,7 @@ components:
       type: http
       scheme: Basic
 servers:
-  - url: https://{space_name}.signalwire.com/api/voice
+  - url: https://{space_name}.signalwire.com/api/messaging
     description: Endpoint
     variables:
       space_name:
