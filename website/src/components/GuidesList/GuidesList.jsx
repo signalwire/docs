@@ -90,7 +90,7 @@ function GuideCardWrapper({ item }) {
   );
 }
 
-export default function GuidesList({ items = null }) {
+export default function GuidesList({ items = null, cols = 2 }) {
   const sidebarItems = useCurrentSidebarCategory();
   const [itemsToUse, setItemsToUse] = useState(null);
 
@@ -103,7 +103,7 @@ export default function GuidesList({ items = null }) {
   }, [items, sidebarItems]);
 
   return (
-    <CardGroup cols={2}>
+    <CardGroup cols={cols}>
       {itemsToUse &&
         itemsToUse
           ?.filter((i) => !(i?.customProps?.hideFromIndex === true || i?.draft === true))
