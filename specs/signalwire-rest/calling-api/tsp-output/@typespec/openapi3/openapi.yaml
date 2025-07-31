@@ -1,12 +1,25 @@
 openapi: 3.0.0
 info:
   title: Calling API
-  description: |-
-    API to create/manage SignalWire's Calls.
-    To create a new Call, you send a `POST` request to the Call resource with a payload including a `dial` command and additional nested `params`.
-  version: 0.0.0
+  version: 1.0.0
+  contact:
+    name: SignalWire
+    url: https://support.signalwire.com/portal/en/newticket?departmentId=1029313000000006907&layoutId=1029313000000074011
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://github.com/signalwire/docs/blob/main/LICENSE
+  termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
+  description: API to create/manage SignalWire's Calls.
+externalDocs:
+  url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling
+  description: The Calling API holds a collection of endpoints that will help you create and manage calls.
 tags:
   - name: Calls
+    description: Endpoints related to creating and managing calls
+    externalDocs:
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling/calls
+      description: Developer documentation on Calling API Call endpoints
 paths:
   /calls:
     post:
@@ -39,6 +52,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CallCreate422Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Calls
       requestBody:
@@ -77,6 +96,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CallUpdate422Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Calls
       requestBody:
@@ -194,6 +219,26 @@ components:
           type: string
           description: The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
           example: https://example.com/fallback
+        status_url:
+          type: string
+          format: uri
+          description: A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.
+          example: https://example.com/status_callback
+        status_events:
+          type: array
+          items:
+            type: string
+            enum:
+              - answered
+              - queued
+              - initiated
+              - ringing
+              - ending
+              - ended
+          description: The call events that will be monitored and sent to the `status_url` when active.
+          example:
+            - answered
+            - ended
         swml:
           type: string
           description: Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.
@@ -222,6 +267,26 @@ components:
           type: string
           description: The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
           example: https://example.com/fallback
+        status_url:
+          type: string
+          format: uri
+          description: A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.
+          example: https://example.com/status_callback
+        status_events:
+          type: array
+          items:
+            type: string
+            enum:
+              - answered
+              - queued
+              - initiated
+              - ringing
+              - ending
+              - ended
+          description: The call events that will be monitored and sent to the `status_url` when active.
+          example:
+            - answered
+            - ended
         url:
           type: string
           description: |-
@@ -309,23 +374,27 @@ components:
         - status
         - duration
         - duration_ms
-        - billable_duration
+        - billing_ms
         - source
         - type
+        - url
         - charge
+        - created_at
+        - parent_id
+        - charge_details
       properties:
         id:
           type: string
           description: The unique identifier of the call on SignalWire. This can be used to update the call programmatically.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          example: 0e9c80d7-a149-4917-892d-420043709f45
         from:
           type: string
           description: The origin number or address.
-          example: sip:from-sip@example-112233445566.sip.signalwire.com
+          example: '+12069708643'
         to:
           type: string
           description: The destination number or address.
-          example: sip:from-sip@example-112233445567.sip.signalwire.com
+          example: '+18048390497'
         direction:
           type: string
           enum:
@@ -345,16 +414,19 @@ components:
           example: queued
         duration:
           type: integer
+          nullable: true
           description: The duration of the call in seconds.
-          example: 60
+          example: null
         duration_ms:
           type: integer
+          nullable: true
           description: The duration of the call in milliseconds.
-          example: 60000
-        billable_duration:
+          example: null
+        billing_ms:
           type: integer
-          description: The billable duration of the call in seconds.
-          example: 60
+          nullable: true
+          description: The billable duration of the call in milliseconds.
+          example: null
         source:
           type: string
           enum:
@@ -368,8 +440,28 @@ components:
             - relay_sip_call
             - relay_webrtc_call
           description: Type of this call.
-          example: relay_sip_call
+          example: relay_pstn_call
+        url:
+          type: string
+          nullable: true
+          description: The URL associated with this call.
+          example: null
         charge:
+          type: number
+          format: double
+          description: Total charge for this call.
+          example: 0
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the call was created.
+          example: '2024-05-06T12:20:00Z'
+        parent_id:
+          type: string
+          nullable: true
+          description: The parent call ID if this is a child call.
+          example: null
+        charge_details:
           type: array
           items:
             $ref: '#/components/schemas/ChargeDetails'
@@ -520,9 +612,11 @@ components:
         description:
           type: string
           description: Description for this charge.
+          example: Text to Speach
         amount:
-          type: integer
+          type: number
           description: Charged amount.
+          example: 0.121176
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -565,6 +659,15 @@ components:
         url:
           type: string
           description: Link to developer resource for this error.
+    Types.StatusCodes.StatusCode500:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal Server Error
     UpdateCurrentCallRequest:
       oneOf:
         - $ref: '#/components/schemas/CallUpdateSWMLRequest'
@@ -584,3 +687,4 @@ servers:
     variables:
       space_name:
         default: '{Your_Space_Name}'
+        description: The domain of the users SignalWire space.
