@@ -63,7 +63,7 @@ model Call {
 
 model ChargeDetails {
   @doc("Description for this charge.")
-  @example("Text to Speach")
+  @example("Text to Speech")
   description: string;
 
   @doc("Charged amount.")
