@@ -16,7 +16,7 @@ const updateCommandDescription = "The `update` command is used to update a exist
 
 const uuidDescription = "The unique identifying ID of a existing call.";
 
-const paramsDescription = "An object of parameters to that will be utilized by the active command.";
+const paramsDescription = "An object of parameters that will be utilized by the active command.";
 
 alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
