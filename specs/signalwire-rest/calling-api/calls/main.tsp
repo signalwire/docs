@@ -21,8 +21,8 @@ namespace CallingAPI.Calls {
         }
       | StatusCode401
       | StatusCode404
-      | CallCreate422Error |
-        StatusCode500;
+      | CallCreate422Error
+      | StatusCode500;
 
     @summary("Update a Call")
     @doc("To update an existing call, you send a `PUT` request to the Call resource with a payload including a `command` and additional nested `params`.")
@@ -56,7 +56,7 @@ namespace CallingAPI.Calls {
         }
       | StatusCode401
       | StatusCode404
-      | CallUpdate422Error |
-        StatusCode500;
+      | CallUpdate422Error
+      | StatusCode500;
   }
 }
