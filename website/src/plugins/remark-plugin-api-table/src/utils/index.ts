@@ -1,2 +1,2 @@
-export * from './typeGuards';
-export * from './tableUtils';
+export * from './typeGuards.js';
+export * from './tableUtils.js';
