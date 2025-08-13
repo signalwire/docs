@@ -14,10 +14,7 @@ dotenv.config({ path: '../.env' }); // Imports environment variables from the .e
 const config: Config = { 
 
   future: {
-    v4: {
-      removeLegacyPostBuildHeadAttribute: true,
-      useCssCascadeLayers: true
-    },
+    v4: true,
     experimental_faster: true,
   },
 
