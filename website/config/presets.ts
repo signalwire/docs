@@ -26,7 +26,7 @@ const presets: PresetConfig[] = [
         remarkPlugins: [
           [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
           [require("../src/plugins/remark-plugin-yaml-and-json"), { sync: false }],
-          [require("../src/plugins/remark-plugin-vfile-reporter"), {}],
+          // [require("../src/plugins/remark-plugin-vfile-reporter"), {}],
           [require("../src/plugins/remark-plugin-api-table"), {}]
         ],
         beforeDefaultRemarkPlugins: [
