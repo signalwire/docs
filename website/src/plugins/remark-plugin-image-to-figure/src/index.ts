@@ -1,7 +1,7 @@
 import { visit } from "unist-util-visit";
 import { position } from "unist-util-position";
 
-function createFigureNode({ srcText, titleText, altText }) {
+function createFigureNode({ srcText, titleText, altText }: { srcText: string; titleText?: string; altText: string }) {
   return {
     type: "mdxJsxFlowElement",
     name: "figure",
@@ -93,13 +93,13 @@ function createFigureNode({ srcText, titleText, altText }) {
   };
 }
 
-function isSvg(url) {
+function isSvg(url: string): boolean {
   return typeof url === "string" && url.toLowerCase().endsWith(".svg");
 }
 
 export default function imageToFigure() {
   /** @type {import('unified').Transformer} */
-  return (tree, vfile) => {
+  return (tree: any, vfile: any) => {
     visit(tree, ["image"], (node, index, parent) => {
       const srcText = node.url;
       const altText = node.alt;

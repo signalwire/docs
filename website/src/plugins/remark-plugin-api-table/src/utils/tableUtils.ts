@@ -14,7 +14,7 @@ import {
   isLinkNode,
   isHeadingNode,
   hasHProperties,
-} from './typeGuards';
+} from './typeGuards.js';
 
 /**
  * Collects all unique anchors from the Markdown AST.
