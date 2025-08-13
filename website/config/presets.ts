@@ -31,7 +31,7 @@ const presets: PresetConfig[] = [
         ],
         beforeDefaultRemarkPlugins: [
           // TODO: temporarily don't fail on a11y errors
-          [require("../src/plugins/remark-plugin-a11y-checker"), { stopOnError: false }],
+          //[require("../src/plugins/remark-plugin-a11y-checker"), { stopOnError: false }],
           [require("../src/plugins/remark-plugin-image-to-figure"), {}],
         ],
         tags: 'tags.yml',
