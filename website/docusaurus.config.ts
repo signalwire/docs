@@ -20,7 +20,7 @@ const config: Config = {
       mdxCrossCompilerCache: true,
       rspackBundler: true,
       rspackPersistentCache: true,
-      ssgWorkerThreads: false,
+      ssgWorkerThreads: true,
       swcHtmlMinimizer: true,
       swcJsLoader: true,
       swcJsMinimizer: true
