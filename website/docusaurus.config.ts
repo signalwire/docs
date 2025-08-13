@@ -15,16 +15,7 @@ const config: Config = {
 
   future: {
     v4: true,
-    experimental_faster: {
-      lightningCssMinimizer: true,
-      mdxCrossCompilerCache: true,
-      rspackBundler: true,
-      rspackPersistentCache: true,
-      ssgWorkerThreads: true,
-      swcHtmlMinimizer: true,
-      swcJsLoader: true,
-      swcJsMinimizer: true
-    },
+    experimental_faster: true
   },
 
   markdown: {
