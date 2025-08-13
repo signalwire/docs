@@ -19,7 +19,7 @@ const config: Config = {
       lightningCssMinimizer: true,
       mdxCrossCompilerCache: true,
       rspackBundler: true,
-      rspackPersistentCache: false,
+      rspackPersistentCache: true,
       ssgWorkerThreads: false,
       swcHtmlMinimizer: true,
       swcJsLoader: true,
