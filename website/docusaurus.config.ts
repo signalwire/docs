@@ -18,7 +18,7 @@ const config: Config = {
       removeLegacyPostBuildHeadAttribute: true,
       useCssCascadeLayers: true
     },
-    experimental_faster: false,
+    experimental_faster: true,
   },
 
   markdown: {
