@@ -96,7 +96,7 @@ export const openapiPlugin: PluginConfig = [
         },
       },
       signalwirePubSubApi: {
-        specPath: "../specs/signalwire-rest/pubsub-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/pubsub-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/pubsub",
         maskCredentials: false,
         sidebarOptions: {
