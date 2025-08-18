@@ -34,6 +34,7 @@ namespace PubSubAPI.Tokens {
           @statusCode _: 422;
           @doc("Unprocessable Entity. You may have specified invalid parameters.")
           @body error: PubSubToken422Error;
-        };
+        }
+      | StatusCode500;
   }
 }
