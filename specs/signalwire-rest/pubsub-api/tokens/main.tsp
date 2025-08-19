@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "@typespec/openapi";
 import "../../types";
 import "./models/core.tsp";
 import "./models/requests.tsp";
@@ -6,6 +7,7 @@ import "./models/responses.tsp";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/tokens")
@@ -23,6 +25,7 @@ namespace PubSubAPI.Tokens {
       The API token must include the following scopes: _PubSub_.
       """)
     @post
+    @operationId("create_token")
     create(@body request: NewPubSubToken):
       | {
           @statusCode _: 200;
