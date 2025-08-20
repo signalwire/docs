@@ -11,7 +11,7 @@ model NewPubSubToken {
   @minValue(1)
   @maxValue(43200)
   @example(15)
-  @doc("The maximum time, in minutes, that the access token will be valid for. Between 1 and 43,200 (30 days).")
+  @doc("The maximum time, in minutes, for which the access token will be valid. Between 1 and 43,200 (30 days).")
   ttl: integer;
 
   channels: PubSubChannels;
