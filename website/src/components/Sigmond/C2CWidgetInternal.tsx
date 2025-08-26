@@ -15,9 +15,14 @@ export default function C2CWidgetInternal({
   token: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const showContactFormRef = useRef<any>(null);
 
   useEffect(() => {
-    import("@niravcodes/call-widget");
+    const loadWidget = async () => {
+      const module = await import("@signalwire/call-widget");
+      showContactFormRef.current = module.showContactForm;
+    };
+    loadWidget();
   }, []);
 
   // react doesn't like other scripts controlling the DOM,
@@ -27,19 +32,50 @@ export default function C2CWidgetInternal({
   useEffect(() => {
     if (rootRef.current) {
       rootRef.current.innerHTML = "";
-      const widget = document.createElement("c2c-widget");
+      const widget = document.createElement("call-widget");
 
-      widget.setAttribute("buttonId", buttonId);
-      widget.setAttribute(
-        "callDetails",
-        JSON.stringify({
-          destination,
-          supportsVideo,
-          supportsAudio,
-        }),
-      );
+      widget.setAttribute("button-id", buttonId);
       widget.setAttribute("token", token);
+      widget.setAttribute("support-video", supportsVideo.toString());
+      widget.setAttribute("support-audio", supportsAudio.toString());
+      widget.setAttribute("destination", destination);
+
+      const handleBeforeDial = (event: any) => {
+        const approve = event.detail.approve;
+        const reject = event.detail.reject;
+
+        event.detail.hasListeners = true;
+
+        if (!showContactFormRef.current) {
+          console.error("showContactForm not loaded yet");
+          reject();
+          return;
+        }
+
+        showContactFormRef.current(
+          {
+            onSubmit: (data: any) => {
+              (widget as any).newCallVariable({
+                email: data.email,
+                name: data.name,
+                phone: data.number,
+              });
+              approve();
+            },
+            onCancel: () => {
+              reject();
+            },
+          },
+          widget,
+        );
+      };
+
+      widget.addEventListener("beforeDial", handleBeforeDial);
       rootRef.current.appendChild(widget);
+
+      return () => {
+        widget.removeEventListener("beforeDial", handleBeforeDial);
+      };
     }
     return () => {
       if (rootRef.current) {
