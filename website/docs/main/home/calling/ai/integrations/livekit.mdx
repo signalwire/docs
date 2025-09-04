@@ -1,0 +1,252 @@
+---
+title: LiveKit
+description: Route calls to and from LiveKit from the SignalWire platform
+slug: /ai/guides/livekit
+---
+
+# Route with LiveKit
+
+## Inbound
+
+This guide will walk you through configuring **inbound SIP calls** using **LiveKit** and **SignalWire**. 
+
+In this guide, we will route inbound SIP calls from SignalWire to the LiveKit platform.
+
+## Prerequisites
+
+For both inbound and outbound routing, 
+prepare the following prerequisites before getting started.
+
+  - a SignalWire Space
+  - a LiveKit account
+  - a SignalWire phone number
+
+<Steps>
+
+### Configure SignalWire
+
+To route inbound calls to LiveKit, you will need to create a SWML script that handles the call routing.
+
+**Create an SWML Script**
+
+  - Log in to your SignalWire dashboard.
+  - Navigate to the **Resources** tab on the left-hand sidebar.
+  - Click **Add**, select **Script**, and then choose **SWML Script**.
+  - Paste the following SWML code snippet into the editor:
+
+```yaml
+version: 1.0.0
+sections:
+   main:
+      - connect:
+           to: sip:%{call.to}@your-unique-SIP-domain-from-Livekit-goes-here.com
+```
+:::warning Replace placeholder domain
+Be sure to replace `your-unique-SIP-domain-from-Livekit-goes-here.com` with the SIP domain from your LiveKit settings-
+for example, `241ozqza.sip.livekit.cloud`.
+Find this domain under **LiveKit Settings** labeled as **SIP URI**.
+
+  - Save the SWML script once the modifications are complete.
+
+### Assign the SWML Script to a Phone Number
+
+  - Go to the **Phone Numbers** section in your SignalWire account.
+  - Select the **Edit Settings** option for the phone number you want to use for inbound calls.
+  - Click **Assign Resource** and choose the SWML script you just created.
+
+This ensures that incoming calls to the designated SignalWire phone number follow the routing path defined in the SWML script.
+
+### Configure LiveKit
+
+Next, we will configure a SIP trunk in LiveKit to handle calls routed from SignalWire. 
+Follow the official LiveKit 
+[SIP trunk inbound guide](https://docs.livekit.io/sip/trunk-inbound/) 
+for further information.
+
+### Add a LiveKit SIP Trunk
+
+  - Create a new SIP trunk using the following configuration:
+
+    ```json
+    {
+      "trunk": {
+        "name": "My trunk",
+        "numbers": ["+1XXXXXXXXXX"]
+      }
+    }
+    ```
+
+Be sure to replace `+1XXXXXXXXXX` with the SignalWire phone number you assigned previously. 
+Ensure the number is formatted in E.164 format.
+
+  - Submit your configuration.
+
+</Steps>
+
+---
+
+After completing this setup, you can use LiveKit's dispatch rules to determine how incoming calls should be handled.
+Consult LiveKit's 
+[Dispatch Rules Guide(https://docs.livekit.io/sip/dispatch-rule/)
+for guidance on managing call routing.
+
+## Troubleshooting
+
+- If calls are not reaching LiveKit:
+    - Verify that the **SIP domain** in your SWML script matches your LiveKit settings.
+    - Ensure your phone number is correctly formatted in the trunk configuration.
+
+You're all set to start handling inbound calls with LiveKit and SignalWire. If you need further assistance, consult the [LiveKit documentation](https://docs.livekit.io) or reach out to SignalWire support.
+
+---
+
+
+# Outbound Calling with LiveKit and SignalWire
+
+This guide will help you set up outbound SIP calls using LiveKit and SignalWire.
+Follow these steps to configure your SIP domain, SWML script, and LiveKit settings efficiently.
+
+---
+
+## Step 1: Configure SignalWire
+
+### 1.1: Create an SWML Script
+
+1. Log in to your SignalWire space.
+2. Navigate to the **Resources** tab on the left-hand sidebar.
+3. Click **Add**, select **Script**, and then choose **SWML Script**.
+4. Use the following SWML script, ensuring to replace the `from` field with a valid phone number from your SignalWire project:
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        answer_on_bridge: true
+        from: "+1A-Number-From-Your-Space-here"
+        to: "%{call.to.replace(/^sip:/i, '').replace(/@.*/, '')}"
+```
+   **What to Update:**
+    - Replace `"+1A-Number-From-Your-Space-here"` with a phone number from your SignalWire account.
+
+### 1.2: Add SIP Address to Your Script
+
+1. Save the SWML script and navigate to the **Addresses & Phone Numbers** section within the script.
+2. Click **Add** and select **SIP Address** to add your SIP domain application.
+3. Configure this SIP address based on your requirements, and save it.
+4. After configuration, note down your unique SIP domain.
+
+   Example SIP domain: `test-space-live-kit.dapp.signalwire.com`.
+
+---
+
+## Step 2: Set Up LiveKit
+
+Now, let’s configure LiveKit for outbound SIP calling. Follow along with LiveKit’s documentation for [outbound SIP trunk setup](https://docs.livekit.io/sip/trunk-outbound/).
+
+### 2.1: Create an Outbound Trunk
+
+Use the following JSON configuration for creating an outbound SIP trunk, ensuring you update the given fields:
+
+```json
+{
+   "trunk": {
+      "name": "My Outbound SIP Trunk",
+      "address": "test-space-livekit.dapp.signalwire.com",
+      "numbers": ["+15105550100"],
+      "auth_username": "<username>",
+      "auth_password": "<password>",
+      "transport": 3
+   }
+}
+```
+
+**What to Update:**
+- Update `"address"` with the SIP domain you created in step 1.2 (e.g., `test-space-live-kit.dapp.signalwire.com`).
+- Update `numbers` with a SignalWire phone number.
+- Replace `<username>` and `<password>` with the credentials provided by SignalWire Support. Contact support if needed.
+
+Submit this request and save the generated `Trunk ID`. If you forget to save the Trunk ID, use LiveKit’s CLI tool to retrieve the trunk configurations.
+
+---
+
+## Step 3: Create a SIP Participant
+
+To initiate outbound calls through your configured trunk, you'll need to create a SIP participant in LiveKit. This
+process establishes the connection and manages the call flow. For detailed instructions on creating SIP participants and
+handling outbound calls, refer to LiveKit's comprehensive
+guide: [Creating a SIP Participant](https://docs.livekit.io/sip/outbound-calls/#creating-a-sip-participant).
+
+If you're working with LiveKit AI agents for outbound calls, please see
+the [LiveKit AI Agent Telephony Guide](https://docs.livekit.io/agents/start/telephony/).
+
+### Notes:
+- Ensure the trunk address matches exactly with the one created in Step 2.1
+- Phone numbers must be in E.164 format (e.g., "+15105550100") to ensure proper routing and connectivity
+
+---
+
+## Conclusion
+
+You’re now ready to make your first outbound SIP call using LiveKit and SignalWire. If you encounter any issues, verify the configurations for both SignalWire and LiveKit.
+
+---
+
+## Additional Functionality
+
+---
+
+## Inbound Call Recording
+
+To record inbound calls, add the `record_call` method to your existing inbound SWML script:
+```yaml
+version: 1.0.0
+sections:
+  main:
+  - record_call:
+      format: mp3
+  - connect:
+      to: sip:%{call.to}@your-unique-SIP-domain-from-Livekit-goes-here.com
+```
+---
+
+## Outbound Call Recording
+For outbound calls, the setup requires two steps:
+1. Create a Recording Script:
+    - Navigate to your SignalWire dashboard > **Resources** > **Add** > **Script** > **SWML Script**
+    - Paste in the below into your editor.
+```yaml
+version: 1.0.0
+sections:
+  main:
+  - record_call:
+      format: mp3
+```
+1. Update Your Outbound SWML Script:
+    - Add the `confirm` parameter to your existing outbound script
+    - Set its value to the recording script's URL:
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        answer_on_bridge: true
+        confirm: "your-recording-script-url"
+        from: "+1XXXXXXXXXX"
+        to: "%{call.to.replace(/^sip:/i, '').replace(/@.*/, '')}"
+```
+---
+
+## Accessing Recordings
+You can access your recordings in two ways:
+1. Through the SignalWire Dashboard:
+    - Navigate to the **Storage** tab
+    - Select the **Recordings** sub-tab
+
+2. Via API:
+    - Use the [Recordings List API endpoint](https://developer.signalwire.com/rest/signalwire-rest/endpoints/space/recordings-list)
+
+## Call Logging
+1. Go to your SignalWire Space
+2. Navigate to **Logs** on the sidebar
+3. Click on any call to inspect its events and actions
