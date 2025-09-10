@@ -6,6 +6,11 @@ slug: /compatibility-api/cxml/voice/stream
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
+[stream_start]: /rest/compatibility-api/endpoints/create-stream
+[stream_stop]: /rest/compatibility-api/endpoints/update-stream
+[conference_create]: /rest/compatibility-api/endpoints/create-conference-stream
+[conference_update]: /rest/compatibility-api/endpoints/update-conference-stream
+
 The `<Stream>` instruction makes it possible to send raw audio streams from a running phone call over WebSockets in near real time, to a specified URL. The audio frames themselves are base64 encoded, embedded in a json string, together with other information like sequence number and timestamp. The feature can be used with Speech-To-Text systems and others.
 
 ## Attributes
@@ -101,14 +106,47 @@ puts response
 </TabItem>
 </Tabs>
 
+<Tabs  groupId="Stream">
+<TabItem value="Stream">
+
 |                                                             Attribute |                                                                                                                                                                                                                              |
 | --------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|                                                    `url` <span className="required-arg">required</span>  | Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is `wss`. For security reasons `ws` is NOT supported. |
+|                 `url` <span className="required-arg">required</span>  | Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is `wss`. For security reasons `ws` is NOT supported. |
 |                 `codec` <span className="optional-arg">optional</span> | The codecs attribute allows you to control the set codec to be used on the stream. **Possible Values**: `L16@24000h` & `L16@16000h` |
 |                 `name` <span className="optional-arg">optional</span> | Unique name for the Stream, per Call. It is used to stop a Stream by name.                                                                                                                                                   |
 |                `track` <span className="optional-arg">optional</span> | This attribute can be one of: `inbound_track`, `outbound_track`, `both_tracks` . Defaults to `inbound_track`. For `both_tracks` there will be both `inbound_track` and `outbound_track` events.                              |
 |       `statusCallback` <span className="optional-arg">optional</span> | Absolute or relative URL. SignalWire will make a HTTP GET or POST request to this URL when a Stream is started, stopped or there is an error.                                                                                |
 | `statusCallbackMethod` <span className="optional-arg">optional</span> | GET or POST. The type of HTTP request to use when requesting a statusCallback. Default is POST.                                                                                                                              |
+
+:::tip Looking to use our REST APIs? 
+
+You can utilize our REST API to both [start][stream_start] and [stop][stream_stop] streams. 
+
+:::
+
+</TabItem>
+
+<TabItem value="Conference Stream">
+
+|                                                             Attribute |                                                                                                                                                                                                                              |
+| --------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|                 `url` <span className="required-arg">required</span>  | Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is `wss`. For security reasons `ws` is NOT supported. |
+|                 `codec` <span className="optional-arg">optional</span> | The codecs attribute allows you to control the set codec to be used on the stream. **Possible Values**: `L16@24000h` & `L16@16000h` |
+|                 `name` <span className="required-arg">required</span> | Unique name for the Stream, per Call. It is used to stop a Stream by name.                                                                                                                                                   |
+|                `track` <span className="optional-arg">optional</span> | This attribute can be one of: `inbound_track`, `outbound_track`, `both_tracks` . Defaults to `inbound_track`. For `both_tracks` there will be both `inbound_track` and `outbound_track` events.                              |
+|       `statusCallback` <span className="optional-arg">optional</span> | Absolute or relative URL. SignalWire will make a HTTP GET or POST request to this URL when a Stream is started, stopped or there is an error.                                                                                |
+| `statusCallbackMethod` <span className="optional-arg">optional</span> | GET or POST. The type of HTTP request to use when requesting a statusCallback. Default is POST.                                                                                                                              |
+| `streamStartConferenceOnEnter` <span className="optional-arg">optional</span>  | Controls if streaming begins automatically when joining a conference.                                                                                                                                                                                                                    |
+| `bidir` <span className="optional-arg">optional</span> | Defines if stream supports bidirectional communication                                                                                                                                                                                                                                            |
+
+:::tip Looking to use our REST APIs?
+
+You can utilize our REST API to [create][conference_create] and [update][conference_update] your conference streams.
+
+:::
+
+</TabItem>
+</Tabs>
 
 ## `StatusCallback` Parameters
 
@@ -123,53 +161,6 @@ For a `statusCallback`, SignalWire will send a request with the following parame
 | `StreamEvent` <span className="optional-arg">string</span> | One of `stream-started`, `stream-stopped`, or `stream-error`.                                   |
 | `StreamError` <span className="optional-arg">string</span> | If an error has occurred, this will contain a detailed error message.                           |
 |   `Timestamp` <span className="optional-arg">string</span> | The time of the event in ISO 8601 format.                                                       |
-
-## Custom Parameters
-
-To pass parameters towards the `wss` server, it is possible to include additional key value pairs. 
-This can be done by using the nested `<Parameter>` cXML noun. These parameters will be added to the `Start` message, as json.
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-   <Start>
-     <Stream url="wss://your-application.com/audiostream" >
-        <Parameter name="Cookie" value ="948f9938-299a-d43e-0df4-af3a7eccb0ac"/>
-        <Parameter name="Type" value ="SIP" />
-      </Stream>
-    </Start>
-</Response>
-```
-
-## Stopping a Stream
-
-It is possible to stop a stream at any time by name. For instance by naming the Stream "mystream", you can later use the unique name of "mystream" to stop the stream.
-
-```xml
-<Start>
-    <Stream name="mystream" url="wss://mystream.ngrok.io/audiostream" />
-</Start>
-```
-
-```xml
-<Stop>
-   <Stream name="mystream" />
-</Stop>
-```
-
-## Bidirectional Stream
-
-The `<Stream>` instruction can allow you to receive audio into the call too. In
-this case, the stream must be bidirectional. The external service (e.g., an AI
-agent) will then be able to both hear the call _and_ play audio.
-
-To initialize a bidirectional stream, wrap the `<Stream>` instruction in [`<Connect>`](./connect.mdx) instead of `<Start>`:
-
-```xml
-<Connect>
-    <Stream url="wss://mystream.ngrok.io/audiostream" />
-</Connect>
-```
 
 ## WebSocket Messages
 
@@ -350,6 +341,75 @@ Example Clear Message
  "streamSid": "c0c7d59b-df06-435e-afbc-9217ce318390"
 }
 ```
+
+## Examples
+
+### Conference stream
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+<Dial trim="do-not-trim">
+  <Conference beep="false" startConferenceOnEnter="true" trim="do-not-trim" streamUrl="wss://206.189.19.130:8765/">test
+    <Stream name="my_conference_stream"
+            url="wss://206.189.19.130:8765/"
+            streamStartConferenceOnEnter="true"
+            bidir="true">
+      <Parameter name="foo1" value="bar1"/>
+      <Parameter name="foo2" value="bar2"/>
+    </Stream>
+  </Conference>
+</Dial>
+</Response>
+```
+
+### Bidirectional stream
+
+The `<Stream>` instruction can allow you to receive audio into the call too. In
+this case, the stream must be bidirectional. The external service (e.g., an AI
+agent) will then be able to both hear the call _and_ play audio.
+
+To initialize a bidirectional stream, wrap the `<Stream>` instruction in [`<Connect>`](./connect.mdx) instead of `<Start>`:
+
+```xml
+<Connect>
+    <Stream url="wss://mystream.ngrok.io/audiostream" />
+</Connect>
+```
+
+### Starting and stopping streams
+
+It is possible to stop a stream at any time by name. For instance by naming the Stream "mystream", you can later use the unique name of "mystream" to stop the stream.
+
+```xml
+<Start>
+    <Stream name="mystream" url="wss://mystream.ngrok.io/audiostream" />
+</Start>
+```
+
+```xml
+<Stop>
+   <Stream name="mystream" />
+</Stop>
+```
+
+### Custom parameters
+
+To pass parameters towards the `wss` server, it is possible to include additional key value pairs. 
+This can be done by using the nested `<Parameter>` cXML noun. These parameters will be added to the `Start` message, as json.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+   <Start>
+     <Stream url="wss://your-application.com/audiostream" >
+        <Parameter name="Cookie" value ="948f9938-299a-d43e-0df4-af3a7eccb0ac"/>
+        <Parameter name="Type" value ="SIP" />
+      </Stream>
+    </Start>
+</Response>
+```
+
 ## Notes on Usage
 
 - The url does not support query string parameters. To pass custom key value pairs to the WebSocket, make use of Custom Parameters instead.
