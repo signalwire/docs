@@ -10,7 +10,7 @@ These addresses can be changed or deleted later as needed.
 
 :::
 
-## Address types
+## Types
 
 Call Fabric supports multiple address types to accommodate different communication protocols and use cases:
 
