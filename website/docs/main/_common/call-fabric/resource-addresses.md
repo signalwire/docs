@@ -10,6 +10,16 @@ These addresses can be changed or deleted later as needed.
 
 :::
 
+## Types
+
+Call Fabric supports multiple address types to accommodate different communication protocols and use cases:
+
+- **Phone numbers**: Traditional phone numbers in E.164 format (e.g., `+14155551234`) that can be mapped to resources for PSTN connectivity.
+- **SIP addresses**: SIP URIs for VoIP communications (e.g., `sip:user@domain.com`) enabling direct SIP endpoint connections.
+- **Alias**: Custom names that provide alternative addressing for resources, making them easier to remember and use (e.g., `/support-queue` or `/main-conference`).
+
+Each address type follows the same context and naming conventions described below, allowing seamless integration across different communication channels.
+
 Each **Resource Address** has two components:
 
 - **Context**: Idenitifies the path of the address. Currently can be a `public` or `private`.
