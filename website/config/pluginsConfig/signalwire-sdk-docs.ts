@@ -27,7 +27,7 @@ export const signalwireSdkPlugin: PluginConfig = [
     versions: {
       current: {
         label: "v0",
-        banner: "none",
+        banner: "unreleased",
       },
     },
   } satisfies PluginOptions,
