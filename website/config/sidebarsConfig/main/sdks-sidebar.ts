@@ -29,6 +29,11 @@ const sdksSidebar: SidebarsConfig = {
         },
         {
           type: "link",
+          href: "/sdks/signalwire-sdk",
+          label: "SignalWire SDK",
+        },
+        {
+          type: "link",
           href: "/sdks/realtime-sdk",
           label: "Realtime SDK",
         },
@@ -36,9 +41,9 @@ const sdksSidebar: SidebarsConfig = {
           type: "link",
           href: "/compatibility-api/sdks",
           label: "Compatibility SDK",
-        }
+        },
       ],
-    }
+    },
   ],
 };
 

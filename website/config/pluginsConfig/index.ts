@@ -20,6 +20,7 @@ import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
 import { realtimeSdkPlugin } from "./realtime-sdk-docs";
 import { browserSdkPlugin } from "./browser-sdk-docs";
+import { signalwireSdkPlugin } from "./signalwire-sdk-docs";
 import { ogImagesPlugin } from "../ogImages/index";
 
 const plugins: PluginConfig[] = [
@@ -32,6 +33,7 @@ const plugins: PluginConfig[] = [
   llmsTxtPlugin,
   realtimeSdkPlugin,
   browserSdkPlugin,
+  signalwireSdkPlugin,
   ogImagesPlugin,
 ];
 

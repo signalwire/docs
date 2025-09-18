@@ -7,7 +7,7 @@
  * Docusaurus technical reference: https://docusaurus.io/docs/api/themes/configuration#navbar
  */
 
-import type { NavbarItem } from '@docusaurus/theme-common';
+import type { NavbarItem } from "@docusaurus/theme-common";
 
 const navbar: NavbarItem[] = [
   /// Guides -------- ///
@@ -100,6 +100,10 @@ const navbar: NavbarItem[] = [
         to: "/sdks/browser-sdk/",
       },
       {
+        label: "SignalWire SDK",
+        to: "/sdks/signalwire-sdk/",
+      },
+      {
         label: "RELAY Realtime Server SDK",
         to: "/sdks/realtime-sdk/",
       },
@@ -167,50 +171,50 @@ const navbar: NavbarItem[] = [
   {
     to: "https://signalwire.zohodesk.com/portal/en/community",
     label: "Community",
-    position: "right"
+    position: "right",
   },
 
-/// Platform Dropdown -------- ///
-{
-  to: "/platform",
-  label: "Platform",
-  position: "right",
-  type: "dropdown",
-  items: [
-    {
-      href: "https://signalwire.com/signup",
-      label: "SignalWire Space (Signup)",
-      className: "dashboard-navbar-link",
-      "aria-label": "Open SignalWire Dashboard",
-    },
-    {
-      href: "https://status.signalwire.com",
-      label: "Platform Status",
-      "aria-label": "Platform Status",
-    },
-    { type: "html", value: '<hr class="dropdown-separator">' },
-    {
-      label: "Call Fabric",
-      to: "/platform/call-fabric",
-    },
-    {
-      label: "Dashboard Documentation",
-      to: "/platform/dashboard",
-    },
-    {
-      label: "Integrations",
-      to: "/platform/integrations",
-    },
-    {
-      label: "Phone Numbers",
-      to: "/platform/phone-numbers",
-    },
-    {
-      label: "Platform Basics",
-      to: "/platform/basics",
-    },
-  ],
-},
+  /// Platform Dropdown -------- ///
+  {
+    to: "/platform",
+    label: "Platform",
+    position: "right",
+    type: "dropdown",
+    items: [
+      {
+        href: "https://signalwire.com/signup",
+        label: "SignalWire Space (Signup)",
+        className: "dashboard-navbar-link",
+        "aria-label": "Open SignalWire Dashboard",
+      },
+      {
+        href: "https://status.signalwire.com",
+        label: "Platform Status",
+        "aria-label": "Platform Status",
+      },
+      { type: "html", value: '<hr class="dropdown-separator">' },
+      {
+        label: "Call Fabric",
+        to: "/platform/call-fabric",
+      },
+      {
+        label: "Dashboard Documentation",
+        to: "/platform/dashboard",
+      },
+      {
+        label: "Integrations",
+        to: "/platform/integrations",
+      },
+      {
+        label: "Phone Numbers",
+        to: "/platform/phone-numbers",
+      },
+      {
+        label: "Platform Basics",
+        to: "/platform/basics",
+      },
+    ],
+  },
 
   {
     href: "https://discord.com/invite/F2WNYTNjuF",
@@ -220,11 +224,11 @@ const navbar: NavbarItem[] = [
   },
 
   {
-    href: 'https://github.com/signalwire/docs',
-    position: 'right',
-    className: 'header-github-link',
-    'aria-label': 'GitHub repository',
-  }
+    href: "https://github.com/signalwire/docs",
+    position: "right",
+    className: "header-github-link",
+    "aria-label": "GitHub repository",
+  },
 ];
 
-export default navbar; 
+export default navbar;
