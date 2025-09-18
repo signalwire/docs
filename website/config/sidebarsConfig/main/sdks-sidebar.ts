@@ -27,11 +27,11 @@ const sdksSidebar: SidebarsConfig = {
           href: "/sdks/browser-sdk",
           label: "Browser SDK",
         },
-        {
-          type: "link",
-          href: "/sdks/signalwire-sdk",
-          label: "SignalWire SDK",
-        },
+        // {
+        //   type: "link",
+        //   href: "/sdks/signalwire-sdk",
+        //   label: "SignalWire SDK",
+        // },
         {
           type: "link",
           href: "/sdks/realtime-sdk",
