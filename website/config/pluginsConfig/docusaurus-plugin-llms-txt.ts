@@ -9,7 +9,7 @@
 
 import { PluginConfig } from '@docusaurus/types';
 // @ts-ignore - ESM/CJS compatibility issue
-import type { PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
+import type { PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt/public';
 export const llmsTxtPlugin: PluginConfig = [
   "@signalwire/docusaurus-plugin-llms-txt",
   {
@@ -20,7 +20,7 @@ export const llmsTxtPlugin: PluginConfig = [
     logLevel: 1,
     depth: 1,
     runOnPostBuild: true,
-
+    copyPageContent: true,
     // Global ordering - guides first, then methods/reference
     includeOrder: [
       "/ai/**",
