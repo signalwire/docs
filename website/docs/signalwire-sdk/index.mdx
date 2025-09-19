@@ -1,0 +1,377 @@
+---
+title: "SignalWire SDK"
+sidebar_position: 0
+---
+
+import { SiJavascript } from "react-icons/si";
+import { MdCode, MdLibraryBooks } from "react-icons/md";
+
+<InstallHero
+  title="SignalWire SDK"
+  titleIcon={<SiJavascript />}
+  installCommand="npm install @signalwire/client"
+  docsUrl="/sdks/signalwire-sdk/technical-reference"
+  status="beta"
+  packages={[
+    {
+      githubUrl: "https://github.com/signalwire/signalwire-sdk",
+      type: "npm",
+      packageName: "@signalwire/client",
+    }
+  ]}
+/>
+
+# Overview
+
+The SignalWire SDK is a JavaScript library that enables WebRTC-based voice, video, and chat applications directly in web browsers. Built on WebSocket architecture, it provides real-time communication capabilities without plugins or downloads.
+
+:::info This SDK is meant to replace the [Browser SDK](/sdks/browser-sdk) 
+
+The SignalWire SDK should be used in place of the [Browser SDK](/sdks/browser-sdk) for all new projects. The new SDK maintains the API where possible while making architectural changes to support a unified way of interacting with SignalWire's services.
+
+:::
+
+## How It Works
+
+The SDK operates through WebSocket connections that handle both method calls and real-time events. 
+When you call methods like `join()` or `publish()`, the SDK sends requests and returns promises. 
+Simultaneously, you can listen for real-time events like new members joining or messages arriving using the `.on()` method.
+
+## Getting Started
+
+<Steps>
+
+### Install the SDK
+
+Choose your preferred installation method:
+
+```bash
+npm install @signalwire/client
+```
+
+Or include it via CDN:
+
+```html
+<script src="https://cdn.signalwire.com/@signalwire/client"></script>
+```
+
+### Set up a SWML resource
+
+Create a SWML resource from the Dashboard to get started:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+  - answer: {}
+  - execute:
+      dest: play_music
+      params:
+        to_play: 'https://cdn.signalwire.com/swml/April_Kisses.mp3'
+  play_music:
+  - play:
+      url: "%{params.to_play}"
+```
+
+### Test your setup
+
+Create a simple video room to test your setup:
+
+<Tabs>
+<TabItem value="npm" label="NPM Package" default>
+
+```javascript
+import { Video } from "@signalwire/js";
+
+// Join a video room
+const roomSession = new Video.RoomSession({
+  token: "your-room-token",  // From your server
+  rootElement: document.getElementById("video-container")
+});
+
+// Listen for events
+roomSession.on("member.joined", (e) => {
+  console.log(`${e.member.name} joined the room`);
+});
+
+roomSession.on("room.joined", () => {
+  console.log("Successfully joined the room!");
+});
+
+// Join the room
+await roomSession.join();
+```
+
+</TabItem>
+<TabItem value="cdn" label="CDN">
+
+```html
+<script src="https://cdn.signalwire.com/@signalwire/js"></script>
+<script>
+// Access SignalWire from the global window object
+const { Video } = window.SignalWire;
+
+// Join a video room
+const roomSession = new Video.RoomSession({
+  token: "your-room-token",  // From your server
+  rootElement: document.getElementById("video-container")
+});
+
+// Listen for events
+roomSession.on("member.joined", (e) => {
+  console.log(`${e.member.name} joined the room`);
+});
+
+roomSession.on("room.joined", () => {
+  console.log("Successfully joined the room!");
+});
+
+// Join the room
+roomSession.join().then(() => {
+  console.log("Join initiated");
+});
+</script>
+```
+
+</TabItem>
+</Tabs>
+
+Add this HTML element to your page:
+```html
+<div id="video-container"></div>
+```
+
+</Steps>
+
+## Usage Examples
+
+<Tabs>
+<TabItem value="video" label="Video Conferencing" default>
+
+```javascript
+import { Video } from "@signalwire/js";
+
+const roomSession = new Video.RoomSession({
+  token: "your-room-token",
+  rootElement: document.getElementById("video-container"),
+  video: true,
+  audio: true
+});
+
+// Handle room events
+roomSession.on("room.joined", () => {
+  console.log("Joined the video room");
+  
+  // Set up UI controls after joining
+  setupControls();
+});
+
+roomSession.on("member.joined", (e) => {
+  console.log(`${e.member.name} joined`);
+});
+
+roomSession.on("member.left", (e) => {
+  console.log(`${e.member.name} left`);
+});
+
+// Detect when members are talking
+roomSession.on("member.talking", (e) => {
+  if (e.member.id === roomSession.memberId) {
+    console.log("You are talking");
+  } else {
+    console.log(`${e.member.name} is talking`);
+  }
+});
+
+// Join the room
+await roomSession.join();
+
+// Example: Set up media controls for your UI
+function setupControls() {
+  // Toggle camera on button click
+  document.getElementById("cameraBtn").onclick = async () => {
+    if (roomSession.localVideo.active) {
+      await roomSession.videoMute();
+      console.log("Camera muted");
+    } else {
+      await roomSession.videoUnmute();
+      console.log("Camera unmuted");
+    }
+  };
+
+  // Toggle microphone on button click
+  document.getElementById("micBtn").onclick = async () => {
+    if (roomSession.localAudio.active) {
+      await roomSession.audioMute();
+      console.log("Microphone muted");
+    } else {
+      await roomSession.audioUnmute();
+      console.log("Microphone unmuted");
+    }
+  };
+}
+```
+
+</TabItem>
+<TabItem value="chat" label="Real-time Chat">
+
+```javascript
+import { Chat } from "@signalwire/js";
+
+const chatClient = new Chat.Client({
+  token: "your-chat-token"
+});
+
+// Subscribe to channels
+await chatClient.subscribe(["general", "support"]);
+
+// Listen for messages
+chatClient.on("message", (message) => {
+  console.log(`${message.member.name}: ${message.content}`);
+  // Add your custom logic to display messages in your UI
+});
+
+// Listen for member events
+chatClient.on("member.joined", (member) => {
+  console.log(`${member.name} joined the channel`);
+});
+
+chatClient.on("member.left", (member) => {
+  console.log(`${member.name} left the channel`);
+});
+
+// Send messages
+await chatClient.publish({
+  channel: "general",
+  content: "Hello everyone!"
+});
+
+// Send with metadata
+await chatClient.publish({
+  channel: "general", 
+  content: "Check out this image!",
+  meta: {
+    image_url: "https://example.com/image.jpg",
+    message_type: "image"
+  }
+});
+```
+
+</TabItem>
+<TabItem value="pubsub" label="PubSub Messaging">
+
+```javascript
+import { PubSub } from "@signalwire/js";
+
+const pubSubClient = new PubSub.Client({
+  token: "your-pubsub-token"
+});
+
+// Subscribe to channels
+await pubSubClient.subscribe(["notifications", "alerts"]);
+
+// Listen for messages
+pubSubClient.on("message", (message) => {
+  console.log(`Channel: ${message.channel}`);
+  console.log(`Content:`, message.content);
+  
+  // Handle different message types
+  if (message.channel === "alerts") {
+    console.log("Alert received:", message.content);
+    // Add your custom logic to show alerts in your UI
+  }
+});
+
+// Publish messages
+await pubSubClient.publish({
+  channel: "notifications",
+  content: {
+    type: "user_action",
+    user_id: "123",
+    action: "button_click",
+    timestamp: Date.now()
+  }
+});
+
+// Publish with metadata
+await pubSubClient.publish({
+  channel: "alerts",
+  content: "System maintenance in 30 minutes",
+  meta: {
+    priority: "high",
+    category: "maintenance"
+  }
+});
+```
+
+</TabItem>
+<TabItem value="webrtc" label="WebRTC Utilities">
+
+```javascript
+import { WebRTC, Video } from "@signalwire/js";
+
+// Check browser support
+if (WebRTC.supportsGetUserMedia()) {
+  console.log("Browser supports getUserMedia");
+}
+
+if (WebRTC.supportsGetDisplayMedia()) {
+  console.log("Browser supports screen sharing");
+}
+
+// Get available devices
+const cameras = await WebRTC.getCameraDevices();
+const microphones = await WebRTC.getMicrophoneDevices();
+const speakers = await WebRTC.getSpeakerDevices();
+
+console.log("Cameras:", cameras);
+console.log("Microphones:", microphones);
+console.log("Speakers:", speakers);
+
+// Get user media with SignalWire WebRTC helper
+const stream = await WebRTC.getUserMedia({
+  video: {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30 }
+  },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true
+  }
+});
+
+// Use custom stream in video room
+const roomSession = new Video.RoomSession({
+  token: "your-room-token",
+  rootElement: document.getElementById("video"),
+  localStream: stream
+});
+
+// Device monitoring
+const deviceWatcher = await WebRTC.createDeviceWatcher();
+deviceWatcher.on("changed", (event) => {
+  console.log("Devices changed:", event.changes);
+  // Add your custom logic to handle device changes
+});
+```
+
+</TabItem>
+</Tabs>
+
+## Explore the SDK
+
+<CardGroup>
+  <Card 
+    title="Technical Reference" 
+    description="Complete API documentation for all namespaces, classes, and methods"
+    href="/sdks/signalwire-sdk/technical-reference"
+    icon={<MdCode />}
+  />
+  <Card 
+    title="Guides & Examples" 
+    description="Step-by-step tutorials and practical examples to get you building quickly"
+    href="/sdks/signalwire-sdk/guides"
+    icon={<MdLibraryBooks />}
+  />
+</CardGroup>
