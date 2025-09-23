@@ -1,5 +1,8 @@
 ---
+title: First steps with fax
+sidebar_label: First steps with fax
 slug: /fax/getting-started/first-steps-with-fax
+description: Learn how to send and receive your first fax using SignalWire's APIs
 sidebar_position: 0
 x-custom:
   tags:
@@ -12,30 +15,75 @@ x-custom:
     - product:fax
 ---
 
-# Sending and Receiving Fax
-It's easy to start sending and receiving Fax using SignalWire's APIs! You will need at least one number to send and receive faxes, so if you don't have one already, please follow the instructions below.
+import Subtitle from "@site/src/components/typography/Subtitle";
+import ResourceAdmonition from '/docs/main/_common/dashboard/_resource-admonition.mdx';
+import LegacyInstructions from '/docs/main/_common/dashboard/legacy-instructions.mdx';
+import UiAccordion from '/docs/main/_common/dashboard/_ui-accordion.mdx';
 
-## Obtaining and configuring a number
-[Log in](https://signalwire.com/signin) to your SignalWire Space. From the Phone Numbers section, you can [buy a new phone number](/platform/phone-numbers/getting-started/buying-a-phone-number).
+# First steps with fax
+
+This guide will walk you through sending and receiving your first fax using SignalWire. You'll learn how to configure a phone number, create cXML scripts to handle faxes, and use our APIs to send faxes programmatically.
+
+## Prerequisites
+
+Before you begin, you'll need:
+- A [SignalWire account](https://signalwire.com/signup)
+- At least one phone number capable of receiving faxes
+- Your API credentials (Space URL, Project ID, and API token)
+
 
 ## Receiving your first fax
-There are two parts to receiving a fax:
-1. A SignalWire Phone Number;
-2. The instructions to actually receive the Fax.
 
-After you have acquired a number, or in case you have one already, open its settings by clicking on "Edit Settings". Scroll down until you reach "Voice and Fax Settings", as shown in the next figure, and configure it to:
-
-- "ACCEPT INCOMING CALLS AS" -> Fax
-- "HANDLE FAXES USING" -> LaML Webhooks
+To receive faxes, you'll configure a phone number to handle incoming faxes using a cXML script that defines what happens when a fax arrives.
 
 <figure>
-    <img className="img-800" src={require("./fax-1.webp").default} alt="A screenshot of the settings for a fax number. Under the Voice and Fax Settings section, a number of values are defined. 'Accept Incoming Calls As' is set to 'Fax'. 'Handle Faxes Using' is set to 'LaML Webhooks'. " />
-    <figcaption>Phone Number Settings</figcaption>
+  ```mermaid
+  graph LR
+      Sender["Fax Sender"]
+
+      subgraph CompanyNumbers["Your SignalWire Space"]
+          N1["+1 (xxx) xxxx"]
+      end
+
+      subgraph XML["cXML Response"]
+        C["&lt;?xml&gt;<br>&lt;Response&gt;<br>&lt;Receive action='/fax/received'/&gt;<br>&lt;/Response&gt;"]
+      end
+
+      %% Positioning adjustments
+      Sender -- "(1) Sender transmits fax to your number" --> N1
+      N1 -- "(2) SignalWire fetches the cXML script for this number" --> C
+      C -- "(3) The Receive verb processes and stores the fax in your SignalWire Dashboard" --> N1
+  ```
+  <figcaption>
+      How incoming faxes are processed using cXML scripts
+  </figcaption>
 </figure>
 
-### Setting up the instructions to receive faxes
-#### Using cXML scripts
-cXML scripts allow you to tell SignalWire how to handle calls, messages, or faxes by using instructions called Verbs. You can learn more about cXML scripts on [this article](/compatibility-api/guides/general/creating-and-using-cxml-scripts), but essentially we need to create a new Bin in the LaML section of the Dashboard with the following instructions:
+
+<Steps>
+
+### Obtain a phone number
+
+First, you need a SignalWire phone number capable of receiving faxes.
+
+[Log in](https://signalwire.com/signin) to your SignalWire Space. If you don't have a number yet, navigate to the Phone Numbers section and [buy a new phone number](/platform/phone-numbers/getting-started/buying-a-phone-number).
+
+
+### Create a cXML script
+
+From your [SignalWire Dashboard](https://my.signalwire.com/dashboard), create a new Resource by selecting the Script option, then choose "cXML script".
+
+<Frame caption="Creating a new cXML script resource for handling faxes.">
+    ![The new resource dialog showing cXML script creation.](@image/dashboard/resources/new-cxml-bin.png)
+</Frame>
+
+In the pane that appears, select the "Script Will Be Used For" dropdown, then select Faxing.
+
+<Frame caption="cXML script configuration with Faxing selected.">
+    ![The cXML script editor showing the faxing configuration option selected.](@image/dashboard/resources/fax-cxml-script-example.webp)
+</Frame>
+
+Paste the following XML into your script:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -44,46 +92,54 @@ cXML scripts allow you to tell SignalWire how to handle calls, messages, or faxe
 </Response>
 ```
 
-Lastly, we need to connect the phone number with the instructions to receive the fax, so we copy the Bin's URL from the cXML Applications section of the Dashboard and paste it in the phone number's "WHEN A FAX COMES IN" field, like this:
+Save the script, it should now be located in your Resources tab on the left sidebar under Scripts.
 
-<figure>
-    <img className="img-800" src={require("./fax-2.webp").default} alt="A screenshot of Voice and Fax Settings. The 'When a Fax Comes In' field is circled in red, and annotated with the instructions 'Paste the Bin URL Here'." />
-    <figcaption>Updating the Phone Number instructions.</figcaption>
-</figure>
+### Configure phone number to handle faxes
 
-That's it! You can now start receiving faxes on your phone number, and they will appear under LaML -> Faxes in your Dashboard:
+Navigate to the "Phone Numbers" tab on the left sidebar. From this tab, click on your newly purchased phone number, then on the "edit settings" option. In the settings page, select "Assign Resource" for the "Inbound Message Settings" option on the page.
 
-<figure>
-    <img className="img-800" src={require("./fax-3.webp").default} alt="A screenshot of the SignalWire Project page. The Faxes tab within the LāML section is selected, showing a log of faxes." />
-    <figcaption>Faxes Tab</figcaption>
-</figure>
+<Frame caption="Assigning the cXML script to your phone number's inbound message settings.">
+    ![Phone number settings page showing the Assign Resource button for inbound messages.](@image/dashboard/phone-numbers/assign-resource-full.png)
+</Frame>
 
-#### Using Compatibility SDKs
-If you wish to avoid using SignalWire's cXML Applications, you can use our SDKs and host the instructions yourself. Please see our [`<Receive\>` Verb instructions](/compatibility-api/cxml/fax/receive#receive-a-fax) for specific code examples.
+Select the newly created cXML script, then click "Save" to apply the configuration.
 
-You'll then need to make your code accessible to SignalWire through a Webhook. We have a great [guide on how to do this using ngrok](/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok)!
+### Test your setup
+
+Send a test fax to your configured phone number. Once received, it can be viewed in your dashboard under the logs sidebar option. These will be located in their own, specific "fax" logs tab:
+
+<Frame caption="View your received faxes in the dashboard logs.">
+    ![The logs page showing various log categories including fax logs.](@image/dashboard/sidebar/fax-logs-example.webp)
+</Frame>
+
+</Steps>
+
+### Alternative: Using Compatibility SDKs
+
+If you prefer to host the fax handling logic yourself, you can use our SDKs instead of cXML scripts. See our [`<Receive>` verb documentation](/compatibility-api/cxml/fax/receive#receive-a-fax) for code examples.
+
+You'll need to make your code accessible to SignalWire through a webhook. We have a [guide on testing webhooks with ngrok](/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok) to help you get started.
 
 ## Sending your first fax
-There are three parts to sending a fax:
-1. A SignalWire Phone Number;
-2. The destination number;
-3. The publicly available media to be sent, such as a PDF file.
 
-### Using our REST API
-Using our [Send a Fax endpoint](/rest/compatibility-api/endpoints/send-fax) you can make a POST request to
+A fax can be sent by utilizing either the SignalWire REST API or the Compatability SDK
 
-`https://<YOUR_SPACE_URL>.signalwire.com/api/laml/2010-04-01/Accounts/<YOUR_PROJECT_ID>/Faxes`
+### Using the REST API
 
-with the following body parameters:
-- `From`
-- `To`
-- `MediaUrl`
+Send a fax by making a POST request to the [Send Fax endpoint](/rest/compatibility-api/endpoints/send-fax):
 
-### Using Compatibility SDKs
-You can send faxes using [our SDK's Send a Fax function](/compatibility-api/client-sdks/methods/faxes/send), in multiple languages:
+```bash
+POST https://<YOUR_SPACE_URL>.signalwire.com/api/laml/2010-04-01/Accounts/<YOUR_PROJECT_ID>/Faxes
+```
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+Required parameters:
+- `From` - Your SignalWire phone number
+- `To` - The destination fax number
+- `MediaUrl` - URL to the document you want to send
+
+### Using the Compatibility SDK
+
+You can also send faxes using our [Compatibility SDK's Send a Fax function](/compatibility-api/client-sdks/methods/faxes/send):
 
 <Tabs>
 <TabItem value="javascript" label="JavaScript">
@@ -184,6 +240,36 @@ puts fax.sid
 </TabItem>
 </Tabs>
 
+<LegacyInstructions/>
+
+<AccordionGroup>
+
+<Accordion title="cXML Scripts in the Legacy Dashboard" description="Follow these steps if your SignalWire Space is on the Legacy Dashboard">
+
+Follow the above guide with these changes:
+
+### Create a cXML Script
+
+Navigate to the "LaML/cXML" section of your Dashboard and create a new cXML bin.
+
+### Assign a phone number
+
+Open the settings for your phone number. Under "Voice and Fax Settings":
+- Set "Accept Incoming Calls As" to "Fax"
+- Set "Handle Faxes Using" to "LaML Webhooks"
+- Select your cXML script from the dropdown for "When a Fax Comes In"
+
+</Accordion>
+
+<UiAccordion/>
+
+</AccordionGroup>
+
 ## Next steps
 
-Congratulations! You can now send and receive faxes using SignalWire. You are now ready to explore the advanced guides in the Fax section from the left menu.
+Here are some helpful guides to continue your fax implementation:
+
+- [Common fax errors](/fax/getting-started/common-fax-errors) - Troubleshoot and understand common fax transmission errors
+- [List faxes to CSV](/fax/getting-started/list-faxes-to-csv-in-all-languages) - Export your fax history to CSV format for reporting
+- [Filter faxes by number, status, and date](/fax/getting-started/filter-faxes-by-number-status-and-date) - Query and filter your fax records
+
