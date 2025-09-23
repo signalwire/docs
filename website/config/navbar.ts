@@ -99,10 +99,10 @@ const navbar: NavbarItem[] = [
         label: "RELAY Browser SDK",
         to: "/sdks/browser-sdk/",
       },
-      // {
-      //   label: "SignalWire SDK",
-      //   to: "/sdks/signalwire-sdk/",
-      // },
+      {
+        label: "SignalWire SDK",
+        to: "/sdks/signalwire-sdk/",
+      },
       {
         label: "RELAY Realtime Server SDK",
         to: "/sdks/realtime-sdk/",
