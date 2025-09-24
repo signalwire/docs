@@ -16,7 +16,7 @@ import Tooltip from "../ShowcaseTooltip";
 import styles from "./styles.module.css";
 
 
-const TagComp = React.forwardRef((props: Tag, ref: React.Ref<HTMLLIElement>) => {
+const TagComp = React.forwardRef<HTMLLIElement, Tag>((props, ref) => {
   const { label, color, description } = props;
   return (
     <li ref={ref} className={styles.tag} title={description}>
@@ -24,7 +24,7 @@ const TagComp = React.forwardRef((props: Tag, ref: React.Ref<HTMLLIElement>) => 
       <span className={styles.colorLabel} style={{ backgroundColor: color }} />
     </li>
   );
-}) as React.ForwardRefRenderFunction<HTMLLIElement, Tag>;
+});
 
 
 function ShowcaseCardTag({tags}: {tags: string[]}) {

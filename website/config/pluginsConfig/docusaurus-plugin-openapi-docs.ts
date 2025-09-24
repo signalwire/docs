@@ -17,6 +17,7 @@ export const openapiPlugin: PluginConfig = [
       compatibilityRest: {
         specPath: "../specs/compatibility-api/_spec_.yaml",
         outputDir: "docs/main/rest/compatibility-api/endpoints",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -24,7 +25,8 @@ export const openapiPlugin: PluginConfig = [
       },
       signalwireCallingApi: {
         specPath: "../specs/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml",
-        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling",        
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling",
+        maskCredentials: false,        
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -33,6 +35,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireChatApi: {
         specPath: "../specs/signalwire-rest/chat-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/chat",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -41,6 +44,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireDatasphereApi: {
         specPath: "../specs/signalwire-rest/datasphere-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/datasphere",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -49,6 +53,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireFabricApi: {
         specPath: "../specs/signalwire-rest/fabric-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/fabric",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -57,6 +62,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireFaxApi: {
         specPath: "../specs/signalwire-rest/fax-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/fax",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -65,6 +71,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireLogsApi: {
         specPath: "../specs/signalwire-rest/logs-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/logs",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -73,6 +80,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireMessagingApi: {
         specPath: "../specs/signalwire-rest/message-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/messaging",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -81,14 +89,16 @@ export const openapiPlugin: PluginConfig = [
       signalwireProjectApi: {
         specPath: "../specs/signalwire-rest/project-api/_spec_.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/project",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
         },
       },
       signalwirePubSubApi: {
-        specPath: "../specs/signalwire-rest/pubsub-api/_spec_.yaml",
+        specPath: "../specs/signalwire-rest/pubsub-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/pubsub",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -97,6 +107,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireSpaceApi: {
         specPath: "../specs/signalwire-rest/space-api/_spec_.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/space",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -105,6 +116,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireVideoApi: {
         specPath: "../specs/signalwire-rest/video-api/_spec_.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/video",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
@@ -113,6 +125,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireVoiceApi: {
         specPath: "../specs/signalwire-rest/voice-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/voice",
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",

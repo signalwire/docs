@@ -332,7 +332,7 @@ Mutes or unmutes the inbound audio for the member (e.g., the one played through 
 
 | Name    | Type      | Description                |
 |:--------|:----------|:---------------------------|
-| `value` | `boolean` | Whether to mute the audio. |
+| `value`<span className="required-arg">Required</span> | `boolean` | Whether to mute the audio. |
 
 #### Returns
 
@@ -381,8 +381,8 @@ Sets the input level at which the participant is identified as currently speakin
 
 | Name           | Type     | Description                                                                                                               |
 |:---------------|:---------|:--------------------------------------------------------------------------------------------------------------------------|
-| `params`       | `Object` | -                                                                                                                         |
-| `params.value` | `number` | Desired sensitivity from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity). The default value is 30. |
+| `params`<span className="required-arg">Required</span>       | `Object` | -                                                                                                                         |
+| `params.value`<span className="required-arg">Required</span> | `number` | Desired sensitivity from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity). The default value is 30. |
 
 #### Returns
 
@@ -431,8 +431,8 @@ Sets the input volume for the member (e.g., the microphone input level).
 
 | Name            | Type     | Description                                                       |
 |:----------------|:---------|:------------------------------------------------------------------|
-| `params`        | `Object` |                                                                   |
-| `params.volume` | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
+| `params`<span className="required-arg">Required</span>        | `Object` |                                                                   |
+| `params.volume`<span className="required-arg">Required</span> | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
 
 #### Returns
 
@@ -481,8 +481,8 @@ Sets the output volume for the member (e.g., the speaker output level).
 
 | Name            | Type     | Description                                                       |
 |:----------------|:---------|:------------------------------------------------------------------|
-| `params`        | `Object` | -                                                                 |
-| `params.volume` | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
+| `params`<span className="required-arg">Required</span>        | `Object` | -                                                                 |
+| `params.volume`<span className="required-arg">Required</span> | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
 
 #### Returns
 

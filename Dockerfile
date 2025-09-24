@@ -7,6 +7,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Copy root package files first for better caching
 COPY package*.json ./
 COPY .yarnrc* ./
+COPY tsconfig.json ./
 
 # Copy workspace package.json files for dependency resolution
 COPY website/package*.json ./website/
@@ -20,6 +21,9 @@ COPY tools ./tools
 
 # Install dependencies and run postinstall (builds specs and website)
 RUN yarn install --frozen-lockfile
+
+# Build the website
+RUN yarn build:website
 
 # Switch to website directory for final output
 WORKDIR /app/website

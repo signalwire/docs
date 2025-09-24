@@ -1,5 +1,5 @@
 import type { Node, Parent } from 'unist';
-import type { HeadingWithProperties } from '../types';
+import type { HeadingWithProperties } from '../types/index.js';
 import type { Table, Link } from 'mdast';
 
 /**

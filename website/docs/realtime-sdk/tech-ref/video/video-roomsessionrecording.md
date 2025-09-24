@@ -289,7 +289,7 @@ Emitted when the recording starts.
 
 | Name        | Type                                                    | Description                 |
 |:------------|:--------------------------------------------------------|:----------------------------|
-| `recording` | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that started. |
+| `recording`<span className="required-arg">Required</span> | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that started. |
 
 ---
 
@@ -303,7 +303,7 @@ Emitted when the recording is updated.
 
 | Name        | Type                                                    | Description                 |
 |:------------|:--------------------------------------------------------|:----------------------------|
-| `recording` | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that updated. |
+| `recording`<span className="required-arg">Required</span> | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that updated. |
 
 ---
 
@@ -317,7 +317,7 @@ Emitted when the recording ends.
 
 | Name        | Type                                                    | Description               |
 |:------------|:--------------------------------------------------------|:--------------------------|
-| `recording` | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that ended. |
+| `recording`<span className="required-arg">Required</span> | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that ended. |
 
 
 

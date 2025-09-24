@@ -12,6 +12,12 @@ import themeConfig from "./config/themeConfig/config";
 dotenv.config({ path: '../.env' }); // Imports environment variables from the .env file in the root of the project.
 
 const config: Config = { 
+
+  future: {
+    v4: true,
+    experimental_faster: true
+  },
+
   markdown: {
     mermaid: true, // enables mermaid diagrams in markdown files
   },
