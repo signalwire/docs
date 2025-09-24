@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import clsx from 'clsx';
 import {useHistory, useLocation} from '@docusaurus/router';
 
@@ -22,7 +22,7 @@ export function readOperator(search: string): Operator {
       'AND') as Operator;
 }
 
-export default function ShowcaseFilterToggle(): JSX.Element {
+export default function ShowcaseFilterToggle(): React.JSX.Element {
   const id = 'showcase_filter_toggle';
   const location = useLocation();
   const history = useHistory();

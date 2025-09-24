@@ -8,7 +8,9 @@ class URLExtractor {
     // Fallback to using a base URL to handle relative paths
     try {
       this.url = new URL(input, "http://example.com");
-    } catch (e) {}
+    } catch (e) {
+      this.url = new URL("http://example.com");
+    }
   }
 
   get path() {
@@ -16,11 +18,11 @@ class URLExtractor {
   }
 
   get filename() {
-    return this.path.split("/").pop();
+    return this.path.split("/").pop() || "";
   }
 
   get extension() {
-    const match = this.filename.match(/\.(\w+)$/);
+    const match = this.filename?.match(/\.(\w+)$/);
     return match ? match[1] : null;
   }
 
@@ -33,7 +35,7 @@ class URLExtractor {
   }
 }
 
-function isSmallImageFormat(str) {
+function isSmallImageFormat(str: string): boolean {
   str = str.toLowerCase().trim();
   const matchesPattern = /require\s*\(['"].+\.webp['"]\)\s*\.default/i.test(str);
   const URLPattern = new URLExtractor(str);
@@ -47,9 +49,9 @@ function isSmallImageFormat(str) {
   );
 }
 
-export default function a11yValidator({ stopOnError = false }) {
-  return (tree, vfile) => {
-    function a11yCheck({ parent, altText, srcText }) {
+export default function a11yValidator({ stopOnError = false }: { stopOnError?: boolean } = {}) {
+  return (tree: any, vfile: any) => {
+    function a11yCheck({ parent, altText, srcText }: { parent: any; altText: string; srcText: string }) {
       // get the accessibility related message
       const altTextMessage = checkAltText(altText);
 
@@ -86,11 +88,11 @@ export default function a11yValidator({ stopOnError = false }) {
 
     visit(tree, ["mdxJsxTextElement"], (node, index, parent) => {
       if (node.type === "mdxJsxTextElement" && node["name"] === "img") {
-        const srcIndex = node["attributes"].findIndex((attr) => attr.name === "src");
+        const srcIndex = node["attributes"].findIndex((attr: any) => attr.name === "src");
         const srcText = node["attributes"][srcIndex]?.value?.value;
-        const altIndex = node["attributes"].findIndex((attr) => attr.name === "alt");
+        const altIndex = node["attributes"].findIndex((attr: any) => attr.name === "alt");
         const altText = node["attributes"][altIndex]?.value?.value;
-        const titleIndex = node["attributes"].findIndex((attr) => attr.name === "title");
+        const titleIndex = node["attributes"].findIndex((attr: any) => attr.name === "title");
         const titleText = node["attributes"][titleIndex]?.value?.value;
 
         a11yCheck({ srcText, parent, altText });

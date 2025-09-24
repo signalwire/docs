@@ -53,8 +53,8 @@ Instantiates an empty Playlist. Use the [`add`][link] method to add media to thi
 
 | Name             | Type     | Description                                                                                    |
 |:-----------------|:---------|:-----------------------------------------------------------------------------------------------|
-| `params?`        | `Object` | -                                                                                              |
-| `params.volume?` | `number` | Default volume to apply to the media in the playlist, between -40dB and +40dB. Default is `0`. |
+| `params`<span className="optional-arg">Optional</span>        | `Object` | -                                                                                              |
+| `params.volume`<span className="optional-arg">Optional</span> | `number` | Default volume to apply to the media in the playlist, between -40dB and +40dB. Default is `0`. |
 
 #### Example
 
@@ -96,7 +96,7 @@ Adds the speecified media in series to the Playlist.
 
 | Name     | Type   | Description                                                                                               |
 |:---------|:-------|:----------------------------------------------------------------------------------------------------------|
-| `params` | Object | A media object. See [`Audio`][link-1], [`Ringtone`][link-2], [`Silence`][link-3], and [`TTS`][link-4]. |
+| `params`<span className="required-arg">Required</span> | Object | A media object. See [`Audio`][link-1], [`Ringtone`][link-2], [`Silence`][link-3], and [`TTS`][link-4]. |
 
 #### Returns
 
@@ -131,8 +131,8 @@ An audio media.
 
 | Name         | Type     | Description           |
 |:-------------|:---------|:----------------------|
-| `params`     | `object` | -                     |
-| `params.url` | `string` | URL of media to play. |
+| `params`<span className="required-arg">Required</span>     | `object` | -                     |
+| `params.url`<span className="required-arg">Required</span> | `string` | URL of media to play. |
 
 #### Returns
 
@@ -158,9 +158,9 @@ A ringtone media.
 
 | Name               | Type                                       | Description                            |
 |:-------------------|:-------------------------------------------|:---------------------------------------|
-| `params`           | `object`                                   | -                                      |
-| `params.duration?` | `number`                                   | How long to play ringtone, in seconds. |
-| `params.name`      | [`RingtoneName`][types] | Name of the ringtone to play.          |
+| `params`<span className="required-arg">Required</span>           | `object`                                   | -                                      |
+| `params.duration`<span className="optional-arg">Optional</span> | `number`                                   | How long to play ringtone, in seconds. |
+| `params.name`<span className="required-arg">Required</span>      | [`RingtoneName`][types] | Name of the ringtone to play.          |
 
 #### Returns
 
@@ -187,8 +187,8 @@ A silence interval.
 
 | Name              | Type     | Description                           |
 |:------------------|:---------|:--------------------------------------|
-| `params`          | `object` | -                                     |
-| `params.duration` | `number` | How long to play silence, in seconds. |
+| `params`<span className="required-arg">Required</span>          | `object` | -                                     |
+| `params.duration`<span className="required-arg">Required</span> | `number` | How long to play silence, in seconds. |
 
 #### Returns
 
@@ -214,11 +214,11 @@ A TTS media.
 
 | Name               | Type                   | Description                                                                                                                                                                                      |
 | :----------------- | :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `params`           | `object`               | -                                                                                                                                                                                                |
-| `params.gender?`   | `'female'` \| `'male'` | Gender of the voice. Defaults to `female`.                                                                                                                                                       |
-| `params.language?` | `string`               | Language of the text in `ISO 639-1` (language name) + `ISO 3166` (country code). Defaults to `en-US`.<br />Supported languages can be found [here][link-5].                |
-| `params.text`      | `string`               | Text to play. SSML may be entered as a string wrapped in `<speak>` tags. <br />See our [supported voices and languages][voice-and-languages] documentation for usage and supported tags. |
-| `params.voice?`    | `string`               | Voice to use (takes precedence on `gender`).<br />Supported voices can be found [here][link-5].                                                                            |
+| `params`<span className="required-arg">Required</span>           | `object`               | -                                                                                                                                                                                                |
+| `params.gender`<span className="optional-arg">Optional</span>   | `'female'` \| `'male'` | Gender of the voice. Defaults to `female`.                                                                                                                                                       |
+| `params.language`<span className="optional-arg">Optional</span> | `string`               | Language of the text in `ISO 639-1` (language name) + `ISO 3166` (country code). Defaults to `en-US`.<br />Supported languages can be found [here][link-5].                |
+| `params.text`<span className="required-arg">Required</span>      | `string`               | Text to play. SSML may be entered as a string wrapped in `<speak>` tags. <br />See our [supported voices and languages][voice-and-languages] documentation for usage and supported tags. |
+| `params.voice`<span className="optional-arg">Optional</span>    | `string`               | Voice to use (takes precedence on `gender`).<br />Supported voices can be found [here][link-5].                                                                            |
 
 #### Returns
 

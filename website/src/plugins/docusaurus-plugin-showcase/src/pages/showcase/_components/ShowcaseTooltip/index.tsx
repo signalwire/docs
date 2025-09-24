@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import React, {useEffect, useState, useRef} from 'react';
+import React, { useEffect, useState, useRef} from 'react';
 import ReactDOM from 'react-dom';
 import {usePopper} from 'react-popper';
 import styles from './styles.module.css';
@@ -22,7 +22,7 @@ export default function Tooltip({
                                   id,
                                   anchorEl,
                                   text,
-                                }: Props): JSX.Element {
+                                }: Props): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(
       null,
@@ -115,7 +115,7 @@ export default function Tooltip({
 
   return (
       <>
-        {React.cloneElement(children, {
+        {React.cloneElement(children as React.ReactElement<any>, {
           ref: setReferenceElement,
           'aria-describedby': open ? tooltipId : undefined,
         })}
