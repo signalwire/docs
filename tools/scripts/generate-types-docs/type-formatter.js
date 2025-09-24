@@ -110,7 +110,9 @@ class TypeFormatter {
   }
 
   formatTypeForTable(type) {
-    return this.formatTypeWithLinks(type, "table");
+    const typeString = this.formatTypeWithLinks(type, "table");
+    // Escape < and > characters for MDX compatibility in tables
+    return typeString.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   formatTypeForCodeBlock(type) {
