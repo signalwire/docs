@@ -1,0 +1,168 @@
+import "../../Methods";
+import "./headers.tsp";
+import "@typespec/json-schema";
+
+using TypeSpec.JsonSchema;
+
+union ValidConfirmMethods {
+  Cond,
+  Set,
+  Unset,
+  Hangup,
+  Play,
+  Prompt,
+  global.Record,
+  RecordCall,
+  StopRecordCall,
+  Tap,
+  StopTap,
+  SendDigits,
+  SendSMS,
+  Denoise,
+  StopDenoise,
+}
+
+enum CallStatus {
+  created,
+  ringing,
+  answered,
+  ended,
+}
+
+@summary("ConnectSwitch object")
+model ConnectSwitch {
+  @doc("Name of the variable whose value needs to be compared. If not provided, it will check the `connect_result` variable.")
+  variable?: string;
+
+  @doc("Object of values mapped to array of instructions to execute")
+  case: {
+    ...TypeSpec.Record<SWMLMethod[]>;
+  };
+
+  @doc("Array of instructions to execute if no cases match")
+  default?: SWMLMethod[];
+}
+
+@summary("ConnectDeviceBase object")
+model ConnectDeviceBase {
+  @doc("The caller ID to use when dialing the number.")
+  from?: string;
+
+  @doc("Custom SIP headers to add to INVITE. It Has no effect on calls to phone numbers.")
+  headers?: ConnectHeaders[];
+
+  @doc("""
+    Comma-separated string of codecs to offer.
+    It has no effect on calls to phone numbers.
+    Based on SignalWire settings.
+    """)
+  codecs?: string;
+
+  @doc("""
+    If true, WebRTC media is offered to the SIP endpoint.
+    It has no effect on calls to phone numbers.
+    Default is `false`.
+    """)
+  webrtc_media?: boolean | SWMLVar;
+
+  @doc("""
+    Time, in seconds, to set the SIP `Session-Expires` header in INVITE.
+    Must be a positive, non-zero number.
+    It has no effect on calls to phone numbers.
+    Based on SignalWire settings.
+    """)
+  @minValue(1)
+  session_timeout?: integer | SWMLVar;
+
+  @doc("Array of URIs to play as ringback tone.")
+  ringback?: string[];
+
+  @doc("`switch` on `return_value` when object `{}` or `cond` when array `[]`")
+  result?: ConnectSwitch | Cond.cond;
+
+  @doc("""
+    Time, in seconds, to wait for the call to be answered.
+    Default is 60 seconds.
+    """)
+  timeout?: integer | SWMLVar;
+
+  @doc("""
+    Maximum duration, in seconds, allowed for the call.
+    Default is `14400` seconds.
+    """)
+  max_duration?: integer | SWMLVar;
+
+  @doc("""
+    Delay answer until the B-leg answers.
+    Default is `false`.
+    """)
+  answer_on_bridge?: boolean | SWMLVar;
+
+  @doc("Confirmation object or string.")
+  confirm?: string | ValidConfirmMethods[];
+
+  @doc("The amount of time, in seconds, to wait for the `confirm` URL to return a response")
+  confirm_timeout?: integer | SWMLVar;
+
+  @doc("Username for authentication.")
+  username?: string;
+
+  @doc("Password for authentication.")
+  password?: string;
+
+  @doc("Encryption setting to use. **Possible values:** `mandatory`, `optional`, `forbidden`")
+  encryption?: "mandatory" | "optional" | "forbidden";
+
+  @doc("http or https URL to deliver call status events")
+  call_state_url?: url;
+
+  @doc("""
+    An array of call state event names to be notified about.
+    Allowed event names are:
+        - `created`
+        - `ringing`
+        - `answered`
+        - `ended`
+    """)
+  call_state_events?: CallStatus[] = #[CallStatus.ended];
+}
+
+@summary("ConnectDeviceSingle object")
+model ConnectDeviceSingle is ConnectDeviceBase {
+  @doc("The SIP URI or phone number to dial.")
+  to: string;
+}
+
+@summary("ConnectDeviceSerial object")
+model ConnectDeviceSerial is ConnectDeviceBase {
+  serial: ConnectDeviceSingle[];
+}
+
+@summary("ConnectDeviceParallel object")
+model ConnectDeviceParallel is ConnectDeviceBase {
+  @doc("Array of destinations to dial simultaneously.")
+  parallel: ConnectDeviceSingle[];
+}
+
+@summary("ConnectDeviceSerialParallel object")
+model ConnectDeviceSerialParallel is ConnectDeviceBase {
+  @doc("""
+    Array of arrays.
+    Inner arrays contain destinations to dial simultaneously.
+    Outer array attempts each parallel group in order.
+    """)
+  serial_parallel: ConnectDeviceSingle[][];
+}
+
+alias ConnectDevice =
+  | ConnectDeviceSingle
+  | ConnectDeviceSerial
+  | ConnectDeviceParallel
+  | ConnectDeviceSerialParallel;
+
+@summary("Connect object")
+model Connect {
+  @doc("Dial a SIP URI or phone number.")
+  @oneOf
+  connect: ConnectDevice;
+}

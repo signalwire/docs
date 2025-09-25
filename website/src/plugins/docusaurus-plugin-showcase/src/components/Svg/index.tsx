@@ -18,7 +18,7 @@
    children: ReactNode; // Node passed into the SVG element.
  };
  
- export default function Svg(props: SvgIconProps): JSX.Element {
+ export default function Svg(props: SvgIconProps): React.JSX.Element {
    const {
      svgClass,
      colorAttr,

@@ -183,4 +183,4 @@ const plugin: Plugin<[PluginOptions?]> = (options = {}): Transformer => {
   };
 };
 
-export = plugin;
+export default plugin;

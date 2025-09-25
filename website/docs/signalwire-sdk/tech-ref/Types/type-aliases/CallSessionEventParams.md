@@ -1,0 +1,3 @@
+> **CallSessionEventParams** = `CallJoinedEventParams` \| [`CallUpdatedEventParams`](../interfaces/CallUpdatedEventParams.md) \| [`CallLeftEventParams`](../interfaces/CallLeftEventParams.md) \| [`CallStateEventParams`](../interfaces/CallStateEventParams.md) \| [`CallPlayEventParams`](../interfaces/CallPlayEventParams.md) \| [`CallConnectEventParams`](../interfaces/CallConnectEventParams.md) \| [`CoreRoomEventParams`](../interfaces/CoreRoomEventParams.md)
+
+Defined in: [packages/core/src/types/fabricRoomSession.ts:768](https://github.com/signalwire/signalwire-js/blob/52fa77b6c8db68f4c99b30b3776f45a4309e15bf/packages/core/src/types/fabricRoomSession.ts#L768)
