@@ -107,7 +107,7 @@ export class MdxGenerator {
         builder.paragraph([
           builder.strong([builder.text("Type:")]),
           builder.text(" "),
-          builder.inlineCode(alias.type),
+          builder.parseInlineContent(alias.type),
         ]),
       );
     });
@@ -154,7 +154,7 @@ export class MdxGenerator {
         const headers = ["Property", "Type", "Optional", "Readonly", "Description"];
         const rows = type.properties.map((prop) => [
           `\`${prop.name}\``,
-          `\`${prop.type}\``,
+          prop.type,
           prop.optional ? "✓" : "",
           prop.readonly ? "✓" : "",
           prop.comment || "",
@@ -169,7 +169,7 @@ export class MdxGenerator {
         const headers = ["Method", "Signature", "Description"];
         const rows = type.methods.map((method) => [
           `\`${method.name}\``,
-          `\`${method.signature}\``,
+          method.signature,
           method.comment || "",
         ]);
 

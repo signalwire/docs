@@ -23,7 +23,7 @@ export class TypeFormatter {
     if (!type) return "unknown";
 
     try {
-      return this.formatTypeInternal(type, true, true);
+      return this.formatTypeInternal(type, false, true);
     } catch (error) {
       this.logger.warn(`Error formatting type for table: ${error.message}`);
       return "unknown";
@@ -32,15 +32,15 @@ export class TypeFormatter {
 
   formatTypeInternal(type, forTable = false, forceSingleLine = false) {
     if (typeof type === "string") {
-      return forTable ? type : this.linkifyType(type);
+      return this.linkifyType(type);
     }
 
     if (type.type === "intrinsic") {
-      return forTable ? type.name : this.linkifyType(type.name);
+      return this.linkifyType(type.name);
     }
 
     if (type.type === "reference") {
-      let result = forTable ? type.name : this.linkifyType(type.name);
+      let result = this.linkifyType(type.name);
 
       if (type.typeArguments && type.typeArguments.length > 0) {
         const args = type.typeArguments
@@ -172,18 +172,24 @@ export class TypeFormatter {
   formatTemplateLiteral(type, forTable = false, forceSingleLine = false) {
     if (!type.head || !type.tail) return "string";
 
-    let result = "`" + type.head;
+    let parts = [];
+    parts.push(type.head);
 
     type.tail.forEach(([templateType, literal]) => {
-      result +=
-        "${" +
-        this.formatTypeInternal(templateType, forTable, forceSingleLine) +
-        "}" +
-        literal;
+      parts.push(
+        "${" + this.formatTypeInternal(templateType, forTable, forceSingleLine) + "}",
+      );
+      parts.push(literal);
     });
 
-    result += "`";
-    return result;
+    const result = parts.join("");
+    const hasLinks = result.includes("](");
+
+    if (hasLinks) {
+      return result;
+    } else {
+      return "`" + result + "`";
+    }
   }
 
   formatMethodSignature(signature, forTable = false, forceSingleLine = false) {

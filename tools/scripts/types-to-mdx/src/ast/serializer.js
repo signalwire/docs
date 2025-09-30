@@ -37,6 +37,8 @@ export class MdxSerializer {
   }
 
   postProcessMdx(markdown) {
+    markdown = this.escapeMdxCharacters(markdown);
+
     return (
       markdown
         .replace(/\n{3,}/g, "\n\n")
@@ -44,6 +46,49 @@ export class MdxSerializer {
         .replace(/\n\s*\n\s*\n/g, "\n\n")
         .trim() + "\n"
     );
+  }
+
+  escapeMdxCharacters(markdown) {
+    const lines = markdown.split("\n");
+    let inCodeBlock = false;
+
+    return lines
+      .map((line) => {
+        if (line.match(/^```/)) {
+          inCodeBlock = !inCodeBlock;
+          return line;
+        }
+
+        if (inCodeBlock) {
+          return line;
+        }
+
+        let result = "";
+        let inInlineCode = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          const prevChar = i > 0 ? line[i - 1] : "";
+
+          if (char === "`") {
+            inInlineCode = !inInlineCode;
+            result += char;
+          } else if (!inInlineCode && char === "{" && prevChar !== "\\") {
+            result += "\\{";
+          } else if (!inInlineCode && char === "}" && prevChar !== "\\") {
+            result += "\\}";
+          } else if (!inInlineCode && char === "<" && prevChar !== "\\") {
+            result += "\\<";
+          } else if (!inInlineCode && char === ">" && prevChar !== "\\") {
+            result += "\\>";
+          } else {
+            result += char;
+          }
+        }
+
+        return result;
+      })
+      .join("\n");
   }
 
   validateMdx(content) {
