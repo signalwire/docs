@@ -54,17 +54,20 @@ class TypeFormatter {
 
       case "reflection":
         if (type.declaration && type.declaration.children) {
-          const props = type.declaration.children
-            .map((child) => {
-              const optional = child.flags?.isOptional ? "?" : "";
-              const childType = this.formatTypeWithLinks(child.type, context);
-              return `${child.name}${optional}: ${childType}`;
-            })
-            .join(context === "table" ? "; " : ", ");
-
-          return context === "table"
-            ? `{ ${props} }`
-            : `{\n  ${props.split(", ").join(",\n  ")}\n}`;
+          if (context === "table") {
+            // For tables, show simplified object type
+            const propCount = type.declaration.children.length;
+            return `object (${propCount} ${propCount === 1 ? "property" : "properties"})`;
+          } else {
+            const props = type.declaration.children
+              .map((child) => {
+                const optional = child.flags?.isOptional ? "?" : "";
+                const childType = this.formatTypeWithLinks(child.type, context);
+                return `${child.name}${optional}: ${childType}`;
+              })
+              .join(", ");
+            return `{\n  ${props.split(", ").join(",\n  ")}\n}`;
+          }
         } else if (type.declaration && type.declaration.signatures) {
           const signatures = type.declaration.signatures
             .map((sig) => {
@@ -111,8 +114,8 @@ class TypeFormatter {
 
   formatTypeForTable(type) {
     const typeString = this.formatTypeWithLinks(type, "table");
-    // Escape < and > characters for MDX compatibility in tables
-    return typeString.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // Escape characters for MDX compatibility in tables
+    return typeString.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\|/g, "\\|");
   }
 
   formatTypeForCodeBlock(type) {

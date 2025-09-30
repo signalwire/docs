@@ -1,0 +1,204 @@
+import { ReflectionKind } from "typedoc";
+import { TypeFormatter } from "./type-formatter.js";
+import { CommentProcessor } from "./comment-processor.js";
+
+export class TypeExtractor {
+  constructor(logger) {
+    this.logger = logger;
+    this.formatter = new TypeFormatter(logger);
+    this.commentProcessor = new CommentProcessor(logger);
+  }
+
+  extractFromProject(project) {
+    this.logger.debug("Extracting types from project...");
+
+    const types = [];
+    const enums = [];
+    const typeAliases = [];
+    const allTypeNames = new Set();
+
+    this.collectTypeNames(project, allTypeNames);
+    this.logger.debug(`Found ${allTypeNames.size} type names for cross-linking`);
+
+    this.formatter.setTypeNames(allTypeNames);
+
+    this.extractTypes(project, types, enums, typeAliases);
+
+    const result = {
+      types: this.sortByName(types),
+      enums: this.sortByName(enums),
+      typeAliases: this.sortByName(typeAliases),
+      allTypeNames,
+    };
+
+    this.logger.debug(
+      `Extracted ${result.types.length} interfaces, ${result.enums.length} enums, ${result.typeAliases.length} type aliases`,
+    );
+
+    return result;
+  }
+
+  collectTypeNames(reflection, allTypeNames) {
+    if (!reflection) return;
+
+    if (reflection.kind === ReflectionKind.TypeAlias) {
+      allTypeNames.add(reflection.name);
+    }
+
+    if (reflection.kind === ReflectionKind.Enum) {
+      allTypeNames.add(reflection.name);
+    }
+
+    if (reflection.kind === ReflectionKind.Interface) {
+      allTypeNames.add(reflection.name);
+    }
+
+    if (reflection.kind === ReflectionKind.Class) {
+      allTypeNames.add(reflection.name);
+    }
+
+    if (reflection.children) {
+      reflection.children.forEach((child) => this.collectTypeNames(child, allTypeNames));
+    }
+  }
+
+  extractTypes(reflection, types, enums, typeAliases) {
+    if (!reflection) return;
+
+    try {
+      if (reflection.kind === ReflectionKind.TypeAlias) {
+        typeAliases.push(this.extractTypeAlias(reflection));
+      }
+
+      if (reflection.kind === ReflectionKind.Enum) {
+        enums.push(this.extractEnum(reflection));
+      }
+
+      if (reflection.kind === ReflectionKind.Interface) {
+        types.push(this.extractInterface(reflection));
+      }
+
+      if (reflection.kind === ReflectionKind.Class) {
+        types.push(this.extractClass(reflection));
+      }
+
+      if (reflection.children) {
+        reflection.children.forEach((child) =>
+          this.extractTypes(child, types, enums, typeAliases),
+        );
+      }
+    } catch (error) {
+      this.logger.warn(`Error extracting ${reflection.name}: ${error.message}`);
+    }
+  }
+
+  extractTypeAlias(reflection) {
+    return {
+      name: reflection.name,
+      type: this.formatter.formatType(reflection.type),
+      comment: this.commentProcessor.processComment(reflection.comment),
+      sources: reflection.sources || [],
+      anchor: this.generateAnchor(reflection.name),
+    };
+  }
+
+  extractEnum(reflection) {
+    const members = [];
+
+    if (reflection.children) {
+      reflection.children.forEach((child) => {
+        if (child.kind === ReflectionKind.EnumMember) {
+          members.push({
+            name: child.name,
+            value: child.defaultValue || "",
+            comment: this.commentProcessor.processCommentAsText(child.comment),
+          });
+        }
+      });
+    }
+
+    return {
+      name: reflection.name,
+      comment: this.commentProcessor.processComment(reflection.comment),
+      members: this.sortByName(members),
+      sources: reflection.sources || [],
+      anchor: this.generateAnchor(reflection.name),
+    };
+  }
+
+  extractInterface(reflection) {
+    return this.extractClassLike(reflection, "Interface");
+  }
+
+  extractClass(reflection) {
+    return this.extractClassLike(reflection, "Class");
+  }
+
+  extractClassLike(reflection, kind) {
+    const properties = [];
+    const methods = [];
+
+    if (reflection.children) {
+      reflection.children.forEach((child) => {
+        try {
+          if (child.kind === ReflectionKind.Property) {
+            properties.push(this.extractProperty(child));
+          } else if (child.kind === ReflectionKind.Method) {
+            methods.push(this.extractMethod(child));
+          }
+        } catch (error) {
+          this.logger.warn(`Error extracting member ${child.name}: ${error.message}`);
+        }
+      });
+    }
+
+    return {
+      name: reflection.name,
+      kind,
+      comment: this.commentProcessor.processComment(reflection.comment),
+      properties: this.sortByName(properties),
+      methods: this.sortByName(methods),
+      sources: reflection.sources || [],
+      anchor: this.generateAnchor(reflection.name),
+    };
+  }
+
+  extractProperty(reflection) {
+    return {
+      name: reflection.name,
+      type: this.formatter.formatTypeForTable(reflection.type),
+      comment: this.commentProcessor.processCommentAsText(reflection.comment),
+      optional: reflection.flags?.isOptional || false,
+      readonly: reflection.flags?.isReadonly || false,
+      static: reflection.flags?.isStatic || false,
+    };
+  }
+
+  extractMethod(reflection) {
+    let signature = null;
+
+    if (reflection.signatures && reflection.signatures.length > 0) {
+      signature = this.formatter.formatMethodSignature(reflection.signatures[0]);
+    } else if (reflection.type) {
+      signature = this.formatter.formatTypeForTable(reflection.type);
+    } else {
+      signature = "Method";
+    }
+
+    return {
+      name: reflection.name,
+      signature,
+      comment: this.commentProcessor.processCommentAsText(reflection.comment),
+      optional: reflection.flags?.isOptional || false,
+      static: reflection.flags?.isStatic || false,
+    };
+  }
+
+  generateAnchor(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+  }
+
+  sortByName(items) {
+    return items.sort((a, b) => a.name.localeCompare(b.name));
+  }
+}
