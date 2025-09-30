@@ -1,12 +1,21 @@
 ---
-title: Integrate OpenAI R
-description: Learn how to create bidirectional audio streaming bridges between telephony platforms and AI real-time APIs
+title: Integrate OpenAI Realtime API with cXML
+description: Put OpenAI Speech-to-Speech models on the phone with bidirectional streaming and cXML.
 slug: /guides/real-time-ai-voice-assistants
-sidebar_label: Real-Time AI Voice Assistants
+sidebar_label: Stream an OpenAI Realtime API agent with cXML
 sidebar_position: 0
+x-custom:
+    tags:
+        - product:ai
+        - product:voice
+        - language:nodejs
+        - language:javascript
+        - sdk:compatibility
 ---
 
-# Stream an OpenAI Realtime API agent with cXML
+import AddResource from '/docs/main/_common/dashboard/add-resource.mdx';
+
+# Stream to OpenAI Realtime API agent with cXML
 
 <Subtitle>Put OpenAI Speech-to-Speech models on the phone with bidirectional streaming and cXML</Subtitle>
 
@@ -49,25 +58,152 @@ flowchart LR
 
 Before you begin, ensure you have:
 
-1. **SignalWire Account** - [Sign up free](https://signalwire.com)
-2. **OpenAI API Key** - [Get access](https://platform.openai.com/api-keys) (requires paid account)
-3. **Node.js 20+** - For running the TypeScript server
-4. **ngrok** - For local development tunneling ([Install ngrok](https://ngrok.com/download))
-5. **Docker** (optional) - For containerized deployment
+- **SignalWire Space** - [Sign up free](https://signalwire.com)
+- **OpenAI API Key** - [Get access](https://platform.openai.com/api-keys) (requires paid account)
+- **Node.js 20+** - For running the TypeScript server ([Install Node](https://nodejs.org/en/download))
+- **ngrok** or other tunneling service - For local development tunneling ([Install ngrok](https://ngrok.com/download))
+- **Docker** (optional) - For containerized deployment
 
-### Dependencies
+---
 
-The project uses these key packages:
+<Steps>
 
-```json
-{
-  "@openai/agents": "^0.1.4",
-  "@openai/agents-realtime": "^0.1.4",
-  "@fastify/websocket": "^10.0.1",
-  "fastify": "^4.28.1",
-  "zod": "^3.23.8"
-}
+### Clone and install
+
+Clone the SignalWire Solutions repository, navigate to this example, and install.
+
+```bash
+git clone https://github.com/signalwire/solutions-architecture
+cd code/cxml-realtime-agent-stream
+npm install
 ```
+
+### Add your API key
+
+Choose **ONE** method based on how you'll run the application.
+
+<Tabs groupId="deploy">
+<TabItem value="local" label="Local">
+
+When running the server on your local machine, store your credentials in a `.env` file.
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your OpenAI API key:
+
+```bash title=".env"
+OPENAI_API_KEY=sk-your-actual-api-key-here
+```
+
+</TabItem>
+
+<TabItem value="docker" label="Docker">
+
+When running the server in production with the Docker container, store your credentials in a `secrets` folder.
+
+```bash
+mkdir secrets
+```
+
+```bash
+echo "sk-your-actual-api-key-here" > secrets/openai_api_key.txt
+```
+
+</TabItem>
+</Tabs>
+
+### Run the application
+
+<Tabs groupId="deploy">
+<TabItem value="local" label="Local">
+
+```bash
+npm run build
+npm start
+```
+
+</TabItem>
+
+<TabItem value="prod" label="Docker">
+
+```bash
+docker-compose up --build signalwire-assistant
+```
+
+</TabItem>
+</Tabs>
+
+Your AI assistant webhook is now running at `http://localhost:5050/incoming-call`.
+
+:::important
+The `/incoming-call` endpoint is where SignalWire sends call data to trigger your AI assistant. 
+This is the URL you'll configure in your SignalWire cXML resource.  
+:::
+
+### Create a cXML Script Resource
+
+Next, we need to tell SignalWire to request cXML from your server when a call comes in.
+
+In your SignalWire Dashboard, navigate to [My Resources][resources].
+Click **Create Resource**, select **Script** as the resource type, and choose `cXML`.
+
+Under `Handle Using`, select `External Url`.
+Set the `Primary Script URL` to your server's **webhook endpoint**:
+
+<Tabs>
+<TabItem value="dev" label="Local">
+Use ngrok to expose port 5050 on your development machine:
+
+```bash
+ngrok http 5050
+```
+
+Append `/incoming-call` to the HTTPS URL returned by ngrok.
+https://abc123.ngrok.io/incoming-call
+</TabItem>
+<TabItem value="prod" label="Docker">
+For production environments, set your server URL + `/incoming-call`:
+      ```
+      https://your-domain.com/incoming-call
+      ```
+</TabItem>
+</Tabs>
+
+   > **🚨 Critical:** You MUST include `/incoming-call` at the end of your URL. This is the specific webhook endpoint that handles incoming calls.
+6. Give it a descriptive name (e.g., "AI Voice Assistant")
+7. Create the resource
+
+> **📖 Learn More:** Follow the [SignalWire Call Fabric Resources Guide](https://developer.signalwire.com/platform/call-fabric/resources) for detailed instructions.
+
+
+### 3. Create a SIP Address
+
+To test your AI assistant, create a SIP address that connects to your cXML resource:
+
+1. Now from the resource page of the resource you just created, click the `Addresses * Phone NUmbers` tab
+2. Click **Add** to create a new address
+3. Select **SIP Address** as the address type
+5. Fill out the address information
+6. Save the configuration
+
+> **📖 Learn More:** Follow the [SignalWire Call Fabric Addresses Guide](https://developer.signalwire.com/platform/call-fabric/addresses) for detailed SIP address creation.
+
+
+> **💡 Tip:** You can also purchase a regular [phone number](https://developer.signalwire.com/platform/dashboard/get-started/phone-numbers) and link it to your cXML resource if you prefer traditional phone number calling.
+
+### Step 4: Test It!
+**Call the SIP address you created in [Step 3](#3-create-a-sip-address) to test your AI assistant:**
+1. **Using a SIP Phone or Softphone:**
+   - Dial: `sip:your-sip-address@yourproject.dapp.signalwire.com`
+   - Replace with the actual SIP address you created in your SignalWire resource
+2. **The call flow will be:**
+   - Your SIP call → SignalWire → Your webhook endpoint → AI assistant
+> **📱 Alternative:** If you purchased a regular phone number and linked it to your cXML resource, you can also call that number directly.
+> **🔧 Troubleshooting:** If you haven't set up ngrok yet, go back to [SignalWire Setup](#signalwire-setup) to expose your local server.
+
+</Steps>
 
 ---
 
@@ -399,7 +535,7 @@ session.on('error', (error) => {
 
 Set up your environment variables for different deployment scenarios:
 
-<Tabs groupId="deployment">
+<Tabs groupId="deploy">
 <TabItem value="local" label="Local Development">
 
 Create a `.env` file in your project root:
@@ -1237,3 +1373,4 @@ todo
 
 [cxml]: /compatibility-api/cxml "Documentation for cXML, or Compatibility XML."
 [bidir-stream]: /compatibility-api/cxml/voice/stream#bidirectional-stream "Technical reference for creating a bidirectional Stream in cXML."
+[resources]: https://my.signalwire.com?page=resources "The My Resources page of your SignalWire Dashboard."
