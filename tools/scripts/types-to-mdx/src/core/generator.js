@@ -104,7 +104,11 @@ export class MdxGenerator {
       }
 
       builder.addChild(
-        builder.paragraph([builder.text("**Type:** "), builder.inlineCode(alias.type)]),
+        builder.paragraph([
+          builder.strong([builder.text("Type:")]),
+          builder.text(" "),
+          builder.inlineCode(alias.type),
+        ]),
       );
     });
   }

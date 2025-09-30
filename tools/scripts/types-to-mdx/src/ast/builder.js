@@ -27,6 +27,10 @@ export class MdxAstBuilder {
     return u("text", this.escapeText(value));
   }
 
+  strong(children) {
+    return u("strong", Array.isArray(children) ? children : [children]);
+  }
+
   code(value, lang = null) {
     return u("code", { lang }, this.escapeCode(value));
   }
