@@ -79,7 +79,9 @@ export class TypeDocLoader {
         throw new Error("Invalid TypeDoc JSON data - missing required fields");
       }
 
-      const app = await Application.bootstrap();
+      const app = await Application.bootstrap({
+        logLevel: "Error",
+      });
       const deserializer = new Deserializer(app);
 
       const projectReflection = deserializer.reviveProject(jsonData);
