@@ -2,7 +2,7 @@
 title: Integrate OpenAI Realtime API with cXML
 description: Put OpenAI Speech-to-Speech models on the phone with bidirectional streaming and cXML.
 slug: /guides/real-time-ai-voice-assistants
-sidebar_label: Stream an OpenAI Realtime API agent with cXML
+sidebar_label: Stream an OpenAI Realtime API agent
 sidebar_position: 0
 x-custom:
     tags:
@@ -14,10 +14,12 @@ x-custom:
 ---
 
 import AddResource from '/docs/main/_common/dashboard/add-resource.mdx';
+import ResourcesFyi from '/docs/main/_common/call-fabric/resources-fyi-card.mdx';
+import { MdCode } from "react-icons/md";
 
 # Stream to OpenAI Realtime API agent with cXML
 
-<Subtitle>Put OpenAI Speech-to-Speech models on the phone with bidirectional streaming and cXML</Subtitle>
+<Subtitle>Put OpenAI Speech-to-Speech models on the phone with bidirectional streaming via a cXML Script</Subtitle>
 
 In this guide, we will build a Node.js application that serves a 
 [cXML Script][cxml]
@@ -27,6 +29,8 @@ to the OpenAI Realtime API.
 When a caller initiates a SIP or 
 <Tooltips tip="Public Switched Telephone Network">PSTN</Tooltips>
 call to the assigned phone number, the SignalWire platform requests and runs the script.
+
+{/* This architectural explainer is a DRAFT. It could be useful, but needs further refinement.
 
 The key architectural components involved are:
 
@@ -39,13 +43,10 @@ This gives our application the ability to update the call instructions according
 Here's what happens when someone calls your application:
 
 ```mermaid
-flowchart LR
+flowchart TD
     A(Phone call) --> B(SignalWire platform)
-    B --> C(Your server)
-    C --> D(WebSocket)
-    D <--> E(OpenAI API)
-    B <--> D
-    D --> F(Tools)
+    B --> |Request cXML Script| C(Your server)
+    B --> |Bidirectional WebSocket connection| D(OpenAI API)
 ```
 
 1. **Call arrives** at SignalWire
@@ -54,21 +55,27 @@ flowchart LR
 4. **AI processes** speech in real-time
 5. **Responses flow back** to the caller
 
+*/}
+
 ## Prerequisites
 
 Before you begin, ensure you have:
 
-- **SignalWire Space** - [Sign up free](https://signalwire.com)
+- **SignalWire Space** - [Sign up free](https://signalwire.com/signup)
 - **OpenAI API Key** - [Get access](https://platform.openai.com/api-keys) (requires paid account)
 - **Node.js 20+** - For running the TypeScript server ([Install Node](https://nodejs.org/en/download))
 - **ngrok** or other tunneling service - For local development tunneling ([Install ngrok](https://ngrok.com/download))
 - **Docker** (optional) - For containerized deployment
 
----
+## Steps
 
 <Steps>
 
 ### Clone and install
+
+<div className="row">
+
+<div class="col col--8">
 
 Clone the SignalWire Solutions repository, navigate to this example, and install.
 
@@ -78,9 +85,25 @@ cd code/cxml-realtime-agent-stream
 npm install
 ```
 
-### Add your API key
+</div>
 
-Choose **ONE** method based on how you'll run the application.
+<div class="col col--4">
+
+<Card 
+    title="GitHub repository" 
+    href="https://github.com/signalwire/solutions-architecture"
+    icon={<MdCode />}
+    >
+The SignalWire Solutions repository
+</Card>
+
+</div>
+
+</div>
+
+### Add OpenAI credentials
+
+Select **Local** or **Docker** 
 
 <Tabs groupId="deploy">
 <TabItem value="local" label="Local">
@@ -114,7 +137,7 @@ echo "sk-your-actual-api-key-here" > secrets/openai_api_key.txt
 </TabItem>
 </Tabs>
 
-### Run the application
+### Run application
 
 <Tabs groupId="deploy">
 <TabItem value="local" label="Local">
@@ -137,20 +160,30 @@ docker-compose up --build signalwire-assistant
 
 Your AI assistant webhook is now running at `http://localhost:5050/incoming-call`.
 
-:::important
-The `/incoming-call` endpoint is where SignalWire sends call data to trigger your AI assistant. 
-This is the URL you'll configure in your SignalWire cXML resource.  
-:::
-
-### Create a cXML Script Resource
+### Create a cXML Script
 
 Next, we need to tell SignalWire to request cXML from your server when a call comes in.
 
-In your SignalWire Dashboard, navigate to [My Resources][resources].
-Click **Create Resource**, select **Script** as the resource type, and choose `cXML`.
+<div className="row">
 
-Under `Handle Using`, select `External Url`.
-Set the `Primary Script URL` to your server's **webhook endpoint**:
+<div className="col col--6">
+
+- Navigate to [My Resources][resources] in your Dashboard.
+- Click **Create Resource**, select **Script** as the resource type, and choose `cXML`.
+- Under `Handle Using`, select `External Url`.
+- Set the `Primary Script URL` to your server's **webhook endpoint**.
+
+Select the **Local** tab below if you ran the application locally, and the **Docker** tab if you're running it with Docker.
+
+</div>
+
+<div className="col col--6">
+
+<ResourcesFyi />
+
+</div>
+
+</div>
 
 <Tabs>
 <TabItem value="dev" label="Local">
@@ -171,43 +204,36 @@ For production environments, set your server URL + `/incoming-call`:
 </TabItem>
 </Tabs>
 
-   > **🚨 Critical:** You MUST include `/incoming-call` at the end of your URL. This is the specific webhook endpoint that handles incoming calls.
-6. Give it a descriptive name (e.g., "AI Voice Assistant")
-7. Create the resource
+:::important set routes
+For this example, you **must** include `/incoming-call` at the end of your URL. This is the specific webhook endpoint that our application uses to handle incoming calls.
+:::
 
-> **📖 Learn More:** Follow the [SignalWire Call Fabric Resources Guide](https://developer.signalwire.com/platform/call-fabric/resources) for detailed instructions.
+- Give the cXML Script a descriptive name, such as "AI Voice Assistant".
+- Save your new Resource.
 
+### Assign SIP address or phone number
 
-### 3. Create a SIP Address
+To test your AI assistant, create a SIP address or phone number and assign it as a handler for your cXML Script Resource.
 
-To test your AI assistant, create a SIP address that connects to your cXML resource:
+- From the [My Resources][resources] tab, select your cXML Script
+- Open the **Addresses & Phone NUmbers** tab
+- Click **Add** 
+- Select **SIP Address** or **Phone Number**
+- Fill out any required details
+- Save the configuration
 
-1. Now from the resource page of the resource you just created, click the `Addresses * Phone NUmbers` tab
-2. Click **Add** to create a new address
-3. Select **SIP Address** as the address type
-5. Fill out the address information
-6. Save the configuration
+### Test application
 
-> **📖 Learn More:** Follow the [SignalWire Call Fabric Addresses Guide](https://developer.signalwire.com/platform/call-fabric/addresses) for detailed SIP address creation.
-
-
-> **💡 Tip:** You can also purchase a regular [phone number](https://developer.signalwire.com/platform/dashboard/get-started/phone-numbers) and link it to your cXML resource if you prefer traditional phone number calling.
-
-### Step 4: Test It!
-**Call the SIP address you created in [Step 3](#3-create-a-sip-address) to test your AI assistant:**
-1. **Using a SIP Phone or Softphone:**
-   - Dial: `sip:your-sip-address@yourproject.dapp.signalwire.com`
-   - Replace with the actual SIP address you created in your SignalWire resource
-2. **The call flow will be:**
-   - Your SIP call → SignalWire → Your webhook endpoint → AI assistant
-> **📱 Alternative:** If you purchased a regular phone number and linked it to your cXML resource, you can also call that number directly.
-> **🔧 Troubleshooting:** If you haven't set up ngrok yet, go back to [SignalWire Setup](#signalwire-setup) to expose your local server.
+Dial the SIP address or phone number assigned to your cXML Script.
+You should now be speaking to your newly created agent!
 
 </Steps>
 
 ---
 
-## Steps
+{/* draft
+
+## How it works
 
 <Steps>
 
@@ -1224,7 +1250,9 @@ curl http://localhost:5050/health
 ✅ Tool call completed: get_weather
 ```
 
----
+*/}
+
+{/* Needs validation
 
 ## Common Issues & Solutions
 
@@ -1277,69 +1305,27 @@ curl http://localhost:5050/health
 - [ ] Function calls (weather, time) work
 - [ ] Interruptions handled gracefully
 
-:::warning Common Mistakes
-
-**Webhook Configuration:**
-- Forgetting `/incoming-call` in your webhook URL (most common!)
-- Using HTTP instead of HTTPS for webhook URL
-- ngrok URL changing and not updating SignalWire configuration
-
-**Environment Setup:**
-- Missing `.env` file or incorrect API key format
-- Using both `.env` and Docker secrets (use only one method)
-- Wrong audio format causing codec mismatches
-
-**Development Issues:**
-- Not running `npm run build` after code changes
-- Port 5050 already in use by another application
-- Network firewall blocking WebSocket connections
-
-:::
-
----
+*/}
 
 ## Complete Example
 
 Ready to see it all in action?
 
 <Card
-  title="SignalWire + OpenAI Voice Assistant"
+  title="SignalWire + OpenAI Realtime"
   description="Production-ready implementation with all features"
-  icon="🚀"
+  icon={<MdCode />}
   href="https://github.com/signalwire/cxml-realtime-agent-stream"
 />
 
 This reference implementation includes:
-- ✅ **Complete bidirectional streaming** - Real-time audio with zero buffering
-- ✅ **OpenAI Realtime API integration** - Latest GPT-4 Realtime model
-- ✅ **Function calling examples** - Weather and time tools included
-- ✅ **Production deployment** - Docker, health checks, logging
-- ✅ **Error handling** - Graceful fallbacks and recovery
-- ✅ **Audio optimization** - Both HD (24kHz) and telephony (8kHz) support
-- ✅ **TypeScript** - Full type safety and development experience
-
-### Key Files to Study
-
-```
-src/
-├── index.ts                    # Server setup and initialization
-├── config.ts                   # Environment and agent configuration
-├── constants.ts                # Application constants and messages
-├── routes/
-│   ├── webhook.ts              # cXML webhook handler (/incoming-call)
-│   ├── streaming.ts            # WebSocket bridge (/media-stream)
-│   └── health.ts               # Health check endpoint (/health)
-├── tools/
-│   ├── index.ts                # Tool exports
-│   ├── weather.tool.ts         # Weather information tool
-│   └── time.tool.ts            # Current time tool
-├── transports/
-│   └── SignalWireRealtimeTransportLayer.ts  # Audio bridge
-├── types/
-│   └── index.ts                # TypeScript interfaces
-└── utils/
-    └── logger.ts               # Logging utilities
-```
+- **Complete bidirectional streaming** - Real-time audio with zero buffering
+- **OpenAI Realtime API integration** - Latest GPT-4 Realtime model
+- **Function calling examples** - Weather and time tools included
+- **Production deployment** - Docker, health checks, logging
+- **Error handling** - Graceful fallbacks and recovery
+- **Audio optimization** - Both HD (24kHz) and telephony (8kHz) support
+- **TypeScript** - Full type safety and development experience
 
 ---
 
