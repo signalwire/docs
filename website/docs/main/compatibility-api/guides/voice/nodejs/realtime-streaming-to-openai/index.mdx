@@ -19,7 +19,7 @@ import { MdCode } from "react-icons/md";
 
 # Stream to OpenAI Realtime API agent with cXML
 
-<Subtitle>Put OpenAI Speech-to-Speech models on the phone with bidirectional streaming via a cXML Script</Subtitle>
+<Subtitle>Put OpenAI Speech-to-Speech models on the phone with cXML `<Stream>`</Subtitle>
 
 In this guide, we will build a Node.js application that serves a 
 [cXML Script][cxml]
@@ -28,7 +28,8 @@ that initiates a two-way (bidirectional)
 to the OpenAI Realtime API.
 When a caller initiates a SIP or 
 <Tooltips tip="Public Switched Telephone Network">PSTN</Tooltips>
-call to the assigned phone number, the SignalWire platform requests and runs the script.
+call to the assigned phone number, 
+the SignalWire platform requests and runs the script.
 
 {/* This architectural explainer is a DRAFT. It could be useful, but needs further refinement.
 
@@ -38,14 +39,14 @@ The key architectural components involved are:
 This gives our application the ability to update the call instructions according to each request.
 - **WebSocket bridge:** Enables real-time audio streaming between telephony and AI
 - **AI integration:** Natural conversations with OpenAI's Realtime API
-- **Function Calling:** Server-side tool execution during conversations
+- **Function calling:** Server-side tool execution during conversations
 
 Here's what happens when someone calls your application:
 
 ```mermaid
 flowchart TD
     A(Phone call) --> B(SignalWire platform)
-    B --> |Request cXML Script| C(Your server)
+    B --> |Request cXML Script via webhook| C(Your server)
     B --> |Bidirectional WebSocket connection| D(OpenAI API)
 ```
 
@@ -57,6 +58,13 @@ flowchart TD
 
 */}
 
+Wondering why this guide uses cXML to stream to OpenAI, instead of using
+the [native SWML AI integration](/swml/ai)?
+Since OpenAI's Realtime API is built for Speech-to-Speech (or "Voice-to-Voice") models, 
+the SignalWire platform must stream audio directly to and from OpenAI
+instead of handling the STT, TTS, and LLM aspects with our integrated toolchain.
+This guide showcases the flexibility of the SignalWire platform to integrate with emerging unified audio models.
+
 ## Prerequisites
 
 Before you begin, ensure you have:
@@ -67,7 +75,7 @@ Before you begin, ensure you have:
 - **ngrok** or other tunneling service - For local development tunneling ([Install ngrok](https://ngrok.com/download))
 - **Docker** (optional) - For containerized deployment
 
-## Steps
+## Quickstart
 
 <Steps>
 
@@ -160,6 +168,14 @@ docker-compose up --build signalwire-assistant
 
 Your AI assistant webhook is now running at `http://localhost:5050/incoming-call`.
 
+:::tip Health check
+Make sure your server is running and the health check passes:
+```bash
+curl http://localhost:5050/health
+# Should return: {"status":"healthy"}
+```
+:::
+
 ### Create a cXML Script
 
 Next, we need to tell SignalWire to request cXML from your server when a call comes in.
@@ -229,19 +245,21 @@ You should now be speaking to your newly created agent!
 
 </Steps>
 
+
+
 ---
 
-{/* draft
+
 
 ## How it works
 
-<Steps>
+<AccordionGroup>
 
-### Create the Webhook Endpoint
+<Accordion title="The webhook endpoint" description="Handle incoming call webhooks from SignalWire">
 
-Your server needs to handle incoming call webhooks from SignalWire.
+First, your server needs to handle incoming call webhooks from SignalWire.
 
-**Set Up the HTTP Endpoint**
+**Set up the HTTP endpoint**
 
 <Tabs groupId="language">
 <TabItem value="typescript" label="TypeScript">
@@ -300,9 +318,11 @@ Your webhook URL must include `/incoming-call` at the end:
 - Production: `https://your-domain.com/incoming-call`
 :::
 
-### Build the WebSocket Bridge
+</Accordion>
 
-Create a WebSocket server to handle bidirectional audio streaming.
+<Accordion title="Websocket bridge" description="Connect the SignalWire and OpenAI platforms with a bidirectional audio streaming websocket connection.">
+
+Next, we will create a WebSocket server to handle bidirectional audio streaming.
 
 **Initialize WebSocket Server**
 
@@ -414,6 +434,8 @@ app.get('/media-stream', { websocket: true }, async (connection) => {
 </TabItem>
 </Tabs>
 
+</Accordion>
+
 <Accordion title="Understanding SignalWire Stream Messages">
 
 SignalWire sends several types of messages through the WebSocket:
@@ -438,6 +460,8 @@ SignalWire sends several types of messages through the WebSocket:
 - **OpenAI Integration**: Handles format negotiation transparently
 
 </Accordion>
+
+<Accordion title="OpenAI Realtime API integration">
 
 ### Integrate with OpenAI Realtime API
 
@@ -601,6 +625,10 @@ Choose the right audio format for your use case:
 - **g711_ulaw (8kHz)**: Standard telephony quality (default)
 - **pcm16 (24kHz)**: High definition audio for demos
 :::
+
+</Accordion>
+
+</AccordionGroup>
 
 ### Add Function Calling
 
@@ -831,8 +859,6 @@ const agentConfig = {
 All of this happens in real-time during the conversation.
 
 </Accordion>
-
-</Steps>
 
 ---
 
@@ -1161,57 +1187,25 @@ DEBUG=openai-agents:* npm run dev
 
 ---
 
-## Testing Your Assistant
-
-:::tip Before Testing
-Make sure your server is running and the health check passes:
+**Console Output to Look For:**
 ```bash
-curl http://localhost:5050/health
-# Should return: {"status":"healthy"}
+📡 Server running on http://0.0.0.0:5050
+🏥 Health check: http://0.0.0.0:5050/health
+🔊 Audio format: g711_ulaw (8kHz telephony)
+🎙️  Voice: alloy
+
+# When calls come in:
+📞 Incoming call - Audio format: g711_ulaw, SignalWire codec: default
+📱 Client connected to WebSocket
+🔧 Tool call started: get_weather
+✅ Tool call completed: get_weather
 ```
-:::
 
-### Quick Test with SIP
+{/* Needs validation
 
-1. **Create a SIP address** in your SignalWire project:
-   - Go to **Call Fabric** > **Addresses**
-   - Click **Create** > **SIP Address**
-   - Link it to your cXML resource
+## Common Issues & Solutions
 
-2. **Test with a SIP client:**
-   ```
-   sip:your-sip-address@yourproject.dapp.signalwire.com
-   ```
-
-   **Recommended SIP clients:**
-   - **Desktop:** [Zoiper](https://www.zoiper.com/) (free)
-   - **Mobile:** Zoiper or [Linphone](https://www.linphone.org/)
-   - **Web:** Use SignalWire's built-in browser calling
-
-3. **Expected call flow:**
-   - Call connects immediately
-   - AI greets you with "Hello! I'm your AI voice assistant..."
-   - Try saying: "What's the weather in New York?"
-   - Try saying: "What time is it?"
-   - Test interruptions by talking while AI is speaking
-
-### Alternative: Purchase a Phone Number
-
-1. **Buy a phone number** in SignalWire
-2. **Link it** to your cXML resource
-3. **Call normally** from any phone
-
-### Testing Checklist
-
-- [ ] **Connection**: Call connects and you hear AI greeting
-- [ ] **Audio Quality**: Clear audio both directions
-- [ ] **Weather Tool**: Ask "What's the weather in [city]?"
-- [ ] **Time Tool**: Ask "What time is it?"
-- [ ] **Interruption**: Talk while AI is speaking (should stop gracefully)
-- [ ] **Conversation**: Have a natural back-and-forth conversation
-- [ ] **Goodbye**: End call normally
-
-### Debugging Your Implementation
+### Debugging
 
 <CardGroup>
   <Card
@@ -1235,26 +1229,6 @@ curl http://localhost:5050/health
     icon="🎤"
   />
 </CardGroup>
-
-**Console Output to Look For:**
-```bash
-📡 Server running on http://0.0.0.0:5050
-🏥 Health check: http://0.0.0.0:5050/health
-🔊 Audio format: g711_ulaw (8kHz telephony)
-🎙️  Voice: alloy
-
-# When calls come in:
-📞 Incoming call - Audio format: g711_ulaw, SignalWire codec: default
-📱 Client connected to WebSocket
-🔧 Tool call started: get_weather
-✅ Tool call completed: get_weather
-```
-
-*/}
-
-{/* Needs validation
-
-## Common Issues & Solutions
 
 ### Troubleshooting Guide
 
@@ -1307,7 +1281,7 @@ curl http://localhost:5050/health
 
 */}
 
-## Complete Example
+## Complete example
 
 Ready to see it all in action?
 
@@ -1343,3 +1317,4 @@ This reference implementation includes:
 [bidir-stream]: /compatibility-api/cxml/voice/stream#bidirectional-stream "Technical reference for creating a bidirectional Stream in cXML."
 [resources]: https://my.signalwire.com?page=resources "The My Resources page of your SignalWire Dashboard."
 [repo]: https://github.com/signalwire/solutions-architecture/tree/main/code/cxml-realtime-agent-stream "This project's GitHub repository."
+[openai-realtime-api]: https://platform.openai.com/docs/guides/realtime "The OpenAI Realtime API"
