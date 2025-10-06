@@ -232,11 +232,9 @@ For this example, you **must** include `/incoming-call` at the end of your URL. 
 To test your AI assistant, create a SIP address or phone number and assign it as a handler for your cXML Script Resource.
 
 - From the [My Resources][resources] tab, select your cXML Script
-- Open the **Addresses & Phone NUmbers** tab
-- Click **Add** 
-- Select **SIP Address** or **Phone Number**
-- Fill out any required details
-- Save the configuration
+- Open the **Addresses & Phone Numbers** tab
+- Click **Add**, and select either **SIP Address** or **Phone Number**
+- Fill out any required details, and save the configuration
 
 ### Test application
 
@@ -255,7 +253,7 @@ You should now be speaking to your newly created agent!
 
 <AccordionGroup>
 
-<Accordion title="The webhook endpoint" description="Handle incoming call webhooks from SignalWire">
+<Accordion title="Webhook endpoint" description="Set up your server to handle incoming call webhooks.">
 
 First, your server needs to handle incoming call webhooks from SignalWire.
 
@@ -436,18 +434,43 @@ app.get('/media-stream', { websocket: true }, async (connection) => {
 
 </Accordion>
 
-<Accordion title="Understanding SignalWire Stream Messages">
+<Accordion title="SignalWire Transport Layer">
+
+The `SignalWireRealtimeTransportLayer` is the critical component that bridges SignalWire's WebSocket protocol with OpenAI's Realtime API:
+
+```typescript
+// Key features of the transport layer:
+const transport = new SignalWireRealtimeTransportLayer({
+    signalWireWebSocket: connection,
+    audioFormat: 'g711_ulaw' // or 'pcm16'
+});
+
+// Automatic handling of:
+// 1. Audio format conversion
+// 2. Base64 encoding/decoding
+// 3. Interruption detection
+// 4. Mark event tracking
+// 5. Session cleanup
+```
+
+**Session Lifecycle:**
+1. **WebSocket connection** → SignalWire connects to `/media-stream`
+2. **Transport creation** → Bridge between SignalWire and OpenAI
+3. **AI session start** → RealtimeSession connects to OpenAI
+4. **Audio streaming** → Bidirectional real-time audio
+5. **Tool execution** → Function calls processed server-side
+6. **Session cleanup** → Graceful disconnect and resource cleanup
 
 SignalWire sends several types of messages through the WebSocket:
 
-| Event | Purpose | Key Data | Handled By |
-|-------|---------|----------|------------|
-| `start` | Connection initialized | `streamSid`, `callSid`, `mediaFormat` | Transport Layer |
-| `media` | Audio data packet (~20ms) | Base64 encoded `payload`, `track` | Transport Layer |
-| `mark` | Audio playback confirmation | `name` (for timing) | Transport Layer |
-| `stop` | Stream ending | None | Transport Layer |
+| Event | Purpose | Key data |
+|-------|---------|----------|
+| `start` | Connection initialized | `streamSid`, `callSid`, `mediaFormat` |
+| `media` | Audio data packet (~20ms) | Base64 encoded `payload`, `track` |
+| `mark` | Audio playback confirmation | `name` (for timing) |
+| `stop` | Stream ending | None |
 
-**Key Features of SignalWireRealtimeTransportLayer:**
+**Key features**
 - **Automatic audio format conversion** between SignalWire and OpenAI
 - **Interruption handling** using `clear` events and mark tracking
 - **Base64 encoding/decoding** for audio data
@@ -461,9 +484,7 @@ SignalWire sends several types of messages through the WebSocket:
 
 </Accordion>
 
-<Accordion title="OpenAI Realtime API integration">
-
-### Integrate with OpenAI Realtime API
+<Accordion title="OpenAI Realtime API integration" description="Integrate the OpenAI Agents SDK.">
 
 Connect your WebSocket bridge to OpenAI's Realtime API for AI processing.
 
@@ -586,7 +607,7 @@ session.on('error', (error) => {
 Set up your environment variables for different deployment scenarios:
 
 <Tabs groupId="deploy">
-<TabItem value="local" label="Local Development">
+<TabItem value="local" label="Local development">
 
 Create a `.env` file in your project root:
 
@@ -628,9 +649,7 @@ Choose the right audio format for your use case:
 
 </Accordion>
 
-</AccordionGroup>
-
-### Add Function Calling
+<Accordion title="Function calling" description="Add server-side tools to your agent.">
 
 Enable your AI to execute server-side tools during conversations.
 
@@ -847,8 +866,6 @@ const agentConfig = {
 </TabItem>
 </Tabs>
 
-<Accordion title="How Function Calling Works">
-
 1. **User asks**: "What's the weather in New York?"
 2. **AI recognizes intent**: Needs weather information
 3. **Function call triggered**: `get_weather({ location: "New York" })`
@@ -860,36 +877,11 @@ All of this happens in real-time during the conversation.
 
 </Accordion>
 
+</AccordionGroup>
+
 ---
 
 ## Technical Deep Dive
-
-### The SignalWire Transport Layer
-
-The `SignalWireRealtimeTransportLayer` is the critical component that bridges SignalWire's WebSocket protocol with OpenAI's Realtime API:
-
-```typescript
-// Key features of the transport layer:
-const transport = new SignalWireRealtimeTransportLayer({
-    signalWireWebSocket: connection,
-    audioFormat: 'g711_ulaw' // or 'pcm16'
-});
-
-// Automatic handling of:
-// 1. Audio format conversion
-// 2. Base64 encoding/decoding
-// 3. Interruption detection
-// 4. Mark event tracking
-// 5. Session cleanup
-```
-
-**Session Lifecycle:**
-1. **WebSocket Connection** → SignalWire connects to `/media-stream`
-2. **Transport Creation** → Bridge between SignalWire and OpenAI
-3. **AI Session Start** → RealtimeSession connects to OpenAI
-4. **Audio Streaming** → Bidirectional real-time audio
-5. **Tool Execution** → Function calls processed server-side
-6. **Session Cleanup** → Graceful disconnect and resource cleanup
 
 ### Audio Processing Pipeline
 
@@ -1026,7 +1018,7 @@ For production deployments:
 
 ## Deployment
 
-### Local Development
+### Local development
 
 1. **Install dependencies**
    ```bash
@@ -1283,7 +1275,10 @@ DEBUG=openai-agents:* npm run dev
 
 ## Complete example
 
-Ready to see it all in action?
+See the GitHub repo for a complete working example, including
+weather and time function examples,
+error handling,
+and a production Docker setup.
 
 <Card
   title="SignalWire + OpenAI Realtime"
@@ -1291,15 +1286,6 @@ Ready to see it all in action?
   icon={<MdCode />}
   href="https://github.com/signalwire/solutions-architecture/tree/main/code/cxml-realtime-agent-stream"
 />
-
-This reference implementation includes:
-- **Complete bidirectional streaming** - Real-time audio with zero buffering
-- **OpenAI Realtime API integration** - Latest GPT-4 Realtime model
-- **Function calling examples** - Weather and time tools included
-- **Production deployment** - Docker, health checks, logging
-- **Error handling** - Graceful fallbacks and recovery
-- **Audio optimization** - Both HD (24kHz) and telephony (8kHz) support
-- **TypeScript** - Full type safety and development experience
 
 ---
 
