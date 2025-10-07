@@ -14,7 +14,7 @@ export const llmsTxtPlugin: PluginConfig = [
   "@signalwire/docusaurus-plugin-llms-txt",
   {
 
-    logLevel: 3,
+    logLevel: 1,
     onRouteError: 'throw',
     onSectionError: 'throw',
     runOnPostBuild: true,
@@ -45,7 +45,8 @@ export const llmsTxtPlugin: PluginConfig = [
         "/events/**",
         "/assets/**",
         "/404.html",
-        "/media/**" 
+        "/media/**" ,
+        "/"
       ],
     },
 
