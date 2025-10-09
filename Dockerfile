@@ -19,7 +19,7 @@ COPY website ./website
 COPY specs ./specs
 COPY tools ./tools
 
-# Install dependencies and run postinstall (builds specs and website)
+# Install dependencies and run postinstall (builds specs)
 RUN yarn install --frozen-lockfile
 
 # Build the website
