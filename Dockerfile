@@ -34,4 +34,7 @@ COPY --from=builder /app/website/provisioning/nginx/nginx.conf /etc/nginx/nginx.
 COPY --from=builder /app/website/provisioning/nginx/redirects.map /etc/nginx/redirects.map
 COPY --from=builder /app/website/build/ /usr/share/nginx/html
 
+# Test nginx configuration
+RUN nginx -t
+
 EXPOSE 80
