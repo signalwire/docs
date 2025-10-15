@@ -1,6 +1,8 @@
 ---
 title: "SignalWire Client SDK"
 sidebar_position: 0
+sidebar_custom_props:
+  hideFromIndex: true
 ---
 
 import { SiJavascript } from "react-icons/si";
@@ -10,11 +12,11 @@ import { MdCode, MdLibraryBooks } from "react-icons/md";
   title="SignalWire Client SDK"
   titleIcon={<SiJavascript />}
   installCommand="npm install @signalwire/client"
-  docsUrl="/sdks/signalwire-client-sdk/technical-reference"
+  docsUrl="/sdks/signalwire-client-sdk/"
   status="beta"
   packages={[
     {
-      githubUrl: "https://github.com/signalwire/signalwire-client-sdk",
+      githubUrl: "https://github.com/signalwire/signalwire-sdk",
       type: "npm",
       packageName: "@signalwire/client",
     }
@@ -30,12 +32,6 @@ The SignalWire Client SDK is a JavaScript library that enables WebRTC-based voic
 The SignalWire Client SDK should be used in place of the [Browser SDK](/sdks/browser-sdk) for all new projects. The new SDK maintains the API where possible while making architectural changes to support a unified way of interacting with SignalWire's services.
 
 :::
-
-## How It Works
-
-The SDK operates through WebSocket connections that handle both method calls and real-time events. 
-When you call methods like `join()` or `publish()`, the SDK sends requests and returns promises. 
-Simultaneously, you can listen for real-time events like new members joining or messages arriving using the `.on()` method.
 
 ## Getting Started
 
@@ -57,307 +53,218 @@ Or include it via CDN:
 
 ### Set up a SWML resource
 
-Create a SWML resource from the Dashboard to get started:
+Create a [SWML Resource](/platform/call-fabric/resources/swml-scripts) from the Dashboard. 
 
 ```yaml andJson
 version: 1.0.0
 sections:
   main:
-  - answer: {}
-  - execute:
-      dest: play_music
-      params:
-        to_play: 'https://cdn.signalwire.com/swml/April_Kisses.mp3'
-  play_music:
-  - play:
-      url: "%{params.to_play}"
+  - play: "https://cdn.signalwire.com/swml/April_Kisses.mp3"
 ```
+
+Navigate to the newly created SWML Resource's `Addresses and Phone Numbers` tab, and note the Address UUID.
+
+### Create a Guest Token for that address
+
+Guest tokens are a simple way to get access to a specific address.
+
+```bash
+curl -L -g 'https://{Your_Space_Name}.signalwire.com/api/fabric/guests/tokens' \
+  -u '<Project ID>:<API Token>' \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' \
+  -d '{"allowed_addresses":["<Address UUID>"]}'
+```
+
+The API credentials can be found in your dashboard. To learn how to find it, 
+see [Your Credentials](/platform/dashboard/getting-started/your-signalwire-api-space) page.
 
 ### Test your setup
 
 Create a simple video room to test your setup:
 
 <Tabs>
-<TabItem value="npm" label="NPM Package" default>
+<TabItem value="npm" label="Vite Vanilla" default>
 
 ```javascript
-import { Video } from "@signalwire/js";
+import { SignalWire } from "@signalwire/client";
 
-// Join a video room
-const roomSession = new Video.RoomSession({
-  token: "your-room-token",  // From your server
-  rootElement: document.getElementById("video-container")
+const $ = (x: string) => document.querySelector<HTMLButtonElement>(x);
+
+$("#app")!.textContent = "Connecting ...";
+
+const client = await SignalWire({
+  token: import.meta.env.VITE_TOKEN,
 });
 
-// Listen for events
-roomSession.on("member.joined", (e) => {
-  console.log(`${e.member.name} joined the room`);
-});
+$("#app")!.innerHTML = `
+  <div>
+    <button id="startCall">Start Call</button>
+    <button id="hangupCall" disabled>Hangup</button>
+    <div id="callContainer"></div>
+  </div>
+`;
 
-roomSession.on("room.joined", () => {
-  console.log("Successfully joined the room!");
-});
+const startButton = $("#startCall")!;
+const hangupButton = $("#hangupCall")!;
+const callContainer = $("#callContainer")!;
 
-// Join the room
-await roomSession.join();
+startButton.addEventListener("click", async () => {
+  startButton.disabled = true;
+  startButton.textContent = "Connecting...";
+
+  const callSession = await client.dial({
+    to: "/private/aprilkisses",
+    rootElement: callContainer,
+  });
+
+  callSession.on("call.joined", () => {
+    startButton.textContent = "Call Joined";
+    hangupButton.disabled = false;
+  });
+
+  callSession.start();
+
+  hangupButton.addEventListener("click", () => {
+    callSession.hangup();
+    hangupButton.disabled = true;
+    startButton.disabled = false;
+    startButton.textContent = "Start Call";
+  });
+});
 ```
 
 </TabItem>
-<TabItem value="cdn" label="CDN">
+<TabItem value="cdn" label="Vanilla HTML/JS">
 
 ```html
-<script src="https://cdn.signalwire.com/@signalwire/js"></script>
-<script>
-// Access SignalWire from the global window object
-const { Video } = window.SignalWire;
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SignalWire Call Example</title>
+  </head>
+  <body>
+    <div id="app">
+      <button id="startCall">Start Call</button>
+      <button id="hangupCall" disabled>Hangup</button>
+      <div id="callContainer"></div>
+    </div>
 
-// Join a video room
-const roomSession = new Video.RoomSession({
-  token: "your-room-token",  // From your server
-  rootElement: document.getElementById("video-container")
-});
+    <script src="https://cdn.signalwire.com/@signalwire/client"></script>
+    <script>
+      const $ = (x) => document.querySelector(x);
 
-// Listen for events
-roomSession.on("member.joined", (e) => {
-  console.log(`${e.member.name} joined the room`);
-});
+      async function main() {
+        const startButton = $("#startCall");
+        const hangupButton = $("#hangupCall");
+        const callContainer = $("#callContainer");
 
-roomSession.on("room.joined", () => {
-  console.log("Successfully joined the room!");
-});
+        const client = await SignalWire.SignalWire({
+          token:
+            "<token you got from the API>",
+        });
 
-// Join the room
-roomSession.join().then(() => {
-  console.log("Join initiated");
-});
-</script>
+        let callSession;
+
+        startButton.addEventListener("click", async () => {
+          startButton.disabled = true;
+          startButton.textContent = "Connecting...";
+
+          callSession = await client.dial({
+            to: "/private/aprilkisses",
+            rootElement: callContainer,
+          });
+
+          callSession.on("call.joined", () => {
+            startButton.textContent = "Call Joined";
+            hangupButton.disabled = false;
+          });
+
+          callSession.start();
+        });
+
+        hangupButton.addEventListener("click", () => {
+          callSession.hangup();
+          hangupButton.disabled = true;
+          startButton.disabled = false;
+          startButton.textContent = "Start Call";
+        });
+      }
+
+      main();
+    </script>
+  </body>
+</html>
 ```
 
 </TabItem>
 </Tabs>
 
-Add this HTML element to your page:
-```html
-<div id="video-container"></div>
+### Walkthrough
+
+<AccordionGroup>
+<Accordion title="Initialize the SignalWire Client Instance">
+
+After you get the token from the CURL request, you can initialize the client.
+
+```javascript
+const client = await SignalWire({
+  token: "<token you got from the API>",
+});
 ```
+
+It is recommended to keep a persistent client instance for the lifetime of the application.
+
+</Accordion>
+<Accordion title="Dial to an Address">
+
+When the user clicks the `Start Call` button, you can use the `dial` method to dial the call.
+
+```javascript
+const callSession = await client.dial({
+  to: "<address for a SWML Resource or a phone number or a SIP address>",
+  rootElement: $("#callContainer")!,
+});
+```
+
+The `callSession` object is a [CallSession](/sdks/signalwire-client-sdk/call-session) object 
+that you can use to manage the call.
+
+After the call session is created, you can use the `start` method to start the call.
+
+```javascript
+callSession.start();
+```
+
+</Accordion>
+
+<Accordion title="Listening for Events">
+
+After the call session is created, you can use the `on` method to listen for events.
+
+```javascript
+callSession.on("call.joined", () => {
+  console.log("Call joined");
+  // UI Updates
+});
+```
+
+</Accordion>
+
+<Accordion title="Hangup the Call">
+
+You can use the `hangup` method to hangup the call.
+
+```javascript
+callSession.hangup();
+```
+
+</Accordion>
+
+</AccordionGroup>
 
 </Steps>
-
-## Usage Examples
-
-<Tabs>
-<TabItem value="video" label="Video Conferencing" default>
-
-```javascript
-import { Video } from "@signalwire/js";
-
-const roomSession = new Video.RoomSession({
-  token: "your-room-token",
-  rootElement: document.getElementById("video-container"),
-  video: true,
-  audio: true
-});
-
-// Handle room events
-roomSession.on("room.joined", () => {
-  console.log("Joined the video room");
-  
-  // Set up UI controls after joining
-  setupControls();
-});
-
-roomSession.on("member.joined", (e) => {
-  console.log(`${e.member.name} joined`);
-});
-
-roomSession.on("member.left", (e) => {
-  console.log(`${e.member.name} left`);
-});
-
-// Detect when members are talking
-roomSession.on("member.talking", (e) => {
-  if (e.member.id === roomSession.memberId) {
-    console.log("You are talking");
-  } else {
-    console.log(`${e.member.name} is talking`);
-  }
-});
-
-// Join the room
-await roomSession.join();
-
-// Example: Set up media controls for your UI
-function setupControls() {
-  // Toggle camera on button click
-  document.getElementById("cameraBtn").onclick = async () => {
-    if (roomSession.localVideo.active) {
-      await roomSession.videoMute();
-      console.log("Camera muted");
-    } else {
-      await roomSession.videoUnmute();
-      console.log("Camera unmuted");
-    }
-  };
-
-  // Toggle microphone on button click
-  document.getElementById("micBtn").onclick = async () => {
-    if (roomSession.localAudio.active) {
-      await roomSession.audioMute();
-      console.log("Microphone muted");
-    } else {
-      await roomSession.audioUnmute();
-      console.log("Microphone unmuted");
-    }
-  };
-}
-```
-
-</TabItem>
-<TabItem value="chat" label="Real-time Chat">
-
-```javascript
-import { Chat } from "@signalwire/js";
-
-const chatClient = new Chat.Client({
-  token: "your-chat-token"
-});
-
-// Subscribe to channels
-await chatClient.subscribe(["general", "support"]);
-
-// Listen for messages
-chatClient.on("message", (message) => {
-  console.log(`${message.member.name}: ${message.content}`);
-  // Add your custom logic to display messages in your UI
-});
-
-// Listen for member events
-chatClient.on("member.joined", (member) => {
-  console.log(`${member.name} joined the channel`);
-});
-
-chatClient.on("member.left", (member) => {
-  console.log(`${member.name} left the channel`);
-});
-
-// Send messages
-await chatClient.publish({
-  channel: "general",
-  content: "Hello everyone!"
-});
-
-// Send with metadata
-await chatClient.publish({
-  channel: "general", 
-  content: "Check out this image!",
-  meta: {
-    image_url: "https://example.com/image.jpg",
-    message_type: "image"
-  }
-});
-```
-
-</TabItem>
-<TabItem value="pubsub" label="PubSub Messaging">
-
-```javascript
-import { PubSub } from "@signalwire/js";
-
-const pubSubClient = new PubSub.Client({
-  token: "your-pubsub-token"
-});
-
-// Subscribe to channels
-await pubSubClient.subscribe(["notifications", "alerts"]);
-
-// Listen for messages
-pubSubClient.on("message", (message) => {
-  console.log(`Channel: ${message.channel}`);
-  console.log(`Content:`, message.content);
-  
-  // Handle different message types
-  if (message.channel === "alerts") {
-    console.log("Alert received:", message.content);
-    // Add your custom logic to show alerts in your UI
-  }
-});
-
-// Publish messages
-await pubSubClient.publish({
-  channel: "notifications",
-  content: {
-    type: "user_action",
-    user_id: "123",
-    action: "button_click",
-    timestamp: Date.now()
-  }
-});
-
-// Publish with metadata
-await pubSubClient.publish({
-  channel: "alerts",
-  content: "System maintenance in 30 minutes",
-  meta: {
-    priority: "high",
-    category: "maintenance"
-  }
-});
-```
-
-</TabItem>
-<TabItem value="webrtc" label="WebRTC Utilities">
-
-```javascript
-import { WebRTC, Video } from "@signalwire/js";
-
-// Check browser support
-if (WebRTC.supportsGetUserMedia()) {
-  console.log("Browser supports getUserMedia");
-}
-
-if (WebRTC.supportsGetDisplayMedia()) {
-  console.log("Browser supports screen sharing");
-}
-
-// Get available devices
-const cameras = await WebRTC.getCameraDevices();
-const microphones = await WebRTC.getMicrophoneDevices();
-const speakers = await WebRTC.getSpeakerDevices();
-
-console.log("Cameras:", cameras);
-console.log("Microphones:", microphones);
-console.log("Speakers:", speakers);
-
-// Get user media with SignalWire WebRTC helper
-const stream = await WebRTC.getUserMedia({
-  video: {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    frameRate: { ideal: 30 }
-  },
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true
-  }
-});
-
-// Use custom stream in video room
-const roomSession = new Video.RoomSession({
-  token: "your-room-token",
-  rootElement: document.getElementById("video"),
-  localStream: stream
-});
-
-// Device monitoring
-const deviceWatcher = await WebRTC.createDeviceWatcher();
-deviceWatcher.on("changed", (event) => {
-  console.log("Devices changed:", event.changes);
-  // Add your custom logic to handle device changes
-});
-```
-
-</TabItem>
-</Tabs>
 
 ## Explore the SDK
 
