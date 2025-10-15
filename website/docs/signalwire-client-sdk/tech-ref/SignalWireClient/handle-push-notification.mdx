@@ -5,53 +5,64 @@ slug: /signalwire-client/handle-push-notification
 
 import APIField from '@site/src/components/APIField';
 
-Processes incoming push notifications for call or message events, allowing the app to respond appropriately when a notification is received.
+Processes incoming push notifications for call or message events, decrypting the encrypted payload and preparing the client to handle the incoming event.
 
 ## How it works
 
-The `handlePushNotification` method processes push notification payloads received from the platform's notification system. It extracts call or message information and prepares the client to handle the incoming event.
+The `handlePushNotification` method processes encrypted push notification payloads received from the platform's notification system (APNS for iOS, FCM for Android). SignalWire sends all push notifications encrypted using AES-256-GCM encryption.
 
-## Key concepts
-
-### Notification flow
-
-1. SignalWire sends push notification to device
-2. Platform delivers notification to app
-3. App calls `handlePushNotification` with payload
-4. Client processes and triggers appropriate handlers
-
-### Platform integration
-
-This method integrates with:
-- **iOS:** APNs notifications
-- **Android:** FCM notifications
-- **Web:** Service Worker notifications
+The method:
+1. Retrieves the `push_notification_key` that was stored during device registration
+2. Extracts the encrypted invite from the platform-specific payload structure
+3. Decrypts the invite using the encryption key, IV, and authentication tag
+4. Decompresses the decrypted invite to get the SDP information
+5. Returns a Call object that can be answered or declined
 
 ## Parameters
 
-<APIField name="params" type="HandlePushNotificationParams" required>
-  The push notification payload to process.
+<APIField name="payload" type="object" required>
+  The push notification payload received from the platform's notification system.
 </APIField>
 
-<APIField name="params.notification" type="object" required>
-  The platform-specific notification data.
+### iOS payload structure
+
+<APIField name="payload.aps.alert" type="object">
+  Contains the encrypted notification data on iOS devices.
 </APIField>
 
-<APIField name="params.notification.data" type="object">
-  Custom data payload from the notification.
+<APIField name="payload.aps.alert.invite" type="string">
+  Base64-encoded encrypted invite data.
+</APIField>
+
+<APIField name="payload.aps.alert.encryption_type" type="'aes_256_gcm'">
+  The encryption algorithm used (always 'aes_256_gcm').
+</APIField>
+
+<APIField name="payload.aps.alert.iv" type="string">
+  Base64-encoded initialization vector for decryption.
+</APIField>
+
+<APIField name="payload.aps.alert.tag" type="string">
+  Base64-encoded authentication tag for AES-GCM.
+</APIField>
+
+### Android payload structure
+
+<APIField name="payload.notification.body" type="string">
+  JSON string containing the encrypted notification data on Android devices.
 </APIField>
 
 ## Signature
 
 ```typescript
-handlePushNotification(params: HandlePushNotificationParams): Promise<HandlePushNotificationResult>
+handlePushNotification(payload: IHandlePushNotificationParams): Promise<Call | null>
 ```
 
 ## Returns
 
-**Type:** `Promise<HandlePushNotificationResult>`
+**Type:** `Promise<Call | null>`
 
-Returns a Promise that resolves with information about the processed notification.
+Returns a Promise that resolves with a Call object if successful, or null if the notification couldn't be processed.
 
 ## Examples
 
@@ -59,149 +70,93 @@ Returns a Promise that resolves with information about the processed notificatio
 
 ```typescript
 async function onNotificationReceived(notification) {
-  const result = await client.handlePushNotification({
-    notification: notification
-  })
+  const pnKey = await AsyncStorage.getItem(
+    '@signalwire_push_notification_key'
+  )
   
-  console.log('Notification processed:', result)
+  if (!pnKey) {
+    console.error('Push notification key not found. Did you call registerDevice()?')
+    return
+  }
+  
+  const call = await client.handlePushNotification(notification)
+  
+  if (call) {
+    console.log('Incoming call from:', call.remotePeer)
+  }
 }
 ```
 
-### Handle Android FCM notification
+### Handle Android push notification
 
 ```typescript
-messaging.onMessage(async (payload) => {
-  const result = await client.handlePushNotification({
-    notification: payload
-  })
+messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  const call = await client.handlePushNotification(remoteMessage)
   
-  console.log('FCM notification handled:', result)
+  if (call) {
+    await call.answer()
+  }
 })
 ```
 
-### Handle notification when app is closed
+### Complete implementation with decryption
 
 ```typescript
-async function handleBackgroundNotification(notificationData) {
-  await client.online({
-    incomingCallHandlers: {
-      onCallReceived: (call) => {
-        console.log('Incoming call from notification')
-        showCallUI(call)
-      }
+client.handlePushNotification = async (payload) => {
+  const pnKeyB64 = await AsyncStorage.getItem(
+    '@signalwire_push_notification_key'
+  )
+  
+  if (!pnKeyB64) {
+    console.error('Push notification decryption key not found')
+    return null
+  }
+
+  let corePayload
+  if (payload?.aps?.alert) {
+    corePayload = payload.aps.alert
+  } else if (typeof payload?.notification?.body === 'string') {
+    try {
+      corePayload = JSON.parse(payload.notification.body)
+    } catch (e) {
+      console.error('Failed to parse notification body')
+      return null
     }
-  })
-  
-  await client.handlePushNotification({
-    notification: notificationData
-  })
-}
-```
-
-### Extract call information
-
-```typescript
-async function processCallNotification(notification) {
-  const result = await client.handlePushNotification({
-    notification: notification
-  })
-  
-  if (result.type === 'call') {
-    console.log('Incoming call from:', result.from)
-    console.log('Call ID:', result.callId)
   }
-}
-```
 
-### Show notification UI
-
-```typescript
-async function handleNotification(notification) {
-  const result = await client.handlePushNotification({
-    notification: notification
-  })
-  
-  if (result.type === 'call') {
-    showIncomingCallScreen({
-      caller: result.from,
-      callId: result.callId
-    })
-  } else if (result.type === 'message') {
-    showMessageNotification({
-      message: result.content,
-      sender: result.from
-    })
+  if (!corePayload?.invite) {
+    console.error('Push notification payload is ill-formed')
+    return null
   }
-}
-```
 
-### Error handling
+  let invite = corePayload.invite
 
-```typescript
-try {
-  const result = await client.handlePushNotification({
-    notification: notificationPayload
-  })
-  console.log('Notification handled successfully')
-} catch (error) {
-  console.error('Failed to handle notification:', error)
-}
-```
+  if (corePayload.encryption_type === 'aes_256_gcm') {
+    const ivHex = Buffer.from(corePayload.iv, 'base64').toString('hex')
+    const tagHex = Buffer.from(corePayload.tag, 'base64').toString('hex')
 
-### Handle notification with deep linking
-
-```typescript
-async function handleNotificationTap(notification) {
-  const result = await client.handlePushNotification({
-    notification: notification
-  })
-  
-  if (result.type === 'call' && result.callId) {
-    window.location.href = `/call/${result.callId}`
-  } else if (result.type === 'message' && result.conversationId) {
-    window.location.href = `/conversation/${result.conversationId}`
+    try {
+      invite = await AesGcmCrypto.decrypt(
+        corePayload.invite,
+        pnKeyB64,
+        ivHex,
+        tagHex,
+        true
+      )
+    } catch (e) {
+      console.error('Decryption failed:', e)
+      return null
+    }
   }
-}
-```
 
-### Log notification handling
+  const decompressedInvite = pako.inflate(Buffer.from(invite, 'base64'))
+  const sdpJson = JSON.parse(Buffer.from(decompressedInvite).toString('utf8'))
 
-```typescript
-async function logAndHandleNotification(notification) {
-  console.log('Received notification:', notification)
-  
-  const result = await client.handlePushNotification({
-    notification: notification
+  const call = client._handlePushNotification({
+    ...corePayload,
+    decrypted: sdpJson,
   })
   
-  console.log('Notification processing result:', {
-    type: result.type,
-    timestamp: new Date().toISOString()
-  })
+  return call
 }
 ```
-
-### Handle multiple notification types
-
-```typescript
-async function processNotification(notification) {
-  const result = await client.handlePushNotification({
-    notification: notification
-  })
-  
-  switch (result.type) {
-    case 'call':
-      handleIncomingCall(result)
-      break
-    case 'message':
-      handleIncomingMessage(result)
-      break
-    case 'voicemail':
-      handleVoicemail(result)
-      break
-    default:
-      console.log('Unknown notification type:', result.type)
-  }
-}
-```
-

@@ -1,49 +1,52 @@
 ---
 title: address.getAddresses
 slug: /signalwire-client/address-get-addresses
+description: Retrieve and filter addresses available in your SignalWire space with pagination and sorting options.
 ---
 
 import APIField from '@site/src/components/APIField';
 
-Retrieves a list of all available addresses in your SignalWire space.
-
-## How it works
-
-The `address.getAddresses` method queries the SignalWire platform for all addresses configured in your space. Addresses represent phone numbers, SIP endpoints, or other communication identifiers.
-
-## Key concepts
-
-### Address types
-
-Addresses can include:
-- Phone numbers (PSTN)
-- SIP addresses
-- WebRTC endpoints
-- Resource names
-
-### Use cases
-
-Common uses:
-- Displaying available phone numbers
-- Selecting caller ID for outbound calls
-- Managing address inventory
-- Routing configuration
-
-## Parameters
-
-None
+Retrieves addresses available to the current subscriber with filtering, sorting, and pagination.
 
 ## Signature
 
 ```typescript
-address.getAddresses(): Promise<GetAddressesResult>
+address.getAddresses(params?: GetAddressesParams): Promise<GetAddressesResult>
 ```
+
+## Parameters
+
+<APIField name="params" type="GetAddressesParams">
+  Optional configuration for filtering and sorting addresses.
+</APIField>
+
+<APIField name="params.type" type="string">
+  Filter addresses by type (e.g., phone number, SIP endpoint).
+</APIField>
+
+<APIField name="params.displayName" type="string">
+  Filter addresses by their display name.
+</APIField>
+
+<APIField name="params.pageSize" type="number">
+  Number of results to return per page.
+</APIField>
+
+<APIField name="params.sortBy" type="'name' | 'created_at'">
+  Field to sort results by. Can be either `'name'` or `'created_at'`.
+</APIField>
+
+<APIField name="params.sortOrder" type="'asc' | 'desc'">
+  Sort order. Can be either `'asc'` (ascending) or `'desc'` (descending).
+</APIField>
 
 ## Returns
 
-**Type:** `Promise<GetAddressesResult>`
+**Type:** `Promise<PaginatedResponse<GetAddressesResult>>`
 
-Returns a Promise that resolves with a list of all available addresses.
+Returns a Promise that resolves with a paginated list of address details. 
+
+For full type information, see the [`GetAddressesResult`](../Types#getaddressesresult) type.
 
 ## Examples
 
@@ -52,102 +55,33 @@ Returns a Promise that resolves with a list of all available addresses.
 ```typescript
 const result = await client.address.getAddresses()
 
-console.log('Available addresses:', result.addresses)
+console.log('Available addresses:', result.data)
 ```
 
-### Display addresses in UI
+### Filter and sort addresses
 
 ```typescript
-const result = await client.address.getAddresses()
-
-const select = document.getElementById('caller-id-select')
-
-result.addresses.forEach(address => {
-  const option = document.createElement('option')
-  option.value = address.id
-  option.textContent = address.number
-  select.appendChild(option)
+const result = await client.address.getAddresses({
+  displayName: 'Support',
+  sortBy: 'created_at',
+  sortOrder: 'desc',
+  pageSize: 10
 })
+
+console.log('Recent support addresses:', result.data)
 ```
 
-### Filter phone numbers
+### Navigate paginated results
 
 ```typescript
-const result = await client.address.getAddresses()
-
-const phoneNumbers = result.addresses.filter(
-  addr => addr.type === 'phone_number'
-)
-
-console.log('Phone numbers:', phoneNumbers)
-```
-
-### List addresses with details
-
-```typescript
-const result = await client.address.getAddresses()
-
-result.addresses.forEach(address => {
-  console.log(`ID: ${address.id}`)
-  console.log(`Number: ${address.number}`)
-  console.log(`Type: ${address.type}`)
-  console.log(`Name: ${address.name}`)
-  console.log('---')
+const result = await client.address.getAddresses({
+  pageSize: 10
 })
-```
 
-### Error handling
+console.log('First page:', result.data)
 
-```typescript
-try {
-  const result = await client.address.getAddresses()
-  console.log('Retrieved addresses:', result.addresses.length)
-} catch (error) {
-  console.error('Failed to get addresses:', error)
+if (result.hasNext) {
+  const nextPage = await result.nextPage()
+  console.log('Second page:', nextPage.data)
 }
 ```
-
-### Cache addresses
-
-```typescript
-let cachedAddresses = null
-
-async function getAddressesCached() {
-  if (!cachedAddresses) {
-    const result = await client.address.getAddresses()
-    cachedAddresses = result.addresses
-  }
-  return cachedAddresses
-}
-
-const addresses = await getAddressesCached()
-```
-
-### Select default address
-
-```typescript
-const result = await client.address.getAddresses()
-
-const defaultAddress = result.addresses.find(
-  addr => addr.isDefault
-) || result.addresses[0]
-
-console.log('Default address:', defaultAddress.number)
-```
-
-### Group addresses by type
-
-```typescript
-const result = await client.address.getAddresses()
-
-const grouped = result.addresses.reduce((acc, addr) => {
-  if (!acc[addr.type]) {
-    acc[addr.type] = []
-  }
-  acc[addr.type].push(addr)
-  return acc
-}, {})
-
-console.log('Addresses by type:', grouped)
-```
-
