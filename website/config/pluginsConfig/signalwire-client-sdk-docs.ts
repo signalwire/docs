@@ -4,10 +4,10 @@ import sidebarGenerator from "../../src/plugins/SidebarGenerator";
 export const signalwireSdkPlugin: PluginConfig = [
   "@docusaurus/plugin-content-docs",
   {
-    id: "signalwire-sdk",
-    path: "docs/signalwire-sdk",
-    routeBasePath: "sdks/signalwire-sdk",
-    sidebarPath: require.resolve("../sidebarsConfig/signalwire-sdk/index.ts"),
+    id: "signalwire-client-sdk",
+    path: "docs/signalwire-client-sdk",
+    routeBasePath: "sdks/signalwire-client-sdk",
+    sidebarPath: require.resolve("../sidebarsConfig/signalwire-client-sdk/index.ts"),
     editUrl: "https://github.com/signalwire/docs/edit/main/website",
     editCurrentVersion: true,
     docItemComponent: "@theme/ApiItem",
