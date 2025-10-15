@@ -1,0 +1,206 @@
+---
+title: conversation.getMessages
+slug: /signalwire-client/conversation-get-messages
+---
+
+import APIField from '@site/src/components/APIField';
+
+Retrieves messages across all conversations, providing a unified view of messages from multiple conversations.
+
+## How it works
+
+The `conversation.getMessages` method fetches messages from all conversations the subscriber has access to. This is useful for displaying a combined message feed or searching across conversations.
+
+## Key concepts
+
+### Cross-conversation retrieval
+
+This method:
+- Aggregates messages from multiple conversations
+- Provides a unified message feed
+- Supports filtering and sorting
+- Enables global message search
+
+### Use cases
+
+Common scenarios:
+- Displaying recent messages from all conversations
+- Search across all conversations
+- Activity feed
+- Global message notifications
+
+## Parameters
+
+<APIField name="params" type="GetMessagesParams">
+  Optional configuration for retrieving messages.
+</APIField>
+
+<APIField name="params.limit" type="number" default="50">
+  Maximum number of messages to retrieve.
+</APIField>
+
+<APIField name="params.offset" type="number" default="0">
+  Number of messages to skip (for pagination).
+</APIField>
+
+<APIField name="params.filter" type="string">
+  Optional filter criteria for messages.
+</APIField>
+
+## Signature
+
+```typescript
+conversation.getMessages(params?: GetMessagesParams): Promise<GetMessagesResult>
+```
+
+## Returns
+
+**Type:** `Promise<GetMessagesResult>`
+
+Returns a Promise that resolves with an array of messages from all conversations.
+
+## Examples
+
+### Get recent messages
+
+```typescript
+const result = await client.conversation.getMessages()
+
+console.log('Recent messages:', result.messages)
+```
+
+### Display unified message feed
+
+```typescript
+const result = await client.conversation.getMessages({
+  limit: 20
+})
+
+const feedContainer = document.getElementById('message-feed')
+
+result.messages.forEach(message => {
+  const item = document.createElement('div')
+  item.className = 'message-item'
+  item.innerHTML = `
+    <div class="message-conversation">${message.conversationName}</div>
+    <div class="message-sender">${message.from}</div>
+    <div class="message-content">${message.content}</div>
+    <div class="message-time">${new Date(message.timestamp).toLocaleString()}</div>
+  `
+  feedContainer.appendChild(item)
+})
+```
+
+### Paginate through messages
+
+```typescript
+const result = await client.conversation.getMessages({
+  limit: 20,
+  offset: 0
+})
+
+console.log(`Showing ${result.messages.length} of ${result.total} messages`)
+```
+
+### Error handling
+
+```typescript
+try {
+  const result = await client.conversation.getMessages()
+  console.log('Retrieved messages:', result.messages.length)
+} catch (error) {
+  console.error('Failed to get messages:', error)
+}
+```
+
+### Search all messages
+
+```typescript
+const result = await client.conversation.getMessages()
+
+const searchTerm = 'meeting'
+const matches = result.messages.filter(
+  msg => msg.content.toLowerCase().includes(searchTerm.toLowerCase())
+)
+
+console.log(`Found ${matches.length} messages containing "${searchTerm}"`)
+```
+
+### Group messages by conversation
+
+```typescript
+const result = await client.conversation.getMessages()
+
+const grouped = result.messages.reduce((acc, message) => {
+  if (!acc[message.conversationId]) {
+    acc[message.conversationId] = []
+  }
+  acc[message.conversationId].push(message)
+  return acc
+}, {})
+
+console.log('Messages by conversation:', grouped)
+```
+
+### Get messages from today
+
+```typescript
+const result = await client.conversation.getMessages()
+
+const today = new Date()
+today.setHours(0, 0, 0, 0)
+
+const todayMessages = result.messages.filter(
+  msg => new Date(msg.timestamp) >= today
+)
+
+console.log(`${todayMessages.length} messages today`)
+```
+
+### Load more messages
+
+```typescript
+let offset = 0
+const limit = 20
+
+async function loadMoreMessages() {
+  const result = await client.conversation.getMessages({
+    limit: limit,
+    offset: offset
+  })
+  
+  appendToFeed(result.messages)
+  offset += limit
+  
+  return result.hasMore
+}
+```
+
+### Get unread messages
+
+```typescript
+const result = await client.conversation.getMessages()
+
+const unread = result.messages.filter(
+  msg => !msg.read && msg.from !== currentUserId
+)
+
+console.log(`${unread.length} unread messages`)
+```
+
+### Activity summary
+
+```typescript
+const result = await client.conversation.getMessages({
+  limit: 100
+})
+
+const summary = {
+  total: result.messages.length,
+  conversations: new Set(result.messages.map(m => m.conversationId)).size,
+  unread: result.messages.filter(m => !m.read).length
+}
+
+console.log('Activity summary:', summary)
+```
+

@@ -33,7 +33,7 @@ const plugins: PluginConfig[] = [
   llmsTxtPlugin,
   realtimeSdkPlugin,
   browserSdkPlugin,
-  // signalwireSdkPlugin,
+  signalwireSdkPlugin,
   ogImagesPlugin,
 ];
 

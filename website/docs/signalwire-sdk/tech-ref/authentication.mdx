@@ -5,59 +5,17 @@ sidebar_position: 1
 
 # Authentication
 
-The SignalWire SDK uses the same authentication methods as the REST API.
+The SignalWire Client SDK is a browser-side library. The source code for all browser-side code is publicly available, so
+we cannot use the same token authentication method as the REST API. 
 
+Authentication is scoped to [subscribers](./about_call_fabric#subscribers). 
+You can create subscribers either through the dashboard or through the REST API.
+For temporary usage, you can create a guest token which creates a temporary subscriber 
+with limited permissions to access only the specified `allowed_address`.
 
-### REST API Token Authentication
+Depending on your use-case, several methods for authentication are available, which ensure security and scoped access.
 
-You can obtain authentication tokens directly through the REST API. The following endpoints are available for token generation:
-
-import { TbApi } from "react-icons/tb";
-
-<CardGroup cols={3}>
-<Card 
-  title="Create a Guest Token" 
-  icon={<TbApi/>} 
-  href="/rest/signalwire-rest/endpoints/fabric/guest-tokens-create"
->
-  Generate a limited-access token for guest access to specific Fabric addresses. 
-</Card>
-<Card 
-  title="Create a Subscriber Invite Token" 
-  icon={<TbApi/>} 
-  href="/rest/signalwire-rest/endpoints/fabric/invite-tokens-create"
->
-  Generate a token to access resources associated with a specific subscriber on behalf of the subscriber.
-</Card>
-<Card 
-  title="Create a new Subscriber and a Token" 
-  icon={<TbApi/>} 
-  href="/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create"
->
-  Create a new subscriber and get their token in a single request.
-</Card>
-</CardGroup>
-
-:::info
-For browser-based applications, we recommend using the OAuth2 flow to 
-authenticate subscribers and obtain tokens. See 
-[Authenticate subscribers using OAuth2](#authenticate-subscribers-using-oauth2) below for details.
-:::
-
-#### Using the Token
-
-The endpoints return a JSON object containing a `token` property. Use this token to initialize the [SignalWire Client][SignalWire Client]:
-
-```js
-import { SignalWire } from "@signalwire/js";
-
-const client = await SignalWire({
-  token: "eyJhbGciOiJIUzI1NiIs..."
-});
-```
-
-
-### Authenticate subscribers using OAuth2
+## 1. OAuth2 Subscriber Log-In
 
 When you create a Subscriber, you assign them a username (email) and a password. These credentials
 can be used authenticate the subscriber using the standard OAuth2 flow with PKCE. For OAuth2, you
@@ -122,6 +80,11 @@ const result = await authorize(config);
 A complete example is presented below.
 Assuming that this page is [`npx serve`d](https://www.npmjs.com/package/serve) at the address `http://localhost:3000`, this script takes the subscriber
 through the OAuth2 login flow, and uses the access token received to fetch the subscriber's registration details from SignalWire.
+
+
+<AccordionGroup>
+
+<Accordion title="Full Example">
 
 {/* prettier-ignore */}
 ```html title="index.html"
@@ -188,3 +151,117 @@ through the OAuth2 login flow, and uses the access token received to fetch the s
   </body>
 </html>
 ```
+
+</Accordion>
+
+</AccordionGroup>
+
+### When to use?
+
+Use this method if you're creating a new subscriber for each end-user of your application. With OAuth2, 
+they'll be able to log into your application and use your application's features without the need for a backend or
+authentication logic on your part.
+
+import { TbApi } from "react-icons/tb";
+
+{/* ## REST API Token Authentication
+
+You can obtain authentication tokens directly through the REST API. The following endpoints are available for token generation:
+
+:::info
+For browser-based applications, we recommend using the OAuth2 flow to 
+authenticate subscribers and obtain tokens. See 
+[Authenticate subscribers using OAuth2](#authenticate-subscribers-using-oauth2) below for details.
+::: */}
+
+## 2. Guest Token Authentication
+
+This method creates a temporary subscriber with limited permissions to access only the specified `allowed_addresses`.
+
+<CardGroup cols={1}>
+<Card 
+  title="Create a Guest Token" 
+  icon={<TbApi/>} 
+  href="/rest/signalwire-rest/endpoints/fabric/guest-tokens-create"
+>
+</Card>
+</CardGroup>
+
+### When to use?
+
+If you have a backend, and would like to generate a token for a specific resource without creating a new 
+permanent subscriber, this is the method to use. 
+
+## 3. Subscriber Invite Token Authentication
+
+Use this method if you're creating a subscriber invite token for a specific subscriber. This is useful if you're creating a
+temporary link for a user to access a specific resource.
+
+This method generates a token to access resources associated with a specific subscriber on behalf of the subscriber.
+
+<CardGroup cols={1}>
+<Card 
+  title="Create a Subscriber Invite Token" 
+  icon={<TbApi/>} 
+  href="/rest/signalwire-rest/endpoints/fabric/invite-tokens-create"
+/>
+</CardGroup>
+
+### When to use?
+
+Use this method if you already have a Subscriber, and would like to allow them to access resources; or if you would like to 
+access a resource on behalf of a Subscriber. 
+
+## 4. Subscriber Token Authentication
+
+This method creates a new subscriber and returns their token.
+
+<CardGroup cols={1}>
+<Card 
+  title="Create a new Subscriber and a Token" 
+  icon={<TbApi/>} 
+  href="/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create"
+>
+  Create a new subscriber and get their token in a single request.
+</Card>
+</CardGroup>
+
+### When to use?
+
+Use this method if you're creating a new subscriber and need to get their token in a single request.
+
+## 5. Exchange a C2C token for a Guest Token
+
+The [C2C widget](/tools/c2c) is a great tool to quickly embed resources into your website. When you 
+create a new C2C widget from the dashboard, you can assign a specific resource that can be accessed by it. 
+That C2C token can then be copied, and exchanged for a Guest Token to access the resource. This particular
+method is great if you don't have a backend, and you need to access a particular resource. 
+
+This particular REST API call can be performed from the browser.
+
+<CardGroup cols={1}>
+<Card 
+  title="Exchange a C2C token for a Guest Token" 
+  icon={<TbApi/>} 
+  href="/rest/signalwire-rest/endpoints/fabric/embeds-tokens-create"
+>
+  Create a new subscriber and get their token in a single request.
+</Card>
+</CardGroup>
+
+### When to use?
+
+Use this method if you don't have a backend, and you need to access a particular resource that is protected by a C2C token.
+
+## Using the Token
+
+The endpoints return a JSON object containing a `token` property. Use this token to initialize the [SignalWire Client][SignalWire Client]:
+
+```js
+import { SignalWire } from "@signalwire/js";
+
+const client = await SignalWire({
+  token: "eyJhbGciOiJIUzI1NiIs..."
+});
+```
+

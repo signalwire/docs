@@ -1,0 +1,260 @@
+---
+title: conversation.sendMessage
+slug: /signalwire-client/conversation-send-message
+---
+
+import APIField from '@site/src/components/APIField';
+
+Sends a message in a persistent conversation. Messages are stored permanently and remain accessible to all participants.
+
+## How it works
+
+The `conversation.sendMessage` method delivers a message to all participants in a persistent conversation. Unlike ephemeral chat messages, these messages are permanently stored.
+
+## Key concepts
+
+### Message persistence
+
+Conversation messages are:
+- Permanently stored
+- Accessible across sessions
+- Available to all participants
+- Synced across devices
+
+### Message delivery
+
+Messages are:
+- Delivered in real-time to active participants
+- Available for retrieval by offline participants
+- Ordered chronologically
+- Guaranteed delivery
+
+## Parameters
+
+<APIField name="params" type="SendConversationMessageParams" required>
+  Configuration for sending the message.
+</APIField>
+
+<APIField name="params.conversationId" type="string" required>
+  The unique identifier of the conversation.
+</APIField>
+
+<APIField name="params.content" type="string" required>
+  The message text to send.
+</APIField>
+
+<APIField name="params.metadata" type="object">
+  Optional metadata to attach to the message.
+</APIField>
+
+## Signature
+
+```typescript
+conversation.sendMessage(params: SendConversationMessageParams): Promise<SendConversationMessageResponse>
+```
+
+## Returns
+
+**Type:** `Promise<SendConversationMessageResponse>`
+
+Returns a Promise that resolves with the sent message details including message ID and timestamp.
+
+## Examples
+
+### Send a message
+
+```typescript
+const response = await client.conversation.sendMessage({
+  conversationId: 'conversation-id-here',
+  content: 'Hello everyone!'
+})
+
+console.log('Message sent:', response.messageId)
+```
+
+### Send message from input
+
+```typescript
+const sendButton = document.getElementById('send-btn')
+const messageInput = document.getElementById('message-input')
+
+sendButton.addEventListener('click', async () => {
+  const content = messageInput.value.trim()
+  
+  if (content) {
+    await client.conversation.sendMessage({
+      conversationId: 'conversation-id-here',
+      content: content
+    })
+    
+    messageInput.value = ''
+  }
+})
+```
+
+### Send message with metadata
+
+```typescript
+const response = await client.conversation.sendMessage({
+  conversationId: 'conversation-id-here',
+  content: 'Check out this file!',
+  metadata: {
+    type: 'file_share',
+    fileUrl: 'https://example.com/file.pdf',
+    fileName: 'document.pdf'
+  }
+})
+```
+
+### Error handling
+
+```typescript
+try {
+  await client.conversation.sendMessage({
+    conversationId: 'conversation-id-here',
+    content: 'Hello!'
+  })
+  console.log('Message sent successfully')
+} catch (error) {
+  console.error('Failed to send message:', error)
+}
+```
+
+### Send message on Enter key
+
+```typescript
+const messageInput = document.getElementById('message-input')
+
+messageInput.addEventListener('keypress', async (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    
+    const content = messageInput.value.trim()
+    
+    if (content) {
+      await client.conversation.sendMessage({
+        conversationId: 'conversation-id-here',
+        content: content
+      })
+      
+      messageInput.value = ''
+    }
+  }
+})
+```
+
+### Display sent message immediately
+
+```typescript
+async function sendAndDisplayMessage(content) {
+  const tempId = `temp-${Date.now()}`
+  
+  displayMessage({
+    id: tempId,
+    content: content,
+    from: currentUserId,
+    timestamp: new Date(),
+    status: 'sending'
+  })
+  
+  try {
+    const response = await client.conversation.sendMessage({
+      conversationId: 'conversation-id-here',
+      content: content
+    })
+    
+    updateMessage(tempId, {
+      id: response.messageId,
+      status: 'sent'
+    })
+  } catch (error) {
+    updateMessage(tempId, {
+      status: 'failed'
+    })
+    console.error('Failed to send:', error)
+  }
+}
+```
+
+### Send with retry logic
+
+```typescript
+async function sendMessageWithRetry(content, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await client.conversation.sendMessage({
+        conversationId: 'conversation-id-here',
+        content: content
+      })
+      return response
+    } catch (error) {
+      console.log(`Send attempt ${i + 1} failed`)
+      
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+      } else {
+        throw error
+      }
+    }
+  }
+}
+```
+
+### Send formatted message
+
+```typescript
+await client.conversation.sendMessage({
+  conversationId: 'conversation-id-here',
+  content: 'Important announcement!',
+  metadata: {
+    format: 'announcement',
+    priority: 'high',
+    timestamp: new Date().toISOString()
+  }
+})
+```
+
+### Reply to a message
+
+```typescript
+await client.conversation.sendMessage({
+  conversationId: 'conversation-id-here',
+  content: 'Thanks for the update!',
+  metadata: {
+    replyTo: originalMessageId,
+    quotedText: originalMessage.content
+  }
+})
+```
+
+### Send with typing indicator
+
+```typescript
+let typingTimer
+
+messageInput.addEventListener('input', () => {
+  clearTimeout(typingTimer)
+  
+  client.conversation.sendTypingIndicator({
+    conversationId: 'conversation-id-here'
+  })
+  
+  typingTimer = setTimeout(() => {
+  }, 3000)
+})
+
+messageInput.addEventListener('keypress', async (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(typingTimer)
+    
+    const content = messageInput.value.trim()
+    if (content) {
+      await client.conversation.sendMessage({
+        conversationId: 'conversation-id-here',
+        content: content
+      })
+    }
+  }
+})
+```
+

@@ -1,1 +1,396 @@
-# Events
+---
+title: Events
+slug: /signalwire-client/events
+---
+
+import APIField from '@site/src/components/APIField';
+
+The SignalWire Client emits various events that you can listen to for real-time updates about AI interactions and custom user events.
+
+## How it works
+
+The client uses an event-driven architecture where you can register listeners for specific event types. When events occur, your callback functions are invoked with relevant event data.
+
+## Event registration
+
+Use the standard `on()` method to register event listeners:
+
+```typescript
+client.on('event_name', (params) => {
+})
+```
+
+## AI events
+
+The client emits several AI-related events for tracking AI agent interactions and responses.
+
+### ai.partial_result
+
+Emitted when the AI agent provides a partial result, similar to a typing indicator. This shows the AI is processing and generating a response.
+
+<APIField name="params.text" type="string">
+  The partial text result from the AI.
+</APIField>
+
+<APIField name="params.barged" type="boolean">
+  Whether the response was interrupted (barged) by user input.
+</APIField>
+
+```typescript
+client.on("ai.partial_result", (params) => {
+  console.log('AI is generating:', params.text)
+  console.log('Was barged:', params.barged)
+})
+```
+
+### ai.speech_detect
+
+Emitted when the AI detects speech from the user. This event indicates that the user is speaking.
+
+<APIField name="params.text" type="string">
+  The detected speech text with confidence information.
+</APIField>
+
+<APIField name="params.type" type="string">
+  The type of speech detection (e.g., 'normal', 'barged').
+</APIField>
+
+```typescript
+client.on("ai.speech_detect", (params) => {
+  const cleanText = params.text.replace(/\{confidence=[\d.]+\}/, "")
+  console.log('User said:', cleanText)
+  console.log('Detection type:', params.type)
+})
+```
+
+### ai.completion
+
+Emitted when the AI agent completes a response. This is the final response from the AI.
+
+<APIField name="params.text" type="string">
+  The complete response text from the AI.
+</APIField>
+
+<APIField name="params.type" type="string">
+  Whether the response was completed normally or was 'barged' (interrupted).
+</APIField>
+
+```typescript
+client.on("ai.completion", (params) => {
+  console.log('AI completed:', params.text)
+  console.log('Was interrupted:', params.type === 'barged')
+})
+```
+
+### ai.response_utterance
+
+Emitted when the AI agent provides a spoken response utterance. This represents what the AI is actually saying.
+
+<APIField name="params.utterance" type="string">
+  The text of the AI's spoken response.
+</APIField>
+
+```typescript
+client.on("ai.response_utterance", (params) => {
+  console.log('AI is saying:', params.utterance)
+})
+```
+
+## Custom user events
+
+### user_event
+
+Emitted for custom user-defined events. This allows you to send and receive custom application-specific events.
+
+<APIField name="params" type="object">
+  Custom event data defined by your application.
+</APIField>
+
+```typescript
+client.on("user_event", (params) => {
+  console.log('User event received:', params)
+})
+```
+
+## Examples
+
+### Track AI conversation flow
+
+```typescript
+client.on("ai.speech_detect", (params) => {
+  const cleanText = params.text.replace(/\{confidence=[\d.]+\}/, "")
+  console.log('User:', cleanText)
+  updateChatUI('user', cleanText)
+})
+
+client.on("ai.partial_result", (params) => {
+  console.log('AI typing...')
+  showTypingIndicator()
+})
+
+client.on("ai.completion", (params) => {
+  console.log('AI:', params.text)
+  hideTypingIndicator()
+  updateChatUI('ai', params.text)
+})
+```
+
+### Display AI responses in UI
+
+```typescript
+const chatContainer = document.getElementById('chat-container')
+
+client.on("ai.response_utterance", (params) => {
+  const messageDiv = document.createElement('div')
+  messageDiv.className = 'ai-message'
+  messageDiv.textContent = params.utterance
+  chatContainer.appendChild(messageDiv)
+  chatContainer.scrollTop = chatContainer.scrollHeight
+})
+```
+
+### Handle barged interactions
+
+```typescript
+client.on("ai.partial_result", (params) => {
+  if (params.barged) {
+    console.log('User interrupted AI')
+    markResponseAsInterrupted()
+  }
+})
+
+client.on("ai.completion", (params) => {
+  if (params.type === 'barged') {
+    console.log('Response was interrupted')
+    showInterruptionIndicator()
+  }
+})
+```
+
+### Log AI interactions
+
+```typescript
+const conversationLog = []
+
+client.on("ai.speech_detect", (params) => {
+  conversationLog.push({
+    type: 'user',
+    text: params.text,
+    timestamp: new Date()
+  })
+})
+
+client.on("ai.completion", (params) => {
+  conversationLog.push({
+    type: 'ai',
+    text: params.text,
+    timestamp: new Date(),
+    interrupted: params.type === 'barged'
+  })
+})
+
+console.log('Conversation history:', conversationLog)
+```
+
+### Real-time transcript
+
+```typescript
+const transcriptContainer = document.getElementById('transcript')
+
+client.on("ai.speech_detect", (params) => {
+  const cleanText = params.text.replace(/\{confidence=[\d.]+\}/, "")
+  
+  const entry = document.createElement('div')
+  entry.className = 'transcript-entry user'
+  entry.innerHTML = `
+    <span class="speaker">User:</span>
+    <span class="text">${cleanText}</span>
+    <span class="time">${new Date().toLocaleTimeString()}</span>
+  `
+  transcriptContainer.appendChild(entry)
+})
+
+client.on("ai.response_utterance", (params) => {
+  const entry = document.createElement('div')
+  entry.className = 'transcript-entry ai'
+  entry.innerHTML = `
+    <span class="speaker">AI:</span>
+    <span class="text">${params.utterance}</span>
+    <span class="time">${new Date().toLocaleTimeString()}</span>
+  `
+  transcriptContainer.appendChild(entry)
+})
+```
+
+### Handle custom application events
+
+```typescript
+client.on("user_event", (params) => {
+  switch (params.action) {
+    case 'button_clicked':
+      handleButtonClick(params.buttonId)
+      break
+    case 'form_submitted':
+      handleFormSubmission(params.formData)
+      break
+    case 'status_update':
+      updateStatus(params.status)
+      break
+    default:
+      console.log('Unknown user event:', params)
+  }
+})
+```
+
+### Typing indicator for AI
+
+```typescript
+let typingIndicatorTimeout
+
+client.on("ai.partial_result", (params) => {
+  const indicator = document.getElementById('ai-typing')
+  indicator.style.display = 'block'
+  indicator.textContent = 'AI is thinking...'
+  
+  clearTimeout(typingIndicatorTimeout)
+})
+
+client.on("ai.completion", (params) => {
+  typingIndicatorTimeout = setTimeout(() => {
+    document.getElementById('ai-typing').style.display = 'none'
+  }, 500)
+})
+```
+
+### Speech confidence tracking
+
+```typescript
+client.on("ai.speech_detect", (params) => {
+  const confidenceMatch = params.text.match(/\{confidence=([\d.]+)\}/)
+  
+  if (confidenceMatch) {
+    const confidence = parseFloat(confidenceMatch[1])
+    console.log(`Speech confidence: ${(confidence * 100).toFixed(1)}%`)
+    
+    if (confidence < 0.5) {
+      console.warn('Low confidence detection')
+    }
+  }
+})
+```
+
+### Event analytics
+
+```typescript
+const analytics = {
+  totalUserMessages: 0,
+  totalAIResponses: 0,
+  interruptedResponses: 0,
+  customEvents: 0
+}
+
+client.on("ai.speech_detect", () => {
+  analytics.totalUserMessages++
+})
+
+client.on("ai.completion", (params) => {
+  analytics.totalAIResponses++
+  if (params.type === 'barged') {
+    analytics.interruptedResponses++
+  }
+})
+
+client.on("user_event", () => {
+  analytics.customEvents++
+})
+
+console.log('Analytics:', analytics)
+```
+
+### Error handling in event listeners
+
+```typescript
+client.on("ai.completion", (params) => {
+  try {
+    processAIResponse(params.text)
+    updateUI(params)
+  } catch (error) {
+    console.error('Error processing AI completion:', error)
+    showErrorMessage('Failed to process AI response')
+  }
+})
+
+client.on("user_event", (params) => {
+  try {
+    handleCustomEvent(params)
+  } catch (error) {
+    console.error('Error handling user event:', error)
+  }
+})
+```
+
+## Best practices
+
+### Remove event listeners
+
+Always remove event listeners when they're no longer needed to prevent memory leaks:
+
+```typescript
+const handler = (params) => {
+  console.log('Event received:', params)
+}
+
+client.on("ai.completion", handler)
+
+client.off("ai.completion", handler)
+```
+
+### Use event namespacing
+
+Group related event handlers for easier management:
+
+```typescript
+class AIConversationManager {
+  constructor(client) {
+    this.client = client
+    this.setupEventListeners()
+  }
+  
+  setupEventListeners() {
+    this.client.on("ai.speech_detect", this.handleSpeech.bind(this))
+    this.client.on("ai.completion", this.handleCompletion.bind(this))
+    this.client.on("ai.partial_result", this.handlePartial.bind(this))
+  }
+  
+  handleSpeech(params) {
+  }
+  
+  handleCompletion(params) {
+  }
+  
+  handlePartial(params) {
+  }
+  
+  cleanup() {
+    this.client.off("ai.speech_detect", this.handleSpeech)
+    this.client.off("ai.completion", this.handleCompletion)
+    this.client.off("ai.partial_result", this.handlePartial)
+  }
+}
+```
+
+### Debounce rapid events
+
+For events that fire frequently, consider debouncing:
+
+```typescript
+let partialResultTimeout
+
+client.on("ai.partial_result", (params) => {
+  clearTimeout(partialResultTimeout)
+  
+  partialResultTimeout = setTimeout(() => {
+    updatePartialResult(params.text)
+  }, 100)
+})
+```

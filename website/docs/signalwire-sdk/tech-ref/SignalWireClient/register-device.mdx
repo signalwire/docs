@@ -1,0 +1,180 @@
+---
+title: registerDevice
+slug: /signalwire-client/register-device
+---
+
+import APIField from '@site/src/components/APIField';
+
+Registers a device for push notifications, enabling the client to receive calls when the app is in the background or closed.
+
+## How it works
+
+The `registerDevice` method registers your device with SignalWire's push notification system. Once registered, your device can receive notifications for incoming calls and messages even when the app is not actively running.
+
+## Key concepts
+
+### Platform-specific tokens
+
+Different platforms use different token formats:
+- **iOS:** APNs device token
+- **Android:** FCM registration token
+- **Web:** Service Worker registration
+
+### Token lifecycle
+
+Device tokens can change and should be re-registered when:
+- App is reinstalled
+- Token expires or is refreshed
+- User logs in on a new device
+
+## Parameters
+
+<APIField name="params" type="RegisterDeviceParams" required>
+  Configuration for device registration.
+</APIField>
+
+<APIField name="params.deviceToken" type="string" required>
+  The platform-specific push notification token.
+</APIField>
+
+<APIField name="params.platform" type="'ios' | 'android' | 'web'">
+  The platform type for the device.
+</APIField>
+
+<APIField name="params.deviceId" type="string">
+  Optional unique identifier for the device.
+</APIField>
+
+## Signature
+
+```typescript
+registerDevice(params: RegisterDeviceParams): Promise<RegisterDeviceResponse>
+```
+
+## Returns
+
+**Type:** `Promise<RegisterDeviceResponse>`
+
+Returns a Promise that resolves when the device is successfully registered.
+
+## Examples
+
+### Register iOS device
+
+```typescript
+const response = await client.registerDevice({
+  deviceToken: 'apns-token-here',
+  platform: 'ios'
+})
+
+console.log('Device registered:', response)
+```
+
+### Register Android device
+
+```typescript
+const response = await client.registerDevice({
+  deviceToken: 'fcm-token-here',
+  platform: 'android'
+})
+
+console.log('Device registered:', response)
+```
+
+### Register with device ID
+
+```typescript
+const deviceId = localStorage.getItem('deviceId') || crypto.randomUUID()
+localStorage.setItem('deviceId', deviceId)
+
+await client.registerDevice({
+  deviceToken: 'push-token-here',
+  platform: 'ios',
+  deviceId: deviceId
+})
+```
+
+### Register on app launch
+
+```typescript
+async function initializeApp() {
+  const pushToken = await getPushNotificationToken()
+  
+  await client.registerDevice({
+    deviceToken: pushToken,
+    platform: 'ios'
+  })
+  
+  console.log('Device registered for push notifications')
+}
+
+initializeApp()
+```
+
+### Handle token refresh
+
+```typescript
+async function onTokenRefresh(newToken) {
+  try {
+    await client.registerDevice({
+      deviceToken: newToken,
+      platform: 'android'
+    })
+    console.log('Updated device token')
+  } catch (error) {
+    console.error('Failed to update device token:', error)
+  }
+}
+```
+
+### Error handling
+
+```typescript
+try {
+  await client.registerDevice({
+    deviceToken: 'device-token',
+    platform: 'ios'
+  })
+  console.log('Device registration successful')
+} catch (error) {
+  console.error('Device registration failed:', error)
+}
+```
+
+### Register with user preferences
+
+```typescript
+async function registerWithPreferences(enablePush) {
+  if (!enablePush) {
+    console.log('Push notifications disabled by user')
+    return
+  }
+  
+  const token = await requestPushPermission()
+  
+  if (token) {
+    await client.registerDevice({
+      deviceToken: token,
+      platform: 'ios'
+    })
+    console.log('Push notifications enabled')
+  }
+}
+```
+
+### Re-register after login
+
+```typescript
+async function onUserLogin(userId) {
+  const deviceToken = await getDeviceToken()
+  
+  await client.registerDevice({
+    deviceToken: deviceToken,
+    platform: 'android',
+    deviceId: `${userId}-${deviceToken.slice(0, 8)}`
+  })
+  
+  console.log('Device registered for user:', userId)
+}
+```
+

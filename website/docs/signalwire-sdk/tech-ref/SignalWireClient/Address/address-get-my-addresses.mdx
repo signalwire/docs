@@ -1,0 +1,179 @@
+---
+title: address.getMyAddresses
+slug: /signalwire-client/address-get-my-addresses
+---
+
+import APIField from '@site/src/components/APIField';
+
+Retrieves addresses associated with the current subscriber. This returns only the addresses that the authenticated user has access to.
+
+## How it works
+
+The `address.getMyAddresses` method queries the SignalWire platform for addresses specifically assigned to or accessible by the current subscriber. This is different from `getAddresses()` which returns all addresses in the space.
+
+## Key concepts
+
+### Subscriber-specific addresses
+
+The response includes only addresses that:
+- Are assigned to the current subscriber
+- The subscriber has permissions to use
+- Are configured for the subscriber's role
+
+### Use cases
+
+Retrieve subscriber addresses for:
+- Displaying user-specific caller IDs
+- Personal phone number selection
+- User address management
+- Permission-aware UI
+
+## Parameters
+
+None
+
+## Signature
+
+```typescript
+address.getMyAddresses(): Promise<GetMyAddressesResult>
+```
+
+## Returns
+
+**Type:** `Promise<GetMyAddressesResult>`
+
+Returns a Promise that resolves with a list of addresses available to the current subscriber.
+
+## Examples
+
+### Get my addresses
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+console.log('My addresses:', result.addresses)
+```
+
+### Display user's phone numbers
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+const select = document.getElementById('my-numbers-select')
+
+result.addresses.forEach(address => {
+  const option = document.createElement('option')
+  option.value = address.number
+  option.textContent = `${address.name} (${address.number})`
+  select.appendChild(option)
+})
+```
+
+### Get primary address
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+const primaryAddress = result.addresses.find(
+  addr => addr.isPrimary
+) || result.addresses[0]
+
+console.log('Primary address:', primaryAddress.number)
+```
+
+### List my addresses with details
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+console.log('Your available addresses:')
+result.addresses.forEach((address, index) => {
+  console.log(`${index + 1}. ${address.number}`)
+  console.log(`   Name: ${address.name}`)
+  console.log(`   Type: ${address.type}`)
+})
+```
+
+### Error handling
+
+```typescript
+try {
+  const result = await client.address.getMyAddresses()
+  console.log(`You have ${result.addresses.length} addresses`)
+} catch (error) {
+  console.error('Failed to get your addresses:', error)
+}
+```
+
+### Check if user has addresses
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+if (result.addresses.length === 0) {
+  console.log('You do not have any addresses configured')
+} else {
+  console.log(`You have ${result.addresses.length} address(es)`)
+}
+```
+
+### Filter my phone numbers
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+const phoneNumbers = result.addresses.filter(
+  addr => addr.type === 'phone_number'
+)
+
+console.log('My phone numbers:', phoneNumbers.map(a => a.number))
+```
+
+### Use my address for outbound call
+
+```typescript
+const result = await client.address.getMyAddresses()
+
+if (result.addresses.length > 0) {
+  const myNumber = result.addresses[0].number
+  
+  const callSession = await client.dial({
+    to: '+15551234567',
+    from: myNumber
+  })
+  
+  console.log('Calling from my number:', myNumber)
+} else {
+  console.error('No addresses available')
+}
+```
+
+### Compare my addresses with all addresses
+
+```typescript
+const myAddresses = await client.address.getMyAddresses()
+const allAddresses = await client.address.getAddresses()
+
+console.log(`I have access to ${myAddresses.addresses.length} addresses`)
+console.log(`Total addresses in space: ${allAddresses.addresses.length}`)
+```
+
+### Select preferred address
+
+```typescript
+async function selectPreferredAddress() {
+  const result = await client.address.getMyAddresses()
+  
+  const preferred = localStorage.getItem('preferredAddress')
+  
+  const address = result.addresses.find(
+    addr => addr.id === preferred
+  ) || result.addresses[0]
+  
+  return address
+}
+
+const address = await selectPreferredAddress()
+console.log('Using address:', address.number)
+```
+

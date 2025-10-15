@@ -1,0 +1,238 @@
+---
+title: conversation.subscribe
+slug: /signalwire-client/conversation-subscribe
+---
+
+import APIField from '@site/src/components/APIField';
+
+Subscribes to real-time conversation events, allowing you to receive notifications for new messages, participant changes, and other conversation updates.
+
+## How it works
+
+The `conversation.subscribe` method establishes a real-time subscription to conversation events. When events occur (new messages, participants joining/leaving, etc.), your callback function is invoked with event details.
+
+## Key concepts
+
+### Real-time subscriptions
+
+Subscriptions provide:
+- Instant event notifications
+- Live conversation updates
+- Bi-directional communication
+- Event-driven architecture
+
+### Event types
+
+Common events include:
+- New messages
+- Message updates/deletions
+- Participant joined/left
+- Conversation metadata changes
+- Typing indicators
+
+## Parameters
+
+<APIField name="callback" type="ConversationSubscribeCallback" required>
+  Callback function invoked when conversation events occur.
+</APIField>
+
+## Signature
+
+```typescript
+conversation.subscribe(callback: ConversationSubscribeCallback): Promise<ConversationSubscribeResult>
+```
+
+## Returns
+
+**Type:** `Promise<ConversationSubscribeResult>`
+
+Returns a Promise that resolves with subscription details including an unsubscribe method.
+
+## Examples
+
+### Subscribe to conversation events
+
+```typescript
+const subscription = await client.conversation.subscribe((event) => {
+  console.log('Conversation event:', event.type)
+  
+  if (event.type === 'message.created') {
+    console.log('New message:', event.message.content)
+  }
+})
+```
+
+### Handle different event types
+
+```typescript
+await client.conversation.subscribe((event) => {
+  switch (event.type) {
+    case 'message.created':
+      displayNewMessage(event.message)
+      break
+    case 'message.updated':
+      updateMessage(event.message)
+      break
+    case 'message.deleted':
+      removeMessage(event.messageId)
+      break
+    case 'participant.joined':
+      console.log(`${event.participant.name} joined`)
+      break
+    case 'participant.left':
+      console.log(`${event.participant.name} left`)
+      break
+  }
+})
+```
+
+### Subscribe with UI updates
+
+```typescript
+await client.conversation.subscribe((event) => {
+  if (event.type === 'message.created') {
+    const chatContainer = document.getElementById('chat-messages')
+    
+    const messageDiv = document.createElement('div')
+    messageDiv.className = 'message'
+    messageDiv.innerHTML = `
+      <div class="sender">${event.message.from}</div>
+      <div class="content">${event.message.content}</div>
+      <div class="timestamp">${new Date(event.message.timestamp).toLocaleTimeString()}</div>
+    `
+    
+    chatContainer.appendChild(messageDiv)
+    chatContainer.scrollTop = chatContainer.scrollHeight
+  }
+})
+```
+
+### Unsubscribe when done
+
+```typescript
+const subscription = await client.conversation.subscribe((event) => {
+  console.log('Event:', event.type)
+})
+
+await subscription.unsubscribe()
+console.log('Unsubscribed from conversation events')
+```
+
+### Error handling
+
+```typescript
+try {
+  await client.conversation.subscribe((event) => {
+    handleEvent(event)
+  })
+  console.log('Subscribed to conversation updates')
+} catch (error) {
+  console.error('Failed to subscribe:', error)
+}
+```
+
+### Filter events by conversation
+
+```typescript
+const activeConversationId = 'conversation-id-here'
+
+await client.conversation.subscribe((event) => {
+  if (event.conversationId === activeConversationId) {
+    handleEvent(event)
+  }
+})
+```
+
+### Play notification sound
+
+```typescript
+const notificationSound = new Audio('/notification.mp3')
+
+await client.conversation.subscribe((event) => {
+  if (event.type === 'message.created') {
+    displayMessage(event.message)
+    
+    if (event.message.from !== currentUserId) {
+      notificationSound.play()
+    }
+  }
+})
+```
+
+### Update unread count
+
+```typescript
+let unreadCount = 0
+
+await client.conversation.subscribe((event) => {
+  if (event.type === 'message.created' && event.message.from !== currentUserId) {
+    unreadCount++
+    document.getElementById('unread-badge').textContent = unreadCount
+  }
+})
+```
+
+### Track typing indicators
+
+```typescript
+const typingUsers = new Set()
+
+await client.conversation.subscribe((event) => {
+  if (event.type === 'typing.started') {
+    typingUsers.add(event.userId)
+    updateTypingIndicator(typingUsers)
+  } else if (event.type === 'typing.stopped') {
+    typingUsers.delete(event.userId)
+    updateTypingIndicator(typingUsers)
+  }
+})
+
+function updateTypingIndicator(users) {
+  const indicator = document.getElementById('typing-indicator')
+  
+  if (users.size === 0) {
+    indicator.textContent = ''
+  } else if (users.size === 1) {
+    indicator.textContent = `${Array.from(users)[0]} is typing...`
+  } else {
+    indicator.textContent = `${users.size} people are typing...`
+  }
+}
+```
+
+### Manage subscription lifecycle
+
+```typescript
+let conversationSubscription = null
+
+async function enableConversationUpdates() {
+  conversationSubscription = await client.conversation.subscribe((event) => {
+    handleConversationEvent(event)
+  })
+}
+
+async function disableConversationUpdates() {
+  if (conversationSubscription) {
+    await conversationSubscription.unsubscribe()
+    conversationSubscription = null
+  }
+}
+```
+
+### Log all conversation activity
+
+```typescript
+await client.conversation.subscribe((event) => {
+  console.log(`[${new Date().toISOString()}] ${event.type}`, event)
+  
+  const logEntry = {
+    timestamp: new Date(),
+    eventType: event.type,
+    conversationId: event.conversationId,
+    details: event
+  }
+  
+  saveToActivityLog(logEntry)
+})
+```
+

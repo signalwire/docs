@@ -1,0 +1,207 @@
+---
+title: handlePushNotification
+slug: /signalwire-client/handle-push-notification
+---
+
+import APIField from '@site/src/components/APIField';
+
+Processes incoming push notifications for call or message events, allowing the app to respond appropriately when a notification is received.
+
+## How it works
+
+The `handlePushNotification` method processes push notification payloads received from the platform's notification system. It extracts call or message information and prepares the client to handle the incoming event.
+
+## Key concepts
+
+### Notification flow
+
+1. SignalWire sends push notification to device
+2. Platform delivers notification to app
+3. App calls `handlePushNotification` with payload
+4. Client processes and triggers appropriate handlers
+
+### Platform integration
+
+This method integrates with:
+- **iOS:** APNs notifications
+- **Android:** FCM notifications
+- **Web:** Service Worker notifications
+
+## Parameters
+
+<APIField name="params" type="HandlePushNotificationParams" required>
+  The push notification payload to process.
+</APIField>
+
+<APIField name="params.notification" type="object" required>
+  The platform-specific notification data.
+</APIField>
+
+<APIField name="params.notification.data" type="object">
+  Custom data payload from the notification.
+</APIField>
+
+## Signature
+
+```typescript
+handlePushNotification(params: HandlePushNotificationParams): Promise<HandlePushNotificationResult>
+```
+
+## Returns
+
+**Type:** `Promise<HandlePushNotificationResult>`
+
+Returns a Promise that resolves with information about the processed notification.
+
+## Examples
+
+### Handle iOS push notification
+
+```typescript
+async function onNotificationReceived(notification) {
+  const result = await client.handlePushNotification({
+    notification: notification
+  })
+  
+  console.log('Notification processed:', result)
+}
+```
+
+### Handle Android FCM notification
+
+```typescript
+messaging.onMessage(async (payload) => {
+  const result = await client.handlePushNotification({
+    notification: payload
+  })
+  
+  console.log('FCM notification handled:', result)
+})
+```
+
+### Handle notification when app is closed
+
+```typescript
+async function handleBackgroundNotification(notificationData) {
+  await client.online({
+    incomingCallHandlers: {
+      onCallReceived: (call) => {
+        console.log('Incoming call from notification')
+        showCallUI(call)
+      }
+    }
+  })
+  
+  await client.handlePushNotification({
+    notification: notificationData
+  })
+}
+```
+
+### Extract call information
+
+```typescript
+async function processCallNotification(notification) {
+  const result = await client.handlePushNotification({
+    notification: notification
+  })
+  
+  if (result.type === 'call') {
+    console.log('Incoming call from:', result.from)
+    console.log('Call ID:', result.callId)
+  }
+}
+```
+
+### Show notification UI
+
+```typescript
+async function handleNotification(notification) {
+  const result = await client.handlePushNotification({
+    notification: notification
+  })
+  
+  if (result.type === 'call') {
+    showIncomingCallScreen({
+      caller: result.from,
+      callId: result.callId
+    })
+  } else if (result.type === 'message') {
+    showMessageNotification({
+      message: result.content,
+      sender: result.from
+    })
+  }
+}
+```
+
+### Error handling
+
+```typescript
+try {
+  const result = await client.handlePushNotification({
+    notification: notificationPayload
+  })
+  console.log('Notification handled successfully')
+} catch (error) {
+  console.error('Failed to handle notification:', error)
+}
+```
+
+### Handle notification with deep linking
+
+```typescript
+async function handleNotificationTap(notification) {
+  const result = await client.handlePushNotification({
+    notification: notification
+  })
+  
+  if (result.type === 'call' && result.callId) {
+    window.location.href = `/call/${result.callId}`
+  } else if (result.type === 'message' && result.conversationId) {
+    window.location.href = `/conversation/${result.conversationId}`
+  }
+}
+```
+
+### Log notification handling
+
+```typescript
+async function logAndHandleNotification(notification) {
+  console.log('Received notification:', notification)
+  
+  const result = await client.handlePushNotification({
+    notification: notification
+  })
+  
+  console.log('Notification processing result:', {
+    type: result.type,
+    timestamp: new Date().toISOString()
+  })
+}
+```
+
+### Handle multiple notification types
+
+```typescript
+async function processNotification(notification) {
+  const result = await client.handlePushNotification({
+    notification: notification
+  })
+  
+  switch (result.type) {
+    case 'call':
+      handleIncomingCall(result)
+      break
+    case 'message':
+      handleIncomingMessage(result)
+      break
+    case 'voicemail':
+      handleVoicemail(result)
+      break
+    default:
+      console.log('Unknown notification type:', result.type)
+  }
+}
+```
+

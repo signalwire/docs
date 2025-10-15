@@ -1,0 +1,202 @@
+---
+title: online
+slug: /signalwire-client/online
+---
+
+import APIField from '@site/src/components/APIField';
+
+Brings the client online to receive incoming calls and messages. This method registers callback handlers for incoming call events.
+
+## How it works
+
+The `online` method establishes the client's availability on the SignalWire network. Once online, the client can receive incoming calls and other real-time events through the provided callback handlers.
+
+## Key concepts
+
+### Availability state
+
+- **Offline:** Client cannot receive incoming calls or messages
+- **Online:** Client is registered and can receive incoming calls and messages
+
+### Callback handlers
+
+You must provide handlers for incoming calls. These callbacks are invoked when events occur, allowing you to manage incoming calls appropriately.
+
+## Parameters
+
+<APIField name="incomingCallHandlers" type="OnlineParams" required>
+  Configuration object containing callback handlers for incoming call events.
+</APIField>
+
+<APIField name="incomingCallHandlers.onCallReceived" type="(call: CallSession) => void" required>
+  Called when an incoming call is received. Provides a CallSession object for the incoming call.
+</APIField>
+
+<APIField name="incomingCallHandlers.onCallEnded" type="(call: CallSession) => void">
+  Called when an incoming call ends before being answered.
+</APIField>
+
+## Signature
+
+```typescript
+online(incomingCallHandlers: OnlineParams): Promise<void>
+```
+
+## Returns
+
+**Type:** `Promise<void>`
+
+Returns a Promise that resolves when the client is successfully online.
+
+## Examples
+
+### Basic online setup
+
+```typescript
+await client.online({
+  incomingCallHandlers: {
+    onCallReceived: (call) => {
+      console.log('Incoming call from:', call.from)
+      call.answer()
+    }
+  }
+})
+
+console.log('Client is now online')
+```
+
+### Handle incoming calls with UI
+
+```typescript
+await client.online({
+  incomingCallHandlers: {
+    onCallReceived: (call) => {
+      const notification = document.getElementById('call-notification')
+      notification.textContent = `Incoming call from ${call.from}`
+      notification.style.display = 'block'
+      
+      const answerBtn = document.getElementById('answer-btn')
+      answerBtn.onclick = () => {
+        call.answer()
+        notification.style.display = 'none'
+      }
+      
+      const rejectBtn = document.getElementById('reject-btn')
+      rejectBtn.onclick = () => {
+        call.hangup()
+        notification.style.display = 'none'
+      }
+    }
+  }
+})
+```
+
+### Handle call ended events
+
+```typescript
+await client.online({
+  incomingCallHandlers: {
+    onCallReceived: (call) => {
+      console.log('Incoming call:', call.id)
+    },
+    onCallEnded: (call) => {
+      console.log('Call ended:', call.id)
+    }
+  }
+})
+```
+
+### Auto-answer incoming calls
+
+```typescript
+await client.online({
+  incomingCallHandlers: {
+    onCallReceived: async (call) => {
+      console.log('Auto-answering call from:', call.from)
+      await call.answer()
+    }
+  }
+})
+```
+
+### Log incoming call details
+
+```typescript
+await client.online({
+  incomingCallHandlers: {
+    onCallReceived: (call) => {
+      console.log('Incoming call details:', {
+        id: call.id,
+        from: call.from,
+        to: call.to,
+        timestamp: new Date().toISOString()
+      })
+      
+      call.answer()
+    }
+  }
+})
+```
+
+### Go online after authentication
+
+```typescript
+async function initialize() {
+  const token = await getAuthToken()
+  const client = await SignalWire.Client({ token })
+  
+  await client.online({
+    incomingCallHandlers: {
+      onCallReceived: (call) => {
+        handleIncomingCall(call)
+      }
+    }
+  })
+  
+  console.log('Client initialized and online')
+}
+
+initialize()
+```
+
+### Toggle online/offline state
+
+```typescript
+let isOnline = false
+
+async function toggleOnlineState() {
+  if (isOnline) {
+    await client.offline()
+    console.log('Now offline')
+  } else {
+    await client.online({
+      incomingCallHandlers: {
+        onCallReceived: (call) => {
+          console.log('Incoming call:', call.id)
+        }
+      }
+    })
+    console.log('Now online')
+  }
+  
+  isOnline = !isOnline
+}
+```
+
+### Error handling
+
+```typescript
+try {
+  await client.online({
+    incomingCallHandlers: {
+      onCallReceived: (call) => {
+        console.log('Incoming call:', call.id)
+      }
+    }
+  })
+  console.log('Successfully online')
+} catch (error) {
+  console.error('Failed to go online:', error)
+}
+```
+
