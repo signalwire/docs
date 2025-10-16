@@ -4,7 +4,7 @@ const signalwireSdkSidebar: SidebarsConfig = {
   signalwireSdkSidebar: [
     {
       type: "category",
-      label: "Browser SDK",
+      label: "SignalWire Client SDK",
       collapsible: false,
       className: "menu-category",
       items: [
