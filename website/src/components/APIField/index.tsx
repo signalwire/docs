@@ -12,7 +12,7 @@ export interface APIFieldProps {
    * The type of the parameter (e.g., 'string', 'number', 'boolean', 'Promise<void>')
    * Supports markdown-style links: [TypeName](/path/to/type#anchor)
    */
-  type: string;
+  type?: string;
   /**
    * Whether the parameter is required
    */
@@ -101,9 +101,11 @@ export const APIField: React.FC<APIFieldProps> = ({
             {name}
           </span>
         </div>
-        <span className={styles.fieldType}>
-          {parseTypeLinks(type)}
-        </span>
+        {type && (
+          <span className={styles.fieldType}>
+            {parseTypeLinks(type)}
+          </span>
+        )}
         {required && <span className={styles.fieldBadge}>required</span>}
         {deprecated && <span className={clsx(styles.fieldBadge, styles.deprecatedBadge)}>deprecated</span>}
       </div>
