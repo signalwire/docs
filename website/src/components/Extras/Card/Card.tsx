@@ -66,7 +66,7 @@ export function Card<T extends ElementType = "div">({
   const Component = as || props.href != undefined ? Link : "div";
   const isImageSrc: boolean = typeof icon === "string";
 
-  const renderIcon: JSX.Element = (
+  const renderIcon: ReactNode = (
     <>
       {icon ? (
         isImageSrc ? (
@@ -98,11 +98,7 @@ export function Card<T extends ElementType = "div">({
             {title} {titleIcon ? titleIcon : null}
           </h2>
         )}
-        {description && (
-          <p className={styles.description}>
-            {description}
-          </p>
-        )}
+        {description && <p className={styles.description}>{description}</p>}
         <span className={`${styles.content} ${!title ? styles.contentNoTitle : ""}`}>
           {children}
         </span>
