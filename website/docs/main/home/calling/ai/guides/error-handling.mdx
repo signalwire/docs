@@ -1,0 +1,178 @@
+---
+title: Error handling
+description: How to handle failure gracefully and avoid disruption to users
+slug: /ai/guides/error-handling
+---
+
+# Error handling
+
+The SignalWire AI platform includes mature error handling features that prioritizes user experience and system reliability.
+The use of human-like error messages, graceful degradation, and retry logic ensures that users receive a professional experience even during system difficulties. 
+
+The error handling patterns demonstrate a mature approach to production AI system reliability, with comprehensive logging, event notification, and fallback mechanisms
+
+## Overview
+
+SignalWire AI communicates user-facing error messages via `ais_say()` messages comunicating the conditions that trigger session termination. 
+The system employs a graceful degradation approach with polite, human-like error messages to maintain user experience even during failures.
+
+## Error types
+
+This guide differentiates between fatal and recoverable errors.
+
+### Fatal errors
+
+This type of error causes the session to terminate.
+
+| Error type                      | Message                                                  | Trigger conditions                                                                                                                                                                                                                   | Details                                                                                                                                                                                                                                                         |
+| ------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI text generation/streaming    | "I'm sorry I am having a migrane. I have to hangup now." | <ul><li>Fatal error flag is set during AI response processing</li><li>Occurs in `ai_send_text()` function during streaming operations</li><li>Typically indicates severe API communication failures or malformed responses</li></ul> | <ul><li>Sets `ais->offhook = 0` to terminate the call</li><li>Fires a `calling.ai.error` event with fatal flag</li><li>Logs error details to system logs</li><li>Used when the AI system cannot recover from the error</li></ul>                                |
+| Maximum retry attempts exceeded | "I'm sorry I am having a problem. I have to hangup now." | <ul><li>Error count exceeds `settings->max_tries` (default: 3, post-processing: 10)</li><li>Only triggered during streaming operations (`if (stream)`)</li><li>Indicates persistent communication or processing failures</li></ul>   | <ul><li>Only spoken during streaming mode</li><li>Implements exponential backoff retry logic before this message</li><li>Sets `ais->offhook = 0` to terminate the call</li><li>Default `max_tries` is 3 for normal operations, 10 for post-processing</li></ul> |
+
+
+### Recoverable errors
+
+This type of error does not terminate the session.
+
+#### 2.1 "I'm sorry, can you hold on for a second?"
+
+**Context:** First retry attempt  
+**Trigger Conditions:**
+- `errors == 1` (first error encountered)
+- System will retry the operation after this message
+- Implements exponential backoff (waits `errors` seconds before retry)
+
+**Technical Details:**
+- Polite way to indicate temporary processing delay
+- Implements exponential backoff (1 second, then 2 seconds, etc.)
+- Session continues after retry delay
+- Does not terminate the call
+
+### 3. Voice/TTS Configuration Errors (Non-Terminating)
+
+#### 3.1 "There was an error with your voice selection, please check your syntax. using a default voice instead."
+
+**Context:** Voice configuration failure with fallback  
+**Trigger Conditions:**
+- TTS engine initialization fails with specified voice parameters
+- System falls back to default Google Cloud voice (`gcloud`, `en-US-Neural2-J`)
+- Occurs during session initialization and runtime voice changes
+
+**Technical Details:**
+- Graceful degradation to default voice
+- Session continues with fallback configuration
+- Provides user feedback about configuration issue
+- Suggests syntax checking for voice parameters
+
+#### 3.2 "There was an error with the current voice, sorry for the trouble."
+
+**Context:** Runtime voice switching failure  
+**Trigger Conditions:**
+- Voice switching fails during active conversation
+- Occurs in the output thread during TTS processing
+- System attempts to recover by switching to default voice
+
+**Technical Details:**
+- Attempts fallback to default voice
+- If fallback fails, sets `ais->running = 0`
+- More apologetic tone for runtime interruption
+- Indicates temporary service disruption
+
+## Session termination patterns
+
+### Termination Triggers (`ais->offhook = 0`)
+
+The system terminates sessions by setting `ais->offhook = 0` in the following scenarios:
+
+1. **Fatal AI Processing Errors** 
+   - Unrecoverable API communication failures
+   - Malformed response data
+   - Critical system errors
+
+2. **Maximum Retry Exceeded** 
+   - Persistent communication failures
+   - Repeated processing errors
+   - System reliability threshold exceeded
+
+3. **Function-Triggered Hangup** 
+   - Explicit hangup command from AI functions
+   - Controlled session termination
+   - User or system-initiated disconnect
+
+4. **Transfer Operations** 
+   - Call transfer scenarios
+   - Session handoff to other systems
+   - Controlled termination for routing
+
+## Error Recovery Mechanisms
+
+### Retry Logic
+- **Exponential Backoff:** Wait time increases with each retry (1s, 2s, 3s...)
+- **Maximum Attempts:** Configurable via `max_tries` (default: 3, post-processing: 10)
+- **Graceful Messages:** User-friendly notifications during retry attempts
+
+### Fallback Strategies
+- **Default Voice:** Falls back to `gcloud` `en-US-Neural2-J` on voice failures
+- **Service Degradation:** Continues with reduced functionality rather than termination
+- **Error Logging:** Comprehensive logging for debugging while maintaining user experience
+
+### Event System
+- **Error Events:** Fires `calling.ai.error` events for external monitoring
+- **Fatal Flag:** Distinguishes between recoverable and fatal errors
+- **Structured Data:** JSON error objects with detailed information
+
+## Best Practices Implemented
+
+### User Experience
+1. **Polite Language:** All error messages use apologetic, human-like language
+2. **Clear Communication:** Messages explain the situation without technical jargon
+3. **Expectation Setting:** Users are informed about delays and recovery attempts
+4. **Graceful Degradation:** System continues operation when possible
+
+### Technical Robustness
+1. **Comprehensive Logging:** All errors logged with appropriate severity levels
+2. **Event Notification:** External systems notified of error conditions
+3. **Resource Cleanup:** Proper memory and resource management during errors
+4. **State Management:** Consistent session state during error conditions
+
+### Error Classification
+1. **Fatal vs Recoverable:** Clear distinction between error types
+2. **Context Awareness:** Different handling for different operational contexts
+3. **Retry Strategies:** Appropriate retry logic for different error types
+4. **Fallback Mechanisms:** Multiple levels of service degradation
+
+## Configuration
+
+The following parameters configure error handling, fallback behavior, and reporting.
+
+### Retry Settings
+- `max_tries`: Maximum retry attempts (default: 3, post-processing: 10)
+- Exponential backoff timing: `errors * 1 second`
+
+### Voice Fallback
+- Default engine: `gcloud`
+- Default voice: `en-US-Neural2-J`
+- Automatic fallback on configuration errors
+
+### Error Reporting
+- Event type: `calling.ai.error`
+- Includes fatal flag and error details
+- Structured JSON error objects
+
+## Monitor and debug
+
+### Log Levels
+- **ERROR:** Fatal conditions and session terminations
+- **WARNING:** Retry attempts and recoverable errors
+- **INFO:** General error recovery information
+- **DEBUG:** Detailed technical information
+
+### Event Monitoring
+- Monitor `calling.ai.error` events for system health
+- Track fatal vs non-fatal error ratios
+- Analyze retry patterns and success rates
+
+### Performance Metrics
+- Track error rates by error type
+- Monitor retry success rates
+- Measure recovery times and user impact
