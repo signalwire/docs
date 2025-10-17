@@ -1,7 +1,11 @@
 ---
 title: answer
 slug: /call-session/answer
+description: Answers an incoming call and establishes the WebRTC connection.
 ---
+
+[event-call-joined]: /sdks/signalwire-sdk/call-session/events#calljoined
+[event-room-subscribed]: /sdks/signalwire-sdk/call-session/events#roomsubscribed
 
 Answers an incoming call and establishes the WebRTC connection.
 
@@ -36,89 +40,27 @@ client.on('call.received', (notification) => {
 await call.answer()
 ```
 
-**Lifecycle Events:** When answering a call, listen for these events:
-- `call.joined` - Call successfully answered and joined
-- `room.subscribed` - Subscribed to call room events
-- `destroy` - Call failed to answer or was terminated
-
 **Inbound Call Direction:** The `answer()` method is only relevant for inbound calls (calls you receive). For outbound calls initiated with `client.dial()`, use `start()` instead.
 
 ## Events
 
 When answering a call, the following events are emitted:
-- `call.joined` - Successfully joined the call
-- `room.subscribed` - Subscribed to call events
+- [`call.joined`][event-call-joined] - Successfully joined the call
+- [`room.subscribed`][event-room-subscribed] - Subscribed to call events
 - Connection state events: `connecting`, `connected`, etc.
 - `destroy` - Call failed or ended
 
-## Examples
-
-### Standard Pattern (Recommended)
-
-Use `invite.accept()` when handling incoming calls:
+## Example
 
 ```typescript
-// Set up incoming call handler
-client.on('call.received', (notification) => {
-  console.log('Incoming call from:', notification.invite.details.caller_id_name)
+// Initialize client and handle incoming calls
+const client = await SignalWire({ token: '<your-token>' })
 
-  // Accept the incoming call - this internally handles the answer process
+// Answer incoming call using invite.accept() (recommended)
+client.on('call.received', (notification) => {
   const call = notification.invite.accept({
     audio: true,
     video: true
   })
-
-  // Call is now answered and connecting
-  call.on('call.joined', () => {
-    console.log('Call answered and joined successfully')
-  })
-})
-```
-
-### With Call Parameters
-
-```typescript
-client.on('call.received', (notification) => {
-  const call = notification.invite.accept({
-    audio: true,
-    video: false,  // Audio-only call
-    rootElement: document.getElementById('video-container')
-  })
-
-  call.on('call.joined', () => {
-    console.log('Audio call answered')
-  })
-})
-```
-
-### Rejecting Instead of Answering
-
-```typescript
-client.on('call.received', (notification) => {
-  const callerName = notification.invite.details.caller_id_name
-
-  // Reject the call
-  await notification.invite.reject()
-  console.log(`Rejected call from ${callerName}`)
-})
-```
-
-### Error Handling
-
-```typescript
-client.on('call.received', (notification) => {
-  try {
-    const call = notification.invite.accept({ audio: true, video: true })
-
-    call.on('call.joined', () => {
-      console.log('Call answered successfully')
-    })
-
-    call.on('destroy', () => {
-      console.error('Call failed to connect')
-    })
-  } catch (error) {
-    console.error('Failed to accept call:', error)
-  }
 })
 ```
