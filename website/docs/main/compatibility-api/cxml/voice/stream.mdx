@@ -28,7 +28,7 @@ An example on how to use Stream:
 
 This cXML will instruct Signalwire to make a copy of the audio frames of the current call and send them in near real-time over WebSocket to wss://your-application.com/audiostream.
 
-`<Stream>` will start the audio stream asynchronous manner it will continue with the next cXML instruction at once. In case there is no instruction, Signalwire disconnect the call.
+`<Stream>` will start the audio stream in an asynchronous manner; it will continue with the next cXML instruction at once. In case there is no instruction, Signalwire will disconnect the call.
 
 <Tabs  groupId="cxml-api">
 <TabItem value="JavaScript">
@@ -109,11 +109,13 @@ puts response
 <Tabs  groupId="Stream">
 <TabItem value="Stream">
 
-|                                                             Attribute |                                                                                                                                                                                                                              |
+|                                                             Attribute | Description                                                                                                                                                                                                                              |
 | --------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 |                 `url` <span className="required-arg">required</span>  | Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is `wss`. For security reasons `ws` is NOT supported. |
+|                 `authBearerToken` <span className="optional-arg">optional</span> | An authentication Bearer token that can be supplied when starting a stream. The remote server can then authenticate the websocket connection request from the supplied token. More information can be found in the [WebSocket connection](#websocket-connection) section. |
 |                 `codec` <span className="optional-arg">optional</span> | The codecs attribute allows you to control the set codec to be used on the stream. **Possible Values**: `L16@24000h` & `L16@16000h` |
 |                 `name` <span className="optional-arg">optional</span> | Unique name for the Stream, per Call. It is used to stop a Stream by name.                                                                                                                                                   |
+|                 `realtime` <span className="optional-arg">optional</span> | If `true`, and the stream is [`bidirectional`](/compatibility-api/cxml/voice/connect#bidirectional-media-stream), the stream offers a realtime experience to the call parties by managing packet delays and bursts. If `false`, the use benefits from buffered audio, which can be played out with delay. Default: `false` |
 |                `track` <span className="optional-arg">optional</span> | This attribute can be one of: `inbound_track`, `outbound_track`, `both_tracks` . Defaults to `inbound_track`. For `both_tracks` there will be both `inbound_track` and `outbound_track` events.                              |
 |       `statusCallback` <span className="optional-arg">optional</span> | Absolute or relative URL. SignalWire will make a HTTP GET or POST request to this URL when a Stream is started, stopped or there is an error.                                                                                |
 | `statusCallbackMethod` <span className="optional-arg">optional</span> | GET or POST. The type of HTTP request to use when requesting a statusCallback. Default is POST.                                                                                                                              |
@@ -128,11 +130,12 @@ You can utilize our REST API to both [start][stream_start] and [stop][stream_sto
 
 <TabItem value="Conference Stream">
 
-|                                                             Attribute |                                                                                                                                                                                                                              |
+|                                                             Attribute | Description                                                                                                                                                                                                                              |
 | --------------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 |                 `url` <span className="required-arg">required</span>  | Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is `wss`. For security reasons `ws` is NOT supported. |
 |                 `codec` <span className="optional-arg">optional</span> | The codecs attribute allows you to control the set codec to be used on the stream. **Possible Values**: `L16@24000h` & `L16@16000h` |
 |                 `name` <span className="required-arg">required</span> | Unique name for the Stream, per Call. It is used to stop a Stream by name.                                                                                                                                                   |
+|                 `realtime` <span className="optional-arg">optional</span> | If `true`, and the stream is [`bidirectional`](/compatibility-api/cxml/voice/connect#bidirectional-media-stream), the stream offers a realtime experience to the call parties by managing packet delays and bursts. If `false`, the call parties benefit from buffered audio, which can be played out with delay. Default: `false` |
 |                `track` <span className="optional-arg">optional</span> | This attribute can be one of: `inbound_track`, `outbound_track`, `both_tracks` . Defaults to `inbound_track`. For `both_tracks` there will be both `inbound_track` and `outbound_track` events.                              |
 |       `statusCallback` <span className="optional-arg">optional</span> | Absolute or relative URL. SignalWire will make a HTTP GET or POST request to this URL when a Stream is started, stopped or there is an error.                                                                                |
 | `statusCallbackMethod` <span className="optional-arg">optional</span> | GET or POST. The type of HTTP request to use when requesting a statusCallback. Default is POST.                                                                                                                              |
@@ -148,11 +151,11 @@ You can utilize our REST API to [create][conference_create] and [update][confere
 </TabItem>
 </Tabs>
 
-## `StatusCallback` Parameters
+## `StatusCallback` parameters
 
 For a `statusCallback`, SignalWire will send a request with the following parameters:
 
-|                                                  Parameter |                                                                                                 |
+|                                                  Parameter | Description                                                                                               |
 | ---------------------------------------------------------: | ----------------------------------------------------------------------------------------------- |
 |  `AccountSid` <span className="optional-arg">string</span> | The unique ID of the Account this call is associated with.                                      |
 |     `CallSid` <span className="optional-arg">string</span> | A unique identifier for the call. May be used to later retrieve this message from the REST API. |
@@ -162,181 +165,375 @@ For a `statusCallback`, SignalWire will send a request with the following parame
 | `StreamError` <span className="optional-arg">string</span> | If an error has occurred, this will contain a detailed error message.                           |
 |   `Timestamp` <span className="optional-arg">string</span> | The time of the event in ISO 8601 format.                                                       |
 
-## WebSocket Messages
 
-There are 5 separate types of events that occur during the Stream's life cycle.
-These events are represented via WebSocket Messages: `Connected`, `Start`, `Media`, `DTMF` and `Stop`.
-Each message sent is a JSON string.
-The type of event which is occurring can be identified by using the `event` property of every JSON object.
 
-### Connected Message
+## WebSocket connection
 
-The first message sent once a WebSocket connection is established is the Connected event.
-This message describes the protocol to expect in the following messages.
+When establishing a stream, SignalWire initiates a WebSocket connection to your specified URL endpoint. The connection begins with an HTTP upgrade request containing the following headers:
 
-|    Event |                                                                         |
-| -------: | ----------------------------------------------------------------------- |
-|    event | The string value of "connected"                                         |
-| protocol | Defines the protocol for the WebSocket connections lifetime. eg: "Call" |
-|  version | Semantic version of the protocol.                                       |
+| Header | Description |
+| :----| :----- |
+| Host | The destination server hosting the WebSocket endpoint (e.g., "example.com") |
+| Upgrade | Protocol upgrade request indicating a switch to WebSocket (value: "websocket") |
+| Connection | Connection type for the upgrade (value: "Upgrade") |
+| Sec-WebSocket-Key | Base64-encoded random value used for the WebSocket handshake |
+| Sec-WebSocket-Version | WebSocket protocol version (value: "13") |
+| Authorization | Bearer token for authentication if `authBearerToken` attribute is provided (format: "Bearer token_here") |
 
-Example Connected Message
+Once the WebSocket connection is established, SignalWire will send various events throughout the stream's lifecycle.
+These events are delivered as JSON-formatted WebSocket messages, each containing an `event` property that identifies the message type.
+
+The stream supports six distinct event types:
+- **[Connected](#connected-message)** - Initial handshake message confirming the connection
+- **[Start](#start-message)** - Stream metadata and configuration details
+- **[Media](#media-message)** - Audio data packets
+- **[DTMF](#dtmf-message)** - Touch-tone digit events
+- **[Mark](#mark-message)** - Audio playback completion acknowledgments
+- **[Stop](#stop-message)** - Stream termination notification
+
+### Connected message
+
+SignalWire sends the Connected event immediately after establishing the WebSocket connection.
+This initial message outlines the communication protocol for all subsequent interactions.
+
+|         Property | Description                                                                         |
+| ---------------: | ----------------------------------------------------------------------- |
+|        timestamp | ISO 8601 timestamp of when the message was sent.                       |
+|        direction | Direction of the message (e.g., "inbound").                            |
+|        eventType | The event type. In this case, `connected`.                             |
+|         rawEvent | Wrapper containing the core event information.                         |
+|   rawEvent.event | The string value of "connected".                                        |
+|rawEvent.protocol | Defines the protocol for the WebSocket connections lifetime. eg: "Call" |
+| rawEvent.version | Semantic version of the protocol.                                       |
+
+Example Connected message
 
 ```json
 {
-  "event": "connected",
-  "protocol": "Call",
-  "version": "0.2.0"
+  "timestamp": "2025-09-26T16:25:04.792Z",
+  "direction": "inbound",
+  "eventType": "connected",
+  "rawEvent": {
+    "event": "connected",
+    "protocol": "Call",
+    "version": "0.2.0"
+  }
 }
 ```
 
-### Start Message
+### Start message
 
-This message contains important information about the Stream and is sent immediately after the `Connected` message.
-It is only sent once at the start of the Stream.
+SignalWire delivers this message right after the `Connected` event, providing essential stream configuration details.
+This message appears only once when the stream initializes.
 
-|                        Event |                                                                                                                                         |
-| ---------------------------: | --------------------------------------------------------------------------------------------------------------------------------------- |
-|                        event | The string value of `start`.                                                                                                            |
-|               sequenceNumber | Number used to keep track of message sending order. First message starts with number "1" and then is incremented.                       |
-|                        start | An object containing Stream metadata.                                                                                                   |
-|              start.streamSid | The unique identifier of the Stream.                                                                                                    |
-|             start.accountSid | The Account identifier that created the Stream.                                                                                         |
-|                start.callSid | The Call identifier from where the Stream was started.                                                                                  |
-|                 start.tracks | An array of values that indicates what media flows to expect in subsequent messages. Values are one of "inbound" or "outbound" or both. |
-|       start.customParameters | An object that represents the Custom Parameters that where set when defining the Stream.                                                |
-|            start.mediaFormat | An object containing the format of the payload in the Media Messages.                                                                   |
-|   start.mediaFormat.encoding | The encoding of the data in the upcoming payload. Default is "audio/x-mulaw".                                                           |
-| start.mediaFormat.sampleRate | The Sample Rate in Hertz of the upcoming audio data. Default value is 8000, which is the rate of PCMU.                                  |
-|   start.mediaFormat.channels | The number of channels in the input audio data. Default value is 1. For `both_tracks` it will be 2.                                     |
+|                            Property | Description                                                                                                                                         |
+| ----------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------- |
+|                           timestamp | ISO 8601 timestamp of when the message was sent.                                                                                       |
+|                           direction | Direction of the message (e.g., "inbound").                                                                                            |
+|                           eventType | The event type. In this case, `start`.                                                                                                 |
+|                           streamSid | The unique identifier of the stream as a string.                                                                                       |
+|                             callSid | The call identifier as a string.                                                                                                       |
+|                      sequenceNumber | Message ordering counter, beginning at "1" and advancing with each communication.                                                      |
+|                            rawEvent | Container for the core event information.                                                                                              |
+|                      rawEvent.event | The string value of `start`.                                                                                                           |
+|             rawEvent.sequenceNumber | Message sequence tracking within the raw event, starting from "1".                                                                    |
+|                      rawEvent.start | Container holding stream configuration and metadata details.                                                                          |
+|            rawEvent.start.streamSid | The unique identifier of the Stream.                                                                                                   |
+|           rawEvent.start.accountSid | The Account identifier that created the Stream.                                                                                        |
+|              rawEvent.start.callSid | Call session identifier where the stream originated.                                                                                   |
+|               rawEvent.start.tracks | Array specifying which audio directions will be transmitted in future messages. Options: "inbound", "outbound", or both.             |
+|     rawEvent.start.customParameters | Container for custom key-value pairs configured during stream creation. Appears only when parameters are defined.                     |
+|          rawEvent.start.mediaFormat | Configuration details for audio data formatting in subsequent transmissions.                                                          |
+| rawEvent.start.mediaFormat.encoding | Audio compression format for transmitted data. Varies by codec: "audio/x-mulaw", "audio/x-L16", etc.                                 |
+|rawEvent.start.mediaFormat.sampleRate| Audio sampling frequency in Hz for stream data. Configuration-dependent: 8000, 16000, 24000, etc.                                     |
+| rawEvent.start.mediaFormat.channels | Audio channel count for stream data. Typically 1 (mono), or 2 for `both_tracks` configurations.                                      |
 
-Example Start Message
+Example Start message
 
 ```json
 {
-  "event": "start",
-  "sequenceNumber": "2",
-  "start": {
-    "streamSid": "c0c7d59b-df06-435e-afbc-9217ce318390",
-    "accountSid": "123abc",
-    "callSid": "a30d16a5-0368-4104-afbf-14247e76a63d",
-    "tracks": ["inbound", "outbound"],
-    "customParameters": {
-      "FirstName": "Jane",
-      "LastName": "Doe",
-      "RemoteParty": "Bob"
-    },
-    "mediaFormat": {
-      "encoding": "audio/x-mulaw",
-      "sampleRate": 8000,
-      "channels": 1
+  "timestamp": "2025-09-26T16:25:04.794Z",
+  "direction": "inbound",
+  "eventType": "start",
+  "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+  "callSid": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad",
+  "sequenceNumber": "1",
+  "rawEvent": {
+    "event": "start",
+    "sequenceNumber": "1",
+    "start": {
+      "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+      "accountSid": "b08dacad-2f6c-4de1-93d6-cc732e0c69c5",
+      "callSid": "76ac3c36-56da-4a3e-a0d6-b5f8df6da9ad",
+      "tracks": [
+        "inbound"
+      ],
+      "mediaFormat": {
+        "encoding": "audio/x-L16",
+        "sampleRate": 24000,
+        "channels": 1
+      }
     }
   }
 }
 ```
 
-### Media Message
+### Media message
 
-This message type encapsulates the raw audio data.
+Media messages deliver the actual audio content from the call as it flows through the stream.
 
-|           Event |                                                                                                                                    |
-| --------------: | ---------------------------------------------------------------------------------------------------------------------------------- |
-|           event | The string value of `media`.                                                                                                       |
-|  sequenceNumber | Number used to keep track of message sending order. First message starts with number "1" and then is incremented for each message. |
-|           media | An object containing media metadata and payload.                                                                                   |
-|     media.track | One of the strings `inbound` or `outbound`.                                                                                        |
-|     media.chunk | The chunk for the message. The first message will begin with number "1" and increment with each subsequent message.                |
-| media.timestamp | Presentation Timestamp in Milliseconds from the start of the stream.                                                               |
-|   media.payload | Raw audio encoded in base64.                                                                                                       |
+|              Property | Description                                                                                                                                    |
+| --------------------: | ---------------------------------------------------------------------------------------------------------------------------------- |
+|             timestamp | ISO 8601 timestamp of when the message was sent.                                                                                  |
+|             direction | Direction of the message (e.g., "inbound").                                                                                       |
+|             eventType | The event type. In this case, `media`.                                                                                            |
+|             streamSid | The unique identifier of the stream as a string.                                                                                  |
+|        sequenceNumber | Sequential message counter for ordering, starting at "1" and incrementing per transmission.                                           |
+|              rawEvent | Wrapper for the core event information.                                                                                           |
+|        rawEvent.event | The string value of `media`.                                                                                                      |
+|rawEvent.sequenceNumber| Sequential counter within the raw event data, beginning at "1".                                                                     |
+|        rawEvent.media | Container with audio data and associated metadata.                                                                                 |
+|  rawEvent.media.track | One of the strings `inbound` or `outbound`.                                                                                       |
+|  rawEvent.media.chunk | The chunk for the message. The first message will begin with number "1" and increment with each subsequent message.               |
+|rawEvent.media.timestamp| Presentation Timestamp in Milliseconds from the start of the stream.                                                             |
+|rawEvent.media.payload | Raw audio encoded in base64.                                                                                                      |
 
-Example Media Messages
-
-Outbound
+Example Media message
 
 ```json
 {
-  "event": "media",
-  "sequenceNumber": "3",
-  "media": {
-    "track": "outbound",
-    "chunk": "1",
-    "payload": "iY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//jw=="
+  "timestamp": "2025-09-26T16:25:24.821Z",
+  "direction": "inbound",
+  "eventType": "media",
+  "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+  "sequenceNumber": "1002",
+  "rawEvent": {
+    "event": "media",
+    "sequenceNumber": "1002",
+    "media": {
+      "track": "inbound",
+      "chunk": "1001",
+      "timestamp": "20041",
+      "payload": "[AUDIO_DATA_1280_BYTES]"
+    }
   }
 }
 ```
 
-Inbound
+### Stop message
+
+SignalWire transmits a stop message when the stream terminates or the associated call concludes.
+
+|         Property | Description                                                                                                                                    |
+| ---------------: | ---------------------------------------------------------------------------------------------------------------------------------- |
+|        timestamp | ISO 8601 timestamp of when the message was sent.                                                                                  |
+|        direction | Direction of the message (e.g., "inbound").                                                                                       |
+|        eventType | The event type. In this case, `stop`.                                                                                             |
+|        streamSid | The unique identifier of the stream as a string.                                                                                  |
+|   sequenceNumber | Transmission order tracking number, incrementing from "1".                                                                         |
+|         rawEvent | Container for the core event information.                                                                                         |
+|   rawEvent.event | The string value of `stop`.                                                                                                       |
+|rawEvent.sequenceNumber| Order tracking within the raw event payload, starting at "1".                                                                     |
+
+Example stop message
 
 ```json
 {
-  "event": "media",
-  "sequenceNumber": "4",
-  "media": {
-    "track": "inbound",
-    "chunk": "1",
-    "timestamp": "5",
-    "payload": "/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JD/+PiY//DwkP/4+Jj/8PCQ//j4mP/w8JDw=="
+  "timestamp": "2025-09-26T16:25:24.863Z",
+  "direction": "inbound",
+  "eventType": "stop",
+  "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+  "sequenceNumber": "1002",
+  "rawEvent": {
+    "event": "stop",
+    "sequenceNumber": "1002"
   }
 }
 ```
 
-### Stop Message
+### DTMF message
 
-A stop message will be sent when the Stream is either stopped or the Call has ended.
+SignalWire generates DTMF messages whenever touch-tone key presses are detected in the audio stream.
 
-Example Stop Message
+|         Property | Description                                                                                                                                               |
+| ---------------: | --------------------------------------------------------------------------------------------------------------------------------------------- |
+|        timestamp | ISO 8601 timestamp of when the message was sent.                                                                                             |
+|        direction | Direction of the message (e.g., "inbound").                                                                                                  |
+|        eventType | The event type. In this case, `dtmf`.                                                                                                        |
+|        streamSid | Stream identifier for the connection.                                                                                                        |
+|   sequenceNumber | Message ordering number, starting from "1" and incrementing with each transmission.                                                          |
+|         rawEvent | Container for the core event information.                                                                                                    |
+|   rawEvent.event | Event type identifier set to `dtmf`.                                                                                                         |
+|rawEvent.streamSid| Stream identifier within the raw event data.                                                                                                 |
+|    rawEvent.dtmf | Container holding the detected touch-tone details.                                                                                           |
+|rawEvent.dtmf.duration| Time span of the key press in milliseconds.                                                                                            |
+|rawEvent.dtmf.digit| The numeric key that was pressed on the handset.                                                                                           |
+
+Example DTMF message
 
 ```json
 {
-  "event": "stop",
-  "sequenceNumber": "5"
+  "timestamp": "2025-09-26T16:25:15.123Z",
+  "direction": "inbound",
+  "eventType": "dtmf",
+  "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+  "sequenceNumber": "25",
+  "rawEvent": {
+    "event": "dtmf",
+    "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+    "dtmf": {
+      "duration": 2700,
+      "digit": "8"
+    }
+  }
 }
 ```
 
-|          Event |                                                                                                                                    |
-| -------------: | ---------------------------------------------------------------------------------------------------------------------------------- |
-|          event | The string value of `stop`.                                                                                                        |
-| sequenceNumber | Number used to keep track of message sending order. First message starts with number "1" and then is incremented for each message. |
+### Mark message
 
-### DTMF Message
+SignalWire delivers mark messages as acknowledgments for completed audio playback or cleared buffer operations. These responses match the mark identifiers from your earlier transmissions to SignalWire.
 
-A DTMF message will be sent when the Stream receives a DTMF tone.
+|         Property | Description                                                                                        |
+| ---------------: | -------------------------------------------------------------------------------------- |
+|        timestamp | ISO 8601 timestamp of when the message was sent.                                      |
+|        direction | Direction of the message (e.g., "inbound").                                           |
+|        eventType | Event classification. Set to `mark` for completion tracking.                          |
+|        streamSid | Stream connection identifier.                                                          |
+|         rawEvent | Wrapper containing the core event information.                                        |
+|   rawEvent.event | Event type designation set to `mark`.                                                 |
+|rawEvent.streamSid| Stream connection identifier within the event payload.                                |
+|   rawEvent.mark  | Container with the mark acknowledgment details.                                       |
+|rawEvent.mark.name| The mark identifier echoed back from your original transmission.                     |
 
-|           Event |                                                                                                                                               |
-| --------------: | --------------------------------------------------------------------------------------------------------------------------------------------- |
-|           event | The string value of `dtmf`.                                                                                                                   |
-| sequence_number | Number, as a string, used to keep track of message-sending order. The first message starts with "1" and then is incremented for each message. |
-|       streamSid | The unique identifier of the stream as a string.                                                                                              |
-|            dtmf | An object containing the details of the detected DTMF.                                                                                        |
-|   dtmf.duration | The duration of the DTMF in milliseconds.                                                                                                     |
-|      dtmf.digit | The digit, as a string, that corresponds to the DTMF.                                                                                         |
-
-Example DTMF Message
+Example Mark message
 
 ```json
 {
-  "event": "dtmf",
-  "sequence_number": "1",
+  "timestamp": "2025-09-26T16:25:24.740Z",
+  "direction": "inbound",
+  "eventType": "mark",
+  "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+  "rawEvent": {
+    "event": "mark",
+    "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+    "mark": {
+      "name": "item_CK5XvgANb1jVorf5VQlKQ:43500"
+    }
+  }
+}
+```
+
+### Clear message
+
+SignalWire transmits clear messages to acknowledge buffer flush operations, usually triggered by clear commands from your application.
+
+|           Property | Description                                                                                                                                               |
+| -----------------: |-----------------------------------------------------------------------------------------------------------------------------------------------|
+|          timestamp | ISO 8601 timestamp of when the message was sent.                                                                                             |
+|          direction | Direction of the message (e.g., "outbound").                                                                                                 |
+|          eventType | Event classification. Set to `clear` for buffer operations.                                                                                  |
+|          streamSid | Stream connection identifier.                                                                                                                |
+|           rawEvent | Wrapper containing the core event information.                                                                                               |
+|   rawEvent.event   | Event type designation set to `clear`.                                                                                                       |
+| rawEvent.streamSid | Stream connection identifier within the event payload.                                                                                       |
+
+Example Clear message
+```json
+{
+  "timestamp": "2025-09-26T16:25:12.018Z",
+  "direction": "outbound",
+  "eventType": "clear",
+  "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b",
+  "rawEvent": {
+    "event": "clear",
+    "streamSid": "7d56cc11-536d-4a45-b4fb-ed3d55be843b"
+  }
+}
+```
+
+## Sending WebSocket Messages
+
+When you create a Stream within a `<Connect><Stream>` element, the connection becomes bidirectional. Your application can transmit WebSocket messages to SignalWire, enabling you to inject audio into the active call and manage the stream's behavior.
+
+The messages that your WebSocket server can send back to SignalWire are:
+
+- **[Media](#send-a-media-message)** - Send audio data back into the call
+- **[Mark](#send-a-mark-message)** - Track when audio playback completes
+- **[Clear](#send-a-clear-message)** - Interrupt buffered audio
+
+### Send a media message
+
+Transmitting audio to SignalWire requires constructing a valid media message with the correct structure.
+
+The payload encoding depends on the codec specified in your Stream configuration:
+
+- **Default (PCMU/mulaw)**: `audio/x-mulaw` with 8000 Hz sample rate
+- **L16@16000h**: Linear PCM with 16000 Hz sample rate
+- **L16@24000h**: Linear PCM with 24000 Hz sample rate
+
+All audio must be base64 encoded. SignalWire queues incoming media messages and plays them sequentially. To stop playback and clear the queue, transmit a clear message.
+
+:::warning
+Ensure your `media.payload` contains only raw audio data without file format headers. Including format headers will result in corrupted audio playback.
+:::
+
+|    Property | Description                                                                               |
+| ----------: | ----------------------------------------------------------------------------- |
+|       event | Specifies the message type. Set to `"media"` for audio data.                  |
+|   streamSid | Target stream identifier for audio playback                                   |
+|       media | Container object holding the audio payload                                    |
+| media.payload | Base64-encoded audio data (format varies by codec configuration)            |
+
+Example media message (payload abbreviated):
+
+```json
+{
+  "event": "media",
   "streamSid": "c0c7d59b-df06-435e-afbc-9217ce318390",
-  "dtmf": {
-    "duration": 2700,
-    "digit": "8"
+  "media": {
+    "payload": "a3242sa..."
   }
 }
 ```
 
-### Clear Message
+### Send a mark message
 
-Send the clear event message if you would like to interrupt the audio that has been sent various media event messages. This will empty all buffered audio.
+Transmit a mark message following your media messages to receive confirmation when audio playback finishes. SignalWire responds with a matching mark identifier once the audio completes playing (or immediately if no audio is queued).
 
-|           Event |                                                                                                                                               |
-| --------------: |-----------------------------------------------------------------------------------------------------------------------------------------------|
-|           event | The string value of `clear`.                                                                                                                  |
-|       streamSid | The unique identifier of the stream as a string.                                                                                              |
+You'll also receive mark confirmations when the audio queue is cleared via a clear message.
 
-Example Clear Message
+|   Property | Description                                                                                    |
+| ---------: | ---------------------------------------------------------------------------------- |
+|      event | Message type identifier. Set to `"mark"` for completion tracking.                 |
+|  streamSid | Target stream identifier for the mark operation                                    |
+|       mark | Container object with mark details                                                 |
+| mark.name  | Custom identifier to track specific audio segments or playback events             |
+
+Example mark message:
+
 ```json
-{ 
+{
+ "event": "mark",
+ "streamSid": "c0c7d59b-df06-435e-afbc-9217ce318390",
+ "mark": {
+   "name": "my label"
+ }
+}
+```
+
+### Send a clear message
+
+Transmit a clear message to halt audio playback and flush the audio queue. This action triggers SignalWire to return any pending mark messages for the cleared audio segments.
+
+|   Property | Description                                                                          |
+| ---------: | ------------------------------------------------------------------------ |
+|      event | Message type identifier. Set to `"clear"` for audio interruption.       |
+|  streamSid | Target stream identifier where audio should be stopped.                  |
+
+Example clear message:
+
+```json
+{
  "event": "clear",
  "streamSid": "c0c7d59b-df06-435e-afbc-9217ce318390"
 }
@@ -410,8 +607,8 @@ This can be done by using the nested `<Parameter>` cXML noun. These parameters w
 </Response>
 ```
 
-## Notes on Usage
+## Notes on usage
 
 - The url does not support query string parameters. To pass custom key value pairs to the WebSocket, make use of Custom Parameters instead.
-- There is a one to one mapping of a stream to a websocket connection, therefore there will be at most one call being streamed over a single websocket connection. Information will be provided so that you can handle handle multiple inbound connections and manage the association between the unique stream identifier (StreamSid) and the connection.
+- There is a one to one mapping of a stream to a websocket connection, therefore there will be at most one call being streamed over a single websocket connection. Information will be provided so that you can handle multiple inbound connections and manage the association between the unique stream identifier (StreamSid) and the connection.
 - On any given call there are inbound and outbound tracks, `inbound` represents the audio Signalwire receives from the call, `outbound` represents the audio generated by Signalwire for the Call.
