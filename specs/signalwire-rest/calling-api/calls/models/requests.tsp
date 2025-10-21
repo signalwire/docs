@@ -16,7 +16,7 @@ const updateCommandDescription = "The `update` command is used to update a exist
 
 const uuidDescription = "The unique identifying ID of a existing call.";
 
-const paramsDescription = "An object of parameters to that will be utilized by the active command.";
+const paramsDescription = "An object of parameters that will be utilized by the active command.";
 
 alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
@@ -120,6 +120,20 @@ model CallCreateParamsBase {
   @doc("The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.")
   @example(CallFallbackURLExample)
   fallback_url?: string;
+
+  @doc("A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.")
+  @example("https://example.com/status_callback")
+  status_url?: url;
+
+  @doc("The call events that will be monitored and sent to the `status_url` when active.")
+  @example(#["answered", "ended"])
+  status_events?: (
+    | "answered"
+    | "queued"
+    | "initiated"
+    | "ringing"
+    | "ending"
+    | "ended")[];
 }
 
 @summary("Create call (URL)")
