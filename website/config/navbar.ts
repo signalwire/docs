@@ -176,7 +176,7 @@ const navbar: NavbarItem[] = [
 
   /// Platform Dropdown -------- ///
   {
-    to: "/platform",
+    to: "/platform/dashboard",
     label: "Platform",
     position: "right",
     type: "dropdown",
