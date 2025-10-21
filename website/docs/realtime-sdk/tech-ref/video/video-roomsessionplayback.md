@@ -99,7 +99,7 @@ Seeks the current playback forward by the specified `offset`.
 
 | Name      | Type     | Description                                                                                                    |
 | :-------- | :------- | :------------------------------------------------------------------------------------------------------------- |
-| `offset?` | `number` | Relative number of milliseconds to seek forward from the current position. <br/> Defaults to `5000` (5 seconds). |
+| `offset`<span className="optional-arg">Optional</span> | `number` | Relative number of milliseconds to seek forward from the current position. <br/> Defaults to `5000` (5 seconds). |
 
 #### Returns
 
@@ -238,7 +238,7 @@ Seeks the current playback backwards by the specified offset.
 
 | Name      | Type     | Description                                                                                         |
 |:----------|:---------|:----------------------------------------------------------------------------------------------------|
-| `offset?` | `number` | Relative number of milliseconds to seek backwards from the current position. Defaults to 5 seconds. |
+| `offset`<span className="optional-arg">Optional</span> | `number` | Relative number of milliseconds to seek backwards from the current position. Defaults to 5 seconds. |
 
 #### Returns
 
@@ -286,7 +286,7 @@ Seeks the current playback to the specified absolute position.
 
 | Name       | Type     | Description                                                       |
 |:-----------|:---------|:------------------------------------------------------------------|
-| `timecode` | `number` | The absolute position in milliseconds to seek to in the playback. |
+| `timecode`<span className="required-arg">Required</span> | `number` | The absolute position in milliseconds to seek to in the playback. |
 
 #### Returns
 
@@ -343,7 +343,7 @@ Sets the audio volume for the playback.
 
 | Name     | Type     | Description                                                           |
 |:---------|:---------|:----------------------------------------------------------------------|
-| `volume` | `number` | The desired volume. Values range from -50 to 50, with a default of 0. |
+| `volume`<span className="required-arg">Required</span> | `number` | The desired volume. Values range from -50 to 50, with a default of 0. |
 
 #### Returns
 
@@ -486,7 +486,7 @@ Emitted when the playback starts.
 
 | Name       | Type                                                  | Description                |
 |:-----------|:------------------------------------------------------|:---------------------------|
-| `playback` | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that started. |
+| `playback`<span className="required-arg">Required</span> | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that started. |
 
 ---
 
@@ -500,7 +500,7 @@ Emitted when the playback is updated.
 
 | Name       | Type                                                  | Description                |
 |:-----------|:------------------------------------------------------|:---------------------------|
-| `playback` | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that updated. |
+| `playback`<span className="required-arg">Required</span> | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that updated. |
 
 ---
 
@@ -514,4 +514,4 @@ Emitted when the playback ends.
 
 | Name       | Type                                                  | Description              |
 |:-----------|:------------------------------------------------------|:-------------------------|
-| `playback` | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that ended. |
+| `playback`<span className="required-arg">Required</span> | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that ended. |
