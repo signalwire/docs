@@ -100,8 +100,8 @@ const navbar: NavbarItem[] = [
         to: "/sdks/browser-sdk/",
       },
       // {
-      //   label: "SignalWire SDK",
-      //   to: "/sdks/signalwire-sdk/",
+      //   label: "SignalWire Client SDK",
+      //   to: "/sdks/signalwire-client-sdk/",
       // },
       {
         label: "RELAY Realtime Server SDK",
@@ -176,7 +176,7 @@ const navbar: NavbarItem[] = [
 
   /// Platform Dropdown -------- ///
   {
-    to: "/platform",
+    to: "/platform/dashboard",
     label: "Platform",
     position: "right",
     type: "dropdown",
