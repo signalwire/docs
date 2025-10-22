@@ -1,0 +1,492 @@
+openapi: 3.0.0
+info:
+  title: Message API
+  version: 1.0.0
+  contact:
+    name: SignalWire
+    url: https://support.signalwire.com/portal/en/newticket?departmentId=1029313000000006907&layoutId=1029313000000074011
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://github.com/signalwire/docs/blob/main/LICENSE
+  termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
+  description: An API to programmatically access information about SignalWire Message activity.
+externalDocs:
+  url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/messaging
+  description: Find more information about this and other SignalWire APIs.
+tags:
+  - name: Logs
+    description: Endpoints related to accessing message logs
+    externalDocs:
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/messaging/logs
+      description: Developer documentation on Message API endpoints
+paths:
+  /logs:
+    get:
+      operationId: Logs_list
+      summary: List Logs
+      description: |-
+        List the available logs.
+
+        #### Permissions
+
+        The API token must include the following scopes: _Messaging_.
+      parameters:
+        - $ref: '#/components/parameters/LogListRequest.include_deleted'
+        - $ref: '#/components/parameters/LogListRequest.created_before'
+        - $ref: '#/components/parameters/LogListRequest.created_on'
+        - $ref: '#/components/parameters/LogListRequest.created_after'
+        - $ref: '#/components/parameters/LogListRequest.page_size'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageLogsListStatusCode422'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Logs
+  /logs/{id}:
+    get:
+      operationId: Logs_retrieve
+      summary: Find a Log by ID
+      description: |-
+        Find a log by ID.
+
+        #### Permissions
+
+        The API token must include the following scopes: _Messaging_.
+      parameters:
+        - $ref: '#/components/parameters/LogPathID'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogRetrieveResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Logs
+security:
+  - BasicAuth: []
+components:
+  parameters:
+    LogListRequest.created_after:
+      name: created_after
+      in: query
+      required: false
+      description: Return logs for activity after this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.created_before:
+      name: created_before
+      in: query
+      required: false
+      description: Return logs for activity prior to this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.created_on:
+      name: created_on
+      in: query
+      required: false
+      description: Return logs for activity on this date.
+      schema:
+        type: string
+      explode: false
+    LogListRequest.include_deleted:
+      name: include_deleted
+      in: query
+      required: false
+      description: Include logs for deleted activity.
+      schema:
+        type: boolean
+      explode: false
+    LogListRequest.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+      explode: false
+    LogPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the log.
+      schema:
+        $ref: '#/components/schemas/uuid'
+        format: uuid
+  schemas:
+    ChargeDetail:
+      type: object
+      required:
+        - description
+        - charge
+      properties:
+        description:
+          type: string
+          description: Description for this charge.
+          example: Inbound SMS
+        charge:
+          type: number
+          format: double
+          description: Charged amount.
+          example: 0.00415
+      description: Details on charges associated with this log.
+    LogListResponse:
+      type: object
+      required:
+        - links
+        - data
+      properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/LogPaginationResponse'
+          description: Object containing pagination links
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageLog'
+          description: Array of message log entries
+    LogPaginationResponse:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          description: URL to current page
+          example: https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50
+        first:
+          type: string
+          description: URL to first page
+          example: https://example.signalwire.com/api/messaging/logs?page_size=50
+        next:
+          type: string
+          description: URL to next page (if available)
+          example: https://example.signalwire.com/api/messaging/logs?page_number=1&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff
+        prev:
+          type: string
+          description: URL to previous page (if available)
+          example: https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50&page_token=PA6ad4c839-9329-43fe-83c6-fbe7c38583ff
+    LogRetrieveResponse:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - status
+        - direction
+        - kind
+        - source
+        - type
+        - url
+        - number_of_segments
+        - charge
+        - charge_details
+        - created_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log.
+        from:
+          type: string
+          description: The origin phone number.
+          example: '+12077447397'
+        to:
+          type: string
+          description: The destination phone number.
+          example: '+12029921413'
+        status:
+          type: string
+          enum:
+            - queued
+            - initiated
+            - delivered
+            - sent
+            - recieved
+            - undelivered
+            - failed
+          description: The status of the message.
+          example: failed
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+            - outbound-api
+            - outbound-call
+            - outbound-reply
+          description: The direction of the message.
+          example: inbound
+        kind:
+          type: string
+          enum:
+            - sms
+            - mms
+          description: The kind of message.
+          example: sms
+        source:
+          type: string
+          enum:
+            - realtime_api
+            - laml
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          enum:
+            - relay_message
+            - laml_message
+          description: Type of this log entry.
+          example: relay_message
+        url:
+          type: string
+          format: uri
+          description: URL for the resource associated with this log entry (if available).
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
+        number_of_segments:
+          type: integer
+          format: int32
+          description: The number of segments.
+          example: 1
+        charge:
+          type: number
+          format: double
+          description: The charge in dollars.
+          example: 0
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the message entry was created.
+          example: '2024-05-06T12:20:00Z'
+      description: Response model for message log retrieve endpoint
+    MessageLog:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - status
+        - direction
+        - kind
+        - source
+        - type
+        - url
+        - number_of_segments
+        - charge
+        - charge_details
+        - created_at
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: A unique identifier for the log.
+        from:
+          type: string
+          description: The origin phone number.
+          example: '+12077447397'
+        to:
+          type: string
+          description: The destination phone number.
+          example: '+12029921413'
+        status:
+          type: string
+          enum:
+            - queued
+            - initiated
+            - delivered
+            - sent
+            - recieved
+            - undelivered
+            - failed
+          description: The status of the message.
+          example: failed
+        direction:
+          type: string
+          enum:
+            - inbound
+            - outbound
+            - outbound-api
+            - outbound-call
+            - outbound-reply
+          description: The direction of the message.
+          example: inbound
+        kind:
+          type: string
+          enum:
+            - sms
+            - mms
+          description: The kind of message.
+          example: sms
+        source:
+          type: string
+          enum:
+            - realtime_api
+            - laml
+          description: Source of this log entry.
+          example: laml
+        type:
+          type: string
+          enum:
+            - relay_message
+            - laml_message
+          description: Type of this log entry.
+          example: relay_message
+        url:
+          type: string
+          format: uri
+          description: URL for the resource associated with this log entry (if available).
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
+        number_of_segments:
+          type: integer
+          format: int32
+          description: The number of segments.
+          example: 1
+        charge:
+          type: number
+          format: double
+          description: The charge in dollars.
+          example: 0
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetail'
+          description: Details on charges associated with this log.
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the message entry was created.
+          example: '2024-05-06T12:20:00Z'
+      description: Message log entry with all activity details
+    MessageLogsListStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: datetime_required
+            message: This value must be a DateTime
+            attribute: created_before
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#datetime_required
+    Types.StatusCodes.StatusCode401:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Unauthorized
+    Types.StatusCodes.StatusCode404:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Not Found
+    Types.StatusCodes.StatusCode422Error:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - attribute
+        - url
+      properties:
+        type:
+          type: string
+          description: Error type.
+        code:
+          type: string
+          description: Error code.
+        message:
+          type: string
+          description: Error details.
+        attribute:
+          type: string
+          description: Request parameter associated with this error.
+        url:
+          type: string
+          description: Link to developer resource for this error.
+    Types.StatusCodes.StatusCode500:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal Server Error
+    uuid:
+      type: string
+      format: uuid
+      description: Universal Unique Identifier.
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: Basic
+servers:
+  - url: https://{space_name}.signalwire.com/api/messaging
+    description: Endpoint
+    variables:
+      space_name:
+        default: '{Your_Space_Name}'
+        description: The domain of the users SignalWire space.

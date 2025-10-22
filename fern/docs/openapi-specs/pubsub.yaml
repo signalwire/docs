@@ -1,0 +1,196 @@
+openapi: 3.0.0
+info:
+  title: PubSub API
+  version: 1.0.0
+  contact:
+    name: SignalWire
+    url: https://support.signalwire.com/portal/en/newticket?departmentId=1029313000000006907&layoutId=1029313000000074011
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://github.com/signalwire/docs/blob/main/LICENSE
+  termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
+  description: An API to use PubSub channels in your own application.
+externalDocs:
+  url: https://developer.signalwire.com
+  description: Find more information about this and other SignalWire APIs.
+tags:
+  - name: Tokens
+    description: Endpoints related to creating & managing PubSub Tokens
+    externalDocs:
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/pubsub/tokens
+      description: Developer documentation on PubSub API endpoints
+paths:
+  /tokens:
+    post:
+      operationId: create_token
+      summary: Generate a new PubSub Token
+      description: |-
+        Generate a PubSub Token to be used to authenticate clients to the PubSub Service.
+
+
+        #### Permissions
+
+        The API token must include the following scopes: _PubSub_.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PubSubToken'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PubSubToken422Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPubSubToken'
+security:
+  - BasicAuth: []
+components:
+  schemas:
+    NewPubSubToken:
+      type: object
+      required:
+        - ttl
+        - channels
+      properties:
+        ttl:
+          type: integer
+          minimum: 1
+          maximum: 43200
+          description: The maximum time, in minutes, for which the access token will be valid. Between 1 and 43,200 (30 days).
+          example: 15
+        channels:
+          $ref: '#/components/schemas/PubSubChannels'
+        member_id:
+          type: string
+          maxLength: 250
+          description: The unique identifier of the member. Up to 250 characters. If not specified, a random UUID will be generated.
+          example: John Doe
+        state:
+          allOf:
+            - $ref: '#/components/schemas/PubSubState'
+          description: An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.
+    PubSubChannels:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          read:
+            type: boolean
+            description: Gives the token read access to the channel.
+            example: true
+          write:
+            type: boolean
+            description: Gives the token write access to the channel.
+            example: false
+      description: |-
+        Each channel with `write` and `read` objects with boolean as values. Max of 500 channels inside main `channels`. 
+        Either `read`, `write`, or both are required inside each channel and default to false. 
+        Each channel name can be up to 250 characters. Must be valid JSON.
+      example:
+        channela:
+          read: true
+          write: false
+        channelb:
+          read: true
+    PubSubState:
+      type: object
+      additionalProperties: {}
+      description: An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.
+      example:
+        display_name: Joe
+        an_array:
+          - foo
+          - bar
+          - baz
+    PubSubToken:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: A PubSub Token to be used to authenticate clients to the PubSub Service.
+          example: eyJ0eXAiOiJWUlQiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE2MjIxMjAxMjMsI...wMCwicnNlIjo5MDB9-BqG-DqC5LhpsdMWEFjhVkTBpQ
+    PubSubToken422Error:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - attribute
+        - url
+      properties:
+        type:
+          type: string
+          description: Error type.
+          example: validation_error
+        code:
+          type: string
+          description: Error code.
+          example: not_a_valid_json
+        message:
+          type: string
+          description: Error details.
+          example: Permissions must be valid JSON
+        attribute:
+          type: string
+          description: Request parameter associated with this error.
+          example: permissions
+        url:
+          type: string
+          format: uri
+          description: Link to developer resource for this error.
+          example: https://developer.signalwire.com/rest/overview/error-codes/#not_a_valid_json
+    Types.StatusCodes.StatusCode401:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Unauthorized
+    Types.StatusCodes.StatusCode500:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal Server Error
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: Basic
+servers:
+  - url: https://{space_name}.signalwire.com/api/pubsub
+    description: Endpoint
+    variables:
+      space_name:
+        default: '{Your_Space_Name}'
+        description: The domain of the users SignalWire space.
