@@ -2,7 +2,7 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
-alias SupportedAIModels = "gpt-4o-mini" | "gpt-4.1-mini" | "gpt-4.1-nano";
+alias SupportedAIModels = "gpt-4o-mini" | "gpt-4.1-mini" | "gpt-4.1-nano" | string;
 
 @minValue(10000)
 @maxValue(600000)
@@ -294,7 +294,7 @@ model AIParams {
   swaig_set_global_data?: boolean | SWMLVar;
 
   @doc("The model to use for the AI's thinking capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
-  thinking_model?: SupportedAIModels | SWMLVar;
+  thinking_model?: SupportedAIModels;
 
   @doc("""
     When enabled, the AI will not respond to the user's input when the user is speaking over the agent. 
@@ -335,7 +335,7 @@ model AIParams {
   video_talking_file?: url;
 
   @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
-  vision_model?: SupportedAIModels | SWMLVar;
+  vision_model?: SupportedAIModels;
 
   @doc("When false, AI agent will initialize dialogue after call is setup. When true, agent will wait for the user to speak first.")
   wait_for_user?: boolean | SWMLVar;
