@@ -25,13 +25,29 @@ In this guide, we will build a Node.js application that serves a
 [cXML Script][cxml]
 that initiates a two-way (bidirectional) 
 [`<Stream>`][bidir-stream]
-to the OpenAI Realtime API.
-When a caller initiates a SIP or 
-<Tooltips tip="Public Switched Telephone Network">PSTN</Tooltips>
-call to the assigned phone number, 
-the SignalWire platform requests and runs the script.
+to a Speech-to-Speech model on the OpenAI Realtime API.
+When a caller initiates a call to the assigned phone number, 
+the SignalWire platform requests and runs the cXML script.
+
+```mermaid
+graph LR
+    A[Phone call] --> B[SignalWire]
+    B --> C[WebSocket]
+    C --> D[Transport layer]
+    D --> E[OpenAI Realtime]
+    E --> D
+    D --> C
+    C --> B
+    B --> A
+```
 
 {/* This architectural explainer is a DRAFT. It could be useful, but needs further refinement.
+
+**Audio Flow Details:**
+- **Inbound**: Phone → SignalWire → Base64 → Transport → ArrayBuffer → OpenAI
+- **Outbound**: OpenAI → ArrayBuffer → Transport → Base64 → SignalWire → Phone
+- **Latency**: Typically 150-300ms end-to-end
+- **Quality**: Depends on codec choice (G.711 vs PCM16)
 
 The key architectural components involved are:
 
@@ -58,13 +74,6 @@ flowchart TD
 
 */}
 
-Wondering why this guide uses cXML to stream to OpenAI, instead of using
-the [native SWML AI integration](/swml/methods/ai)?
-Since OpenAI's Realtime API is built for Speech-to-Speech (or "Voice-to-Voice") models, 
-the SignalWire platform must stream audio directly to and from OpenAI
-instead of handling the STT, TTS, and LLM aspects with our integrated toolchain.
-This guide showcases the flexibility of the SignalWire platform to integrate with emerging unified audio models.
-
 ## Prerequisites
 
 Before you begin, ensure you have:
@@ -88,8 +97,8 @@ Before you begin, ensure you have:
 Clone the SignalWire Solutions repository, navigate to this example, and install.
 
 ```bash
-git clone https://github.com/signalwire/solutions-architecture
-cd code/cxml-realtime-agent-stream
+git clone https://github.com/signalwire/cXML-realtime-agent-stream
+cd cxml-realtime-agent-stream
 npm install
 ```
 
@@ -98,11 +107,11 @@ npm install
 <div class="col col--4">
 
 <Card 
-    title="GitHub repository" 
-    href="https://github.com/signalwire/solutions-architecture"
+    title="Project repository" 
+    href="https://github.com/signalwire/cXML-realtime-agent-stream"
     icon={<MdCode />}
     >
-The SignalWire Solutions repository
+View the source code on GitHub
 </Card>
 
 </div>
@@ -111,7 +120,7 @@ The SignalWire Solutions repository
 
 ### Add OpenAI credentials
 
-Select **Local** or **Docker** 
+Select the **Local** or **Docker** tab below depending on where you plan to run the application.
 
 <Tabs groupId="deploy">
 <TabItem value="local" label="Local">
@@ -157,7 +166,7 @@ npm start
 
 </TabItem>
 
-<TabItem value="prod" label="Docker">
+<TabItem value="docker" label="Docker">
 
 ```bash
 docker-compose up --build signalwire-assistant
@@ -202,7 +211,7 @@ Select the **Local** tab below if you ran the application locally, and the **Doc
 </div>
 
 <Tabs>
-<TabItem value="dev" label="Local">
+<TabItem value="local" label="Local">
 Use ngrok to expose port 5050 on your development machine:
 
 ```bash
@@ -212,7 +221,7 @@ ngrok http 5050
 Append `/incoming-call` to the HTTPS URL returned by ngrok.
 https://abc123.ngrok.io/incoming-call
 </TabItem>
-<TabItem value="prod" label="Docker">
+<TabItem value="docker" label="Docker">
 For production environments, set your server URL + `/incoming-call`:
       ```
       https://your-domain.com/incoming-call
@@ -227,7 +236,7 @@ For this example, you **must** include `/incoming-call` at the end of your URL. 
 - Give the cXML Script a descriptive name, such as "AI Voice Assistant".
 - Save your new Resource.
 
-### Assign SIP address or phone number
+### Assign phone number or SIP address
 
 To test your AI assistant, create a SIP address or phone number and assign it as a handler for your cXML Script Resource.
 
@@ -886,28 +895,6 @@ All of this happens in real-time during the conversation.
 {/* Section reserved for future architectural explanations */}
 
 ---
-
-## Audio Processing
-
-### Audio Processing Pipeline
-
-```mermaid
-graph LR
-    A[Phone Call] --> B[SignalWire]
-    B --> C[WebSocket]
-    C --> D[Transport Layer]
-    D --> E[OpenAI Realtime]
-    E --> D
-    D --> C
-    C --> B
-    B --> A
-```
-
-**Audio Flow Details:**
-- **Inbound**: Phone → SignalWire → Base64 → Transport → ArrayBuffer → OpenAI
-- **Outbound**: OpenAI → ArrayBuffer → Transport → Base64 → SignalWire → Phone
-- **Latency**: Typically 150-300ms end-to-end
-- **Quality**: Depends on codec choice (G.711 vs PCM16)
 
 ### Codec Selection Guide
 
