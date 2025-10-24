@@ -20,6 +20,10 @@ const config: Config = {
 
   markdown: {
     mermaid: true, // enables mermaid diagrams in markdown files
+    hooks: {
+      onBrokenMarkdownImages: 'throw',
+      onBrokenMarkdownLinks: 'throw'
+    }
   },
   themes: [
     '@signalwire/docusaurus-theme-llms-txt',
@@ -40,7 +44,6 @@ const config: Config = {
       More information can be found at: https://docusaurus.io/docs/api/docusaurus-config
   */
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
   onBrokenAnchors: "throw",
   onDuplicateRoutes: "throw",
 

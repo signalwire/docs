@@ -1,358 +1,197 @@
 ---
 title: Introduction to SWML
-description: Get started with SWML (SignalWire Markup Language), a markup and scripting language for quickly writing powerful Relay applications in YAML or JSON documents.
+description: Get started with SWML (SignalWire Markup Language), a markup and scripting language for quickly writing powerful communication applications in YAML or JSON documents.
 sidebar_position: 0
-sidebar_label: Introduction
+sidebar_label: Overview
 slug: /swml
 tags: ['swml']
-keywords: ['swml', 'signalwire markup language']
+keywords: ['swml', 'signalwire markup language', 'getting started', 'voice applications', 'yaml', 'json']
 ---
 
 import UiAccordion from '/docs/main/_common/dashboard/_ui-accordion.mdx'
 import AddResource from '/docs/main/_common/dashboard/add-resource-legacy-warning.mdx'
+import { MdCode, MdAutoAwesome, MdSmartToy } from "react-icons/md";
 
 # SWML
 
-<Subtitle>SignalWire Markup Language</Subtitle>
+<Subtitle>Build powerful communication applications with the SignalWire Markup Language</Subtitle>
 
-## Introduction
 
-SignalWire Markup Language (SWML) lets you write Relay applications using simple statements in a YAML or a JSON document.
-[Relay applications](/sdks/overview/what-is-relay)
-are programs connected to the SignalWire network through a real-time WebSocket connection.
-They can dynamically and interactively use the services offered by SignalWire, including
-[**voice calls**](/voice),
-[**video conferences**](/video),
-[**messaging**](/messaging) and
-[**chat**](/chat).
+SWML is a markup and scripting language for quickly writing powerful communication applications in YAML or JSON documents. 
+SWML is easy to use, and enables you to create powerful voice and messaging applications using a descriptive format. 
 
-SWML also allows you to instantiate
-[**AI agents**](/ai/get-started).
-AI Agents hold natural conversations with the caller, and perform actions intuitively based on the resources you have specified
-(like REST API endpoints or SWAIG functions).
+SWML scripts can be deployed serverlessly via the SignalWire Dashboard, via your own server, or using the 
+[Agents SDK](/sdks/agents-sdk/).
+For a comprehensive breakdown, see our [SWML deployment guide](/swml/guides/deployment).
 
-On your SignalWire Dashboard, you can configure SMWL scripts to be executed in response to a phone call,
-through a Relay script, or when a subscriber calls a SWML resource.
-You can write and store SWML on the SignalWire Dashboard, but you can also serve SWML scripts directly from a web server.
-You can even respond with dynamically generated SWML scripts.
+- **Server or serverless**: Serve SWML from your own server or via the SignalWire platform
+- **Powerful**: Handle voice calls, messaging, AI agents, and more
+- **Simple**: Declarative, composable format that's easy to learn, maintain, and scale
+- **Extensible**: Integrate native AI, functions, and external APIs
 
-## SWML and Resource Addresses
+Whether you're building simple call forwarding systems or complex AI-powered customer service agents, SWML provides the tools you need to deploy sophisticated communication workflows. 
 
-SWML is the best-supported way to use the new Call Fabric paradigm.
-To access a Resource, simply reference its Address using this syntax:
 
-```text
-space_name.signalwire.com/context/address
+## Core concepts
+
+### Document structure
+
+Every SWML script follows this basic structure in either YAML or JSON format:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - method1: {}
+    - method2:
+        parameter: value
 ```
 
-Each **Resource Address** has two components:
+| Properties | Description |
+|-----------|-------------|
+| `version` | Always use `1.0.0` (the only supported version) |
+| `sections` | Contains all script sections |
+| `main` | Required starting section where execution begins |
 
-- **Context**: A identifier that indicates the container in which a Resource is located.
-- **Name**: The name is the unique identifier for the resource.
 
-For example, the address for a `Subscribers` resource named `Alice` in the `public` context would be `/public/Alice`.
+### Sections
 
-Learn more by reading our
-[Introduction to Call Fabric](/platform/call-fabric)
-or the guide to
-[Managing Resources](/platform/call-fabric/resources).
+**Sections** are named blocks of code that organize your script.
+Each section is an array of 
+[methods](/swml/methods)
+to execute.
 
-## Writing SWML
+All SWML scripts start with the `main` section, but you can create additional sections for different tasks (like `sales`, `support`, `menu`). Use the following methods to move between sections:
 
-SWML documents are written in YAML or its equivalent JSON.
-The following SWML script will answer a call, play some music, then hang up:
+- **[`execute`](/swml/methods/execute)**: Calls a section like a function and returns to the current section
+- **[`transfer`](/swml/methods/transfer)**: Transfers control permanently to another section
+
+### Methods
+
+[Methods](swml/methods) are the commands that tell SWML what to do during a call - 
+like answering, playing audio, collecting input, or instantiating an AI Agent. 
+Think of them as the instructions in your script.
+
+
+## Basic SWML examples
+
+Here are some basic SWML examples utilizing these core concepts for Text to Speech and Call Forwarding:
+
+<Tabs>
+<TabItem value="text-to-speech" label="Text to Speech">
+
+Create a simple text-to-speech greeting:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say:Hello from Signal Wire! Have a great day!"
+    - hangup
+```
+
+This script will answer the incoming call, play a greeting message using text-to-speech, and then hang up.
+
+</TabItem>
+<TabItem value="call-forwarding" label="Call Forwarding">
+
+Forward incoming calls to another number:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        to: "+18888888888"
+```
+
+This script will forward the incoming call to the specified phone number.
+
+</TabItem>
+</Tabs>
+
+
+## Basic IVR
+
+An Interactive Voice Response (IVR) system routes callers to different departments based on their input. 
+This example demonstrates a complete IVR that answers the call, plays a welcome message, records the conversation, collects user input (via keypress or speech), and routes callers to sales or support. 
+
+This pattern is one of the most common use cases for SWML and demonstrates how multiple methods work together to create a professional phone system.
+For an extensive breakdown of this example, see our [IVR Creation Guide](/swml/guides/creating_ivr).
 
 ```yaml andJson
 version: 1.0.0
 sections:
   main:
     - answer: {}
-    - execute:
-        dest: play_music
-        params:
-          to_play: 'https://cdn.signalwire.com/swml/April_Kisses.mp3'
-  play_music:
     - play:
-        url: '${params.to_play}'
-```
-
-
-
-Let us walk through the components of this script.
-
-### `version`
-
-Every SWML script starts with a version string.
-Version `1.0.0` is the latest, and the only supported version.
-
-### `sections`
-
-Each SWML script is divided into sections, which are arrays of statements and methods to execute.
-Methods that don't expect parameters are be mentioned as strings (like [`answer`](/swml/methods/answer)).
-Methods with parameters are invoked as objects
-(like [`execute`](/swml/methods/execute) and [`play`](/swml/methods/play)).
-
-Every SWML script must have the `main` section, which is where execution starts.
-You can switch to other sections by using either the [`execute`](/swml/methods/execute) method
-or the [`transfer`](/swml/methods/transfer) method.
-Sections behave like functions when you invoke them with the [`execute`](/swml/methods/execute) method,
-but when you invoke a section using [`transfer`](/swml/methods/transfer),
-control is transferred to the new section and doesn't return.
-
-In the example above, we have two sections: `main` and `play_music`.
-The `main` section first answers the call.
-Then it executes the `play_music` section which calls the [`play`](/swml/methods/play) method.
-
-### Variable substitution and expression evaluation
-
-Anything inside a `${ }` bracket is considered a JavaScript expression.
-This can be used to insert variables in SWML.
-In the example, params passed through the [`execute`](/swml/methods/execute) method are accessed by`${params.to_play}`.
-If we wanted to lowercase the URL, we could have written `${params.to_play.toLowerCase()}`.
-
-### AI in SWML
-
-You can use the [AI methods](/swml/methods/ai) to very quickly create flexible
-AI agents.
-
-```yaml andJson
-version: 1.0.0
-sections:
-  main:
-    - ai:
-        post_prompt_url: https://example.com/my-api
-        prompt:
-          text: |
-            You are Franklin's assistant, and your job is to collect messages for him over the phone.
-            You can reassure that Franklin will get in touch as soon as possible.
-            Collect the user's name and number if you do not already know it from the caller id.
-            Start by presenting yourself, then let the contact know that Franklin is not available, then offer to collect a message.
-            After collecting the message, do not wait for the user to end the conversation: say good bye and hang up the call.
-        post_prompt:
-          text: |
-            Summarize the message as a valid anonymous json object by filling the upper case placeholders in this template:
-            { "contact_info": { "name": "CONTACT_NAME", "number": "CONTACT_PHONE" }, "message": "MESSAGE" }
-```
-
-In this example, we instantiate an AI agent with instructions to get messages from the caller.
-Once the call ends, the `post_prompt` text will summarize the conversation and HTTP POST it to the `post_prompt_url`.
-Check out our [AI Santa](/swml/guides/ai/holiday_special_santa_ai) guide for a complete example.
-
-## Serving SWML
-
-### From the Dashboard
-
-:::tip
-
-This use case is described in detail in the 
-[Making and Receiving Phone Calls](/voice/getting-started/making-and-receiving-phone-calls) guide.
-
-:::
-
-<Steps>
-
-#### Open the Resources tab
-
-<AddResource/>
-
-#### Create a new SWML Script
-
-From within the Resources tab, click **Add New** and select **SWML Script**.
-
-#### Save the SWML Script
-
-Input your SWML and save.
-
-</Steps>
-
-##### In the Legacy Dashboard {#legacy-dashboard}
-
-<AccordionGroup>
-
-<Accordion 
-  title="In the Legacy Dashboard"
-  description="Follow these instructions if your SignalWire Space is on the Legacy Dashboard"
->
-
-You can write and save new SWML scripts from the "Relay/SWML" section of your Dashboard.
-In that section, switch to the tab named [SWML Scripts](https://my.signalwire.com/relay-bins).
-Once there, you can create a new SWML script:
-
-<figure>
-  <img
-    alt="SignalWire Dashboard with SWML tab open"
-    className="img-600"
-    src={require("./new-swml-2.png").default}
-  />
-</figure>
-
-After you save the SWML, navigate to the [Phone Numbers](https://my.signalwire.com/phone_numbers) page.
-Open the settings for a phone number you own (you may have to buy a new one),
-and configure it to handle incoming calls using the SWML script you just saved.
-
-<figure>
-  <img
-    className="img-400"
-    alt="SignalWire Dashboard's phone number setting screen, selecting a SWML script as call handler."
-    src={require("./add-phone-number.png").default}
-  />
-</figure>
-
-</Accordion>
-
-<UiAccordion/>
-
-</AccordionGroup>
-
-### From a web server
-
-:::tip
-
-This use case is described in detail in the [Handling Incoming Calls from Code](/swml/guides/remote_server) guide.
-
-:::
-
-In the phone number settings, when you check the "Use External URL for SWML Script handler?" option,
-you can set a Web URL that will serve the SWML script.
-Every time a call comes in (or some other designated event occurs),
-you'll get a HTTP POST request to the URL with the following JSON parameters:
-
-| Parameter | Type                              | Description                                                                                                |
-| --------: | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-|    `call` | [`Call`](#the-call-object) object | Contains properties describing the call.                                                                   |
-|    `vars` | `any` object                      | Contains the list of variables set in the calling SWML. Empty when invoked as a direct response to a call. |
-|  `params` | `any` object                      | Contains the list of params set by the calling SWML. Empty when invoked as a direct response to a call.    |
-
-The following is an example JSON that you might receive as a POST request on your server when a SWML is requested.
-
-```json
-{
-  "call": {
-    "call_id": "<CALL_UUID>",
-    "node_id": "<NODE_ID>",
-    "segment_id": "<SEGMENT_ID>",
-    "call_state": "created",
-    "direction": "inbound",
-    "type": "phone",
-    "from": "<CALLING PHONE NUMBER>",
-    "to": "<THE NUMBER ATTACHED TO THE SWML>",
-    "from_number": "<CALLING PHONE NUMBER>",
-    "to_number": "<NUMBER ATTACHED TO THE SWML>",
-    "headers": [],
-    "project_id": "<YOUR PROJECT ID>",
-    "space_id": "<YOUR SPACE ID>"
-  },
-  "vars": {}
-}
-```
-
-#### The Call Object
-
-The `call` object is a description of the received call.
-It will have the following properties:
-
-|       Parameter | Type       | Description                                                             |
-|----------------:|------------|-------------------------------------------------------------------------|
-|       `call_id` | `string`   | A unique identifier for the call.                                       |
-|       `node_id` | `string`   | A unique identifier for the node handling the call.                     |
-|    `segment_id` | `string`   | A unique identifier for the segment.                                    |
-|    `call_state` | `string`   | The current state of the call.                                          |
-|     `direction` | `string`   | The direction of this call. <br/>Possible values: `inbound`, `outbound` |
-|          `type` | `string`   | The type of call. <br/>Possible values: `sip`, `phone`                  |
-|          `from` | `string`   | The number/URI that initiated this call.                                |
-|            `to` | `string`   | The number/URI of the destination of this call.                         |
-|       `headers` | `object[]` | The headers associated with this call.                                  |
-|  `headers.name` | `string`   | The name of the header.                                                 |
-| `headers.value` | `string`   | The value of the header.                                                |
-|    `project_id` | `string`   | The Project ID this call belongs to.                                    |
-|      `space_id` | `string`   | The Space ID this call belongs to.                                      |
-
-The `vars` object and the `params` object will be empty for a new call.
-If you're executing a remote SWML script using the [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/execute) methods,
-the `vars` parameter has a list of the variables declared in the script so far.
-And the `params` object has the list of parameters explicitly set by the [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/execute) methods.
-
-You can also reference the properties of `call` and `params` objects during the script execution using the variable subtitution bracket like so:
-
-```yaml andJson
-version: 1.0.0
-sections:
-  main:
+        url: "say:Welcome to Acme Corporation. This call may be recorded."
+    - record_call:
+        stereo: true
+        format: wav
+    - prompt:
+        play: "say:Press 1 for sales, Press 2 for support"
+        max_digits: 1
+        speech_hints:
+          - one
+          - two
+    - switch:
+        variable: prompt_value
+        case:
+          '1':
+            - execute:
+                dest: sales
+          '2':
+            - execute:
+                dest: support
+          one:
+            - execute:
+                dest: sales
+          two:
+            - execute:
+                dest: support
+        default:
+          - execute:
+              dest: sales
+  sales:
     - play:
-        url: 'say:${call.from}'
-```
-
-Further, consider the following SWML script:
-
-```yaml andJson
-# hosted on https://example.com/swml.yaml
-version: 1.0.0
-sections:
-  main:
+        url: "say:You have reached sales"
+    - connect:
+        to: "+15551234567"
+  support:
     - play:
-        url: '${params.file}'
-    - return: 1
-
+        url: "say:You have reached support"
+    - connect:
+        to: "+15551234568"
 ```
 
-It references `params.file` in it's [`play`](/swml/methods/play) method.
-If this SWML was invoked as a response to a phone call, it would cause an error as the `params` object is empty.
-But if it was hosted on a server and called with the [`execute`](/swml/methods/execute) or the [`transfer`](/swml/methods/transfer) method,
-the `params` object is passed into the SWML.
+**Variable substitution**: Notice how `prompt_value` in the switch statement automatically contains the user's input from the prompt. SWML supports dynamic values using the `%{variable_name}` format. For example, you can reference call information with `%{call.from}` or parameters with `%{params.audio_file}`.
 
-The SWML above can be invoked as follows:
 
-```yaml andJson
-version: 1.0.0
-sections:
-  main:
-    execute:
-      dest: https://example.com/swml.yaml
-      params:
-        file: https://cdn.signalwire.com/swml/audio.mp3
-```
+## Next steps
 
-### From a Relay application
+  <CardGroup cols={3}>
+    <Card
+      title="Quickstart"
+      icon={<MdAutoAwesome />}
+      href="/swml/quickstart"
+    >
+      Quickly create and deploy SWML through the SignalWire Dashboard
+    </Card>
+    <Card
+      title="Methods reference"
+      icon={<MdCode />}
+      href="/swml/methods"
+    >
+      Explore all available SWML methods
+    </Card>
+    <Card
+      title="AI guides"
+      icon={<MdSmartToy />}
+      href="/swml/guides/ai"
+    >
+      Learn how AI methods are used in SWML
+    </Card>
+  </CardGroup>
 
-You can also execute SWML from a Relay application.
-The following is an snippet using the [RealTime API](/sdks/realtime-sdk).
-
-```javascript
-const { Voice } = require("@signalwire/realtime-api");
-const script = `
-version: 1.0.0
-sections:
-  main:
-    - answer: {}
-    - execute:
-        dest: play_music
-        params:
-          to_play: 'https://cdn.signalwire.com/swml/April_Kisses.mp3'
-  play_music:
-    - play:
-        url: '${params.to_play}'
-`;
-
-const client = new Voice.Client({
-  project: "<your project token>",
-  token: "<your project API key>",
-  topics: ["swml"],
-});
-
-client.on("call.received", async (call) => {
-  try {
-    await client.execute({
-      method: "calling.transfer",
-      params: {
-        node_id: call.nodeId,
-        call_id: call.callId,
-        dest: script,
-      },
-    });
-  } catch (error) {}
-});
-```
-
-In this snippet, we are registering an event for every time a call is received to any phone number in your project with the topic "swml".
-You can set the topics a number is subscribed to from the phone number settings page in the SignalWire Dashboard.
-Every time a call is received, the SWML script is executed using the `client.execute` method.
