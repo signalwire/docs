@@ -23,7 +23,7 @@ Why is this change required? What problem does it solve?
 
 ## Checklist:
 
-- [ ] My documentation follows the [style guidelines](https://github.com/signalwire/signalwire-docs/wiki/Style-Guidelines) of this project
+- [ ] My documentation follows the [style guidelines](https://github.com/signalwire/docs/wiki/Written-Style-Guide) of this project
 - [ ] I have performed a self-review of my documentation
 - [ ] My changes generate no new warnings
 - [ ] Builds successfully locally
