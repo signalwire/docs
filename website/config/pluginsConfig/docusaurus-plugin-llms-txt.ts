@@ -234,7 +234,8 @@ export const llmsTxtPlugin: PluginConfig = [
         display: {
           excludeRoutes: [
             '/rest/signalwire-rest/endpoints/**',
-            '/rest/compatibility-api/endpoints/**'
+            '/rest/compatibility-api/endpoints/**',
+            '/'
           ]
         }
       }
