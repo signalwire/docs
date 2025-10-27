@@ -34,7 +34,6 @@ export const llmsTxtPlugin: PluginConfig = [
         "/img/**",
         "/demos/**",
         "/tags/**",
-        "/rest/**",
         "/plugins/**",
         "/internal/**",
         "/landing-assets/**",
@@ -65,7 +64,6 @@ export const llmsTxtPlugin: PluginConfig = [
         "/img/**",
         "/demos/**",
         "/tags/**",
-        "/rest/**",
         "/plugins/**",
         "/internal/**",
         "/landing-assets/**",
@@ -160,7 +158,9 @@ export const llmsTxtPlugin: PluginConfig = [
           name: 'API OpenAPI Spec',
           description: 'The OpenAPI Spec definitions.',
           position: 2,
-          routes: [],
+          routes: [
+            '/rest/**'
+          ],
           attachments: [
             {
               fileName: 'compatibility-api',
