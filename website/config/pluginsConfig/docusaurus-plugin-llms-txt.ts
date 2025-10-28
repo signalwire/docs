@@ -9,7 +9,6 @@
 
 import { PluginConfig } from '@docusaurus/types';
 import type { Options as PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
-import { title } from 'process';
 export const llmsTxtPlugin: PluginConfig = [
   "@signalwire/docusaurus-plugin-llms-txt",
   {
