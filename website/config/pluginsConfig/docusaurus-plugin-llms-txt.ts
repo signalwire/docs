@@ -116,7 +116,7 @@ export const llmsTxtPlugin: PluginConfig = [
           position: 1,
           routes: [
             {
-              route: '/sdks/**'
+              route:  '/sdks/**'
             }
           ],
           subsections: [
@@ -158,7 +158,9 @@ export const llmsTxtPlugin: PluginConfig = [
           description: 'The OpenAPI Spec definitions.',
           position: 2,
           routes: [
-            '/rest/**'
+            {
+              route: '/rest/**'
+            }
           ],
           attachments: [
             {
