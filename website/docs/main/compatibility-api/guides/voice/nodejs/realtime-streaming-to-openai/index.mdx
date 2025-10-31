@@ -30,15 +30,27 @@ When a caller initiates a call to the assigned phone number,
 the SignalWire platform requests and runs the cXML script.
 
 ```mermaid
-graph LR
-    A[Phone call] --> B[SignalWire]
-    B --> C[WebSocket]
-    C --> D[Transport layer]
-    D --> E[OpenAI Realtime]
-    E --> D
-    D --> C
-    C --> B
-    B --> A
+sequenceDiagram
+    participant Caller
+    participant SignalWire
+    participant Server as Your Server
+    participant OpenAI
+
+    Caller->>SignalWire: Call arrives
+    SignalWire->>Server: POST /incoming-call
+    Server->>SignalWire: cXML: Stream
+    SignalWire->>Server: WebSocket /media-stream
+    Server->>OpenAI: RealtimeSession.connect()
+
+    rect rgba(100, 150, 255, 0.2)
+        Note over Caller,OpenAI: Audio streams bidirectionally
+        Caller->>SignalWire: Audio
+        SignalWire->>Server: Audio (base64) via WebSocket
+        Server->>OpenAI: Audio frames
+        OpenAI->>Server: Synthesized speech
+        Server->>SignalWire: Audio (base64) via WebSocket
+        SignalWire->>Caller: Audio
+    end
 ```
 
 {/* This architectural explainer is a DRAFT. It could be useful, but needs further refinement.
