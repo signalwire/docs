@@ -316,38 +316,19 @@ Next, we will create a WebSocket server to handle bidirectional audio streaming.
 <TabItem value="typescript" label="TypeScript">
 
 ```typescript
-import websocket from '@fastify/websocket';
+import type { WebSocket } from 'ws';
 import { SignalWireCompatibilityTransportLayer } from '../transports/SignalWireCompatibilityTransportLayer.js';
 import { RealtimeSession, RealtimeAgent } from '@openai/agents/realtime';
-import { AGENT_CONFIG } from '../config.js';
+import type { RealtimeAgentConfiguration } from '@openai/agents/realtime';
 
-interface SignalWireMessage {
-    event: 'start' | 'media' | 'stop' | 'mark';
-    media?: {
-        payload: string;  // Base64 encoded audio
-        track?: 'inbound' | 'outbound';
-    };
-    start?: {
-        streamSid: string;
-        callSid: string;
-        mediaFormat?: {
-            encoding: string;
-            sampleRate: number;
-            channels: number;
-        };
-    };
-}
-
-app.register(websocket);
-
-app.get('/media-stream', { websocket: true }, async (connection) => {
+app.get('/media-stream', { websocket: true }, async (connection: WebSocket) => {
     console.log('📞 Client connected to WebSocket');
 
     try {
         // Create SignalWire transport layer with configured audio format
         const signalWireTransportLayer = new SignalWireCompatibilityTransportLayer({
             signalWireWebSocket: connection,
-            audioFormat: AGENT_CONFIG.audioFormat
+            audioFormat: 'g711_ulaw' // or 'pcm16' for HD audio
         });
 
         // Create AI agent and session
@@ -366,12 +347,6 @@ app.get('/media-stream', { websocket: true }, async (connection) => {
         session.on('agent_tool_start', (context, agent, tool, details) => {
             console.log('🔧 Tool call started:', details);
         });
-
-    } catch (error) {
-        console.error('❌ Transport initialization failed:', error);
-    }
-});
-```
 
         session.on('agent_tool_end', (context, agent, tool, result, details) => {
             console.log('✅ Tool call completed:', details);
