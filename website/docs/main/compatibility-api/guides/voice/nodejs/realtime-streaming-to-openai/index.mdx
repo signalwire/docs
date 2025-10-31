@@ -273,9 +273,6 @@ First, your server needs to handle incoming call webhooks from SignalWire.
 
 **Set up the HTTP endpoint**
 
-<Tabs groupId="language">
-<TabItem value="typescript" label="TypeScript">
-
 ```typescript
 import Fastify from 'fastify';
 
@@ -320,9 +317,6 @@ app.post('/incoming-call', async (req, res) => {
 
 app.listen({ port: 5050, host: '0.0.0.0' });
 ```
-
-</TabItem>
-</Tabs>
 
 :::tip Webhook URL Format
 Your webhook URL must include `/incoming-call` at the end:
@@ -399,42 +393,8 @@ app.get('/media-stream', { websocket: true }, async (connection) => {
 });
 ```
 
-</TabItem>
-<TabItem value="javascript" label="JavaScript">
-
-```javascript
-const websocket = require('@fastify/websocket');
-const { SignalWireCompatibilityTransportLayer } = require('../transports/SignalWireCompatibilityTransportLayer.js');
-const { RealtimeSession, RealtimeAgent } = require('@openai/agents/realtime');
-const { AGENT_CONFIG } = require('../config.js');
-
-app.register(websocket);
-
-app.get('/media-stream', { websocket: true }, async (connection) => {
-    console.log('📞 Client connected to WebSocket');
-
-    try {
-        // Create SignalWire transport layer with configured audio format
-        const signalWireTransportLayer = new SignalWireCompatibilityTransportLayer({
-            signalWireWebSocket: connection,
-            audioFormat: AGENT_CONFIG.audioFormat
-        });
-
-        // Create AI agent and session
-        const realtimeAgent = new RealtimeAgent(agentConfig);
-        const session = new RealtimeSession(realtimeAgent, {
-            transport: signalWireTransportLayer,
-            model: 'gpt-4o-realtime-preview'
-        });
-
-        // Connect to OpenAI Realtime API
-        await session.connect({
-            apiKey: process.env.OPENAI_API_KEY
-        });
-
-        // Handle session events
-        session.on('agent_tool_start', (context, agent, tool, details) => {
-            console.log('🔧 Tool call started:', details);
+        session.on('agent_tool_end', (context, agent, tool, result, details) => {
+            console.log('✅ Tool call completed:', details);
         });
 
     } catch (error) {
@@ -442,9 +402,6 @@ app.get('/media-stream', { websocket: true }, async (connection) => {
     }
 });
 ```
-
-</TabItem>
-</Tabs>
 
 </Accordion>
 
@@ -546,51 +503,6 @@ async function createAISession(signalWireWebSocket: WebSocket): Promise<Realtime
     return session;
 }
 ```
-
-</TabItem>
-<TabItem value="javascript" label="JavaScript">
-
-```javascript
-const { RealtimeAgent, RealtimeSession } = require('@openai/agents/realtime');
-const { SignalWireRealtimeTransportLayer } = require('../transports/SignalWireRealtimeTransportLayer.js');
-const { allTools } = require('../tools/index.js');
-
-// Configure the AI agent
-const agentConfig = {
-    name: 'SignalWire Voice Assistant',
-    instructions: `You are a helpful and friendly voice assistant.
-        Always start every conversation by greeting the caller first.
-        You can help with weather information, time queries, and general conversation.
-        Be concise and friendly in your responses.`,
-    tools: allTools, // Weather, time, and other tools
-    voice: 'alloy'
-};
-
-async function createAISession(signalWireWebSocket) {
-    // Create transport layer that bridges SignalWire and OpenAI
-    const transport = new SignalWireCompatibilityTransportLayer({
-        signalWireWebSocket,
-        audioFormat: 'g711_ulaw' // or 'pcm16' for HD audio
-    });
-
-    // Create agent and session
-    const agent = new RealtimeAgent(agentConfig);
-    const session = new RealtimeSession(agent, {
-        transport,
-        model: 'gpt-4o-realtime-preview'
-    });
-
-    // Connect to OpenAI
-    await session.connect({
-        apiKey: process.env.OPENAI_API_KEY
-    });
-
-    return session;
-}
-```
-
-</TabItem>
-</Tabs>
 
 **Send Audio Back to Caller**
 
@@ -772,113 +684,6 @@ const agentConfig = {
     voice: 'alloy'
 };
 ```
-
-</TabItem>
-<TabItem value="javascript" label="JavaScript">
-
-```javascript
-const { tool: realtimeTool } = require('@openai/agents/realtime');
-const { z } = require('zod');
-
-// Weather tool using real US National Weather Service API
-const weatherTool = realtimeTool({
-    name: 'get_weather',
-    description: 'Get current weather information for any US city',
-    parameters: z.object({
-        location: z.string().describe('The US city or location to get weather for (include state if needed for clarity)')
-    }),
-    execute: async ({ location }) => {
-        try {
-            // Step 1: Geocoding - Convert city name to coordinates
-            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&countrycodes=us&limit=1`;
-            const geocodeResponse = await fetch(geocodeUrl, {
-                headers: {
-                    'User-Agent': 'SignalWire-OpenAI-Voice-Assistant/1.0.0'
-                }
-            });
-
-            if (!geocodeResponse.ok) {
-                return 'Sorry, weather information is currently unavailable.';
-            }
-
-            const geocodeData = await geocodeResponse.json();
-            if (!geocodeData || geocodeData.length === 0) {
-                return `Sorry, I couldn't find the location "${location}". Please try a different city name.`;
-            }
-
-            const lat = parseFloat(geocodeData[0].lat);
-            const lon = parseFloat(geocodeData[0].lon);
-
-            // Step 2: Get weather from weather.gov
-            const pointsUrl = `https://api.weather.gov/points/${lat},${lon}`;
-            const pointsResponse = await fetch(pointsUrl);
-            const pointsData = await pointsResponse.json();
-
-            const forecastUrl = pointsData.properties?.forecast;
-            if (!forecastUrl) {
-                return 'Sorry, weather information is currently unavailable.';
-            }
-
-            const forecastResponse = await fetch(forecastUrl);
-            const forecastData = await forecastResponse.json();
-
-            const currentPeriod = forecastData.properties?.periods?.[0];
-            if (!currentPeriod) {
-                return 'Sorry, weather information is currently unavailable.';
-            }
-
-            // Format response for voice
-            const cityName = geocodeData[0].display_name.split(',')[0];
-            return `In ${cityName}, it's currently ${currentPeriod.detailedForecast.toLowerCase()}`;
-
-        } catch (error) {
-            return 'Sorry, weather information is currently unavailable.';
-        }
-    }
-});
-
-// Time tool example (no external API required)
-const timeTool = realtimeTool({
-    name: 'get_time',
-    description: 'Get the current time in Eastern Time',
-    parameters: z.object({}), // No parameters needed
-    execute: async () => {
-        try {
-            const now = new Date();
-            const easternTime = now.toLocaleString('en-US', {
-                timeZone: 'America/New_York',
-                timeZoneName: 'short',
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-            });
-            return `The current time in Eastern Time is ${easternTime}.`;
-        } catch (error) {
-            return 'Sorry, time information is currently unavailable.';
-        }
-    }
-});
-
-// Export all tools
-module.exports = { allTools: [weatherTool, timeTool] };
-
-// Add to your AI agent configuration
-const agentConfig = {
-    name: 'SignalWire Voice Assistant',
-    instructions: `You are a helpful and friendly voice assistant.
-        Always start every conversation by greeting the caller first.
-        You can help with weather information, time queries, and general conversation.
-        Be concise and friendly in your responses.`,
-    tools: allTools,
-    voice: 'alloy'
-};
-```
-
-</TabItem>
-</Tabs>
 
 1. **User asks**: "What's the weather in New York?"
 2. **AI recognizes intent**: Needs weather information
