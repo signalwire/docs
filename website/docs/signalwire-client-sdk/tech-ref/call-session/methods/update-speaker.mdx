@@ -1,6 +1,7 @@
 ---
 title: updateSpeaker
-slug: /call-session/updatespeaker
+slug: /call-session/methods/updatespeaker
+description: Updates the audio output device (speaker) used for playing remote audio from the call.
 ---
 
 import APIField from '@site/src/components/APIField';
@@ -23,12 +24,14 @@ call.updateSpeaker({ deviceId }: { deviceId: string }): Promise<undefined>
 
 **Type:** `Promise<undefined>`
 
-## Examples
-
-### Switch to Specific Speaker
+## Example
 
 ```typescript
-// Get available audio output devices
+// Initialize client and start a call
+const client = await SignalWire({ token: '<your-token>' })
+const call = await client.dial({ to: '/public/example' })
+
+// Get available speakers
 const devices = await navigator.mediaDevices.enumerateDevices()
 const speakers = devices.filter(d => d.kind === 'audiooutput')
 
@@ -36,105 +39,11 @@ const speakers = devices.filter(d => d.kind === 'audiooutput')
 await call.updateSpeaker({
   deviceId: speakers[1].deviceId
 })
-```
 
-### Switch to Default Speaker
-
-```typescript
-await call.updateSpeaker({
-  deviceId: 'default'
-})
-```
-
-### Dynamic Speaker Selection
-
-```typescript
-async function selectSpeaker() {
-  const devices = await navigator.mediaDevices.enumerateDevices()
-  const speakers = devices.filter(d => d.kind === 'audiooutput')
-
-  // Show dropdown to user
-  const selectedId = await showSpeakerDropdown(speakers)
-
-  // Update to selected speaker
-  await call.updateSpeaker({ deviceId: selectedId })
-}
-```
-
-### Listen for Speaker Changes
-
-```typescript
-// The updateSpeaker method triggers a 'speaker.updated' event
+// Listen for speaker change events
 call.on('speaker.updated', (data) => {
-  console.log('Speaker changed from:', data.previous)
-  console.log('Speaker changed to:', data.current)
-  console.log('New device ID:', data.current.deviceId)
-  console.log('New device label:', data.current.label)
+  console.log('Speaker changed to:', data.current.label)
 })
-
-// Update speaker
-await call.updateSpeaker({ deviceId: newDeviceId })
-```
-
-### Speaker Selection UI
-
-```typescript
-async function buildSpeakerSelector() {
-  const devices = await navigator.mediaDevices.enumerateDevices()
-  const speakers = devices.filter(d => d.kind === 'audiooutput')
-
-  const select = document.createElement('select')
-
-  speakers.forEach(speaker => {
-    const option = document.createElement('option')
-    option.value = speaker.deviceId
-    option.text = speaker.label || `Speaker ${speaker.deviceId.substring(0, 5)}`
-    select.appendChild(option)
-  })
-
-  select.addEventListener('change', async (e) => {
-    await call.updateSpeaker({ deviceId: e.target.value })
-  })
-
-  return select
-}
-```
-
-### React Speaker Selector
-
-```typescript
-function SpeakerSelector({ call }) {
-  const [speakers, setSpeakers] = useState([])
-  const [currentSpeaker, setCurrentSpeaker] = useState('')
-
-  useEffect(() => {
-    async function loadSpeakers() {
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const outputs = devices.filter(d => d.kind === 'audiooutput')
-      setSpeakers(outputs)
-    }
-
-    loadSpeakers()
-
-    call.on('speaker.updated', (data) => {
-      setCurrentSpeaker(data.current.deviceId)
-    })
-  }, [call])
-
-  async function handleChange(e) {
-    await call.updateSpeaker({ deviceId: e.target.value })
-  }
-
-  return (
-    <select value={currentSpeaker} onChange={handleChange}>
-      {speakers.map(speaker => (
-        <option key={speaker.deviceId} value={speaker.deviceId}>
-          {speaker.label}
-        </option>
-      ))}
-    </select>
-  )
-}
 ```
 
 ## Events
