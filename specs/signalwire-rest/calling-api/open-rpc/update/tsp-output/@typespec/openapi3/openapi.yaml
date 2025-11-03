@@ -1,0 +1,342 @@
+openapi: 3.0.0
+info:
+  title: Calling API - Update Call
+  version: 1.0.0
+  contact:
+    name: SignalWire
+    url: https://support.signalwire.com/portal/en/newticket?departmentId=1029313000000006907&layoutId=1029313000000074011
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://github.com/signalwire/docs/blob/main/LICENSE
+  termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
+  description: API to update existing SignalWire calls with new SWML instructions.
+externalDocs:
+  url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling/calls/update
+  description: Documentation for the update command to modify existing calls.
+tags:
+  - name: Calls
+    description: Endpoints related to creating and managing calls
+    externalDocs:
+      url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling/calls
+      description: Developer documentation on Calling API Call endpoints
+paths:
+  /calls:
+    post:
+      operationId: update-call
+      summary: Update a Call
+      description: To update an existing call, you send a `POST` request to the Call resource with a payload including an `update` command and additional nested `params` containing new SWML instructions.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallUpdate422Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Calls
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CallUpdateCurrentCallRequest'
+security:
+  - BasicAuth: []
+components:
+  schemas:
+    CallResponse:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - direction
+        - status
+        - duration
+        - duration_ms
+        - billing_ms
+        - source
+        - type
+        - url
+        - charge
+        - created_at
+        - parent_id
+        - charge_details
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the call on SignalWire. This can be used to update the call programmatically.
+          example: 0e9c80d7-a149-4917-892d-420043709f45
+        from:
+          type: string
+          description: The origin number or address.
+          example: '+12069708643'
+        to:
+          type: string
+          description: The destination number or address.
+          example: '+18048390497'
+        direction:
+          type: string
+          enum:
+            - outbound-api
+          description: The direction of the call.
+          example: outbound-api
+        status:
+          type: string
+          enum:
+            - answered
+            - queued
+            - initiated
+            - ringing
+            - ending
+            - ended
+          description: The status of the call.
+          example: queued
+        duration:
+          type: integer
+          nullable: true
+          description: The duration of the call in seconds.
+          example: null
+        duration_ms:
+          type: integer
+          nullable: true
+          description: The duration of the call in milliseconds.
+          example: null
+        billing_ms:
+          type: integer
+          nullable: true
+          description: The billable duration of the call in milliseconds.
+          example: null
+        source:
+          type: string
+          enum:
+            - realtime_api
+          description: Source of this call.
+          example: realtime_api
+        type:
+          type: string
+          enum:
+            - relay_pstn_call
+            - relay_sip_call
+            - relay_webrtc_call
+          description: Type of this call.
+          example: relay_pstn_call
+        url:
+          type: string
+          nullable: true
+          description: The URL associated with this call.
+          example: null
+        charge:
+          type: number
+          format: double
+          description: Total charge for this call.
+          example: 0
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the call was created.
+          example: '2024-05-06T12:20:00Z'
+        parent_id:
+          type: string
+          nullable: true
+          description: The parent call ID if this is a child call.
+          example: null
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetails'
+          description: Details on charges associated with this call.
+    CallUpdate422Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.StatusCode422Error'
+      example:
+        errors:
+          - type: validation_error
+            code: missing_required_parameter
+            message: url must be a valid http or https url
+            attribute: url
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#http_url_required
+    CallUpdateCurrentCallRequest:
+      type: object
+      required:
+        - command
+        - params
+      properties:
+        command:
+          type: string
+          enum:
+            - update
+          description: The `update` command is used to update a existing call with a new dialplan.
+          example: update
+        params:
+          anyOf:
+            - $ref: '#/components/schemas/CallUpdateParamsURL'
+            - $ref: '#/components/schemas/CallUpdateParamsSWML'
+          description: An object of parameters that will be utilized by the active command.
+      title: Update call
+    CallUpdateParamsSWML:
+      type: object
+      required:
+        - id
+        - swml
+      properties:
+        id:
+          type: string
+          description: The unique identifying ID of a existing call.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        fallback_url:
+          type: string
+          description: |-
+            The Fallback URL to handle the call. 
+            This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
+          example: https://example.com/fallback
+        status:
+          type: string
+          enum:
+            - canceled
+            - completed
+          description: Either `canceled` (to cancel a not yet connected call) or `completed` (to end a call that is in progress).
+          example: canceled
+        swml:
+          type: string
+          description: Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.
+          example: "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}"
+      title: Update call (SWML)
+    CallUpdateParamsURL:
+      type: object
+      required:
+        - id
+        - url
+      properties:
+        id:
+          type: string
+          description: The unique identifying ID of a existing call.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        fallback_url:
+          type: string
+          description: |-
+            The Fallback URL to handle the call. 
+            This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
+          example: https://example.com/fallback
+        status:
+          type: string
+          enum:
+            - canceled
+            - completed
+          description: Either `canceled` (to cancel a not yet connected call) or `completed` (to end a call that is in progress).
+          example: canceled
+        url:
+          type: string
+          description: |-
+            The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
+            Either `url` or `swml` must be included for a new call.
+          example: https://example.com/swml
+      title: Update call (URL)
+    ChargeDetails:
+      type: object
+      required:
+        - description
+        - amount
+      properties:
+        description:
+          type: string
+          description: Description for this charge.
+          example: Text to Speech
+        amount:
+          type: number
+          description: Charged amount.
+          example: 0.121176
+    Types.StatusCodes.StatusCode401:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Unauthorized
+    Types.StatusCodes.StatusCode404:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Not Found
+    Types.StatusCodes.StatusCode422Error:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - attribute
+        - url
+      properties:
+        type:
+          type: string
+          description: Error type.
+        code:
+          type: string
+          description: Error code.
+        message:
+          type: string
+          description: Error details.
+        attribute:
+          type: string
+          description: Request parameter associated with this error.
+        url:
+          type: string
+          description: Link to developer resource for this error.
+    Types.StatusCodes.StatusCode500:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Internal Server Error
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: Basic
+servers:
+  - url: https://{space_name}.signalwire.com/api/calling
+    description: Endpoint
+    variables:
+      space_name:
+        default: '{Your_Space_Name}'
+        description: The domain of the users SignalWire space.

@@ -23,14 +23,44 @@ export const openapiPlugin: PluginConfig = [
           groupPathsBy: "tag",
         },
       },
-      signalwireCallingApi: {
-        specPath: "../specs/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml",
-        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling",
-        maskCredentials: false,        
-        sidebarOptions: {
-          categoryLinkSource: "tag",
-          groupPathsBy: "tag",
-        },
+      // BACKUP: Previous config with subdirectories
+      // To revert: restore outputDir to subdirectories (dial/, update/, calling-end/, etc.)
+      // and remove the outputDir override below
+      signalwireCallingApiDial: {
+        specPath: "../specs/signalwire-rest/calling-api/open-rpc/dial/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling", // FLAT - no subdirectories
+        maskCredentials: false,
+        // NO sidebarOptions - we'll create a manual sidebar to avoid overwriting
+      },
+      signalwireCallingApiUpdate: {
+        specPath: "../specs/signalwire-rest/calling-api/open-rpc/update/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling", // FLAT
+        maskCredentials: false,
+        // NO sidebarOptions
+      },
+      signalwireCallingApiEnd: {
+        specPath: "../specs/signalwire-rest/calling-api/open-rpc/calling-end/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling", // FLAT
+        maskCredentials: false,
+        // NO sidebarOptions
+      },
+      signalwireCallingApiAiHold: {
+        specPath: "../specs/signalwire-rest/calling-api/open-rpc/calling-ai-hold/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling", // FLAT
+        maskCredentials: false,
+        // NO sidebarOptions
+      },
+      signalwireCallingApiAiUnhold: {
+        specPath: "../specs/signalwire-rest/calling-api/open-rpc/calling-ai-unhold/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling", // FLAT
+        maskCredentials: false,
+        // NO sidebarOptions
+      },
+      signalwireCallingApiAiMessage: {
+        specPath: "../specs/signalwire-rest/calling-api/open-rpc/calling-ai-message/tsp-output/@typespec/openapi3/openapi.yaml",
+        outputDir: "docs/main/rest/signalwire-rest/endpoints/calling", // FLAT
+        maskCredentials: false,
+        // NO sidebarOptions
       },
       signalwireChatApi: {
         specPath: "../specs/signalwire-rest/chat-api/tsp-output/@typespec/openapi3/openapi.yaml",

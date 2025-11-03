@@ -74,7 +74,45 @@ const apiSidebar: SidebarsConfig = {
               },
               type: "category",
               label: "Calling",
-              items: require("../../../docs/main/rest/signalwire-rest/endpoints/calling/sidebar"),
+              // Manual sidebar items since all specs output to flat directory without auto-sidebar generation
+              items: [
+                {
+                  type: "doc",
+                  id: "rest/signalwire-rest/endpoints/calling/create-call",
+                  label: "Create a Call (dial)",
+                  className: "api-method post",
+                },
+                {
+                  type: "doc",
+                  id: "rest/signalwire-rest/endpoints/calling/update-call",
+                  label: "Update a Call (update)",
+                  className: "api-method post",
+                },
+                {
+                  type: "doc",
+                  id: "rest/signalwire-rest/endpoints/calling/hangup-call",
+                  label: "Hangup a Call (calling.end)",
+                  className: "api-method post",
+                },
+                {
+                  type: "doc",
+                  id: "rest/signalwire-rest/endpoints/calling/hold-ai",
+                  label: "Hold an AI Call (calling.ai_hold)",
+                  className: "api-method post",
+                },
+                {
+                  type: "doc",
+                  id: "rest/signalwire-rest/endpoints/calling/unhold-ai",
+                  label: "Unhold an AI Call (calling.ai_unhold)",
+                  className: "api-method post",
+                },
+                {
+                  type: "doc",
+                  id: "rest/signalwire-rest/endpoints/calling/inject-ai-message",
+                  label: "Inject AI Message (calling.ai_message)",
+                  className: "api-method post",
+                },
+              ],
             },
             {
               link: {

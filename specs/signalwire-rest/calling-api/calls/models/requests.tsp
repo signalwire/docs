@@ -18,7 +18,9 @@ const uuidDescription = "The unique identifying ID of a existing call.";
 
 const paramsDescription = "An object of parameters that will be utilized by the active command.";
 
-alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
+alias CallCreateParamsAlias = CallCreateParamsURL | CallCreateParamsSWML;
+
+alias CallUpdateParamsAlias = CallUpdateParamsURL | CallUpdateParamsSWML;
 
 @summary("Hangup call")
 model CallHangupRequest {
@@ -101,7 +103,7 @@ model CallCreateRequest {
   command: "dial";
 
   @doc(paramsDescription)
-  params: CallCreateRequestAlias;
+  params: CallCreateParamsAlias;
 }
 
 model CallCreateParamsBase {
@@ -189,34 +191,19 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
 }
 
 @summary("Update call")
-@oneOf
-union UpdateCurrentCallRequest {
-  CallUpdateSWMLRequest,
-  CallUpdateURLRequest,
+model CallUpdateCurrentCallRequest {
+  @doc(updateCommandDescription)
+  @example("update")
+  command: "update";
+
+  @doc(paramsDescription)
+  params: CallUpdateParamsAlias;
 }
 
 union CallUpdateRequest {
-  UpdateCurrentCallRequest,
+  CallUpdateCurrentCallRequest,
   CallHangupRequest,
   CallHoldRequest,
   CallUnholdRequest,
   CallAIMessageRequest,
-}
-
-model CallUpdateRequestBase {
-  @doc(updateCommandDescription)
-  @example("update")
-  command: "update";
-}
-
-@summary("Update call (SWML)")
-model CallUpdateSWMLRequest is CallUpdateRequestBase {
-  @doc(paramsDescription)
-  params: CallUpdateParamsSWML;
-}
-
-@summary("Update call (URL)")
-model CallUpdateURLRequest is CallUpdateRequestBase {
-  @doc(paramsDescription)
-  params: CallUpdateParamsURL;
 }
