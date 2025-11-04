@@ -508,12 +508,61 @@ mkdir -p secrets
 echo "sk-your-actual-api-key-here" > secrets/openai_api_key.txt
 ```
 
-Environment variables in `docker-compose.yml`:
-```yaml
-environment:
-  - PORT=5050
-  - AUDIO_FORMAT=pcm16
+**docker-compose.yml configuration:**
+
+The `docker-compose.yml` file references the secret and mounts it into the container:
+
+```yaml title="docker-compose.yml"
+services:
+  signalwire-assistant:
+    # ... other config
+    secrets:
+      - openai_api_key
+
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt
 ```
+
+**Reading secrets in your application:**
+
+Your application reads from the Docker secret at runtime, checking the secret file first and falling back to an environment variable:
+
+```typescript title="src/config.ts - Read Docker secrets"
+import * as fs from 'fs';
+
+function getOpenAIApiKey(): string {
+  // First try to read from Docker secret (for containerized deployments)
+  const secretPath = '/run/secrets/openai_api_key';
+  try {
+    if (fs.existsSync(secretPath)) {
+      const apiKey = fs.readFileSync(secretPath, 'utf8').trim();
+      if (apiKey) {
+        return apiKey;
+      }
+    }
+  } catch (error) {
+    // Fall back to environment variable if secret reading fails
+    // (logging omitted for simplicity)
+  }
+
+  // Fallback to environment variable
+  const envApiKey = process.env.OPENAI_API_KEY;
+  if (envApiKey) {
+    return envApiKey;
+  }
+
+  return '';
+}
+
+const OPENAI_API_KEY = getOpenAIApiKey();
+```
+
+**Important reminders:**
+
+- Always add `secrets/` to your `.gitignore` to prevent accidental commits
+- Docker secrets are mounted at `/run/secrets/` inside the container
+- Keep credentials out of `.env` files and version control
 
 </TabItem>
 </Tabs>
