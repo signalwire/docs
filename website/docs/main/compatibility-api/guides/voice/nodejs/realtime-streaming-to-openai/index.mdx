@@ -541,6 +541,14 @@ function getOpenAIApiKey(): string {
 const OPENAI_API_KEY = getOpenAIApiKey();
 ```
 
+:::info Configuration Validation
+The actual implementation includes startup validation that checks:
+- **API Key**: Throws an error if `OPENAI_API_KEY` is missing, with helpful instructions for both local and Docker setups
+- **Audio Format**: Validates that `AUDIO_FORMAT` is either `g711_ulaw` or `pcm16`, rejecting invalid values
+
+This means configuration errors are caught immediately at startup, preventing runtime failures later. If you see configuration errors when starting the application, check the error message—it includes specific instructions for fixing the issue.
+:::
+
 **Important reminders:**
 
 - Always add `secrets/` to your `.gitignore` to prevent accidental commits
@@ -651,7 +659,7 @@ const timeTool = realtimeTool({
 
       return `The current time in Eastern Time is ${easternTime}.`;
     } catch (error) {
-      // Error handling omitted for simplicity
+      // Return fallback message if time formatting fails
       return 'Time information unavailable';
     }
   },
@@ -872,6 +880,15 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/index.js"]
 ```
 
+:::tip Multi-Stage Build in Production
+The example above uses a single-stage build for simplicity. For production deployments with smaller image sizes, the actual implementation uses a **multi-stage build pattern**:
+
+1. **Builder stage**: Installs all dependencies (dev + production) and builds the TypeScript
+2. **Production stage**: Copies only the compiled code and production dependencies, discarding build artifacts
+
+This approach reduces final image size by ~60% by excluding dev dependencies, build tools, and temporary files. Consider adopting the multi-stage pattern for production deployments to reduce deployment time and storage costs.
+:::
+
 </TabItem>
 <TabItem value="compose" label="docker-compose.yml">
 
@@ -892,12 +909,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      start_period: 40s
 
 secrets:
   openai_api_key:
