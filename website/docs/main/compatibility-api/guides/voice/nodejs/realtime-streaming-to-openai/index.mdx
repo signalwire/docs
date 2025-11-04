@@ -265,29 +265,29 @@ First, your server needs to handle incoming call webhooks from SignalWire.
 
 **Set up the HTTP endpoint**
 
-```typescript
-import Fastify from 'fastify';
+```typescript title="src/routes/webhook.ts"
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-const app = Fastify();
+export async function webhookRoute(fastify: FastifyInstance) {
+  fastify.all('/incoming-call', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Dynamically construct WebSocket URL from request headers
+    const host = request.headers.host || 'localhost';
+    const protocol = request.headers['x-forwarded-proto'] === 'https' ? 'wss' : 'ws';
+    const websocketUrl = `${protocol}://${host}/media-stream`;
 
-app.post('/incoming-call', async (req, res) => {
-    const host = req.headers.host;
-    const wsUrl = `wss://${host}/media-stream`;
-
-    // Return cXML instructions to stream audio
-    const cxml = `<?xml version="1.0" encoding="UTF-8"?>
+    // Codec negotiation omitted for simplicity
+    // Generate cXML response to stream audio to our WebSocket
+    const cXMLResponse = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
-        <Stream url="${wsUrl}" />
+      <Say>Connecting to agent</Say>
+      <Connect>
+        <Stream url="${websocketUrl}" />
+      </Connect>
     </Response>`;
 
-    res.type('text/xml').send(cxml);
-});
-
-// For production with proxies (ngrok, load balancers), detect protocol:
-// const protocol = req.headers['x-forwarded-proto'] === 'https' ? 'wss' : 'ws';
-// const wsUrl = `${protocol}://${host}/media-stream`;
-
-app.listen({ port: 5050, host: '0.0.0.0' });
+    reply.type('text/xml').send(cXMLResponse);
+  });
+}
 ```
 
 :::tip Webhook URL Format
@@ -307,46 +307,59 @@ Next, we will create a WebSocket server to handle bidirectional audio streaming.
 <Tabs groupId="language">
 <TabItem value="typescript" label="TypeScript">
 
-```typescript
+```typescript title="src/routes/streaming.ts"
 import type { WebSocket } from 'ws';
+import { RealtimeAgent, RealtimeSession } from '@openai/agents/realtime';
 import { SignalWireCompatibilityTransportLayer } from '../transports/SignalWireCompatibilityTransportLayer.js';
-import { RealtimeSession, RealtimeAgent } from '@openai/agents/realtime';
-import type { RealtimeAgentConfiguration } from '@openai/agents/realtime';
 
-app.get('/media-stream', { websocket: true }, async (connection: WebSocket) => {
-    console.log('📞 Client connected to WebSocket');
+fastify.get('/media-stream', { websocket: true }, async (connection: WebSocket) => {
+  // Handle client disconnection
+  connection.on('close', () => {
+    console.log('Client disconnected');
+  });
 
-    try {
-        // Create SignalWire transport layer with configured audio format
-        const signalWireTransportLayer = new SignalWireCompatibilityTransportLayer({
-            signalWireWebSocket: connection,
-            audioFormat: 'g711_ulaw' // or 'pcm16' for HD audio
-        });
+  // Handle connection errors
+  connection.on('error', (error) => {
+    console.error('Connection error:', error);
+  });
 
-        // Create AI agent and session
-        const realtimeAgent = new RealtimeAgent(agentConfig);
-        const session = new RealtimeSession(realtimeAgent, {
-            transport: signalWireTransportLayer,
-            model: 'gpt-4o-realtime-preview'
-        });
+  try {
+    // Create SignalWire transport layer with configured audio format
+    const signalWireTransportLayer = new SignalWireCompatibilityTransportLayer({
+      signalWireWebSocket: connection,
+      audioFormat: AGENT_CONFIG.audioFormat
+    });
 
-        // Connect to OpenAI Realtime API
-        await session.connect({
-            apiKey: process.env.OPENAI_API_KEY
-        });
+    // Create session with SignalWire transport
+    const session = new RealtimeSession(realtimeAgent, {
+      transport: signalWireTransportLayer,
+      model: model
+    });
 
-        // Handle session events
-        session.on('agent_tool_start', (context, agent, tool, details) => {
-            console.log('🔧 Tool call started:', details);
-        });
+    // Listen to session events for tool call lifecycle
+    session.on('agent_tool_start', (context, agent, tool, details) => {
+      console.log('Tool call started:', details);
+    });
 
-        session.on('agent_tool_end', (context, agent, tool, result, details) => {
-            console.log('✅ Tool call completed:', details);
-        });
+    session.on('agent_tool_end', (context, agent, tool, result, details) => {
+      console.log('Tool call completed:', details);
+    });
 
-    } catch (error) {
-        console.error('❌ Transport initialization failed:', error);
-    }
+    // Handle errors gracefully
+    session.on('error', (error) => {
+      console.error('Session error:', error);
+    });
+
+    // Connect to OpenAI Realtime API via the transport layer
+    await session.connect({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
+    // Transport event monitoring and response trigger omitted for simplicity
+
+  } catch (error) {
+    console.error('Error initializing session:', error);
+  }
 });
 ```
 
@@ -409,73 +422,28 @@ SignalWire sends several types of messages through the WebSocket:
 
 The AI agent configuration defines how your assistant behaves. Import your tools and set instructions:
 
-**Create the AI Session**
-
-<Tabs groupId="language">
-<TabItem value="typescript" label="TypeScript">
-
-```typescript
-import { RealtimeAgent, RealtimeSession } from '@openai/agents/realtime';
+```typescript title="src/config.ts - Agent configuration"
 import type { RealtimeAgentConfiguration } from '@openai/agents/realtime';
-import { SignalWireCompatibilityTransportLayer } from '../transports/SignalWireCompatibilityTransportLayer.js';
 import { allTools } from '../tools/index.js';
 
-// Configure the AI agent
-const agentConfig: RealtimeAgentConfiguration = {
-    name: 'SignalWire Voice Assistant',
-    instructions: `You are a helpful and friendly voice assistant.
-        Always start every conversation by greeting the caller first.
-        You can help with weather information, time queries, and general conversation.
-        Be concise and friendly in your responses.`,
-    tools: allTools, // Weather, time, and other tools
-    voice: 'alloy'
+export const AGENT_CONFIG: RealtimeAgentConfiguration = {
+  name: 'SignalWire Voice Assistant',
+  voice: 'alloy',
+  model: 'gpt-4o-realtime-preview',
+  audioFormat: process.env.AUDIO_FORMAT || 'g711_ulaw',
+  instructions: `
+    You are a helpful and friendly voice assistant integrated with SignalWire.
+
+    IMPORTANT: Always start every conversation by greeting the caller first. Begin with something like "Hello! I'm your AI voice assistant. How can I help you today?"
+
+    You can help with weather information, time queries, and general conversation.
+    Be concise and friendly in your responses, remembering you're on a phone call.
+    When you first greet someone, briefly mention that you can help with weather, time, and answering questions.
+    Always confirm when you're about to use a tool.
+  `
 };
 
-async function createAISession(signalWireWebSocket: WebSocket): Promise<RealtimeSession> {
-    // Create transport layer that bridges SignalWire and OpenAI
-    const transport = new SignalWireCompatibilityTransportLayer({
-        signalWireWebSocket,
-        audioFormat: 'g711_ulaw' // or 'pcm16' for HD audio
-    });
-
-    // Create agent and session
-    const agent = new RealtimeAgent(agentConfig);
-    const session = new RealtimeSession(agent, {
-        transport,
-        model: 'gpt-4o-realtime-preview'
-    });
-
-    // Connect to OpenAI
-    await session.connect({
-        apiKey: process.env.OPENAI_API_KEY
-    });
-
-    return session;
-}
-```
-
-**Send Audio Back to Caller**
-
-```typescript
-// Audio is automatically handled by SignalWireRealtimeTransportLayer
-// The transport layer manages:
-// 1. Audio format conversion (g711_ulaw ↔ pcm16)
-// 2. Base64 encoding/decoding
-// 3. Chunk timing and interruption handling
-// 4. Mark events for tracking audio playback
-
-// Example of session event handling:
-session.on('agent_tool_start', (context, agent, tool, details) => {
-    console.log('🔧 Tool call started:', details);
-});
-
-session.on('agent_tool_end', (context, agent, tool, result, details) => {
-    console.log('✅ Tool call completed:', details);
-});
-
-session.on('error', (error) => {
-    console.error('❌ Session error:', error);
-});
+// The agent is instantiated in the WebSocket handler with: new RealtimeAgent(AGENT_CONFIG)
 ```
 
 **Environment configuration**
@@ -580,90 +548,98 @@ Tools are functions the AI can call during a conversation. Here's the structure�
 <Tabs groupId="language">
 <TabItem value="typescript" label="TypeScript">
 
-```typescript
-import { tool as realtimeTool } from '@openai/agents/realtime';
+```typescript title="src/tools/weather.tool.ts"
 import { z } from 'zod';
+import { tool as realtimeTool } from '@openai/agents/realtime';
 
-// Weather tool using real US National Weather Service API
+// Weather tool that calls an external API
 const weatherTool = realtimeTool({
-    name: 'get_weather',
-    description: 'Get current weather information for any US city',
-    parameters: z.object({
-        location: z.string().describe('The US city or location to get weather for (include state if needed for clarity)')
-    }),
-    execute: async ({ location }) => {
-        try {
-            // Step 1: Geocoding - Convert city name to coordinates
-            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&countrycodes=us&limit=1`;
-            const geocodeResponse = await fetch(geocodeUrl, {
-                headers: {
-                    'User-Agent': 'SignalWire-OpenAI-Voice-Assistant/1.0.0'
-                }
-            });
-
-            if (!geocodeResponse.ok) {
-                return 'Sorry, weather information is currently unavailable.';
-            }
-
-            const geocodeData = await geocodeResponse.json();
-            if (!geocodeData || geocodeData.length === 0) {
-                return `Sorry, I couldn't find the location "${location}". Please try a different city name.`;
-            }
-
-            const lat = parseFloat(geocodeData[0].lat);
-            const lon = parseFloat(geocodeData[0].lon);
-
-            // Step 2: Get weather from weather.gov
-            const pointsUrl = `https://api.weather.gov/points/${lat},${lon}`;
-            const pointsResponse = await fetch(pointsUrl);
-            const pointsData = await pointsResponse.json();
-
-            const forecastUrl = pointsData.properties?.forecast;
-            if (!forecastUrl) {
-                return 'Sorry, weather information is currently unavailable.';
-            }
-
-            const forecastResponse = await fetch(forecastUrl);
-            const forecastData = await forecastResponse.json();
-
-            const currentPeriod = forecastData.properties?.periods?.[0];
-            if (!currentPeriod) {
-                return 'Sorry, weather information is currently unavailable.';
-            }
-
-            // Format response for voice
-            const cityName = geocodeData[0].display_name.split(',')[0];
-            return `In ${cityName}, it's currently ${currentPeriod.detailedForecast.toLowerCase()}`;
-
-        } catch (error) {
-            return 'Sorry, weather information is currently unavailable.';
+  name: 'get_weather',
+  description: 'Get current weather information for any US city',
+  parameters: z.object({
+    location: z.string().describe('The US city or location to get weather for (include state if needed for clarity)'),
+  }),
+  execute: async ({ location }) => {
+    try {
+      // Step 1: Geocoding - Convert city name to coordinates
+      const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&countrycodes=us&limit=1`;
+      const geocodeResponse = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'SignalWire-OpenAI-Voice-Assistant/1.0.0 (Contact: developer@example.com)'
         }
+      });
+
+      if (!geocodeResponse.ok) {
+        return 'Sorry, weather information is currently unavailable.';
+      }
+
+      const geocodeData = await geocodeResponse.json();
+      if (!geocodeData || geocodeData.length === 0) {
+        return `Sorry, I couldn't find the location "${location}". Please try a different city name.`;
+      }
+
+      const lat = parseFloat(geocodeData[0].lat);
+      const lon = parseFloat(geocodeData[0].lon);
+
+      // Step 2: Get weather grid point from weather.gov
+      const pointsUrl = `https://api.weather.gov/points/${lat},${lon}`;
+      const pointsResponse = await fetch(pointsUrl);
+      const pointsData = await pointsResponse.json();
+      const forecastUrl = pointsData.properties?.forecast;
+
+      if (!forecastUrl) {
+        return 'Sorry, weather information is currently unavailable.';
+      }
+
+      // Step 3: Get the detailed forecast
+      const forecastResponse = await fetch(forecastUrl);
+      const forecastData = await forecastResponse.json();
+      const currentPeriod = forecastData.properties?.periods?.[0];
+
+      if (!currentPeriod) {
+        return 'Sorry, weather information is currently unavailable.';
+      }
+
+      // Format response for voice
+      const cityName = geocodeData[0].display_name.split(',')[0];
+      return `In ${cityName}, it's currently ${currentPeriod.detailedForecast.toLowerCase()}`;
+
+    } catch (error) {
+      return 'Sorry, weather information is currently unavailable.';
     }
+  }
 });
+```
 
-// Time tool example (no external API required)
+In production, the `fetchWeatherData` logic is extracted to a separate helper function.
+
+```typescript title="src/tools/time.tool.ts"
 const timeTool = realtimeTool({
-    name: 'get_time',
-    description: 'Get the current time in Eastern Time',
-    parameters: z.object({}), // No parameters needed
-    execute: async () => {
-        try {
-            const now = new Date();
-            const easternTime = now.toLocaleString('en-US', {
-                timeZone: 'America/New_York',
-                timeZoneName: 'short',
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-            });
-            return `The current time in Eastern Time is ${easternTime}.`;
-        } catch (error) {
-            return 'Sorry, time information is currently unavailable.';
-        }
+  name: 'get_time',
+  description: 'Get the current time in Eastern Time',
+  parameters: z.object({}), // No parameters needed
+  execute: async () => {
+    try {
+      const now = new Date();
+
+      // Always format for Eastern Time
+      const easternTime = now.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        timeZoneName: 'short',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+
+      return `The current time in Eastern Time is ${easternTime}.`;
+    } catch (error) {
+      // Error handling omitted for simplicity
+      return 'Time information unavailable';
     }
+  },
 });
 
 // Export all tools
