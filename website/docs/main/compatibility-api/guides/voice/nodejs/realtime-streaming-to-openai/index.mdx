@@ -574,67 +574,94 @@ Tools are functions the AI can call during a conversation. Here's the structureâ
 ```typescript title="src/tools/weather.tool.ts"
 import { z } from 'zod';
 import { tool as realtimeTool } from '@openai/agents/realtime';
+import { ERROR_MESSAGES } from '../constants.js';
 
-// Weather tool that calls an external API
-const weatherTool = realtimeTool({
+/**
+ * Fetches weather data using the free US National Weather Service API
+ *
+ * Flow:
+ * 1. Convert city name to coordinates (OpenStreetMap Nominatim)
+ * 2. Get weather grid point from coordinates (weather.gov)
+ * 3. Fetch detailed forecast for that grid point
+ */
+async function fetchWeatherData(location: string): Promise<string> {
+  try {
+    // Step 1: Geocoding - Convert city name to coordinates
+    const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&countrycodes=us&limit=1`;
+
+    const geocodeResponse = await fetch(geocodeUrl, {
+      headers: {
+        'User-Agent': 'SignalWire-OpenAI-Voice-Assistant/1.0.0 (Contact: developer@example.com)'
+      }
+    });
+
+    if (!geocodeResponse.ok) {
+      return ERROR_MESSAGES.WEATHER_UNAVAILABLE;
+    }
+
+    const geocodeData = await geocodeResponse.json();
+
+    if (!geocodeData || geocodeData.length === 0) {
+      return ERROR_MESSAGES.CITY_NOT_FOUND(location);
+    }
+
+    const lat = parseFloat(geocodeData[0].lat);
+    const lon = parseFloat(geocodeData[0].lon);
+
+    // Step 2: Get weather grid point from weather.gov
+    const pointsUrl = `https://api.weather.gov/points/${lat},${lon}`;
+
+    const pointsResponse = await fetch(pointsUrl);
+
+    if (!pointsResponse.ok) {
+      return ERROR_MESSAGES.WEATHER_UNAVAILABLE;
+    }
+
+    const pointsData = await pointsResponse.json();
+
+    // Step 3: Get the detailed forecast
+    const forecastUrl = pointsData.properties?.forecast;
+
+    if (!forecastUrl) {
+      return ERROR_MESSAGES.WEATHER_UNAVAILABLE;
+    }
+
+    const forecastResponse = await fetch(forecastUrl);
+
+    if (!forecastResponse.ok) {
+      return ERROR_MESSAGES.WEATHER_UNAVAILABLE;
+    }
+
+    const forecastData = await forecastResponse.json();
+
+    const currentPeriod = forecastData.properties?.periods?.[0];
+    if (!currentPeriod) {
+      return ERROR_MESSAGES.WEATHER_UNAVAILABLE;
+    }
+
+    // Format the response for voice
+    const cityName = geocodeData[0].display_name.split(',')[0];
+    const weatherReport = `In ${cityName}, it's currently ${currentPeriod.detailedForecast.toLowerCase()}`;
+
+    return weatherReport;
+
+  } catch (error) {
+    return ERROR_MESSAGES.WEATHER_UNAVAILABLE;
+  }
+}
+
+export const weatherTool = realtimeTool({
   name: 'get_weather',
   description: 'Get current weather information for any US city',
   parameters: z.object({
     location: z.string().describe('The US city or location to get weather for (include state if needed for clarity)'),
   }),
   execute: async ({ location }) => {
-    try {
-      // Step 1: Geocoding - Convert city name to coordinates
-      const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&countrycodes=us&limit=1`;
-      const geocodeResponse = await fetch(geocodeUrl, {
-        headers: {
-          'User-Agent': 'SignalWire-OpenAI-Voice-Assistant/1.0.0 (Contact: developer@example.com)'
-        }
-      });
-
-      if (!geocodeResponse.ok) {
-        return 'Sorry, weather information is currently unavailable.';
-      }
-
-      const geocodeData = await geocodeResponse.json();
-      if (!geocodeData || geocodeData.length === 0) {
-        return `Sorry, I couldn't find the location "${location}". Please try a different city name.`;
-      }
-
-      const lat = parseFloat(geocodeData[0].lat);
-      const lon = parseFloat(geocodeData[0].lon);
-
-      // Step 2: Get weather grid point from weather.gov
-      const pointsUrl = `https://api.weather.gov/points/${lat},${lon}`;
-      const pointsResponse = await fetch(pointsUrl);
-      const pointsData = await pointsResponse.json();
-      const forecastUrl = pointsData.properties?.forecast;
-
-      if (!forecastUrl) {
-        return 'Sorry, weather information is currently unavailable.';
-      }
-
-      // Step 3: Get the detailed forecast
-      const forecastResponse = await fetch(forecastUrl);
-      const forecastData = await forecastResponse.json();
-      const currentPeriod = forecastData.properties?.periods?.[0];
-
-      if (!currentPeriod) {
-        return 'Sorry, weather information is currently unavailable.';
-      }
-
-      // Format response for voice
-      const cityName = geocodeData[0].display_name.split(',')[0];
-      return `In ${cityName}, it's currently ${currentPeriod.detailedForecast.toLowerCase()}`;
-
-    } catch (error) {
-      return 'Sorry, weather information is currently unavailable.';
-    }
-  }
+    const weatherData = await fetchWeatherData(location);
+    return weatherData;
+  },
 });
 ```
-
-In production, the `fetchWeatherData` logic is extracted to a separate helper function.
 
 ```typescript title="src/tools/time.tool.ts"
 const timeTool = realtimeTool({
