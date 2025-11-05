@@ -1,7 +1,7 @@
 ---
 slug: /video/room-session-member
 sidebar_label: RoomSessionMember
-
+position: 4
 ---
 
 # RoomSessionMember
@@ -24,10 +24,13 @@ time and remains fixed for the whole lifetime of the object.
 Getting a RoomSessionMember instance when a user joins a [RoomSession][video-roomsession]:
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -37,10 +40,10 @@ await videoClient.listen({
   onRoomStarted: async (roomsession) => {
     roomsession.listen({
       onMemberJoined: (member) => {
-        console.log("RoomSessionMember:", member);
+        console.log('RoomSessionMember:', member);
       },
     });
-  }
+  },
 });
 ```
 
@@ -204,10 +207,13 @@ This example assumes that you already have a [`RoomSession`][video-roomsession] 
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -221,10 +227,10 @@ await videoClient.listen({
         await member.audioMute();
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -243,15 +249,18 @@ Unmutes the outbound audio for this member (e.g., the one coming from a micropho
 #### Example
 
 In this example, we mute the audio of the member when they join the room and
-unmute it after 5 seconds. 
+unmute it after 5 seconds.
 This example assumes that you already have a [`RoomSession`][video-roomsession] active
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -268,10 +277,10 @@ await videoClient.listen({
         }, 5000);
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -294,10 +303,13 @@ This example assumes that you already have a [`RoomSession`][video-roomsession] 
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -313,10 +325,10 @@ await videoClient.listen({
         }, 5000);
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -330,8 +342,8 @@ Mutes or unmutes the inbound audio for the member (e.g., the one played through 
 
 #### Parameters
 
-| Name    | Type      | Description                |
-|:--------|:----------|:---------------------------|
+| Name                                                  | Type      | Description                |
+| :---------------------------------------------------- | :-------- | :------------------------- |
 | `value`<span className="required-arg">Required</span> | `boolean` | Whether to mute the audio. |
 
 #### Returns
@@ -345,10 +357,13 @@ This example assumes that you already have a [`RoomSession`][video-roomsession] 
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -362,10 +377,10 @@ await videoClient.listen({
         await member.setDeaf(true);
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -379,8 +394,8 @@ Sets the input level at which the participant is identified as currently speakin
 
 #### Parameters
 
-| Name           | Type     | Description                                                                                                               |
-|:---------------|:---------|:--------------------------------------------------------------------------------------------------------------------------|
+| Name                                                         | Type     | Description                                                                                                               |
+| :----------------------------------------------------------- | :------- | :------------------------------------------------------------------------------------------------------------------------ |
 | `params`<span className="required-arg">Required</span>       | `Object` | -                                                                                                                         |
 | `params.value`<span className="required-arg">Required</span> | `number` | Desired sensitivity from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity). The default value is 30. |
 
@@ -395,10 +410,13 @@ This example assumes that you already have a [`RoomSession`][video-roomsession] 
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -412,10 +430,10 @@ await videoClient.listen({
         await member.setInputSensitivity({ value: 80 });
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -429,8 +447,8 @@ Sets the input volume for the member (e.g., the microphone input level).
 
 #### Parameters
 
-| Name            | Type     | Description                                                       |
-|:----------------|:---------|:------------------------------------------------------------------|
+| Name                                                          | Type     | Description                                                       |
+| :------------------------------------------------------------ | :------- | :---------------------------------------------------------------- |
 | `params`<span className="required-arg">Required</span>        | `Object` |                                                                   |
 | `params.volume`<span className="required-arg">Required</span> | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
 
@@ -445,10 +463,13 @@ This example assumes that you already have a [`RoomSession`][video-roomsession] 
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -462,10 +483,10 @@ await videoClient.listen({
         await member.setInputVolume({ volume: -10 });
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -479,8 +500,8 @@ Sets the output volume for the member (e.g., the speaker output level).
 
 #### Parameters
 
-| Name            | Type     | Description                                                       |
-|:----------------|:---------|:------------------------------------------------------------------|
+| Name                                                          | Type     | Description                                                       |
+| :------------------------------------------------------------ | :------- | :---------------------------------------------------------------- |
 | `params`<span className="required-arg">Required</span>        | `Object` | -                                                                 |
 | `params.volume`<span className="required-arg">Required</span> | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
 
@@ -495,10 +516,13 @@ This example assumes that you already have a [`RoomSession`][video-roomsession] 
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
@@ -512,10 +536,10 @@ await videoClient.listen({
         await member.setOutputVolume({ volume: -10 });
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -533,23 +557,24 @@ Mutes the outbound video for this member (e.g., the one coming from a webcam). P
 
 #### Example
 
-
 In this example, we mute the video of the member when they join the room.
 This example assumes that you already have a [`RoomSession`][video-roomsession] active
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
 
 // Setup listerner for when a room starts
 await videoClient.listen({
-  
   onRoomStarted: async (roomsession) => {
     roomsession.listen({
       // Mute the video of the RoomSession member when they join the room
@@ -557,10 +582,10 @@ await videoClient.listen({
         await member.videoMute();
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```
 
@@ -583,17 +608,19 @@ unmute it after 5 seconds. This example assumes that you already have a [`RoomSe
 and members are joining the room.
 
 ```js
-import { SignalWire } from "@signalwire/realtime-api";
+import { SignalWire } from '@signalwire/realtime-api';
 
 // Intialize the SignalWire Client
-const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+const client = await SignalWire({
+  project: 'ProjectID Here',
+  token: 'Token Here',
+});
 
 // Access the video client from the SignalWire client
 const videoClient = client.video;
 
 // Listen for a room to start
 await videoClient.listen({
-  
   onRoomStarted: async (roomsession) => {
     // Listen for a member to join the room
     roomsession.listen({
@@ -606,9 +633,9 @@ await videoClient.listen({
         }, 5000);
       },
       onMemberUpdated: async (member) => {
-        console.log("Member Updated:", member.name);
-      }
+        console.log('Member Updated:', member.name);
+      },
     });
-  }
+  },
 });
 ```

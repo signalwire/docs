@@ -1,6 +1,7 @@
 ---
 slug: /video/room-session-playback
 sidebar_label: RoomSessionPlayback
+position: 5
 ---
 
 # RoomSessionPlayback
