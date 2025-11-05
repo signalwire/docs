@@ -846,48 +846,61 @@ For production deployments:
 <TabItem value="dockerfile" label="Dockerfile">
 
 ```dockerfile
-FROM node:20-alpine
+# Multi-stage Docker build for SignalWire + OpenAI Voice Assistant
+# ============================================================================
 
-# Install system dependencies
-RUN apk add --no-cache dumb-init
+# Stage 1: Build stage
+FROM node:20-alpine AS builder
 
+# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install dependencies (including dev dependencies for build)
+RUN npm ci --only=production=false
 
 # Copy source code
 COPY . .
 
-# Build TypeScript
+# Build the TypeScript application
 RUN npm run build
 
-# Create non-root user
+# Remove dev dependencies after build
+RUN npm prune --production
+
+# Stage 2: Production stage
+FROM node:20-alpine AS production
+
+# Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001
+    adduser -S signalwire -u 1001
 
-# Change ownership and switch to non-root user
-RUN chown -R nodeuser:nodejs /app
-USER nodeuser
+# Set working directory
+WORKDIR /app
 
+# Copy built application and production dependencies from builder stage
+COPY --from=builder --chown=signalwire:nodejs /app/dist ./dist
+COPY --from=builder --chown=signalwire:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=signalwire:nodejs /app/package*.json ./
+
+# Create directory for Docker secrets
+RUN mkdir -p /run/secrets && chown signalwire:nodejs /run/secrets
+
+# Switch to non-root user
+USER signalwire
+
+# Expose the application port
 EXPOSE 5050
 
-# Use dumb-init for proper signal handling
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+# Health check to ensure the service is running
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "const http = require('http'); const options = { hostname: 'localhost', port: 5050, path: '/health', timeout: 2000 }; const req = http.request(options, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"
+
+# Start the application
+CMD ["npm", "start"]
 ```
-
-:::tip Multi-Stage Build in Production
-The example above uses a single-stage build for simplicity. For production deployments with smaller image sizes, the actual implementation uses a **multi-stage build pattern**:
-
-1. **Builder stage**: Installs all dependencies (dev + production) and builds the TypeScript
-2. **Production stage**: Copies only the compiled code and production dependencies, discarding build artifacts
-
-This approach reduces final image size by ~60% by excluding dev dependencies, build tools, and temporary files. Consider adopting the multi-stage pattern for production deployments to reduce deployment time and storage costs.
-:::
 
 </TabItem>
 <TabItem value="compose" label="docker-compose.yml">
