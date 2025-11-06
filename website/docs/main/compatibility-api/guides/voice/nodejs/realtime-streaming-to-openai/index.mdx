@@ -190,7 +190,7 @@ Select the **Local** tab below if you ran the application locally, and the **Doc
 
 </div>
 
-<Tabs>
+<Tabs groupId="deploy">
 <TabItem value="local" label="Local">
 
 SignalWire must be able to reach your webhook from the internet. For local development, use [ngrok](https://ngrok.com/) or another [tunneling service](https://github.com/anderspitman/awesome-tunneling) to expose your local server.
@@ -215,10 +215,13 @@ Use this as the **Primary Script URL** when creating your cXML script in the Sig
 
 </TabItem>
 <TabItem value="docker" label="Docker">
+
 For production environments, set your server URL + `/incoming-call`:
-      ```
-      https://your-domain.com/incoming-call
-      ```
+
+```
+https://your-domain.com/incoming-call
+```
+
 </TabItem>
 </Tabs>
 
@@ -261,7 +264,7 @@ This section walks through the key components of the integration. Start with the
 
 The application consists of four key components:
 
-1. **cXML Server** (Fastify): Receives incoming call webhooks and returns cXML instructions to SignalWire
+1. **cXML Server** (Fastify): Receives incoming call webhooks and returns instructions, in the form of a [cXML Script][cxml], to SignalWire
 2. **WebSocket Bridge** (SignalWireCompatibilityTransportLayer): Translates between SignalWire's media stream protocol and OpenAI's Realtime API format
 3. **OpenAI Connection**: Manages the realtime connection to OpenAI for speech processing and AI responses, using the RealtimeSession class from OpenAI's Realtime SDK
 4. **Function Calling**: Server-side tool execution (weather, time, custom functions) during conversations
@@ -270,9 +273,10 @@ The application consists of four key components:
 
 <Accordion title="Webhook endpoint" description="Set up your server to handle incoming call webhooks and respond with a cXML Script.">
 
-First, your server needs to handle incoming call webhooks from SignalWire.
-
-**Set up the HTTP endpoint**
+When SignalWire receives an incoming call, it sends a webhook to your server. 
+Your server responds with instructions, in the form of a 
+[cXML Script][cxml],
+that tell SignalWire to stream the audio to your WebSocket endpoint, which is connected to OpenAI.
 
 ```typescript title="src/routes/webhook.ts"
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -321,9 +325,9 @@ Your webhook URL must include `/incoming-call` at the end:
 
 <Accordion title="WebSocket bridge" description="Translate between SignalWire's media stream protocol and OpenAI's Realtime API.">
 
-This is the core of the integration. The WebSocket server receives audio from SignalWire and forwards it to OpenAI's Realtime API, then sends AI responses back. The `SignalWireCompatibilityTransportLayer` handles all the protocol translation and audio format conversions automatically.
+This is the core of the integration. When a WebSocket connection is established at `/media-stream`, you create a transport layer that bridges SignalWire's audio stream to OpenAI's Realtime API. The transport layer automatically handles protocol translation and audio format conversions, so audio flows bidirectionally without any manual conversion.
 
-**Initialize WebSocket server**
+In the code below, we handle WebSocket lifecycle events (connection, disconnection, errors), create the transport layer with the configured audio format, connect to OpenAI's Realtime API while logging key events (AI responses, transcriptions, tool calls), and trigger an immediate AI response to greet the caller.
 
 ```typescript title="src/routes/streaming.ts"
 import type { WebSocket } from 'ws';
