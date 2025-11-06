@@ -286,6 +286,8 @@ First, your server needs to handle incoming call webhooks from SignalWire.
 
 ```typescript title="src/routes/webhook.ts"
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { WEBHOOK_MESSAGES, AUDIO_FORMAT, SIGNALWIRE_CODECS } from '../constants.js';
+import { AGENT_CONFIG } from '../config.js';
 
 export async function webhookRoute(fastify: FastifyInstance) {
   fastify.all('/incoming-call', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -294,12 +296,21 @@ export async function webhookRoute(fastify: FastifyInstance) {
     const protocol = request.headers['x-forwarded-proto'] === 'https' ? 'wss' : 'ws';
     const websocketUrl = `${protocol}://${host}/media-stream`;
 
+    // Get codec attribute based on configured audio format
+    const codec = AGENT_CONFIG.audioFormat === AUDIO_FORMAT.PCM16
+      ? SIGNALWIRE_CODECS.PCM16
+      : SIGNALWIRE_CODECS.G711_ULAW;
+    const codecAttribute = codec ? ` codec="${codec}"` : '';
+
+    // Log codec selection for debugging
+    console.log(`📞 Incoming call - Audio format: ${AGENT_CONFIG.audioFormat}, SignalWire codec: ${codec || 'default (G.711 μ-law)'}`);
+
     // Generate cXML response to stream audio to our WebSocket
     const cXMLResponse = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
-      <Say>Connecting to agent</Say>
+      <Say>${WEBHOOK_MESSAGES.CONNECTING}</Say>
       <Connect>
-        <Stream url="${websocketUrl}" />
+        <Stream url="${websocketUrl}"${codecAttribute} />
       </Connect>
     </Response>`;
 
@@ -308,9 +319,7 @@ export async function webhookRoute(fastify: FastifyInstance) {
 }
 ```
 
-:::info Codec Negotiation
-The example above uses the default codec (G.711 μ-law). For production deployments, you can enhance this by adding dynamic codec selection based on your configured audio format. The actual implementation supports both G.711 μ-law (standard telephony, 8kHz) and PCM16 (high quality, 24kHz). See [Configure audio format](#configure-audio-format) section for details.
-:::
+The webhook automatically sets the correct codec based on your `AUDIO_FORMAT` configuration. No manual codec configuration needed here—see [Configure audio format](#configure-audio-format) for how to set your desired audio quality.
 
 :::tip Webhook URL Format
 Your webhook URL must include `/incoming-call` at the end:
@@ -320,9 +329,9 @@ Your webhook URL must include `/incoming-call` at the end:
 
 </Accordion>
 
-<Accordion title="Websocket bridge" description="Connect the SignalWire and OpenAI platforms with a bidirectional audio streaming websocket connection.">
+<Accordion title="WebSocket bridge" description="Translate between SignalWire's media stream protocol and OpenAI's Realtime API.">
 
-Next, we will create a WebSocket server to handle bidirectional audio streaming.
+This is the core of the integration. The WebSocket server receives audio from SignalWire and forwards it to OpenAI's Realtime API, then sends AI responses back. The `SignalWireCompatibilityTransportLayer` handles all the protocol translation and audio format conversions automatically.
 
 **Initialize WebSocket server**
 
@@ -404,9 +413,9 @@ fastify.get('/media-stream', { websocket: true }, async (connection: WebSocket) 
 
 </Accordion>
 
-<Accordion title="OpenAI Realtime API integration" description="Set up OpenAI Realtime API configuration and environment variables.">
+<Accordion title="Agent configuration" description="Define your AI assistant's behavior, voice, and available tools.">
 
-The AI agent configuration defines how your assistant behaves. Import your tools and set instructions:
+The agent configuration controls how your assistant behaves during conversations. You define its personality through instructions, select its voice, specify which tools it can use, and configure the audio format:
 
 ```typescript title="src/config.ts - Agent configuration"
 import type { RealtimeAgentConfiguration } from '@openai/agents/realtime';
