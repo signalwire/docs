@@ -439,12 +439,63 @@ export const AGENT_CONFIG: RealtimeAgentConfiguration = {
 
 <Accordion title="Function calling" description="Add server-side tools to your agent.">
 
-Enable your AI to execute server-side tools during conversations.
+Tools are server-side functions that the AI can call during a conversation. In production, extract the implementation logic into separate files as shown in the repository.
 
-**Define tools**
+<Tabs groupId="tools">
+<TabItem value="time" label="Time tool">
 
-Tools are functions the AI can call during a conversation. 
-Here's the structure—in production, you extract the implementation logic into separate files as shown in the repository.
+Get the current time in Eastern Time. Uses JavaScript's built-in `toLocaleString` method—no external APIs required.
+
+```typescript title="src/tools/time.tool.ts"
+import { z } from 'zod';
+import { tool as realtimeTool } from '@openai/agents/realtime';
+import { ERROR_MESSAGES } from '../constants.js';
+
+export const timeTool = realtimeTool({
+  name: 'get_time',
+  description: 'Get the current time in Eastern Time',
+  parameters: z.object({}), // No parameters needed
+  execute: async () => {
+    try {
+      const now = new Date();
+
+      // Always format for Eastern Time
+      const easternTime = now.toLocaleString('en-US', {
+        timeZone: 'America/New_York',
+        timeZoneName: 'short',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+
+      return `The current time in Eastern Time is ${easternTime}.`;
+    } catch (error) {
+      // Return fallback message if time formatting fails
+      return ERROR_MESSAGES.TIME_UNAVAILABLE;
+    }
+  },
+});
+```
+
+1. **User asks**: "What time is it?"
+2. **AI recognizes intent**: Needs time information
+3. **Function call triggered**: `get_time()`
+4. **Server executes**: Gets current Eastern Time
+5. **Result returned**: AI incorporates into response
+6. **User hears**: "The current time is 3:45 PM Eastern Time."
+
+</TabItem>
+<TabItem value="weather" label="Weather tool">
+
+Get current weather information for a specified US location.
+Uses the
+[OpenStreetMap Nominatim API](https://nominatim.org/)
+for geocoding and the
+[US National Weather Service API](https://www.weather.gov/documentation/services-web-api)
+for forecast data.
 
 ```typescript title="src/tools/weather.tool.ts"
 import { z } from 'zod';
@@ -538,40 +589,6 @@ export const weatherTool = realtimeTool({
 });
 ```
 
-```typescript title="src/tools/time.tool.ts"
-import { z } from 'zod';
-import { tool as realtimeTool } from '@openai/agents/realtime';
-import { ERROR_MESSAGES } from '../constants.js';
-
-export const timeTool = realtimeTool({
-  name: 'get_time',
-  description: 'Get the current time in Eastern Time',
-  parameters: z.object({}), // No parameters needed
-  execute: async () => {
-    try {
-      const now = new Date();
-
-      // Always format for Eastern Time
-      const easternTime = now.toLocaleString('en-US', {
-        timeZone: 'America/New_York',
-        timeZoneName: 'short',
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-
-      return `The current time in Eastern Time is ${easternTime}.`;
-    } catch (error) {
-      // Return fallback message if time formatting fails
-      return ERROR_MESSAGES.TIME_UNAVAILABLE;
-    }
-  },
-});
-```
-
 1. **User asks**: "What's the weather in New York?"
 2. **AI recognizes intent**: Needs weather information
 3. **Function call triggered**: `get_weather({ location: "New York" })`
@@ -579,7 +596,8 @@ export const timeTool = realtimeTool({
 5. **Result returned**: AI incorporates into response
 6. **User hears**: "The weather in New York is 72°F and sunny."
 
-All of this happens in real-time during the conversation.
+</TabItem>
+</Tabs>
 
 </Accordion>
 
