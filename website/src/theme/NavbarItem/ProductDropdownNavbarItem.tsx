@@ -3,7 +3,7 @@ import { useLocation } from '@docusaurus/router';
 import clsx from 'clsx';
 import { FaChevronDown } from 'react-icons/fa';
 import { IconType } from 'react-icons';
-import { useModalContext } from '@theme/Layout/ModalContext';
+import { useModalContext } from '@theme/Navbar/ModalContext';
 import { modalSections, ProductItem, ProductLink } from '@site/secondaryNavbar';
 import styles from './ProductDropdownNavbarItem/styles.module.scss';
 
