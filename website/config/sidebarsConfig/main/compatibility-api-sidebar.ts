@@ -1,7 +1,8 @@
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
-const compatibilityAPI: SidebarsConfig = {
-  compatibilityAPI: [
+const compatibilityApiSidebars: SidebarsConfig = {
+  // Overview Sidebar
+  compatibilityApiOverviewSidebar: [
     {
       type: "category",
       label: "Compatibility API",
@@ -20,6 +21,10 @@ const compatibilityAPI: SidebarsConfig = {
         },
       ],
     },
+  ],
+
+  // Technical Reference Sidebar (combines cXML + SDKs)
+  compatibilityApiReferenceSidebar: [
     {
       type: "category",
       label: "cXML",
@@ -49,6 +54,10 @@ const compatibilityAPI: SidebarsConfig = {
         },
       ],
     },
+  ],
+
+  // Guides Sidebar
+  compatibilityApiGuidesSidebar: [
     {
       type: "category",
       label: "Guides",
@@ -64,4 +73,4 @@ const compatibilityAPI: SidebarsConfig = {
   ],
 };
 
-export default compatibilityAPI;
+export default compatibilityApiSidebars;
