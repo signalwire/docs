@@ -13,7 +13,7 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
   const [isFixed, setIsFixed] = useState(false);
 
   // Get secondary navbar state from shared hook
-  const { product, productLinks } = useSecondaryNavState();
+  const { product, productLinks, activeSidebar } = useSecondaryNavState();
 
   // Handle fixed positioning when scrolling past main navbar (Weaviate approach)
   useEffect(() => {
@@ -77,8 +77,8 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
               );
             }
 
-            // Regular link - determine if active based on pathname
-            const isActive = location.pathname.startsWith(item.link);
+            // Regular link - determine if active based on sidebar name
+            const isActive = activeSidebar && item.sidebar === activeSidebar;
 
             return (
               <Link

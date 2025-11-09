@@ -77,7 +77,7 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
   const items = useNavbarItems();
 
   // Get secondary navbar state
-  const { product, productLinks } = useSecondaryNavState();
+  const { product, productLinks, activeSidebar } = useSecondaryNavState();
 
   // Track if user manually navigated to main menu
   const userNavigatedToMainRef = useRef(false);
@@ -185,7 +185,7 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
             );
           }
 
-          const isActive = location.pathname.startsWith(navItem.link);
+          const isActive = activeSidebar && navItem.sidebar === activeSidebar;
           return (
             <li key={index} className="menu__list-item">
               <Link

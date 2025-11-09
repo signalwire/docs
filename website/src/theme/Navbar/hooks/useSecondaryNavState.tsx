@@ -1,12 +1,16 @@
 import { useMemo } from 'react';
 import { useLocation } from '@docusaurus/router';
-import { useActivePluginAndVersion } from '@docusaurus/plugin-content-docs/client';
+import { useActivePluginAndVersion, useActiveDocContext } from '@docusaurus/plugin-content-docs/client';
 import { modalSections, ProductItem, ProductLink } from '@site/secondaryNavbar';
 
 export function useSecondaryNavState() {
   const location = useLocation();
   const activePluginAndVersion = useActivePluginAndVersion();
   const activeVersion = activePluginAndVersion?.activeVersion?.name;
+
+  // Get the active document's sidebar name
+  const activeDocContext = useActiveDocContext(activePluginAndVersion?.activePlugin?.pluginId);
+  const activeSidebar = activeDocContext?.activeDoc?.sidebar;
 
   // Create flat map of all products
   const allProducts = useMemo(() => {
@@ -56,5 +60,5 @@ export function useSecondaryNavState() {
     return product.links || [];
   }, [product, activeVersion]);
 
-  return { currentProduct, product, productLinks };
+  return { currentProduct, product, productLinks, activeSidebar };
 }
