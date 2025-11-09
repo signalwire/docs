@@ -4,6 +4,7 @@ import Link from '@docusaurus/Link';
 import clsx from 'clsx';
 import { FaChevronDown } from 'react-icons/fa';
 import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
+import { ProductLink, DropdownItem } from '@site/secondaryNavbar';
 import styles from './styles.module.scss';
 
 export default function SecondaryNavbar(): React.JSX.Element | null {
@@ -53,7 +54,7 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
         className={clsx(styles.secondaryNavbar, isFixed && styles.fixedTop)}
       >
         <nav className={styles.navLinks}>
-          {productLinks.map((item, index) => {
+          {productLinks.map((item: ProductLink, index: number) => {
             if (item.dropdown) {
               // Dropdown support (optional)
               return (
@@ -63,7 +64,7 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
                     <FaChevronDown aria-hidden="true" />
                   </span>
                   <div className={styles.dropdownMenu}>
-                    {item.dropdown.map((subItem, subIndex) => (
+                    {item.dropdown.map((subItem: DropdownItem, subIndex: number) => (
                       <Link
                         key={subIndex}
                         to={subItem.link}
