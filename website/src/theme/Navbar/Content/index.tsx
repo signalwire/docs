@@ -1,7 +1,6 @@
 import React, {type ReactNode} from 'react';
 import clsx from 'clsx';
 import {
-  useThemeConfig,
   ErrorCauseBoundary,
   ThemeClassNames,
 } from '@docusaurus/theme-common';
@@ -16,13 +15,9 @@ import NavbarMobileSidebarToggle from '@theme/Navbar/MobileSidebar/Toggle';
 import NavbarLogo from '@theme/Navbar/Logo';
 import NavbarSearch from '@theme/Navbar/Search';
 import ProductDropdownNavbarItem from '@theme/NavbarItem/ProductDropdownNavbarItem';
+import { useNavbarItems } from '@theme/utils/productUtils';
 
 import styles from './styles.module.css';
-
-function useNavbarItems() {
-  // TODO temporary casting until ThemeConfig type is improved
-  return useThemeConfig().navbar.items as NavbarItemConfig[];
-}
 
 function NavbarItems({items}: {items: NavbarItemConfig[]}): ReactNode {
   return (

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useLocation } from '@docusaurus/router';
 import { useActivePluginAndVersion, useActiveDocContext } from '@docusaurus/plugin-content-docs/client';
-import { modalSections, ProductItem, ProductLink } from '@site/secondaryNavbar';
+import { ProductItem, ProductLink } from '@site/secondaryNavbar';
+import { useAllProducts } from '@theme/utils/productUtils';
 
 export function useSecondaryNavState() {
   const location = useLocation();
@@ -12,12 +13,8 @@ export function useSecondaryNavState() {
   const activeDocContext = useActiveDocContext(activePluginAndVersion?.activePlugin?.pluginId);
   const activeSidebar = activeDocContext?.activeDoc?.sidebar;
 
-  // Create flat map of all products
-  const allProducts = useMemo(() => {
-    return modalSections.reduce<Record<string, ProductItem>>((acc, section) => {
-      return { ...acc, ...section.items };
-    }, {});
-  }, []);
+  // Get flat map of all products from shared utility
+  const allProducts = useAllProducts();
 
   // Detect current product based on pathname
   const currentProduct = useMemo(() => {

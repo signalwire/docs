@@ -4,19 +4,16 @@ import clsx from 'clsx';
 import { FaChevronDown } from 'react-icons/fa';
 import { IconType } from 'react-icons';
 import { useModalContext } from '@theme/Navbar/ModalContext';
-import { modalSections, ProductItem, ProductLink } from '@site/secondaryNavbar';
+import { ProductItem, ProductLink } from '@site/secondaryNavbar';
+import { useAllProducts } from '@theme/utils/productUtils';
 import styles from './ProductDropdownNavbarItem/styles.module.scss';
 
 export default function ProductDropdownNavbarItem(): React.JSX.Element | null {
   const { isModalOpen, setModalOpen, setCurrentProduct } = useModalContext();
   const location = useLocation();
 
-  // Create a flat map of all products from modalSections
-  const allProducts = React.useMemo(() => {
-    return modalSections.reduce<Record<string, ProductItem>>((acc, section) => {
-      return { ...acc, ...section.items };
-    }, {});
-  }, []);
+  // Get flat map of all products from shared utility
+  const allProducts = useAllProducts();
 
   // Determine current product based on pathname (fully dynamic from config)
   const detectedProduct = React.useMemo(() => {

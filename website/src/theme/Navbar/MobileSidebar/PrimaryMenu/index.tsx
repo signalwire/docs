@@ -1,18 +1,13 @@
 import React, { useState, useRef, useEffect, type ReactNode } from 'react';
-import { useThemeConfig } from '@docusaurus/theme-common';
 import { useNavbarMobileSidebar } from '@docusaurus/theme-common/internal';
 import { Collapsible, useCollapsible } from '@docusaurus/theme-common';
 import { useLocation } from '@docusaurus/router';
 import Link from '@docusaurus/Link';
-import NavbarItem, { type Props as NavbarItemConfig } from '@theme/NavbarItem';
+import NavbarItem from '@theme/NavbarItem';
 import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
 import { ProductLink } from '@site/secondaryNavbar';
+import { useNavbarItems } from '@theme/utils/productUtils';
 import styles from './styles.module.scss';
-
-function useNavbarItems() {
-  // TODO temporary casting until ThemeConfig type is improved
-  return useThemeConfig().navbar.items as NavbarItemConfig[];
-}
 
 // Helper component for collapsible dropdowns
 function MobileDropdown({ item, onClose }: { item: ProductLink; onClose: () => void }) {
@@ -124,6 +119,17 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
     <div className={`${styles.menuContainer} ${!showMainNav ? styles.showSecondary : ''}`}>
       {/* Main Menu Panel */}
       <ul className={`menu__list ${styles.menuPanel}`}>
+        {/* Button to navigate to product navigation */}
+        <li className="menu__list-item">
+          <button
+            type="button"
+            className="clean-btn navbar-sidebar__back"
+            onClick={navigateToSecondary}
+          >
+            → {product.title} Navigation
+          </button>
+        </li>
+
         {items.map((item, i) => (
           <NavbarItem
             mobile
@@ -132,25 +138,6 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
             key={i}
           />
         ))}
-
-        {/* Button to navigate to product navigation */}
-        <li
-          className="menu__list-item"
-          style={{
-            marginTop: '1rem',
-            paddingTop: '1rem',
-            borderTop: '1px solid var(--ifm-toc-border-color)',
-          }}
-        >
-          <button
-            type="button"
-            className="clean-btn navbar-sidebar__back"
-            onClick={navigateToSecondary}
-            style={{ width: '100%', textAlign: 'left' }}
-          >
-            → {product.title} Navigation
-          </button>
-        </li>
       </ul>
 
       {/* Secondary Navbar Panel */}

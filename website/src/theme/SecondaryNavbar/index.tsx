@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation } from '@docusaurus/router';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
 import { FaChevronDown } from 'react-icons/fa';
@@ -8,7 +7,6 @@ import { ProductLink, DropdownItem } from '@site/secondaryNavbar';
 import styles from './styles.module.scss';
 
 export default function SecondaryNavbar(): React.JSX.Element | null {
-  const location = useLocation();
   const navbarRef = useRef<HTMLDivElement>(null);
   const placeholderRef = useRef<HTMLDivElement>(null);
   const [isFixed, setIsFixed] = useState(false);
