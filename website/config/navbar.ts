@@ -10,67 +10,11 @@
 import type { NavbarItem } from "@docusaurus/theme-common";
 
 const navbar: NavbarItem[] = [
-  /// Guides -------- ///
-  { to: "/guides", label: "Guides", position: "left" },
+  /* Docs Version Dropdown
+  * Conditoinaly renders in if current route has versioned docs.
+  * See the VersionDropdown theme component for more details.
+  */
 
-  /// API & SDK Reference Dropdown -------- ///
-  {
-    type: "dropdown",
-    label: "APIs & SDKs",
-    position: "left",
-    items: [
-      {
-        type: "html",
-        value: '<div class="nav-dropdown-title" href="/rest">SignalWire</div>',
-      },
-      {
-        label: "REST API",
-        to: "/rest/signalwire-rest/overview/",
-      },
-      {
-        label: "Agents SDK (New!)",
-        to: "/sdks/agents-sdk",
-      },
-      {
-        label: "RELAY Browser SDK",
-        to: "/sdks/browser-sdk/",
-      },
-      // {
-      //   label: "SignalWire Client SDK",
-      //   to: "/sdks/signalwire-client-sdk/",
-      // },
-      {
-        label: "RELAY Realtime Server SDK",
-        to: "/sdks/realtime-sdk/",
-      },
-      { type: "html", value: '<hr class="dropdown-separator">' },
-      {
-        type: "html",
-        value: '<div class="nav-dropdown-title" href="/sdks/">Compatibility</div>',
-      },
-      {
-        label: "REST API",
-        to: "/rest/compatibility-api/overview/",
-      },
-      {
-        label: "SDKs",
-        to: "/compatibility-api/sdks",
-      },
-      {
-        label: "cXML",
-        to: "/compatibility-api/cxml",
-      },
-      { type: "html", value: '<hr class="dropdown-separator">' },
-      {
-        label: "All REST APIs",
-        to: "/rest",
-      },
-      {
-        label: "All RELAY SDKs",
-        to: "/sdks",
-      },
-    ],
-  },
   {
     type: "docsVersionDropdown",
     position: "right",
@@ -127,27 +71,6 @@ const navbar: NavbarItem[] = [
         href: "https://status.signalwire.com",
         label: "Platform Status",
         "aria-label": "Platform Status",
-      },
-      { type: "html", value: '<hr class="dropdown-separator">' },
-      {
-        label: "Call Fabric",
-        to: "/platform/call-fabric",
-      },
-      {
-        label: "Dashboard Documentation",
-        to: "/platform/dashboard",
-      },
-      {
-        label: "Integrations",
-        to: "/platform/integrations",
-      },
-      {
-        label: "Phone Numbers",
-        to: "/platform/phone-numbers",
-      },
-      {
-        label: "Platform Basics",
-        to: "/platform/basics",
       },
     ],
   },
