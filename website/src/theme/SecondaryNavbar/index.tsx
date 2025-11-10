@@ -14,7 +14,7 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
   // Get secondary navbar state from shared hook
   const { product, productLinks, activeSidebar } = useSecondaryNavState();
 
-  // Handle fixed positioning when scrolling past main navbar (Weaviate approach)
+  // Handle fixed positioning when scrolling past main navbar
   useEffect(() => {
     const handleScroll = () => {
       const mainNavbar = document.querySelector('.navbar') as HTMLElement | null;
