@@ -22,6 +22,7 @@ import { realtimeSdkPlugin } from "./realtime-sdk-docs";
 import { browserSdkPlugin } from "./browser-sdk-docs";
 // import { signalwireSdkPlugin } from "./signalwire-client-sdk-docs";
 import { ogImagesPlugin } from "../ogImages/index";
+import { scalarApiPlugin } from "./scalar-test";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
@@ -35,6 +36,7 @@ const plugins: PluginConfig[] = [
   browserSdkPlugin,
   // signalwireSdkPlugin,
   ogImagesPlugin,
+  scalarApiPlugin,
 ];
 
 export default plugins;
