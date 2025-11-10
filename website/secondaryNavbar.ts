@@ -10,6 +10,7 @@ import {
   FaProjectDiagram,
   FaBook,
   FaComments,
+  FaNewspaper
 } from "react-icons/fa";
 import { IconType } from "react-icons";
 
@@ -87,7 +88,13 @@ export const modalSections: ModalSection[] = [
         icon: FaRobot,
         description: "AI Agents development with SWAIG",
         link: "/sdks/agents-sdk",
-        links: [],
+        links: [
+          {
+            label: "",
+            link: "/sdks/agents-sdk",
+            sidebar: "agentsSdkOverviewSidebar",
+          }
+        ],
       },
       browserSdk: {
         title: "Browser SDK",
@@ -240,14 +247,27 @@ export const modalSections: ModalSection[] = [
             sidebar: "compatibilityApiOverviewSidebar",
           },
           {
-            label: "Technical Reference",
-            link: "/compatibility-api/cxml",
-            sidebar: "compatibilityApiReferenceSidebar",
-          },
-          {
             label: "Guides",
             link: "/compatibility-api/guides",
             sidebar: "compatibilityApiGuidesSidebar",
+          },
+          {
+            label: "Technical Reference",
+            link: "/compatibility-api/cxml",
+            sidebar: "compatibilityApiReferenceSidebar",
+          }
+        ],
+      },
+      callFlowBuilder: {
+        title: "Call Flow Builder",
+        description: "Visual tool to design and deploy call flows",
+        icon: FaProjectDiagram,
+        link: "/call-flow-builder",
+        links: [
+          {
+            label: "Call Flow Builder",
+            link: "/call-flow-builder",
+            sidebar: "callFlowBuilderSidebar",
           },
         ],
       },
@@ -257,16 +277,17 @@ export const modalSections: ModalSection[] = [
     type: "section",
     title: "Additional resources",
     items: {
-      callFlowBuilder: {
-        title: "Call Flow Builder",
-        icon: FaProjectDiagram,
-        link: "/call-flow-builder",
+      blogs: {
+        title: "Blogs",
+        icon: FaNewspaper,
+        description: "Latest news and updates from SignalWire",
+        link: "/blog",
         links: [
           {
-            label: "Call Flow Builder",
-            link: "/call-flow-builder",
-            sidebar: "homeSidebar",
-          },
+            label: "Blog Home",
+            link: "/blog",
+            sidebar: "",
+          }
         ],
       },
       guides: {
