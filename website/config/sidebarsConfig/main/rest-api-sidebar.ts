@@ -13,8 +13,8 @@
 
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
-const apiSidebar: SidebarsConfig = {
-  apiSidebar: [
+const restApiSidebars: SidebarsConfig = {
+  apiOverviewSidebar: [
     {
       type: "category",
       label: "Overview",
@@ -34,7 +34,9 @@ const apiSidebar: SidebarsConfig = {
         },
       ],
     },
+  ],
 
+  apiSignalwireSidebar: [
     {
       type: "category",
       label: "SignalWire REST API",
@@ -223,7 +225,9 @@ const apiSidebar: SidebarsConfig = {
         },
       ],
     },
+  ],
 
+  apiCompatibilitySidebar: [
     {
       type: "category",
       label: "Compatibility REST API",
@@ -258,4 +262,4 @@ const apiSidebar: SidebarsConfig = {
   ],
 };
 
-export default apiSidebar;
+export default restApiSidebars;

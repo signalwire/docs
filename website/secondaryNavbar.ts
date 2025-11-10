@@ -53,32 +53,11 @@ export const modalSections: ModalSection[] = [
     title: "Go to documentation:",
     items: {
       platform: {
-        title: "Platform",
+        title: "Home",
         icon: FaHome,
         description: "Platform overview and getting started resources",
         link: "/",
-        links: [
-          {
-            label: "Overview",
-            link: "/",
-            sidebar: "homeSidebar",
-          },
-          {
-            label: "Products",
-            link: "/voice",
-            sidebar: "homeSidebar",
-          },
-          {
-            label: "Platform Basics",
-            link: "/platform/basics",
-            sidebar: "homeSidebar",
-          },
-          {
-            label: "Dashboard",
-            link: "/platform/dashboard",
-            sidebar: "homeSidebar",
-          },
-        ],
+        links: []
       },
       swml: {
         title: "SWML",
@@ -108,18 +87,7 @@ export const modalSections: ModalSection[] = [
         icon: FaRobot,
         description: "AI Agents development with SWAIG",
         link: "/sdks/agents-sdk",
-        links: [
-          {
-            label: "Overview",
-            link: "/sdks/agents-sdk",
-            sidebar: "agentsSdkSidebar",
-          },
-          {
-            label: "Getting Started",
-            link: "/sdks/agents-sdk/getting-started",
-            sidebar: "agentsSdkSidebar",
-          },
-        ],
+        links: [],
       },
       browserSdk: {
         title: "Browser SDK",
@@ -136,15 +104,15 @@ export const modalSections: ModalSection[] = [
                 sidebar: "browserSdkOverviewSidebar",
               },
               {
-                label: "Technical Reference",
-                link: "/sdks/browser-sdk/technical-reference",
-                sidebar: "browserSdkReferenceSidebar",
-              },
-              {
                 label: "Guides",
                 link: "/sdks/browser-sdk/guides",
                 sidebar: "browserSdkGuidesSidebar",
               },
+              {
+                label: "Technical Reference",
+                link: "/sdks/browser-sdk/technical-reference",
+                sidebar: "browserSdkReferenceSidebar",
+              }
             ],
           },
           // v2 version
@@ -156,15 +124,15 @@ export const modalSections: ModalSection[] = [
                 sidebar: "browserSdkOverviewSidebar",
               },
               {
-                label: "Technical Reference",
-                link: "/sdks/browser-sdk/v2/call",
-                sidebar: "browserSdkReferenceSidebar",
-              },
-              {
                 label: "Guides",
                 link: "/sdks/browser-sdk/v2/guides",
                 sidebar: "browserSdkGuidesSidebar",
               },
+              {
+                label: "Technical Reference",
+                link: "/sdks/browser-sdk/v2/call",
+                sidebar: "browserSdkReferenceSidebar",
+              }
             ],
           },
         },
@@ -184,15 +152,15 @@ export const modalSections: ModalSection[] = [
                 sidebar: "realtimeSdkOverviewSidebar",
               },
               {
-                label: "Technical Reference",
-                link: "/sdks/realtime-sdk/technical-reference",
-                sidebar: "realtimeSdkReferenceSidebar",
-              },
-              {
                 label: "Guides",
                 link: "/sdks/realtime-sdk/guides",
                 sidebar: "realtimeSdkGuidesSidebar",
               },
+              {
+                label: "Technical Reference",
+                link: "/sdks/realtime-sdk/technical-reference",
+                sidebar: "realtimeSdkReferenceSidebar",
+              }
             ],
           },
           // v3 version
@@ -204,15 +172,15 @@ export const modalSections: ModalSection[] = [
                 sidebar: "realtimeSdkOverviewSidebar",
               },
               {
-                label: "Technical Reference",
-                link: "/sdks/realtime-sdk/v3/technical-reference",
-                sidebar: "realtimeSdkReferenceSidebar",
-              },
-              {
                 label: "Guides",
                 link: "/sdks/realtime-sdk/v3/guides",
                 sidebar: "realtimeSdkGuidesSidebar",
               },
+              {
+                label: "Technical Reference",
+                link: "/sdks/realtime-sdk/v3/technical-reference",
+                sidebar: "realtimeSdkReferenceSidebar",
+              }
             ],
           },
           // v2 version
@@ -224,15 +192,15 @@ export const modalSections: ModalSection[] = [
                 sidebar: "realtimeSdkOverviewSidebar",
               },
               {
-                label: "Technical Reference",
-                link: "/sdks/realtime-sdk/v2/language/nodejs",
-                sidebar: "realtimeSdkLanguageSidebar",
-              },
-              {
                 label: "Guides",
                 link: "/sdks/realtime-sdk/v2/guides",
                 sidebar: "realtimeSdkGuidesSidebar",
               },
+              {
+                label: "Technical Reference",
+                link: "/sdks/realtime-sdk/v2/language/nodejs",
+                sidebar: "realtimeSdkLanguageSidebar",
+              }
             ],
           },
         },
@@ -246,17 +214,17 @@ export const modalSections: ModalSection[] = [
           {
             label: "Overview",
             link: "/rest",
-            sidebar: "apiSidebar",
+            sidebar: "apiOverviewSidebar",
           },
           {
-            label: "SignalWire REST",
+            label: "SignalWire APIs",
             link: "/rest/signalwire-rest",
-            sidebar: "apiSidebar",
+            sidebar: "apiSignalwireSidebar",
           },
           {
-            label: "Compatibility REST",
+            label: "Compatibility APIs",
             link: "/rest/compatibility-api",
-            sidebar: "apiSidebar",
+            sidebar: "apiCompatibilitySidebar",
           },
         ],
       },
