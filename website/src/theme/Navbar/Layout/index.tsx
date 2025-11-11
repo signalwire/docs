@@ -21,12 +21,17 @@ function NavbarBackdrop(props: ComponentProps<'div'>) {
   );
 }
 
-export default function NavbarLayout({children}: Props): ReactNode {
+interface ExtendedProps extends Props {
+  secondaryNavbar?: ReactNode;
+}
+
+export default function NavbarLayout({children, secondaryNavbar}: ExtendedProps): ReactNode {
   const {
     navbar: {hideOnScroll, style},
   } = useThemeConfig();
   const mobileSidebar = useNavbarMobileSidebar();
   const {navbarRef, isNavbarVisible} = useHideableNavbar(hideOnScroll);
+
   return (
     <nav
       ref={navbarRef}
@@ -48,8 +53,10 @@ export default function NavbarLayout({children}: Props): ReactNode {
           'navbar--primary': style === 'primary',
           'navbar-sidebar--show': mobileSidebar.shown,
         },
+        secondaryNavbar && styles.hasSecondaryNavbar,
       )}>
       {children}
+      {secondaryNavbar}
       <NavbarBackdrop onClick={mobileSidebar.toggle} />
       <NavbarMobileSidebar />
     </nav>
