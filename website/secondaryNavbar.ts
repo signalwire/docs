@@ -1,17 +1,16 @@
 import React from "react";
 import {
   FaHome,
-  FaCode,
   FaRobot,
-  FaDesktop,
   FaServer,
-  FaPlug,
   FaExchangeAlt,
-  FaProjectDiagram,
   FaBook,
   FaComments,
   FaNewspaper
 } from "react-icons/fa";
+import { MdCode, MdWeb } from "react-icons/md";
+import { TbApi } from "react-icons/tb";
+import { PiTreeStructure } from "react-icons/pi";
 import { IconType } from "react-icons";
 
 // Type definitions
@@ -62,7 +61,7 @@ export const modalSections: ModalSection[] = [
       },
       swml: {
         title: "SWML",
-        icon: FaCode,
+        icon: MdCode,
         description: "SignalWire Markup Language documentation",
         link: "/swml",
         links: [
@@ -98,7 +97,7 @@ export const modalSections: ModalSection[] = [
       },
       browserSdk: {
         title: "Browser SDK",
-        icon: FaDesktop,
+        icon: MdWeb,
         description: "RELAY Browser SDK for WebRTC",
         link: "/sdks/browser-sdk",
         versions: {
@@ -214,7 +213,7 @@ export const modalSections: ModalSection[] = [
       },
       restApi: {
         title: "REST APIs",
-        icon: FaPlug,
+        icon: TbApi,
         description: "SignalWire REST API endpoints",
         link: "/rest",
         links: [
@@ -261,7 +260,7 @@ export const modalSections: ModalSection[] = [
       callFlowBuilder: {
         title: "Call Flow Builder",
         description: "Visual tool to design and deploy call flows",
-        icon: FaProjectDiagram,
+        icon: PiTreeStructure,
         link: "/call-flow-builder",
         links: [
           {
