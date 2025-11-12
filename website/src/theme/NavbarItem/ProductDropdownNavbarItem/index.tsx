@@ -6,7 +6,7 @@ import { IconType } from 'react-icons';
 import { useModalContext } from '@theme/Navbar/ModalContext';
 import { ProductItem, ProductLink } from '@site/secondaryNavbar';
 import { useAllProducts } from '@theme/utils/productUtils';
-import styles from './ProductDropdownNavbarItem/styles.module.scss';
+import styles from './styles.module.scss';
 
 export default function ProductDropdownNavbarItem(): React.JSX.Element | null {
   const { isModalOpen, setModalOpen, setCurrentProduct } = useModalContext();
