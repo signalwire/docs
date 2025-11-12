@@ -47,53 +47,56 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
 
   return (
     <>
-      <div
+      <nav
         ref={navbarRef}
-        className={clsx(styles.secondaryNavbar, isFixed && styles.fixedTop)}
+        className={clsx('navbar', styles.secondaryNavbar, isFixed && styles.fixedTop)}
       >
-        <nav className={styles.navLinks}>
-          {productLinks.map((item: ProductLink, index: number) => {
-            if (item.dropdown) {
-              // Dropdown support (optional)
-              return (
-                <div key={index} className={styles.dropdown}>
-                  <span className={styles.dropdownToggle}>
-                    {item.label}
-                    <FaChevronDown aria-hidden="true" />
-                  </span>
-                  <div className={styles.dropdownMenu}>
-                    {item.dropdown.map((subItem: DropdownItem, subIndex: number) => (
-                      <Link
-                        key={subIndex}
-                        to={subItem.link}
-                        className={styles.dropdownItem}
-                      >
-                        {subItem.label}
-                      </Link>
-                    ))}
+        <div className="navbar__inner">
+          <div className="navbar__items">
+            {productLinks.map((item: ProductLink, index: number) => {
+              if (item.dropdown) {
+                // Dropdown support (optional)
+                return (
+                  <div key={index} className="navbar__item dropdown dropdown--hoverable">
+                    <a href="#" className="navbar__link" onClick={(e) => e.preventDefault()}>
+                      {item.label}
+                      <FaChevronDown aria-hidden="true" style={{ marginLeft: '0.3em', fontSize: '0.8em' }} />
+                    </a>
+                    <ul className="dropdown__menu">
+                      {item.dropdown.map((subItem: DropdownItem, subIndex: number) => (
+                        <li key={subIndex}>
+                          <Link
+                            to={subItem.link}
+                            className="dropdown__link"
+                          >
+                            {subItem.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                );
+              }
+
+              // Regular link - determine if active based on sidebar name
+              const isActive = activeSidebar && item.sidebar === activeSidebar;
+
+              return (
+                <Link
+                  key={index}
+                  to={item.link}
+                  className={clsx(
+                    'navbar__item navbar__link',
+                    isActive && 'navbar__link--active' // Infima active class (color, no underline)
+                  )}
+                >
+                  {item.label}
+                </Link>
               );
-            }
-
-            // Regular link - determine if active based on sidebar name
-            const isActive = activeSidebar && item.sidebar === activeSidebar;
-
-            return (
-              <Link
-                key={index}
-                to={item.link}
-                className={clsx(
-                  styles.navLink,
-                  isActive && styles.activeLink
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+            })}
+          </div>
+        </div>
+      </nav>
       {/* Placeholder to prevent content jump when navbar becomes fixed */}
       {isFixed && (
         <div ref={placeholderRef} className={styles.placeholder} />
