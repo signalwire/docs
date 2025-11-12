@@ -40,6 +40,27 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
     };
   }, []);
 
+  // Signal to main navbar that secondary navbar exists
+  // COMMENTED OUT FOR TESTING - showing both navbar borders
+  // useEffect(() => {
+  //   // Only add class if we're actually going to show the secondary navbar
+  //   if (!product || !productLinks || productLinks.length <= 1) {
+  //     return; // Don't add class if not rendering
+  //   }
+
+  //   const mainNavbar = document.querySelector('.navbar:not(.secondaryNavbar)');
+  //   if (mainNavbar) {
+  //     mainNavbar.classList.add('has-secondary-navbar');
+  //   }
+
+  //   return () => {
+  //     const mainNavbar = document.querySelector('.navbar:not(.secondaryNavbar)');
+  //     if (mainNavbar) {
+  //       mainNavbar.classList.remove('has-secondary-navbar');
+  //     }
+  //   };
+  // }, [product, productLinks]);
+
   // Don't show if no product or only 1 link
   if (!product || !productLinks || productLinks.length <= 1) {
     return null;
@@ -94,6 +115,9 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
                 </Link>
               );
             })}
+          </div>
+          <div className="navbar__items navbar__items--right">
+            {/* Empty - provides proper flex layout for full width */}
           </div>
         </div>
       </nav>

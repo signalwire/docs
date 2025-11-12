@@ -21,8 +21,6 @@ const navbar: NavbarItem[] = [
     dropdownActiveClassDisabled: true,
   },
 
-  { to: "/blog", label: "Blog", position: "right" },
-
   /// Support Dropdown -------- ///
   {
     type: "dropdown",
