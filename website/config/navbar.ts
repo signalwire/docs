@@ -10,6 +10,15 @@
 import type { NavbarItem } from "@docusaurus/theme-common";
 
 const navbar: NavbarItem[] = [
+  /* Product Dropdown
+  * Custom navbar item for switching between products.
+  * Registered via ComponentTypes pattern.
+  */
+  {
+    type: "custom-productDropdown",
+    position: "left",
+  },
+
   /* Docs Version Dropdown
   * Conditoinaly renders in if current route has versioned docs.
   * See the VersionDropdown theme component for more details.

@@ -1,4 +1,4 @@
-import React, {type ReactNode, useState} from 'react';
+import React, { type ReactNode, useState } from 'react';
 import NavbarLayout from '@theme/Navbar/Layout';
 import NavbarContent from '@theme/Navbar/Content';
 import SecondaryNavbar from '@theme/SecondaryNavbar';
