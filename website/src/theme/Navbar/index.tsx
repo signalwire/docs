@@ -13,8 +13,8 @@ export default function Navbar(): ReactNode {
     <ModalContext.Provider value={{ isModalOpen, setModalOpen, currentProduct, setCurrentProduct }}>
       <NavbarLayout>
         <NavbarContent />
+        <SecondaryNavbar />
       </NavbarLayout>
-      <SecondaryNavbar />
       <ProductModal
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
