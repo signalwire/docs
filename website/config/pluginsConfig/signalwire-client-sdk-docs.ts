@@ -1,7 +1,7 @@
 import { PluginConfig, PluginOptions } from "@docusaurus/types";
 import sidebarGenerator from "../../src/plugins/SidebarGenerator";
 
-export const signalwireSdkPlugin: PluginConfig = [
+export const signalwireClientSdkPlugin: PluginConfig = [
   "@docusaurus/plugin-content-docs",
   {
     id: "signalwire-client-sdk",
