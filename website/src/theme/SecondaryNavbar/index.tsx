@@ -16,7 +16,7 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
   }
 
   return (
-    <div className={clsx('navbar', styles.secondaryNavbar)}>
+    <div className={clsx('navbar', 'navbar--secondary', styles.secondaryNavbar)}>
       <div className="navbar__inner">
         {/* LEFT CONTAINER - Product navigation links */}
         <div className="theme-layout-navbar-left navbar__items">

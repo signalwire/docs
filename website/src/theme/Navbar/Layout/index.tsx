@@ -1,4 +1,4 @@
-import React, {type ComponentProps, type ReactNode, useEffect} from 'react';
+import React, {type ComponentProps, type ReactNode, useLayoutEffect} from 'react';
 import clsx from 'clsx';
 import {ThemeClassNames, useThemeConfig} from '@docusaurus/theme-common';
 import {useHideableNavbar, useNavbarMobileSidebar} from '@docusaurus/theme-common/internal';
@@ -24,12 +24,22 @@ export default function NavbarLayout({children}: Props): ReactNode {
   const {navbarRef, isNavbarVisible} = useHideableNavbar(hideOnScroll);
   const { productLinks } = useSecondaryNavState();
 
-  // Dynamically set --ifm-navbar-height based on secondary navbar visibility
-  useEffect(() => {
+  // Dynamically set navbar height synchronously before paint
+  // useLayoutEffect runs before browser paint, eliminating visual flicker during SPA navigation
+  useLayoutEffect(() => {
     const hasSecondaryNavbar = productLinks && productLinks.length > 1;
-    const totalHeight = hasSecondaryNavbar ? '120px' : '60px';
+
+    // Update total navbar height using calc() strings for flexibility
+    // This allows theme users to customize navbar heights via CSS variables
+    const totalHeight = hasSecondaryNavbar
+      ? 'calc(var(--ifm-primary-navbar-height) + var(--secondary-navbar-height))'
+      : 'var(--ifm-primary-navbar-height)';
+
     document.documentElement.style.setProperty('--ifm-navbar-height', totalHeight);
   }, [productLinks]);
+
+  // Calculate if secondary navbar is present for conditional border styling
+  const hasSecondaryNavbar = productLinks && productLinks.length > 1;
 
   return (
     <nav
@@ -42,6 +52,8 @@ export default function NavbarLayout({children}: Props): ReactNode {
       className={clsx(
         ThemeClassNames.layout.navbar.container,
         'navbar',
+        // Conditional border styling via CSS classes
+        hasSecondaryNavbar ? 'navbar--with-secondary' : 'navbar--standalone',
         hideOnScroll && [
           styles.navbarHideable,
           !isNavbarVisible && styles.navbarHidden,
