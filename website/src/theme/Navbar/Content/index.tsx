@@ -4,7 +4,12 @@ import type {Props} from '@theme/Navbar/Content';
 
 export default function NavbarContent(props: Props): React.JSX.Element {
   return (
-    <div style={{width: '100%', display: 'flex'}}>
+    <div style={{
+      width: '100%', 
+      display: 'flex',
+      height: 'var(--ifm-primary-navbar-height)',  // Lock to 60px always
+      flexShrink: 0  // Prevent flex shrinking
+    }}>
       <OriginalNavbarContent {...props} />
     </div>
   );

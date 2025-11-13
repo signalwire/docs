@@ -22,7 +22,7 @@ export default function ProductDropdownNavbarItem(): React.JSX.Element | null {
     // Collect all product/link pairs from config
     const allLinks: Array<{ productKey: string; link: string }> = [];
 
-    for (const [productKey, productConfig] of Object.entries(allProducts)) {
+    for (const [productKey, productConfig] of Object.entries(allProducts) as [string, ProductItem][]) {
       // Handle versioned products (check versions.current.links or versions[version].links)
       let productLinks: ProductLink[] | undefined = productConfig.links;
 

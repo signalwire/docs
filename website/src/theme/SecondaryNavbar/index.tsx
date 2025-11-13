@@ -1,42 +1,40 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
-import { FaChevronDown } from 'react-icons/fa';
+import DropdownNavbarItem from '@theme/NavbarItem/DropdownNavbarItem';
 import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
 import { ProductLink, DropdownItem } from '@site/secondaryNavbar';
 import styles from './styles.module.scss';
 
-export default function SecondaryNavbar(): React.JSX.Element {
+export default function SecondaryNavbar(): React.JSX.Element | null {
   // Get secondary navbar state from shared hook
   const { product, productLinks, activeSidebar } = useSecondaryNavState();
 
+  // Don't render if no product links or only 1 item
+  if (!productLinks || productLinks.length <= 1) {
+    return null;
+  }
+
   return (
-    <div className={styles.secondaryNavbar}>
+    <div className={clsx('navbar', styles.secondaryNavbar)}>
       <div className="navbar__inner">
         {/* LEFT CONTAINER - Product navigation links */}
         <div className="theme-layout-navbar-left navbar__items">
-          {productLinks && productLinks.length > 1 && productLinks.map((item: ProductLink, index: number) => {
+          {productLinks.map((item: ProductLink, index: number) => {
             if (item.dropdown) {
-              // Dropdown support (optional)
+              // Use Docusaurus's built-in dropdown component for accessibility & consistency
               return (
-                <div key={index} className="navbar__item dropdown dropdown--hoverable">
-                  <a href="#" className="navbar__link" onClick={(e) => e.preventDefault()}>
-                    {item.label}
-                    <FaChevronDown aria-hidden="true" style={{ marginLeft: '0.3em', fontSize: '0.8em' }} />
-                  </a>
-                  <ul className="dropdown__menu">
-                    {item.dropdown.map((subItem: DropdownItem, subIndex: number) => (
-                      <li key={subIndex}>
-                        <Link
-                          to={subItem.link}
-                          className="dropdown__link"
-                        >
-                          {subItem.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <DropdownNavbarItem
+                  key={index}
+                  label={item.label}
+                  to={item.link}
+                  activeClassName='navbar__link--active'
+                  items={item.dropdown.map((subItem: DropdownItem) => ({
+                    type: 'default' as const,
+                    label: subItem.label,
+                    to: subItem.link,
+                  }))}
+                />
               );
             }
 

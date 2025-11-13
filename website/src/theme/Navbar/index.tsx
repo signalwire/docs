@@ -11,10 +11,19 @@ export default function Navbar(): ReactNode {
 
   return (
     <ModalContext.Provider value={{ isModalOpen, setModalOpen, currentProduct, setCurrentProduct }}>
-      <NavbarLayout>
-        <NavbarContent />
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 'var(--ifm-z-index-fixed)',
+
+        }}
+      >
+        <NavbarLayout>
+          <NavbarContent />
+        </NavbarLayout>
         <SecondaryNavbar />
-      </NavbarLayout>
+      </div>
       <ProductModal
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}

@@ -1,9 +1,10 @@
-import React, {type ComponentProps, type ReactNode} from 'react';
+import React, {type ComponentProps, type ReactNode, useEffect} from 'react';
 import clsx from 'clsx';
 import {ThemeClassNames, useThemeConfig} from '@docusaurus/theme-common';
 import {useHideableNavbar, useNavbarMobileSidebar} from '@docusaurus/theme-common/internal';
 import {translate} from '@docusaurus/Translate';
 import NavbarMobileSidebar from '@theme/Navbar/MobileSidebar';
+import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
 import type {Props} from '@theme/Navbar/Layout';
 import styles from './styles.module.css';
 
@@ -21,6 +22,14 @@ export default function NavbarLayout({children}: Props): ReactNode {
   const {navbar: {hideOnScroll, style}} = useThemeConfig();
   const mobileSidebar = useNavbarMobileSidebar();
   const {navbarRef, isNavbarVisible} = useHideableNavbar(hideOnScroll);
+  const { productLinks } = useSecondaryNavState();
+
+  // Dynamically set --ifm-navbar-height based on secondary navbar visibility
+  useEffect(() => {
+    const hasSecondaryNavbar = productLinks && productLinks.length > 1;
+    const totalHeight = hasSecondaryNavbar ? '120px' : '60px';
+    document.documentElement.style.setProperty('--ifm-navbar-height', totalHeight);
+  }, [productLinks]);
 
   return (
     <nav
@@ -33,7 +42,6 @@ export default function NavbarLayout({children}: Props): ReactNode {
       className={clsx(
         ThemeClassNames.layout.navbar.container,
         'navbar',
-        'navbar--fixed-top',
         hideOnScroll && [
           styles.navbarHideable,
           !isNavbarVisible && styles.navbarHidden,
@@ -44,10 +52,8 @@ export default function NavbarLayout({children}: Props): ReactNode {
           'navbar-sidebar--show': mobileSidebar.shown,
         },
       )}>
-      {/* Container with flex-column for multiple rows */}
-      <div className={styles.navbarRows}>
-        {children}
-      </div>
+      {/* Render children directly - no wrapper needed */}
+      {children}
       <NavbarBackdrop onClick={mobileSidebar.toggle} />
       <NavbarMobileSidebar />
     </nav>
