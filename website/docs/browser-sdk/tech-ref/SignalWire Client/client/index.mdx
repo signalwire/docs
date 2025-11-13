@@ -217,7 +217,7 @@ The call invites can be accepted or rejected as per user input.
 #### Example
 
 ```javascript
-// Receive calls using push notifications
+// Receive calls using websocket notifications
 client.online({
   incomingCallHandlers: {
     all: __incomingCallHandler,
@@ -284,7 +284,6 @@ console.log(await client.getSubscriberInfo())
   "country": "US",
   "region": "East",
   "company_name": "Example Inc",
-  "push_notification_key": "bm90aGluZyBpbnRlcmVzdGluZyBoZXJlOyk=",
   "app_settings": {
     "display_name": "Cool Application",
     "scopes": ["read", "write"]
@@ -292,76 +291,6 @@ console.log(await client.getSubscriberInfo())
 }
 ```
 
-### registerDevice
-
-▸ **registerDevice**(`options`): `Promise<`[`Response`](#response-for-registerdevice-json)`>`
-
-Register a device for receiving SignalWire notifications related to the registering subscriber.
-
-#### Parameters
-
-| Name                  | Type                              | Description                                                                                |
-| :-------------------- | :-------------------------------- | :----------------------------------------------------------------------------------------- |
-| `options`             | `object`                          |
-| `options.deviceToken` | `string`                          | The token you receive from the device after getting notification permission from the user. |
-| `options.deviceType`  | `"iOS" \| "Android" \| "Desktop"` | The address type to filter for. Possible values: `subscriber`, `room`, `app`, `call`.      |
-
-#### Response for RegisterDevice (JSON)
-
-The method call returns a promise to a JSON object with the following fields:
-
-| Name                    | Type                              | Description                                                                                                                                   |
-| :---------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                    | `string`                          | ID of the current device registration. Use this when sending a request to unregister this device.                                             |
-| `device_token`          | `string`                          | Echo of the`options.deviceToken` option that was sent while registering.                                                                      |
-| `device_type`           | `"iOS" \| "Android" \| "Desktop"` | Echo of the `options.deviceType` option that was sent while registering.                                                                      |
-| `device_name`           | `null`                            | Not yet implemented                                                                                                                           |
-| `push_notification_key` | `string`                          | SignalWire only sends encrypted push notifications. When you receive them, use this key to decode them ([Details](/sdks/browser-sdk/signalwire-client/push-notifications)) |
-| `date_registered`       | `string`                          | The date string when the server registered this device                                                                                        |
-
-#### Example
-
-```javascript
-await client.registerDevice({ deviceToken: "XYZ", deviceType: "Desktop" });
-```
-
-```json
-{
-  "id": "222rr8b2-9070-4383-af17-e48b97e900a0",
-  "device_token": "XYZ",
-  "device_name": null,
-  "device_type": "Desktop",
-  "push_notification_key": "qMdif...fZzz",
-  "date_registered": "2024-02-27T12:46:42Z"
-}
-```
-
-### unregisterDevice
-
-▸ **registerDevice**(`{id:string}`): `Promise<{}>`
-
-Cancels the registration of the device mentioned by its ID.
-
-#### Parameters
-
-| Name | Type     | Description                                                                                        |
-| :--- | :------- | :------------------------------------------------------------------------------------------------- |
-| `id` | `string` | The ID of the device that you need to unregister. This ID is returned when registering the device. |
-
-#### Returns
-
-Returns empty object when successful. Throws error with the server's error when unsuccessful.
-
-#### Example
-
-```javascript
-const device = await client.registerDevice({ deviceToken: "XYZ", deviceType: "Desktop" });
-// commit `device.id` and `device.push_notification_key` to a persistent storage like localStorage or session or file
-// ...
-
-// When the time comes to "log out" or stop getting notifications:
-await client.unregisterDevice({ id: device.id });
-```
 
 ### connect
 
@@ -381,55 +310,6 @@ automatically in most cases.
 #### Returns
 
 Nothing
-
-### handlePushNotification
-
-▸ **handlePushNotification**(`payload`): `Promise<Call>`
-
-Creates the call based on the push notification that the device received.
-
-Dials to the address specified in the `to` parameter, and returns a `Call` object if successful.
-If the `rootElement` was set during [client instantiation](#instantiation),
-the video call will be injected into that container.
-
-#### Parameters
-
-| Name      | Type     | Description                           |
-| :-------- | :------- | :------------------------------------ |
-| `payload` | `object` | The contents of the push notification |
-
-The exact format of Push Notification you receive will vary depending from
-Android to iOS to Web. But it will always contain the following information:
-
-| Name                   | Type     | Description                                                      |
-| :--------------------- | :------- | :--------------------------------------------------------------- |
-| `encryption_type`      | `string` | Type of encryption used (`'aes_256_gcm'` or `'none'`)            |
-| `notification_uuid`    | `string` | UUID of the push notification                                    |
-| `with_video`           | `string` | Indicates whether the call includes video (`"true" \| "false"`)  |
-| `incoming_caller_name` | `string` | Name of the incoming caller                                      |
-| `incoming_caller_id`   | `string` | ID of the incoming caller                                        |
-| `invite`               | `string` | Invitation (base 64 encoded, compressed, and possibly encrypted) |
-| `title`                | `string` | Title of the call                                                |
-| `type`                 | `string` | Type of notification (`'call_invite'`)                           |
-| `iv`                   | `string` | The initialization vector of the encryption (base 64)            |
-| `tag`                  | `string` | The tag info for the encryption (base 64)                        |
-| `version`              | `string` | The version of the push notification received                    |
-
-In addition to this, you are required to add a `decrypted` field which has the decrypted SDP invite.
-To decrypt the encrypted invite, use the encryption key that was sent while calling `registerDevice`
-method. The [Push Notifications](/sdks/browser-sdk/signalwire-client/push-notifications) reference goes through this in detail.
-
-#### Returns
-
-Promise to a JavaScript object with the following attributes:
-
-| Name           | Type     | Description                                                        |
-| :------------- | :------- | :----------------------------------------------------------------- |
-| `resultType`   | `string` | a resultType of `"inboundCall"` signifies that a call was received |
-| `resultObject` | `Call`   | The Call object                                                    |
-
-Unlike with the `dial` method, the `Call` object here has not been started.
-To accept and start the call, use `Call.answer()` and to reject the call, use `Call.hangup()`.
 
 ### updateToken
 
@@ -496,8 +376,7 @@ Use this object to assign callback functions which get invoked when a call is re
 
 | Name               | Type                                     | Required? | Description                                                                 |
 | :----------------- | :--------------------------------------- | :-------- | :-------------------------------------------------------------------------- |
-| `all`              | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Callback for calls received either as a push notification or from websocket |
-| `pushNotification` | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Callback for calls received via push notification (overrides `all`)         |
+| `all`              | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Since push support has been removed, identical to `websocket`               |
 | `websocket`        | `(`[`IncomingCallNotification`]`)=>void` | Optional  | Callback for calls received via websocket (overrides `all`)                 |
 
 [`IncomingCallNotification`]: #incomingcallnotification
@@ -526,17 +405,15 @@ This is the type of object that is passed into the [IncomingCallHandlers] callba
 
 | Name                | Type                                | Description                                                                 |
 | :------------------ | :---------------------------------- | :-------------------------------------------------------------------------- |
-| `source`            | `"websocket"`\|`"pushNotification"` |                                                                             |
+| `source`            | `"websocket"`                       |                                                                             |
 | `callID`            | `string`                            | Unique ID of the incoming call                                              |
-| `sdp`               | `string`                            | The encrypted payload documented in the [push notification payload] section |
+| `sdp`               | `string`                            |  deprecated                                                            |
 | `caller_id_name`    | `string`                            | Name of the caller                                                          |
 | `caller_id_number`  | `string`                            | ID or number of the caller                                                  |
 | `callee_id_name`    | `string`                            | Name of the callee                                                          |
 | `callee_id_number`  | `string`                            | ID or number of the callee                                                  |
 | `display_direction` | `string`                            | Direction of the call                                                       |
 | `nodeId`            | `string`                            | The node from where the call was received                                   |
-
-[push notification payload]: /sdks/browser-sdk/signalwire-client/push-notifications#payload
 
 ### CallOptions
 
