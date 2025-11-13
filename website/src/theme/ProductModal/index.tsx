@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
 import { IconType } from 'react-icons';
-import { modalSections, ProductItem } from '@site/secondaryNavbar';
+import { modalSections, modalHeaderTitle, ProductItem } from '@site/secondaryNavbar';
 import styles from './styles.module.scss';
 
 interface ProductModalProps {
@@ -53,17 +53,22 @@ export default function ProductModal({
     return null;
   };
 
-  // Extract modal header title from first main section
-  const mainSections = modalSections.filter((section) => section.type === 'main');
-  const modalTitle = mainSections[0]?.title || 'Go to documentation:';
+  // Helper function to sort by position
+  const sortByPosition = <T extends { position?: number }>(items: T[]): T[] => {
+    return [...items].sort((a, b) => {
+      const posA = a.position ?? Infinity;
+      const posB = b.position ?? Infinity;
+      return posA - posB;
+    });
+  };
 
-  // Merge all main sections into single products object
-  const mainProducts = mainSections.reduce<Record<string, ProductItem>>((acc, section) => {
-    return { ...acc, ...section.items };
-  }, {});
-
-  // Get all section-type sections
-  const customSections = modalSections.filter((section) => section.type === 'section');
+  // Get all main and custom sections, sorted by position
+  const mainSections = sortByPosition(
+    modalSections.filter((section) => section.type === 'main')
+  );
+  const customSections = sortByPosition(
+    modalSections.filter((section) => section.type === 'section')
+  );
 
   return (
     <div
@@ -80,7 +85,7 @@ export default function ProductModal({
         {/* Header */}
         <div className={styles.modalHeader}>
           <div className={styles.modalHeaderLeft}>
-            <strong>{modalTitle}</strong>
+            <strong>{modalHeaderTitle}</strong>
           </div>
           <div className={styles.modalHeaderRight}>
             <button
@@ -99,29 +104,47 @@ export default function ProductModal({
 
         {/* Body */}
         <div className={styles.modalBody}>
-          {/* Main Products */}
+          {/* Main Products with Section Headers */}
           <div className={styles.productsGrid}>
-            {Object.entries(mainProducts).map(([key, value]) => {
-              const active = isProductActive(key);
-              return (
-                <Link
-                  key={key}
-                  to={value.link}
-                  className={clsx(
-                    styles.productCard,
-                    active && styles.activeCard
-                  )}
-                  onClick={onClose}
-                >
-                  {renderIcon(value.icon, styles.productIcon)}
-                  <div className={styles.productText}>
-                    <strong>{value.title}</strong>
-                    <p>{value.description}</p>
-                  </div>
-                  {active && <div className={styles.activeIndicator} />}
-                </Link>
-              );
-            })}
+            {mainSections.map((section, sectionIndex) => (
+              <React.Fragment key={`section-${sectionIndex}`}>
+                {/* Section Header - only render if title is not empty */}
+                {section.title && (
+                  <h3 className={clsx(styles.sectionTitle, styles.gridSectionTitle)}>
+                    {section.title}
+                  </h3>
+                )}
+                {/* Section Items */}
+                {sortByPosition(
+                  Object.entries(section.items).map(([key, value]) => ({
+                    key,
+                    ...value,
+                  }))
+                ).map(({ key, ...value }) => {
+                  const active = isProductActive(key);
+                  const isFullWidth = sectionIndex === 0; // First section (Home)
+                  return (
+                    <Link
+                      key={key}
+                      to={value.link}
+                      className={clsx(
+                        styles.productCard,
+                        active && styles.activeCard,
+                        isFullWidth && styles.fullWidthCard
+                      )}
+                      onClick={onClose}
+                    >
+                      {renderIcon(value.icon, styles.productIcon)}
+                      <div className={styles.productText}>
+                        <strong>{value.title}</strong>
+                        <p>{value.description}</p>
+                      </div>
+                      {active && <div className={styles.activeIndicator} />}
+                    </Link>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </div>
 
           {/* Custom Sections */}

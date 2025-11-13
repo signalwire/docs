@@ -6,12 +6,17 @@ import {
   FaExchangeAlt,
   FaBook,
   FaComments,
-  FaNewspaper
+  FaNewspaper,
+  FaBox,
+  FaLifeRing
 } from "react-icons/fa";
 import { MdCode, MdWeb } from "react-icons/md";
-import { TbApi } from "react-icons/tb";
+import { TbWorldCode } from "react-icons/tb";
 import { PiTreeStructure } from "react-icons/pi";
 import { IconType } from "react-icons";
+
+// Modal header title
+export const modalHeaderTitle = "Explore the SignalWire Docs";
 
 // Type definitions
 export interface DropdownItem {
@@ -38,35 +43,47 @@ export interface ProductItem {
   links?: ProductLink[];
   versions?: Record<string, ProductVersion>;
   dropdown?: DropdownItem[];
+  position?: number;
 }
 
 export interface ModalSection {
   type: "main" | "section";
   title: string;
   items: Record<string, ProductItem>;
+  position?: number;
 }
 
 // Type-based modal sections structure
 export const modalSections: ModalSection[] = [
   {
     type: "main",
-    title: "Go to documentation:",
+    title: "",
+    position: 1,
     items: {
       platform: {
         title: "Home",
         icon: FaHome,
-        description: "Platform overview and getting started resources",
+        description: "Get started with the SignalWire platform",
         link: "/",
-        links: []
+        links: [],
+        position: 1,
       },
+    },
+  },
+  {
+    type: "main",
+    title: "SignalWire API",
+    position: 2,
+    items: {
       swml: {
         title: "SWML",
         icon: MdCode,
-        description: "SignalWire Markup Language documentation",
+        description: "Technical reference and guides for the SignalWire Markup Language",
         link: "/swml",
+        position: 2,
         links: [
           {
-            label: "Get Started",
+            label: "Get started",
             link: "/swml",
             sidebar: "swmlOverviewSidebar",
           },
@@ -87,6 +104,7 @@ export const modalSections: ModalSection[] = [
         icon: FaRobot,
         description: "AI Agents development with SWAIG",
         link: "/sdks/agents-sdk",
+        position: 5,
         links: [
           {
             label: "",
@@ -100,6 +118,7 @@ export const modalSections: ModalSection[] = [
         icon: MdWeb,
         description: "RELAY Browser SDK for WebRTC",
         link: "/sdks/browser-sdk",
+        position: 3,
         versions: {
           // Current/latest version (v3)
           current: {
@@ -148,6 +167,7 @@ export const modalSections: ModalSection[] = [
         icon: FaServer,
         description: "RELAY Realtime Server SDK",
         link: "/sdks/realtime-sdk",
+        position: 4,
         versions: {
           // Current/latest version
           current: {
@@ -212,10 +232,11 @@ export const modalSections: ModalSection[] = [
         },
       },
       restApi: {
-        title: "REST APIs",
-        icon: TbApi,
-        description: "SignalWire REST API endpoints",
+        title: "SignalWire API",
+        icon: TbWorldCode,
+        description: "Technical reference for the SignalWire REST API",
         link: "/rest",
+        position: 1,
         links: [
           {
             label: "Overview",
@@ -223,37 +244,9 @@ export const modalSections: ModalSection[] = [
             sidebar: "apiOverviewSidebar",
           },
           {
-            label: "SignalWire APIs",
+            label: "REST API reference",
             link: "/rest/signalwire-rest",
             sidebar: "apiSignalwireSidebar",
-          },
-          {
-            label: "Compatibility APIs",
-            link: "/rest/compatibility-api",
-            sidebar: "apiCompatibilitySidebar",
-          },
-        ],
-      },
-      compatibilityApi: {
-        title: "Compatibility API",
-        icon: FaExchangeAlt,
-        description: "Twilio-compatible migration path",
-        link: "/compatibility-api",
-        links: [
-          {
-            label: "Overview",
-            link: "/compatibility-api",
-            sidebar: "compatibilityApiOverviewSidebar",
-          },
-          {
-            label: "Guides",
-            link: "/compatibility-api/guides",
-            sidebar: "compatibilityApiGuidesSidebar",
-          },
-          {
-            label: "Technical Reference",
-            link: "/compatibility-api/cxml",
-            sidebar: "compatibilityApiReferenceSidebar",
           }
         ],
       },
@@ -262,6 +255,7 @@ export const modalSections: ModalSection[] = [
         description: "Visual tool to design and deploy call flows",
         icon: PiTreeStructure,
         link: "/call-flow-builder",
+        position: 6,
         links: [
           {
             label: "Call Flow Builder",
@@ -273,14 +267,71 @@ export const modalSections: ModalSection[] = [
     },
   },
   {
+    type: "main",
+    title: "Compatibility API",
+    position: 3,
+    items: {
+      compatibilityRestApi: {
+        title: "Compatibility API",
+        icon: TbWorldCode,
+        description: "Technical reference for the Compatibility REST API",
+        link: "/compatibility-api",
+        position: 1,
+        links: [
+	      {
+	        label: "Overview",
+	        link: "/compatibility-api",
+	        sidebar: "compatibilityApiOverviewSidebar",
+	      },
+	      {
+	        label: "Guides",
+	        link: "/compatibility-api/guides",
+	        sidebar: "compatibilityApiGuidesSidebar",
+	      },
+	      {
+	        label: "cXML reference",
+	        link: "/compatibility-api/cxml",
+	        sidebar: "compatibilityApiReferenceSidebar",
+	      },
+          {
+            label: "REST API reference",
+            link: "/rest/compatibility-api",
+            sidebar: "apiCompatibilitySidebar",
+          },
+          {
+	        label: "REST client libraries",
+	        link: "/compatibility-api/sdks",
+	        sidebar: "compatibilityApiClientLibrariesSidebar",
+	      }
+        ],
+      },
+      cxml: {
+        title: "cXML",
+        icon: MdCode,
+        description: "TwiML-compatible, XML-based language for calls and messages",
+        link: "/compatibility-api/cxml",
+        position: 2,
+        links: [
+          {
+            label: "cXML Reference",
+            link: "/compatibility-api/cxml",
+            sidebar: "compatibilityApiReferenceSidebar",
+          }
+        ],
+      },
+    },
+  },
+  {
     type: "section",
     title: "Additional resources",
+    position: 4,
     items: {
       blogs: {
-        title: "Blogs",
+        title: "Release notes",
         icon: FaNewspaper,
         description: "Latest news and updates from SignalWire",
         link: "/blog",
+        position: 2,
         links: [
           {
             label: "Blog Home",
@@ -290,9 +341,10 @@ export const modalSections: ModalSection[] = [
         ],
       },
       guides: {
-        title: "Guides & Tutorials",
+        title: "All guides",
         icon: FaBook,
         link: "/guides",
+        position: 1,
         links: [
           {
             label: "Guides",
@@ -301,16 +353,11 @@ export const modalSections: ModalSection[] = [
           },
         ],
       },
-    },
-  },
-  {
-    type: "section",
-    title: "Need help?",
-    items: {
-      communityForum: {
-        title: "Community Forum",
-        icon: FaComments,
-        link: "https://community.signalwire.com",
+      support: {
+        title: "Support",
+        icon: FaLifeRing,
+        link: "https://support.signalwire.com/portal/en/community",
+        position: 3,
       },
     },
   },
