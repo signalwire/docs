@@ -52,23 +52,13 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
     );
   }
 
-  // Mobile: Simple single menu with main items + secondary navbar items inline
+  // Mobile: Simple single menu with product nav at top, main items at bottom
   if (isMobile) {
     return (
       <ul className="menu__list">
-        {/* Main navbar items */}
-        {items.map((item, i) => (
-          <NavbarItem
-            mobile
-            {...item}
-            onClick={() => mobileSidebar.toggle()}
-            key={i}
-          />
-        ))}
-
         {/* Product section divider */}
         <li className="menu__list-item">
-          <span className={`menu__link menu__link--sublist ${styles.sectionTitle} ${styles.sectionDivider}`}>
+          <span className={`menu__link menu__link--sublist ${styles.sectionTitle}`}>
             {product.title}
           </span>
         </li>
@@ -103,6 +93,19 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
             </li>
           );
         })}
+
+        {/* Separator between product nav and main nav */}
+        <li className={`menu__list-item ${styles.menuSeparator}`} />
+
+        {/* Main navbar items */}
+        {items.map((item, i) => (
+          <NavbarItem
+            mobile
+            {...item}
+            onClick={() => mobileSidebar.toggle()}
+            key={i}
+          />
+        ))}
       </ul>
     );
   }
