@@ -1,6 +1,7 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import Link from "@docusaurus/Link";
+import { useHistory } from "@docusaurus/router";
 import styles from "./styles.module.css";
 
 export interface APIFieldProps {
@@ -42,6 +43,38 @@ export const APIField: React.FC<APIFieldProps> = ({
   // Create a URL-friendly ID from the field name
   const fieldId = `field-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
+  // State and ref for highlight effect
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const history = useHistory();
+
+  // Highlight the field when navigating to its anchor
+  useEffect(() => {
+    const anchor = `#${fieldId}`;
+    if (history.location.hash === anchor) {
+      setIsHighlighted(true);
+      fieldRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      setIsHighlighted(false);
+    }
+  }, [fieldId, history.location.hash]);
+
+  // Clear highlight when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fieldRef.current && !fieldRef.current.contains(event.target as Node)) {
+        setIsHighlighted(false);
+      }
+    };
+
+    if (isHighlighted) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isHighlighted]);
+
   const handleAnchorClick = (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -52,8 +85,6 @@ export const APIField: React.FC<APIFieldProps> = ({
     navigator.clipboard
       .writeText(window.location.href)
       .then(() => {
-        // Optional: Show a toast/notification that link was copied
-        console.log("Link copied to clipboard");
       })
       .catch((err) => {
         console.error("Failed to copy link:", err);
@@ -93,7 +124,11 @@ export const APIField: React.FC<APIFieldProps> = ({
 
   return (
     <div
-      className={clsx(styles.apiField, { [styles.deprecatedField]: deprecated })}
+      ref={fieldRef}
+      className={clsx(styles.apiField, {
+        [styles.deprecatedField]: deprecated,
+        [styles.highlighted]: isHighlighted,
+      })}
       id={fieldId}
     >
       <div className={styles.fieldHeader}>
