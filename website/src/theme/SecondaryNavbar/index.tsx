@@ -6,6 +6,28 @@ import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
 import { ProductLink, DropdownItem } from '@site/secondaryNavbar';
 import styles from './styles.module.scss';
 
+/**
+ * Escapes HTML special characters to prevent rendering issues
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Creates HTML markup for dropdown items with optional descriptions
+ */
+function createDropdownItemHtml(label: string, description?: string): string {
+  const escapedLabel = escapeHtml(label);
+  const escapedDescription = description ? escapeHtml(description) : '';
+
+  return `
+    <span class="dropdown-item-label">${escapedLabel}</span>
+    ${description ? `<span class="dropdown-item-description">${escapedDescription}</span>` : ''}
+  `.trim();
+}
+
 export default function SecondaryNavbar(): React.JSX.Element | null {
   // Get secondary navbar state from shared hook
   const { product, productLinks, activeSidebar } = useSecondaryNavState();
@@ -22,29 +44,52 @@ export default function SecondaryNavbar(): React.JSX.Element | null {
         <div className="theme-layout-navbar-left navbar__items">
           {productLinks.map((item: ProductLink, index: number) => {
             if (item.dropdown) {
-              // Use Docusaurus's built-in dropdown component for accessibility & consistency
+              // Check if any dropdown child is currently active
+              const isParentActive = item.dropdown.some(
+                (child) => child.sidebar === activeSidebar
+              );
+
+              // Dropdown link - pure container, no link on parent
               return (
                 <DropdownNavbarItem
+                  mobile={false}
                   key={index}
                   label={item.label}
-                  to={item.link}
-                  activeClassName='navbar__link--active'
-                  items={item.dropdown.map((subItem: DropdownItem) => ({
-                    type: 'default' as const,
-                    label: subItem.label,
-                    to: subItem.link,
-                  }))}
+                  // No 'to' prop - dropdown parents are pure containers
+                  className={isParentActive ? 'navbar__link--active' : undefined}
+                  items={item.dropdown.map((subItem: DropdownItem) => {
+                    // Determine if this dropdown item is active
+                    const isSubItemActive = activeSidebar === subItem.sidebar;
+
+                    // If description exists, use html property for structured content
+                    if (subItem.description) {
+                      return {
+                        type: 'default' as const,
+                        html: createDropdownItemHtml(subItem.label, subItem.description),
+                        to: subItem.link,
+                        className: 'dropdown-link-with-description',
+                        activeClassName: isSubItemActive ? 'dropdown__link--active' : undefined,
+                      };
+                    }
+                    // Otherwise, use regular label (backward compatible)
+                    return {
+                      type: 'default' as const,
+                      label: subItem.label,
+                      to: subItem.link,
+                      activeClassName: isSubItemActive ? 'dropdown__link--active' : undefined,
+                    };
+                  })}
                 />
               );
             }
 
-            // Regular link - determine if active based on sidebar name
+            // Regular link - TypeScript knows item.link is required here
             const isActive = activeSidebar && item.sidebar === activeSidebar;
 
             return (
               <Link
                 key={index}
-                to={item.link}
+                to={item.link} // Required - TypeScript enforces this for regular links
                 className={clsx(
                   'navbar__item navbar__link',
                   isActive && 'navbar__link--active' // Infima active class (color, no underline)

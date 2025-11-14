@@ -1,6 +1,6 @@
 import React, {type ComponentProps, type ReactNode, useLayoutEffect} from 'react';
 import clsx from 'clsx';
-import {ThemeClassNames, useThemeConfig} from '@docusaurus/theme-common';
+import {ThemeClassNames, useThemeConfig, useWindowSize} from '@docusaurus/theme-common';
 import {useHideableNavbar, useNavbarMobileSidebar} from '@docusaurus/theme-common/internal';
 import {translate} from '@docusaurus/Translate';
 import NavbarMobileSidebar from '@theme/Navbar/MobileSidebar';
@@ -23,20 +23,22 @@ export default function NavbarLayout({children}: Props): ReactNode {
   const mobileSidebar = useNavbarMobileSidebar();
   const {navbarRef, isNavbarVisible} = useHideableNavbar(hideOnScroll);
   const { productLinks } = useSecondaryNavState();
+  const windowSize = useWindowSize();
 
   // Dynamically set navbar height synchronously before paint
   // useLayoutEffect runs before browser paint, eliminating visual flicker during SPA navigation
   useLayoutEffect(() => {
     const hasSecondaryNavbar = productLinks && productLinks.length > 1;
+    const isMobile = windowSize === 'mobile';
 
-    // Update total navbar height using calc() strings for flexibility
-    // This allows theme users to customize navbar heights via CSS variables
-    const totalHeight = hasSecondaryNavbar
+    // On mobile, secondary navbar is hidden, so only use primary navbar height
+    // On desktop/SSR, include both primary and secondary navbar heights
+    const totalHeight = hasSecondaryNavbar && !isMobile
       ? 'calc(var(--ifm-primary-navbar-height) + var(--secondary-navbar-height))'
       : 'var(--ifm-primary-navbar-height)';
 
     document.documentElement.style.setProperty('--ifm-navbar-height', totalHeight);
-  }, [productLinks]);
+  }, [productLinks, windowSize]);
 
   // Calculate if secondary navbar is present for conditional border styling
   const hasSecondaryNavbar = productLinks && productLinks.length > 1;

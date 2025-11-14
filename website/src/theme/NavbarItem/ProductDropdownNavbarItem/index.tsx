@@ -5,10 +5,20 @@ import { FaChevronDown } from 'react-icons/fa';
 import { IconType } from 'react-icons';
 import { useModalContext } from '@theme/Navbar/ModalContext';
 import { ProductItem, ProductLink } from '@site/secondaryNavbar';
-import { useAllProducts } from '@theme/utils/productUtils';
+import { useAllProducts, detectCurrentProduct } from '@theme/utils/productUtils';
 import styles from './styles.module.scss';
 
-export default function ProductDropdownNavbarItem(): React.JSX.Element | null {
+interface Props {
+  mobile?: boolean;
+}
+
+export default function ProductDropdownNavbarItem({ mobile = false }: Props): React.JSX.Element | null {
+  // Don't render in mobile sidebar
+  if (mobile) {
+    return null;
+  }
+
+
   const { isModalOpen, setModalOpen, setCurrentProduct } = useModalContext();
   const location = useLocation();
 
@@ -17,40 +27,7 @@ export default function ProductDropdownNavbarItem(): React.JSX.Element | null {
 
   // Determine current product based on pathname (fully dynamic from config)
   const detectedProduct = React.useMemo(() => {
-    const pathname = location.pathname;
-
-    // Collect all product/link pairs from config
-    const allLinks: Array<{ productKey: string; link: string }> = [];
-
-    for (const [productKey, productConfig] of Object.entries(allProducts) as [string, ProductItem][]) {
-      // Handle versioned products (check versions.current.links or versions[version].links)
-      let productLinks: ProductLink[] | undefined = productConfig.links;
-
-      if (productConfig.versions) {
-        // For versioned products, use current version links
-        productLinks = productConfig.versions.current?.links || [];
-      }
-
-      if (productLinks) {
-        for (const link of productLinks) {
-          allLinks.push({ productKey, link: link.link });
-        }
-      }
-    }
-
-    // Sort by link length (longest first) to match most specific paths first
-    // This prevents "/" from matching everything
-    allLinks.sort((a, b) => b.link.length - a.link.length);
-
-    // Find first matching link
-    for (const { productKey, link } of allLinks) {
-      if (pathname.startsWith(link)) {
-        return productKey;
-      }
-    }
-
-    // Default to platform if no match found
-    return 'platform';
+    return detectCurrentProduct(location.pathname, allProducts, 'platform');
   }, [location.pathname, allProducts]);
 
   // Update context when detected product changes
@@ -96,7 +73,7 @@ export default function ProductDropdownNavbarItem(): React.JSX.Element | null {
 
   return (
     <button
-      className={clsx('navbar__item', styles.productButton)}
+      className={styles.productButton}
       onClick={() => setModalOpen(true)}
       aria-label="Select product"
       aria-expanded={isModalOpen}

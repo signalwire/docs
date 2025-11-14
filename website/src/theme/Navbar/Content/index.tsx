@@ -7,7 +7,7 @@ export default function NavbarContent(props: Props): React.JSX.Element {
     <div style={{
       width: '100%', 
       display: 'flex',
-      height: 'var(--ifm-primary-navbar-height)',  // Lock to 60px always
+      height: 'var(--ifm-primary-navbar-height)',
       flexShrink: 0  // Prevent flex shrinking
     }}>
       <OriginalNavbarContent {...props} />

@@ -22,14 +22,28 @@ export const modalHeaderTitle = "Explore the SignalWire Docs";
 export interface DropdownItem {
   label: string;
   link: string;
+  sidebar: string; // Required for active state detection
+  description?: string; // Optional description shown below the label
 }
 
-export interface ProductLink {
+// Regular link (no dropdown) - link is required
+export interface RegularProductLink {
   label: string;
   link: string;
   sidebar: string;
-  dropdown?: DropdownItem[];
+  dropdown?: never; // Must NOT have dropdown
 }
+
+// Dropdown link - no link property (parent is pure dropdown container)
+export interface DropdownProductLink {
+  label: string;
+  link?: never; // Must NOT have link - dropdown parents are pure containers
+  sidebar: string;
+  dropdown: DropdownItem[]; // Required - must have dropdown items
+}
+
+// Union type - enforces correct combinations
+export type ProductLink = RegularProductLink | DropdownProductLink;
 
 export interface ProductVersion {
   links: ProductLink[];
@@ -244,6 +258,11 @@ export const modalSections: ModalSection[] = [
             sidebar: "apiOverviewSidebar",
           },
           {
+            label: "Guides",
+            link: "/rest/signalwire-rest/guides",
+            sidebar: "apiSignalwireGuidesSidebar",
+          },
+          {
             label: "REST API reference",
             link: "/rest/signalwire-rest",
             sidebar: "apiSignalwireSidebar",
@@ -289,19 +308,28 @@ export const modalSections: ModalSection[] = [
 	        sidebar: "compatibilityApiGuidesSidebar",
 	      },
 	      {
-	        label: "cXML reference",
-	        link: "/compatibility-api/cxml",
+	        label: "Technical Reference",
 	        sidebar: "compatibilityApiReferenceSidebar",
-	      },
-          {
-            label: "REST API reference",
-            link: "/rest/compatibility-api",
-            sidebar: "apiCompatibilitySidebar",
-          },
-          {
-	        label: "REST client libraries",
-	        link: "/compatibility-api/sdks",
-	        sidebar: "compatibilityApiClientLibrariesSidebar",
+	        dropdown: [
+	          {
+	            label: "cXML Reference",
+	            link: "/compatibility-api/cxml",
+	            sidebar: "compatibilityApiReferenceSidebar",
+	            description: "TwiML-compatible XML markup for calls and messages"
+	          },
+	          {
+	            label: "REST API Reference",
+	            link: "/rest/compatibility-api",
+	            sidebar: "apiCompatibilitySidebar",
+	            description: "HTTP endpoints for managing resources"
+	          },
+	          {
+	            label: "REST Client Libraries",
+	            link: "/compatibility-api/sdks",
+	            sidebar: "compatibilityApiClientLibrariesSidebar",
+	            description: "Official SDKs for popular programming languages"
+	          }
+	        ]
 	      }
         ],
       },

@@ -1,75 +1,18 @@
-import React, { useState, useRef, useEffect, type ReactNode } from 'react';
+import React, { useState, useRef, type ReactNode } from 'react';
 import { useNavbarMobileSidebar } from '@docusaurus/theme-common/internal';
-import { Collapsible, useCollapsible } from '@docusaurus/theme-common';
-import { useLocation } from '@docusaurus/router';
+import { useWindowSize } from '@docusaurus/theme-common';
 import Link from '@docusaurus/Link';
 import NavbarItem from '@theme/NavbarItem';
+import DropdownNavbarItem from '@theme/NavbarItem/DropdownNavbarItem';
 import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
-import { ProductLink } from '@site/secondaryNavbar';
 import { useNavbarItems } from '@theme/utils/productUtils';
 import styles from './styles.module.scss';
-
-// Helper component for collapsible dropdowns
-function MobileDropdown({ item, onClose }: { item: ProductLink; onClose: () => void }) {
-  const { collapsed, toggleCollapsed, setCollapsed } = useCollapsible({
-    initialState: true,
-  });
-
-  if (!item.dropdown || item.dropdown.length === 0) {
-    return null;
-  }
-
-  return (
-    <li className="menu__list-item">
-      <span
-        className={`menu__link menu__link--sublist ${!collapsed ? 'menu__link--active' : ''}`}
-        onClick={(e) => {
-          e.preventDefault();
-          toggleCollapsed();
-        }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleCollapsed();
-          }
-        }}
-      >
-        {item.label}
-        <span
-          className={`${styles.dropdownArrow} ${
-            !collapsed ? styles.dropdownArrowOpen : ''
-          }`}
-        >
-          ▼
-        </span>
-      </span>
-      <Collapsible lazy as="ul" className="menu__list" collapsed={collapsed}>
-        {item.dropdown.map((subItem, subIndex) => (
-          <li key={subIndex} className="menu__list-item">
-            <Link
-              className="menu__link"
-              to={subItem.link}
-              onClick={() => {
-                setCollapsed(true);
-                onClose();
-              }}
-            >
-              {subItem.label}
-            </Link>
-          </li>
-        ))}
-      </Collapsible>
-    </li>
-  );
-}
 
 // The primary menu displays the navbar items
 export default function NavbarMobilePrimaryMenu(): ReactNode {
   const mobileSidebar = useNavbarMobileSidebar();
-  const location = useLocation();
   const items = useNavbarItems();
+  const windowSize = useWindowSize();
 
   // Get secondary navbar state
   const { product, productLinks, activeSidebar } = useSecondaryNavState();
@@ -78,14 +21,7 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
   const userNavigatedToMainRef = useRef(false);
 
   // Internal state: toggle between main menu and secondary navbar
-  const [showMainNav, setShowMainNav] = useState(!product);
-
-  // Reset to secondary nav when product appears (unless user manually chose main menu)
-  useEffect(() => {
-    if (product && productLinks.length > 1 && !userNavigatedToMainRef.current) {
-      setShowMainNav(false);
-    }
-  }, [product, productLinks]);
+  const [showMainNav, setShowMainNav] = useState(true);
 
   // Wrapper functions to track manual navigation
   const navigateToMain = () => {
@@ -97,6 +33,8 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
     userNavigatedToMainRef.current = false;
     setShowMainNav(false);
   };
+
+  const isMobile = windowSize === 'mobile';
 
   // If no product or only 1 link, show main menu only (no dual-panel needed)
   if (!product || !productLinks || productLinks.length <= 1) {
@@ -114,22 +52,66 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
     );
   }
 
+  // Mobile: Simple single menu with main items + secondary navbar items inline
+  if (isMobile) {
+    return (
+      <ul className="menu__list">
+        {/* Main navbar items */}
+        {items.map((item, i) => (
+          <NavbarItem
+            mobile
+            {...item}
+            onClick={() => mobileSidebar.toggle()}
+            key={i}
+          />
+        ))}
+
+        {/* Product section divider */}
+        <li className="menu__list-item">
+          <span className={`menu__link menu__link--sublist ${styles.sectionTitle} ${styles.sectionDivider}`}>
+            {product.title}
+          </span>
+        </li>
+
+        {/* Secondary navbar items */}
+        {productLinks.map((navItem, index) => {
+          if (navItem.dropdown && navItem.dropdown.length > 0) {
+            return (
+              <DropdownNavbarItem
+                mobile={true}
+                key={`secondary-${index}`}
+                label={navItem.label}
+                items={navItem.dropdown.map((subItem) => ({
+                  type: 'default' as const,
+                  label: subItem.label,
+                  to: subItem.link,
+                }))}
+              />
+            );
+          }
+
+          const isActive = activeSidebar && navItem.sidebar === activeSidebar;
+          return (
+            <li key={`secondary-${index}`} className="menu__list-item">
+              <Link
+                className={`menu__link ${isActive ? 'menu__link--active' : ''}`}
+                to={navItem.link}
+                onClick={() => mobileSidebar.toggle()}
+              >
+                {navItem.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   // Dual-panel mode: render both main menu and secondary navbar with transitions
   return (
     <div className={`${styles.menuContainer} ${!showMainNav ? styles.showSecondary : ''}`}>
       {/* Main Menu Panel */}
       <ul className={`menu__list ${styles.menuPanel}`}>
-        {/* Button to navigate to product navigation */}
-        <li className="menu__list-item">
-          <button
-            type="button"
-            className="clean-btn navbar-sidebar__back"
-            onClick={navigateToSecondary}
-          >
-            → {product.title} Navigation
-          </button>
-        </li>
-
         {items.map((item, i) => (
           <NavbarItem
             mobile
@@ -164,10 +146,15 @@ export default function NavbarMobilePrimaryMenu(): ReactNode {
         {productLinks.map((navItem, index) => {
           if (navItem.dropdown && navItem.dropdown.length > 0) {
             return (
-              <MobileDropdown
+              <DropdownNavbarItem
+                mobile={true}
                 key={index}
-                item={navItem}
-                onClose={() => mobileSidebar.toggle()}
+                label={navItem.label}
+                items={navItem.dropdown.map((subItem) => ({
+                  type: 'default' as const,
+                  label: subItem.label,
+                  to: subItem.link,
+                }))}
               />
             );
           }

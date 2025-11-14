@@ -26,7 +26,7 @@ const navbar: NavbarItem[] = [
 
   {
     type: "docsVersionDropdown",
-    position: "right",
+    position: "left",
     dropdownActiveClassDisabled: true,
   },
 
