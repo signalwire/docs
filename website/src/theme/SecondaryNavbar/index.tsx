@@ -4,29 +4,8 @@ import clsx from 'clsx';
 import DropdownNavbarItem from '@theme/NavbarItem/DropdownNavbarItem';
 import { useSecondaryNavState } from '@theme/Navbar/hooks/useSecondaryNavState';
 import { ProductLink, DropdownItem } from '@site/secondaryNavbar';
+import { createDropdownItemHtml } from '@theme/utils/productUtils';
 import styles from './styles.module.scss';
-
-/**
- * Escapes HTML special characters to prevent rendering issues
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-/**
- * Creates HTML markup for dropdown items with optional descriptions
- */
-function createDropdownItemHtml(label: string, description?: string): string {
-  const escapedLabel = escapeHtml(label);
-  const escapedDescription = description ? escapeHtml(description) : '';
-
-  return `
-    <span class="dropdown-item-label">${escapedLabel}</span>
-    ${description ? `<span class="dropdown-item-description">${escapedDescription}</span>` : ''}
-  `.trim();
-}
 
 export default function SecondaryNavbar(): React.JSX.Element | null {
   // Get secondary navbar state from shared hook

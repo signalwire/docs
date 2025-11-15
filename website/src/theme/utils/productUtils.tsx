@@ -2,6 +2,11 @@ import { useMemo } from 'react';
 import { useThemeConfig } from '@docusaurus/theme-common';
 import { modalSections, ProductItem, ProductLink } from '@site/secondaryNavbar';
 import type { Props as NavbarItemConfig } from '@theme/NavbarItem';
+import React from 'react';
+import clsx from 'clsx';
+
+// Type for icon that can be a component or string
+export type IconType = React.ComponentType<{ className?: string }>;
 
 /**
  * Shared utility: Creates a flat map of all products from modalSections
@@ -84,4 +89,72 @@ export function detectCurrentProduct(
 
   // Return default or null if no match found
   return defaultProduct !== undefined ? defaultProduct : null;
+}
+
+/**
+ * Shared utility: Renders an icon (either as a component or CSS class string)
+ * Used by: ProductModal, ProductDropdownNavbarItem
+ *
+ * @param icon - Icon component or CSS class string
+ * @param className - Additional CSS classes to apply
+ * @returns Rendered icon element or null
+ */
+export function renderIcon(
+  icon: IconType | string | undefined,
+  className: string
+): React.JSX.Element | null {
+  if (!icon) return null;
+
+  if (typeof icon === 'string') {
+    return <i className={clsx(icon, className)} aria-hidden="true" />;
+  }
+
+  const IconComponent = icon as IconType;
+  return <IconComponent className={className} aria-hidden="true" />;
+}
+
+/**
+ * Shared utility: Sorts items by their position property
+ * Items without position are sorted to the end (treated as Infinity)
+ * Used by: ProductModal
+ *
+ * @param items - Array of items with optional position property
+ * @returns New sorted array
+ */
+export function sortByPosition<T extends { position?: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const posA = a.position ?? Infinity;
+    const posB = b.position ?? Infinity;
+    return posA - posB;
+  });
+}
+
+/**
+ * Shared utility: Escapes HTML special characters in text
+ * Used by: SecondaryNavbar, and potentially other components needing HTML escaping
+ *
+ * @param text - Text to escape
+ * @returns HTML-escaped text
+ */
+export function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Shared utility: Creates HTML for dropdown items with label and optional description
+ * Used by: SecondaryNavbar
+ *
+ * @param label - Item label
+ * @param description - Optional item description
+ * @returns HTML string for dropdown item
+ */
+export function createDropdownItemHtml(label: string, description?: string): string {
+  const escapedLabel = escapeHtml(label);
+  const escapedDescription = description ? escapeHtml(description) : '';
+  return `
+    <span class="dropdown-item-label">${escapedLabel}</span>
+    ${description ? `<span class="dropdown-item-description">${escapedDescription}</span>` : ''}
+  `.trim();
 }

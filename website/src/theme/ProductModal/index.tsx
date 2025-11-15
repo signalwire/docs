@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
-import { IconType } from 'react-icons';
-import { modalSections, modalHeaderTitle, ProductItem } from '@site/secondaryNavbar';
+import { modalSections, modalHeaderTitle } from '@site/secondaryNavbar';
+import { renderIcon, sortByPosition } from '@theme/utils/productUtils';
+import { useKeyboardShortcut } from '@theme/hooks/useKeyboardShortcut';
 import styles from './styles.module.scss';
 
 interface ProductModalProps {
@@ -24,18 +25,7 @@ export default function ProductModal({
   }, []);
 
   // Close on Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  useKeyboardShortcut('Escape', onClose, { enabled: isOpen });
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -52,26 +42,6 @@ export default function ProductModal({
   // Helper to determine if a product is active
   const isProductActive = (productKey: string): boolean => {
     return productKey === currentProduct;
-  };
-
-  // Render icon (supports React component or string class)
-  const renderIcon = (icon: IconType | string, className: string): React.JSX.Element | null => {
-    if (typeof icon === 'string') {
-      return <i className={clsx(icon, className)} aria-hidden="true" />;
-    } else if (typeof icon === 'function') {
-      const IconComponent = icon;
-      return <IconComponent className={className} aria-hidden="true" />;
-    }
-    return null;
-  };
-
-  // Helper function to sort by position
-  const sortByPosition = <T extends { position?: number }>(items: T[]): T[] => {
-    return [...items].sort((a, b) => {
-      const posA = a.position ?? Infinity;
-      const posB = b.position ?? Infinity;
-      return posA - posB;
-    });
   };
 
   // Get all main and custom sections, sorted by position
@@ -105,10 +75,10 @@ export default function ProductModal({
               onClick={onClose}
               aria-label="Close modal"
             >
-              <span className={styles.shortcut}>
+              <span className={clsx(styles.shortcut, styles.desktopOnly)}>
                 {isApple ? '⌘U' : 'Ctrl+U'}
               </span>
-              <span className={styles.divider} />
+              <span className={clsx(styles.divider, styles.desktopOnly)} />
               <span className={styles.closeIcon}>✕</span>
             </button>
           </div>
