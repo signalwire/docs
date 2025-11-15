@@ -37,6 +37,18 @@ export default function ProductModal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   // Helper to determine if a product is active
   const isProductActive = (productKey: string): boolean => {
     return productKey === currentProduct;
@@ -70,7 +82,7 @@ export default function ProductModal({
     modalSections.filter((section) => section.type === 'section')
   );
 
-  return (
+  const modalContent = (
     <div
       className={clsx(styles.modalOverlay, isOpen && styles.active)}
       onClick={onClose}
@@ -180,4 +192,6 @@ export default function ProductModal({
       </div>
     </div>
   );
+
+  return modalContent;
 }
