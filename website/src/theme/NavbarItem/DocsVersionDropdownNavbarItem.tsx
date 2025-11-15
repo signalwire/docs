@@ -13,7 +13,7 @@ export default function DocsVersionDropdownNavbarItem({
   dropdownItemsBefore,
   dropdownItemsAfter,
   ...props
-}: Props): JSX.Element | null {
+}: Props): React.JSX.Element | null {
   const activePlugin = useActivePlugin();
   const allDocsData = useAllDocsData();
   

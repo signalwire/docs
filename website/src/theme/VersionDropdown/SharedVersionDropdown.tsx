@@ -18,7 +18,7 @@ export default function SharedVersionDropdown({
   className,
   mobile = false,
   position,
-}: SharedVersionDropdownProps): JSX.Element {
+}: SharedVersionDropdownProps): React.JSX.Element {
   const versions = useVersions(pluginId);
   const activeDocContext = useActiveDocContext(pluginId);
   const { savePreferredVersionName } = useDocsPreferredVersion(pluginId);

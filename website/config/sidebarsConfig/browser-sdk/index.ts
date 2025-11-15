@@ -1,7 +1,8 @@
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
-const browserSdkSidebar: SidebarsConfig = {
-  browserSdkSidebar: [
+const browserSdkSidebars: SidebarsConfig = {
+  // Getting Started Sidebar
+  browserSdkOverviewSidebar: [
     {
       type: "category",
       label: "Browser SDK",
@@ -15,6 +16,10 @@ const browserSdkSidebar: SidebarsConfig = {
         }
       ]
     },
+  ],
+
+  // Technical Reference Sidebar
+  browserSdkReferenceSidebar: [
     {
       type: "category",
       label: "Technical Reference",
@@ -27,6 +32,10 @@ const browserSdkSidebar: SidebarsConfig = {
         }
       ]
     },
+  ],
+
+  // Guides Sidebar
+  browserSdkGuidesSidebar: [
     {
       type: "category",
       label: "Guides",
@@ -38,8 +47,8 @@ const browserSdkSidebar: SidebarsConfig = {
           dirName: "guides"
         }
       ]
-    }
+    },
   ],
 };
 
-export default browserSdkSidebar;
+export default browserSdkSidebars;
