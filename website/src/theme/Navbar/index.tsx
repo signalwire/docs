@@ -7,7 +7,7 @@ import { ModalContext } from '@theme/Navbar/ModalContext';
 
 export default function Navbar(): ReactNode {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState('platform');
+  const [currentProduct, setCurrentProduct] = useState<string | null>(null);
 
   return (
     <ModalContext.Provider value={{ isModalOpen, setModalOpen, currentProduct, setCurrentProduct }}>

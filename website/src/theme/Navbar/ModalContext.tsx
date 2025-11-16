@@ -4,8 +4,8 @@ import React, { createContext, useContext } from 'react';
 export interface ModalContextType {
   isModalOpen: boolean;
   setModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  currentProduct: string;
-  setCurrentProduct: React.Dispatch<React.SetStateAction<string>>;
+  currentProduct: string | null;
+  setCurrentProduct: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 export const ModalContext = createContext<ModalContextType | null>(null);

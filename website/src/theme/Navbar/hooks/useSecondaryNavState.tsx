@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLocation } from '@docusaurus/router';
 import { useActivePluginAndVersion, useActiveDocContext } from '@docusaurus/plugin-content-docs/client';
 import { ProductItem, ProductLink } from '@site/secondaryNavbar';
-import { useAllProducts, detectCurrentProduct } from '@theme/utils/productUtils';
+import { useAllProducts, detectCurrentProduct, detectCurrentProductBySidebar } from '@theme/utils/productUtils';
 
 export function useSecondaryNavState() {
   const location = useLocation();
@@ -16,10 +16,17 @@ export function useSecondaryNavState() {
   // Get flat map of all products from shared utility
   const allProducts = useAllProducts();
 
-  // Detect current product based on pathname
+  // Detect current product based on sidebar first (most reliable), then pathname
   const currentProduct = useMemo(() => {
+    // Try sidebar-based detection first (most reliable)
+    if (activeSidebar) {
+      const productBySidebar = detectCurrentProductBySidebar(activeSidebar, allProducts);
+      if (productBySidebar) return productBySidebar;
+    }
+
+    // Fallback to URL matching for non-doc pages (blog, home, etc.)
     return detectCurrentProduct(location.pathname, allProducts);
-  }, [location.pathname, allProducts]);
+  }, [activeSidebar, location.pathname, allProducts]);
 
   const product: ProductItem | null = currentProduct ? allProducts[currentProduct] : null;
 

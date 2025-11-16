@@ -79,7 +79,13 @@ export const modalSections: ModalSection[] = [
         icon: FaHome,
         description: "Get started with the SignalWire platform",
         link: "/",
-        links: [],
+        links: [
+          {
+            label: "Home",
+            sidebar: "homeSidebar",
+            link: "/"
+          }
+        ],
         position: 1,
       },
     },

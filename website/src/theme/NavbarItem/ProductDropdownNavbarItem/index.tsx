@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { useLocation } from '@docusaurus/router';
 import { useWindowSize } from '@docusaurus/theme-common';
+import { useActivePluginAndVersion, useActiveDocContext } from '@docusaurus/plugin-content-docs/client';
 import clsx from 'clsx';
 import { FaChevronDown } from 'react-icons/fa';
 import { useModalContext } from '@theme/Navbar/ModalContext';
 import { ProductItem } from '@site/secondaryNavbar';
-import { useAllProducts, detectCurrentProduct, renderIcon } from '@theme/utils/productUtils';
+import { useAllProducts, detectCurrentProduct, detectCurrentProductBySidebar, renderIcon } from '@theme/utils/productUtils';
 import { useKeyboardShortcut } from '@theme/hooks/useKeyboardShortcut';
 import styles from './styles.module.scss';
 
@@ -24,20 +25,36 @@ export default function ProductDropdownNavbarItem({ mobile = false }: Props): Re
   const { isModalOpen, setModalOpen, setCurrentProduct } = useModalContext();
   const location = useLocation();
 
+  // Get active sidebar for product detection
+  const activePluginAndVersion = useActivePluginAndVersion();
+  const activeDocContext = useActiveDocContext(activePluginAndVersion?.activePlugin?.pluginId);
+  const activeSidebar = activeDocContext?.activeDoc?.sidebar;
+
   // Get flat map of all products from shared utility
   const allProducts = useAllProducts();
 
-  // Determine current product based on pathname (fully dynamic from config)
+  // Determine current product based on sidebar first, then pathname
   const detectedProduct = React.useMemo(() => {
-    return detectCurrentProduct(location.pathname, allProducts, 'platform');
-  }, [location.pathname, allProducts]);
+    // Try sidebar-based detection first (most reliable)
+    if (activeSidebar) {
+      const productBySidebar = detectCurrentProductBySidebar(activeSidebar, allProducts);
+      if (productBySidebar) return productBySidebar;
+    }
+
+    // Fallback to URL matching for non-doc pages (blog, home, etc.)
+    return detectCurrentProduct(location.pathname, allProducts, null);
+  }, [activeSidebar, location.pathname, allProducts]);
 
   // Update context when detected product changes
   useEffect(() => {
     setCurrentProduct(detectedProduct);
   }, [detectedProduct, setCurrentProduct]);
 
-  const product: ProductItem | undefined = allProducts[detectedProduct];
+  const product: ProductItem = detectedProduct
+    ? allProducts[detectedProduct]
+    : {
+        title: "Browse Documentation"
+      };
 
   // Close modal when navigating
   useEffect(() => {
@@ -49,10 +66,6 @@ export default function ProductDropdownNavbarItem({ mobile = false }: Props): Re
     ctrlCmd: true,
     preventDefault: true,
   });
-
-  if (!product) {
-    return null;
-  }
 
   return (
     <button

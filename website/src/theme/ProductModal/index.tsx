@@ -44,7 +44,7 @@ export default function ProductModal({
 
   // Helper to determine if a product is active
   const isProductActive = (productKey: string): boolean => {
-    return productKey === currentProduct;
+    return currentProduct !== null && productKey === currentProduct;
   };
 
   // Get all main and custom sections, sorted by position

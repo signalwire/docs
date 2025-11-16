@@ -82,6 +82,15 @@ export function detectCurrentProduct(
 
   // Find first matching link
   for (const { productKey, link } of allLinks) {
+    // Special case: root path should only match exactly
+    if (link === '/') {
+      if (pathname === '/') {
+        return productKey;
+      }
+      continue; // Skip to next link
+    }
+
+    // For all other paths, use startsWith
     if (pathname.startsWith(link)) {
       return productKey;
     }
@@ -89,6 +98,55 @@ export function detectCurrentProduct(
 
   // Return default or null if no match found
   return defaultProduct !== undefined ? defaultProduct : null;
+}
+
+/**
+ * Detects the current product based on the active sidebar ID.
+ * This is more reliable than URL pattern matching because:
+ * 1. Docusaurus already knows which sidebar is active
+ * 2. Sidebar IDs are unique per product section
+ * 3. Works correctly with complex URL structures and versions
+ *
+ * @param activeSidebar - The active sidebar ID from Docusaurus (e.g., "swmlOverviewSidebar")
+ * @param allProducts - Record of all products to search through
+ * @returns The detected product key, or null if no match found
+ */
+export function detectCurrentProductBySidebar(
+  activeSidebar: string | undefined,
+  allProducts: Record<string, ProductItem>
+): string | null {
+  if (!activeSidebar) return null;
+
+  // Search through all products to find which one has a link with this sidebar
+  for (const [productKey, productConfig] of Object.entries(allProducts)) {
+    // Get the appropriate links (versioned or regular)
+    let productLinks: ProductLink[] | undefined = productConfig.links;
+
+    if (productConfig.versions) {
+      // For versioned products, check current version
+      productLinks = productConfig.versions.current?.links || [];
+    }
+
+    if (!productLinks) continue;
+
+    // Check if any link in this product matches the active sidebar
+    for (const link of productLinks) {
+      if (link.sidebar === activeSidebar) {
+        return productKey;
+      }
+
+      // Check dropdown children
+      if (link.dropdown) {
+        for (const dropdownItem of link.dropdown) {
+          if (dropdownItem.sidebar === activeSidebar) {
+            return productKey;
+          }
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
