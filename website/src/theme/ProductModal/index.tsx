@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
 import { useWindowSize } from '@docusaurus/theme-common';
-import { modalSections, modalHeaderTitle } from '@site/secondaryNavbar';
+import { modalSections, modalHeaderTitle, ModalSection, ProductItem } from '@site/secondaryNavbar';
 import { renderIcon, sortByPosition } from '@theme/utils/productUtils';
 import { useKeyboardShortcut } from '@theme/hooks/useKeyboardShortcut';
 import styles from './styles.module.scss';
@@ -98,8 +98,8 @@ export default function ProductModal({
         {/* Body */}
         <div className={styles.modalBody}>
           {/* Main Products with Section Headers */}
-          <div className={clsx(styles.productsGrid, isMobile && styles.mobile)}>
-            {mainSections.map((section, sectionIndex) => (
+          <div className={styles.productsGrid}>
+            {mainSections.map((section: ModalSection, sectionIndex: number) => (
               <React.Fragment key={`section-${sectionIndex}`}>
                 {/* Section Header - only render if title is not empty */}
                 {section.title && (
@@ -113,7 +113,7 @@ export default function ProductModal({
                     key,
                     ...value,
                   }))
-                ).map(({ key, ...value }) => {
+                ).map(({ key, ...value }: { key: string } & ProductItem) => {
                   const active = isProductActive(key);
                   const isFullWidth = sectionIndex === 0; // First section (Home)
                   return (
@@ -141,10 +141,10 @@ export default function ProductModal({
           </div>
 
           {/* Custom Sections */}
-          {customSections.map((section, sectionIndex) => (
+          {customSections.map((section: ModalSection, sectionIndex: number) => (
             <div key={sectionIndex} className={styles.resourcesSection}>
               <h4 className={styles.sectionTitle}>{section.title}</h4>
-              <div className={clsx(styles.resourcesGrid, isMobile && styles.mobile)}>
+              <div className={styles.resourcesGrid}>
                 {Object.entries(section.items).map(([key, value]) => {
                   const active = isProductActive(key);
 
