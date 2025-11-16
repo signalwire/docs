@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation } from '@docusaurus/router';
+import { useWindowSize } from '@docusaurus/theme-common';
+import clsx from 'clsx';
 import { FaChevronDown } from 'react-icons/fa';
 import { useModalContext } from '@theme/Navbar/ModalContext';
 import { ProductItem } from '@site/secondaryNavbar';
@@ -17,7 +19,8 @@ export default function ProductDropdownNavbarItem({ mobile = false }: Props): Re
     return null;
   }
 
-
+  const windowSize = useWindowSize();
+  const isMobile = windowSize === 'mobile';
   const { isModalOpen, setModalOpen, setCurrentProduct } = useModalContext();
   const location = useLocation();
 
@@ -53,7 +56,7 @@ export default function ProductDropdownNavbarItem({ mobile = false }: Props): Re
 
   return (
     <button
-      className={styles.productButton}
+      className={clsx(styles.productButton, isMobile && styles.mobile)}
       onClick={() => setModalOpen(true)}
       aria-label="Select product"
       aria-expanded={isModalOpen}

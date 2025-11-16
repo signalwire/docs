@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
+import { useWindowSize } from '@docusaurus/theme-common';
 import { modalSections, modalHeaderTitle } from '@site/secondaryNavbar';
 import { renderIcon, sortByPosition } from '@theme/utils/productUtils';
 import { useKeyboardShortcut } from '@theme/hooks/useKeyboardShortcut';
@@ -18,6 +19,8 @@ export default function ProductModal({
   currentProduct,
 }: ProductModalProps): React.JSX.Element {
   const [isApple, setIsApple] = React.useState(false);
+  const windowSize = useWindowSize();
+  const isMobile = windowSize === 'mobile';
 
   // Detect platform for keyboard shortcuts
   useEffect(() => {
@@ -54,14 +57,18 @@ export default function ProductModal({
 
   const modalContent = (
     <div
-      className={clsx(styles.modalOverlay, isOpen && styles.active)}
+      className={clsx(
+        styles.modalOverlay,
+        isOpen && styles.active,
+        isMobile && styles.mobile
+      )}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-hidden={!isOpen}
     >
       <div
-        className={styles.modalContent}
+        className={clsx(styles.modalContent, isMobile && styles.mobile)}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -71,14 +78,18 @@ export default function ProductModal({
           </div>
           <div className={styles.modalHeaderRight}>
             <button
-              className={styles.closeButton}
+              className={clsx(styles.closeButton, isMobile && styles.mobile)}
               onClick={onClose}
               aria-label="Close modal"
             >
-              <span className={clsx(styles.shortcut, styles.desktopOnly)}>
-                {isApple ? '⌘U' : 'Ctrl+U'}
-              </span>
-              <span className={clsx(styles.divider, styles.desktopOnly)} />
+              {!isMobile && (
+                <>
+                  <span className={styles.shortcut}>
+                    {isApple ? '⌘U' : 'Ctrl+U'}
+                  </span>
+                  <span className={styles.divider} />
+                </>
+              )}
               <span className={styles.closeIcon}>✕</span>
             </button>
           </div>
@@ -87,7 +98,7 @@ export default function ProductModal({
         {/* Body */}
         <div className={styles.modalBody}>
           {/* Main Products with Section Headers */}
-          <div className={styles.productsGrid}>
+          <div className={clsx(styles.productsGrid, isMobile && styles.mobile)}>
             {mainSections.map((section, sectionIndex) => (
               <React.Fragment key={`section-${sectionIndex}`}>
                 {/* Section Header - only render if title is not empty */}
@@ -133,7 +144,7 @@ export default function ProductModal({
           {customSections.map((section, sectionIndex) => (
             <div key={sectionIndex} className={styles.resourcesSection}>
               <h4 className={styles.sectionTitle}>{section.title}</h4>
-              <div className={styles.resourcesGrid}>
+              <div className={clsx(styles.resourcesGrid, isMobile && styles.mobile)}>
                 {Object.entries(section.items).map(([key, value]) => {
                   const active = isProductActive(key);
 

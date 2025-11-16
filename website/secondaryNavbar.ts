@@ -283,67 +283,46 @@ export const modalSections: ModalSection[] = [
           },
         ],
       },
-    },
-  },
-  {
-    type: "main",
-    title: "Compatibility API",
-    position: 3,
-    items: {
-      compatibilityRestApi: {
+      compatibilityApi: {
         title: "Compatibility API",
         icon: TbWorldCode,
-        description: "Technical reference for the Compatibility REST API",
+        description: "TwiML-compatible API for seamless migration",
         link: "/compatibility-api",
-        position: 1,
-        links: [
-	      {
-	        label: "Overview",
-	        link: "/compatibility-api",
-	        sidebar: "compatibilityApiOverviewSidebar",
-	      },
-	      {
-	        label: "Guides",
-	        link: "/compatibility-api/guides",
-	        sidebar: "compatibilityApiGuidesSidebar",
-	      },
-	      {
-	        label: "Technical Reference",
-	        sidebar: "compatibilityApiReferenceSidebar",
-	        dropdown: [
-	          {
-	            label: "cXML Reference",
-	            link: "/compatibility-api/cxml",
-	            sidebar: "compatibilityApiReferenceSidebar",
-	            description: "TwiML-compatible XML markup for calls and messages"
-	          },
-	          {
-	            label: "REST API Reference",
-	            link: "/rest/compatibility-api",
-	            sidebar: "apiCompatibilitySidebar",
-	            description: "HTTP endpoints for managing resources"
-	          },
-	          {
-	            label: "REST Client Libraries",
-	            link: "/compatibility-api/sdks",
-	            sidebar: "compatibilityApiClientLibrariesSidebar",
-	            description: "Official SDKs for popular programming languages"
-	          }
-	        ]
-	      }
-        ],
-      },
-      cxml: {
-        title: "cXML",
-        icon: MdCode,
-        description: "TwiML-compatible, XML-based language for calls and messages",
-        link: "/compatibility-api/cxml",
-        position: 2,
+        position: 7,
         links: [
           {
-            label: "cXML Reference",
-            link: "/compatibility-api/cxml",
+            label: "Overview",
+            link: "/compatibility-api",
+            sidebar: "compatibilityApiOverviewSidebar",
+          },
+          {
+            label: "Guides",
+            link: "/compatibility-api/guides",
+            sidebar: "compatibilityApiGuidesSidebar",
+          },
+          {
+            label: "Technical Reference",
             sidebar: "compatibilityApiReferenceSidebar",
+            dropdown: [
+              {
+                label: "cXML Reference",
+                link: "/compatibility-api/cxml",
+                sidebar: "compatibilityApiReferenceSidebar",
+                description: "TwiML-compatible XML markup for calls and messages"
+              },
+              {
+                label: "REST API Reference",
+                link: "/rest/compatibility-api",
+                sidebar: "apiCompatibilitySidebar",
+                description: "HTTP endpoints for managing resources"
+              },
+              {
+                label: "REST Client Libraries",
+                link: "/compatibility-api/sdks",
+                sidebar: "compatibilityApiClientLibrariesSidebar",
+                description: "Official SDKs for popular programming languages"
+              }
+            ]
           }
         ],
       },
@@ -352,7 +331,7 @@ export const modalSections: ModalSection[] = [
   {
     type: "section",
     title: "Additional resources",
-    position: 4,
+    position: 3,
     items: {
       blogs: {
         title: "Release notes",
