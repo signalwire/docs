@@ -26,7 +26,9 @@ import { ogImagesPlugin } from "../ogImages/index";
 const plugins: PluginConfig[] = [
   openapiPlugin,
   sassPlugin,
-  markdownPrinterPlugin,
+  ...(process.env.CONFIG_ENABLE_MARKDOWN_PRINTER === "FALSE"
+    ? []
+    : [markdownPrinterPlugin]),
   showcasePlugin,
   require.resolve("../../src/plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
@@ -34,7 +36,7 @@ const plugins: PluginConfig[] = [
   realtimeSdkPlugin,
   browserSdkPlugin,
   // signalwireSdkPlugin,
-  ogImagesPlugin,
+  ...(process.env.CONFIG_BUILD_OG_IMAGES === "FALSE" ? [] : [ogImagesPlugin]),
 ];
 
 export default plugins;
