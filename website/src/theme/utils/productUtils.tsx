@@ -188,19 +188,6 @@ export function sortByPosition<T extends { position?: number }>(items: T[]): T[]
 }
 
 /**
- * Shared utility: Escapes HTML special characters in text
- * Used by: SecondaryNavbar, and potentially other components needing HTML escaping
- *
- * @param text - Text to escape
- * @returns HTML-escaped text
- */
-export function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-/**
  * Shared utility: Creates HTML for dropdown items with label and optional description
  * Used by: SecondaryNavbar
  *
@@ -209,10 +196,8 @@ export function escapeHtml(text: string): string {
  * @returns HTML string for dropdown item
  */
 export function createDropdownItemHtml(label: string, description?: string): string {
-  const escapedLabel = escapeHtml(label);
-  const escapedDescription = description ? escapeHtml(description) : '';
   return `
-    <span class="dropdown-item-label">${escapedLabel}</span>
-    ${description ? `<span class="dropdown-item-description">${escapedDescription}</span>` : ''}
+    <span class="dropdown-item-label">${label}</span>
+    ${description ? `<span class="dropdown-item-description">${description}</span>` : ''}
   `.trim();
 }
