@@ -13,22 +13,16 @@ type ScriptItem = NonNullable<Config["scripts"]>[number];
 
 const scripts: ScriptItem[] = [
   {
-    src: "/scripts/apollo.js",
-    async: true,
-    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
-  },
-  {
-    src: "/scripts/koala.js",
-    async: true,
-    nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
-  },
-  {
     src: "/scripts/fullstory.js",
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
   {
     src: "/scripts/hubspot.js",
+  },
+
+  {
+    src: "/scripts/zoomInfo.js",
     async: true,
     nonce: "SIGNALWIRE_DOCS_CSP_NONCE",
   },
