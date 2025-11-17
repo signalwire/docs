@@ -6,17 +6,10 @@ sidebar_position: 2
 # Notifications
 
 If you've initialized the SignalWire Client with a subscriber token, you can opt into receiving notifications 
-whenever that subscriber address is called. There are two ways to push the notifications to your application:
-
-- WebSocket Notifications
-- Push Notifications
+whenever that subscriber address is called using WebSockets.
 
 The WebSocket notifications are delivered over the WebSocket connection while your application is active, and you have
 called the [`online()`](/sdks/signalwire-client-sdk/signalwire-client/online) method to opt into receiving them.
-
-Push Notifications are delivered to your application regardless of whether it's active or not. It can be 
-used to push VoIP calls to your application when it's in the background.
-
 
 ## WebSocket Notifications
 
@@ -46,108 +39,3 @@ When an incoming call arrives, the `websocket` handler receives a `callInvite` o
 
 [`incomingCallHandlers`]: /sdks/signalwire-client-sdk/types#incomingcallhandlers
 
-
-## Push Notifications
-
-
-The SignalWire platform can be configured to send push notifications to a subscriber that is being called.
-When the subscriber's device receives a push notification, it will make the device ring and forward the notification to your
-application.
-Your application should set up an audio/video link if the user accepts the call using the
-[`handlePushNotification`](/sdks/signalwire-client-sdk/types#handlepushnotificationresult) method.
-The push notification is only sent if there is no active WebSocket connection to the subscriber at that moment.
-
-### Setup
-
-To be able to receive push notifications to your applications, device-specific configurations are required.
-
-For iOS, generate a [VoIP services certificate](https://developer.apple.com/account/resources/certificates/list)
-from the Apple Developer website.
-
-For Android, acquire the FCM API key. It can be found
-at the Firebase project settings under Cloud Messaging tab. To get the API key, you might have to
-explicitly enable "Cloud Messaging API (Legacy)".
-
-:::info
-
-There is no UI to upload the certificates for push to SignalWire yet. Please
-get in touch with SignalWire support who'll promptly configure your account
-with the certificates you want.
-
-:::
-
-### Handling Push Notifications
-
-The push notification is a compressed and encrypted JSON payload which contains the caller details
-and the invitation that needs to be passed into the SDK to join the call.
-
-To receive push notifications, after the app is configured with the certificates or tokens as
-per device requirements, the device needs to be registered using the
-[`client.registerDevice`](/sdks/browser-sdk/signalwire-client/client#registerdevice) method. The `registerDevice` method
-expects a token, which the OS provides only if the user explicitly allows the app to receive
-push notifications.
-
-The `registerDevice` method, if successful, returns a push notification decryption key, which
-must be saved and used to decrypt push notification messages as they are received.
-
-### Payload
-
-Each platform has its own schema but the core message has the following attributes:
-
-| Name                   | Type     | Description                                                      |
-| :--------------------- | :------- | :--------------------------------------------------------------- |
-| `encryption_type`      | `string` | Type of encryption used (`'aes_256_gcm'` or `'none'`)            |
-| `notification_uuid`    | `string` | UUID of the push notification                                    |
-| `with_video`           | `string` | Indicates whether the call includes video (`"true" \| "false"`)  |
-| `incoming_caller_name` | `string` | Name of the incoming caller                                      |
-| `incoming_caller_id`   | `string` | ID of the incoming caller                                        |
-| `invite`               | `string` | Invitation (base 64 encoded, compressed, and possibly encrypted) |
-| `title`                | `string` | Title of the call                                                |
-| `type`                 | `string` | Type of notification (`'call_invite'`)                           |
-| `iv`                   | `string` | The initialization vector of the encryption (base 64)            |
-| `tag`                  | `string` | The tag info for the encryption (base 64)                        |
-| `version`              | `string` | The version of the push notification received                    |
-
-#### iOS
-
-In iOS platform devices will wrap the payload in the following structure.
-
-##### Payload
-
-```json
-{
-  "aps": {
-    "alert": {
-      ...payload
-    }
-  }
-}
-```
-
-On iOS, a special VoIP push notification will be sent which automatically invokes the
-system's incoming call UI.
-
-#### Android and Web Notifications
-
-Android and web platforms will wrap the payload in the following structure.
-
-##### Payload
-
-```json
-{
-  "notification": {
-    "body": "JSON stringified payload"
-  },
-  "data": {}
-}
-```
-
-#### Handling the notification payload
-
-Once the payload has been received, the `invite` needs to be decoded from Base64, decompressed, and decrypted
-using the key received during device registration. Sample implementations in
-[React Native](https://github.com/signalwire-community/react/blob/9bafa5ebec9dd3ade69ff4c97aec1a17269cdcf1/packages/react-native/src/SignalWire/useSignalWire.ts#L134)
-and for [iOS](https://github.com/signalwire/signalwire_flutter/blob/4035c73b718995eedaeb1087a778228fe7fa1bc5/packages/flutter_ios_voip_kit/ios/Classes/VoIPCenter.swift#L155)
-are available.
-
-Alternatively, a sample React Native project is available in the [community repo](https://github.com/signalwire-community/react/tree/main/demo/pushNotifications).
