@@ -26,7 +26,7 @@ export const openapiPlugin: PluginConfig = [
       signalwireCallingApi: {
         specPath: "../specs/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml",
         outputDir: "docs/main/rest/signalwire-rest/endpoints/calling",
-        maskCredentials: false,        
+        maskCredentials: false,
         sidebarOptions: {
           categoryLinkSource: "tag",
           groupPathsBy: "tag",
