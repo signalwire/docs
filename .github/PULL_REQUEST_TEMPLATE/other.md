@@ -38,7 +38,7 @@ Why is this change required? What problem does it solve?
 
 ## Checklist:
 
-- [ ] My changes follow the [style guidelines](https://github.com/signalwire/signalwire-docs/wiki/Style-Guidelines) of this project
+- [ ] My changes follow the [style guidelines](https://github.com/signalwire/docs/wiki/Written-Style-Guide) of this project
 - [ ] I have performed a self-review of my changes
 - [ ] My changes generate no new warnings
 - [ ] Builds successfully locally 

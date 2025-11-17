@@ -1,0 +1,175 @@
+---
+slug: /swml/guides/deployment
+title: Deployment
+tags: ['swml']
+x-custom:
+  tags:
+    - sdk:swml
+    - product:voice
+description: Learn how to serve SWML scripts from web servers and Relay applications, including the Call Object reference.
+---
+
+
+# Deploy SWML
+
+<Subtitle>Deploy SWML scripts from web servers and applications</Subtitle>
+
+SWML scripts can be served in multiple ways beyond the SignalWire Dashboard. This guide covers serving SWML from web servers and Relay applications, including important technical details about the Call Object structure.
+
+## From a web server
+
+:::tip
+
+This use case is described in detail in the [Handling Incoming Calls from Code](/swml/guides/remote_server) guide.
+
+:::
+
+In the phone number settings, when you check the "Use External URL for SWML Script handler?" option,
+you can set a Web URL that will serve the SWML script.
+Every time a call comes in (or some other designated event occurs),
+you'll get a HTTP POST request to the URL with the following JSON parameters:
+
+| Parameter | Type                              | Description                                                                                                |
+| --------: | --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+|    `call` | [`Call`](#the-call-object) object | Contains properties describing the call.                                                                   |
+|    `vars` | `any` object                      | Contains the list of variables set in the calling SWML. Empty when invoked as a direct response to a call. |
+|  `params` | `any` object                      | Contains the list of params set by the calling SWML. Empty when invoked as a direct response to a call.    |
+
+The following is an example JSON that you might receive as a POST request on your server when a SWML is requested.
+
+```json
+{
+  "call": {
+    "call_id": "<CALL_UUID>",
+    "node_id": "<NODE_ID>",
+    "segment_id": "<SEGMENT_ID>",
+    "call_state": "created",
+    "direction": "inbound",
+    "type": "phone",
+    "from": "<CALLING PHONE NUMBER>",
+    "to": "<THE NUMBER ATTACHED TO THE SWML>",
+    "headers": [],
+    "project_id": "<YOUR PROJECT ID>",
+    "space_id": "<YOUR SPACE ID>"
+  },
+  "vars": {}
+}
+```
+
+### The Call Object
+
+The `call` object is a description of the received call.
+It will have the following properties:
+
+|       Parameter | Type       | Description                                                             |
+|----------------:|------------|-------------------------------------------------------------------------|
+|       `call_id` | `string`   | A unique identifier for the call.                                       |
+|       `node_id` | `string`   | A unique identifier for the node handling the call.                     |
+|    `segment_id` | `string`   | A unique identifier for the segment.                                    |
+|    `call_state` | `string`   | The current state of the call.                                          |
+|     `direction` | `string`   | The direction of this call. <br/>Possible values: `inbound`, `outbound` |
+|          `type` | `string`   | The type of call. <br/>Possible values: `sip`, `phone`                  |
+|          `from` | `string`   | The number/URI that initiated this call.                                |
+|            `to` | `string`   | The number/URI of the destination of this call.                         |
+|       `headers` | `object[]` | The headers associated with this call.                                  |
+|  `headers.name` | `string`   | The name of the header.                                                 |
+| `headers.value` | `string`   | The value of the header.                                                |
+|    `project_id` | `string`   | The Project ID this call belongs to.                                    |
+|      `space_id` | `string`   | The Space ID this call belongs to.                                      |
+
+The `vars` object and the `params` object will be empty for a new call.
+If you're executing a remote SWML script using the [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/execute) methods,
+the `vars` parameter has a list of the variables declared in the script so far.
+And the `params` object has the list of parameters explicitly set by the [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/execute) methods.
+
+You can also reference the properties of `call` and `params` objects during the script execution using the variable subtitution bracket like so:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say:%{call.from}'
+```
+
+Further, consider the following SWML script:
+
+```yaml andJson
+# hosted on https://example.com/swml.yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: '%{params.file}'
+    - return: 1
+
+```
+
+It references `params.file` in it's [`play`](/swml/methods/play) method.
+If this SWML was invoked as a response to a phone call, it would cause an error as the `params` object is empty.
+But if it was hosted on a server and called with the [`execute`](/swml/methods/execute) or the [`transfer`](/swml/methods/transfer) method,
+the `params` object is passed into the SWML.
+
+The SWML above can be invoked as follows:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    execute:
+      dest: https://example.com/swml.yaml
+      params:
+        file: https://cdn.signalwire.com/swml/audio.mp3
+```
+
+## From a Relay application
+
+You can also execute SWML from a Relay application.
+The following is a snippet using the [RealTime API](/sdks/realtime-sdk).
+
+```javascript
+const { Voice } = require("@signalwire/realtime-api");
+const script = `
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - execute:
+        dest: play_music
+        params:
+          to_play: 'https://cdn.signalwire.com/swml/April_Kisses.mp3'
+  play_music:
+    - play:
+        url: '%{params.to_play}'
+`;
+
+const client = new Voice.Client({
+  project: "<your project token>",
+  token: "<your project API key>",
+  topics: ["swml"],
+});
+
+client.on("call.received", async (call) => {
+  try {
+    await client.execute({
+      method: "calling.transfer",
+      params: {
+        node_id: call.nodeId,
+        call_id: call.callId,
+        dest: script,
+      },
+    });
+  } catch (error) {}
+});
+```
+
+In this snippet, we are registering an event for every time a call is received to any phone number in your project with the topic "swml".
+You can set the topics a number is subscribed to from the phone number settings page in the SignalWire Dashboard.
+Every time a call is received, the SWML script is executed using the `client.execute` method.
+
+## Next steps
+
+- **[Handle incoming calls from code](/swml/guides/remote_server)**: Complete guide to serving SWML from web servers
+- **[SWML methods reference](/swml/methods)**: Explore all available SWML methods
+
+- **[Getting started with SWML](/swml)**: Learn the fundamentals

@@ -1,10 +1,12 @@
 import "@typespec/http";
+import "@typespec/openapi";
 import "../../types";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/examples.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/calls")
@@ -12,19 +14,33 @@ namespace CallingAPI.Calls {
   @tag("Calls")
   @friendlyName("Calls")
   interface Calls {
-    @summary("Create a Call")
-    @doc("To create a new call, you send a `POST` request to the Call resource with a payload including a `dial` command and additional nested `params`.")
-    create(@body request: CallCreateRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body call: CallResponse;
-        }
-      | StatusCode401
-      | StatusCode404
-      | CallCreate422Error;
-
-    @summary("Update a Call")
-    @doc("To update an existing call, you send a `PUT` request to the Call resource with a payload including a `command` and additional nested `params`.")
+    @summary("Send Call Commands")
+    @doc("""
+    Unified OpenRPC-style endpoint for executing call methods through command-based dispatch.
+    Send a request with the appropriate `command` field to invoke the desired call operation.
+    This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
+    """)
+    @opExample(
+      #{ parameters: dialCallExample },
+      #{
+        title: "Create new call",
+        description: "Initiate a new outbound call with the dial command",
+      }
+    )
+    @opExample(
+      #{ parameters: updateCallExample },
+      #{
+        title: "Update active call",
+        description: "Modify an existing call's parameters in real-time",
+      }
+    )
+    @opExample(
+      #{ parameters: hangupCallExample },
+      #{
+        title: "End call",
+        description: "Terminate an active call immediately",
+      }
+    )
     @opExample(
       #{ parameters: holdCallExample },
       #{
@@ -46,15 +62,16 @@ namespace CallingAPI.Calls {
         description: "Send a message to the AI conversation to modify behavior or add context",
       }
     )
-    //@opExample(#{parameters: #{request: #{command: "update", params: #{id: "3fa85f64-5717-4562-b3fc-2c963f66afa6", url: "https://example.com/swml", fallback_url: "https://example.com/fallback"}}}}, #{title: "Update active call", description: "Modify an active call's behavior using new SWML instructions"})
-    @put
-    update(@body request: CallUpdateRequest):
+    @post
+    @operationId("call-commands")
+    callCommand(@body request: CallRequest):
       | {
           @statusCode statusCode: 200;
           @body call: CallResponse;
         }
       | StatusCode401
       | StatusCode404
-      | CallUpdate422Error;
+      | CallCreate422Error
+      | StatusCode500;
   }
 }

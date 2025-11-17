@@ -20,8 +20,13 @@ const config: Config = {
 
   markdown: {
     mermaid: true, // enables mermaid diagrams in markdown files
+    hooks: {
+      onBrokenMarkdownImages: 'throw',
+      onBrokenMarkdownLinks: 'throw'
+    }
   },
   themes: [
+    '@signalwire/docusaurus-theme-llms-txt',
     "@docusaurus/theme-mermaid", // Imports the mermaid library for rendering diagrams
     "docusaurus-theme-openapi-docs", // Imports the openapi-docs theme for rendering OpenAPI documentation
     ...(process.env.TYPESENSE_HOST && process.env.TYPESENSE_API_SEARCH_KEY && process.env.TYPESENSE_COLLECTION_NAME && process.env.TYPESENSE_EXPORTS ? 
@@ -39,7 +44,6 @@ const config: Config = {
       More information can be found at: https://docusaurus.io/docs/api/docusaurus-config
   */
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "throw",
   onBrokenAnchors: "throw",
   onDuplicateRoutes: "throw",
 
