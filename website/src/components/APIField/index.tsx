@@ -40,11 +40,13 @@ export const APIField: React.FC<APIFieldProps> = ({
   deprecated = false,
   children,
 }: APIFieldProps) => {
-  // Create a URL-friendly ID from the field name
-  const fieldId = `field-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  // Create a URL-friendly ID from the final property name (after last dot)
+  const finalPropertyName = name.substring(name.lastIndexOf(".") + 1);
+  const fieldId = `field-${finalPropertyName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   // State and ref for highlight effect
   const [isHighlighted, setIsHighlighted] = useState(false);
+  const [showSeparator, setShowSeparator] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
   const history = useHistory();
 
@@ -74,6 +76,16 @@ export const APIField: React.FC<APIFieldProps> = ({
       };
     }
   }, [isHighlighted]);
+
+  // Check if next sibling is an APIField
+  useEffect(() => {
+    if (fieldRef.current) {
+      const nextSibling = fieldRef.current.nextElementSibling;
+      // Check if next sibling exists and does NOT have the apiField class
+      const isNextSiblingNotAPIField = nextSibling && !nextSibling.classList.contains(styles.apiField.split(' ')[0]);
+      setShowSeparator(!!isNextSiblingNotAPIField);
+    }
+  }, []);
 
   const handleAnchorClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,55 +134,80 @@ export const APIField: React.FC<APIFieldProps> = ({
     return parts.length > 0 ? parts : typeString;
   };
 
+  // Parse dot notation in field name to highlight the final property
+  const parseDotNotation = (fieldName: string) => {
+    const lastDotIndex = fieldName.lastIndexOf(".");
+
+    // No dots found - return name as-is
+    if (lastDotIndex === -1) {
+      return fieldName;
+    }
+
+    // Split into parent path and final property
+    const parentPath = fieldName.substring(0, lastDotIndex);
+    const finalProperty = fieldName.substring(lastDotIndex + 1);
+
+    return (
+      <>
+        <span className={styles.fieldNameParent}>{parentPath}</span>
+        <span className={styles.fieldNameSeparator}>.</span>
+        <span className={styles.fieldNameProperty}>{finalProperty}</span>
+      </>
+    );
+  };
+
   return (
-    <div
-      ref={fieldRef}
-      className={clsx(styles.apiField, {
-        [styles.deprecatedField]: deprecated,
-        [styles.highlighted]: isHighlighted,
-      })}
-      id={fieldId}
-    >
-      <div className={styles.fieldHeader}>
-        <div className={styles.fieldNameContainer} onClick={handleAnchorClick}>
-          <a
-            href={`#${fieldId}`}
-            className={styles.fieldAnchor}
-            aria-label={`Link to ${name}`}
-            onClick={handleAnchorClick}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 576 512"
-              fill="currentColor"
+    <>
+      <div
+        ref={fieldRef}
+        className={clsx(styles.apiField, {
+          [styles.deprecatedField]: deprecated,
+          [styles.highlighted]: isHighlighted,
+        })}
+        id={fieldId}
+      >
+        <div className={styles.fieldHeader}>
+          <div className={styles.fieldNameContainer} onClick={handleAnchorClick}>
+            <a
+              href={`#${fieldId}`}
+              className={styles.fieldAnchor}
+              aria-label={`Link to ${finalPropertyName}`}
+              onClick={handleAnchorClick}
             >
-              <path d="M0 256C0 167.6 71.6 96 160 96h72c13.3 0 24 10.7 24 24s-10.7 24-24 24H160C98.1 144 48 194.1 48 256s50.1 112 112 112h72c13.3 0 24 10.7 24 24s-10.7 24-24 24H160C71.6 416 0 344.4 0 256zm576 0c0 88.4-71.6 160-160 160H344c-13.3 0-24-10.7-24-24s10.7-24 24-24h72c61.9 0 112-50.1 112-112s-50.1-112-112-112H344c-13.3 0-24-10.7-24-24s10.7-24 24-24h72c88.4 0 160 71.6 160 160zM184 232H392c13.3 0 24 10.7 24 24s-10.7 24-24 24H184c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
-            </svg>
-          </a>
-          <span
-            className={clsx(styles.fieldName, { [styles.deprecatedName]: deprecated })}
-          >
-            {name}
-          </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 576 512"
+                fill="currentColor"
+              >
+                <path d="M0 256C0 167.6 71.6 96 160 96h72c13.3 0 24 10.7 24 24s-10.7 24-24 24H160C98.1 144 48 194.1 48 256s50.1 112 112 112h72c13.3 0 24 10.7 24 24s-10.7 24-24 24H160C71.6 416 0 344.4 0 256zm576 0c0 88.4-71.6 160-160 160H344c-13.3 0-24-10.7-24-24s10.7-24 24-24h72c61.9 0 112-50.1 112-112s-50.1-112-112-112H344c-13.3 0-24-10.7-24-24s10.7-24 24-24h72c88.4 0 160 71.6 160 160zM184 232H392c13.3 0 24 10.7 24 24s-10.7 24-24 24H184c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
+              </svg>
+            </a>
+            <span
+              className={clsx(styles.fieldName, { [styles.deprecatedName]: deprecated })}
+            >
+              {parseDotNotation(name)}
+            </span>
+          </div>
+          <span className={styles.fieldType}>{parseTypeLinks(type)}</span>
+          {required && <span className={styles.fieldBadge}>required</span>}
+          {deprecated && (
+            <span className={clsx(styles.fieldBadge, styles.deprecatedBadge)}>
+              deprecated
+            </span>
+          )}
         </div>
-        <span className={styles.fieldType}>{parseTypeLinks(type)}</span>
-        {required && <span className={styles.fieldBadge}>required</span>}
-        {deprecated && (
-          <span className={clsx(styles.fieldBadge, styles.deprecatedBadge)}>
-            deprecated
-          </span>
+        {defaultValue && (
+          <div className={styles.fieldDefault}>
+            <span className={styles.defaultLabel}>Default:</span>{" "}
+            <code>{defaultValue}</code>
+          </div>
         )}
+        {children && <div className={styles.fieldDescription}>{children}</div>}
       </div>
-      {defaultValue && (
-        <div className={styles.fieldDefault}>
-          <span className={styles.defaultLabel}>Default:</span>{" "}
-          <code>{defaultValue}</code>
-        </div>
-      )}
-      {children && <div className={styles.fieldDescription}>{children}</div>}
-    </div>
+      {showSeparator && <br />}
+    </>
   );
 };
 
