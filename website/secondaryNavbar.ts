@@ -292,7 +292,7 @@ export const modalSections: ModalSection[] = [
       compatibilityApi: {
         title: "Compatibility API",
         icon: TbWorldCode,
-        description: "TwiML-compatible API for seamless migration",
+        description: "Twilio-compatible API for seamless migration",
         link: "/compatibility-api",
         position: 7,
         links: [
