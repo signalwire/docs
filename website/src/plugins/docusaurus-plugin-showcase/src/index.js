@@ -35,7 +35,7 @@ let articles = [];
 
 module.exports = function(context, options) {
   const pluginOptions = { ...DEFAULT_OPTIONS, ...options };
-  const loggingEnabled = pluginOptions.logging !== "false";
+  const loggingEnabled = pluginOptions.logging !== false;
 
   addDescriptionContent(pluginOptions.description);
 
