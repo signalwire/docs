@@ -59,7 +59,7 @@ export const showcasePlugin: PluginConfig = [
     ],
     onlyLogFailedAttempts: true,
     page: "/guides",
-    logging: true,
+    logging: process.env.CONFIG_HIDE_SHOWCASE_OUTPUT ? false : true,
     displayFavorites: true,
     displayTableOfContents: true,
     displaySearchBar: true,
