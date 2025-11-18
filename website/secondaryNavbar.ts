@@ -135,7 +135,7 @@ export const modalSections: ModalSection[] = [
       browserSdk: {
         title: "Browser SDK",
         icon: MdWeb,
-        description: "Build WebRTC-based voice, video, and chat applications in the browser",
+        description: "JavaScript library for building WebRTC-based voice, video, and chat applications in the browser",
         link: "/sdks/browser-sdk",
         position: 3,
         versions: {
@@ -184,7 +184,7 @@ export const modalSections: ModalSection[] = [
       realtimeSdk: {
         title: "Realtime SDK",
         icon: FaServer,
-        description: "Build applications capable of async operations via a WebSocket connection to your server",
+        description: "Node.js SDK for building applications capable of async operations via a WebSocket connection to your server",
         link: "/sdks/realtime-sdk",
         position: 4,
         versions: {
@@ -253,7 +253,7 @@ export const modalSections: ModalSection[] = [
       restApi: {
         title: "SignalWire API",
         icon: TbWorldCode,
-        description: "Technical reference for the SignalWire REST API",
+        description: "Complete technical reference for the SignalWire API, including REST and JSON-RPC endpoints",
         link: "/rest",
         position: 1,
         links: [
