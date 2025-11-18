@@ -95,9 +95,9 @@ export const modalSections: ModalSection[] = [
     position: 2,
     items: {
       swml: {
-        title: "SWML",
+        title: "SignalWire Markup Language",
         icon: MdCode,
-        description: "Simple, powerful YAML/JSON scripts for voice, SMS, and AI applications",
+        description: "SWML scripts are serverless or HTTP-requested voice, SMS, and AI applications written in YAML or JSON",
         link: "/swml",
         position: 2,
         links: [
