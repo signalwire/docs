@@ -1,0 +1,189 @@
+---
+title: enter_queue
+slug: /swml/methods/enter_queue
+description: Place the call in a queue.
+tags: ['swml']
+---
+
+import APIField from "@site/src/components/APIField";
+
+Place the current call in a queue where it will wait until an agent or resource becomes available.
+This method allows you to manage call flow by queuing calls and playing wait music while callers wait for service.
+
+<APIField
+  name="enter_queue"
+  type="object"
+  required={true}
+>
+  An object that accepts the [`enter_queue parameters`](#enter_queue-parameters).
+</APIField>
+
+## **enter_queue Parameters**
+
+<APIField
+  name="enter_queue.queue_name"
+  type="string"
+  required={true}
+>
+  Name of the queue to enter.
+</APIField>
+
+<APIField
+  name="enter_queue.transfer_after_bridge"
+  type="string"
+  required={true}
+>
+  SWML to execute after the bridge completes. This defines what should happen after the call is connected to an agent and the bridge ends.
+
+  Can be either:
+  - A URL (http or https) that returns a SWML document
+  - An inline SWML document (as a JSON string)
+</APIField>
+
+<APIField
+  name="enter_queue.status_url"
+  type="string"
+>
+  HTTP or HTTPS URL to deliver queue status events. See [Queue Status Callbacks](#queue-status-callbacks) for event details.
+</APIField>
+
+<APIField
+  name="enter_queue.wait_url"
+  type="string"
+>
+  URL for media to play while waiting in the queue. Default hold music will be played if not set.
+</APIField>
+
+<APIField
+  name="enter_queue.wait_time"
+  type="integer"
+  default="3600"
+>
+  Maximum time in seconds to wait in the queue before timeout.
+</APIField>
+
+## **Queue Status Callbacks**
+
+When you provide a `status_url`, SignalWire will send HTTP POST requests to that URL for the following queue events:
+
+### `enqueue` Event
+
+Sent when a caller is added to the queue.
+
+```json
+{
+  "event_type": "calling.call.queue",
+  "event_channel": "swml:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "timestamp": 1762966696.218623,
+  "project_id": "f8e7d6c5-b4a3-4210-9876-543210fedcba",
+  "space_id": "1a2b3c4d-5e6f-4789-abcd-ef0123456789",
+  "params": {
+    "status": "enqueue",
+    "id": "9f8e7d6c-5b4a-4321-9876-543210fedcba",
+    "name": "support_queue",
+    "position": 1,
+    "size": 1,
+    "avg_time": 0,
+    "enqueue_ts": 1762966696203260,
+    "dequeue_ts": 0,
+    "leave_ts": 0,
+    "status_url": "https://example.com/queue-status",
+    "control_id": "7a6b5c4d-3e2f-4123-8765-432109876543",
+    "call_id": "5d4c3b2a-1f0e-4321-9abc-def012345678",
+    "node_id": "2b3c4d5e-6f7a-4890-bcde-f01234567890@us-east"
+  }
+}
+```
+
+### `leave` Event
+
+Sent when a caller leaves the queue without being bridged to another call (e.g., timeout, hangup).
+
+```json
+{
+  "event_type": "calling.call.queue",
+  "event_channel": "swml:3c4d5e6f-7a8b-4910-cdef-012345678901",
+  "timestamp": 1762966720.978854,
+  "project_id": "f8e7d6c5-b4a3-4210-9876-543210fedcba",
+  "space_id": "1a2b3c4d-5e6f-4789-abcd-ef0123456789",
+  "params": {
+    "status": "leave",
+    "id": "9f8e7d6c-5b4a-4321-9876-543210fedcba",
+    "name": "support_queue",
+    "position": 1,
+    "size": 1,
+    "avg_time": 0,
+    "enqueue_ts": 1762966719450020,
+    "dequeue_ts": 0,
+    "leave_ts": 1762966720943789,
+    "status_url": "https://example.com/queue-status",
+    "control_id": "8b7a6c5d-4e3f-4234-9876-543210987654",
+    "call_id": "6e5d4c3b-2a1f-4432-abcd-ef0123456789",
+    "node_id": "4d5e6f7a-8b9c-4a01-def0-123456789012@us-east"
+  }
+}
+```
+
+### `dequeue` Event
+
+Sent when a caller is pulled out of the queue and bridged with another caller.
+
+```json
+{
+  "event_type": "calling.call.queue",
+  "event_channel": "swml:a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "timestamp": 1762966703.409084,
+  "project_id": "f8e7d6c5-b4a3-4210-9876-543210fedcba",
+  "space_id": "1a2b3c4d-5e6f-4789-abcd-ef0123456789",
+  "params": {
+    "status": "dequeue",
+    "id": "9f8e7d6c-5b4a-4321-9876-543210fedcba",
+    "name": "support_queue",
+    "position": 0,
+    "size": 0,
+    "avg_time": 0,
+    "enqueue_ts": 0,
+    "dequeue_ts": 1762966703217168,
+    "leave_ts": 0,
+    "status_url": "https://example.com/queue-status",
+    "call_id": "5d4c3b2a-1f0e-4321-9abc-def012345678",
+    "node_id": "2b3c4d5e-6f7a-4890-bcde-f01234567890@us-east"
+  }
+}
+```
+
+## **Variables**
+
+Set by the method:
+
+- **queue_result:** (out) The result of the queue operation. **Possible Values**: `connected` (successfully connected to an agent), `timeout` (waited too long and timed out), `hangup` (caller hung up while waiting), `failed` (queue operation failed due to an error).
+- **wait_time:** (out) Time in seconds the caller waited in the queue. Set to -1 if not available.
+- **entry_position:** (out) The caller's position in the queue when they entered. Set to -1 if not available.
+- **entry_size:** (out) The total size of the queue when the caller entered. Set to -1 if not available.
+
+## **Examples**
+
+### Basic Queue
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - enter_queue:
+        queue_name: "my_queue"
+        transfer_after_bridge: "https://example.com/post-call-swml"
+```
+
+
+### Queue with Status Callback
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - enter_queue:
+        queue_name: "sales_queue"
+        status_url: "https://example.com/queue-status"
+        wait_time: 1800
+        transfer_after_bridge: "https://example.com/post-call-swml"
+```

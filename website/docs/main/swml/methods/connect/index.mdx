@@ -134,6 +134,19 @@ Dial a SIP URI or phone number.
 </APIField>
 
 <APIField
+  name="connect.transfer_after_bridge"
+  type="string"
+>
+  SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+
+  Can be either:
+  - A URL (http or https) that returns a SWML document
+  - An inline SWML document (as a JSON string)
+
+  **Note:** This parameter is **REQUIRED** when connecting to a queue (when `to` starts with `queue:`)
+</APIField>
+
+<APIField
   name="connect.username"
   type="string"
 >
@@ -161,7 +174,11 @@ In addition, you are required to specify **one and only one** of the following d
   name="connect.to"
   type="string"
 >
-  Single destination to dial. Possible values are a phone number (i.e.: "+15552345678") or sip uri (i.e. "sip:alice@example.com").
+  Single destination to dial. Possible values are:
+  - Phone number in E.164 format (e.g., "+15552345678")
+  - SIP URI (e.g., "sip:alice@example.com")
+  - Call Fabric Resource address (e.g., "/public/test_room")
+  - Queue (e.g., "queue:support")
 </APIField>
 
 <APIField
@@ -192,7 +209,11 @@ In addition, you are required to specify **one and only one** of the following d
   type="string"
   required={true}
 >
-  Phone number or SIP URI to dial.
+  Destination to dial. Can be:
+  - Phone number in E.164 format (e.g., "+15552345678")
+  - SIP URI (e.g., "sip:alice@example.com")
+  - Call Fabric Resource address (e.g., "/public/test_room")
+  - Queue (e.g., "queue:support")
 </APIField>
 
 <APIField
@@ -270,37 +291,6 @@ sections:
         to: "+15551231234"
 ```
 
-{/* This does not actually work - need amd for voicemail to work properly.
-
-### Dial a single phone number and go to voicemail on failure
-
-```yaml andJson
-version: 1.0.0
-sections:
-  main:
-    - connect:
-        from: '${call.from}'
-        to: '+15551231234'
-        result:
-          variable: vars.call_state
-          case:
-            answered:
-              - play:
-                  url: 'say: We are connected.'
-              - hangup: {}
-          default:
-            - execute:
-                dest: voicemail
-            - hangup: {}
-  voicemail:
-    - play:
-        urls:
-          - 'say:I''m sorry the person you are trying to reach is not available'
-          - 'say:Please leave a message after the tone'
-    - record:
-        beep: true
-```
-*/}
 
 ### Dial numbers in parallel
 
@@ -327,4 +317,15 @@ sections:
             to: "sip:alice@example.com"
           - to: "sip:bob@example.com"
             codecs: PCMU
+```
+
+### Connect to a queue with transfer after bridge
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - connect:
+        to: "queue:support"
+        transfer_after_bridge: "https://example.com/post-call-swml"
 ```

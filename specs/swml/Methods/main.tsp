@@ -4,6 +4,7 @@ import "./denoise";
 import "./cond";
 import "./connect";
 import "./execute";
+import "./enter_queue";
 import "./switch";
 import "./goto";
 import "./label";
@@ -48,6 +49,7 @@ union SWMLMethod {
   Cond,
   Connect,
   Denoise,
+  EnterQueue,
   Execute,
   Goto,
   Label,
