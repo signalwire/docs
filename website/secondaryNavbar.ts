@@ -97,7 +97,7 @@ export const modalSections: ModalSection[] = [
       swml: {
         title: "SignalWire Markup Language",
         icon: MdCode,
-        description: "SWML scripts are serverless or HTTP-requested voice, SMS, and AI applications written in YAML or JSON",
+        description: "SWML scripts are serverless or HTTP-requested voice and AI applications written in YAML or JSON",
         link: "/swml",
         position: 2,
         links: [
@@ -276,7 +276,7 @@ export const modalSections: ModalSection[] = [
       },
       callFlowBuilder: {
         title: "Call Flow Builder",
-        description: "Visual tool to design and deploy call flows",
+        description: "Visual drag-and-drop tool for designing and deploying SWML-based voice applications",
         icon: PiTreeStructure,
         link: "/call-flow-builder",
         position: 6,
