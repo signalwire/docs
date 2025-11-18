@@ -62,7 +62,7 @@ export interface ProductItem {
 
 export interface ModalSection {
   type: "main" | "section";
-  title: string;
+  title?: string;
   items: Record<string, ProductItem>;
   position?: number;
 }
