@@ -74,7 +74,7 @@ export const modalSections: ModalSection[] = [
     title: "",
     position: 1,
     items: {
-      platform: {
+      home: {
         title: "Home",
         icon: FaHome,
         description: "Get started with the SignalWire platform",
@@ -92,13 +92,12 @@ export const modalSections: ModalSection[] = [
   },
   {
     type: "main",
-    title: "SignalWire API",
     position: 2,
     items: {
       swml: {
         title: "SWML",
         icon: MdCode,
-        description: "Technical reference and guides for the SignalWire Markup Language",
+        description: "Simple, powerful YAML/JSON scripts for voice, SMS, and AI applications",
         link: "/swml",
         position: 2,
         links: [
@@ -122,7 +121,7 @@ export const modalSections: ModalSection[] = [
       agentsSdk: {
         title: "Agents SDK",
         icon: FaRobot,
-        description: "AI Agents development with SWAIG",
+        description: "A powerful Python SDK for building SWML-based agentic AI voice applications",
         link: "/sdks/agents-sdk",
         position: 5,
         links: [
@@ -136,7 +135,7 @@ export const modalSections: ModalSection[] = [
       browserSdk: {
         title: "Browser SDK",
         icon: MdWeb,
-        description: "RELAY Browser SDK for WebRTC",
+        description: "Build WebRTC-based voice, video, and chat applications in the browser",
         link: "/sdks/browser-sdk",
         position: 3,
         versions: {
@@ -185,7 +184,7 @@ export const modalSections: ModalSection[] = [
       realtimeSdk: {
         title: "Realtime SDK",
         icon: FaServer,
-        description: "RELAY Realtime Server SDK",
+        description: "Build applications capable of async operations via a WebSocket connection to your server",
         link: "/sdks/realtime-sdk",
         position: 4,
         versions: {
@@ -291,8 +290,8 @@ export const modalSections: ModalSection[] = [
       },
       compatibilityApi: {
         title: "Compatibility API",
-        icon: TbWorldCode,
-        description: "Twilio-compatible API for seamless migration",
+        icon: FaExchangeAlt,
+        description: "Migrate seamlessly to our Twilio-compatible REST API and TwiML-compatible cXML language",
         link: "/compatibility-api",
         position: 7,
         links: [
