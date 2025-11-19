@@ -7,8 +7,10 @@ tags: ['swml']
 
 import APIField from "@site/src/components/APIField";
 
-Place the current call in a queue where it will wait until an agent or resource becomes available.
-This method allows you to manage call flow by queuing calls and playing wait music while callers wait for service.
+Place the current call in a named queue where it will wait to be connected to an available agent or resource.
+While waiting, callers will hear music or custom audio. 
+When an agent connects to the queue (using the [`connect`](/swml/methods/connect) method), the caller and agent are bridged together.
+After the bridge completes, execution continues with the SWML script specified in `transfer_after_bridge`.
 
 <APIField
   name="enter_queue"
@@ -25,7 +27,7 @@ This method allows you to manage call flow by queuing calls and playing wait mus
   type="string"
   required={true}
 >
-  Name of the queue to enter.
+  Name of the queue to enter. If a queue with this name does not exist, it will be automatically created.
 </APIField>
 
 <APIField
@@ -44,14 +46,21 @@ This method allows you to manage call flow by queuing calls and playing wait mus
   name="enter_queue.status_url"
   type="string"
 >
-  HTTP or HTTPS URL to deliver queue status events. See [Queue Status Callbacks](#queue-status-callbacks) for event details.
+  HTTP or HTTPS URL to deliver queue status events. Status events will be sent via HTTP POST requests. See [Queue Status Callbacks](#queue-status-callbacks) for event details.
 </APIField>
 
 <APIField
   name="enter_queue.wait_url"
   type="string"
 >
-  URL for media to play while waiting in the queue. Default hold music will be played if not set.
+  URL for media to play while waiting in the queue. The file will be fetched using an HTTP GET request. Supported audio formats include:
+  - `WAV` (audio/wav, audio/wave, audio/x-wav)
+  - `MP3` (audio/mpeg)
+  - `AIFF` (audio/aiff, audio/x-aifc, audio/x-aiff)
+  - `GSM` (audio/x-gsm, audio/gsm)
+  - `μ-law` (audio/ulaw)
+
+  Default hold music will be played if not set.
 </APIField>
 
 <APIField
@@ -156,7 +165,14 @@ Sent when a caller is pulled out of the queue and bridged with another caller.
 
 Set by the method:
 
-- **queue_result:** (out) The result of the queue operation. **Possible Values**: `connected` (successfully connected to an agent), `timeout` (waited too long and timed out), `hangup` (caller hung up while waiting), `failed` (queue operation failed due to an error).
+- **queue_result:** (out) The result of the queue operation. **Possible Values**:
+  - `entering` - Call is entering the queue
+  - `connecting` - Call is in the process of connecting to an agent
+  - `connected` - Successfully connected to an agent
+  - `leaving` - Call is leaving the queue
+  - `timeout` - Waited too long and timed out
+  - `hangup` - Caller hung up while waiting
+  - `failed` - Queue operation failed due to an error
 - **wait_time:** (out) Time in seconds the caller waited in the queue. Set to -1 if not available.
 - **entry_position:** (out) The caller's position in the queue when they entered. Set to -1 if not available.
 - **entry_size:** (out) The total size of the queue when the caller entered. Set to -1 if not available.
