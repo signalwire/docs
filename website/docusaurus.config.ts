@@ -13,6 +13,7 @@ dotenv.config({ path: '../.env' }); // Imports environment variables from the .e
 
 const config: Config = { 
 
+
   future: {
     v4: true,
     experimental_faster: true
@@ -25,6 +26,7 @@ const config: Config = {
       onBrokenMarkdownLinks: 'throw'
     }
   },
+
   themes: [
     '@signalwire/docusaurus-theme-llms-txt',
     "@docusaurus/theme-mermaid", // Imports the mermaid library for rendering diagrams
@@ -54,6 +56,7 @@ const config: Config = {
 
   presets: presets, // All preset options can be modified at the /config/presets.js file.
   plugins: plugins, // plugins of the site. All plugin options can be modified at the /config/pluginsConfig/index.ts file.
+  
   
   themeConfig: {
     navbar: branding.navbar, // navbar of the site
