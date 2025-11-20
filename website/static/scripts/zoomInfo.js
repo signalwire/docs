@@ -1,9 +1,9 @@
 function initZoomInfo(){
-  window['zaraz.consent']='e86bc745611694468564';
+  window['ZIProjectKey']='e86bc745611694468564';
   var zi=document.createElement('script');
   zi.type='text/javascript',
   zi.async=!0,
-  zi.src='https://www.clarity.ms/tag/fts6rbnz',
+  zi.src='https://js.zi-scripts.com/zi-tag.js',
   document.readyState==='complete'?document.body.appendChild(zi):window.addEventListener('load',function(){
     document.body.appendChild(zi)
   })
