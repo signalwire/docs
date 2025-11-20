@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "project_id is required",
       attribute: "project_id",
-      url: "/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
