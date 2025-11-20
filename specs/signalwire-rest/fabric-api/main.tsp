@@ -49,7 +49,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(PHONE_ROUTES_TAG, PHONE_ROUTES_TAG_METADATA)
 @service(#{ title: "Call Fabric API" })
 @externalDocs(
-  "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric",
+  "/rest/signalwire-rest/endpoints/fabric",
   "The Fabric API holds a collection of endpoints that will help you in managing and creating your SignalWire Resources."
 )
 @info(#{

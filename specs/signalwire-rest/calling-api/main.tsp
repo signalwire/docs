@@ -11,7 +11,7 @@ using Types.StatusCodes;
 
 @tagMetadata(CALLS_TAG, CALLS_TAG_METADATA)
 @externalDocs(
-  "https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling",
+  "/rest/signalwire-rest/endpoints/calling",
   "The Calling API holds a collection of endpoints that will help you create and manage calls."
 )
 @info(#{

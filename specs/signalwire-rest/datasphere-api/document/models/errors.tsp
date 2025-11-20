@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "invalid_parameter",
       message: "Invalid chunking_strategy",
       attribute: "chunking_strategy",
-      url: "https://developer.signalwire.com/rest/overview/error-codes#{code}",
+      url: "/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })
@@ -22,7 +22,7 @@ model CreateStatusCode422 is StatusCode422;
       code: "invalid_parameter",
       message: "Invalid tags",
       attribute: "tags",
-      url: "https://developer.signalwire.com/rest/overview/error-codes#{code}",
+      url: "/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })
