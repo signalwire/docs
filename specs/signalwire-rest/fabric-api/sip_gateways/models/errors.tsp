@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "Name can't be blank",
       attribute: "name",
-      url: "/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })

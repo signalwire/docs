@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "contents is required",
       attribute: "contents",
-      url: "/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
