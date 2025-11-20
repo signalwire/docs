@@ -707,7 +707,75 @@ result.switch_context(
 
 ---
 
-### 20. User Input Simulation
+### 20. Change Context
+**Purpose**: Navigate to a different conversation context within the contexts system
+
+**JSON Structure**:
+```json
+{
+  "change_context": "<context_name>"
+}
+```
+
+**Parameters**:
+- `change_context` (required): String - name of the target context (must be defined in `prompt.contexts`)
+
+**Proposed Python Method**:
+```python
+result.swml_change_context(context_name)
+```
+
+**Usage Examples**:
+```python
+# Switch to support context
+result.swml_change_context("support")
+
+# Switch to billing context
+result.swml_change_context("billing")
+```
+
+**Additional Information**:
+- The target context must be defined in the AI's `prompt.contexts` configuration
+- See [Contexts and Steps Guide](/sdks/agents-sdk/contexts) for details on defining contexts
+- This action is for simple navigation between pre-defined contexts (use `switch_context` for dynamic prompt changes)
+
+---
+
+### 21. Change Step
+**Purpose**: Navigate to a specific step within the current context's workflow
+
+**JSON Structure**:
+```json
+{
+  "change_step": "<step_name>"
+}
+```
+
+**Parameters**:
+- `change_step` (required): String - name of the target step (must be defined in `prompt.contexts.{context_name}.steps`)
+
+**Proposed Python Method**:
+```python
+result.swml_change_step(step_name)
+```
+
+**Usage Examples**:
+```python
+# Move to troubleshooting step
+result.swml_change_step("troubleshoot")
+
+# Jump to closing step
+result.swml_change_step("close_conversation")
+```
+
+**Additional Information**:
+- The target step must be defined in the current context's `steps` array
+- See [Contexts and Steps Guide](/sdks/agents-sdk/contexts) for details on defining steps
+- This action enables programmatic control over step progression within a context
+
+---
+
+### 22. User Input Simulation
 **Purpose**: Queue simulated user input
 
 **JSON Structure**:
