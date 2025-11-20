@@ -20,7 +20,6 @@ const scripts: ScriptItem[] = [
   {
     src: "/scripts/hubspot.js",
   },
-
   {
     src: "/scripts/zoomInfo.js",
     async: true,

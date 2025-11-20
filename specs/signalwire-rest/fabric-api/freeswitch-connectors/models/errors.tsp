@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "host is required",
       attribute: "host",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter",
+      url: "/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
@@ -22,7 +22,7 @@ model FreeswitchConnectorCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "port must be between 1 and 65535",
       attribute: "port",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#invalid_parameter_value",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })

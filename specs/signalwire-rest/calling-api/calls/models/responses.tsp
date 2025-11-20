@@ -15,7 +15,7 @@ model CallResponse {
       code: "missing_required_parameter",
       message: "url must be a valid http or https url",
       attribute: "url",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#http_url_required",
+      url: "/rest/signalwire-rest/overview/error-codes#http_url_required",
     }
   ],
 })

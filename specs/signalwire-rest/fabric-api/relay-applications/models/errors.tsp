@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "name is required",
       attribute: "name",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter",
+      url: "/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
@@ -22,7 +22,7 @@ model RelayApplicationCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "webhook_url must be a valid URL",
       attribute: "webhook_url",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#invalid_parameter_value",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })
