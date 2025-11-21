@@ -1,0 +1,723 @@
+---
+slug: /swml/guides/variables-and-expressions
+title: Variables and Expressions
+tags: ['swml']
+x-custom:
+  tags:
+    - sdk:swml
+    - product:voice
+description: Complete technical reference for SWML variables, expressions, scopes, and the Call Object.
+---
+
+import APIField from "@site/src/components/APIField";
+
+# SWML Variables and Expressions
+
+<Subtitle>Complete reference for variables, expressions, and data access in SWML</Subtitle>
+
+SWML provides a powerful variable system that allows you to access call information, store data, pass parameters between sections, and dynamically construct values using JavaScript expressions. This page is the authoritative technical reference for all variable-related features in SWML.
+
+## Variable Syntax
+
+SWML supports variable substitution using two bracket syntaxes:
+
+### `${variable}` Syntax (Primary)
+
+The **dollar-brace syntax** is the primary way to reference variables throughout SWML scripts:
+
+```yaml
+- play:
+    url: 'say: ${num_var}'
+- set:
+    greeting: 'Hello ${call.from}'
+```
+
+Use this syntax in:
+- Method parameters (play, record, prompt, etc.)
+- String values and URLs
+- Variable assignments
+- Most contexts where you need to reference a variable
+
+### `%{variable}` Syntax (Server Context)
+
+The **percent-brace syntax** is functionally equivalent to `${}` and is commonly used in server deployment examples:
+
+```yaml
+- play:
+    url: 'say:%{call.from}'
+- execute:
+    dest: https://example.com/script
+    params:
+      file: '%{params.to_play}'
+```
+
+Both syntaxes work identically. Documentation examples may use either depending on context.
+
+## The Call Object {#call-object}
+
+The `call` object contains information about the current call and is available in all SWML scripts. It is automatically provided by SignalWire and contains the following properties:
+
+| Property | Type | Description |
+|---------|------|-------------|
+| `call.call_id` | `string` | A unique identifier for the call. |
+| `call.node_id` | `string` | A unique identifier for the node handling the call. |
+| `call.segment_id` | `string` | A unique identifier for the current call segment. |
+| `call.call_state` | `string` | The current state of the call. |
+| `call.direction` | `string` | The direction of this call.<br/>Possible values: `inbound`, `outbound` |
+| `call.type` | `string` | The type of call.<br/>Possible values: `sip`, `phone`, `webrtc` |
+| `call.from` | `string` | The number/URI that initiated this call. |
+| `call.to` | `string` | The number/URI of the destination of this call. |
+| `call.headers` | `object[]` | The headers associated with this call. |
+| `call.headers[].name` | `string` | The name of the header. |
+| `call.headers[].value` | `string` | The value of the header. |
+| `call.project_id` | `string` | The Project ID this call belongs to. |
+| `call.space_id` | `string` | The Space ID this call belongs to. |
+
+### Accessing Call Properties
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    # Access caller number
+    - play:
+        url: 'say: You are calling from ${call.from}'
+
+    # Use in conditional logic
+    - cond:
+        - when: call.type.toLowerCase() == 'sip'
+          then:
+            - play:
+                url: "say: You're calling from SIP."
+        - when: call.direction == 'inbound'
+          then:
+            - play:
+                url: "say: This is an inbound call."
+
+    # Access custom headers
+    - play:
+        url: 'say: Custom header value is ${call.headers[0].value}'
+```
+
+### Call Object in Server Deployments
+
+When SWML is served from an external URL, the call object is sent as part of the POST request body:
+
+```json
+{
+  "call": {
+    "call_id": "<CALL_UUID>",
+    "node_id": "<NODE_ID>",
+    "segment_id": "<SEGMENT_ID>",
+    "call_state": "created",
+    "direction": "inbound",
+    "type": "phone",
+    "from": "<CALLING PHONE NUMBER>",
+    "to": "<DESTINATION NUMBER>",
+    "headers": [],
+    "project_id": "<YOUR PROJECT ID>",
+    "space_id": "<YOUR SPACE ID>"
+  },
+  "vars": {},
+  "params": {}
+}
+```
+
+Your server can use this information to generate dynamic SWML responses. See the [Deployment Guide](/swml/guides/deployment) for more details on server-based SWML.
+
+## Variable Scopes
+
+SWML organizes variables into several scopes, each serving a specific purpose:
+
+<APIField
+  name="call"
+  type="object"
+>
+  Information about the current call. Contains the following properties.
+
+  **Availability:** All contexts (serverless, server)
+</APIField>
+
+<APIField name="call.call_id" type="string">
+  A unique identifier for the call.
+</APIField>
+
+<APIField name="call.node_id" type="string">
+  A unique identifier for the node handling the call.
+</APIField>
+
+<APIField name="call.segment_id" type="string">
+  A unique identifier for the current call segment.
+</APIField>
+
+<APIField name="call.call_state" type="string">
+  The current state of the call.
+</APIField>
+
+<APIField name="call.direction" type="string">
+  The direction of this call. Possible values: `inbound`, `outbound`
+</APIField>
+
+<APIField name="call.type" type="string">
+  The type of call. Possible values: `sip`, `phone`, `webrtc`
+</APIField>
+
+<APIField name="call.from" type="string">
+  The number/URI that initiated this call.
+</APIField>
+
+<APIField name="call.to" type="string">
+  The number/URI of the destination of this call.
+</APIField>
+
+<APIField name="call.headers" type="object[]">
+  The headers associated with this call.
+</APIField>
+
+<APIField name="call.headers[].name" type="string">
+  The name of the header.
+</APIField>
+
+<APIField name="call.headers[].value" type="string">
+  The value of the header.
+</APIField>
+
+<APIField name="call.project_id" type="string">
+  The Project ID this call belongs to.
+</APIField>
+
+<APIField name="call.space_id" type="string">
+  The Space ID this call belongs to.
+</APIField>
+
+<APIField
+  name="params"
+  type="object"
+>
+  Parameters passed via [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/transfer) methods. Contains user-defined key-value pairs.
+  
+  Properties are user-defined and set by the calling script via execute or transfer. Access them using dot notation: `params.key_name`
+  
+  **Example keys:** `params.audio_file`, `params.volume`, `params.department`
+  
+  **Availability:** Scripts invoked via execute/transfer
+  
+  When serving SWML from an external URL, `params` is included in the POST request body along with `call` and `vars`.
+</APIField>
+
+<APIField
+  name="vars"
+  type="object"
+>
+  Script variables set by the [`set`](/swml/methods/set) method or automatically created by method outputs. Contains user-defined variables and method output variables.
+  
+  Properties can be:
+  - User-defined variables created with the [`set`](/swml/methods/set) method
+  - Output variables automatically created by methods (e.g., `prompt_value`, `record_url`, `return_value`)
+  
+  Access them using dot notation: `vars.key_name`
+  
+  Many SWML methods automatically create output variables in the `vars` scope. See individual method documentation for complete lists.
+</APIField>
+
+<APIField
+  name="args"
+  type="object"
+>
+  Function arguments in [SWAIG](/swml/guides/AI/swaig) (SignalWire AI Gateway) contexts. Contains function-specific arguments defined by the SWAIG function signature.
+  
+  Properties are defined by the SWAIG function's argument schema. Access them using dot notation: `args.key_name`
+  
+  **Example keys:** `args.location`, `args.customer_id`, `args.target`, `args.query`
+  
+  **Availability:** SWAIG function definitions and data_map
+</APIField>
+
+<APIField
+  name="meta_data"
+  type="object"
+>
+  Function-level metadata that persists across function calls within an AI conversation. Can be modified using SWAIG actions.
+  
+  Properties are user-defined and persist for the duration of the AI session. Access them using dot notation: `meta_data.key_name`
+  
+  **Example keys:** `meta_data.table.support`, `meta_data.user_preferences`, `meta_data.context`
+  
+  **Availability:** SWAIG functions
+</APIField>
+
+<APIField
+  name="global_data"
+  type="object"
+>
+  Application-wide data accessible across all functions in an AI agent. Can be set using the `set_global_data` SWAIG action.
+  
+  Properties are user-defined and available throughout the AI application across all function calls and sessions. Access them using dot notation: `global_data.key_name`
+  
+  **Example keys:** `global_data.api_key`, `global_data.config`, `global_data.settings`
+  
+  **Availability:** SWAIG functions
+</APIField>
+
+<APIField
+  name="prompt_vars"
+  type="object"
+>
+  Built-in template variables in data_map contexts that provide call and AI session information.
+  
+  **Availability:** SWAIG data_map expressions
+</APIField>
+
+### prompt_vars Properties
+
+<APIField name="prompt_vars.call_direction" type="string">
+  Call direction (inbound/outbound)
+</APIField>
+
+<APIField name="prompt_vars.caller_id_name" type="string">
+  Caller name
+</APIField>
+
+<APIField name="prompt_vars.caller_id_number" type="string">
+  Caller number
+</APIField>
+
+<APIField name="prompt_vars.local_date" type="string">
+  Current local date
+</APIField>
+
+<APIField name="prompt_vars.local_time" type="string">
+  Current local time
+</APIField>
+
+<APIField name="prompt_vars.time_of_day" type="string">
+  Time of day (morning/afternoon/evening)
+</APIField>
+
+<APIField name="prompt_vars.supported_languages" type="string[]">
+  List of supported languages
+</APIField>
+
+<APIField name="prompt_vars.default_language" type="string">
+  Default language
+</APIField>
+
+<APIField
+  name="request_response"
+  type="object"
+>
+  Variables created by the [`request`](/swml/methods/request) method when `save_variables: true`. Contains the parsed response data from the HTTP request.
+  
+  Properties depend on the API response structure. Access them using dot notation: `request_response.field_name`
+  
+  Supports nested access for complex response structures: `request_response.contact.phone.home`
+  
+  **Example fields:** `request_response.title`, `request_response.status`, `request_response.data`, `request_response.user.email`
+  
+  **Availability:** After a [`request`](/swml/methods/request) method with `save_variables` enabled
+</APIField>
+
+## Setting and Managing Variables
+
+### Using the `set` Method
+
+The [`set`](/swml/methods/set) method creates or updates variables in the script scope:
+
+```yaml
+# Set a single variable
+- set:
+    num_var: 1
+
+# Set multiple variables
+- set:
+    items:
+      - drill bit
+      - drill
+    person: handyman
+    counter: 0
+
+# Set nested objects
+- set:
+    systems:
+      ventilation:
+        - inlet
+        - outlet
+      electrical:
+        status: online
+```
+
+### Using the `unset` Method
+
+The [`unset`](/swml/methods/unset) method removes variables:
+
+```yaml
+# Remove a single variable
+- unset:
+    vars: num_var
+
+# Remove multiple variables
+- unset:
+    vars:
+      - temp_value
+      - counter
+      - old_data
+```
+
+### Variables from Method Outputs
+
+Many methods automatically create variables. These are available immediately after the method executes:
+
+```yaml
+# prompt creates prompt_value
+- prompt:
+    play: 'say: Press 1 for sales, 2 for support'
+- play:
+    url: 'say: You pressed ${prompt_value}'
+
+# record creates record_url
+- record:
+    stereo: true
+- play:
+    url: 'say: Recording saved at ${record_url}'
+
+# return creates return_value
+- execute:
+    dest: calculate
+    params:
+      a: 5
+      b: 3
+- play:
+    url: 'say: Result is ${return_value}'
+```
+
+## Accessing Variable Data
+
+### Simple Property Access
+
+Access variables directly by name:
+
+```yaml
+- set:
+    name: Alice
+- play:
+    url: 'say: Hello ${name}'
+```
+
+### Nested Object Access
+
+Access nested properties using dot notation:
+
+```yaml
+- set:
+    user:
+      name: Alice
+      phone: '555-1234'
+      address:
+        city: Seattle
+- play:
+    url: 'say: ${user.name} lives in ${user.address.city}'
+```
+
+### Array Access
+
+Access array elements using bracket notation:
+
+```yaml
+- set:
+    items:
+      - apple
+      - banana
+      - cherry
+- play:
+    url: 'say: First item is ${items[0]}'
+
+# Access nested arrays
+- return:
+    - a: 1
+      b: 2
+    - a: 3
+      b: 4
+- play:
+    url: 'say: returned ${return_value[0].a}'
+```
+
+### Dynamic Property Access
+
+Use nested variable substitution for dynamic property names:
+
+```yaml
+# In SWAIG data_map context
+data_map:
+  expressions:
+    - pattern: ".*"
+      string: '${meta_data.table.${lc:args.target}}'
+```
+
+## Template Functions
+
+SWML provides template functions that transform variable values:
+
+### `lc:` - Lowercase Conversion
+
+Converts a string to lowercase:
+
+```yaml
+- string: '${lc:args.target}'
+# If args.target = "HELLO", result is "hello"
+```
+
+### `enc:url:` - URL Encoding
+
+URL-encodes a string for safe use in URLs:
+
+```yaml
+- string: '${enc:url:variable}'
+# If variable = "hello world", result is "hello%20world"
+```
+
+### `@{strftime}` - Date/Time Formatting
+
+Formats the current date and time:
+
+```yaml
+- string: '@{strftime %Y-%m-%d}'
+# Result: "2025-01-15"
+
+- string: '@{strftime %H:%M:%S}'
+# Result: "14:30:45"
+```
+
+### `@{expr}` - Expression Evaluation
+
+Evaluates a mathematical expression:
+
+```yaml
+- string: '@{expr 2+2}'
+# Result: "4"
+
+- string: '@{expr 10 * 5}'
+# Result: "50"
+```
+
+## JavaScript Expressions in Variables
+
+Variables can include JavaScript expressions for dynamic value construction:
+
+### String Manipulation
+
+```yaml
+# Split and join
+- play:
+    url: "say: ${call.from.split('').join(' ')}"
+# "5551234" becomes "5 5 5 1 2 3 4"
+
+# String methods
+- play:
+    url: "say: ${call.type.toUpperCase()}"
+# "phone" becomes "PHONE"
+
+- play:
+    url: "say: ${call.from.substring(0, 3)}"
+# Extract first 3 digits
+```
+
+### Arithmetic Operations
+
+```yaml
+# Addition
+- return: '${parseInt(params.a) + parseInt(params.b)}'
+
+# Multiplication
+- set:
+    total: '${params.price * params.quantity}'
+
+# Complex expressions
+- set:
+    discount: '${(params.price * 0.9).toFixed(2)}'
+```
+
+### Conditional Expressions
+
+```yaml
+# Ternary operator
+- set:
+    greeting: '${call.direction == "inbound" ? "Welcome" : "Calling"}'
+
+# Comparison
+- set:
+    is_special: '${call.from.startsWith("555")}'
+```
+
+### Array Methods
+
+```yaml
+# Array length
+- play:
+    url: 'say: You have ${items.length} items'
+
+# Array join
+- play:
+    url: 'say: Items are ${items.join(", ")}'
+
+# Array filtering/mapping (when supported)
+- set:
+    uppercase_items: '${items.map(x => x.toUpperCase())}'
+```
+
+## Variables in Different Contexts
+
+
+### Serverless (Dashboard) Scripts
+
+When SWML is executed directly from the SignalWire Dashboard:
+
+- All variable scopes work identically
+- `call` object is automatically provided
+- `params` and `vars` start empty for new calls
+- Variables persist throughout script execution
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - set:
+        greeting: 'Hello from ${call.to}'
+    - play:
+        url: 'say: ${greeting}'
+```
+
+### Server-Based (External URL) Scripts
+
+When SWML is served from a web server:
+
+- Your server receives POST requests with `call`, `vars`, and `params` objects
+- You can generate dynamic SWML based on these inputs
+- Variables work the same way in the returned SWML
+
+**Example POST request received:**
+
+```json
+{
+  "call": {
+    "call_id": "abc-123",
+    "from": "5551234567",
+    "to": "5559876543",
+    "direction": "inbound",
+    "type": "phone"
+  },
+  "vars": {
+    "user_selection": "1"
+  },
+  "params": {
+    "department": "sales"
+  }
+}
+```
+
+**Your server returns SWML:**
+
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say: Welcome to ${params.department}'
+```
+
+See the [Deployment Guide](/swml/guides/deployment) for complete server setup instructions.
+
+### SWAIG/data_map Context
+
+In [SWAIG](/swml/guides/AI/swaig) functions with data_map, additional scopes become available:
+
+```yaml
+functions:
+  - function: lookup_customer
+    purpose: Look up customer information
+    argument:
+      properties:
+        customer_id:
+          type: string
+    data_map:
+      expressions:
+        - pattern: ".*"
+          output:
+            response: 'Customer ${args.customer_id} found'
+            action:
+              - SWAIG:
+                  function: update_metadata
+                  argument:
+                    last_lookup: '${args.customer_id}'
+      webhooks:
+        - url: 'https://api.example.com/customers/${args.customer_id}'
+          method: GET
+```
+
+Available scopes: `args`, `meta_data`, `global_data`, `prompt_vars`, `call`, `vars`
+
+## Variable Lifecycle and Scope Boundaries
+
+### Within a Section
+
+Variables set in a section are available for the rest of that section:
+
+```yaml
+sections:
+  main:
+    - set:
+        counter: 0
+    - play:
+        url: 'say: ${counter}'  # ✅ Available
+```
+
+### Across execute/transfer
+
+When using [`execute`](/swml/methods/execute) with `dest` pointing to another section:
+
+- `params` passed to execute are available in the target section
+- `vars` from the calling section are **not** automatically available
+- `return_value` from the called section is available after execution
+
+```yaml
+sections:
+  main:
+    - set:
+        local_var: 'not passed'
+    - execute:
+        dest: other_section
+        params:
+          passed_var: 'this is passed'
+    - play:
+        url: 'say: ${return_value}'
+
+  other_section:
+    # local_var is NOT available here
+    # params.passed_var IS available
+    - play:
+        url: 'say: ${params.passed_var}'
+    - return: 'done'
+```
+
+When using [`transfer`](/swml/methods/transfer), the call is handed off completely and variables do not persist.
+
+### Method Output Variables
+
+Variables created by method outputs are available immediately after execution and persist for the remainder of the section:
+
+```yaml
+- prompt:
+    play: 'say: Enter a number'
+# prompt_value is now available
+
+- play:
+    url: 'say: You entered ${prompt_value}'
+# Still available
+
+- execute:
+    dest: other_section
+    params:
+      user_input: '${prompt_value}'
+# Pass it explicitly if needed in other sections
+```
+
