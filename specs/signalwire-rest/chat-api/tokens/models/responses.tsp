@@ -7,7 +7,7 @@ import "../../../types/status-codes";
       code: "missing_required_parameter",
       message: "A required parameter is missing from the request. Please refer to the technical reference for a complete list of parameters.",
       attribute: "ttl",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter",
+       url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
