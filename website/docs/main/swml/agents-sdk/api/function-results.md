@@ -678,6 +678,32 @@ result.switch_context(
 )
 ```
 
+#### `swml_change_context(context_name)`
+Navigate to a different conversation context within the contexts system. The target context must be defined in the AI's `prompt.contexts` configuration.
+
+```python
+# Switch to support context
+result.swml_change_context("support")
+
+# Switch to billing context
+result.swml_change_context("billing")
+```
+
+See [Contexts and Steps Guide](/sdks/agents-sdk/contexts) for details on defining contexts.
+
+#### `swml_change_step(step_name)`
+Navigate to a specific step within the current context's workflow. The target step must be defined in the current context's `steps` array.
+
+```python
+# Move to troubleshooting step
+result.swml_change_step("troubleshoot")
+
+# Jump to closing step
+result.swml_change_step("close_conversation")
+```
+
+See [Contexts and Steps Guide](/sdks/agents-sdk/contexts) for details on defining steps.
+
 #### `simulate_user_input(text)`
 Queue simulated user input for testing or flow control.
 
