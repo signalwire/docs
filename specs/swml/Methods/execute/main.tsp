@@ -22,9 +22,10 @@ model Execute {
   @doc("Execute a section or URL as a subroutine and return back to current document.")
   execute: {
     @doc("""
-      Specifies what to execute. The value can be one of: 
-      <section_name> - section in the current document to execute.
-      https://<URL>" - URL pointing to the document to execute. Sends HTTP POST.
+      Specifies what to execute. The value can be one of:
+      - `<section_name>` - section in the current document to execute
+      - A URL (http or https) that returns a SWML document - Sends HTTP POST
+      - An inline SWML document (as a JSON string)
       """)
     dest: string;
 

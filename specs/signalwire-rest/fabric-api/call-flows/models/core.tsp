@@ -25,7 +25,7 @@ model CallFlow {
   @example("{}")
   flow_data?: string;
 
-  @doc("A SWML document. For more information on SWML, please go to https://developer.signalwire.com/swml")
+  @doc("A SWML document. For more information on SWML, please go to the [SWML docs](/swml)")
   @example(SWML_EXAMPLE)
   relayml?: string;
 
