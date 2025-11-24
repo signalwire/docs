@@ -65,13 +65,14 @@ export interface ModalSection {
   title?: string;
   items: Record<string, ProductItem>;
   position?: number;
+  layout?: "column" | "stack"; // Controls if section appears as column or stacks vertically (default: stack)
 }
 
 // Type-based modal sections structure
 export const modalSections: ModalSection[] = [
   {
     type: "main",
-    title: "",
+    title: "Explore SiganlWire Documentation",
     position: 1,
     items: {
       home: {
@@ -88,12 +89,6 @@ export const modalSections: ModalSection[] = [
         ],
         position: 1,
       },
-    },
-  },
-  {
-    type: "main",
-    position: 2,
-    items: {
       swml: {
         title: "SWML (SignalWire Markup Language)",
         icon: MdCode,
@@ -335,23 +330,9 @@ export const modalSections: ModalSection[] = [
   },
   {
     type: "section",
-    title: "Additional resources",
-    position: 3,
+    title: "Resources",
+    position: 2,
     items: {
-      blogs: {
-        title: "Release notes",
-        icon: FaNewspaper,
-        description: "Latest news and updates from SignalWire",
-        link: "/blog",
-        position: 2,
-        links: [
-          {
-            label: "Blog Home",
-            link: "/blog",
-            sidebar: "",
-          }
-        ],
-      },
       guides: {
         title: "All guides",
         icon: FaBook,
@@ -363,6 +344,19 @@ export const modalSections: ModalSection[] = [
             link: "/guides",
             sidebar: "homeSidebar",
           },
+        ],
+      },
+      blogs: {
+        title: "Release notes",
+        icon: FaNewspaper,
+        link: "/blog",
+        position: 2,
+        links: [
+          {
+            label: "Blog Home",
+            link: "/blog",
+            sidebar: "",
+          }
         ],
       },
       support: {
