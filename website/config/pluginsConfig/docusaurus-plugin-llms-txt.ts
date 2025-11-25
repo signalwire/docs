@@ -9,34 +9,39 @@
 
 import { PluginConfig } from '@docusaurus/types';
 import type { Options as PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
+import rehypeTransformApiField from './rehype-transform-apifield';
+
 export const llmsTxtPlugin: PluginConfig = [
   "@signalwire/docusaurus-plugin-llms-txt",
   {
-
+    // Top-level runtime options
     logLevel: 1,
     onRouteError: 'throw',
     onSectionError: 'throw',
     runOnPostBuild: true,
 
-    generate: {
-      enableMarkdownFiles: true,
-      enableLlmsFullTxt: true,
-      relativePaths: true
-    },
-
-    include: {
-      includeBlog: false,
-      includePages: false,
+    // Markdown file generation options
+    markdown: {
+      enableFiles: true,
+      relativePaths: true,
       includeDocs: true,
       includeVersionedDocs: false,
+      includeBlog: false,
+      includePages: false,
       includeGeneratedIndex: false,
+      beforeDefaultRehypePlugins: [
+        rehypeTransformApiField
+      ],
+      remarkStringify: {
+        rule: '-',
+        ruleRepetition: 3
+      },
       excludeRoutes: [
         "/attachments/**",
         "/cluecon-2024/**",
         "/img/**",
         "/demos/**",
         "/tags/**",
-        "/rest/**",
         "/plugins/**",
         "/internal/**",
         "/landing-assets/**",
@@ -44,16 +49,46 @@ export const llmsTxtPlugin: PluginConfig = [
         "/events/**",
         "/assets/**",
         "/404.html",
-        "/media/**" ,
+        "/media/**",
         "/search",
-        "/"
+        "/",
+        '/rest/signalwire-rest/endpoints/**',
+        '/rest/compatibility-api/endpoints/**'
       ],
     },
 
-    structure: {
+    // llms.txt index file options
+    llmsTxt: {
+      autoSectionPosition: 3,
+      enableLlmsFullTxt: true,
+      includeDocs: true,
+      includeVersionedDocs: false,
+      includeBlog: false,
+      includePages: false,
+      includeGeneratedIndex: false,
+      excludeRoutes: [
+        "/attachments/**",
+        "/cluecon-2024/**",
+        "/img/**",
+        "/demos/**",
+        "/tags/**",
+        "/plugins/**",
+        "/internal/**",
+        "/landing-assets/**",
+        "/livewire/**",
+        "/events/**",
+        "/assets/**",
+        "/404.html",
+        "/media/**",
+        "/search",
+        "/",
+        '/rest/signalwire-rest/endpoints/**',
+        '/rest/compatibility-api/endpoints/**'
+      ],
+      
       enableDescriptions: true,
       siteTitle: "SignalWire Developer Documentation",
-      siteDescription: "SignalWire provide comprehensive and easy to use APIs that allow developers to reate unified communication applications.",
+      siteDescription: "SignalWire provide comprehensive and easy to use APIs that allow developers to create unified communication applications.",
 
       optionalLinks: [
         {
@@ -73,16 +108,24 @@ export const llmsTxtPlugin: PluginConfig = [
             {
               route: '/swml/**'
             }
-          ]
+          ],
+          attachments: [
+            {
+              fileName: 'swml-json-schema',
+              title: 'SWML JSON Schema',
+              description: "The JSON Schema definition for SWML (SignalWire Markup Language).",
+              source: '../specs/swml/tsp-output/@typespec/json-schema/SWMLObject.json',
+            }
+          ],
         },
         {
           id: 'sdks',
           name: 'SDKs',
           description: 'SignalWire Software Development Kits for building real-time communication applications.',
-          position: 0,
+          position: 1,
           routes: [
             {
-              route: '/sdks/**'
+              route:  '/sdks/**'
             }
           ],
           subsections: [
@@ -122,86 +165,90 @@ export const llmsTxtPlugin: PluginConfig = [
           id: 'api-ref',
           name: 'API OpenAPI Spec',
           description: 'The OpenAPI Spec definitions.',
-          position: 1,
-          routes: []
+          position: 2,
+          routes: [
+            {
+              route: '/rest/**'
+            }
+          ],
+          attachments: [
+            {
+              fileName: 'compatibility-api',
+              source: '../specs/compatibility-api/_spec_.yaml',
+              title: 'Compatibility API Spec',
+              description: "The OpenAPI spec for the SignalWire Compatibility API.",
+            },
+            {
+              fileName: 'calling-api',
+              source: '../specs/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Calling API Spec',
+              description: "The OpenAPI spec for the SignalWire Calling API.",
+            },
+            {
+              fileName: 'chat-api',
+              source: '../specs/signalwire-rest/chat-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Chat API Spec',
+              description: "The OpenAPI spec for the SignalWire Chat API.",
+            },
+            {
+              fileName: 'data-sphere-api',
+              source: '../specs/signalwire-rest/datasphere-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'DataSphere API Spec',
+              description: "The OpenAPI spec for the SignalWire DataSphere API.",
+            },
+            {
+              fileName: 'fabric-api',
+              source: '../specs/signalwire-rest/fabric-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Fabric API Spec',
+              description: "The OpenAPI spec for the SignalWire Fabric API.",
+            },
+            {
+              fileName: 'fax-api',
+              source: '../specs/signalwire-rest/fax-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Fax API Spec',
+              description: "The OpenAPI spec for the SignalWire Fax API.",
+            },
+            {
+              fileName: 'logs-api',
+              source: '../specs/signalwire-rest/logs-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Logs API Spec',
+              description: "The OpenAPI spec for the SignalWire Logs API.",
+            },
+            {
+              fileName: 'message-api',
+              source: '../specs/signalwire-rest/message-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Message API Spec',
+              description: "The OpenAPI spec for the SignalWire Message API.",
+            },
+            {
+              fileName: 'pubsub-api',
+              source: '../specs/signalwire-rest/pubsub-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'PubSub API Spec',
+              description: "The OpenAPI spec for the SignalWire PubSub API.",
+            },
+            {
+              fileName: 'voice-api',
+              source: '../specs/signalwire-rest/voice-api/tsp-output/@typespec/openapi3/openapi.yaml',
+              title: 'Voice API Spec',
+              description: "The OpenAPI spec for the SignalWire Voice API.",
+            }
+          ]
         },
-      ]
+      ],
     },
 
-    processing: {
-
-      attachments: [
-        {
-          source: '../specs/swml/tsp-output/@typespec/json-schema/SWMLObject.json',
-          title: 'SWML JSON Schema',
-          description: "The JSON Schema definition for SWML (SignalWire Markup Language).",
-          sectionId: "swml"
-        },
-        {
-          source: '../specs/compatibility-api/_spec_.yaml',
-          title: 'Compatibility API Spec',
-          description: "The OpenAPI spec for the SignalWire Compatibility API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/calling-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Calling API Spec',
-          description: "The OpenAPI spec for the SignalWire Calling API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/chat-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Chat API Spec',
-          description: "The OpenAPI spec for the SignalWire Chat API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/datasphere-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'DataSphere API Spec',
-          description: "The OpenAPI spec for the SignalWire DataSphere API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/fabric-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Fabric API Spec',
-          description: "The OpenAPI spec for the SignalWire Fabric API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/fax-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Fax API Spec',
-          description: "The OpenAPI spec for the SignalWire Fax API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/logs-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Logs API Spec',
-          description: "The OpenAPI spec for the SignalWire Logs API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/message-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Message API Spec',
-          description: "The OpenAPI spec for the SignalWire Message API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/pubsub-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'PubSub API Spec',
-          description: "The OpenAPI spec for the SignalWire PubSub API.",
-          sectionId: "api-ref"
-        },
-        {
-          source: '../specs/signalwire-rest/voice-api/tsp-output/@typespec/openapi3/openapi.yaml',
-          title: 'Voice API Spec',
-          description: "The OpenAPI spec for the SignalWire Voice API.",
-          sectionId: "api-ref",
-        }
-      ]
-    },
-
+    // UI options
     ui: {
-      copyPageContent: true
+      copyPageContent: {
+        contentStrategy: 'prefer-markdown',
+        display: {
+          excludeRoutes: [
+            '/rest/signalwire-rest/endpoints/**',
+            '/rest/compatibility-api/endpoints/**',
+            '/'
+          ]
+        }
+      }
     }
   } satisfies PluginOptions
 ];

@@ -5,8 +5,9 @@ model Transfer {
   transfer: {
     @doc("""
       Specifies where to transfer the call. The value can be one of:
-          - `<section_name>` - section in the SWML document to jump to.
-          - `https://<URL>` - URL pointing to the document to transfer to. Sends HTTP POST.
+      - `<section_name>` - section in the SWML document to jump to
+      - A URL (http or https) that returns a SWML document - Sends HTTP POST
+      - An inline SWML document (as a JSON string)
       """)
     dest: string;
 
