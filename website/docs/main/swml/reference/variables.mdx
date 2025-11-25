@@ -13,7 +13,7 @@ import APIField from "@site/src/components/APIField";
 <Subtitle>Complete reference for variables and scopes in SWML</Subtitle>
 
 SWML provides a powerful variable system that allows you to access call information, store data, and pass parameters between sections.
-This page is the authoritative technical reference for global variable scopes (`call`, `params`, `vars`) and variable management in SWML.
+This page is the authoritative technical reference for global variable scopes (`call`, `params`, `vars`, `envs`) and variable management in SWML.
 
 For information about using JavaScript expressions with variables, see the [Expressions Reference](/swml/expressions).
 For template transformation functions, see the [Template Functions Reference](/swml/reference/template-functions).
@@ -129,6 +129,27 @@ SWML provides several variable scopes that are available throughout your scripts
 
   **Scope:** Global within a single call session. Variables persist across all sections and through `execute` calls.
   However, connecting to a new leg of a call will reset the `vars` object to an empty state.
+
+  **Variable access:** Variables can be accessed with or without the `vars.` prefix. When you reference a variable without a scope prefix (e.g., `${my_variable}`), SWML first checks `vars`. If not found in `vars`, it automatically falls back to `envs`.
+
+</APIField>
+
+<APIField
+  name="envs"
+  type="object"
+>
+  Environment variables configured at the account or project level in your SignalWire configuration. These provide access to account-wide settings and configuration values.
+
+  :::warning Coming soon!
+  The `envs` object is included in POST request bodies to external servers, but the ability to set environment variables in the SignalWire Dashboard is not yet available in production. This feature is coming soon.
+  :::
+
+  **Scope:** Account/project-level and read-only. Set in your SignalWire account configuration, not within SWML scripts.
+
+  **Fallback behavior:** When you reference a variable without a scope prefix (e.g., `${my_variable}`), SWML first checks `vars`. If not found in `vars`, it automatically falls back to `envs`.
+
+  **Example keys:** `envs.api_key`, `envs.webhook_url`, `envs.account_setting`
+
 </APIField>
 
 ### Example: Variables in JSON format
@@ -153,6 +174,10 @@ When SWML communicates with your SWML server, the following request body format 
   "vars": {
     "user_selection": "1"
   },
+  "envs": {
+    "api_key": "<YOUR_API_KEY>",
+    "webhook_url": "https://example.com/webhook"
+  },
   "params": {
     "department": "sales"
   }
@@ -161,7 +186,7 @@ When SWML communicates with your SWML server, the following request body format 
 
 ## Variables in serverless and server-based SWML
 
-All SWML variables (`call`, `params`, `vars`) are available in both serverless (Dashboard-hosted) and server-based (external URL) deployments.
+All SWML variables (`call`, `params`, `vars`, `envs`) are available in both serverless (Dashboard-hosted) and server-based (external URL) deployments.
 
 ### Serverless (dashboard-hosted) scripts
 
@@ -204,11 +229,12 @@ Extract variables from the request body in your server code and insert them dire
 ```javascript
 // Example: Node.js/Express server
 app.post('/swml-handler', (req, res) => {
-  const { call, vars, params } = req.body;
+  const { call, vars, envs, params } = req.body;
 
   // Extract values from the request
   const department = params.department || 'support';
   const callerNumber = call.from;
+  const apiKey = envs.api_key;
 
   // Build SWML with values inserted directly
   const swml = {

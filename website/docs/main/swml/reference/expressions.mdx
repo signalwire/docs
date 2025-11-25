@@ -18,7 +18,7 @@ For template transformation functions, see the [Template Functions Reference](/s
 
 ## What are expressions?
 
-Expressions use the `${...}` syntax and support JavaScript for dynamic value construction. Any JavaScript that evaluates to a value can be used inside `${}`.
+Expressions use the `${...}` syntax and support JavaScript for dynamic value construction. Any JavaScript that evaluates to a value can be used inside these delimiters. Both syntaxes work identically.
 
 SWML uses the Google V8 JavaScript engine (version 6 and later) to evaluate expressions. For detailed JavaScript feature support, refer to the [V8 documentation](https://v8.dev/docs).
 
@@ -27,10 +27,10 @@ version: 1.0.0
 sections:
   main:
     - set:
-        # Simple variable reference
+        # Simple variable reference (both syntaxes work)
         number: '${call.from}'
         # Expression with method call
-        area_code: '${call.from.substring(0, 3)}'
+        area_code: '%{call.from.substring(0, 3)}'
         # Expression with calculation
         total: '${params.price * params.quantity}'
 ```
@@ -70,9 +70,6 @@ sections:
     - play:
         url: 'say: Your total is ${total.toFixed(2)} dollars ${shipping_msg}'
 ```
-
-However, serverless SWML has inherent limitations. You can't access databases or external APIs directly through expressions, and async operations aren't supported.
-The expression syntax is also limited to simple JavaScript—no loops, function declarations, or complex control flow.
 
 If you need complex logic in serverless mode, use the [`request`](/swml/methods/request) method to fetch data from a server during call execution.
 The response data becomes available as variables that you can then manipulate with expressions.
@@ -222,3 +219,51 @@ sections:
 ```
 
 Use: `parseInt()`, `parseFloat()`, `.toString()`, `Boolean()`
+
+## Expression limitations
+
+Expressions are designed for quick data transformations during calls. They work great for formatting strings, performing calculations, and making simple decisions, but they're intentionally constrained to keep your calls running smoothly.
+
+You can't create custom functions with the `function` keyword or arrow syntax. Instead, rely on JavaScript's built-in methods like string operations, Math functions, and array methods:
+
+```yaml
+# This won't work
+- set:
+    calculator: '${function(x) { return x * 2; }}'
+
+# Do this instead
+- set:
+    doubled: '${value * 2}'
+```
+
+Loops like `for` and `while` aren't available, but you can use array methods for most transformation needs. Methods like `.map()`, `.filter()`, and `.reduce()` handle common iteration patterns:
+
+```yaml
+# Loops aren't supported
+- set:
+    result: '${for(let i=0; i<10; i++) { sum += i; }}'
+
+# Array methods work well
+- set:
+    sum: '${[1,2,3,4,5].reduce((a,b) => a+b, 0)}'
+```
+
+Expressions execute synchronously, so you can't use `async`, `await`, or make API calls directly. For operations that need external data, use the [`request`](/swml/methods/request) method to fetch data first, then transform the results with expressions.
+
+Keep expressions under 1,024 characters and expect them to complete within 150ms. If you're hitting these limits, it's usually a sign that the logic belongs in your server code rather than inline in SWML.
+
+### Variable access in expressions
+
+All SWML variables are accessible within JavaScript expressions. You can reference them with or without scope prefixes:
+
+```yaml
+- set:
+    # With prefix (explicit)
+    caller: '${call.from}'
+    value: '${vars.my_variable}'
+    setting: '${envs.api_key}'
+    # Without prefix (automatic)
+    formatted: '${my_variable.toUpperCase()}'
+```
+
+When you access a variable without a prefix, the expression engine checks scopes in this order: `vars`, then `envs`, then `call`. Using explicit prefixes like `vars.` or `call.` is recommended for clarity, especially when variable names might exist in multiple scopes.
