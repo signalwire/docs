@@ -2,395 +2,105 @@
 slug: /swml/reference/template-functions
 title: Template Functions
 tags: ['swml']
-x-custom:
-  tags:
-    - sdk:swml
-    - product:voice
-description: Complete technical reference for SWML template transformation functions.
+sidebar_position: 1
+description: Reference for built-in template transformation functions in SWML
 ---
+
+import APIField from "@site/src/components/APIField";
 
 # SWML Template Functions
 
-<Subtitle>Complete reference for built-in transformation functions in SWML</Subtitle>
+<Subtitle>Reference for built-in transformation functions</Subtitle>
 
-SWML provides template functions that transform variable values for common use cases like text formatting, URL encoding, and date/time manipulation. This page is the authoritative technical reference for all template functions available in SWML.
+Template functions provide simple text transformations for common operations like converting to lowercase, URL encoding, and date formatting.
+They complement JavaScript expressions by handling specific formatting tasks that don't require complex logic.
 
-For information about variable scopes, see the [Variables Reference](/swml/reference/variables). For JavaScript expressions, see the [Expressions Reference](/swml/reference/expressions).
+For information about variable scopes, see the [Variables Reference](/swml/variables).
+For JavaScript expressions and data manipulation, see the [Expressions Reference](/swml/expressions).
 
-## What Are Template Functions?
+## Available template functions
 
-Template functions are built-in transformation utilities that process variable values using special syntax prefixes. Unlike JavaScript expressions (which use `${...}`), template functions use distinct syntax patterns:
 
-- `${lc:variable}` - Lowercase conversion
-- `${enc:url:variable}` - URL encoding
-- `@{strftime format}` - Date/time formatting
-- `@{expr expression}` - Mathematical expression evaluation
+<APIField name="lc" type="string">
+  Converts a string to lowercase. Commonly used to normalize user input for case-insensitive comparisons or ensure consistent casing when accessing object properties dynamically.
 
-## Available Template Functions
+  **Syntax:** `${lc:<value>}`
 
-### `lc:` - Lowercase Conversion {#lowercase}
+  **Example:**
+  ```yaml andJson
+  version: 1.0.0
+  sections:
+    main:
+      - prompt:
+          play: 'say: Please say yes or no'
+      - set:
+          normalized_input: '${lc:prompt_value}'
+      - cond:
+          - when: normalized_input == 'yes'
+            then:
+              - play:
+                  url: 'say: You said yes'
+  ```
+</APIField>
 
-Converts a string to lowercase.
+<APIField name="enc:url" type="string">
+  Encodes a string for safe use in URLs by converting special characters to percent-encoded equivalents. Always use this when including variables in URL query parameters or paths to prevent special characters from breaking URLs or causing unexpected behavior.
 
-**Syntax:**
-```
-${lc:variable_name}
-```
+  **Syntax:** `${enc:url:<value>}`
 
-**Parameters:**
-- `variable_name` - The variable to convert to lowercase
-
-**Examples:**
-
-```yaml
-# Convert function argument to lowercase
-- string: '${lc:args.target}'
-# If args.target = "HELLO", result is "hello"
-
-# Use with call object
-- play:
-    url: 'say: ${lc:call.type}'
-# If call.type = "PHONE", result is "phone"
-
-# Common use case: normalize user input
-- set:
-    normalized_input: '${lc:prompt_value}'
-- cond:
-    - when: normalized_input == 'yes'
-      then:
-        - play:
-            url: 'say: You said yes'
-```
-
-**Use Cases:**
-- Normalizing user input for comparison
-- Converting enum values for display
-- Preparing data for case-sensitive APIs
-- Dynamic property access with consistent casing
-
-**Common Pattern - Dynamic Property Access:**
-
-```yaml
-# In SWAIG data_map context
-data_map:
-  expressions:
-    - pattern: ".*"
-      string: '${meta_data.table.${lc:args.target}}'
-# Converts args.target to lowercase for dynamic property lookup
-```
-
-### `enc:url:` - URL Encoding {#url-encoding}
-
-URL-encodes a string for safe use in URLs.
-
-**Syntax:**
-```
-${enc:url:variable_name}
-```
-
-**Parameters:**
-- `variable_name` - The variable to URL-encode
-
-**Examples:**
-
-```yaml
-# Encode query parameter
-- string: '${enc:url:params.search_query}'
-# If search_query = "hello world", result is "hello%20world"
-
-# Use in API request
-- request:
-    url: 'https://api.example.com/search?q=${enc:url:prompt_value}'
-    method: GET
-
-# Encode phone number for API call
-- request:
-    url: 'https://api.example.com/lookup/${enc:url:call.from}'
-    method: GET
-
-# Encode complex strings
-- set:
-    encoded_message: '${enc:url:params.message}'
-# "Hello & goodbye!" becomes "Hello%20%26%20goodbye%21"
-```
-
-**Use Cases:**
-- Encoding query parameters in HTTP requests
-- Preparing data for webhook URLs
-- Encoding phone numbers or identifiers in API calls
-- Ensuring safe URL construction
-
-**Common Pattern - Dynamic API URLs:**
-
-```yaml
-functions:
-  - function: lookup_customer
-    data_map:
-      webhooks:
-        - url: 'https://api.example.com/customers/${enc:url:args.customer_id}'
+  **Example:**
+  ```yaml andJson
+  version: 1.0.0
+  sections:
+    main:
+      - prompt:
+          play: 'say: What would you like to search for?'
+      - request:
+          url: 'https://api.yourcompany.com/search?q=${enc:url:prompt_value}'
           method: GET
-```
+  ```
+</APIField>
 
-### `@{strftime}` - Date/Time Formatting {#strftime}
+<APIField name="strftime" type="string">
+  Formats the current date and time using standard strftime format codes. This generates timestamps at the moment the template is evaluated, not when the SWML script was created.
 
-Formats the current date and time using strftime format codes.
+  **Syntax:** `@{strftime format}`
 
-**Syntax:**
-```
-@{strftime format_string}
-```
+  **Common format codes:**
+  - `%Y-%m-%d` - ISO date (2025-01-15)
+  - `%H:%M:%S` - 24-hour time (14:30:45)
+  - `%I:%M %p` - 12-hour time (02:30 PM)
+  - `%A, %B %d, %Y` - Full readable date (Monday, January 15, 2025)
 
-**Parameters:**
-- `format_string` - A strftime-compatible format string
+  **Example:**
+  ```yaml andJson
+  version: 1.0.0
+  sections:
+    main:
+      - set:
+          call_timestamp: '@{strftime %Y-%m-%d %H:%M:%S}'
+      - request:
+          url: https://api.yourcompany.com/log
+          method: POST
+          body:
+            call_id: '${call.call_id}'
+            timestamp: '${call_timestamp}'
+  ```
+</APIField>
 
-**Common Format Codes:**
+<APIField name="expr" type="string">
+  Evaluates simple arithmetic expressions with literal numbers. Supports addition, subtraction, multiplication, division, and parentheses for grouping. Only works with literal numbers and cannot reference variables.
 
-| Code | Description | Example |
-|------|-------------|---------|
-| `%Y` | 4-digit year | 2025 |
-| `%y` | 2-digit year | 25 |
-| `%m` | Month (01-12) | 01 |
-| `%d` | Day of month (01-31) | 15 |
-| `%H` | Hour 24-hour (00-23) | 14 |
-| `%I` | Hour 12-hour (01-12) | 02 |
-| `%M` | Minute (00-59) | 30 |
-| `%S` | Second (00-59) | 45 |
-| `%p` | AM/PM | PM |
-| `%A` | Full weekday name | Monday |
-| `%a` | Abbreviated weekday | Mon |
-| `%B` | Full month name | January |
-| `%b` | Abbreviated month | Jan |
+  **Syntax:** `@{expr expression}`
 
-**Examples:**
-
-```yaml
-# ISO date format
-- string: '@{strftime %Y-%m-%d}'
-# Result: "2025-01-15"
-
-# Full date and time
-- string: '@{strftime %Y-%m-%d %H:%M:%S}'
-# Result: "2025-01-15 14:30:45"
-
-# Readable format
-- play:
-    url: 'say: Today is @{strftime %A, %B %d, %Y}'
-# Result: "Today is Monday, January 15, 2025"
-
-# 12-hour time
-- string: '@{strftime %I:%M %p}'
-# Result: "02:30 PM"
-
-# Use in logging or tracking
-- set:
-    call_timestamp: '@{strftime %Y-%m-%d %H:%M:%S}'
-- request:
-    url: https://api.example.com/log
-    method: POST
-    body:
-      call_id: '${call.call_id}'
-      timestamp: '${call_timestamp}'
-```
-
-**Use Cases:**
-- Logging call timestamps
-- Creating time-based identifiers
-- Displaying current time to callers
-- Recording when events occurred
-- Generating dated filenames
-
-**Common Pattern - Timestamped Logging:**
-
-```yaml
-- set:
-    log_entry:
-      timestamp: '@{strftime %Y-%m-%d %H:%M:%S}'
-      call_id: '${call.call_id}'
-      from: '${call.from}'
-- request:
-    url: https://api.example.com/logs
-    method: POST
-    body: '${log_entry}'
-```
-
-### `@{expr}` - Expression Evaluation {#expr}
-
-Evaluates a mathematical expression.
-
-**Syntax:**
-```
-@{expr mathematical_expression}
-```
-
-**Parameters:**
-- `mathematical_expression` - A mathematical expression to evaluate
-
-**Supported Operations:**
-- Addition: `+`
-- Subtraction: `-`
-- Multiplication: `*`
-- Division: `/`
-- Parentheses for grouping: `()`
-
-**Examples:**
-
-```yaml
-# Simple arithmetic
-- string: '@{expr 2+2}'
-# Result: "4"
-
-- string: '@{expr 10 * 5}'
-# Result: "50"
-
-# Complex expressions
-- string: '@{expr (100 - 25) / 5}'
-# Result: "15"
-
-# Use in calculations
-- set:
-    result: '@{expr 42 + 8}'
-- play:
-    url: 'say: The answer is ${result}'
-
-# Calculate totals
-- string: '@{expr 10.50 + 5.25 + 2.75}'
-# Result: "18.5"
-```
-
-**Use Cases:**
-- Simple calculations in SWML
-- Computing totals or subtotals
-- Basic mathematical operations without JavaScript expressions
-- Quick arithmetic for display or logging
-
-**Limitations:**
-- Only supports basic arithmetic operators
-- No variable substitution within the expression
-- For complex calculations with variables, use [JavaScript expressions](/swml/reference/expressions) instead
-
-**Comparison with JavaScript Expressions:**
-
-```yaml
-# Using @{expr} - static calculation only
-- set:
-    static_result: '@{expr 10 + 20}'
-
-# Using ${} - can use variables
-- set:
-    dynamic_result: '${parseInt(params.a) + parseInt(params.b)}'
-```
-
-## Combining Template Functions
-
-Template functions can be combined with variables and other expressions:
-
-```yaml
-# Combine lc: with dynamic access
-- string: '${meta_data.${lc:args.category}}'
-
-# Use strftime in API requests
-- request:
-    url: https://api.example.com/report
-    body:
-      date: '@{strftime %Y-%m-%d}'
-      caller: '${enc:url:call.from}'
-
-# Multiple transformations
-- set:
-    api_url: 'https://api.example.com/${lc:params.endpoint}?phone=${enc:url:call.from}'
-```
-
-## Template Functions vs JavaScript Expressions
-
-Choose the right tool for your use case:
-
-### Use Template Functions When:
-- ✅ Converting text to lowercase (`lc:`)
-- ✅ URL-encoding values (`enc:url:`)
-- ✅ Formatting current date/time (`@{strftime}`)
-- ✅ Simple static arithmetic (`@{expr}`)
-
-### Use JavaScript Expressions When:
-- ✅ String manipulation (substring, split, replace)
-- ✅ Calculations with variables
-- ✅ Conditional logic (ternary operators)
-- ✅ Array operations (map, filter, join)
-- ✅ Type conversions
-- ✅ Complex transformations
-
-**Example - Choosing the Right Approach:**
-
-```yaml
-# ✅ Use template function for lowercase
-- set:
-    lowercase_type: '${lc:call.type}'
-
-# ✅ Use JavaScript for substring
-- set:
-    area_code: '${call.from.substring(0, 3)}'
-
-# ✅ Use template function for URL encoding
-- set:
-    encoded_param: '${enc:url:params.query}'
-
-# ✅ Use JavaScript for arithmetic with variables
-- set:
-    total: '${params.price * params.quantity}'
-
-# ✅ Use template function for current timestamp
-- set:
-    timestamp: '@{strftime %Y-%m-%d %H:%M:%S}'
-```
-
-## Best Practices
-
-### URL Encoding
-Always use `enc:url:` when building URLs with dynamic data:
-
-```yaml
-# ❌ Unsafe - may break URL with special characters
-- request:
-    url: 'https://api.example.com/search?q=${params.query}'
-
-# ✅ Safe - properly encoded
-- request:
-    url: 'https://api.example.com/search?q=${enc:url:params.query}'
-```
-
-### Lowercase Normalization
-Use `lc:` for case-insensitive comparisons:
-
-```yaml
-# ❌ Case-sensitive - may miss matches
-- cond:
-    - when: prompt_value == 'yes'
-      then: [...]
-
-# ✅ Case-insensitive - handles Yes, YES, yes
-- set:
-    normalized: '${lc:prompt_value}'
-- cond:
-    - when: normalized == 'yes'
-      then: [...]
-```
-
-### Date/Time Consistency
-Use consistent formats for timestamps:
-
-```yaml
-# ✅ ISO format for APIs and logging
-- set:
-    timestamp: '@{strftime %Y-%m-%d %H:%M:%S}'
-
-# ✅ Readable format for speech
-- play:
-    url: 'say: The time is @{strftime %I:%M %p}'
-```
-
-## See Also
-
-- **[Variables Reference](/swml/reference/variables)**: Variable scopes and the Call Object
-- **[Expressions Reference](/swml/reference/expressions)**: JavaScript expressions and data manipulation
-- **[`set` method](/swml/methods/set)**: Store transformed values
-- **[`request` method](/swml/methods/request)**: Use template functions in HTTP requests
-- **[SWAIG Guide](/swml/guides/AI/swaig)**: Template functions in AI contexts
+  **Example:**
+  ```yaml andJson
+  version: 1.0.0
+  sections:
+    main:
+      - set:
+          result: '@{expr (100 - 25) / 5}'
+      - play:
+          url: 'say: The answer is ${result}'
+  ```
+</APIField>

@@ -1,12 +1,9 @@
 ---
-slug: /swml/reference/variables
+slug: /swml/variables
 title: Variables
 tags: ['swml']
-x-custom:
-  tags:
-    - sdk:swml
-    - product:voice
 description: Complete technical reference for SWML variable scopes and variable management.
+sidebar_position: 1
 ---
 
 import APIField from "@site/src/components/APIField";
@@ -15,36 +12,39 @@ import APIField from "@site/src/components/APIField";
 
 <Subtitle>Complete reference for variables and scopes in SWML</Subtitle>
 
-SWML provides a powerful variable system that allows you to access call information, store data, and pass parameters between sections. This page is the authoritative technical reference for global variable scopes (`call`, `params`, `vars`) and variable management in SWML.
+SWML provides a powerful variable system that allows you to access call information, store data, and pass parameters between sections.
+This page is the authoritative technical reference for global variable scopes (`call`, `params`, `vars`) and variable management in SWML.
 
-For information about using JavaScript expressions with variables, see the [Expressions Reference](/swml/reference/expressions). For template transformation functions, see the [Template Functions Reference](/swml/reference/template-functions).
+For information about using JavaScript expressions with variables, see the [Expressions Reference](/swml/expressions).
+For template transformation functions, see the [Template Functions Reference](/swml/reference/template-functions).
 
-## Variable Syntax
+## Variable syntax
 
 SWML uses the `${variable}` syntax for variable substitution:
 
-```yaml
-- play:
-    url: 'say: ${call.from}'
-- set:
-    greeting: 'Hello ${call.from}'
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say: ${call.from}'
+    - set:
+        greeting: 'Hello ${call.from}'
 ```
 
-Use this syntax in:
-- Method parameters (play, record, prompt, etc.)
-- String values and URLs
-- Variable assignments
-- Any context where you need to reference a variable
 
-## Global Variable Scopes
+## Variables list
 
-SWML provides several global variable scopes that are available throughout your scripts. These scopes give you access to call information, script parameters, and stored data.
+SWML provides several variable scopes that are available throughout your scripts. These scopes give you access to call information, script parameters, and stored data.
 
 <APIField
   name="call"
   type="object"
 >
   Information about the current call. Contains the following properties.
+
+  **Scope:** Call-specific and read-only. Each call leg (A-leg, B-leg) has its own unique `call` object with different `call_id`, `from`, `to`, etc.
+   When connecting to a new leg, the `call` object is re-initialized with the new leg's data.
 </APIField>
 
 <APIField name="call.call_id" type="string">
@@ -103,63 +103,37 @@ SWML provides several global variable scopes that are available throughout your 
   name="params"
   type="object"
 >
-  Parameters passed via [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/transfer) methods. Contains user-defined key-value pairs.
+  Parameters that are user-defined and set by the calling the [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/transfer) method.
 
-  Properties are user-defined and set by the calling script via execute or transfer. Access them using dot notation: `params.key_name`
+  **Scope:** Section-scoped and read-only. Each section has its own independent `params` that must be explicitly passed via `execute` or `transfer`. Params do not persist after a section completes. 
+  When an `execute` call returns, the calling section's original params are restored.
 
   **Example keys:** `params.audio_file`, `params.volume`, `params.department`
 
-  **Availability:** Scripts invoked via execute/transfer
 </APIField>
 
 <APIField
   name="vars"
   type="object"
 >
-  Script variables set by the [`set`](/swml/methods/set) method or automatically created by method outputs. Contains user-defined variables and method output variables.
+  Script variables that can be set, modified, and accessed throughout your SWML script.
 
-  Properties can be:
-  - User-defined variables created with the [`set`](/swml/methods/set) method
-  - Output variables automatically created by methods (e.g., `prompt_value`, `record_url`, `return_value`)
+  **Created by:**
+  - [`set`](/swml/methods/set) method - Create or update user-defined variables
+  - Method outputs - Many methods automatically create variables (e.g., `prompt_value`, `record_url`, `return_value`)
 
-  Access them using dot notation: `vars.key_name`
+  **Managed with:**
+  - [`unset`](/swml/methods/unset) method - Remove variables
 
-  Many SWML methods automatically create output variables in the `vars` scope. See individual method documentation for complete lists.
+  **Example keys:** `vars.user_choice`, `vars.counter`, `vars.prompt_value`, `vars.record_url`
+
+  **Scope:** Global within a single call session. Variables persist across all sections and through `execute` calls.
+  However, connecting to a new leg of a call will reset the `vars` object to an empty state.
 </APIField>
 
-### Context-Specific Variable Scopes
+### Example: Variables in JSON format
 
-Some variable scopes are only available in specific contexts:
-
-- **AI/SWAIG Variables** - See [SWAIG Variables Reference](/swml/methods/ai/swaig/functions/data_map/variables) for `args`, `meta_data`, `global_data`, and `prompt_vars` which are only available in AI agent and SWAIG function contexts.
-- **Request Variables** - See [`request` method](/swml/methods/request#variables) for `request_response` and related variables which are only available after executing a request.
-
-## Variables in Serverless and Server-Based SWML
-
-All SWML variables (`call`, `params`, `vars`) are available in both serverless (Dashboard-hosted) and server-based (external URL) deployments.
-
-### Serverless (Dashboard-Hosted) Scripts
-
-When SWML is executed directly from the SignalWire Dashboard, access variables using the `${}` syntax:
-
-```yaml
-version: 1.0.0
-sections:
-  main:
-    - play:
-        url: 'say: You are calling from ${call.from}'
-    - play:
-        url: 'say: Department is ${params.department}'
-```
-
-### Server-Based (External URL) Scripts
-
-When SWML is served from your web server, variables work in two ways:
-
-1. **In the request TO your server**: SignalWire sends the current variable state as JSON in the POST request body
-2. **In the SWML you return**: You can use variable expansion syntax `${}` in your returned SWML
-
-**Example request your server receives**:
+When SWML communicates with your SWML server, the following request body format is used to represent variables:
 
 ```json
 {
@@ -185,150 +159,157 @@ When SWML is served from your web server, variables work in two ways:
 }
 ```
 
-**Example SWML your server returns**:
+## Variables in serverless and server-based SWML
 
-```yaml
+All SWML variables (`call`, `params`, `vars`) are available in both serverless (Dashboard-hosted) and server-based (external URL) deployments.
+
+### Serverless (dashboard-hosted) scripts
+
+When SWML is executed directly from the SignalWire Dashboard, access variables using the `${}` syntax:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: 'say: You are calling from ${call.from}'
+    - play:
+        url: 'say: Department is ${params.department}'
+```
+
+### Server-based (external URL) scripts
+
+When SWML is served from your web server, SignalWire sends the current variable state as JSON in the POST request body (see the [JSON format example](#example-variables-in-json-format) above).
+
+You have two options for working with these variables in your SWML response:
+
+#### Option 1: Use variable expansion syntax
+
+Use `${}` syntax in your returned SWML, and SignalWire will substitute the values at runtime:
+
+```yaml andJson
 version: 1.0.0
 sections:
   main:
     - play:
         url: 'say: Welcome to ${params.department}'
+    - play:
+        url: 'say: Calling from ${call.from}'
 ```
+
+#### Option 2: Extract and insert values server-side
+
+Extract variables from the request body in your server code and insert them directly into the SWML response:
+
+```javascript
+// Example: Node.js/Express server
+app.post('/swml-handler', (req, res) => {
+  const { call, vars, params } = req.body;
+
+  // Extract values from the request
+  const department = params.department || 'support';
+  const callerNumber = call.from;
+
+  // Build SWML with values inserted directly
+  const swml = {
+    version: '1.0.0',
+    sections: {
+      main: [
+        {
+          play: {
+            url: `say: Welcome to ${department}`
+          }
+        },
+        {
+          play: {
+            url: `say: Calling from ${callerNumber}`
+          }
+        }
+      ]
+    }
+  };
+
+  res.json(swml);
+});
+```
+
+Both approaches produce the same result. Use variable expansion (`${}`) for simpler cases, or extract values server-side when you need to perform logic or transformations on the data.
 
 See the [Deployment Guide](/swml/guides/deployment) for complete server setup instructions.
 
 
-## Setting and Managing Variables
+## Accessing variable data
 
-### Using the `set` Method
+Variables can contain different types of data - simple values, nested objects, or arrays. Use dot notation (`.`) for object properties, bracket notation (`[]`) for array elements, or combine both for complex data structures.
 
-The [`set`](/swml/methods/set) method creates or updates variables in the script scope:
-
-```yaml
-# Set a single variable
-- set:
-    num_var: 1
-
-# Set multiple variables
-- set:
-    items:
-      - drill bit
-      - drill
-    person: handyman
-    counter: 0
-
-# Set nested objects
-- set:
-    systems:
-      ventilation:
-        - inlet
-        - outlet
-      electrical:
-        status: online
-```
-
-### Using the `unset` Method
-
-The [`unset`](/swml/methods/unset) method removes variables:
-
-```yaml
-# Remove a single variable
-- unset:
-    vars: num_var
-
-# Remove multiple variables
-- unset:
-    vars:
-      - temp_value
-      - counter
-      - old_data
-```
-
-### Variables from Method Outputs
-
-Many methods automatically create variables. These are available immediately after the method executes:
-
-```yaml
-# prompt creates prompt_value
-- prompt:
-    play: 'say: Press 1 for sales, 2 for support'
-- play:
-    url: 'say: You pressed ${prompt_value}'
-
-# record creates record_url
-- record:
-    stereo: true
-- play:
-    url: 'say: Recording saved at ${record_url}'
-
-# return creates return_value
-- execute:
-    dest: calculate
-    params:
-      a: 5
-      b: 3
-- play:
-    url: 'say: Result is ${return_value}'
-```
-
-## Accessing Variable Data
-
-### Simple Property Access
+### Simple values
 
 Access variables directly by name:
 
-```yaml
-- set:
-    name: Alice
-- play:
-    url: 'say: Hello ${name}'
-```
-
-For complex data access patterns including nested objects, arrays, and dynamic properties, see the [Expressions Reference](/swml/reference/expressions).
-
-## Variable Lifecycle and Scope Boundaries
-
-### Within a Section
-
-Variables set in a section are available for the rest of that section:
-
-```yaml
+```yaml andJson
+version: 1.0.0
 sections:
   main:
     - set:
-        counter: 0
+        name: Alice
+        age: 30
     - play:
-        url: 'say: ${counter}'  # ✅ Available
+        url: 'say: Hello ${name}, you are ${age} years old'
 ```
 
-### Across execute/transfer
+### Nested objects
 
-When using [`execute`](/swml/methods/execute) with `dest` pointing to another section:
+Access nested properties using dot notation:
 
-- `params` passed to execute are available in the target section
-- `vars` from the calling section are **not** automatically available
-- `return_value` from the called section is available after execution
-
-```yaml
+```yaml andJson
+version: 1.0.0
 sections:
   main:
     - set:
-        local_var: 'not passed'
-    - execute:
-        dest: other_section
-        params:
-          passed_var: 'this is passed'
+        user:
+          name: Alice
+          address:
+            city: Seattle
+            state: WA
     - play:
-        url: 'say: ${return_value}'
-
-  other_section:
-    # local_var is NOT available here
-    # params.passed_var IS available
-    - play:
-        url: 'say: ${params.passed_var}'
-    - return: 'done'
+        url: 'say: ${user.name} lives in ${user.address.city}, ${user.address.state}'
 ```
 
-When using [`transfer`](/swml/methods/transfer), the call is handed off completely and variables do not persist.
+### Arrays
 
+Access array elements using bracket notation with zero-based indexing:
 
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - set:
+        departments:
+          - Sales
+          - Support
+          - Engineering
+    - play:
+        url: 'say: First department is ${departments[0]}'
+    - play:
+        url: 'say: Second department is ${departments[1]}'
+```
+
+### Arrays of objects
+
+Combine bracket and dot notation to access properties in array elements:
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - set:
+        employees:
+          - name: Alice
+            role: Engineer
+          - name: Bob
+            role: Manager
+    - play:
+        url: 'say: ${employees[0].name} is an ${employees[0].role}'
+    - play:
+        url: 'say: ${employees[1].name} is a ${employees[1].role}'
+```
