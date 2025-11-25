@@ -1,0 +1,393 @@
+---
+sidebar_position: 5
+title: "Exposing Agents"
+---
+
+## Exposing Your Agent to the Internet
+
+> **Summary**: Use ngrok to create a public URL for your local agent so SignalWire can send webhook requests to it.
+
+### Why You Need a Public URL
+
+SignalWire's cloud needs to reach your agent via HTTP:
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         The Problem                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  SignalWire Cloud                        Your Computer                      │
+│  ┌─────────────────┐                    ┌─────────────────┐                 │
+│  │                 │                    │                 │                 │
+│  │  Needs to send  │     CANNOT         │  localhost:3000 │                 │
+│  │  HTTP requests  │ ───── X ─────────► │                 │                 │
+│  │                 │     REACH          │  (Not on the    │                 │
+│  └─────────────────┘                    │   internet)     │                 │
+│                                         └─────────────────┘                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         The Solution: ngrok                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  SignalWire Cloud        ngrok Cloud           Your Computer                │
+│  ┌─────────────────┐    ┌─────────────────┐   ┌─────────────────┐           │
+│  │                 │    │                 │   │                 │           │
+│  │  Sends request  │───►│  abc123.ngrok.io│──►│  localhost:3000 │           │
+│  │  to public URL  │    │  (tunnel)       │   │                 │           │
+│  │                 │◄───│                 │◄──│                 │           │
+│  └─────────────────┘    └─────────────────┘   └─────────────────┘           │
+│                                                                             │
+│  https://abc123.ngrok.io  ───►  tunnels to  ───►  http://localhost:3000     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Installing ngrok
+
+#### macOS (Homebrew)
+
+```bash
+brew install ngrok
+```
+
+#### Linux
+
+```bash
+## Download
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | \
+  sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && \
+  echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | \
+  sudo tee /etc/apt/sources.list.d/ngrok.list
+
+## Install
+sudo apt update && sudo apt install ngrok
+```
+
+#### Windows
+
+```powershell
+## Using Chocolatey
+choco install ngrok
+
+## Or download from https://ngrok.com/download
+```
+
+#### Direct Download
+
+Visit [ngrok.com/download](https://ngrok.com/download) and download for your platform.
+
+### Create an ngrok Account (Free)
+
+1. Go to [ngrok.com](https://ngrok.com) and sign up
+2. Get your auth token from the dashboard
+3. Configure ngrok with your token:
+
+```bash
+ngrok config add-authtoken YOUR_AUTH_TOKEN_HERE
+```
+
+This enables:
+
+- Longer session times
+- Custom subdomains (paid)
+- Multiple tunnels
+
+### Basic Usage
+
+Start your agent in one terminal:
+
+```bash
+## Terminal 1
+python my_agent.py
+```
+
+Start ngrok in another terminal:
+
+```bash
+## Terminal 2
+ngrok http 3000
+```
+
+You'll see output like:
+
+```
+ngrok                                                           (Ctrl+C to quit)
+
+Session Status                online
+Account                       your-email@example.com (Plan: Free)
+Version                       3.x.x
+Region                        United States (us)
+Latency                       45ms
+Web Interface                 http://127.0.0.1:4040
+Forwarding                    https://abc123def456.ngrok-free.app -> http://localhost:3000
+
+Connections                   ttl     opn     rt1     rt5     p50     p90
+                              0       0       0.00    0.00    0.00    0.00
+```
+
+Your public URL is: `https://abc123def456.ngrok-free.app`
+
+### Test the Tunnel
+
+```bash
+## Test locally
+curl http://localhost:3000/
+
+## Test through ngrok (use YOUR URL from ngrok output)
+curl https://abc123def456.ngrok-free.app/
+```
+
+Both should return the same SWML document.
+
+### ngrok Web Interface
+
+ngrok provides a web interface at `http://127.0.0.1:4040` showing:
+
+- All requests coming through the tunnel
+- Request/response headers and bodies
+- Timing information
+- Ability to replay requests
+
+This is invaluable for debugging SignalWire webhook calls!
+
+### Static Domains (Recommended)
+
+Free ngrok gives you random URLs that change each restart. For easier development, use a static domain:
+
+#### Free Static Domain (ngrok account required)
+
+1. Go to ngrok Dashboard → Domains
+2. Create a free static domain (e.g., `your-name.ngrok-free.app`)
+3. Use it:
+
+```bash
+ngrok http 3000 --domain=your-name.ngrok-free.app
+```
+
+Now your URL stays the same across restarts!
+
+### Understanding Basic Authentication
+
+**Important:** The SDK automatically secures your agent with HTTP Basic Authentication. Every time you start your agent, you'll see:
+
+```
+Agent 'my-agent' is available at:
+URL: http://localhost:3000
+Basic Auth: signalwire:7vVZ8iMTOWL0Y7-BG6xaN3qhjmcm4Sf59nORNdlF9bs (source: provided)
+```
+
+**The password changes on every restart** unless you set environment variables.
+
+#### Setting Persistent Credentials
+
+For development, set these environment variables to use the same credentials across restarts:
+
+```bash
+## In your .env file or shell
+export SWML_BASIC_AUTH_USER=signalwire
+export SWML_BASIC_AUTH_PASSWORD=your-secure-password-here
+```
+
+Then start your agent:
+
+```bash
+python my_agent.py
+```
+
+Now it will show:
+
+```
+Basic Auth: signalwire:your-secure-password-here (source: environment)
+```
+
+**Why this matters:**
+- SignalWire needs these credentials to call your agent
+- Random passwords mean reconfiguring SignalWire on every restart
+- Set environment variables once for consistent development
+
+### Configure Your Agent for ngrok
+
+Set the `SWML_PROXY_URL_BASE` environment variable so your agent generates correct webhook URLs:
+
+```bash
+## In your .env file
+SWML_PROXY_URL_BASE=https://your-name.ngrok-free.app
+SWML_BASIC_AUTH_USER=signalwire
+SWML_BASIC_AUTH_PASSWORD=your-secure-password-here
+```
+
+Or set them when running:
+
+```bash
+SWML_PROXY_URL_BASE=https://your-name.ngrok-free.app \
+SWML_BASIC_AUTH_USER=signalwire \
+SWML_BASIC_AUTH_PASSWORD=your-secure-password-here \
+python my_agent.py
+```
+
+This ensures:
+
+- SWAIG function webhook URLs point to your public ngrok URL, not localhost
+- Authentication credentials remain consistent across restarts
+
+### Complete Development Setup
+
+Here's the full workflow:
+
+```bash
+## Terminal 1: Start ngrok with static domain
+ngrok http 3000 --domain=your-name.ngrok-free.app
+
+## Terminal 2: Start agent with environment variables
+export SWML_PROXY_URL_BASE=https://your-name.ngrok-free.app
+export SWML_BASIC_AUTH_USER=signalwire
+export SWML_BASIC_AUTH_PASSWORD=your-secure-password-here
+python my_agent.py
+
+## Terminal 3: Test (use the credentials from Terminal 2)
+curl -u signalwire:your-secure-password-here https://your-name.ngrok-free.app/
+curl -u signalwire:your-secure-password-here https://your-name.ngrok-free.app/debug
+```
+
+### Using a Script
+
+Create `start-dev.sh`:
+
+```bash
+#!/bin/bash
+## start-dev.sh - Start development environment
+
+NGROK_DOMAIN="your-name.ngrok-free.app"
+AUTH_USER="signalwire"
+AUTH_PASS="your-secure-password-here"
+
+echo "Starting development environment..."
+echo "Public URL: https://${NGROK_DOMAIN}"
+echo "Basic Auth: ${AUTH_USER}:${AUTH_PASS}"
+echo ""
+
+## Start ngrok in background
+ngrok http 3000 --domain=${NGROK_DOMAIN} &
+NGROK_PID=$!
+
+## Wait for ngrok to start
+sleep 2
+
+## Start agent with environment variables
+export SWML_PROXY_URL_BASE="https://${NGROK_DOMAIN}"
+export SWML_BASIC_AUTH_USER="${AUTH_USER}"
+export SWML_BASIC_AUTH_PASSWORD="${AUTH_PASS}"
+python my_agent.py
+
+## Cleanup on exit
+trap "kill $NGROK_PID 2>/dev/null" EXIT
+```
+
+Make it executable:
+
+```bash
+chmod +x start-dev.sh
+./start-dev.sh
+```
+
+### Alternative Tunneling Solutions
+
+#### Cloudflare Tunnel (Free)
+
+```bash
+## Install cloudflared
+brew install cloudflared  # macOS
+
+## Quick tunnel (no account needed)
+cloudflared tunnel --url http://localhost:3000
+```
+
+#### localtunnel (Free, no signup)
+
+```bash
+## Install
+npm install -g localtunnel
+
+## Run
+lt --port 3000
+```
+
+#### tailscale Funnel (Requires Tailscale)
+
+```bash
+## If you use Tailscale
+tailscale funnel 3000
+```
+
+### Production Alternatives
+
+For production, don't use ngrok. Instead:
+
+| Option | Description |
+|--------|-------------|
+| **Cloud VM** | Deploy to AWS, GCP, Azure, DigitalOcean |
+| **Serverless** | AWS Lambda, Google Cloud Functions, Azure Functions |
+| **Container** | Docker on Kubernetes, ECS, Cloud Run |
+| **VPS** | Any server with a public IP |
+
+See the [Deployment](../deployment/local-development) chapter for production deployment guides.
+
+### Troubleshooting
+
+#### ngrok shows "ERR_NGROK_108"
+
+Your auth token is invalid or expired. Get a new one from the ngrok dashboard:
+
+```bash
+ngrok config add-authtoken YOUR_NEW_TOKEN
+```
+
+#### Connection refused
+
+Your agent isn't running or is on a different port:
+
+```bash
+## Check agent is running
+curl http://localhost:3000/
+
+## If using different port
+ngrok http 8080
+```
+
+#### Webhook URLs still show localhost
+
+Set `SWML_PROXY_URL_BASE`:
+
+```bash
+export SWML_PROXY_URL_BASE=https://your-domain.ngrok-free.app
+python my_agent.py
+```
+
+#### ngrok tunnel expires
+
+Free ngrok tunnels expire after a few hours. Solutions:
+
+- Restart ngrok
+- Use a static domain (stays same after restart)
+- Upgrade to paid ngrok plan
+- Use an alternative like Cloudflare Tunnel
+
+### What's Next?
+
+Your agent is now accessible at a public URL. You're ready to connect it to SignalWire!
+
+### You've Completed Phase 1!
+
+- [x] Installed the SDK
+- [x] Created your first agent
+- [x] Set up development environment
+- [x] Exposed agent via ngrok
+
+Your agent is ready at: `https://your-domain.ngrok-free.app`
+
+**Next Chapter: [Core Concepts](../core-concepts/architecture)** - Deep dive into SWML, SWAIG, and agent architecture
+
+**Or jump to: [SignalWire Integration](../signalwire-integration/account-setup)** - Connect your agent to phone numbers
+

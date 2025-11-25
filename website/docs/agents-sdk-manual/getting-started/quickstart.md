@@ -1,0 +1,370 @@
+---
+sidebar_position: 3
+title: "Quickstart"
+---
+
+## Quick Start: Your First Agent
+
+> **Summary**: Build a working voice AI agent in under 5 minutes with a single Python file.
+
+### The Minimal Agent
+
+```python
+#!/usr/bin/env python3
+## my_first_agent.py - A simple voice AI agent
+"""
+My First SignalWire Agent
+
+A simple voice AI agent that greets callers and has conversations.
+"""
+
+from signalwire_agents import AgentBase
+
+
+class MyFirstAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-first-agent")
+
+        # Set the voice
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Define the AI's personality and behavior
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly and helpful assistant. Greet the caller warmly "
+            "and help them with any questions they have. Keep responses concise "
+            "and conversational."
+        )
+
+        self.prompt_add_section(
+            "Guidelines",
+            body="Follow these rules:",
+            bullets=[
+                "Be friendly and professional",
+                "Keep responses brief (1-2 sentences when possible)",
+                "If you don't know something, say so honestly",
+                "End conversations politely when the caller is done"
+            ]
+        )
+
+
+if __name__ == "__main__":
+    agent = MyFirstAgent()
+    print("Starting My First Agent...")
+    print("Server running at: http://localhost:3000")
+    print("Press Ctrl+C to stop")
+    agent.run()
+```
+
+### Run the Agent
+
+Start your agent:
+
+```bash
+python my_first_agent.py
+```
+
+You'll see output like:
+
+```
+[12:29:56] INFO     security_config (info:72) security_config_loaded
+    (service=SWMLService, ssl_enabled=False, domain=None,
+    allowed_hosts=['*'], cors_origins=['*'], max_request_size=10485760,
+    rate_limit=60, use_hsts=True, has_basic_auth=False)
+[12:29:56] INFO     swml_service    (info:72) service_initializing
+    (service=my-first-agent, route=, host=0.0.0.0, port=3000)
+[12:29:56] INFO     agent_base      (info:72) agent_initializing
+    (agent=my-first-agent, route=/, host=0.0.0.0, port=3000)
+Starting My First Agent...
+Server running at: http://localhost:3000
+Press Ctrl+C to stop
+[12:29:56] INFO     agent_base      (info:72) agent_starting
+    (agent=my-first-agent, url=http://localhost:3000, username=signalwire,
+    password_length=43, auth_source=provided, ssl_enabled=False)
+Agent 'my-first-agent' is available at:
+URL: http://localhost:3000
+Basic Auth: signalwire:7vVZ8iMTOWL0Y7-BG6xaN3qhjmcm4Sf59nORNdlF9bs
+    (source: provided)
+INFO:     Started server process [49982]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+```
+
+**Note:** The SDK shows:
+
+- Security configuration (SSL, CORS, rate limits)
+- Service initialization details
+- Basic auth credentials (username and password)
+- Server startup information
+
+### Test the Agent
+
+Open a new terminal and test with curl. Use the Basic Auth credentials shown in the agent output:
+
+```bash
+## Get the SWML document (what SignalWire receives)
+## Replace the password with the one from your agent's output
+curl -u signalwire:7vVZ8iMTOWL0Y7-BG6xaN3qhjmcm4Sf59nORNdlF9bs \
+  http://localhost:3000/
+```
+
+**Note:** The `-u` flag provides Basic Auth credentials in the format `username:password`. Use the exact password shown in your agent's startup output.
+
+You'll see JSON output like:
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {"answer": {}},
+      {
+        "ai": {
+          "prompt": {
+            "text": "# Role\nYou are a friendly and helpful assistant..."
+          },
+          "languages": [
+            {"name": "English", "code": "en-US", "voice": "rime.spore"}
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+### What Just Happened?
+
+**1. You run: `python my_first_agent.py`**
+
+Agent starts a web server on port 3000.
+
+**2. SignalWire (or curl) sends: `GET http://localhost:3000/`**
+
+Agent returns SWML document (JSON).
+
+**3. SWML tells SignalWire:**
+- Answer the call
+- Use this AI prompt (your personality config)
+- Use this voice (rime.spore)
+- Use English language
+
+**4. SignalWire's AI:**
+- Converts caller's speech to text (STT)
+- Sends text to AI model (GPT-4, etc.)
+- Gets AI response
+- Converts response to speech (TTS)
+
+### Adding a Custom Function
+
+Let's add a function the AI can call:
+
+```python
+#!/usr/bin/env python3
+## my_first_agent_with_function.py - Agent with custom function
+"""
+My First SignalWire Agent - With Custom Function
+"""
+
+from signalwire_agents import AgentBase, SwaigFunctionResult
+
+
+class MyFirstAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-first-agent")
+
+        # Set the voice
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Define the AI's personality
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly assistant who can tell jokes. "
+            "When someone asks for a joke, use your tell_joke function."
+        )
+
+        # Register the custom function
+        self.define_tool(
+            name="tell_joke",
+            description="Tell a joke to the caller",
+            parameters={"type": "object", "properties": {}},
+            handler=self.tell_joke
+        )
+
+    def tell_joke(self, args, raw_data):
+        """Return a joke for the AI to tell."""
+        import random
+        jokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs!",
+            "Why did the Python programmer need glasses? Because they couldn't C!",
+            "What's a programmer's favorite hangout spot? Foo Bar!",
+        ]
+        joke = random.choice(jokes)
+        return SwaigFunctionResult(f"Here's a joke: {joke}")
+
+
+if __name__ == "__main__":
+    agent = MyFirstAgent()
+    print("Starting My First Agent (with jokes!)...")
+    print("Server running at: http://localhost:3000")
+    agent.run()
+```
+
+Now when a caller asks for a joke, the AI will call your `tell_joke` function!
+
+### Using the Debug Endpoint
+
+The agent provides a debug endpoint to inspect its configuration:
+
+```bash
+curl http://localhost:3000/debug
+```
+
+This shows detailed information about:
+
+- Registered functions
+- Prompt configuration
+- Voice settings
+- Authentication credentials
+
+### Test with swaig-test CLI
+
+The SDK includes a CLI tool for testing:
+
+```bash
+## Show the SWML document
+swaig-test my_first_agent.py --dump-swml
+
+## List available functions
+swaig-test my_first_agent.py --list-tools
+
+## Test a function
+swaig-test my_first_agent.py --exec tell_joke
+```
+
+### Complete Example with Multiple Features
+
+Here's a more complete example showing common patterns:
+
+```python
+#!/usr/bin/env python3
+## complete_first_agent.py - Complete agent example with multiple features
+"""
+Complete First Agent Example
+
+Demonstrates:
+
+- Voice configuration
+- AI parameters
+- Prompt sections
+- Custom functions
+- Speech hints
+"""
+
+from signalwire_agents import AgentBase, SwaigFunctionResult
+
+
+class CompleteFirstAgent(AgentBase):
+    def __init__(self):
+        super().__init__(
+            name="complete-agent",
+            auto_answer=True,
+            record_call=False
+        )
+
+        # Voice and language
+        self.add_language("English", "en-US", "rime.spore")
+
+        # AI behavior parameters
+        self.set_params({
+            "end_of_speech_timeout": 500,      # Wait 500ms for speaker to finish
+            "attention_timeout": 15000         # 15 second attention span
+        })
+
+        # Speech recognition hints (improves accuracy)
+        self.add_hints([
+            "SignalWire",
+            "SWML",
+            "AI agent"
+        ])
+
+        # Prompt sections
+        self.prompt_add_section(
+            "Identity",
+            "You are Alex, a helpful AI assistant created by SignalWire."
+        )
+
+        self.prompt_add_section(
+            "Capabilities",
+            body="You can help callers with:",
+            bullets=[
+                "Answering general questions",
+                "Telling jokes",
+                "Providing the current time",
+                "Basic conversation"
+            ]
+        )
+
+        self.prompt_add_section(
+            "Style",
+            "Keep responses brief and friendly. Use a conversational tone."
+        )
+
+        # Register functions
+        self.define_tool(
+            name="get_current_time",
+            description="Get the current time",
+            parameters={"type": "object", "properties": {}},
+            handler=self.get_current_time
+        )
+
+        self.define_tool(
+            name="tell_joke",
+            description="Tell a random joke",
+            parameters={"type": "object", "properties": {}},
+            handler=self.tell_joke
+        )
+
+    def get_current_time(self, args, raw_data):
+        """Return the current time."""
+        from datetime import datetime
+        now = datetime.now()
+        return SwaigFunctionResult(f"The current time is {now.strftime('%I:%M %p')}")
+
+    def tell_joke(self, args, raw_data):
+        """Return a random joke."""
+        import random
+        jokes = [
+            "Why do programmers prefer dark mode? Because light attracts bugs!",
+            "Why did the developer go broke? Because they used up all their cache!",
+            "There are only 10 types of people: those who understand binary and those who don't.",
+        ]
+        return SwaigFunctionResult(random.choice(jokes))
+
+
+if __name__ == "__main__":
+    agent = CompleteFirstAgent()
+
+    print("="*60)
+    print("Complete First Agent")
+    print("="*60)
+    print(f"Server: http://localhost:3000")
+    print(f"Debug:  http://localhost:3000/debug")
+    print("")
+    print("Features:")
+    print("  - Custom voice (rime.spore)")
+    print("  - Speech hints for better recognition")
+    print("  - Two custom functions (time, jokes)")
+    print("="*60)
+
+    agent.run()
+```
+
+### Next Steps
+
+Your agent is running locally, but SignalWire can't reach `localhost`. You need to expose it to the internet.
+
+
+**Or skip to: [Exposing Your Agent](exposing-agents)** - Make your agent accessible via ngrok
+

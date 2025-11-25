@@ -1,0 +1,462 @@
+---
+sidebar_position: 4
+title: "Lifecycle"
+---
+
+## Request Lifecycle
+
+> **Summary**: Trace the complete journey of a call through the SignalWire Agents SDK, from incoming call to conversation end.
+
+### The Complete Call Flow
+
+Understanding the request lifecycle helps you debug issues and optimize your agents. Here's the complete flow:
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Complete Call Lifecycle                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  PHASE 1: Call Setup                                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  1. Caller dials your phone number                                   │   │
+│  │  2. SignalWire receives the call                                     │   │
+│  │  3. SignalWire checks webhook configuration for the number           │   │
+│  │  4. SignalWire requests SWML: POST https://your-agent.com/           │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│       │                                                                     │
+│       ▼                                                                     │
+│  PHASE 2: SWML Generation                                                   │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  5. Your agent receives the HTTP request                             │   │
+│  │  6. Agent builds SWML document (prompts, functions, languages)       │   │
+│  │  7. Agent generates security tokens for SWAIG functions              │   │
+│  │  8. Agent returns SWML JSON response                                 │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│       │                                                                     │
+│       ▼                                                                     │
+│  PHASE 3: AI Conversation                                                   │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  9. SignalWire executes SWML (answers call, starts AI)               │   │
+│  │  10. AI speaks greeting from prompt                                  │   │
+│  │  11. User speaks, AI listens and transcribes                         │   │
+│  │  12. AI processes and responds (loop continues)                      │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│       │                                                                     │
+│       ▼                                                                     │
+│  PHASE 4: Function Calls (as needed)                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  13. AI decides to call a function                                   │   │
+│  │  14. SignalWire sends POST to /swaig with function name and args     │   │
+│  │  15. Your agent executes the handler                                 │   │
+│  │  16. Agent returns SwaigFunctionResult                               │   │
+│  │  17. AI incorporates result and continues conversation               │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│       │                                                                     │
+│       ▼                                                                     │
+│  PHASE 5: Call End                                                          │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  18. Call ends (hangup, transfer, or timeout)                        │   │
+│  │  19. AI generates summary using post_prompt                          │   │
+│  │  20. SignalWire sends POST to /post_prompt with summary              │   │
+│  │  21. Your agent receives and processes summary                       │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase 1: Call Setup
+
+When a call arrives at SignalWire:
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              Call Setup                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Caller                    SignalWire                   Your Agent          │
+│    │                           │                            │               │
+│    │    Dial +1-555-123-4567   │                            │               │
+│    │──────────────────────────►│                            │               │
+│    │                           │                            │               │
+│    │                           │  Look up webhook config    │               │
+│    │                           │  for this phone number     │               │
+│    │                           │                            │               │
+│    │                           │  POST /                    │               │
+│    │                           │───────────────────────────►│               │
+│    │                           │                            │               │
+│    │                           │  Content-Type: application/json            │
+│    │                           │  Authorization: Basic xxx  │               │
+│    │                           │                            │               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key points:**
+- SignalWire knows which agent to contact based on phone number configuration
+- The request includes Basic Auth credentials
+- POST is the default; GET requests are also supported for SWML retrieval
+
+### Phase 2: SWML Generation
+
+Your agent builds and returns the SWML document:
+
+```python
+## Inside AgentBase._render_swml()
+
+def _render_swml(self, request_body=None):
+    """Generate SWML document for this agent."""
+
+    # 1. Build the prompt (POM or text)
+    prompt = self._build_prompt()
+
+    # 2. Collect all SWAIG functions
+    functions = self._tool_registry.get_functions()
+
+    # 3. Generate webhook URLs with security tokens
+    webhook_url = self._build_webhook_url("/swaig")
+
+    # 4. Assemble AI configuration
+    ai_config = {
+        "prompt": prompt,
+        "post_prompt": self._post_prompt,
+        "post_prompt_url": self._build_webhook_url("/post_prompt"),
+        "SWAIG": {
+            "defaults": {"web_hook_url": webhook_url},
+            "functions": functions
+        },
+        "hints": self._hints,
+        "languages": self._languages,
+        "params": self._params
+    }
+
+    # 5. Build complete SWML document
+    swml = {
+        "version": "1.0.0",
+        "sections": {
+            "main": [
+                {"answer": {}},
+                {"ai": ai_config}
+            ]
+        }
+    }
+
+    return swml
+```
+
+### Phase 3: AI Conversation
+
+Once SignalWire has the SWML, it executes the instructions:
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          AI Conversation Loop                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│         ┌───────────────────────────────────────────────────┐               │
+│         │                                                   │               │
+│         ▼                                                   │               │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │               │
+│  │   Listen    │───►│  Transcribe │───►│  Process    │      │               │
+│  │   (STT)     │    │   Speech    │    │   Intent    │      │               │
+│  └─────────────┘    └─────────────┘    └─────────────┘      │               │
+│                                              │              │               │
+│                                              ▼              │               │
+│                                    ┌─────────────────┐      │               │
+│                                    │  Need function? │      │               │
+│                                    └─────────────────┘      │               │
+│                                      │           │          │               │
+│                                     Yes          No         │               │
+│                                      │           │          │               │
+│                                      ▼           ▼          │               │
+│                             ┌─────────────┐ ┌─────────────┐ │               │
+│                             │ Call SWAIG  │ │  Generate   │ │               │
+│                             │  Function   │ │  Response   │ │               │
+│                             └─────────────┘ └─────────────┘ │               │
+│                                      │           │          │               │
+│                                      └─────┬─────┘          │               │
+│                                            │                │               │
+│                                            ▼                │               │
+│                                    ┌─────────────┐          │               │
+│                                    │   Speak     │──────────┘               │
+│                                    │   (TTS)     │                          │
+│                                    └─────────────┘                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**AI Parameters that control this loop:**
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `end_of_speech_timeout` | 500ms | Wait time after user stops speaking |
+| `attention_timeout` | 15000ms | Max silence before AI prompts |
+| `inactivity_timeout` | 30000ms | Max silence before ending call |
+| `barge_match_string` | - | Words that immediately interrupt AI |
+
+### Phase 4: Function Calls
+
+When the AI needs to call a function:
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          SWAIG Function Call                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  SignalWire AI                                           Your Agent         │
+│       │                                                       │             │
+│       │  POST /swaig                                          │             │
+│       │  Authorization: Basic xxx                             │             │
+│       │  Content-Type: application/json                       │             │
+│       │                                                       │             │
+│       │  {                                                    │             │
+│       │    "action": "swaig_action",                          │             │
+│       │    "function": "get_balance",                         │             │
+│       │    "argument": {                                      │             │
+│       │      "parsed": [{"account_id": "12345"}]              │             │
+│       │    },                                                 │             │
+│       │    "call_id": "...",                                  │             │
+│       │    "global_data": {...}                               │             │
+│       │  }                                                    │             │
+│       │──────────────────────────────────────────────────────►│             │
+│       │                                                       │             │
+│       │                                            ┌──────────┴───────────┐ │
+│       │                                            │ 1. Validate auth     │ │
+│       │                                            │ 2. Find handler      │ │
+│       │                                            │ 3. Execute function  │ │
+│       │                                            │ 4. Build response    │ │
+│       │                                            └──────────┬───────────┘ │
+│       │                                                       │             │
+│       │  200 OK                                               │             │
+│       │  {                                                    │             │
+│       │    "response": "Balance is $150.00",                  │             │
+│       │    "action": [...]                                    │             │
+│       │  }                                                    │             │
+│       │◄──────────────────────────────────────────────────────│             │
+│       │                                                       │             │
+│       │  AI speaks the response                               │             │
+│       │  and continues conversation                           │             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase 5: Call End
+
+When the call ends, the post-prompt summary is sent:
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             Call Ending                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Trigger Events:                                                            │
+│  ├── User hangs up                                                          │
+│  ├── Agent triggers transfer action                                         │
+│  ├── Agent triggers stop action                                             │
+│  ├── Inactivity timeout                                                     │
+│  └── Error condition                                                        │
+│       │                                                                     │
+│       ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  AI generates summary using post_prompt instructions                │    │
+│  │                                                                     │    │
+│  │  Example post_prompt:                                               │    │
+│  │  "Summarize: caller's issue, resolution status, any follow-up"      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│       │                                                                     │
+│       ▼                                                                     │
+│  POST /post_prompt                                                          │
+│  {                                                                          │
+│    "post_prompt_data": {                                                    │
+│      "raw": "Customer called about billing issue. Resolved by...",          │
+│      "parsed": {...},                                                       │
+│      "substituted": "..."                                                   │
+│    },                                                                       │
+│    "call_id": "...",                                                        │
+│    "caller_id_num": "+15551234567",                                         │
+│    "call_duration": 180                                                     │
+│  }                                                                          │
+│       │                                                                     │
+│       ▼                                                                     │
+│  Your agent receives summary for logging, CRM update, analytics             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Handling Post-Prompt
+
+Configure post-prompt handling in your agent:
+
+```python
+from signalwire_agents import AgentBase
+
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+
+        # Set the post-prompt instruction
+        self.set_post_prompt(
+            "Summarize this call including: "
+            "1) The caller's main question or issue "
+            "2) How it was resolved "
+            "3) Any follow-up actions needed"
+        )
+
+        # Or use structured post-prompt with JSON output
+        self.set_post_prompt_json({
+            "issue": "string - the caller's main issue",
+            "resolution": "string - how the issue was resolved",
+            "follow_up": "boolean - whether follow-up is needed",
+            "sentiment": "string - caller sentiment (positive/neutral/negative)"
+        })
+
+    def on_post_prompt(self, data):
+        """Handle the call summary."""
+        summary = data.get("post_prompt_data", {})
+        call_id = data.get("call_id")
+
+        # Log to your system
+        self.log_call_summary(call_id, summary)
+
+        # Update CRM
+        self.update_crm(data)
+```
+
+### Request/Response Headers
+
+#### SWML Request (GET or POST /)
+
+```http
+GET / HTTP/1.1
+Host: your-agent.com
+Authorization: Basic c2lnbmFsd2lyZTpwYXNzd29yZA==
+Accept: application/json
+X-Forwarded-For: signalwire-ip
+X-Forwarded-Proto: https
+```
+
+#### SWML Response
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"version": "1.0.0", "sections": {...}}
+```
+
+#### SWAIG Request (POST /swaig)
+
+```http
+POST /swaig HTTP/1.1
+Host: your-agent.com
+Authorization: Basic c2lnbmFsd2lyZTpwYXNzd29yZA==
+Content-Type: application/json
+
+{"action": "swaig_action", "function": "...", ...}
+```
+
+#### SWAIG Response
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"response": "...", "action": [...]}
+```
+
+### Debugging the Lifecycle
+
+#### View SWML Output
+
+```bash
+## See what your agent returns
+curl -u signalwire:password http://localhost:3000/ | jq '.'
+
+## Using swaig-test
+swaig-test my_agent.py --dump-swml
+```
+
+#### Test Function Calls
+
+```bash
+## Call a function directly
+swaig-test my_agent.py --exec get_balance --account_id 12345
+
+## With verbose output
+swaig-test my_agent.py --exec get_balance --account_id 12345 --verbose
+```
+
+#### Monitor Live Traffic
+
+```python
+from signalwire_agents import AgentBase
+
+
+class DebugAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="debug-agent")
+
+    def on_swml_request(self, request):
+        """Called when SWML is requested."""
+        print(f"SWML requested from: {request.client.host}")
+        print(f"Headers: {dict(request.headers)}")
+
+    def on_swaig_request(self, function_name, args, raw_data):
+        """Called before each SWAIG function."""
+        print(f"Function called: {function_name}")
+        print(f"Arguments: {args}")
+        print(f"Call ID: {raw_data.get('call_id')}")
+```
+
+### Error Handling
+
+#### SWML Errors
+
+If your agent can't generate SWML:
+
+```python
+def _render_swml(self):
+    try:
+        return self._build_swml()
+    except Exception as e:
+        # Return minimal valid SWML
+        return {
+            "version": "1.0.0",
+            "sections": {
+                "main": [
+                    {"answer": {}},
+                    {"play": {"url": "https://example.com/error.mp3"}},
+                    {"hangup": {}}
+                ]
+            }
+        }
+```
+
+#### SWAIG Errors
+
+If a function fails:
+
+```python
+def get_balance(self, args, raw_data):
+    try:
+        balance = self.lookup_balance(args.get("account_id"))
+        return SwaigFunctionResult(f"Your balance is ${balance}")
+    except DatabaseError:
+        return SwaigFunctionResult(
+            "I'm having trouble accessing account information right now. "
+            "Please try again in a moment."
+        )
+    except Exception as e:
+        # Log the error but return user-friendly message
+        self.logger.error(f"Function error: {e}")
+        return SwaigFunctionResult(
+            "I encountered an unexpected error. "
+            "Let me transfer you to a representative."
+        )
+```
+
+### Next Steps
+
+Now that you understand the complete lifecycle, let's look at how security works throughout this flow.
+
+

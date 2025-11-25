@@ -1,0 +1,446 @@
+---
+sidebar_position: 4
+title: "Custom Skills"
+---
+
+## Custom Skills
+
+> **Summary**: Create your own skills by inheriting from `SkillBase`. Custom skills can be reused across agents and shared with others.
+
+### Skill Structure
+
+Create a directory with these files:
+
+```
+my_custom_skill/
+     __init__.py          # Empty or exports
+     skill.py             # Skill implementation
+     requirements.txt     # Optional dependencies
+```
+
+### Basic Custom Skill
+
+```python
+## my_custom_skill/skill.py
+
+from typing import List, Dict, Any
+from signalwire_agents.core.skill_base import SkillBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+
+class GreetingSkill(SkillBase):
+    """A skill that provides personalized greetings"""
+
+    # Required class attributes
+    SKILL_NAME = "greeting"
+    SKILL_DESCRIPTION = "Provides personalized greetings"
+    SKILL_VERSION = "1.0.0"
+
+    # Optional requirements
+    REQUIRED_PACKAGES = []
+    REQUIRED_ENV_VARS = []
+
+    def setup(self) -> bool:
+        """Initialize the skill. Return True if successful."""
+        # Get configuration parameter with default
+        self.greeting_style = self.params.get("style", "friendly")
+        return True
+
+    def register_tools(self) -> None:
+        """Register SWAIG tools with the agent."""
+        self.define_tool(
+            name="greet_user",
+            description="Generate a personalized greeting",
+            parameters={
+                "name": {
+                    "type": "string",
+                    "description": "Name of the person to greet"
+                }
+            },
+            handler=self.greet_handler
+        )
+
+    def greet_handler(self, args, raw_data):
+        """Handle greeting requests."""
+        name = args.get("name", "friend")
+
+        if self.greeting_style == "formal":
+            greeting = f"Good day, {name}. How may I assist you?"
+        else:
+            greeting = f"Hey {name}! Great to hear from you!"
+
+        return SwaigFunctionResult(greeting)
+```
+
+### Required Class Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `SKILL_NAME` | `str` | Unique identifier for the skill |
+| `SKILL_DESCRIPTION` | `str` | Human-readable description |
+| `SKILL_VERSION` | `str` | Semantic version (default: "1.0.0") |
+
+**Optional Attributes:**
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `REQUIRED_PACKAGES` | `List[str]` | Python packages needed |
+| `REQUIRED_ENV_VARS` | `List[str]` | Environment variables needed |
+| `SUPPORTS_MULTIPLE` | `bool` | Allow multiple instances |
+
+### Required Methods
+
+#### setup()
+
+Initialize the skill and validate requirements:
+
+```python
+def setup(self) -> bool:
+    """
+    Initialize the skill.
+
+    Returns:
+        True if setup successful, False otherwise
+    """
+    # Validate packages are installed
+    if not self.validate_packages():
+        return False
+
+    # Validate environment variables
+    if not self.validate_env_vars():
+        return False
+
+    # Initialize from parameters
+    self.api_url = self.params.get("api_url", "https://api.example.com")
+    self.timeout = self.params.get("timeout", 30)
+
+    # Any other initialization
+    return True
+```
+
+#### register_tools()
+
+Register SWAIG functions:
+
+```python
+def register_tools(self) -> None:
+    """Register all tools this skill provides."""
+
+    self.define_tool(
+        name="my_function",
+        description="Does something useful",
+        parameters={
+            "param1": {
+                "type": "string",
+                "description": "First parameter"
+            },
+            "param2": {
+                "type": "integer",
+                "description": "Second parameter"
+            }
+        },
+        handler=self.my_handler
+    )
+
+    # Register multiple tools if needed
+    self.define_tool(
+        name="another_function",
+        description="Does something else",
+        parameters={},
+        handler=self.another_handler
+    )
+```
+
+### Optional Methods
+
+#### get_hints()
+
+Provide speech recognition hints:
+
+```python
+def get_hints(self) -> List[str]:
+    """Return words to improve speech recognition."""
+    return ["greeting", "hello", "hi", "welcome"]
+```
+
+#### get_prompt_sections()
+
+Add sections to the agent's prompt:
+
+```python
+def get_prompt_sections(self) -> List[Dict[str, Any]]:
+    """Return prompt sections for the agent."""
+    return [
+        {
+            "title": "Greeting Capability",
+            "body": "You can greet users by name.",
+            "bullets": [
+                "Use greet_user when someone introduces themselves",
+                "Match the greeting style to the conversation tone"
+            ]
+        }
+    ]
+```
+
+#### get_global_data()
+
+Provide data for the agent's global context:
+
+```python
+def get_global_data(self) -> Dict[str, Any]:
+    """Return data to add to global context."""
+    return {
+        "greeting_skill_enabled": True,
+        "greeting_style": self.greeting_style
+    }
+```
+
+#### cleanup()
+
+Release resources when skill is unloaded:
+
+```python
+def cleanup(self) -> None:
+    """Clean up when skill is removed."""
+    # Close connections, release resources
+    if hasattr(self, "connection"):
+        self.connection.close()
+```
+
+### Parameter Schema
+
+Define parameters your skill accepts:
+
+```python
+@classmethod
+def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
+    """Define the parameters this skill accepts."""
+    # Start with base schema
+    schema = super().get_parameter_schema()
+
+    # Add skill-specific parameters
+    schema.update({
+        "style": {
+            "type": "string",
+            "description": "Greeting style",
+            "default": "friendly",
+            "enum": ["friendly", "formal", "casual"],
+            "required": False
+        },
+        "api_key": {
+            "type": "string",
+            "description": "API key for external service",
+            "required": True,
+            "hidden": True,
+            "env_var": "MY_SKILL_API_KEY"
+        }
+    })
+
+    return schema
+```
+
+### Multi-Instance Skills
+
+Support multiple instances with different configurations:
+
+```python
+class MultiInstanceSkill(SkillBase):
+    SKILL_NAME = "multi_search"
+    SKILL_DESCRIPTION = "Searchable with multiple instances"
+    SKILL_VERSION = "1.0.0"
+
+    # Enable multiple instances
+    SUPPORTS_MULTIPLE_INSTANCES = True
+
+    def get_instance_key(self) -> str:
+        """Return unique key for this instance."""
+        tool_name = self.params.get("tool_name", self.SKILL_NAME)
+        return f"{self.SKILL_NAME}_{tool_name}"
+
+    def setup(self) -> bool:
+        self.tool_name = self.params.get("tool_name", "search")
+        return True
+
+    def register_tools(self) -> None:
+        # Use custom tool name
+        self.define_tool(
+            name=self.tool_name,
+            description="Search function",
+            parameters={
+                "query": {"type": "string", "description": "Search query"}
+            },
+            handler=self.search_handler
+        )
+```
+
+### Complete Example
+
+```python
+#!/usr/bin/env python3
+## product_search_skill.py - Custom skill for product search
+from typing import List, Dict, Any
+import requests
+
+from signalwire_agents.core.skill_base import SkillBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+
+class ProductSearchSkill(SkillBase):
+    """Search product catalog"""
+
+    SKILL_NAME = "product_search"
+    SKILL_DESCRIPTION = "Search and lookup products in catalog"
+    SKILL_VERSION = "1.0.0"
+    REQUIRED_PACKAGES = ["requests"]
+    REQUIRED_ENV_VARS = []
+    SUPPORTS_MULTIPLE_INSTANCES = False
+
+    def setup(self) -> bool:
+        if not self.validate_packages():
+            return False
+
+        self.api_url = self.params.get("api_url")
+        self.api_key = self.params.get("api_key")
+
+        if not self.api_url or not self.api_key:
+            self.logger.error("api_url and api_key are required")
+            return False
+
+        return True
+
+    def register_tools(self) -> None:
+        self.define_tool(
+            name="search_products",
+            description="Search for products by name or category",
+            parameters={
+                "query": {
+                    "type": "string",
+                    "description": "Search term"
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Product category filter",
+                    "enum": ["electronics", "clothing", "home", "all"]
+                }
+            },
+            handler=self.search_handler
+        )
+
+        self.define_tool(
+            name="get_product_details",
+            description="Get details for a specific product",
+            parameters={
+                "product_id": {
+                    "type": "string",
+                    "description": "Product ID"
+                }
+            },
+            handler=self.details_handler
+        )
+
+    def search_handler(self, args, raw_data):
+        query = args.get("query", "")
+        category = args.get("category", "all")
+
+        try:
+            response = requests.get(
+                f"{self.api_url}/search",
+                params={"q": query, "cat": category},
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                timeout=10
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            products = data.get("products", [])
+            if not products:
+                return SwaigFunctionResult(f"No products found for '{query}'")
+
+            result = f"Found {len(products)} products:\n"
+            for p in products[:5]:
+                result += f"- {p['name']} (${p['price']})\n"
+
+            return SwaigFunctionResult(result)
+
+        except Exception as e:
+            self.logger.error(f"Search failed: {e}")
+            return SwaigFunctionResult("Product search is temporarily unavailable")
+
+    def details_handler(self, args, raw_data):
+        product_id = args.get("product_id")
+
+        try:
+            response = requests.get(
+                f"{self.api_url}/products/{product_id}",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                timeout=10
+            )
+            response.raise_for_status()
+            product = response.json()
+
+            return SwaigFunctionResult(
+                f"{product['name']}: {product['description']}. "
+                f"Price: ${product['price']}. In stock: {product['stock']}"
+            )
+
+        except Exception as e:
+            self.logger.error(f"Details lookup failed: {e}")
+            return SwaigFunctionResult("Could not retrieve product details")
+
+    def get_hints(self) -> List[str]:
+        return ["product", "search", "find", "lookup", "catalog"]
+
+    def get_prompt_sections(self) -> List[Dict[str, Any]]:
+        return [
+            {
+                "title": "Product Search",
+                "body": "You can search the product catalog.",
+                "bullets": [
+                    "Use search_products to find products",
+                    "Use get_product_details for specific items"
+                ]
+            }
+        ]
+
+    @classmethod
+    def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
+        schema = super().get_parameter_schema()
+        schema.update({
+            "api_url": {
+                "type": "string",
+                "description": "Product catalog API URL",
+                "required": True
+            },
+            "api_key": {
+                "type": "string",
+                "description": "API authentication key",
+                "required": True,
+                "hidden": True
+            }
+        })
+        return schema
+```
+
+### Using Custom Skills
+
+Register the skill directory:
+
+```python
+from signalwire_agents.skills.registry import skill_registry
+
+## Add your skills directory
+skill_registry.add_skill_directory("/path/to/my_skills")
+
+## Now use in agent
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.add_skill("product_search", {
+            "api_url": "https://api.mystore.com",
+            "api_key": "secret"
+        })
+```
+
+

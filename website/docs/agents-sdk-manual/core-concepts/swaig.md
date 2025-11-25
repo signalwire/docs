@@ -1,0 +1,492 @@
+---
+sidebar_position: 3
+title: "Swaig"
+---
+
+## SWAIG (SignalWire AI Gateway)
+
+> **Summary**: SWAIG is the system that lets the AI call your functions during a conversation. You define functions, SignalWire calls them via webhooks, and your responses guide the AI.
+
+### What is SWAIG?
+
+SWAIG (SignalWire AI Gateway) connects the AI conversation to your backend logic. When the AI decides it needs to perform an action (like looking up an order or checking a balance), it calls a SWAIG function that you've defined.
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SWAIG Function Flow                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  User: "What's my account balance?"                                         │
+│       │                                                                     │
+│       ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    SignalWire AI Engine                             │    │
+│  │  1. Transcribes speech                                              │    │
+│  │  2. Understands intent: "user wants account balance"                │    │
+│  │  3. Decides to call: get_balance(account_id="12345")                │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│       │                                                                     │
+│       │  POST /swaig                                                        │
+│       │  {"function": "get_balance", "argument": {"account_id": "12345"}}   │
+│       ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                      Your Agent                                     │    │
+│  │  def get_balance(self, args, raw_data):                             │    │
+│  │      account_id = args.get("account_id")                            │    │
+│  │      balance = lookup_balance(account_id)                           │    │
+│  │      return SwaigFunctionResult(f"Balance is ${balance}")           │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│       │                                                                     │
+│       │  Response: {"response": "Balance is $150.00"}                       │
+│       ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    SignalWire AI Engine                             │    │
+│  │  Speaks: "Your account balance is one hundred fifty dollars."       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### SWAIG in SWML
+
+When your agent generates SWML, it includes SWAIG function definitions in the `ai` verb:
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://your-agent.com/swaig"
+            },
+            "functions": [
+              {
+                "function": "get_balance",
+                "description": "Get the customer's current account balance",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string",
+                      "description": "The customer's account ID"
+                    }
+                  },
+                  "required": ["account_id"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+### Defining SWAIG Functions
+
+There are three ways to define SWAIG functions in your agent:
+
+#### Method 1: define_tool()
+
+The most explicit way to register a function:
+
+```python
+from signalwire_agents import AgentBase, SwaigFunctionResult
+
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+
+        self.define_tool(
+            name="get_balance",
+            description="Get account balance for a customer",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "account_id": {
+                        "type": "string",
+                        "description": "The account ID to look up"
+                    }
+                },
+                "required": ["account_id"]
+            },
+            handler=self.get_balance
+        )
+
+    def get_balance(self, args, raw_data):
+        account_id = args.get("account_id")
+        # Your business logic here
+        return SwaigFunctionResult(f"Account {account_id} has a balance of $150.00")
+```
+
+#### Method 2: @swaig_function Decorator
+
+A cleaner approach using decorators:
+
+```python
+from signalwire_agents import AgentBase, SwaigFunctionResult, swaig_function
+
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+
+    @swaig_function(
+        description="Get account balance for a customer",
+        parameters={
+            "account_id": {
+                "type": "string",
+                "description": "The account ID to look up"
+            }
+        }
+    )
+    def get_balance(self, args, raw_data):
+        account_id = args.get("account_id")
+        return SwaigFunctionResult(f"Account {account_id} has a balance of $150.00")
+```
+
+#### Method 3: DataMap (Serverless)
+
+For direct API integration without code:
+
+```python
+from signalwire_agents import AgentBase
+
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+
+        self.data_map.add_tool(
+            name="get_balance",
+            description="Get account balance",
+            parameters={
+                "account_id": {
+                    "type": "string",
+                    "description": "The account ID"
+                }
+            },
+            data_map={
+                "webhooks": [
+                    {
+                        "url": "https://api.example.com/accounts/${enc:args.account_id}/balance",
+                        "method": "GET",
+                        "headers": {
+                            "Authorization": "Bearer ${env.API_KEY}"
+                        },
+                        "output": {
+                            "response": "Account balance is $${balance}",
+                            "action": [{"set_global_data": {"balance": "${balance}"}}]
+                        }
+                    }
+                ]
+            }
+        )
+```
+
+### Function Handler Signature
+
+Every SWAIG function handler receives two arguments:
+
+```python
+def my_function(self, args, raw_data):
+    """
+    args: dict - The parsed arguments from the AI
+        Example: {"account_id": "12345", "include_history": True}
+
+    raw_data: dict - The complete request payload from SignalWire
+        Contains metadata, call info, and conversation context
+    """
+    pass
+```
+
+#### The raw_data Payload
+
+The `raw_data` contains rich context about the call:
+
+```python
+def my_function(self, args, raw_data):
+    # Call metadata
+    call_id = raw_data.get("call_id")
+    call_sid = raw_data.get("call_sid")
+
+    # Caller information
+    from_number = raw_data.get("caller_id_num")
+    to_number = raw_data.get("callee_id_num")
+
+    # Global data (shared state)
+    global_data = raw_data.get("global_data", {})
+    customer_name = global_data.get("customer_name")
+
+    # Conversation context
+    meta_data = raw_data.get("meta_data", {})
+
+    return SwaigFunctionResult("Processed")
+```
+
+### SwaigFunctionResult
+
+Always return a `SwaigFunctionResult` from your handlers:
+
+```python
+from signalwire_agents import SwaigFunctionResult
+
+
+def simple_response(self, args, raw_data):
+    # Simple text response - AI will speak this
+    return SwaigFunctionResult("Your order has been placed successfully.")
+
+
+def response_with_actions(self, args, raw_data):
+    result = SwaigFunctionResult("Transferring you now.")
+
+    # Add actions to control call behavior
+    result.add_action("transfer", True)
+    result.add_action("swml", {
+        "version": "1.0.0",
+        "sections": {
+            "main": [
+                {"connect": {"to": "+15551234567", "from": "+15559876543"}}
+            ]
+        }
+    })
+
+    return result
+
+
+def response_with_data(self, args, raw_data):
+    result = SwaigFunctionResult("I've saved your preferences.")
+
+    # Store data for later functions
+    result.add_action("set_global_data", {
+        "user_preference": "email",
+        "confirmed": True
+    })
+
+    return result
+```
+
+### Common Actions
+
+| Action | Purpose | Example |
+|--------|---------|---------|
+| `set_global_data` | Store data for later use | `{"key": "value"}` |
+| `transfer` | End AI, prepare for transfer | `True` |
+| `swml` | Execute SWML after AI ends | `{"version": "1.0.0", ...}` |
+| `stop` | End the AI conversation | `True` |
+| `toggle_functions` | Enable/disable functions | `[{"active": false, "function": "fn_name"}]` |
+| `say` | Speak text immediately | `"Please hold..."` |
+| `play_file` | Play audio file | `"https://example.com/hold_music.mp3"` |
+
+### SWAIG Request Flow
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        SWAIG Request Processing                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. SignalWire sends POST to /swaig                                         │
+│       │                                                                     │
+│       ▼                                                                     │
+│  2. Agent validates authentication (Basic Auth)                             │
+│       │                                                                     │
+│       ▼                                                                     │
+│  3. Agent validates function-specific token (if configured)                 │
+│       │                                                                     │
+│       ▼                                                                     │
+│  4. Agent looks up function in ToolRegistry                                 │
+│       │                                                                     │
+│       ├───► Function found ───► Execute handler                             │
+│       │                              │                                      │
+│       │                              ▼                                      │
+│       │                         Return SwaigFunctionResult                  │
+│       │                              │                                      │
+│       │                              ▼                                      │
+│       │                         Format JSON response                        │
+│       │                                                                     │
+│       └───► Function not found ───► Return error response                   │
+│                                                                             │
+│  5. Response sent to SignalWire                                             │
+│       │                                                                     │
+│       ▼                                                                     │
+│  6. AI incorporates response into conversation                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### SWAIG Request Format
+
+SignalWire sends a POST request with this structure:
+
+```json
+{
+  "action": "swaig_action",
+  "function": "get_balance",
+  "argument": {
+    "parsed": [
+      {
+        "account_id": "12345"
+      }
+    ],
+    "raw": "{\"account_id\": \"12345\"}"
+  },
+  "call_id": "uuid-here",
+  "call_sid": "call-sid-here",
+  "caller_id_num": "+15551234567",
+  "callee_id_num": "+15559876543",
+  "global_data": {
+    "customer_name": "John Doe"
+  },
+  "meta_data": {},
+  "ai_session_id": "session-uuid"
+}
+```
+
+### SWAIG Response Format
+
+Your agent responds with:
+
+```json
+{
+  "response": "The account balance is $150.00",
+  "action": [
+    {
+      "set_global_data": {
+        "last_balance_check": "2024-01-15T10:30:00Z"
+      }
+    }
+  ]
+}
+```
+
+Or for a transfer:
+
+```json
+{
+  "response": "Transferring you to a specialist now.",
+  "action": [
+    {"transfer": true},
+    {
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {"connect": {"to": "+15551234567", "from": "+15559876543"}}
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### Function Parameters (JSON Schema)
+
+SWAIG functions use JSON Schema for parameter definitions:
+
+```python
+self.define_tool(
+    name="search_orders",
+    description="Search customer orders",
+    parameters={
+        "type": "object",
+        "properties": {
+            "customer_id": {
+                "type": "string",
+                "description": "Customer ID to search for"
+            },
+            "status": {
+                "type": "string",
+                "enum": ["pending", "shipped", "delivered", "cancelled"],
+                "description": "Filter by order status"
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Maximum number of results",
+                "default": 10
+            },
+            "include_details": {
+                "type": "boolean",
+                "description": "Include full order details",
+                "default": False
+            }
+        },
+        "required": ["customer_id"]
+    },
+    handler=self.search_orders
+)
+```
+
+### Webhook Security
+
+SWAIG endpoints support multiple security layers:
+
+1. **Basic Authentication**: HTTP Basic Auth on all requests
+2. **Function Tokens**: Per-function security tokens
+3. **HTTPS**: TLS encryption in transit
+
+```python
+## Function-specific token security
+self.define_tool(
+    name="sensitive_action",
+    description="Perform a sensitive action",
+    parameters={...},
+    handler=self.sensitive_action,
+    secure=True  # Enables per-function token validation
+)
+```
+
+### Testing SWAIG Functions
+
+Use `swaig-test` to test functions locally:
+
+```bash
+## List all registered functions
+swaig-test my_agent.py --list-tools
+
+## Execute a function with arguments
+swaig-test my_agent.py --exec get_balance --account_id 12345
+
+## View the SWAIG configuration in SWML
+swaig-test my_agent.py --dump-swml | grep -A 50 '"SWAIG"'
+```
+
+### Best Practices
+
+1. **Keep functions focused**: One function, one purpose
+2. **Write clear descriptions**: Help the AI understand when to use each function
+3. **Validate inputs**: Check for required arguments
+4. **Handle errors gracefully**: Return helpful error messages
+5. **Use global_data**: Share state between function calls
+6. **Log for debugging**: Track function calls and responses
+
+```python
+def get_balance(self, args, raw_data):
+    account_id = args.get("account_id")
+
+    if not account_id:
+        return SwaigFunctionResult(
+            "I need an account ID to look up the balance. "
+            "Could you provide your account number?"
+        )
+
+    try:
+        balance = self.lookup_balance(account_id)
+        return SwaigFunctionResult(f"Your current balance is ${balance:.2f}")
+    except AccountNotFoundError:
+        return SwaigFunctionResult(
+            "I couldn't find an account with that ID. "
+            "Could you verify the account number?"
+        )
+```
+
+### Next Steps
+
+Now that you understand how SWAIG connects AI to your code, let's trace the complete lifecycle of a request through the system.
+
+

@@ -1,0 +1,343 @@
+---
+sidebar_position: 2
+title: "Static Vs Dynamic"
+---
+
+## Static vs Dynamic Agents
+
+> **Summary**: Choose between static agents (fixed configuration) and dynamic agents (runtime customization) based on whether you need per-call personalization.
+
+### Understanding the Difference
+
+| Aspect | Static Agent | Dynamic Agent |
+|--------|--------------|---------------|
+| **Configuration** | Set once at startup | Per-request based on call data |
+| **Behavior** | Same for all callers | Different for different callers |
+
+**Use Static When:**
+- Same prompt for everyone
+- Generic assistant
+- Simple IVR
+- FAQ bot
+
+**Use Dynamic When:**
+- Personalized greetings
+- Caller-specific data
+- Account-based routing
+- Multi-tenant applications
+
+### Static Agents
+
+Static agents have fixed configuration determined at instantiation time.
+
+#### Example: Static Customer Service Agent
+
+```python
+from signalwire_agents import AgentBase, SwaigFunctionResult
+
+
+class StaticSupportAgent(AgentBase):
+    """Same behavior for all callers."""
+
+    def __init__(self):
+        super().__init__(name="static-support")
+
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You are a customer service agent for Acme Corp. "
+            "Help callers with general inquiries about our products."
+        )
+
+        self.prompt_add_section(
+            "Guidelines",
+            bullets=[
+                "Be helpful and professional",
+                "Answer questions about products",
+                "Transfer complex issues to support"
+            ]
+        )
+
+        self.define_tool(
+            name="get_store_hours",
+            description="Get store hours",
+            parameters={},
+            handler=self.get_store_hours
+        )
+
+    def get_store_hours(self, args, raw_data):
+        return SwaigFunctionResult(
+            "We're open Monday through Friday, 9 AM to 5 PM."
+        )
+
+
+if __name__ == "__main__":
+    agent = StaticSupportAgent()
+    agent.run()
+```
+
+### Dynamic Agents
+
+Dynamic agents customize their behavior based on the incoming request using the `on_swml_request` method.
+
+#### The on_swml_request Method
+
+```python
+def on_swml_request(self, request_data: dict) -> None:
+    """
+    Called before SWML is generated for each request.
+
+    Args:
+        request_data: Contains call information:
+            - call_id: Unique call identifier
+            - caller_id_num: Caller's phone number
+            - caller_id_name: Caller's name (if available)
+            - called_id_num: Number that was called
+            - direction: "inbound" or "outbound"
+            - And more...
+    """
+    pass
+```
+
+#### Example: Dynamic Personalized Agent
+
+```python
+from signalwire_agents import AgentBase, SwaigFunctionResult
+
+
+class DynamicPersonalizedAgent(AgentBase):
+    """Customizes greeting based on caller."""
+
+    # Simulated customer database
+    CUSTOMERS = {
+        "+15551234567": {"name": "John Smith", "tier": "gold", "account": "A001"},
+        "+15559876543": {"name": "Jane Doe", "tier": "platinum", "account": "A002"},
+    }
+
+    def __init__(self):
+        super().__init__(name="dynamic-agent")
+
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Base configuration
+        self.set_params({
+            "end_of_speech_timeout": 500,
+            "attention_timeout": 15000
+        })
+
+        # Functions available to all callers
+        self.define_tool(
+            name="get_account_status",
+            description="Get the caller's account status",
+            parameters={},
+            handler=self.get_account_status
+        )
+
+        # Store caller info for function access
+        self._current_caller = None
+
+    def on_swml_request(self, request_data: dict) -> None:
+        """Customize behavior based on caller."""
+        caller_num = request_data.get("caller_id_num", "")
+
+        # Look up caller in database
+        customer = self.CUSTOMERS.get(caller_num)
+
+        if customer:
+            # Known customer - personalized experience
+            self._current_caller = customer
+
+            self.prompt_add_section(
+                "Role",
+                f"You are a premium support agent for Acme Corp. "
+                f"You are speaking with {customer['name']}, a {customer['tier']} member."
+            )
+
+            self.prompt_add_section(
+                "Context",
+                f"Customer account: {customer['account']}\n"
+                f"Membership tier: {customer['tier'].upper()}"
+            )
+
+            if customer["tier"] == "platinum":
+                self.prompt_add_section(
+                    "Special Treatment",
+                    "This is a platinum customer. Prioritize their requests and "
+                    "offer expedited service on all issues."
+                )
+        else:
+            # Unknown caller - generic experience
+            self._current_caller = None
+
+            self.prompt_add_section(
+                "Role",
+                "You are a customer service agent for Acme Corp. "
+                "Help the caller with their inquiry and offer to create an account."
+            )
+
+    def get_account_status(self, args, raw_data):
+        if self._current_caller:
+            return SwaigFunctionResult(
+                f"Account {self._current_caller['account']} is active. "
+                f"Tier: {self._current_caller['tier'].upper()}"
+            )
+        return SwaigFunctionResult(
+            "No account found. Would you like to create one?"
+        )
+
+
+if __name__ == "__main__":
+    agent = DynamicPersonalizedAgent()
+    agent.run()
+```
+
+### Request Data Fields
+
+The `request_data` dictionary contains call information:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `call_id` | Unique call identifier | `"a1b2c3d4-..."` |
+| `caller_id_num` | Caller's phone number | `"+15551234567"` |
+| `caller_id_name` | Caller's name | `"John Smith"` |
+| `called_id_num` | Number that was called | `"+15559876543"` |
+| `direction` | Call direction | `"inbound"` |
+
+### Dynamic Function Registration
+
+You can also register functions dynamically based on the caller:
+
+```python
+class DynamicFunctionsAgent(AgentBase):
+    """Different functions for different callers."""
+
+    ADMIN_NUMBERS = ["+15551111111", "+15552222222"]
+
+    def __init__(self):
+        super().__init__(name="dynamic-functions")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Base functions for everyone
+        self.define_tool(
+            name="get_info",
+            description="Get general information",
+            parameters={},
+            handler=self.get_info
+        )
+
+    def on_swml_request(self, request_data: dict) -> None:
+        caller_num = request_data.get("caller_id_num", "")
+
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+
+        # Add admin functions only for admin callers
+        if caller_num in self.ADMIN_NUMBERS:
+            self.prompt_add_section(
+                "Admin Access",
+                "This caller has administrator privileges. "
+                "They can access system administration functions."
+            )
+
+            self.define_tool(
+                name="admin_reset",
+                description="Reset system configuration (admin only)",
+                parameters={},
+                handler=self.admin_reset
+            )
+
+            self.define_tool(
+                name="admin_report",
+                description="Generate system report (admin only)",
+                parameters={},
+                handler=self.admin_report
+            )
+
+    def get_info(self, args, raw_data):
+        return SwaigFunctionResult("General information...")
+
+    def admin_reset(self, args, raw_data):
+        return SwaigFunctionResult("System reset initiated.")
+
+    def admin_report(self, args, raw_data):
+        return SwaigFunctionResult("Report generated: All systems operational.")
+```
+
+### Multi-Tenant Applications
+
+Dynamic agents are ideal for multi-tenant scenarios:
+
+```python
+class MultiTenantAgent(AgentBase):
+    """Different branding per tenant."""
+
+    TENANTS = {
+        "+15551111111": {
+            "company": "Acme Corp",
+            "voice": "rime.spore",
+            "greeting": "Welcome to Acme Corp support!"
+        },
+        "+15552222222": {
+            "company": "Beta Industries",
+            "voice": "rime.marsh",
+            "greeting": "Thank you for calling Beta Industries!"
+        }
+    }
+
+    def __init__(self):
+        super().__init__(name="multi-tenant")
+
+    def on_swml_request(self, request_data: dict) -> None:
+        called_num = request_data.get("called_id_num", "")
+
+        tenant = self.TENANTS.get(called_num, {
+            "company": "Default Company",
+            "voice": "rime.spore",
+            "greeting": "Hello!"
+        })
+
+        # Configure for this tenant
+        self.add_language("English", "en-US", tenant["voice"])
+
+        self.prompt_add_section(
+            "Role",
+            f"You are a customer service agent for {tenant['company']}. "
+            f"Start by saying: {tenant['greeting']}"
+        )
+```
+
+### Comparison Summary
+
+| Aspect | Static | Dynamic |
+|--------|--------|---------|
+| **Configuration** | Once at startup | Per-request |
+| **Performance** | Slightly faster | Minimal overhead |
+| **Use Case** | Generic assistants | Personalized experiences |
+| **Complexity** | Simpler | More complex |
+| **Testing** | Easier | Requires more scenarios |
+| **Method** | `__init__` only | `on_swml_request` |
+
+### Best Practices
+
+1. **Start static, go dynamic when needed** - Don't over-engineer
+2. **Cache expensive lookups** - Database calls in `on_swml_request` add latency
+3. **Clear prompts between calls** - Use `self.pom.clear()` if reusing sections
+4. **Log caller info** - Helps with debugging dynamic behavior
+5. **Test multiple scenarios** - Each caller path needs testing
+
+```python
+def on_swml_request(self, request_data: dict) -> None:
+    # Clear previous dynamic configuration
+    self.pom.clear()
+
+    # Log for debugging
+    self.log.info("request_received",
+        caller=request_data.get("caller_id_num"),
+        called=request_data.get("called_id_num")
+    )
+
+    # Configure based on request
+    self._configure_for_caller(request_data)
+```
+
+

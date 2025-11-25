@@ -1,0 +1,181 @@
+---
+sidebar_position: 5
+title: "Concierge"
+---
+
+## Concierge
+
+> **Summary**: ConciergeAgent provides venue information, answers questions about amenities and services, helps with bookings, and gives directions.
+
+### Basic Usage
+
+```python
+from signalwire_agents.prefabs import ConciergeAgent
+
+agent = ConciergeAgent(
+    venue_name="Grand Hotel",
+    services=["room service", "spa bookings", "restaurant reservations", "tours"],
+    amenities={
+        "pool": {"hours": "7 AM - 10 PM", "location": "2nd Floor"},
+        "gym": {"hours": "24 hours", "location": "3rd Floor"},
+        "spa": {"hours": "9 AM - 8 PM", "location": "4th Floor"}
+    }
+)
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Amenity Format
+
+```python
+amenities = {
+    "amenity_name": {
+        "hours": "Operating hours",
+        "location": "Where to find it",
+        "description": "Optional description",
+        # ... any other key-value pairs
+    }
+}
+```
+
+### Constructor Parameters
+
+```python
+ConciergeAgent(
+    venue_name="...",                  # Name of venue (required)
+    services=[...],                    # List of services offered (required)
+    amenities={...},                   # Dict of amenities with details (required)
+    hours_of_operation=None,           # Dict of operating hours
+    special_instructions=None,         # List of special instructions
+    welcome_message=None,              # Custom welcome message
+    name="concierge",                  # Agent name
+    route="/concierge",                # HTTP route
+    **kwargs                           # Additional AgentBase arguments
+)
+```
+
+### Built-in Functions
+
+ConciergeAgent provides these SWAIG functions automatically:
+
+| Function | Description |
+|----------|-------------|
+| `check_availability` | Check service availability for date/time |
+| `get_directions` | Get directions to an amenity or location |
+
+### Concierge Flow
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     Concierge Flow                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Guest: "What time does the pool close?"                                    │
+│      │                                                                      │
+│      ▼                                                                      │
+│  AI looks up pool in amenities                                              │
+│      │                                                                      │
+│      ▼                                                                      │
+│  Response: "The pool is open until 10 PM and located on the 2nd Floor."     │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                             │
+│  Guest: "Can I book a spa appointment for tomorrow at 2 PM?"                │
+│      │                                                                      │
+│      ▼                                                                      │
+│  AI calls check_availability("spa", "2025-01-16", "14:00")                  │
+│      │                                                                      │
+│      ▼                                                                      │
+│  Response: "Yes, the spa is available tomorrow at 2 PM. Shall I book it?"   │
+│                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                             │
+│  Guest: "How do I get to the gym?"                                          │
+│      │                                                                      │
+│      ▼                                                                      │
+│  AI calls get_directions("gym")                                             │
+│      │                                                                      │
+│      ▼                                                                      │
+│  Response: "The gym is on Level 2, West Wing. From the lobby..."            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Complete Example
+
+```python
+#!/usr/bin/env python3
+## resort_concierge.py - Hotel concierge agent
+from signalwire_agents.prefabs import ConciergeAgent
+
+
+agent = ConciergeAgent(
+    venue_name="The Riverside Resort",
+    services=[
+        "room service",
+        "spa treatments",
+        "restaurant reservations",
+        "golf tee times",
+        "airport shuttle",
+        "event planning"
+    ],
+    amenities={
+        "swimming pool": {
+            "hours": "6 AM - 10 PM",
+            "location": "Ground Floor, East Wing",
+            "description": "Heated indoor/outdoor pool with poolside bar"
+        },
+        "fitness center": {
+            "hours": "24 hours",
+            "location": "Level 2, West Wing",
+            "description": "Full gym with personal trainers available"
+        },
+        "spa": {
+            "hours": "9 AM - 9 PM",
+            "location": "Level 3, East Wing",
+            "description": "Full service spa with massage and facials"
+        },
+        "restaurant": {
+            "hours": "Breakfast 7-10 AM, Lunch 12-3 PM, Dinner 6-10 PM",
+            "location": "Lobby Level",
+            "description": "Fine dining with panoramic river views"
+        }
+    },
+    hours_of_operation={
+        "front desk": "24 hours",
+        "concierge": "7 AM - 11 PM",
+        "valet": "6 AM - 12 AM"
+    },
+    special_instructions=[
+        "Always offer to make reservations when guests ask about restaurants or spa.",
+        "Mention the daily happy hour at the pool bar (4-6 PM)."
+    ],
+    welcome_message="Welcome to The Riverside Resort! How may I assist you today?"
+)
+
+if __name__ == "__main__":
+    agent.add_language("English", "en-US", "rime.spore")
+    agent.run()
+```
+
+### Best Practices
+
+#### Amenities
+- Include hours for all amenities
+- Provide clear location descriptions
+- Add any special requirements or dress codes
+- Keep information up to date
+
+#### Services
+- List all bookable services
+- Connect to real booking system for availability
+- Include service descriptions and pricing if possible
+
+#### Special Instructions
+- Use for promotions and special offers
+- Include upselling opportunities
+- Add seasonal information
+
+
+

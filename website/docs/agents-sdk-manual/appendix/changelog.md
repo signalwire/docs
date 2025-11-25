@@ -1,0 +1,150 @@
+---
+sidebar_position: 6
+title: "Changelog"
+---
+
+## Changelog
+
+> **Summary**: Version history and release notes for the SignalWire Agents SDK.
+
+### Version History
+
+| Version | Date | Type | Highlights |
+|---------|------|------|------------|
+| 1.0.3 | 2025 | Patch | SWML schema updates for queues and context switching |
+| 1.0.2 | 2025 | Patch | Added serve_static_files() to AgentServer |
+| 1.0.1 | 2025 | Patch | Minor fixes to included examples |
+| 1.0.0 | 2025 | Initial | First public release |
+
+### Version 1.0.3
+
+**Patch Release**
+
+Updated SWML schema with new features for queue management and enhanced context switching.
+
+#### Changes
+
+| Area | Change |
+|------|--------|
+| SWML Schema | Added `enter_queue` method for queue management |
+| SWML Schema | Added `change_context` action for SWAIG functions |
+| SWML Schema | Added `change_step` action for SWAIG functions |
+| SWML Schema | Added `transfer_after_bridge` parameter to `connect` method |
+| SWML Schema | Improved documentation for `execute`, `transfer`, and `connect` destinations |
+| SWML Schema | Fixed payment connector URL documentation link |
+
+### Version 1.0.2
+
+**Patch Release**
+
+Added `serve_static_files()` method to `AgentServer` for properly serving static files alongside agents.
+
+#### Changes
+
+| Area | Change |
+|------|--------|
+| AgentServer | Added `serve_static_files(directory, route)` method |
+| AgentServer | Static files now correctly fall back after agent routes |
+| AgentServer | Both `/route` and `/route/` now work for agent endpoints |
+
+### Version 1.0.1
+
+**Patch Release**
+
+Minor fixes to included examples for better compatibility with the `swaig-test` CLI tool.
+
+#### Changes
+
+| Area | Change |
+|------|--------|
+| Examples | Fixed deprecated API calls in `swml_service_routing_example.py` |
+| Examples | Added error handling for remote search in `sigmond_remote_search.py` |
+| Examples | Fixed argparse conflicts with swaig-test in several examples |
+| Examples | Updated examples to return agents from `main()` for testing |
+
+### Version 1.0.0
+
+**Initial Release**
+
+The first public release of the SignalWire Agents SDK, providing a comprehensive Python framework for building AI voice agents.
+
+#### Core Features
+
+| Feature | Description |
+|---------|-------------|
+| AgentBase | Base class for all voice AI agents |
+| SWAIG Functions | Define callable functions with `@agent.tool` |
+| SwaigFunctionResult | Chainable response builder with actions |
+| DataMap | Serverless REST API integration |
+| Skills System | Auto-discovered plugin architecture |
+| Prefabs | Pre-built agent archetypes |
+| Contexts | Multi-step conversation workflows |
+| AgentServer | Host multiple agents on one server |
+
+#### Built-in Skills
+
+- **datetime**: Current time and date information
+- **native_vector_search**: Local document search
+- **web_search**: Web search integration
+- **math**: Mathematical calculations
+- **datasphere**: SignalWire DataSphere integration
+
+#### Prefab Agents
+
+- **InfoGatherer**: Structured information collection
+- **FAQBot**: Knowledge base Q&A
+- **Survey**: Multi-question surveys
+- **Receptionist**: Call routing
+- **Concierge**: Restaurant/service booking
+
+#### CLI Tools
+
+- **swaig-test**: Test agents and functions locally
+- **sw-search**: Build and query search indexes
+
+#### Deployment Support
+
+- Local development server
+- AWS Lambda
+- Google Cloud Functions
+- Azure Functions
+- CGI mode
+- Docker/Kubernetes
+
+### Versioning Policy
+
+The SDK follows [Semantic Versioning](https://semver.org/):
+
+| Version Component | Meaning |
+|-------------------|---------|
+| MAJOR (1.x.x) | Breaking changes requiring code updates |
+| MINOR (x.1.x) | New features, backwards compatible |
+| PATCH (x.x.1) | Bug fixes, backwards compatible |
+
+### Upgrade Notifications
+
+To stay informed about new releases:
+
+1. Watch the GitHub repository
+2. Subscribe to release notifications
+3. Check `pip show signalwire-agents` for current version
+4. Use `pip install --upgrade signalwire-agents` to update
+
+### Reporting Issues
+
+To report bugs or request features:
+
+1. Check existing GitHub issues
+2. Create a new issue with:
+   - SDK version (`pip show signalwire-agents`)
+   - Python version (`python --version`)
+   - Minimal reproduction code
+   - Expected vs actual behavior
+
+### Contributing
+
+Contributions are welcome! See the repository's CONTRIBUTING.md for guidelines.
+
+
+**This concludes the SignalWire Agents SDK documentation.**
+
