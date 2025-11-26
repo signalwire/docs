@@ -6,7 +6,7 @@ export const agentsSdkManualPlugin: PluginConfig = [
   {
     id: "agents-sdk-manual",
     path: "docs/agents-sdk-manual",
-    routeBasePath: "sdks/agents-sdk-manual",
+    routeBasePath: "sdks/agents-sdk",
     sidebarPath: require.resolve("../sidebarsConfig/agents-sdk-manual/index.ts"),
     editUrl: "https://github.com/signalwire/docs/edit/main/website",
     editCurrentVersion: true,
