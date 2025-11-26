@@ -22,8 +22,8 @@ const config: NonNullable<ThemeConfig["typesense"]> = {
     nodes: [
       {
         host: process.env.TYPESENSE_HOST ?? "example.typesense.com",
-        protocol: "https",
-        port: Number(process.env.TYPESENSE_EXPORTS) ?? 8108,
+        protocol: (process.env.TYPESENSE_PROTOCOL as "http" | "https") ?? "https",
+        port: Number(process.env.TYPESENSE_PORT) ?? 8108,
       },
     ],
     apiKey: process.env.TYPESENSE_API_SEARCH_KEY ?? "placeholder",
