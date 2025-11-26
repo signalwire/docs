@@ -26,13 +26,27 @@ SWML uses the Google V8 JavaScript engine (version 6 and later) to evaluate expr
 version: 1.0.0
 sections:
   main:
+    - prompt:
+        play: 'say: Please enter your order quantity'
+        speech_hints:
+          - one
+          - two
+          - three
     - set:
-        # Simple variable reference (both syntaxes work)
-        number: '${call.from}'
-        # Expression with method call
-        area_code: '%{call.from.substring(0, 3)}'
-        # Expression with calculation
-        total: '${params.price * params.quantity}'
+        # Set the prompt value
+        quantity: '${prompt_value}'
+        # Set the unit price
+        unit_price: 5
+        # Extract area code from caller
+        area_code: '${call.from.substring(0, 3)}'
+        # Calculate total with tax
+        subtotal: '${vars.unit_price * parseInt(vars.quantity)}'
+        tax: '${subtotal * 0.08}'
+        total: '${subtotal + tax}'
+        # Determine shipping message
+        shipping_msg: '${total > 50 ? "with free shipping" : "plus shipping"}'
+    - play:
+        url: 'say: Your total is ${total.toFixed(2)} dollars ${shipping_msg}'
 ```
 
 Expressions are evaluated at runtime and replaced with their computed values.
@@ -63,7 +77,7 @@ The question of when to use expressions versus server-side logic depends largely
 ### Serverless (dashboard-hosted) SWML
 
 When hosting SWML directly in the SignalWire Dashboard, expressions become your primary tool for dynamic behavior.
-You can use them to transform call data like extracting area codes with `${call.from.substring(0, 3)}`, perform calculations such as `${params.price * params.quantity}`, or make simple decisions with ternary operators.
+You can use them to transform call data like extracting area codes with `${call.from.substring(0, 3)}`, perform calculations such as `${vars.unit_price * parseInt(vars.quantity)}`, or make simple decisions with ternary operators.
 
 ```yaml andJson
 version: 1.0.0
@@ -76,12 +90,14 @@ sections:
           - two
           - three
     - set:
+        # Set the prompt value
+        quantity: '${prompt_value}'
         # Set the unit price
         unit_price: 5
         # Extract area code from caller
         area_code: '${call.from.substring(0, 3)}'
         # Calculate total with tax
-        subtotal: '${vars.unit_price * parseInt(prompt_value)}'
+        subtotal: '${vars.unit_price * parseInt(vars.quantity)}'
         tax: '${subtotal * 0.08}'
         total: '${subtotal + tax}'
         # Determine shipping message
@@ -151,12 +167,16 @@ version: 1.0.0
 sections:
   main:
     - set:
+        first_name: 'John'
+        last_name: 'Doe'
         # Extract part of a string
         area_code: '${call.from.substring(0, 3)}'
         # Change case
         uppercase: '${call.type.toUpperCase()}'
         # Combine strings
-        full_name: '${user.first_name + " " + user.last_name}'
+        full_name: '${vars.first_name + " " + vars.last_name}'
+    - play:
+        url: 'say: Hello ${full_name}. Your area code is ${area_code}. Call type: ${uppercase}'
 ```
 
 Common methods: `substring()`, `toUpperCase()`, `toLowerCase()`, `trim()`, `replace()`, `split()`, `join()`
@@ -189,12 +209,14 @@ version: 1.0.0
 sections:
   main:
     - set:
-        # Choose value based on condition
+        # Conditional greeting based on call direction
         greeting: '${call.direction == "inbound" ? "Welcome" : "Calling"}'
-        # Provide default for undefined/null
-        display_name: '${user.name != null ? user.name : "Guest"}'
-        # Complex condition
+        # Fallback to "unknown" if call.type is null
+        call_label: '${call.type != null ? call.type : "unknown"}'
+        # Compound condition checking both type and direction
         status: '${call.type == "phone" && call.direction == "inbound" ? "valid" : "invalid"}'
+    - play:
+        url: 'say: ${greeting}! Your call type is ${call_label} and status is ${status}' 
 ```
 
 Use comparisons: `==`, `!=`, `>`, `<`, `>=`, `<=` and logical operators: `&&`, `||`
@@ -204,18 +226,25 @@ Use comparisons: `==`, `!=`, `>`, `<`, `>=`, `<=` and logical operators: `&&`, `
 Work with arrays using JavaScript array methods:
 
 ```yaml andJson
-version: 1.0.0
-sections:
-  main:
-    - set:
-        # Get array length
-        count: '${items.length}'
-        # Join array into string
-        list: '${items.join(", ")}'
-        # Check if array contains item
-        has_item: '${items.includes("apple")}'
-        # Get last item
-        last: '${items[items.length - 1]}'
+  version: 1.0.0
+  sections:
+    main:
+      - set:
+          # Define the array first
+          items:
+            - apple
+            - banana
+      - set:
+          # Get array length
+          count: '${(items.length)}'
+          # Join array into string
+          list: '${vars.items.join(", ")}'
+          # Check if array contains item
+          has_item: '${vars.items.includes("apple")}'
+          # Get last item
+          last: '${vars.items[vars.items.length - 1]}'
+      - play:
+          url: 'say: You have ${count} items: ${list}. Last item is ${last}.'
 ```
 
 Common methods: `.length`, `.join()`, `.includes()`, bracket notation for access
@@ -228,13 +257,13 @@ Convert between strings, numbers, and booleans:
 version: 1.0.0
 sections:
   main:
-    - set:
-        # String to number
-        quantity: '${parseInt(prompt_value)}'
-        # Number to string
-        text: '${count.toString()}'
-        # To boolean
-        is_active: '${Boolean(value)}'
+  - set:
+      quantity: ${parseInt("42")}
+      count: 100
+      text: "${count.toString()}"
+      is_active: "${Boolean(1)}"
+  - play:
+      url: 'say: The quantity is ${quantity}. The count variable is ${text}. Active is set to ${is_active}'
 ```
 
 Use: `parseInt()`, `parseFloat()`, `.toString()`, `Boolean()`
@@ -265,6 +294,22 @@ Loops like `for` and `while` aren't available, but you can use array methods for
 # Array methods work well
 - set:
     sum: '${[1,2,3,4,5].reduce((a,b) => a+b, 0)}'
+```
+
+Simple property access like `.length`, `.name`, `.value`, etc. on arrays or strings require parentheses to evaluate correctly.
+Without them, the expression is treated as a variable lookup rather than JavaScript.
+Method Calls with parentheses work directly:
+
+```yaml
+  # Property access needs parentheses
+  - set:
+      count: '${(items.length)}'
+      name_length: '${(user.name.length)}'
+
+  # Method calls work without extra syntax
+  - set:
+      list: '${items.join(", ")}'
+      upper: '${name.toUpperCase()}'
 ```
 
 Expressions execute synchronously, so you can't use `async`, `await`, or make API calls directly. For operations that need external data, use the [`request`](/swml/methods/request) method to fetch data first, then transform the results with expressions.
