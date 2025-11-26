@@ -1,0 +1,583 @@
+---
+sidebar_position: 1
+title: "By Feature"
+slug: /examples/by-feature
+---
+
+# Examples
+
+> **Summary**: Practical examples organized by feature and complexity to help you build voice AI agents.
+
+## How to Use This Chapter
+
+This chapter provides examples organized two ways:
+
+1. **By Feature** - Find examples demonstrating specific SDK features
+2. **By Complexity** - Start simple and progressively add features
+
+## Example Categories
+
+### By Feature
+- Basic agent setup
+- SWAIG functions
+- DataMap integration
+- Skills usage
+- Call transfers
+- Context workflows
+- Multi-agent servers
+
+### By Complexity
+- **Beginner** - Simple agents with basic prompts
+- **Intermediate** - Functions, skills, and state management
+- **Advanced** - Multi-context workflows, multi-agent systems
+
+## Quick Start Examples
+
+### Minimal Agent
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="hello", route="/hello")
+agent.prompt_add_section("Role", "You are a friendly assistant.")
+agent.add_language("English", "en-US", "rime.spore")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Agent with Function
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="helper", route="/helper")
+agent.prompt_add_section("Role", "You help users look up information.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Look up information by ID")
+def lookup(id: str) -> SwaigFunctionResult:
+    # Your lookup logic here
+    return SwaigFunctionResult(f"Found record {id}")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Agent with Transfer
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="receptionist", route="/reception")
+agent.prompt_add_section("Role", "You are a receptionist. Help callers reach the right department.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Transfer caller to support")
+def transfer_to_support() -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Transferring you to support now.")
+        .connect("+15551234567", final=True)
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Running Examples
+
+```bash
+# Run directly
+python agent.py
+
+# Test with swaig-test
+swaig-test agent.py --dump-swml
+swaig-test agent.py --list-tools
+swaig-test agent.py --exec lookup --id "12345"
+```
+
+## Example Structure
+
+Most examples follow this pattern:
+
+```python
+# 1. Imports
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+# 2. Create Agent
+agent = AgentBase(name="...", route="/...")
+
+# 3. Configure
+agent.prompt_add_section(...)
+agent.add_language(...)
+agent.add_skill(...)
+
+# 4. Define Functions
+@agent.tool(...)
+def my_function(...) -> SwaigFunctionResult:
+    ...
+
+# 5. Run
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Chapter Contents
+
+| Section | Description |
+|---------|-------------|
+| [By Feature](by-feature) | Examples organized by SDK feature |
+| [By Complexity](by-complexity) | Examples from beginner to advanced |
+
+## Basic Agent Setup
+
+### Minimal Agent
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="basic", route="/basic")
+agent.prompt_add_section("Role", "You are a helpful assistant.")
+agent.add_language("English", "en-US", "rime.spore")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Class-Based Agent
+
+```python
+from signalwire_agents import AgentBase
+
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent", route="/my-agent")
+        self.prompt_add_section("Role", "You are a customer service agent.")
+        self.prompt_add_section("Guidelines", "Be helpful and professional.")
+        self.add_language("English", "en-US", "rime.spore")
+
+
+if __name__ == "__main__":
+    agent = MyAgent()
+    agent.run()
+```
+
+## SWAIG Functions
+
+### Simple Function
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="functions", route="/functions")
+agent.prompt_add_section("Role", "You help users with account lookups.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Look up account information")
+def get_account(account_id: str) -> SwaigFunctionResult:
+    # Simulated lookup
+    return SwaigFunctionResult(f"Account {account_id}: Active, balance $150.00")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Function with Multiple Parameters
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="booking", route="/booking")
+agent.prompt_add_section("Role", "You help users book appointments.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Book an appointment")
+def book_appointment(
+    name: str,
+    date: str,
+    time: str = "10:00 AM",
+    service: str = "consultation"
+) -> SwaigFunctionResult:
+    return SwaigFunctionResult(
+        f"Booked {service} for {name} on {date} at {time}. "
+        "You will receive a confirmation."
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Secure Function
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="secure", route="/secure")
+agent.prompt_add_section("Role", "You handle sensitive account operations.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(
+    description="Update account password",
+    secure=True,
+    fillers=["Processing your request securely..."]
+)
+def update_password(
+    account_id: str,
+    new_password: str
+) -> SwaigFunctionResult:
+    # Password update logic here
+    return SwaigFunctionResult("Password has been updated successfully.")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## DataMap Integration
+
+### Weather Lookup
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.data_map import DataMap
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="weather", route="/weather")
+agent.prompt_add_section("Role", "You provide weather information.")
+agent.add_language("English", "en-US", "rime.spore")
+
+weather_map = (
+    DataMap("get_weather")
+    .purpose("Get current weather for a city")
+    .parameter("city", "string", "City name", required=True)
+    .webhook("GET", "https://api.weather.com/current?q=${enc:args.city}&key=YOUR_API_KEY")
+    .output(SwaigFunctionResult(
+        "Current weather in ${args.city}: ${response.condition}, ${response.temp} degrees F"
+    ))
+    .fallback_output(SwaigFunctionResult("Weather service unavailable."))
+)
+
+agent.register_swaig_function(weather_map.to_swaig_function())
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Expression-Based Control
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.data_map import DataMap
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="control", route="/control")
+agent.prompt_add_section("Role", "You control media playback.")
+agent.add_language("English", "en-US", "rime.spore")
+
+playback_map = (
+    DataMap("media_control")
+    .purpose("Control media playback")
+    .parameter("command", "string", "Command: play, pause, stop", required=True)
+    .expression("${args.command}", r"play|start",
+        SwaigFunctionResult("Starting playback.")
+        .play_background_file("https://example.com/music.mp3"))
+    .expression("${args.command}", r"pause|stop",
+        SwaigFunctionResult("Stopping playback.")
+        .stop_background_file())
+)
+
+agent.register_swaig_function(playback_map.to_swaig_function())
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Call Transfers
+
+### Simple Transfer
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="transfer", route="/transfer")
+agent.prompt_add_section("Role", "You route callers to the right department.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Transfer to sales department")
+def transfer_sales() -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Connecting you to our sales team.")
+        .connect("+15551234567", final=True)
+    )
+
+@agent.tool(description="Transfer to support department")
+def transfer_support() -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Transferring you to technical support.")
+        .connect("+15559876543", final=True)
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Temporary Transfer
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="consult", route="/consult")
+agent.prompt_add_section("Role", "You help with consultations.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Connect to specialist for consultation")
+def consult_specialist() -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Connecting you to a specialist. I'll be here when you're done.")
+        .connect("+15551234567", final=False)  # Returns to agent after
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Skills Usage
+
+### DateTime Skill
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="datetime", route="/datetime")
+agent.prompt_add_section("Role", "You provide time and date information.")
+agent.add_language("English", "en-US", "rime.spore")
+agent.add_skill("datetime")
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Search Skill
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="search", route="/search")
+agent.prompt_add_section("Role", "You search documentation for answers.")
+agent.add_language("English", "en-US", "rime.spore")
+agent.add_skill("native_vector_search", {
+    "index_path": "./docs.swsearch",
+    "tool_name": "search_docs",
+    "tool_description": "Search the documentation"
+})
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Global Data
+
+### Setting Initial State
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="state", route="/state")
+agent.prompt_add_section("Role", "You track user preferences.")
+agent.add_language("English", "en-US", "rime.spore")
+agent.set_global_data({
+    "user_tier": "standard",
+    "preferences": {}
+})
+
+@agent.tool(description="Update user preference")
+def set_preference(key: str, value: str) -> SwaigFunctionResult:
+    return SwaigFunctionResult(f"Set {key} to {value}").update_global_data({
+        f"preferences.{key}": value
+    })
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Recording
+
+### Enable Call Recording
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(
+    name="recording",
+    route="/recording",
+    record_call=True,
+    record_format="mp3",
+    record_stereo=True
+)
+agent.prompt_add_section("Role", "You handle recorded conversations.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Start call recording")
+def start_recording() -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Starting recording now.")
+        .record_call(control_id="main", stereo=True, format="mp3")
+    )
+
+@agent.tool(description="Stop call recording")
+def stop_recording() -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Recording stopped.")
+        .stop_record_call(control_id="main")
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## SMS Notifications
+
+### Send Confirmation SMS
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="sms", route="/sms")
+agent.prompt_add_section("Role", "You help with appointments and send confirmations.")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Send appointment confirmation via SMS")
+def send_confirmation(
+    phone: str,
+    date: str,
+    time: str
+) -> SwaigFunctionResult:
+    return (
+        SwaigFunctionResult("Sending confirmation to your phone.")
+        .send_sms(
+            to_number=phone,
+            from_number="+15559876543",
+            body=f"Appointment confirmed for {date} at {time}."
+        )
+    )
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+## Static Files with AgentServer
+
+### Serving Static Files Alongside Agents
+
+```python
+#!/usr/bin/env python3
+# static_files_server.py - Serve static files alongside agents
+#
+# Static files directory layout:
+#   This script expects a "web/" directory in the same folder:
+#
+#   code/11_examples/
+#   ├── static_files_server.py
+#   └── web/
+#       ├── index.html      -> served at /
+#       ├── styles.css      -> served at /styles.css
+#       └── app.js          -> served at /app.js
+#
+# Route priority:
+#   /support/*  -> SupportAgent
+#   /sales/*    -> SalesAgent
+#   /health     -> AgentServer health check
+#   /*          -> Static files (fallback)
+
+from signalwire_agents import AgentBase, AgentServer
+from pathlib import Path
+
+HOST = "0.0.0.0"
+PORT = 3000
+
+
+class SupportAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="support", route="/support")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a support agent.")
+
+
+class SalesAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="sales", route="/sales")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a sales agent.")
+
+
+def create_server():
+    """Create AgentServer with static file mounting."""
+    server = AgentServer(host=HOST, port=PORT)
+    server.register(SupportAgent(), "/support")
+    server.register(SalesAgent(), "/sales")
+
+    # Serve static files using SDK's built-in method
+    web_dir = Path(__file__).parent / "web"
+    if web_dir.exists():
+        server.serve_static_files(str(web_dir))
+
+    return server
+
+
+if __name__ == "__main__":
+    server = create_server()
+    server.run()
+```
+
+## Hints and Pronunciation
+
+### Speech Recognition Hints
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="hints", route="/hints")
+agent.prompt_add_section("Role", "You help with technical products.")
+agent.add_language("English", "en-US", "rime.spore")
+agent.add_hints([
+    "SignalWire",
+    "SWML",
+    "SWAIG",
+    "API",
+    "SDK"
+])
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+### Pronunciation Rules
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="pronounce", route="/pronounce")
+agent.prompt_add_section("Role", "You discuss technical topics.")
+agent.add_language("English", "en-US", "rime.spore")
+agent.add_pronounce([
+    {"replace": "API", "with": "A P I"},
+    {"replace": "SQL", "with": "sequel"},
+    {"replace": "JSON", "with": "jason"}
+])
+
+if __name__ == "__main__":
+    agent.run()
+```
+
+

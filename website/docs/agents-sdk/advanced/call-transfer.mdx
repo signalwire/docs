@@ -1,0 +1,357 @@
+---
+sidebar_position: 4
+title: "Call Transfer"
+slug: /advanced/call-transfer
+---
+
+## Call Transfer
+
+> **Summary**: Transfer calls to other destinations using `connect()` for phone numbers/SIP and `swml_transfer()` for SWML endpoints. Support for both permanent and temporary transfers.
+
+### Transfer Types
+
+#### Permanent Transfer (`final=True`)
+- Call exits the agent completely
+- Caller connected directly to destination
+- Agent conversation ends
+- **Use for:** Handoff to human, transfer to another system
+
+#### Temporary Transfer (`final=False`)
+- Call returns to agent when far end hangs up
+- Agent can continue conversation after transfer
+- **Use for:** Conferencing, brief consultations
+
+### Basic Phone Transfer
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+
+class TransferAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="transfer-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You are a receptionist who can transfer calls to different departments."
+        )
+
+        self.define_tool(
+            name="transfer_to_sales",
+            description="Transfer the caller to the sales department",
+            parameters={"type": "object", "properties": {}},
+            handler=self.transfer_to_sales
+        )
+
+    def transfer_to_sales(self, args, raw_data):
+        return (
+            SwaigFunctionResult("Transferring you to sales now.")
+            .connect("+15551234567", final=True)
+        )
+
+
+if __name__ == "__main__":
+    agent = TransferAgent()
+    agent.run()
+```
+
+### Connect Method Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `destination` | str | required | Phone number, SIP address, or URI |
+| `final` | bool | True | Permanent (True) or temporary (False) |
+| `from_addr` | str | None | Override caller ID for outbound leg |
+
+### Permanent vs Temporary Transfer
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+
+class SmartTransferAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="smart-transfer-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You can transfer calls permanently or temporarily."
+        )
+
+        self._register_functions()
+
+    def _register_functions(self):
+        self.define_tool(
+            name="transfer_permanent",
+            description="Permanently transfer to support (call ends with agent)",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "number": {"type": "string", "description": "Phone number"}
+                },
+                "required": ["number"]
+            },
+            handler=self.transfer_permanent
+        )
+
+        self.define_tool(
+            name="transfer_temporary",
+            description="Temporarily connect to expert, then return to agent",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "number": {"type": "string", "description": "Phone number"}
+                },
+                "required": ["number"]
+            },
+            handler=self.transfer_temporary
+        )
+
+    def transfer_permanent(self, args, raw_data):
+        number = args.get("number")
+        return (
+            SwaigFunctionResult(f"Transferring you now. Goodbye!")
+            .connect(number, final=True)
+        )
+
+    def transfer_temporary(self, args, raw_data):
+        number = args.get("number")
+        return (
+            SwaigFunctionResult("Connecting you briefly. I'll be here when you're done.")
+            .connect(number, final=False)
+        )
+
+
+if __name__ == "__main__":
+    agent = SmartTransferAgent()
+    agent.run()
+```
+
+### SIP Transfer
+
+Transfer to SIP endpoints:
+
+```python
+def transfer_to_sip(self, args, raw_data):
+    return (
+        SwaigFunctionResult("Connecting to internal support")
+        .connect("sip:support@company.com", final=True)
+    )
+```
+
+### Transfer with Caller ID Override
+
+```python
+def transfer_with_custom_callerid(self, args, raw_data):
+    return (
+        SwaigFunctionResult("Connecting you now")
+        .connect(
+            "+15551234567",
+            final=True,
+            from_addr="+15559876543"  # Custom caller ID
+        )
+    )
+```
+
+### SWML Transfer
+
+Transfer to another SWML endpoint (another agent):
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+
+class MultiAgentTransfer(AgentBase):
+    def __init__(self):
+        super().__init__(name="multi-agent-transfer")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section("Role", "You route calls to specialized agents.")
+
+        self.define_tool(
+            name="transfer_to_billing",
+            description="Transfer to the billing specialist agent",
+            parameters={"type": "object", "properties": {}},
+            handler=self.transfer_to_billing
+        )
+
+    def transfer_to_billing(self, args, raw_data):
+        return (
+            SwaigFunctionResult(
+                "I'm transferring you to our billing specialist.",
+                post_process=True  # Speak message before transfer
+            )
+            .swml_transfer(
+                dest="https://agents.example.com/billing",
+                ai_response="How else can I help?",  # Used if final=False
+                final=True
+            )
+        )
+
+
+if __name__ == "__main__":
+    agent = MultiAgentTransfer()
+    agent.run()
+```
+
+### Transfer Flow
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Transfer Flow Diagram                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Permanent Transfer (final=True):                                           │
+│                                                                             │
+│  Caller ──→ Agent ──→ "Transferring..." ──→ Destination                     │
+│                                │                    │                       │
+│                                └── Agent exits ─────┘                       │
+│                                                                             │
+│  Temporary Transfer (final=False):                                          │
+│                                                                             │
+│  Caller ──→ Agent ──→ "Connecting..." ──→ Destination                       │
+│                │                               │                            │
+│                │                               ▼                            │
+│                │                        Destination hangs up                │
+│                │                               │                            │
+│                └───────────── Returns ─────────┘                            │
+│                                    │                                        │
+│                                    ▼                                        │
+│                          Agent continues conversation                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Department Transfer Example
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+
+class ReceptionistAgent(AgentBase):
+    """Receptionist that routes calls to departments"""
+
+    DEPARTMENTS = {
+        "sales": "+15551111111",
+        "support": "+15552222222",
+        "billing": "+15553333333",
+        "hr": "+15554444444"
+    }
+
+    def __init__(self):
+        super().__init__(name="receptionist-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You are the company receptionist. Help callers reach the right department."
+        )
+
+        self.prompt_add_section(
+            "Available Departments",
+            "Sales, Support, Billing, Human Resources (HR)"
+        )
+
+        self.define_tool(
+            name="transfer_to_department",
+            description="Transfer caller to a specific department",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "department": {
+                        "type": "string",
+                        "description": "Department name",
+                        "enum": ["sales", "support", "billing", "hr"]
+                    }
+                },
+                "required": ["department"]
+            },
+            handler=self.transfer_to_department
+        )
+
+    def transfer_to_department(self, args, raw_data):
+        dept = args.get("department", "").lower()
+
+        if dept not in self.DEPARTMENTS:
+            return SwaigFunctionResult(
+                f"I don't recognize the department '{dept}'. "
+                "Available departments are: Sales, Support, Billing, and HR."
+            )
+
+        number = self.DEPARTMENTS[dept]
+        dept_name = dept.upper() if dept == "hr" else dept.capitalize()
+
+        return (
+            SwaigFunctionResult(f"Transferring you to {dept_name} now. Have a great day!")
+            .connect(number, final=True)
+        )
+
+
+if __name__ == "__main__":
+    agent = ReceptionistAgent()
+    agent.run()
+```
+
+### Sending SMS During Transfer
+
+Notify the user via SMS before transfer:
+
+```python
+def transfer_with_sms(self, args, raw_data):
+    caller_number = raw_data.get("caller_id_number")
+
+    return (
+        SwaigFunctionResult("I'm transferring you and sending a confirmation text.")
+        .send_sms(
+            to_number=caller_number,
+            from_number="+15559876543",
+            body="You're being transferred to our support team. Reference #12345"
+        )
+        .connect("+15551234567", final=True)
+    )
+```
+
+### Post-Process Transfer
+
+Use `post_process=True` to have the AI speak before executing the transfer:
+
+```python
+def announced_transfer(self, args, raw_data):
+    return (
+        SwaigFunctionResult(
+            "Please hold while I transfer you to our specialist. "
+            "This should only take a moment.",
+            post_process=True  # AI speaks this before transfer executes
+        )
+        .connect("+15551234567", final=True)
+    )
+```
+
+### Transfer Methods Summary
+
+| Method | Use Case | Destination Types |
+|--------|----------|-------------------|
+| `connect()` | Direct call transfer | Phone numbers, SIP URIs |
+| `swml_transfer()` | Transfer to another agent | SWML endpoint URLs |
+
+### Best Practices
+
+**DO:**
+- Use post_process=True to announce transfers
+- Validate destination numbers before transfer
+- Log transfers for tracking and compliance
+- Use final=False for consultation/return flows
+- Provide clear confirmation to the caller
+
+**DON'T:**
+- Transfer without informing the caller
+- Use hard-coded numbers without validation
+- Forget to handle transfer failures gracefully
+- Use final=True when you need the call to return
+
