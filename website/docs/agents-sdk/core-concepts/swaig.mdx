@@ -213,12 +213,14 @@ The `raw_data` contains rich context about the call:
 ```python
 def my_function(self, args, raw_data):
     # Call metadata
-    call_id = raw_data.get("call_id")
+    # Call information (nested under 'call' key)
+    call_data = raw_data.get("call", {})
+    call_id = call_data.get("call_id") or raw_data.get("call_id")  # Fallback for compatibility
     call_sid = raw_data.get("call_sid")
 
-    # Caller information
-    from_number = raw_data.get("caller_id_num")
-    to_number = raw_data.get("callee_id_num")
+    # Caller information (from nested call object)
+    from_number = call_data.get("from") or call_data.get("from_number")
+    to_number = call_data.get("to") or call_data.get("to_number")
 
     # Global data (shared state)
     global_data = raw_data.get("global_data", {})
@@ -336,10 +338,16 @@ SignalWire sends a POST request with this structure:
     ],
     "raw": "{\"account_id\": \"12345\"}"
   },
+  "call": {
+    "call_id": "uuid-here",
+    "from": "+15551234567",
+    "from_number": "+15551234567",
+    "to": "+15559876543",
+    "to_number": "+15559876543",
+    "direction": "inbound"
+  },
   "call_id": "uuid-here",
   "call_sid": "call-sid-here",
-  "caller_id_num": "+15551234567",
-  "callee_id_num": "+15559876543",
   "global_data": {
     "customer_name": "John Doe"
   },
@@ -347,6 +355,12 @@ SignalWire sends a POST request with this structure:
   "ai_session_id": "session-uuid"
 }
 ```
+
+**Important Note on Request Structure:**
+- Call information (caller/callee numbers, call_id, direction) is **nested under the `call` key**
+- Always use defensive access: `call_data = raw_data.get("call", {})`
+- Some fields may also appear at the top level for backwards compatibility
+- Use the pattern shown in "The raw_data Payload" section above for robust code
 
 ### SWAIG Response Format
 

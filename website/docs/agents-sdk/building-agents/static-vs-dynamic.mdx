@@ -85,18 +85,23 @@ Dynamic agents customize their behavior based on the incoming request using the 
 #### The on_swml_request Method
 
 ```python
-def on_swml_request(self, request_data: dict) -> None:
+def on_swml_request(self, request_data=None, callback_path=None, request=None):
     """
     Called before SWML is generated for each request.
 
     Args:
-        request_data: Contains call information:
-            - call_id: Unique call identifier
-            - caller_id_num: Caller's phone number
-            - caller_id_name: Caller's name (if available)
-            - called_id_num: Number that was called
-            - direction: "inbound" or "outbound"
-            - And more...
+        request_data: Optional dict containing the parsed POST body from SignalWire.
+                     Call information is nested under the 'call' key:
+                     - call["call_id"]: Unique call identifier
+                     - call["from"]: Caller's phone number
+                     - call["from_number"]: Alternative caller number field
+                     - call["to"]: Number that was called
+                     - call["direction"]: "inbound" or "outbound"
+        callback_path: Optional callback path for routing
+        request: Optional FastAPI Request object for accessing query params, headers, etc.
+
+    Returns:
+        Optional dict with modifications to apply (usually None for simple cases)
     """
     pass
 ```
@@ -138,9 +143,11 @@ class DynamicPersonalizedAgent(AgentBase):
         # Store caller info for function access
         self._current_caller = None
 
-    def on_swml_request(self, request_data: dict) -> None:
+    def on_swml_request(self, request_data=None, callback_path=None, request=None):
         """Customize behavior based on caller."""
-        caller_num = request_data.get("caller_id_num", "")
+        # Extract call data (nested under 'call' key in request_data)
+        call_data = (request_data or {}).get("call", {})
+        caller_num = call_data.get("from") or call_data.get("from_number", "")
 
         # Look up caller in database
         customer = self.CUSTOMERS.get(caller_num)
@@ -195,15 +202,24 @@ if __name__ == "__main__":
 
 ### Request Data Fields
 
-The `request_data` dictionary contains call information:
+The `request_data` dictionary is the parsed POST body from SignalWire. Call information is **nested under the `call` key**:
 
 | Field | Description | Example |
 |-------|-------------|---------|
-| `call_id` | Unique call identifier | `"a1b2c3d4-..."` |
-| `caller_id_num` | Caller's phone number | `"+15551234567"` |
-| `caller_id_name` | Caller's name | `"John Smith"` |
-| `called_id_num` | Number that was called | `"+15559876543"` |
-| `direction` | Call direction | `"inbound"` |
+| `call["call_id"]` | Unique call identifier | `"a1b2c3d4-..."` |
+| `call["from"]` | Caller's phone number | `"+15551234567"` |
+| `call["from_number"]` | Alternative caller number field | `"+15551234567"` |
+| `call["to"]` | Number that was called | `"+15559876543"` |
+| `call["direction"]` | Call direction | `"inbound"` |
+
+**Important:** Always use defensive access when working with `request_data`:
+
+```python
+def on_swml_request(self, request_data=None, callback_path=None, request=None):
+    call_data = (request_data or {}).get("call", {})
+    caller_num = call_data.get("from") or call_data.get("from_number", "")
+    call_id = call_data.get("call_id", "")
+```
 
 ### Dynamic Function Registration
 
@@ -227,8 +243,9 @@ class DynamicFunctionsAgent(AgentBase):
             handler=self.get_info
         )
 
-    def on_swml_request(self, request_data: dict) -> None:
-        caller_num = request_data.get("caller_id_num", "")
+    def on_swml_request(self, request_data=None, callback_path=None, request=None):
+        call_data = (request_data or {}).get("call", {})
+        caller_num = call_data.get("from") or call_data.get("from_number", "")
 
         self.prompt_add_section("Role", "You are a helpful assistant.")
 
@@ -288,8 +305,9 @@ class MultiTenantAgent(AgentBase):
     def __init__(self):
         super().__init__(name="multi-tenant")
 
-    def on_swml_request(self, request_data: dict) -> None:
-        called_num = request_data.get("called_id_num", "")
+    def on_swml_request(self, request_data=None, callback_path=None, request=None):
+        call_data = (request_data or {}).get("call", {})
+        called_num = call_data.get("to", "")
 
         tenant = self.TENANTS.get(called_num, {
             "company": "Default Company",
@@ -327,14 +345,15 @@ class MultiTenantAgent(AgentBase):
 5. **Test multiple scenarios** - Each caller path needs testing
 
 ```python
-def on_swml_request(self, request_data: dict) -> None:
+def on_swml_request(self, request_data=None, callback_path=None, request=None):
     # Clear previous dynamic configuration
     self.pom.clear()
 
     # Log for debugging
+    call_data = (request_data or {}).get("call", {})
     self.log.info("request_received",
-        caller=request_data.get("caller_id_num"),
-        called=request_data.get("called_id_num")
+        caller=call_data.get("from"),
+        called=call_data.get("to")
     )
 
     # Configure based on request
