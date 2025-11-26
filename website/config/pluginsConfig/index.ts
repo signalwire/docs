@@ -20,7 +20,7 @@ import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
 import { realtimeSdkPlugin } from "./realtime-sdk-docs";
 import { browserSdkPlugin } from "./browser-sdk-docs";
-import { agentsSdkManualPlugin } from "./agents-sdk-manual-docs";
+import { agentsSdkManualPlugin } from "./agents-sdk-docs";
 // import { signalwireSdkPlugin } from "./signalwire-client-sdk-docs";
 import { ogImagesPlugin } from "../ogImages/index";
 
