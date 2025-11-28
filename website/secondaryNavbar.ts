@@ -114,7 +114,7 @@ export const modalSections: ModalSection[] = [
           {
             label: "Technical Reference",
             link: "/swml/methods",
-            sidebar: "swmlMethodsSidebar",
+            sidebar: "swmlReferenceSidebar",
           },
         ],
       },
