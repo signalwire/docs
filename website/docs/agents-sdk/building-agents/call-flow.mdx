@@ -1,0 +1,189 @@
+---
+sidebar_position: 7
+title: "Call Flow Customization"
+slug: /building-agents/call-flow
+---
+
+## Call Flow Customization
+
+> **Summary**: Customize call flow by adding verbs after the answer but before the AI speaks.
+
+### Understanding Default Call Flow
+
+By default, `AgentBase` automatically answers incoming calls and starts the AI conversation:
+
+```python
+agent = AgentBase(
+    name="my-agent"
+)
+```
+
+This generates SWML like:
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {"answer": {}},
+      {"ai": {...}}
+    ]
+  }
+}
+```
+
+The call is answered immediately, and the AI starts speaking.
+
+### Adding Post-Answer Verbs
+
+You can customize call flow by adding verbs **after** the call is answered but **before** the AI speaks. Common use cases:
+
+| Use Case | Description |
+|----------|-------------|
+| **Welcome Message** | Play an announcement before AI speaks |
+| **Legal Disclaimer** | "This call may be recorded" message |
+| **Queue Position** | Announce wait time or position |
+| **Hold Music** | Play music before connecting to AI |
+| **Pause** | Brief silence before AI greeting |
+
+To add post-answer verbs, override `_render_swml()` and insert verbs between the answer and AI:
+
+```python
+#!/usr/bin/env python3
+import json
+from signalwire_agents import AgentBase
+
+
+class CallFlowAgent(AgentBase):
+    """Agent that plays a welcome message before the AI speaks."""
+
+    def __init__(self):
+        super().__init__(
+            name="call-flow-agent",
+            route="/",
+            host="0.0.0.0",
+            port=3000
+        )
+
+        # Configure the AI
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly customer service representative for Acme Corporation. "
+            "The caller has just heard the welcome message."
+        )
+
+        self.prompt_add_section(
+            "Guidelines",
+            body="Follow these guidelines:",
+            bullets=[
+                "Be professional and courteous",
+                "Listen carefully to the caller's needs",
+                "Provide accurate information",
+                "Offer to escalate if needed"
+            ]
+        )
+
+        # Set AI parameters
+        self.set_params({
+            "end_of_speech_timeout": 1000,
+            "attention_timeout": 10000,
+            "inactivity_timeout": 300000  # 5 minutes
+        })
+
+        # Verbs to insert after answer but before AI
+        self._post_answer_verbs = [
+            {"play": {"url": "say:Thank you for calling Acme Corporation. "
+                            "Your call may be recorded for quality assurance."}},
+            {"sleep": {"time": 500}}  # Brief pause before AI speaks
+        ]
+
+    def _render_swml(self, call_id=None, modifications=None):
+        """Override to insert post-answer verbs before the AI."""
+        # Get standard SWML from parent
+        result = super()._render_swml(call_id, modifications)
+        swml = json.loads(result)
+
+        # Find answer verb index and insert our verbs after it
+        main = swml["sections"]["main"]
+        answer_idx = next((i for i, v in enumerate(main) if "answer" in v), 0)
+
+        # Insert post-answer verbs after answer, before AI
+        for i, verb in enumerate(self._post_answer_verbs):
+            main.insert(answer_idx + 1 + i, verb)
+
+        return json.dumps(swml)
+
+
+if __name__ == "__main__":
+    agent = CallFlowAgent()
+    agent.run()
+```
+
+This generates:
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {"answer": {}},
+      {"play": {"url": "say:Thank you for calling..."}},
+      {"sleep": {"time": 500}},
+      {"ai": {...}}
+    ]
+  }
+}
+```
+
+### How It Works
+
+1. **Call parent's `_render_swml()`** - Gets the standard SWML with answer and AI verbs
+2. **Parse the JSON** - Convert to a dictionary for manipulation
+3. **Find the answer verb** - Locate its position in the main section
+4. **Insert post-answer verbs** - Add your verbs after answer but before AI
+5. **Return modified JSON** - Serialize back to JSON string
+
+### Available Post-Answer Verbs
+
+| Verb | Purpose | Example |
+|------|---------|---------|
+| `play` | Play audio or TTS | `{"url": "say:Welcome"}` |
+| `sleep` | Pause execution | `{"time": 1000}` |
+| `set` | Set variables | `{"var": "value"}` |
+
+### Play Verb Options
+
+```python
+# Text-to-speech
+{"play": {"url": "say:Welcome to our service"}}
+
+# Audio file
+{"play": {"url": "https://example.com/welcome.mp3"}}
+
+# Multiple URLs (played in sequence)
+{"play": {"urls": ["say:Please hold", "https://example.com/music.mp3"]}}
+
+# With volume adjustment
+{"play": {"url": "say:Welcome", "volume": -10}}
+```
+
+### Pre-Answer Customization
+
+For **pre-answer** customization (playing ringback tones before answering), you'll need to use `SWMLService` directly for full SWML control. See [SWMLService API](/sdks/agents-sdk/api/swml-service) for details.
+
+### Related Documentation
+
+- [AgentBase API](/sdks/agents-sdk/api/agent-base) - Full AgentBase parameter reference
+- [SWMLService API](/sdks/agents-sdk/api/swml-service) - `add_verb()` method details
+- [SWML Schema](/sdks/agents-sdk/api/swml-schema) - All available SWML verbs
+- [AI Parameters](/sdks/agents-sdk/building-agents/ai-parameters) - Tuning AI behavior after answer
+
+### Next Steps
+
+Now that you understand call flow customization, you can:
+
+- Learn about [Contexts & Workflows](/sdks/agents-sdk/advanced/contexts-workflows) for complex conversation flows
+- Explore [Call Transfer](/sdks/agents-sdk/advanced/call-transfer) for routing calls
+- Build [Multi-Agent Systems](/sdks/agents-sdk/advanced/multi-agent) for specialized handlers

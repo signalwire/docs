@@ -1,0 +1,199 @@
+---
+sidebar_position: 3
+title: "Mapping Numbers"
+slug: /signalwire-integration/mapping-numbers
+---
+
+## Mapping Numbers
+
+> **Summary**: Connect phone numbers to your agent's SWML endpoint so calls are handled by your agent.
+
+### Overview
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Number to Agent Mapping                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Phone Number          →    Voice URL           →    Agent                  │
+│  +1 (555) 123-4567          https://server/          SupportAgent           │
+│  +1 (555) 987-6543          https://server/sales     SalesAgent             │
+│                                                                             │
+│  When a call comes in:                                                      │
+│  1. SignalWire receives call on your number                                 │
+│  2. SignalWire makes POST request to Voice URL                              │
+│  3. Your server returns SWML document                                       │
+│  4. SignalWire executes the SWML (runs your agent)                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Configure Voice URL
+
+1. Go to Phone Numbers in dashboard
+2. Click on your number
+3. Set Voice URL to your agent endpoint
+4. Save changes
+
+### URL Format
+
+Your agent URL structure:
+
+**Single Agent:**
+```
+https://your-server.com/
+```
+
+**Multiple Agents:**
+```
+https://your-server.com/support
+https://your-server.com/sales
+https://your-server.com/billing
+```
+
+**With Authentication:**
+```
+https://user:pass@your-server.com/
+```
+
+### HTTPS Requirements
+
+**Production:**
+- HTTPS required
+- Valid SSL certificate
+- Properly configured domain
+
+**Development:**
+- Use ngrok or similar tunnel
+- ngrok provides HTTPS automatically
+- Update URL when tunnel restarts
+
+### Using ngrok for Development
+
+```bash
+## Start your agent locally
+python my_agent.py
+
+## In another terminal, start ngrok
+ngrok http 3000
+
+## Use the ngrok HTTPS URL in SignalWire
+## https://abc123.ngrok.io
+```
+
+### Basic Authentication
+
+Set authentication credentials:
+
+```python
+from signalwire_agents import AgentBase
+
+
+class SecureAgent(AgentBase):
+    def __init__(self):
+        super().__init__(
+            name="secure-agent",
+            # Basic auth credentials
+            # Also configurable via environment variables:
+            # SWML_BASIC_AUTH_USER, SWML_BASIC_AUTH_PASSWORD
+        )
+```
+
+In SignalWire, use URL with credentials:
+
+```
+https://username:password@your-server.com/
+```
+
+### Multi-Agent Server
+
+Run multiple agents on one server:
+
+```python
+from signalwire_agents import AgentServer
+
+server = AgentServer()
+
+## Register agents at different paths
+server.register(SupportAgent(), "/support")
+server.register(SalesAgent(), "/sales")
+server.register(BillingAgent(), "/billing")
+
+server.run(host="0.0.0.0", port=3000)
+```
+
+Map each number to its agent:
+
+| Number | Voice URL |
+|--------|-----------|
+| +1 (555) 111-1111 | https://server.com/support |
+| +1 (555) 222-2222 | https://server.com/sales |
+| +1 (555) 333-3333 | https://server.com/billing |
+
+### SWML Scripts
+
+Alternative: Use SWML scripts directly in SignalWire:
+
+```json
+{
+    "version": "1.0.0",
+    "sections": {
+        "main": [
+            {
+                "ai": {
+                    "prompt": {
+                        "text": "You are a helpful assistant."
+                    },
+                    "SWAIG": {
+                        "defaults": {
+                            "web_hook_url": "https://your-server.com/swaig"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
+```
+
+### Fallback URL
+
+Configure a fallback for errors:
+
+| Setting | Value |
+|---------|-------|
+| Primary URL | `https://your-server.com/agent` |
+| Fallback URL | `https://backup-server.com/agent` |
+
+**Fallback triggers on:**
+- Connection timeout
+- HTTP 5xx errors
+- Invalid SWML response
+
+### Status Callbacks
+
+Receive notifications about call events:
+
+```
+Status Callback URL: https://your-server.com/status
+
+Events:
+• Call started
+• Call answered
+• Call completed
+• Call failed
+```
+
+### Verification Checklist
+
+Before going live:
+
+- [ ] Agent is deployed and running
+- [ ] HTTPS URL is accessible
+- [ ] URL returns valid SWML on POST request
+- [ ] Basic auth is configured (if used)
+- [ ] Phone number Voice URL is set
+- [ ] Fallback URL is configured (recommended)
+- [ ] Test call completes successfully
+
+

@@ -1,0 +1,432 @@
+---
+sidebar_position: 1
+title: "Contexts Workflows"
+slug: /advanced/contexts-workflows
+---
+
+# Advanced Features
+
+> **Summary**: This chapter covers advanced SDK features including multi-step workflows with contexts, state management, call recording, call transfers, multi-agent servers, and knowledge search integration.
+
+## What You'll Learn
+
+This chapter covers advanced capabilities:
+
+1. **Contexts & Workflows** - Multi-step conversation flows with branching logic
+2. **State Management** - Session data, global state, and metadata handling
+3. **Call Recording** - Record calls with various formats and options
+4. **Call Transfer** - Transfer calls to other destinations
+5. **Multi-Agent Servers** - Run multiple agents on a single server
+6. **Search & Knowledge** - Vector search for RAG-style knowledge integration
+
+## Feature Overview
+
+### Contexts & Workflows
+- Multi-step conversations
+- Branching logic
+- Context switching
+- Step validation
+
+### State Management
+- global_data dictionary
+- metadata per call
+- Tool-specific tokens
+- Post-prompt data injection
+
+### Call Recording
+- Stereo/mono recording
+- Multiple formats (mp3, wav, mp4 for video)
+- Pause/resume control
+- Transcription support
+
+### Call Transfer
+- Blind transfers
+- Announced transfers
+- SIP destinations
+- PSTN destinations
+
+### Multi-Agent Servers
+- Multiple agents per server
+- Path-based routing
+- SIP username routing
+- Shared configuration
+
+### Search & Knowledge
+- Vector similarity search
+- SQLite/pgvector backends
+- Document processing
+- RAG integration
+
+## When to Use These Features
+
+| Feature | Use Case |
+|---------|----------|
+| Contexts | Multi-step forms, wizards, guided flows |
+| State Management | Persisting data across function calls |
+| Call Recording | Compliance, training, quality assurance |
+| Call Transfer | Escalation, routing to humans |
+| Multi-Agent | Different agents for different purposes |
+| Search | Knowledge bases, FAQ lookup, documentation |
+
+## Prerequisites
+
+Before diving into advanced features:
+
+- Understand basic agent creation (Chapter 3)
+- Know how SWAIG functions work (Chapter 4)
+- Be comfortable with skills (Chapter 5)
+
+## Chapter Contents
+
+| Section | Description |
+|---------|-------------|
+| [Contexts & Workflows](/sdks/agents-sdk/advanced/contexts-workflows) | Build multi-step conversation flows |
+| [State Management](/sdks/agents-sdk/advanced/state-management) | Manage session and call state |
+| [Call Recording](/sdks/agents-sdk/advanced/call-recording) | Record calls with various options |
+| [Call Transfer](/sdks/agents-sdk/advanced/call-transfer) | Transfer calls to destinations |
+| [Multi-Agent](/sdks/agents-sdk/advanced/multi-agent) | Run multiple agents on one server |
+| [Search & Knowledge](/sdks/agents-sdk/advanced/search-knowledge) | Vector search integration |
+
+## When to Use Contexts
+
+| Regular Prompts | Contexts |
+|-----------------|----------|
+| Free-form conversations | Structured workflows |
+| Simple Q&A agents | Multi-step data collection |
+| Single-purpose tasks | Wizard-style flows |
+| No defined sequence | Branching conversations |
+| | Multiple personas |
+
+**Use contexts when you need:**
+- Guaranteed step completion
+- Controlled navigation
+- Step-specific function access
+- Context-dependent personas
+- Department transfers
+- Isolated conversation segments
+
+## Context Architecture
+
+```diagram
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Context Structure                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         ContextBuilder                              │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │                      Context "sales"                        │    │    │
+│  │  │  ┌────────────┐ ┌────────────┐ ┌────────────┐               │    │    │
+│  │  │  │  Step 1    │→│  Step 2    │→│  Step 3    │               │    │    │
+│  │  │  │ get_info   │ │ confirm    │ │ process    │               │    │    │
+│  │  │  └────────────┘ └────────────┘ └────────────┘               │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                              ↕                                      │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │                    Context "support"                        │    │    │
+│  │  │  ┌────────────┐                                             │    │    │
+│  │  │  │  Step 1    │                                             │    │    │
+│  │  │  │ help       │                                             │    │    │
+│  │  │  └────────────┘                                             │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Basic Context Example
+
+```python
+from signalwire_agents import AgentBase
+
+
+class OrderAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="order-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Base prompt (required even with contexts)
+        self.prompt_add_section(
+            "Role",
+            "You help customers place orders."
+        )
+
+        # Define contexts after setting base prompt
+        contexts = self.define_contexts()
+
+        # Add a context with steps
+        order = contexts.add_context("default")
+
+        order.add_step("get_item") \
+            .set_text("Ask what item they want to order.") \
+            .set_step_criteria("Customer has specified an item") \
+            .set_valid_steps(["get_quantity"])
+
+        order.add_step("get_quantity") \
+            .set_text("Ask how many they want.") \
+            .set_step_criteria("Customer has specified a quantity") \
+            .set_valid_steps(["confirm"])
+
+        order.add_step("confirm") \
+            .set_text("Confirm the order details and thank them.") \
+            .set_step_criteria("Order has been confirmed")
+
+
+if __name__ == "__main__":
+    agent = OrderAgent()
+    agent.run()
+```
+
+## Step Configuration
+
+### set_text()
+
+Simple text prompt for the step:
+
+```python
+step.set_text("What item would you like to order?")
+```
+
+### add_section() / add_bullets()
+
+POM-style structured prompts:
+
+```python
+step.add_section("Task", "Collect customer information") \
+    .add_bullets("Required Information", [
+        "Full name",
+        "Phone number",
+        "Email address"
+    ])
+```
+
+### set_step_criteria()
+
+Define when the step is complete:
+
+```python
+step.set_step_criteria("Customer has provided their full name and phone number")
+```
+
+### set_valid_steps()
+
+Control step navigation:
+
+```python
+# Can go to specific steps
+step.set_valid_steps(["confirm", "cancel"])
+
+# Use "next" for sequential flow
+step.set_valid_steps(["next"])
+```
+
+### set_functions()
+
+Restrict available functions per step:
+
+```python
+# Disable all functions
+step.set_functions("none")
+
+# Allow specific functions only
+step.set_functions(["check_inventory", "get_price"])
+```
+
+### set_valid_contexts()
+
+Allow navigation to other contexts:
+
+```python
+step.set_valid_contexts(["support", "manager"])
+```
+
+## Context Configuration
+
+### set_isolated()
+
+Truncate conversation history when entering:
+
+```python
+context.set_isolated(True)
+```
+
+### set_system_prompt()
+
+New system prompt when entering context:
+
+```python
+context.set_system_prompt("You are now a technical support specialist.")
+```
+
+### set_user_prompt()
+
+Inject a user message when entering:
+
+```python
+context.set_user_prompt("I need help with a technical issue.")
+```
+
+### set_consolidate()
+
+Summarize previous conversation when switching:
+
+```python
+context.set_consolidate(True)
+```
+
+### set_full_reset()
+
+Completely reset conversation state:
+
+```python
+context.set_full_reset(True)
+```
+
+### add_enter_filler() / add_exit_filler()
+
+Add transition phrases:
+
+```python
+context.add_enter_filler("en-US", [
+    "Let me connect you with our support team...",
+    "Transferring you to a specialist..."
+])
+
+context.add_exit_filler("en-US", [
+    "Returning you to the main menu...",
+    "Back to the sales department..."
+])
+```
+
+## Multi-Context Example
+
+```python
+from signalwire_agents import AgentBase
+
+
+class MultiDepartmentAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="multi-dept-agent")
+        self.add_language("English-Sales", "en-US", "rime.spore")
+        self.add_language("English-Support", "en-US", "rime.cove")
+        self.add_language("English-Manager", "en-US", "rime.marsh")
+
+        self.prompt_add_section(
+            "Instructions",
+            "Guide customers through sales or transfer to appropriate departments."
+        )
+
+        contexts = self.define_contexts()
+
+        # Sales context
+        sales = contexts.add_context("sales") \
+            .set_isolated(True) \
+            .add_section("Role", "You are Alex, a sales representative.")
+
+        sales.add_step("qualify") \
+            .add_section("Task", "Determine customer needs") \
+            .set_step_criteria("Customer needs are understood") \
+            .set_valid_steps(["recommend"]) \
+            .set_valid_contexts(["support", "manager"])
+
+        sales.add_step("recommend") \
+            .add_section("Task", "Make product recommendations") \
+            .set_step_criteria("Recommendation provided") \
+            .set_valid_contexts(["support", "manager"])
+
+        # Support context
+        support = contexts.add_context("support") \
+            .set_isolated(True) \
+            .add_section("Role", "You are Sam, technical support.") \
+            .add_enter_filler("en-US", [
+                "Connecting you with technical support...",
+                "Let me transfer you to our tech team..."
+            ])
+
+        support.add_step("assist") \
+            .add_section("Task", "Help with technical questions") \
+            .set_step_criteria("Technical issue resolved") \
+            .set_valid_contexts(["sales", "manager"])
+
+        # Manager context
+        manager = contexts.add_context("manager") \
+            .set_isolated(True) \
+            .add_section("Role", "You are Morgan, the store manager.") \
+            .add_enter_filler("en-US", [
+                "Let me get the manager for you...",
+                "One moment, connecting you with management..."
+            ])
+
+        manager.add_step("escalate") \
+            .add_section("Task", "Handle escalated issues") \
+            .set_step_criteria("Issue resolved by manager") \
+            .set_valid_contexts(["sales", "support"])
+
+
+if __name__ == "__main__":
+    agent = MultiDepartmentAgent()
+    agent.run()
+```
+
+## Navigation Flow
+
+### Within Context (Steps)
+- `set_valid_steps(["next"])` - Go to next sequential step
+- `set_valid_steps(["step_name"])` - Go to specific step
+- `set_valid_steps(["a", "b"])` - Multiple options
+
+### Between Contexts
+- `set_valid_contexts(["other_context"])` - Allow context switch
+- AI calls `change_context("context_name")` automatically
+- Enter/exit fillers provide smooth transitions
+
+### Context Entry Behavior
+- `isolated=True` - Clear conversation history
+- `consolidate=True` - Summarize previous conversation
+- `full_reset=True` - Complete prompt replacement
+
+## Validation Rules
+
+The ContextBuilder validates your configuration:
+
+- Single context must be named "default"
+- Every context must have at least one step
+- `valid_steps` must reference existing steps (or "next")
+- `valid_contexts` must reference existing contexts
+- Cannot mix `set_text()` with `add_section()` on same step
+- Cannot mix `set_prompt()` with `add_section()` on same context
+
+## Step and Context Methods Summary
+
+| Method | Level | Purpose |
+|--------|-------|---------|
+| `set_text()` | Step | Simple text prompt |
+| `add_section()` | Both | POM-style section |
+| `add_bullets()` | Both | Bulleted list section |
+| `set_step_criteria()` | Step | Completion criteria |
+| `set_functions()` | Step | Restrict available functions |
+| `set_valid_steps()` | Step | Allowed step navigation |
+| `set_valid_contexts()` | Both | Allowed context navigation |
+| `set_isolated()` | Context | Clear history on entry |
+| `set_consolidate()` | Context | Summarize on entry |
+| `set_full_reset()` | Context | Complete reset on entry |
+| `set_system_prompt()` | Context | New system prompt |
+| `set_user_prompt()` | Context | Inject user message |
+| `add_enter_filler()` | Context | Entry transition phrases |
+| `add_exit_filler()` | Context | Exit transition phrases |
+
+## Best Practices
+
+**DO:**
+- Set clear step_criteria for each step
+- Use isolated=True for persona changes
+- Add enter_fillers for smooth transitions
+- Define valid_contexts to enable department transfers
+- Test navigation paths thoroughly
+
+**DON'T:**
+- Create circular navigation without exit paths
+- Skip setting a base prompt before define_contexts()
+- Mix set_text() with add_section() on the same step
+- Forget to validate step/context references
+
