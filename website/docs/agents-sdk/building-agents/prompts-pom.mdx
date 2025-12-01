@@ -18,11 +18,13 @@ slug: /building-agents/prompts-pom
 | **Extensibility** | Difficult to extend | Reusable components |
 
 **Raw Text Problems:**
+
 - Everything mixed together in one string
 - Hard to find and update specific instructions
 - Difficult to share sections between agents
 
 **POM Benefits:**
+
 - Sections keep concerns separated
 - Bullets make lists scannable
 - Subsections add depth without clutter
@@ -233,24 +235,128 @@ class AdvancedAgent(AgentBase):
 
 ### Post-Call Prompts
 
-Configure what happens after the call ends:
+Post-prompts run after a call ends, allowing the AI to generate summaries, extract data, or create structured output from the conversation.
+
+#### When Post-Prompts Run
+
+Post-prompts execute:
+
+- After the caller hangs up
+- After a transfer completes
+- After an inactivity timeout
+- Before any post-call webhooks fire
+
+The AI has access to the full conversation history when generating the post-prompt response.
+
+#### set_post_prompt() vs set_post_prompt_data()
+
+Use `set_post_prompt()` for simple text instructions:
 
 ```python
-## Set post-prompt for call summary
 self.set_post_prompt(
     "Summarize this call including: "
     "1) The customer's issue "
     "2) How it was resolved "
     "3) Any follow-up needed"
 )
+```
 
-## Alternative: Full post-prompt configuration
+Use `set_post_prompt_data()` for full control over generation parameters:
+
+```python
 self.set_post_prompt_data({
     "text": "Generate a detailed call summary.",
     "temperature": 0.3,
     "top_p": 0.9
 })
 ```
+
+#### Post-Prompt Data Options
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | string | Required | The post-prompt instruction |
+| `temperature` | float | 0.3 | Creativity level (0-2, lower = more consistent) |
+| `top_p` | float | 1.0 | Nucleus sampling threshold |
+| `max_tokens` | int | 256 | Maximum output length |
+
+#### Common Post-Prompt Use Cases
+
+**Call summarization:**
+
+```python
+self.set_post_prompt(
+    "Summarize this call in 2-3 sentences. Include the main topic, "
+    "outcome, and any commitments made."
+)
+```
+
+**Structured data extraction:**
+
+```python
+self.set_post_prompt_data({
+    "text": """
+    Extract from this conversation and format as JSON:
+    {
+        "customer_name": "name if mentioned",
+        "issue_category": "billing|technical|sales|general",
+        "resolution": "resolved|escalated|pending|unknown",
+        "follow_up_required": true/false,
+        "sentiment": "positive|neutral|negative"
+    }
+    """,
+    "temperature": 0.1  # Low for consistent structure
+})
+```
+
+**CRM notes:**
+
+```python
+self.set_post_prompt(
+    "Generate CRM notes for this call. Include: "
+    "- Customer inquiry summary "
+    "- Actions taken by agent "
+    "- Next steps or follow-up items "
+    "- Any account changes discussed"
+)
+```
+
+**Compliance logging:**
+
+```python
+self.set_post_prompt(
+    "Log compliance-relevant details: "
+    "- Was identity verified? "
+    "- What sensitive data was discussed? "
+    "- Were required disclosures given? "
+    "- Any compliance concerns noted?"
+)
+```
+
+#### Accessing Post-Prompt Output
+
+The post-prompt output is sent to your configured webhooks. To receive it, configure a post-prompt webhook:
+
+```python
+# The output will be sent to your webhook as part of the call data
+# Configure via SignalWire dashboard or SWML settings
+```
+
+#### Post-Prompt Best Practices
+
+**DO:**
+
+- Use low temperature (0.1-0.3) for structured extraction
+- Keep instructions clear and specific
+- Test with various conversation types
+- Use JSON format for machine-readable output
+
+**DON'T:**
+
+- Expect post-prompt to modify call behavior (call already ended)
+- Use high temperature for data extraction
+- Request very long outputs (increases latency)
+- Assume all fields will always be populated
 
 ### Voice-Optimized Prompts
 

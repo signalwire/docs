@@ -336,4 +336,140 @@ If issues persist:
 3. Use `swaig-test` for diagnostics
 4. Check SignalWire community forums
 
+### Advanced Debugging
+
+#### Enable Debug Logging
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Or for specific components
+logging.getLogger("signalwire_agents").setLevel(logging.DEBUG)
+```
+
+#### Inspect Raw Request Data
+
+```python
+@agent.tool(description="Debug function")
+def debug_info(args=None, raw_data=None) -> SwaigFunctionResult:
+    import json
+    print("RAW DATA:", json.dumps(raw_data, indent=2))
+    return SwaigFunctionResult("Debug complete")
+```
+
+#### Test Webhook Connectivity
+
+```bash
+# Start agent
+python agent.py
+
+# In another terminal, simulate webhook call
+curl -X POST http://localhost:3000/ \
+  -H "Content-Type: application/json" \
+  -d '{"function": "my_function", "argument": {"parsed": [{"name": "param", "value": "test"}]}}'
+```
+
+#### Verify SWML Generation
+
+```bash
+# Check for syntax issues
+swaig-test agent.py --dump-swml --raw | python -m json.tool
+
+# Extract specific sections
+swaig-test agent.py --dump-swml --raw | jq '.sections.main[1].ai.prompt'
+swaig-test agent.py --dump-swml --raw | jq '.sections.main[1].ai.SWAIG.functions[].function'
+```
+
+### Voice Quality Issues
+
+#### AI Speaks Too Fast
+
+```python
+# Reduce speech rate via prompt
+agent.prompt_add_section("Speech", "Speak at a moderate pace. Pause briefly between sentences.")
+```
+
+#### Caller Has Trouble Understanding
+
+```python
+# Add pronunciation rules
+agent.add_pronounce([
+    {"replace": "www", "with": "dub dub dub"},
+    {"replace": ".com", "with": "dot com"},
+    {"replace": "API", "with": "A P I"}
+])
+```
+
+#### Background Noise Issues
+
+```python
+agent.set_params({
+    "energy_level": 52.0,        # Higher = requires louder speech (default 52)
+    "input_sensitivity": 45.0    # Higher = less sensitive to background
+})
+```
+
+### Production Issues
+
+#### High Latency
+
+**Symptoms**: Long delays before AI responds.
+
+**Solutions**:
+
+1. Use fillers for long operations:
+
+```python
+@agent.tool(
+    description="Slow operation",
+    fillers=["One moment please...", "Let me check that..."]
+)
+def slow_operation() -> SwaigFunctionResult:
+    # Long running code
+    pass
+```
+
+2. Optimize database queries
+3. Use DataMap for simple API calls (executes on SignalWire servers)
+4. Consider caching frequently accessed data
+
+#### Memory/Resource Issues
+
+**Symptoms**: Agent crashes or becomes unresponsive.
+
+**Solutions**:
+
+1. Don't store large objects in global_data
+2. Clean up state between calls
+3. Use streaming for large responses
+4. Monitor memory usage in production
+
+#### Concurrent Call Issues
+
+**Symptoms**: State bleeds between calls.
+
+**Solutions**:
+
+1. Use `global_data` (per-call) instead of class attributes
+2. Don't use mutable default arguments
+3. Ensure thread safety for shared resources
+
+```python
+# BAD: Shared state across calls
+class Agent(AgentBase):
+    cart = []  # Shared between all calls!
+
+# GOOD: Per-call state
+agent.set_global_data({"cart": []})
+```
+
+### See Also
+
+| Topic | Reference |
+|-------|-----------|
+| swaig-test CLI | [swaig-test Reference](/sdks/agents-sdk/cli) |
+| AI parameters | [AI Parameters](/sdks/agents-sdk/appendix/ai-parameters-reference) |
+| Security best practices | [Security](/sdks/agents-sdk/core-concepts/security) |
+
 

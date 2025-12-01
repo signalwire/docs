@@ -8,16 +8,41 @@ slug: /skills/custom
 
 > **Summary**: Create your own skills by inheriting from `SkillBase`. Custom skills can be reused across agents and shared with others.
 
+Creating custom skills is worthwhile when you have functionality you want to reuse across multiple agents or share with your team. A skill packages a capability—functions, prompts, hints, and configuration—into a single reusable unit.
+
+### When to Create a Custom Skill
+
+**Create a skill when:**
+
+- You'll use the same functionality in multiple agents
+- You want to share a capability with your team
+- The functionality is complex enough to benefit from encapsulation
+- You want version-controlled, tested components
+
+**Just use define_tool() when:**
+
+- The function is specific to one agent
+- You need quick iteration during development
+- The logic is simple and unlikely to be reused
+
 ### Skill Structure
 
 Create a directory with these files:
 
 ```
 my_custom_skill/
-     __init__.py          # Empty or exports
+     __init__.py          # Empty or exports skill class
      skill.py             # Skill implementation
      requirements.txt     # Optional dependencies
 ```
+
+**What each file does:**
+
+| File | Purpose |
+|------|---------|
+| `__init__.py` | Makes the directory a Python package. Can be empty or export the skill class |
+| `skill.py` | Contains the skill class that inherits from SkillBase |
+| `requirements.txt` | Lists Python packages the skill needs (pip format) |
 
 ### Basic Custom Skill
 
@@ -444,4 +469,134 @@ class MyAgent(AgentBase):
         })
 ```
 
+### How Skill Registration Works
+
+When you call `skill_registry.add_skill_directory()`:
+
+1. The registry scans the directory for valid skill packages
+2. Each subdirectory with a `skill.py` is considered a potential skill
+3. Skills are validated but not loaded yet (lazy loading)
+4. When `add_skill()` is called, the skill class is instantiated
+
+**Registration order matters:** If multiple directories contain skills with the same name, the first registered takes precedence.
+
+### Testing Custom Skills
+
+Test your skill before using it in production:
+
+**1. Test the skill class directly:**
+```python
+# test_my_skill.py
+from my_skills.product_search.skill import ProductSearchSkill
+
+# Create a mock agent for testing
+class MockAgent:
+    def define_tool(self, **kwargs):
+        print(f"Registered tool: {kwargs['name']}")
+
+    class log:
+        @staticmethod
+        def info(msg): print(f"INFO: {msg}")
+        @staticmethod
+        def error(msg): print(f"ERROR: {msg}")
+
+# Test setup
+skill = ProductSearchSkill(MockAgent())
+skill.params = {"api_url": "http://test", "api_key": "test"}
+assert skill.setup() == True
+
+# Test tools register
+skill.register_tools()
+```
+
+**2. Test with a real agent using swaig-test:**
+```bash
+# Create a test agent that uses your skill
+swaig-test test_agent.py --dump-swml
+
+# Test a specific function
+swaig-test test_agent.py --function search_products --args '{"query": "test"}'
+```
+
+**3. Validate skill structure:**
+```python
+from signalwire_agents.skills.registry import skill_registry
+
+# Add and validate your skills
+skill_registry.add_skill_directory("/path/to/my_skills")
+
+# Check it loaded
+available = skill_registry.list_available_skills()
+print(f"Available skills: {available}")
+```
+
+### Publishing and Sharing Skills
+
+**Option 1: Git Repository**
+
+Share your skills via Git:
+```
+my_company_skills/
+    README.md
+    product_search/
+        __init__.py
+        skill.py
+    crm_integration/
+        __init__.py
+        skill.py
+        requirements.txt
+```
+
+Users clone and register:
+```python
+skill_registry.add_skill_directory("/path/to/my_company_skills")
+```
+
+**Option 2: Python Package**
+
+Package skills for pip installation using entry points:
+
+```python
+# setup.py or pyproject.toml
+setup(
+    name="my_company_skills",
+    entry_points={
+        "signalwire_agents.skills": [
+            "product_search = my_company_skills.product_search.skill:ProductSearchSkill",
+            "crm_integration = my_company_skills.crm_integration.skill:CRMSkill",
+        ]
+    }
+)
+```
+
+After pip install, skills are automatically discoverable.
+
+**Option 3: Environment Variable**
+
+Set `SIGNALWIRE_SKILL_PATHS` to include your skills directory:
+```bash
+export SIGNALWIRE_SKILL_PATHS="/opt/company_skills:/home/user/my_skills"
+```
+
+### Skill Development Best Practices
+
+**DO:**
+
+- Use descriptive SKILL_NAME and SKILL_DESCRIPTION
+- Validate all parameters in setup()
+- Return user-friendly error messages
+- Log technical errors for debugging
+- Include speech hints for better recognition
+- Write clear prompt sections explaining usage
+- Handle network/API failures gracefully
+- Version your skills meaningfully
+
+**DON'T:**
+
+- Hard-code configuration values
+- Expose internal errors to users
+- Skip parameter validation
+- Forget to handle edge cases
+- Make setup() do heavy work (defer to first use)
+- Use global state between instances
 

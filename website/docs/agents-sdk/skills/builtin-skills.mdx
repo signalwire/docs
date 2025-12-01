@@ -25,13 +25,40 @@ slug: /skills/builtin-skills
 
 ### datetime
 
-Get current date (today) and time information with timezone support.
+Get current date and time information with timezone support. This is one of the most commonly used skills—callers often ask "what time is it?" or need scheduling help.
 
 **Functions:**
+
 - `get_current_time` - Get current time in a timezone
 - `get_current_date` - Get today's date
 
-**Requirements:** `pytz` package
+**Requirements:** `pytz` package (usually installed automatically)
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `default_timezone` | string | Default timezone if none specified | "UTC" |
+| `tool_name_time` | string | Custom name for time function | "get_current_time" |
+| `tool_name_date` | string | Custom name for date function | "get_current_date" |
+
+**Output format:**
+
+- Time: "The current time in America/New_York is 2:30 PM"
+- Date: "Today's date is November 25, 2024"
+
+**Common use cases:**
+
+- "What time is it?" / "What time is it in Tokyo?"
+- "What's today's date?"
+- Scheduling and appointment contexts
+- Time zone conversions
+
+**Limitations:**
+
+- Requires valid timezone names (e.g., "America/New_York", not "EST")
+- Doesn't do time math or calculate durations
+- Doesn't handle historical dates
 
 ```python
 from signalwire_agents import AgentBase
@@ -42,7 +69,9 @@ class TimeAgent(AgentBase):
         super().__init__(name="time-agent")
         self.add_language("English", "en-US", "rime.spore")
 
-        self.add_skill("datetime")
+        self.add_skill("datetime", {
+            "default_timezone": "America/New_York"
+        })
 
         self.prompt_add_section(
             "Role",
@@ -52,12 +81,45 @@ class TimeAgent(AgentBase):
 
 ### math
 
-Perform mathematical calculations.
+Perform mathematical calculations safely. The skill uses a secure expression evaluator that supports common operations without executing arbitrary code.
 
 **Functions:**
+
 - `calculate` - Evaluate mathematical expressions
 
 **Requirements:** None
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `tool_name` | string | Custom function name | "calculate" |
+| `tool_description` | string | Custom description | "Perform calculations" |
+
+**Supported operations:**
+
+- Basic: `+`, `-`, `*`, `/`, `**` (power), `%` (modulo)
+- Functions: `sqrt`, `sin`, `cos`, `tan`, `log`, `abs`, `round`
+- Constants: `pi`, `e`
+- Parentheses for grouping
+
+**Output format:**
+
+- "The result of 15 * 23 is 345"
+- "The square root of 144 is 12"
+
+**Common use cases:**
+
+- "What's 15 percent of 230?"
+- "Calculate 45 times 67"
+- "What's the square root of 256?"
+- Price calculations, tip calculations
+
+**Limitations:**
+
+- Limited to supported functions (no arbitrary Python)
+- Large numbers may lose precision
+- Can't solve equations or do symbolic math
 
 ```python
 from signalwire_agents import AgentBase
@@ -78,14 +140,54 @@ class CalculatorAgent(AgentBase):
 
 ### web_search
 
-Search the web using Google Custom Search API with quality filtering.
+Search the web using Google Custom Search API. Results are filtered for quality and summarized for voice delivery.
 
 **Functions:**
-- `web_search` - Search the web
+
+- `web_search` - Search the web and return summarized results
 
 **Requirements:**
-- Google Custom Search API key
-- Search Engine ID
+
+- Google Custom Search API key (from Google Cloud Console)
+- Search Engine ID (from Programmable Search Engine)
+
+**Setup:**
+
+1. Create a project in Google Cloud Console
+2. Enable the Custom Search JSON API
+3. Create an API key
+4. Create a Programmable Search Engine at https://programmablesearchengine.google.com/
+5. Get the Search Engine ID
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `api_key` | string | Google API key | Required |
+| `search_engine_id` | string | Search engine ID | Required |
+| `num_results` | integer | Results to return | 3 |
+| `min_quality_score` | number | Quality threshold (0-1) | 0.3 |
+| `tool_name` | string | Custom function name | "web_search" |
+| `tool_description` | string | Custom description | "Search the web" |
+
+**Output format:**
+Returns a summary of top results with titles, snippets, and URLs.
+
+**Common use cases:**
+
+- Current events and news queries
+- Fact-checking and verification
+- Looking up specific information
+- Research assistance
+
+**Limitations:**
+
+- Requires paid Google API (free tier has limits)
+- Results depend on search engine configuration
+- May not work for very recent events (indexing delay)
+- Quality varies with search terms
+
+**Multi-instance support:** Yes - add multiple instances for different search engines (news, docs, etc.)
 
 ```python
 from signalwire_agents import AgentBase
@@ -108,23 +210,40 @@ class SearchAgent(AgentBase):
         )
 ```
 
+### wikipedia_search
+
+Search Wikipedia for information. A free, no-API-key alternative to web search for factual queries.
+
+**Functions:**
+
+- `search_wikipedia` - Search and retrieve Wikipedia article summaries
+
+**Requirements:** None (uses public Wikipedia API)
+
 **Parameters:**
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `api_key` | string | Google API key | Required |
-| `search_engine_id` | string | Search engine ID | Required |
-| `num_results` | integer | Results to return | 3 |
-| `min_quality_score` | number | Quality threshold | 0.3 |
+| `language` | string | Wikipedia language code | "en" |
+| `sentences` | integer | Sentences to return per result | 3 |
+| `tool_name` | string | Custom function name | "search_wikipedia" |
 
-### wikipedia_search
+**Output format:**
+Returns article title and summary excerpt.
 
-Search Wikipedia for information.
+**Common use cases:**
 
-**Functions:**
-- `search_wikipedia` - Search Wikipedia articles
+- Factual questions ("Who was Marie Curie?")
+- Definitions and explanations
+- Historical information
+- General knowledge queries
 
-**Requirements:** None
+**Limitations:**
+
+- Only searches Wikipedia (not general web)
+- May not have very recent information
+- Content quality varies by article
+- Not suitable for opinions or current events
 
 ```python
 from signalwire_agents import AgentBase
@@ -135,22 +254,56 @@ class WikiAgent(AgentBase):
         super().__init__(name="wiki-agent")
         self.add_language("English", "en-US", "rime.spore")
 
-        self.add_skill("wikipedia_search")
+        self.add_skill("wikipedia_search", {
+            "sentences": 5  # More detailed summaries
+        })
 
         self.prompt_add_section(
             "Role",
-            "You look up information on Wikipedia."
+            "You look up information on Wikipedia to answer factual questions."
         )
 ```
 
 ### weather_api
 
-Get weather information for locations.
+Get current weather information for locations worldwide. Commonly used for small talk, travel planning, and location-aware services.
 
 **Functions:**
-- `get_weather` - Get current weather
 
-**Requirements:** Weather API key
+- `get_weather` - Get current weather conditions for a location
+
+**Requirements:** WeatherAPI.com API key (free tier available)
+
+**Setup:**
+
+1. Sign up at https://www.weatherapi.com/
+2. Get your API key from the dashboard
+3. Free tier allows 1 million calls/month
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `api_key` | string | WeatherAPI.com API key | Required |
+| `tool_name` | string | Custom function name | "get_weather" |
+| `tool_description` | string | Custom description | "Get weather" |
+
+**Output format:**
+"Weather in Seattle: 58°F (14°C), partly cloudy. Humidity: 72%. Wind: 8 mph."
+
+**Common use cases:**
+
+- "What's the weather in Chicago?"
+- "Is it raining in London?"
+- Travel and event planning
+- Small talk and conversation starters
+
+**Limitations:**
+
+- Current conditions only (no forecast in basic skill)
+- Location must be recognizable (city names, zip codes)
+- Weather data may have slight delay
+- API rate limits apply
 
 ```python
 from signalwire_agents import AgentBase
@@ -167,18 +320,39 @@ class WeatherAgent(AgentBase):
 
         self.prompt_add_section(
             "Role",
-            "You provide weather information."
+            "You provide weather information for any location."
         )
 ```
 
 ### joke
 
-Tell jokes to users.
+Tell jokes to lighten the mood or entertain callers. Uses a curated joke database for clean, family-friendly humor.
 
 **Functions:**
+
 - `tell_joke` - Get a random joke
 
 **Requirements:** None
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `category` | string | Joke category filter | None (random) |
+| `tool_name` | string | Custom function name | "tell_joke" |
+
+**Common use cases:**
+
+- Entertainment and engagement
+- Breaking tension in conversations
+- Waiting periods during processing
+- Adding personality to your agent
+
+**Limitations:**
+
+- Limited joke database
+- May repeat jokes in long conversations
+- Humor is subjective
 
 ```python
 from signalwire_agents import AgentBase
@@ -193,19 +367,45 @@ class FunAgent(AgentBase):
 
         self.prompt_add_section(
             "Role",
-            "You are a fun assistant that tells jokes."
+            "You are a fun assistant that tells jokes when asked."
         )
 ```
 
 ### play_background_file
 
-Play audio files during the call.
+Play audio files in the background during calls. Audio plays while conversation continues, useful for hold music, ambient sound, or audio cues.
 
 **Functions:**
-- `play_background_file` - Start playing audio
-- `stop_background_file` - Stop playing audio
 
-**Requirements:** None
+- `play_background_file` - Start playing audio file
+- `stop_background_file` - Stop currently playing audio
+
+**Requirements:** None (audio file must be accessible via URL)
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `audio_url` | string | URL of audio file to play | Required |
+| `volume` | number | Playback volume (0.0-1.0) | 0.5 |
+| `loop` | boolean | Loop the audio | false |
+| `tool_name_play` | string | Custom play function name | "play_background_file" |
+| `tool_name_stop` | string | Custom stop function name | "stop_background_file" |
+
+**Supported formats:** MP3, WAV, OGG
+
+**Common use cases:**
+
+- Hold music while processing
+- Ambient sound for atmosphere
+- Audio notifications or alerts
+- Branding jingles
+
+**Limitations:**
+
+- Audio file must be publicly accessible
+- Large files may have loading delay
+- Background audio may interfere with speech recognition
 
 ```python
 from signalwire_agents import AgentBase
@@ -217,7 +417,9 @@ class MusicAgent(AgentBase):
         self.add_language("English", "en-US", "rime.spore")
 
         self.add_skill("play_background_file", {
-            "audio_url": "https://example.com/music.mp3"
+            "audio_url": "https://example.com/hold-music.mp3",
+            "volume": 0.3,  # Lower volume for background
+            "loop": True
         })
 ```
 
@@ -226,6 +428,7 @@ class MusicAgent(AgentBase):
 Transfer calls to another SWML endpoint.
 
 **Functions:**
+
 - `transfer_to_swml` - Transfer to SWML URL
 
 **Requirements:** None
@@ -250,6 +453,7 @@ class TransferAgent(AgentBase):
 Search SignalWire DataSphere documents.
 
 **Functions:**
+
 - `search_datasphere` - Search uploaded documents
 
 **Requirements:** DataSphere API credentials
@@ -275,6 +479,7 @@ class KnowledgeAgent(AgentBase):
 Local vector search using .swsearch index files.
 
 **Functions:**
+
 - `search_knowledge` - Search local vector index
 
 **Requirements:** Search extras installed (`pip install signalwire-agents[search]`)

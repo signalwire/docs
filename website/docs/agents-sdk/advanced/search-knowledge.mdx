@@ -8,6 +8,28 @@ slug: /advanced/search-knowledge
 
 > **Summary**: Add RAG-style knowledge search to your agents using local vector indexes (.swsearch files) or PostgreSQL with pgvector. Build indexes with `sw-search` CLI and integrate using the `native_vector_search` skill.
 
+Knowledge search transforms your agent from a general-purpose assistant into a domain expert. By connecting your agent to documents—FAQs, product manuals, policies, API docs—it can answer questions based on your actual content rather than general knowledge.
+
+This is called RAG (Retrieval-Augmented Generation): when asked a question, the agent first retrieves relevant documents, then uses them to generate an accurate response. The result is more accurate, verifiable answers grounded in your authoritative sources.
+
+### When to Use Knowledge Search
+
+**Good use cases:**
+
+- Customer support with FAQ/knowledge base
+- Product information lookup
+- Policy and procedure questions
+- API documentation assistant
+- Internal knowledge management
+- Training and onboarding assistants
+
+**Not ideal for:**
+
+- Real-time data (use APIs instead)
+- Transactional operations (use SWAIG functions)
+- Content that changes very frequently
+- Highly personalized information (use database lookups)
+
 ### Search System Overview
 
 **Build Time:**
@@ -340,6 +362,145 @@ self.add_skill(
 )
 ```
 
+### Understanding Embeddings
+
+Search works by converting text into numerical vectors (embeddings) that capture semantic meaning. Similar concepts have similar vectors, enabling "meaning-based" search rather than just keyword matching.
+
+**How it works:**
+
+1. **At index time**: Each document chunk is converted to a vector and stored
+2. **At query time**: The search query is converted to a vector
+3. **Matching**: Chunks with vectors closest to the query vector are returned
+
+This means "return policy" will match documents about "refund process" or "merchandise exchange" even if they don't contain those exact words.
+
+**Embedding quality matters:**
+
+- Better embeddings = better search results
+- The SDK uses efficient embedding models optimized for search
+- Different chunking strategies affect how well content is embedded
+
+### Index Management
+
+#### When to Rebuild Indexes
+
+Rebuild your search index when:
+- Source documents are added, removed, or significantly changed
+- You change chunking strategy
+- You want to add or modify tags
+- Search quality degrades
+
+Rebuilding is fast for small document sets. For large collections, consider incremental updates.
+
+#### Keeping Indexes Updated
+
+For production systems, automate index rebuilding:
+
+```bash
+#!/bin/bash
+# rebuild_index.sh - Run on document updates
+
+sw-search ./docs \
+  --chunking-strategy markdown \
+  --output knowledge.swsearch.new
+
+# Atomic replacement
+mv knowledge.swsearch.new knowledge.swsearch
+
+echo "Index rebuilt at $(date)"
+```
+
+#### Index Size and Performance
+
+Index size depends on:
+- Number of documents
+- Chunking strategy (more chunks = larger index)
+- Embedding dimensions
+
+**Rough sizing:**
+
+- 100 documents (~50KB each) → ~10-20MB index
+- 1,000 documents → ~100-200MB index
+- 10,000+ documents → Consider pgvector for better performance
+
+### Query Optimization
+
+#### Writing Good Prompts for Search
+
+Help the AI use search effectively by being specific in your prompt:
+
+```python
+self.prompt_add_section(
+    "Search Instructions",
+    """
+    When users ask questions:
+    1. First search the documentation using search_docs
+    2. Review all results before answering
+    3. Cite which document your answer came from
+    4. If results aren't relevant, try a different search query
+    5. If no results help, acknowledge you couldn't find the answer
+    """
+)
+```
+
+#### Tuning Search Parameters
+
+Adjust these parameters based on your content and use case:
+
+**count**: Number of results to return
+- `count=3`: Focused answers, faster response
+- `count=5`: Good balance (default)
+- `count=10`: More comprehensive, but may include less relevant results
+
+**similarity_threshold**: Minimum relevance score (0.0 to 1.0)
+- `0.0`: Return all results regardless of relevance
+- `0.3`: Filter out clearly irrelevant results
+- `0.5+`: Only high-confidence matches (may miss relevant content)
+
+**tags**: Filter by document categories
+```python
+self.add_skill(
+    "native_vector_search",
+    index_file="./knowledge.swsearch",
+    tags=["policies", "returns"],  # Only search these categories
+    tool_name="search_policies"
+)
+```
+
+#### Handling Poor Search Results
+
+If search quality is low:
+
+1. **Check chunking**: Are chunks too large or too small?
+2. **Review content**: Is the source content well-written and searchable?
+3. **Try different strategies**: Markdown chunking for docs, sentence for prose
+4. **Add metadata**: Tags help filter irrelevant content
+5. **Tune threshold**: Too high filters good results, too low adds noise
+
+### Troubleshooting
+
+#### "No results found"
+- Check that the index file exists and is readable
+- Verify the query is meaningful (not too short or generic)
+- Lower similarity_threshold if set too high
+- Ensure documents were actually indexed (check with `sw-search validate`)
+
+#### Poor result relevance
+- Try different chunking strategies
+- Increase count to see more results
+- Review source documents for quality
+- Consider adding tags to filter by category
+
+#### Slow search performance
+- For large indexes, use pgvector instead of SQLite
+- Reduce count if you don't need many results
+- Consider a remote search server for shared access
+
+#### Index file issues
+- Validate with `sw-search validate knowledge.swsearch`
+- Rebuild if corrupted
+- Check file permissions
+
 ### Search Best Practices
 
 #### Index Building
@@ -347,16 +508,20 @@ self.add_skill(
 - Keep chunks reasonably sized (5-10 sentences)
 - Add meaningful tags for filtering
 - Rebuild indexes when source docs change
+- Test search quality after building
+- Version your indexes with your documentation
 
 #### Agent Configuration
 - Set count=3-5 for most use cases
 - Use similarity_threshold to filter noise
 - Give descriptive tool_name and tool_description
 - Tell AI when/how to use search in the prompt
+- Handle "no results" gracefully in your prompt
 
 #### Production
 - Use pgvector for high-volume deployments
 - Consider remote search server for shared indexes
 - Monitor search latency and result quality
-
+- Automate index rebuilding when docs change
+- Log search queries to understand user needs
 

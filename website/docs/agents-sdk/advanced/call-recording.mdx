@@ -8,6 +8,21 @@ slug: /advanced/call-recording
 
 > **Summary**: Record calls using `record_call()` and `stop_record_call()` methods on SwaigFunctionResult. Supports stereo/mono, multiple formats, and webhook notifications.
 
+Call recording is essential for many business applications: quality assurance, compliance, training, dispute resolution, and analytics. The SDK provides flexible recording options that let you capture exactly what you need while respecting privacy and compliance requirements.
+
+Recording happens server-side on SignalWire's infrastructure, so there's no additional load on your application server. Recordings are stored securely and can be retrieved via webhooks or the SignalWire API.
+
+### When to Record
+
+Common recording use cases:
+
+- **Quality assurance**: Review agent performance and customer interactions
+- **Compliance**: Meet regulatory requirements for financial services, healthcare, etc.
+- **Training**: Build libraries of good (and problematic) call examples
+- **Dispute resolution**: Have an authoritative record of what was said
+- **Analytics**: Feed recordings into speech analytics platforms
+- **Transcription**: Generate text transcripts for search and analysis
+
 ### Recording Overview
 
 **`record_call()`**
@@ -79,9 +94,13 @@ if __name__ == "__main__":
 | `max_length` | float | None | Maximum recording seconds |
 | `status_url` | str | None | Webhook for recording events |
 
-### Stereo Recording
+### Stereo vs Mono Recording
 
-Record caller and agent on separate channels:
+The `stereo` parameter determines how audio channels are recorded. This choice significantly affects how you can use the recording afterward.
+
+#### Stereo Recording (stereo=True)
+
+Records caller and agent on separate channels (left and right):
 
 ```python
 def start_stereo_recording(self, args, raw_data):
@@ -94,6 +113,43 @@ def start_stereo_recording(self, args, raw_data):
         )
     )
 ```
+
+**When to use stereo:**
+
+- **Speech-to-text transcription**: Most transcription services work better with separated audio, correctly attributing speech to each party
+- **Speaker diarization**: Analysis tools can easily identify who said what
+- **Quality review**: Isolate agent or caller audio for focused review
+- **Training data**: Clean separation for building speech models
+- **Noise analysis**: Identify which side has audio quality issues
+
+**Stereo considerations:**
+
+- Larger file sizes (roughly 2x mono)
+- Requires stereo-capable playback for proper review
+- Some basic media players may only play one channel by default
+
+#### Mono Recording (stereo=False)
+
+Records both parties mixed into a single channel:
+
+```python
+def start_mono_recording(self, args, raw_data):
+    return (
+        SwaigFunctionResult("Recording in mono mode")
+        .record_call(
+            control_id="mono_rec",
+            stereo=False,  # Mixed audio (default)
+            format="mp3"
+        )
+    )
+```
+
+**When to use mono:**
+
+- **Simple archival**: Just need a record of what was said
+- **Storage-constrained environments**: Smaller file sizes
+- **Human playback**: Easier to listen to on any device
+- **Basic compliance**: Where separate channels aren't required
 
 ### Direction Options
 
@@ -323,6 +379,82 @@ if __name__ == "__main__":
     agent.run()
 ```
 
+### Format Comparison
+
+The `format` parameter determines the output file type. Each format has tradeoffs:
+
+| Format | Best For | File Size | Quality | Notes |
+|--------|----------|-----------|---------|-------|
+| `wav` | Transcription, archival | Large | Lossless | Uncompressed, no quality loss |
+| `mp3` | General storage | Small | Lossy | Good compression, widely supported |
+| `mp4` | Video calls | Medium | Lossy | Required for video recording |
+
+**Choosing a format:**
+
+- **wav**: Use when quality matters more than storage. Best for speech analytics, transcription services, and long-term archival where you might need to reprocess later. Files can be 10x larger than MP3.
+
+- **mp3**: Use for general-purpose recording where storage costs matter. Quality is sufficient for human review and most transcription services. Good balance of size and quality.
+
+- **mp4**: Required if you're recording video calls. Contains both audio and video tracks.
+
+### Storage and Retention Considerations
+
+Recordings consume storage and may have regulatory requirements. Plan your retention strategy:
+
+**Storage costs**: A 10-minute mono MP3 recording is roughly 2-3 MB. At scale, this adds up. A business handling 1,000 calls/day generates 60-90 GB/month of recordings.
+
+**Retention policies**:
+- **Financial services**: Often required to retain for 5-7 years
+- **Healthcare (HIPAA)**: Typically 6 years
+- **General business**: 1-2 years is common
+- **Training/QA**: Keep only what's valuable
+
+**Automated cleanup**: Build processes to delete old recordings according to your policy. Don't assume someone will do it manually.
+
+**Access controls**: Recordings may contain sensitive information. Restrict access to those who need it for legitimate business purposes.
+
+### Compliance and Legal Considerations
+
+Recording laws vary by jurisdiction. Understanding your obligations is critical.
+
+#### Consent Requirements
+
+**One-party consent** (e.g., most US states): Only one party needs to know about the recording. The agent itself can be that party, but best practice is still to inform callers.
+
+**Two-party/all-party consent** (e.g., California, many European countries): All parties must consent before recording. You must:
+1. Inform the caller that recording may occur
+2. Obtain explicit consent before starting
+3. Provide an option to decline
+4. Proceed without recording if declined
+
+**Best practice**: Regardless of jurisdiction, always inform callers. It builds trust and protects you legally.
+
+#### Compliance Implementation
+
+```python
+self.prompt_add_section(
+    "Recording Disclosure",
+    """
+    At the start of every call:
+    1. Say: "This call may be recorded for quality and training purposes."
+    2. Ask: "Do you consent to recording?"
+    3. If yes: Call start_recording function
+    4. If no: Say "No problem, I'll proceed without recording" and continue
+    5. NEVER start recording without explicit consent
+    """
+)
+```
+
+#### Sensitive Information
+
+Some information should never be recorded, or recordings should be paused:
+- Credit card numbers (PCI compliance)
+- Social Security numbers
+- Medical information in non-healthcare contexts
+- Passwords or PINs
+
+Use the pause/resume pattern shown in the complete example to handle these situations.
+
 ### Recording Best Practices
 
 #### Compliance
@@ -330,15 +462,25 @@ if __name__ == "__main__":
 - Obtain consent where legally required
 - Provide option to decline recording
 - Document consent in call logs
+- Pause recording for sensitive information (credit cards, SSN)
+- Know your jurisdiction's consent requirements
 
 #### Technical
-- Use control_id for multiple recordings
+- Use control_id for multiple recordings or pause/resume
 - Use stereo=True for transcription accuracy
 - Use status_url to track recording completion
 - Set max_length to prevent oversized files
+- Handle webhook failures gracefully
 
 #### Storage
 - Use WAV for quality, MP3 for size, MP4 for video
-- Implement retention policies
-- Secure storage with encryption
+- Implement retention policies aligned with regulations
+- Secure storage with encryption at rest
+- Restrict access to recordings
+- Build automated cleanup processes
+
+#### Quality
+- Test recording quality in your deployment environment
+- Verify both channels are capturing clearly in stereo mode
+- Monitor for failed recordings via status webhooks
 
