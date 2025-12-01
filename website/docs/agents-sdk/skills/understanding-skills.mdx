@@ -156,10 +156,12 @@ Let's start by understanding how skills work internally.
 ### SkillBase (Abstract Base Class)
 
 **Required Methods:**
+
 - `setup()` - Initialize the skill
 - `register_tools()` - Register SWAIG functions
 
 **Optional Methods:**
+
 - `get_hints()` - Speech recognition hints
 - `get_global_data()` - Session data
 - `get_prompt_sections()` - Prompt additions
@@ -173,6 +175,10 @@ Let's start by understanding how skills work internally.
 - Supports external skill paths
 
 ## How Skills Work
+
+Skills are a convenience layer built on top of SWAIG functions. When you add a skill, it registers one or more SWAIG functions with the agent, adds relevant prompts, and configures hints—all from a single `add_skill()` call.
+
+Understanding this helps when debugging: a skill's function behaves exactly like a SWAIG function you'd define yourself. The only difference is that the skill packages everything together.
 
 When you call `add_skill()`:
 
@@ -408,4 +414,116 @@ agent.add_skill("web_search", {
 })
 ```
 
+## Parameter Passing
+
+Parameters flow through skills in a structured way:
+
+**At add_skill() time:**
+```python
+self.add_skill("web_search", {
+    "api_key": "your-key",
+    "tool_name": "custom_search",
+    "max_results": 5
+})
+```
+
+The skill receives these in `self.params` during setup:
+```python
+def setup(self) -> bool:
+    self.api_key = self.params.get("api_key")
+    self.max_results = self.params.get("max_results", 3)
+    return True
+```
+
+**At function call time:**
+The AI calls the function with arguments:
+```python
+def search_handler(self, args, raw_data):
+    query = args.get("query")  # From AI's function call
+    max_results = self.max_results  # From skill config
+    # ...
+```
+
+## Result Handling
+
+Skill handlers return `SwaigFunctionResult` just like regular SWAIG functions:
+
+```python
+def my_handler(self, args, raw_data):
+    # Success case
+    return SwaigFunctionResult("The result is 42")
+
+    # With actions
+    return (
+        SwaigFunctionResult("Updated your preferences")
+        .update_global_data({"preference": "value"})
+    )
+
+    # Error case - still return a result for the AI
+    return SwaigFunctionResult("I couldn't complete that request. Please try again.")
+```
+
+The result goes back to the AI, which uses it to formulate a response to the user.
+
+## Error Handling and Propagation
+
+Skills should handle errors gracefully and return meaningful messages:
+
+```python
+def api_handler(self, args, raw_data):
+    try:
+        result = self.call_external_api(args)
+        return SwaigFunctionResult(f"Result: {result}")
+    except requests.Timeout:
+        return SwaigFunctionResult(
+            "The service is taking too long to respond. Please try again."
+        )
+    except requests.RequestException as e:
+        self.agent.log.error(f"API error: {e}")
+        return SwaigFunctionResult(
+            "I'm having trouble connecting to the service right now."
+        )
+    except Exception as e:
+        self.agent.log.error(f"Unexpected error: {e}")
+        return SwaigFunctionResult(
+            "Something went wrong. Please try again."
+        )
+```
+
+**Error handling principles:**
+
+- Always return a `SwaigFunctionResult`, even on errors
+- Make error messages user-friendly (the AI will relay them)
+- Log technical details for debugging
+- Don't expose internal errors to users
+
+## Debugging Skills
+
+When skills don't work as expected:
+
+**1. Check if the skill loaded:**
+```python
+# In your agent
+print(f"Skills loaded: {list(self._skill_manager._skills.keys())}")
+```
+
+**2. Verify functions are registered:**
+```bash
+swaig-test your_agent.py --dump-swml | grep -A 5 "functions"
+```
+
+**3. Test the function directly:**
+```bash
+swaig-test your_agent.py --function skill_function_name --args '{"param": "value"}'
+```
+
+**4. Check for missing requirements:**
+Skills log warnings if required packages or environment variables are missing. Check your logs during agent startup.
+
+**5. Look at skill source:**
+Built-in skills are in the SDK source. Examine them to understand how they work:
+```bash
+pip show signalwire-agents
+# Find location, then look in signalwire_agents/skills/
+```
 

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 4
 title: "Function Result"
-slug: /api/function-results
+slug: /api/function-result
 ---
 
 ## SwaigFunctionResult API
@@ -542,5 +542,59 @@ def to_dict(self) -> Dict[str, Any]
 ```
 
 Convert to SWAIG response format. Called automatically when returning from functions.
+
+### Action Execution Order
+
+Actions execute in the order they're added. Some actions are **terminal** and end the call flow:
+
+| Terminal Actions | Non-Terminal Actions |
+|-----------------|---------------------|
+| `.connect(final=True)` | `.update_global_data()` |
+| `.hangup()` | `.send_sms()` |
+| `.swml_transfer(final=True)` | `.say()` |
+| | `.set_metadata()` |
+
+**Best practice**: Put terminal actions last so preceding actions can execute.
+
+```python
+# Good: data saved before transfer
+return (
+    SwaigFunctionResult("Transferring...")
+    .update_global_data({"transferred": True})
+    .send_sms(to_number=phone, from_number=agent_num, body="Call transferred")
+    .connect("+15551234567", final=True)  # Terminal - goes last
+)
+```
+
+### See Also
+
+| Topic | Reference |
+|-------|-----------|
+| Defining SWAIG functions | [SWAIG Function API](/sdks/agents-sdk/api/swaig-function) |
+| Results and actions guide | [Results [Results & Actions](/sdks/agents-sdk/swaig-functions/results-actions) Actions](/sdks/agents-sdk/swaig-functions/results-actions) |
+| Call transfer options | [Call Transfers](/sdks/agents-sdk/advanced/call-transfer) |
+| State management | [State Management](/sdks/agents-sdk/advanced/state-management) |
+
+### Common Patterns
+
+**Conditional transfer:**
+
+```python
+if caller_verified:
+    return SwaigFunctionResult("Connecting...").connect("+15551234567")
+else:
+    return SwaigFunctionResult("Please verify your identity first.")
+```
+
+**Multi-action response:**
+
+```python
+return (
+    SwaigFunctionResult("Order confirmed!")
+    .update_global_data({"order_id": order_id})
+    .send_sms(to_number=phone, from_number="+15559876543", body=f"Order {order_id} confirmed")
+    .swml_change_step("confirmation")
+)
+```
 
 
