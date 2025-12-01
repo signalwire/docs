@@ -128,7 +128,7 @@ export const modalSections: ModalSection[] = [
           {
             label: "",
             link: "/sdks/agents-sdk",
-            sidebar: "agentsSdkOverviewSidebar",
+            sidebar: "agentsSdkSidebar",
           }
         ],
       },
