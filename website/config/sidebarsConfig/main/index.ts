@@ -19,7 +19,6 @@ import restApiSidebars from "./rest-api-sidebar";
 import swmlTechRefSidebar from "./swml-sidebar";
 import compatibilityAPI from "./compatibility-api-sidebar";
 import cantinaSidebar from "./cantina-sidebar";
-import agentsSdkSidebar from "./agents-sdk-sidebar";
 import callFlowBuilderSidebar from "./call-flow-builder-sidebar";
 
 const mainSidebars: SidebarsConfig = {
@@ -29,7 +28,6 @@ const mainSidebars: SidebarsConfig = {
     ...swmlTechRefSidebar,
     ...compatibilityAPI,
     ...cantinaSidebar,
-    ...agentsSdkSidebar,
     ...callFlowBuilderSidebar,
   };
 
