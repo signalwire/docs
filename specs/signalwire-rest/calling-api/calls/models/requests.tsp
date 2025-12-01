@@ -202,7 +202,7 @@ model CallUpdateCurrentCallRequest {
 
 @discriminated(#{discriminatorPropertyName: "command", envelope: "none"})
 @doc("""
-Call request union for OpenRPC-style method dispatch. Use the `command` field to specify which call method to invoke:
+Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke:
 
 - **`dial`** - Create and initiate a new outbound call to a destination. Returns immediately with call details while the call is being established in the background.
 
