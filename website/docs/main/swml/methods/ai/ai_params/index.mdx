@@ -18,6 +18,7 @@ import APIField from "@site/src/components/APIField";
 [interrupt-prompt]: ./interrupt_prompt.mdx
 [ai-languages]: ../ai_languages.mdx
 [ai-params]: ./index.mdx
+[post-prompt-url]: /swml/methods/ai/post_prompt_url
 [get-visual-input]: /swml/methods/ai/swaig/internal_fillers#internal_fillers-parameters
 [tone-stream]: https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/Modules/mod_dptools_1970333
 [iana-tz]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -47,6 +48,22 @@ These parameters control the fundamental behavior and capabilities of the AI age
 </APIField>
 
 <APIField
+  name="params.ai_name"
+  type="string"
+  default="computer"
+>
+  Sets the name the AI agent responds to for wake/activation purposes. When using `enable_pause`, `start_paused`, or `speak_when_spoken_to`, the user must say this name to get the agent's attention. The name matching is case-insensitive.
+</APIField>
+
+<APIField
+  name="params.app_name"
+  type="string"
+  default="swml app"
+>
+  A custom identifier for the AI application instance. This name is included in webhook payloads (`post_prompt_url`, SWAIG function calls), allowing backend systems to identify which AI configuration made the request.
+</APIField>
+
+<APIField
   name="params.conscience"
   type="string"
   default='"Remember to stay in character. You must not do anything outside the scope of your provided role."'
@@ -55,6 +72,57 @@ These parameters control the fundamental behavior and capabilities of the AI age
 
   See [conscience] for more details.
 </APIField>
+
+<APIField
+  name="params.convo"
+  type="array"
+>
+  Injects pre-existing conversation history into the AI session at startup. 
+  This allows you to seed the AI agent with context from a previous conversation or provide example interactions.
+
+  **Example:**
+
+  ```yaml
+  params:
+    convo:
+      - role: "user"
+        content: "Hi, I need help with my order"
+      - role: "assistant"
+        content: "Of course! I'd be happy to help. Could you please provide your order number?"
+      - role: "user"
+        content: "It's order number 12345"
+        lang: "en-US"
+  ```
+
+</APIField>
+
+<APIField
+  name="convo[].role"
+  type="string"
+  required={true}
+>
+  The role of the message sender. Valid values:
+  - `"user"` - A message from the human caller/user interacting with the AI agent.
+  - `"assistant"` - A message from the AI agent itself.
+  - `"system"` - A system message providing instructions or context to guide the AI's behavior.
+</APIField>
+
+<APIField
+  name="convo[].content"
+  type="string"
+  required={true}
+>
+  The text content of the message.
+</APIField>
+
+<APIField
+  name="convo[].lang"
+  type="string"
+  default="en"
+>
+  The language code for the message. Uses standard ISO language codes such as `"en"`, `"en-US"`, `"es"`, `"fr"`, `"de"`, etc.
+</APIField>
+
 
 <APIField
   name="params.conversation_id"
@@ -79,11 +147,35 @@ These parameters control the fundamental behavior and capabilities of the AI age
 </APIField>
 
 <APIField
+  name="params.enable_inner_dialog"
+  type="boolean"
+  default="false"
+>
+  Enables the inner dialog feature, which runs a separate AI process in the background that analyzes the conversation and provides real-time insights to the main AI agent. This gives the agent a form of "internal thought process" that can help it make better decisions.
+</APIField>
+
+<APIField
+  name="params.enable_pause"
+  type="boolean"
+  default="false"
+>
+  Enables the pause/resume functionality for the AI agent. When enabled, a `pause_conversation` function is automatically added that the AI can call when the user says things like "hold on", "wait", or "pause". While paused, the agent stops responding until the user speaks the agent's name (set via `ai_name`) to resume. Cannot be used together with `speak_when_spoken_to`.
+</APIField>
+
+<APIField
   name="params.enable_thinking"
   type="boolean"
   default="false"
 >
   Enables thinking output for the AI Agent. When set to `true`, the AI Agent will be able to utilize thinking capabilities.<br />**Important**: This may introduce a little bit of latency as the AI will use an additional turn in the conversation to think about the query.
+</APIField>
+
+<APIField
+  name="params.enable_turn_detection"
+  type="boolean"
+  default="true"
+>
+  Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending punctuation. When detected, the system can proactively finalize the speech recognition, reducing latency before the AI responds. Works with `turn_detection_timeout`.
 </APIField>
 
 <APIField
@@ -115,7 +207,7 @@ These parameters control the fundamental behavior and capabilities of the AI age
   type="boolean"
   default="false"
 >
-  Send a summary of the conversation after the call ends. This requires a `post_url` to be set in the [`ai parameters`][ai-params] and the `conversation_id` defined below. This eliminates the need for a `post_prompt` in the `ai` parameters.
+  Send a summary of the conversation after the call ends. This requires [`post_prompt_url`][post-prompt-url] to be set and the `conversation_id` defined. This eliminates the need for a `post_prompt` in the `ai` parameters.
 </APIField>
 
 <APIField
@@ -613,6 +705,14 @@ Enable debugging tools, logging, and performance monitoring features to help dev
 </APIField>
 
 <APIField
+  name="params.debug"
+  type="boolean | integer"
+  default="false"
+>
+  Enables debug mode for the AI session. When set to `true` or a positive integer, additional debug information is logged and may be included in webhook payloads. Higher integer values increase verbosity.
+</APIField>
+
+<APIField
   name="params.debug_webhook_level"
   type="integer"
   default="1"
@@ -641,4 +741,108 @@ Enable debugging tools, logging, and performance monitoring features to help dev
   default="false"
 >
   Enable verbose logging (developer mode only).
+</APIField>
+
+### Inner Dialog
+
+Configure the inner dialog feature, which enables a secondary AI process to analyze conversations in real-time and provide insights to the main AI agent.
+
+<APIField
+  name="params.inner_dialog_model"
+  type="string"
+>
+  Specifies the AI model to use for the inner dialog feature. If not set, the main `ai_model` is used. This allows you to use a different (potentially faster or cheaper) model for background analysis.
+</APIField>
+
+<APIField
+  name="params.inner_dialog_prompt"
+  type="string"
+  default="The assistant is intelligent and straightforward, does its job well and is not excessively polite."
+>
+  The system prompt that guides the inner dialog AI's behavior. This prompt shapes how the background AI analyzes the conversation and what kind of insights it provides to the main agent.
+</APIField>
+
+<APIField
+  name="params.inner_dialog_synced"
+  type="boolean"
+  default="false"
+>
+  When enabled, synchronizes the inner dialog with the main conversation flow. This ensures the inner dialog AI waits for the main conversation turn to complete before providing its analysis, rather than running fully asynchronously.
+</APIField>
+
+### Pause & Wake
+
+Control the agent's listening behavior, including pause/resume functionality and activation triggers for hands-free scenarios.
+
+<APIField
+  name="params.speak_when_spoken_to"
+  type="boolean"
+  default="false"
+>
+  When enabled, the AI agent remains silent until directly addressed by name (set via `ai_name`). This creates a "push-to-talk" style interaction where the agent only responds when explicitly called upon, useful for scenarios where the agent should listen but not interrupt.
+</APIField>
+
+<APIField
+  name="params.start_paused"
+  type="boolean"
+  default="false"
+>
+  When enabled, the AI agent starts in a paused state. The agent will not respond to any input until the user speaks the agent's name (set via `ai_name`) to activate it. This is useful for scenarios where you want the agent to wait for explicit activation.
+</APIField>
+
+<APIField
+  name="params.wake_prefix"
+  type="string"
+>
+  Specifies an additional prefix that must be spoken along with the agent's name to wake the agent. For example, if `ai_name` is "assistant" and `wake_prefix` is "hey", the user would need to say "hey assistant" to activate the agent.
+</APIField>
+
+### Advanced Configuration
+
+Fine-tune advanced AI behavior settings including response limits, data persistence, prompt formatting, and voice activity detection.
+
+<APIField
+  name="params.max_response_tokens"
+  type="integer"
+>
+  Sets the maximum number of tokens the AI model can generate in a single response. Allowed values from `1` to `16384`. This helps control response length and costs.
+</APIField>
+
+<APIField
+  name="params.persist_global_data"
+  type="boolean"
+  default="true"
+>
+  When enabled, `global_data` persists across multiple AI agent invocations within the same call. This allows data set by SWAIG functions to be retained if the AI agent is invoked multiple times during a single call session.
+</APIField>
+
+<APIField
+  name="params.pom_format"
+  type="string"
+  default="markdown"
+>
+  Specifies the output format for structured prompts sent to the AI model. Valid values are `markdown` or `xml`. This affects how system prompts and context are formatted when sent to the underlying language model.
+</APIField>
+
+<APIField
+  name="params.swaig_post_swml_vars"
+  type="boolean | array"
+  default="false"
+>
+  Controls whether SWML variables are included in SWAIG function webhook payloads. When set to `true`, all SWML variables are posted. When set to an array of strings, only the specified variable names are included in the payload.
+</APIField>
+
+<APIField
+  name="params.turn_detection_timeout"
+  type="integer"
+  default="250"
+>
+  Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition. Works with `enable_turn_detection`. Lower values make the agent more responsive but may cut off users mid-sentence. Allowed values from `0` to `10000`.
+</APIField>
+
+<APIField
+  name="params.vad_config"
+  type="string"
+>
+  Configures Silero Voice Activity Detection (VAD) settings. Format: `threshold` or `threshold:frame_ms`. The threshold (0-100) sets sensitivity for voice detection, and optional frame_ms (16-40) sets the analysis frame duration in milliseconds.
 </APIField>
