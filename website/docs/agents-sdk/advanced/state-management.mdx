@@ -8,6 +8,25 @@ slug: /advanced/state-management
 
 > **Summary**: Manage data throughout call sessions using global_data for persistent state, metadata for function-scoped data, and post_prompt for call summaries.
 
+State management is essential for building agents that remember information throughout a conversation. Without state, every function call would be independent—your agent wouldn't know the customer's name, what items they've ordered, or what step of a workflow they're on.
+
+The SDK provides several state mechanisms, each designed for different use cases. Understanding when to use each one is key to building effective agents.
+
+### How State Persists
+
+State in the AI Agents SDK is **session-scoped**—it exists only for the duration of a single call. When the call ends, all state is cleared. This is by design: each call is independent, and there's no built-in mechanism for persisting state between calls.
+
+If you need data to persist across calls (like customer profiles or order history), store it in your own database and retrieve it when needed using SWAIG functions.
+
+**Within a call, state flows like this:**
+
+1. Agent initialization sets initial `global_data`
+2. AI uses state in prompts via `${global_data.key}` substitution
+3. SWAIG functions can read state from `raw_data` and update it via `SwaigFunctionResult`
+4. Updated state becomes available to subsequent prompts and function calls
+5. When the call ends, `post_prompt` runs to extract structured data
+6. All in-memory state is cleared
+
 ### State Types Overview
 
 | State Type | Scope | Key Features |
@@ -371,18 +390,115 @@ lookup_dm = (
 | `set_post_prompt_url()` | Agent | Set webhook for post-prompt data |
 | `set_post_prompt_llm_params()` | Agent | Configure post-prompt model |
 
+### Timeout and Disconnection Behavior
+
+Understanding what happens when calls end unexpectedly is important for robust state management.
+
+**Normal call end:** When the caller hangs up or the agent ends the call normally, the post-prompt executes and any configured webhooks fire. State is then cleared.
+
+**Timeout:** If the caller is silent for too long, the call may timeout. The post-prompt still executes, but the conversation may be incomplete. Design your post-prompt to handle partial data gracefully.
+
+**Network disconnection:** If the connection drops unexpectedly, the post-prompt may not execute. Don't rely solely on post-prompt for critical data—consider saving important state via SWAIG function webhooks as the conversation progresses.
+
+**Function timeout:** Individual SWAIG function calls have timeout limits. If a function takes too long, it returns an error. State updates from that function call won't be applied.
+
+### Memory and Size Limits
+
+While the SDK doesn't impose strict limits on state size, keep these practical considerations in mind:
+
+**Global data:** Keep global_data reasonably small (under a few KB). Large state objects increase latency and memory usage. Don't store base64-encoded files or large datasets.
+
+**Metadata:** Same guidance—use metadata for small pieces of function-specific data, not large payloads.
+
+**Prompt substitution:** When state is substituted into prompts, the entire value is included. Very large state values can consume your context window quickly.
+
+**Best practice:** If you need to work with large datasets, keep them server-side and retrieve specific pieces as needed rather than loading everything into state.
+
+### Structuring State Effectively
+
+Well-structured state makes your agent easier to debug and maintain.
+
+**Flat structures work well:**
+```python
+self.set_global_data({
+    "customer_name": "",
+    "customer_email": "",
+    "order_total": 0.0,
+    "current_step": "greeting"
+})
+```
+
+**Avoid deeply nested structures:**
+```python
+# Harder to access and update
+self.set_global_data({
+    "customer": {
+        "profile": {
+            "personal": {
+                "name": ""  # ${global_data.customer.profile.personal.name} is cumbersome
+            }
+        }
+    }
+})
+```
+
+**Use consistent naming conventions:**
+```python
+# Good: Clear, consistent naming
+self.set_global_data({
+    "order_id": "",
+    "order_items": [],
+    "order_total": 0.0,
+    "customer_name": "",
+    "customer_phone": ""
+})
+
+# Avoid: Inconsistent naming
+self.set_global_data({
+    "orderId": "",
+    "items": [],
+    "total": 0.0,
+    "customerName": "",
+    "phone": ""
+})
+```
+
+### Debugging State Issues
+
+When state isn't working as expected:
+
+1. **Log state in handlers:**
+```python
+def my_handler(self, args, raw_data):
+    self.log.info(f"Current global_data: {raw_data.get('global_data', {})}")
+    # ... rest of handler
+```
+
+2. **Check variable substitution:** Ensure your `${global_data.key}` references match the actual keys in state.
+
+3. **Verify update timing:** State updates from a function result aren't available until the *next* prompt or function call. You can't update state and use the new value in the same function's return message.
+
+4. **Use swaig-test:** The testing tool shows the SWML configuration including initial global_data.
+
 ### Best Practices
 
 **DO:**
+
 - Use global_data for data needed across functions
 - Use metadata for function-specific isolated data
 - Set initial state in __init__ for predictable behavior
 - Use post_prompt to extract structured call summaries
 - Log state changes for debugging
+- Keep state structures flat and simple
+- Use consistent naming conventions
+- Save critical data server-side, not just in session state
 
 **DON'T:**
-- Store sensitive data (passwords, API keys) in global_data
+
+- Store sensitive data (passwords, API keys) in global_data where it might be logged
 - Rely on global_data for complex state machines (use server-side)
 - Assume metadata persists across function boundaries
 - Forget that state resets between calls
+- Store large objects or arrays in state
+- Use deeply nested state structures
 

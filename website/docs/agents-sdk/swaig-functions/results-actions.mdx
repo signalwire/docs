@@ -587,6 +587,115 @@ def complete_interaction(self, args, raw_data):
     )
 ```
 
+### Action Execution Order and Interactions
+
+When chaining multiple actions, understanding how they interact is important.
+
+#### Execution Order
+
+Actions execute in the order they're added to the SwaigFunctionResult. The response text is processed first, then actions execute sequentially.
+
+```python
+# These execute in order: 1, 2, 3
+return (
+    SwaigFunctionResult("Starting process")
+    .update_global_data({"step": 1})      # 1st
+    .send_sms(to_number=phone, ...)       # 2nd
+    .update_global_data({"step": 2})      # 3rd
+)
+```
+
+#### Terminal Actions
+
+Some actions end the call or AI session. Once a terminal action executes, subsequent actions may not run:
+
+**Terminal actions:**
+
+- `.connect(final=True)` - Transfers call away permanently
+- `.hangup()` - Ends the call
+- `.swml_transfer(final=True)` - Transfers to another SWML endpoint
+
+**Non-terminal actions:**
+
+- `.update_global_data()` - Continues normally
+- `.send_sms()` - Continues normally
+- `.say()` - Continues normally
+- `.connect(final=False)` - Returns to agent if far end hangs up
+
+**Best practice:** Put terminal actions last in the chain.
+
+```python
+# Good - data saved before transfer
+return (
+    SwaigFunctionResult("Transferring you now")
+    .update_global_data({"transferred": True})  # Executes
+    .send_sms(to_number=phone, body="...")      # Executes
+    .connect("+15551234567", final=True)        # Terminal
+)
+
+# Risky - SMS might not send
+return (
+    SwaigFunctionResult("Transferring you now")
+    .connect("+15551234567", final=True)        # Terminal - call leaves
+    .send_sms(to_number=phone, body="...")      # May not execute
+)
+```
+
+#### Conflicting Actions
+
+Some action combinations don't make sense together:
+
+| Combination | Result |
+|-------------|--------|
+| Multiple `.connect()` | Last one wins |
+| `.hangup()` then `.connect()` | Hangup executes, connect ignored |
+| `.connect(final=True)` then `.say()` | Say won't execute (call transferred) |
+| Multiple `.update_global_data()` | Merged (later keys overwrite earlier) |
+| Multiple `.send_sms()` | All execute (multiple SMS sent) |
+
+#### Using post_process with Actions
+
+When `post_process=True`, the AI speaks the response and can respond to follow-up before actions execute:
+
+```python
+return (
+    SwaigFunctionResult(
+        "I'll transfer you. Anything else first?",
+        post_process=True  # AI waits for response
+    )
+    .connect("+15551234567", final=True)  # Executes after AI finishes
+)
+```
+
+This is useful for:
+
+- Confirming before transfers
+- Last-chance questions before hangup
+- Warning before destructive actions
+
+#### Action Timing Considerations
+
+**Immediate actions** execute as soon as the function returns:
+
+- `.update_global_data()`
+- `.toggle_functions()`
+
+**Speech actions** execute during AI's turn:
+
+- `.say()`
+- `.stop()`
+
+**Call control actions** affect the call flow:
+
+- `.connect()` - Immediate transfer
+- `.hangup()` - Immediate disconnect
+- `.hold()` - Immediate hold
+
+**External actions** may have latency:
+
+- `.send_sms()` - Network delay possible
+- `.record_call()` - Recording starts immediately but storage is async
+
 ### Advanced: Execute Raw SWML
 
 For advanced use cases, execute raw SWML documents directly:
