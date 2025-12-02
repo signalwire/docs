@@ -382,6 +382,123 @@ class MyAgent(AgentBase):
         return SwaigFunctionResult(f"The current time in {timezone} is 3:45 PM")
 ```
 
+## define_tool() vs @tool: Choosing an Approach
+
+Both methods register SWAIG functions with the same result. Choose based on your coding style and requirements.
+
+### Comparison
+
+| Aspect | define_tool() | @tool Decorator |
+|--------|---------------|-----------------|
+| **Where defined** | Inside `__init__` | At method definition |
+| **Dynamic registration** | Easy | Requires workarounds |
+| **Conditional functions** | Straightforward | More complex |
+| **Code organization** | Definition separate from handler | Self-documenting |
+| **Inheritance** | Easier to override | Works but less flexible |
+
+### When to Use define_tool()
+
+**Conditional function registration:**
+
+```python
+def __init__(self, enable_admin=False):
+    super().__init__(name="my-agent")
+
+    # Always available
+    self.define_tool(name="get_info", ...)
+
+    # Only for admin mode
+    if enable_admin:
+        self.define_tool(name="admin_reset", ...)
+```
+
+**Dynamic functions from configuration:**
+
+```python
+def __init__(self, functions_config):
+    super().__init__(name="my-agent")
+
+    for func in functions_config:
+        self.define_tool(
+            name=func["name"],
+            description=func["description"],
+            parameters=func["params"],
+            handler=getattr(self, func["handler_name"])
+        )
+```
+
+**Handlers defined outside the class:**
+
+```python
+def external_handler(agent, args, raw_data):
+    return SwaigFunctionResult("Handled externally")
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.define_tool(
+            name="external_func",
+            description="Uses external handler",
+            parameters={...},
+            handler=lambda args, raw: external_handler(self, args, raw)
+        )
+```
+
+### When to Use @tool Decorator
+
+**Static, self-documenting functions:**
+
+```python
+class CustomerServiceAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="customer-service")
+        self.add_language("English", "en-US", "rime.spore")
+
+    @AgentBase.tool(
+        name="check_order",
+        description="Look up order status",
+        parameters={...}
+    )
+    def check_order(self, args, raw_data):
+        # Handler right here with its definition
+        return SwaigFunctionResult("...")
+
+    @AgentBase.tool(
+        name="get_balance",
+        description="Get account balance",
+        parameters={...}
+    )
+    def get_balance(self, args, raw_data):
+        return SwaigFunctionResult("...")
+```
+
+The decorator keeps the function metadata with the implementation, making it easier to see what a function does at a glance.
+
+### Mixing Both Approaches
+
+You can use both in the same agent:
+
+```python
+class HybridAgent(AgentBase):
+    def __init__(self, extra_functions=None):
+        super().__init__(name="hybrid")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Dynamic functions via define_tool
+        if extra_functions:
+            for func in extra_functions:
+                self.define_tool(**func)
+
+    # Static function via decorator
+    @AgentBase.tool(
+        name="get_help",
+        description="Get help information",
+        parameters={"type": "object", "properties": {}}
+    )
+    def get_help(self, args, raw_data):
+        return SwaigFunctionResult("How can I help you?")
+```
+
 ## External Webhook Functions
 
 Route function calls to an external webhook:

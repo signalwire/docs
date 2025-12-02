@@ -8,6 +8,10 @@ slug: /advanced/contexts-workflows
 
 > **Summary**: This chapter covers advanced SDK features including multi-step workflows with contexts, state management, call recording, call transfers, multi-agent servers, and knowledge search integration.
 
+The features in this chapter build on the fundamentals covered earlier. While basic agents handle free-form conversations well, many real-world applications require more structure: guided workflows that ensure certain information is collected, the ability to transfer between different "departments" or personas, recording for compliance, and integration with knowledge bases.
+
+These advanced features transform simple voice agents into sophisticated conversational applications capable of handling complex business processes.
+
 ## What You'll Learn
 
 This chapter covers advanced capabilities:
@@ -89,6 +93,10 @@ Before diving into advanced features:
 
 ## When to Use Contexts
 
+Contexts are the SDK's answer to a common challenge: how do you ensure a conversation follows a specific path? Regular prompts work well for open-ended conversations, but many business processes require structure—collecting specific information in a specific order, or routing callers through a defined workflow.
+
+Think of contexts as conversation "states" or "modes." Each context can have its own persona, available functions, and series of steps. The AI automatically manages transitions between contexts and steps based on criteria you define.
+
 | Regular Prompts | Contexts |
 |-----------------|----------|
 | Free-form conversations | Structured workflows |
@@ -98,6 +106,7 @@ Before diving into advanced features:
 | | Multiple personas |
 
 **Use contexts when you need:**
+
 - Guaranteed step completion
 - Controlled navigation
 - Step-specific function access
@@ -105,7 +114,25 @@ Before diving into advanced features:
 - Department transfers
 - Isolated conversation segments
 
+**Common context patterns:**
+
+- **Data collection wizard**: Gather customer information step-by-step (name → address → payment)
+- **Triage flow**: Qualify callers before routing to appropriate department
+- **Multi-department support**: Sales, Support, and Billing each with their own persona
+- **Appointment scheduling**: Check availability → select time → confirm details
+- **Order processing**: Select items → confirm order → process payment
+
 ## Context Architecture
+
+Understanding how contexts, steps, and navigation work together is essential for building effective workflows.
+
+**Key concepts:**
+
+- **ContextBuilder**: The top-level container that holds all your contexts
+- **Context**: A distinct conversation mode (like "sales" or "support"), with its own persona and settings
+- **Step**: A specific point within a context where certain tasks must be completed
+
+The AI automatically tracks which context and step the conversation is in. When step criteria are met, it advances to the next allowed step. When context navigation is permitted and appropriate, it switches contexts entirely.
 
 ```diagram
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -133,6 +160,14 @@ Before diving into advanced features:
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**How state flows through contexts:**
+
+1. Caller starts in the first step of the default (or specified) context
+2. AI follows the step's instructions until `step_criteria` is satisfied
+3. AI chooses from `valid_steps` to advance within the context
+4. If `valid_contexts` allows, AI can switch to a different context entirely
+5. When switching contexts, `isolated`, `consolidate`, or `full_reset` settings control what conversation history carries over
 
 ## Basic Context Example
 
@@ -238,6 +273,42 @@ Allow navigation to other contexts:
 
 ```python
 step.set_valid_contexts(["support", "manager"])
+```
+
+## Understanding Step Criteria
+
+Step criteria tell the AI when a step is "complete" and it's time to move on. Writing good criteria is crucial—too vague and the AI may advance prematurely; too strict and the conversation may get stuck.
+
+**Good criteria are:**
+
+- Specific and measurable
+- Phrased as completion conditions
+- Focused on what information has been collected
+
+**Examples of well-written criteria:**
+
+```python
+# Good: Specific, measurable
+.set_step_criteria("Customer has provided their full name and email address")
+
+# Good: Clear completion condition
+.set_step_criteria("Customer has selected a product and confirmed the quantity")
+
+# Good: Explicit confirmation
+.set_step_criteria("Customer has verbally confirmed the order total")
+```
+
+**Problematic criteria to avoid:**
+
+```python
+# Bad: Too vague
+.set_step_criteria("Customer is ready")
+
+# Bad: Subjective
+.set_step_criteria("Customer seems satisfied")
+
+# Bad: No clear completion point
+.set_step_criteria("Help the customer")
 ```
 
 ## Context Configuration
@@ -415,18 +486,101 @@ The ContextBuilder validates your configuration:
 | `add_enter_filler()` | Context | Entry transition phrases |
 | `add_exit_filler()` | Context | Exit transition phrases |
 
+## Context Switching Behavior
+
+When the AI switches between contexts, several things can happen depending on your configuration. Understanding these options helps you create smooth transitions.
+
+### Isolated Contexts
+
+When `isolated=True`, the conversation history is cleared when entering the context. This is useful when:
+- You want a clean slate for a new department
+- Previous context shouldn't influence the new persona
+- You're implementing strict separation between workflow segments
+
+```python
+support = contexts.add_context("support") \
+    .set_isolated(True)  # Fresh start when entering support
+```
+
+The caller won't notice—the AI simply starts fresh with no memory of the previous context.
+
+### Consolidated Contexts
+
+When `consolidate=True`, the AI summarizes the previous conversation before switching. This preserves important information without carrying over the full history:
+
+```python
+billing = contexts.add_context("billing") \
+    .set_consolidate(True)  # Summarize previous conversation
+```
+
+The summary includes key facts and decisions, giving the new context awareness of what happened without the full transcript.
+
+### Full Reset Contexts
+
+`full_reset=True` goes further than isolation—it completely replaces the system prompt and clears all state:
+
+```python
+escalation = contexts.add_context("escalation") \
+    .set_full_reset(True)  # Complete prompt replacement
+```
+
+Use this when the new context needs to behave as if it were a completely different agent.
+
+### Combining with Enter/Exit Fillers
+
+Fillers provide audio feedback during context switches, making transitions feel natural:
+
+```python
+support = contexts.add_context("support") \
+    .set_isolated(True) \
+    .add_enter_filler("en-US", [
+        "Let me transfer you to technical support.",
+        "One moment while I connect you with a specialist."
+    ]) \
+    .add_exit_filler("en-US", [
+        "Returning you to the main menu.",
+        "Transferring you back."
+    ])
+```
+
+The AI randomly selects from the filler options, providing variety in the transitions.
+
+## Debugging Context Flows
+
+When contexts don't behave as expected, use these debugging strategies:
+
+1. **Check step criteria**: If stuck on a step, the criteria may be too strict. Temporarily loosen them to verify the flow works.
+
+2. **Verify navigation paths**: Ensure `valid_steps` and `valid_contexts` form a complete graph. Every step should have somewhere to go (unless it's a terminal step).
+
+3. **Test with swaig-test**: The testing tool shows context configuration in the SWML output:
+
+```bash
+swaig-test your_agent.py --dump-swml | grep -A 50 "contexts"
+```
+
+4. **Add logging in handlers**: If you have SWAIG functions, log when they're called to trace the conversation flow.
+
+5. **Watch for validation errors**: The ContextBuilder validates your configuration at runtime. Check logs for validation failures.
+
 ## Best Practices
 
 **DO:**
+
 - Set clear step_criteria for each step
 - Use isolated=True for persona changes
 - Add enter_fillers for smooth transitions
 - Define valid_contexts to enable department transfers
 - Test navigation paths thoroughly
+- Provide escape routes from every step (avoid dead ends)
+- Use consolidate=True when context needs awareness of previous conversation
 
 **DON'T:**
+
 - Create circular navigation without exit paths
 - Skip setting a base prompt before define_contexts()
 - Mix set_text() with add_section() on the same step
 - Forget to validate step/context references
+- Use full_reset unless you truly need a complete persona change
+- Make criteria too vague or too strict
 

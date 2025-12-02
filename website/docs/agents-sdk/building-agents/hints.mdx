@@ -150,25 +150,125 @@ self.add_hints([
 
 ### Pattern Hints (Advanced)
 
-For words with specific patterns, use pattern hints:
+Pattern hints use regular expressions to match and normalize spoken input. They're useful for:
+
+- Normalizing common mishearings of brand names
+- Capturing structured data (account numbers, order IDs)
+- Handling variations in how people say things
+
+#### Pattern Hint Syntax
 
 ```python
-## Pattern hint with replacement
 self.add_pattern_hint(
-    hint="account number",           # What to listen for
-    pattern=r"\d{8,12}",             # Regex pattern to match
-    replace="${1}",                   # How to format it
+    hint="what STT should listen for",
+    pattern=r"regex pattern to match",
+    replace="normalized output",
+    ignore_case=True  # optional, default False
+)
+```
+
+#### Common Pattern Examples
+
+**Brand name normalization:**
+
+```python
+# Catch common mishearings of "Acme"
+self.add_pattern_hint(
+    hint="Acme",
+    pattern=r"(acme|ackme|ac me|acmee)",
+    replace="Acme",
     ignore_case=True
 )
 
-## Normalize variations
+# SignalWire variations
 self.add_pattern_hint(
-    hint="Acme",
-    pattern=r"(acme|ackme|ac me)",   # Common mishearings
-    replace="Acme",                   # Normalize to correct form
+    hint="SignalWire",
+    pattern=r"(signal wire|signalwire|signal-wire)",
+    replace="SignalWire",
     ignore_case=True
 )
 ```
+
+**Account/Order numbers:**
+
+```python
+# 8-digit account numbers
+self.add_pattern_hint(
+    hint="account number",
+    pattern=r"\d{8}",
+    replace="${0}"  # Keep the matched digits
+)
+
+# Order IDs like "ORD-12345"
+self.add_pattern_hint(
+    hint="order ID",
+    pattern=r"ORD[-\s]?\d{5,8}",
+    replace="${0}",
+    ignore_case=True
+)
+```
+
+**Phone numbers:**
+
+```python
+# Various phone number formats
+self.add_pattern_hint(
+    hint="phone number",
+    pattern=r"\d{3}[-.\s]?\d{3}[-.\s]?\d{4}",
+    replace="${0}"
+)
+```
+
+**Email addresses:**
+
+```python
+self.add_pattern_hint(
+    hint="email",
+    pattern=r"\S+@\S+\.\S+",
+    replace="${0}"
+)
+```
+
+**Dates:**
+
+```python
+# Dates like "January 15th" or "Jan 15"
+self.add_pattern_hint(
+    hint="date",
+    pattern=r"(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}(st|nd|rd|th)?",
+    replace="${0}",
+    ignore_case=True
+)
+```
+
+#### Pattern Hint Tips
+
+**Test patterns first:**
+
+Before adding pattern hints, test your regex at a site like regex101.com. STT output may vary from what you expect.
+
+**Start simple:**
+
+Begin with basic patterns and refine based on actual transcription errors you observe.
+
+**Use capture groups carefully:**
+
+- `${0}` = entire match
+- `${1}` = first capture group
+- `${2}` = second capture group, etc.
+
+**Debug with logging:**
+
+Enable debug logging to see what STT produces, then craft patterns to match.
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+**Order matters:**
+
+If multiple patterns could match, they're evaluated in registration order. Put more specific patterns first.
 
 ### Organizing Hints
 
@@ -226,6 +326,7 @@ class DynamicHintsAgent(AgentBase):
 ### Hint Best Practices
 
 **DO:**
+
 - Hint brand names and product names
 - Hint technical terms specific to your domain
 - Hint common employee/customer names
@@ -233,6 +334,7 @@ class DynamicHintsAgent(AgentBase):
 - Test with actual callers to find missed words
 
 **DON'T:**
+
 - Hint common English words (already recognized well)
 - Add hundreds of hints (quality over quantity)
 - Hint full sentences (single words/short phrases work best)
