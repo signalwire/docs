@@ -5,12 +5,11 @@ import "../enums.tsp";
 using TypeSpec.Http;
 
 const callHandlerDescription = """
-  Specify how the SIP endpoint will handle outbound calls. 
-  These options will control if the call is simply passed to the destination or controlled by a resource.
-  - **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
-  - **passthrough**: Passes the call to the destination with no additional logic.
-  - **block-pstn**: Passes the call to the destination while blocking PSTN destination.
-  - **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
+  Specify how the SIP endpoint will handle outbound calls.
+  - **default**: The SIP endpoint will pull the outbound policy setting from the [SIP Profile Settings](https://my.signalwire.com?page=sip_profile/edit). This allows centralized management of outbound call behavior across multiple endpoints from a single configuration.
+  - **passthrough**: The SIP endpoint will be allowed to dial PSTN numbers. This permits outbound calling to traditional phone numbers without restrictions.
+  - **block-pstn**: The SIP endpoint will be blocked from dialing PSTN numbers. Use this to restrict the endpoint from initiating calls to the public telephone network.
+  - **resource**: Outbound calls from this SIP endpoint will dial the specified resource and execute its instructions. Requires setting `calling_handler_resource_id` to a valid resource. This enables custom call handling workflows for outbound calls. See the [Fabric REST API](/rest/signalwire-rest/endpoints/fabric) for valid resource types.
   """;
 
 model SipEndpointPathID {
