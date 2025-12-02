@@ -50,7 +50,19 @@ model CallHoldRequest {
   command: "calling.ai_hold";
 
   @doc(paramsDescription)
-  params: {};
+  params: {
+    @doc("The duration to hold the caller in seconds.")
+    @example(300)
+    @maxValue(300)
+    timeout?: int32 = 300;
+
+    @doc("""
+      A system message added to the AI conversation before placing the caller on hold.
+      The AI will speak this message to the caller before hold music begins.
+      """)
+    @example("Please hold while I transfer you to a specialist.")
+    prompt?: string = "Tell the user you are putting them on hold.";
+  };
 }
 
 @summary("Unhold call")
@@ -64,7 +76,14 @@ model CallUnholdRequest {
   command: "calling.ai_unhold";
 
   @doc(paramsDescription)
-  params: {};
+  params: {
+    @doc("""
+      A system message added to the AI conversation when taking the caller off hold.
+      The AI will use this context when resuming the conversation.
+      """)
+    @example("The user has been connected to a specialist.")
+    prompt?: string = "The user has been taken off hold.";
+  };
 }
 
 @summary("Inject AI message")
