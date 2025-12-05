@@ -31,7 +31,7 @@ const config: Config = {
     '@signalwire/docusaurus-theme-llms-txt',
     "@docusaurus/theme-mermaid", // Imports the mermaid library for rendering diagrams
     "docusaurus-theme-openapi-docs", // Imports the openapi-docs theme for rendering OpenAPI documentation
-    ...(process.env.TYPESENSE_HOST && process.env.TYPESENSE_API_SEARCH_KEY && process.env.TYPESENSE_COLLECTION_NAME && process.env.TYPESENSE_EXPORTS ? 
+    ...(process.env.TYPESENSE_HOST && process.env.TYPESENSE_API_SEARCH_KEY && process.env.TYPESENSE_COLLECTION_NAME && (process.env.TYPESENSE_PORT || process.env.TYPESENSE_EXPORTS) ?
       ["docusaurus-theme-search-typesense"] : []), // Only include Typesense theme if env vars are set
   ],
 

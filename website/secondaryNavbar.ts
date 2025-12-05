@@ -95,9 +95,9 @@ export const modalSections: ModalSection[] = [
     position: 2,
     items: {
       swml: {
-        title: "SWML (SignalWire Markup Language)",
+        title: "SWML",
         icon: MdCode,
-        description: "Voice and AI applications defined by serverless or HTTP-requested scripts written in YAML or JSON",
+        description: "SWML (SignalWire Markup Language) enables you to create voice and AI applications defined by serverless or HTTP-requested scripts written in YAML or JSON",
         link: "/swml",
         position: 2,
         links: [
@@ -114,7 +114,7 @@ export const modalSections: ModalSection[] = [
           {
             label: "Technical Reference",
             link: "/swml/methods",
-            sidebar: "swmlMethodsSidebar",
+            sidebar: "swmlReferenceSidebar",
           },
         ],
       },
@@ -128,7 +128,7 @@ export const modalSections: ModalSection[] = [
           {
             label: "",
             link: "/sdks/agents-sdk",
-            sidebar: "agentsSdkOverviewSidebar",
+            sidebar: "agentsSdkSidebar",
           }
         ],
       },
