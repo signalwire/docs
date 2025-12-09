@@ -20,6 +20,10 @@ Instances of this class allow you to control (e.g., pause, resume, stop) the pla
   Unique id for this playback.
 </APIField>
 
+<APIField name="roomId" type="string" required={true}>
+  Id of the room associated to this playback.
+</APIField>
+
 <APIField name="roomSessionId" type="string" required={true}>
   Id of the room session associated to this playback.
 </APIField>
@@ -52,6 +56,9 @@ Instances of this class allow you to control (e.g., pause, resume, stop) the pla
   End time, if available.
 </APIField>
 
+<APIField name="hasEnded" type="boolean" required={true}>
+  Whether the playback has ended. Returns `true` if the state is `"completed"`.
+</APIField>
 
 ## **Methods**
 

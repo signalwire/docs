@@ -16,6 +16,10 @@ Represents a specific recording of a room session.
   The unique ID of this recording.
 </APIField>
 
+<APIField name="roomId" type="string" required={true}>
+  The ID of the room associated to this recording.
+</APIField>
+
 <APIField name="roomSessionId" type="string" required={true}>
   The ID of the room session associated to this recording.
 </APIField>
@@ -36,6 +40,9 @@ Represents a specific recording of a room session.
   End time, if available.
 </APIField>
 
+<APIField name="hasEnded" type="boolean" required={true}>
+  Whether the recording has ended. Returns `true` if the state is `"completed"`.
+</APIField>
 
 ## **Methods**
 
