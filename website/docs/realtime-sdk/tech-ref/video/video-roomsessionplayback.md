@@ -16,75 +16,41 @@ Instances of this class allow you to control (e.g., pause, resume, stop) the pla
 
 ## **Properties**
 
-### endedAt
+<APIField name="id" type="string" required={true}>
+  Unique id for this playback.
+</APIField>
 
-• `Optional` **endedAt**: `Date`
+<APIField name="roomSessionId" type="string" required={true}>
+  Id of the room session associated to this playback.
+</APIField>
 
-End time, if available.
+<APIField name="url" type="string" required={true}>
+  Url of the file reproduced by this playback.
+</APIField>
 
----
+<APIField name="state" type='"paused" | "completed" | "playing"' required={true}>
+  Current state of the playback.
+</APIField>
 
-### id
+<APIField name="position" type="number" required={true}>
+  Current playback position, in milliseconds.
+</APIField>
 
-• **id**: `string`
+<APIField name="seekable" type="boolean" required={true}>
+  Whether the seek functions ([seek][link], [forward][link-1], [rewind][link-2]) can be used for this playback.
+</APIField>
 
-Unique id for this playback.
+<APIField name="volume" type="number" required={true} default="0">
+  Audio volume at which the playback file is reproduced.
+</APIField>
 
----
+<APIField name="startedAt" type="Date">
+  Start time, if available.
+</APIField>
 
-### position
-
-• **position**: `number`
-
-Current playback position, in milliseconds.
-
----
-
-### roomSessionId
-
-• **roomSessionId**: `string`
-
-Id of the room session associated to this playback.
-
----
-
-### seekable
-
-• **seekable**: `boolean`
-
-Whether the seek functions ([seek][link], [forward][link-1], [rewind][link-2]) can be used for this playback.
-
----
-
-### startedAt
-
-• **startedAt**: `Date`
-
-Start time, if available.
-
----
-
-### state
-
-• **state**: `"paused"` \| `"completed"` \| `"playing"`
-
-Current state of the playback.
-
----
-
-### url
-
-• **url**: `string`
-
-Url of the file reproduced by this playback.
-
----
-
-### volume
-
-• **volume**: `number`
-
-Audio volume at which the playback file is reproduced.
+<APIField name="endedAt" type="Date">
+  End time, if available.
+</APIField>
 
 
 ## **Methods**
@@ -97,9 +63,9 @@ Seeks the current playback forward by the specified `offset`.
 
 #### Parameters
 
-| Name      | Type     | Description                                                                                                    |
-| :-------- | :------- | :------------------------------------------------------------------------------------------------------------- |
-| `offset`<span className="optional-arg">Optional</span> | `number` | Relative number of milliseconds to seek forward from the current position. <br/> Defaults to `5000` (5 seconds). |
+<APIField name="offset" type="number" default="5000">
+  Relative number of milliseconds to seek forward from the current position.
+</APIField>
 
 #### Returns
 
@@ -236,9 +202,9 @@ Seeks the current playback backwards by the specified offset.
 
 #### Parameters
 
-| Name      | Type     | Description                                                                                         |
-|:----------|:---------|:----------------------------------------------------------------------------------------------------|
-| `offset`<span className="optional-arg">Optional</span> | `number` | Relative number of milliseconds to seek backwards from the current position. Defaults to 5 seconds. |
+<APIField name="offset" type="number" default="5000">
+  Relative number of milliseconds to seek backwards from the current position.
+</APIField>
 
 #### Returns
 
@@ -284,9 +250,9 @@ Seeks the current playback to the specified absolute position.
 
 #### Parameters
 
-| Name       | Type     | Description                                                       |
-|:-----------|:---------|:------------------------------------------------------------------|
-| `timecode`<span className="required-arg">Required</span> | `number` | The absolute position in milliseconds to seek to in the playback. |
+<APIField name="timecode" type="number" required={true}>
+  The absolute position in milliseconds to seek to in the playback.
+</APIField>
 
 #### Returns
 
@@ -341,9 +307,9 @@ Sets the audio volume for the playback.
 
 #### Parameters
 
-| Name     | Type     | Description                                                           |
-|:---------|:---------|:----------------------------------------------------------------------|
-| `volume`<span className="required-arg">Required</span> | `number` | The desired volume. Values range from -50 to 50, with a default of 0. |
+<APIField name="volume" type="number" required={true} default="0">
+  The desired volume. Values range from -50 to 50.
+</APIField>
 
 #### Returns
 
@@ -484,9 +450,9 @@ Emitted when the playback starts.
 
 #### Parameters
 
-| Name       | Type                                                  | Description                |
-|:-----------|:------------------------------------------------------|:---------------------------|
-| `playback`<span className="required-arg">Required</span> | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that started. |
+<APIField name="playback" type="RoomSessionPlayback" required={true}>
+  The playback that started. See [`RoomSessionPlayback`][video-roomsessionplayback].
+</APIField>
 
 ---
 
@@ -498,9 +464,9 @@ Emitted when the playback is updated.
 
 #### Parameters
 
-| Name       | Type                                                  | Description                |
-|:-----------|:------------------------------------------------------|:---------------------------|
-| `playback`<span className="required-arg">Required</span> | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that updated. |
+<APIField name="playback" type="RoomSessionPlayback" required={true}>
+  The playback that updated. See [`RoomSessionPlayback`][video-roomsessionplayback].
+</APIField>
 
 ---
 
@@ -512,6 +478,6 @@ Emitted when the playback ends.
 
 #### Parameters
 
-| Name       | Type                                                  | Description              |
-|:-----------|:------------------------------------------------------|:-------------------------|
-| `playback`<span className="required-arg">Required</span> | [`RoomSessionPlayback`][video-roomsessionplayback] | The playback that ended. |
+<APIField name="playback" type="RoomSessionPlayback" required={true}>
+  The playback that ended. See [`RoomSessionPlayback`][video-roomsessionplayback].
+</APIField>

@@ -48,140 +48,77 @@ await videoClient.listen({
 
 ## **Properties**
 
-### audioMuted
-
-• **audioMuted**: `boolean`
-
-Whether the outbound audio is muted (e.g., from the microphone).
-
----
-
-### currentPosition
-
-• `Optional` **currentPosition**: `VideoPosition`
-
-Current position of this member in the layout.
-
----
-
-### deaf
-
-• **deaf**: `boolean`
-
-Whether the inbound audio is muted.
-
----
-
-### id
-
-• **id**: `string`
-
-Unique id of this member.
-
----
-
-### inputSensitivity
-
-• **inputSensitivity**: `number`
-
-Input level at which the participant is identified as currently speaking. The default value is 30 and the scale goes from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity).
-
----
-
-### inputVolume
-
-• **inputVolume**: `number`
-
-Input volume (e.g., of the microphone). Values range from -50 to 50, with a default of 0.
-
----
-
-### meta
-
-• **meta**: `Record<string, unknown>`
-
-Metadata associated to this member.
-
----
-
-### name
-
-• **name**: `string`
-
-Name of this member.
-
----
-
-### onHold
-
-• **onHold**: `boolean`
-
-Whether the member is on hold.
-
----
-
-### outputVolume
-
-• **outputVolume**: `number`
-
-Output volume (e.g., of the speaker). Values range from -50 to 50, with a default of 0.
-
----
-
-### parentId
-
-• `Optional` **parentId**: `string`
-
-Id of the parent video member, if it exists.
-
----
-
-### requestedPosition
-
-• **requestedPosition**: `VideoPosition`
-
-Position requested for this member in the layout. This may differ from
-`currentPosition` if the requested position is not currently available.
-
----
-
-### roomId
-
-• **roomId**: `string`
-
-Id of the room associated to this member.
-
----
-
-### roomSessionId
-
-• **roomSessionId**: `string`
-
-Id of the room session associated to this member.
-
----
-
-### type
-
-• **type**: `VideoMemberType`
-
-Type of this video member. Can be `'member'`, `'screen'`, or `'device'`.
-
----
-
-### videoMuted
-
-• **videoMuted**: `boolean`
-
-Whether the outbound video is muted.
-
----
-
-### visible
-
-• **visible**: `boolean`
-
-Whether the member is visible.
+<APIField name="id" type="string" required={true}>
+  Unique id of this member.
+</APIField>
+
+<APIField name="roomId" type="string" required={true}>
+  Id of the room associated to this member.
+</APIField>
+
+<APIField name="roomSessionId" type="string" required={true}>
+  Id of the room session associated to this member.
+</APIField>
+
+<APIField name="name" type="string" required={true}>
+  Name of this member.
+</APIField>
+
+<APIField name="type" type="VideoMemberType" required={true}>
+  Type of this video member. Can be `'member'`, `'screen'`, or `'device'`.
+</APIField>
+
+<APIField name="parentId" type="string">
+  Id of the parent video member, if it exists.
+</APIField>
+
+<APIField name="requestedPosition" type="VideoPosition" required={true}>
+  Position requested for this member in the layout. This may differ from `currentPosition` if the requested position is not currently available.
+</APIField>
+
+<APIField name="currentPosition" type="VideoPosition">
+  Current position of this member in the layout.
+</APIField>
+
+<APIField name="meta" type="Record<string, unknown>">
+  Metadata associated to this member.
+</APIField>
+
+<APIField name="audioMuted" type="boolean" required={true}>
+  Whether the outbound audio is muted (e.g., from the microphone).
+</APIField>
+
+<APIField name="videoMuted" type="boolean" required={true}>
+  Whether the outbound video is muted.
+</APIField>
+
+<APIField name="deaf" type="boolean" required={true}>
+  Whether the inbound audio is muted.
+</APIField>
+
+<APIField name="visible" type="boolean" required={true}>
+  Whether the member is visible.
+</APIField>
+
+<APIField name="inputVolume" type="number" required={true} default="0">
+  Input volume (e.g., of the microphone). Values range from -50 to 50.
+</APIField>
+
+<APIField name="outputVolume" type="number" required={true} default="0">
+  Output volume (e.g., of the speaker). Values range from -50 to 50.
+</APIField>
+
+<APIField name="inputSensitivity" type="number" required={true} default="30">
+  Input level at which the participant is identified as currently speaking. The scale goes from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity).
+</APIField>
+
+<APIField name="handraised" type="boolean" required={true}>
+  Whether the member's hand is raised.
+</APIField>
+
+<APIField name="talking" type="boolean">
+  Whether the member is currently talking.
+</APIField>
 
 ---
 
@@ -330,9 +267,9 @@ Mutes or unmutes the inbound audio for the member (e.g., the one played through 
 
 #### Parameters
 
-| Name    | Type      | Description                |
-|:--------|:----------|:---------------------------|
-| `value`<span className="required-arg">Required</span> | `boolean` | Whether to mute the audio. |
+<APIField name="value" type="boolean" required={true}>
+  Whether to mute the audio.
+</APIField>
 
 #### Returns
 
@@ -379,10 +316,13 @@ Sets the input level at which the participant is identified as currently speakin
 
 #### Parameters
 
-| Name           | Type     | Description                                                                                                               |
-|:---------------|:---------|:--------------------------------------------------------------------------------------------------------------------------|
-| `params`<span className="required-arg">Required</span>       | `Object` | -                                                                                                                         |
-| `params.value`<span className="required-arg">Required</span> | `number` | Desired sensitivity from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity). The default value is 30. |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.value" type="number" required={true} default="30">
+  Desired sensitivity from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity).
+</APIField>
 
 #### Returns
 
@@ -429,10 +369,13 @@ Sets the input volume for the member (e.g., the microphone input level).
 
 #### Parameters
 
-| Name            | Type     | Description                                                       |
-|:----------------|:---------|:------------------------------------------------------------------|
-| `params`<span className="required-arg">Required</span>        | `Object` |                                                                   |
-| `params.volume`<span className="required-arg">Required</span> | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.volume" type="number" required={true} default="0">
+  Desired volume. Values range from -50 to 50.
+</APIField>
 
 #### Returns
 
@@ -479,10 +422,13 @@ Sets the output volume for the member (e.g., the speaker output level).
 
 #### Parameters
 
-| Name            | Type     | Description                                                       |
-|:----------------|:---------|:------------------------------------------------------------------|
-| `params`<span className="required-arg">Required</span>        | `Object` | -                                                                 |
-| `params.volume`<span className="required-arg">Required</span> | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.volume" type="number" required={true} default="0">
+  Desired volume. Values range from -50 to 50.
+</APIField>
 
 #### Returns
 
