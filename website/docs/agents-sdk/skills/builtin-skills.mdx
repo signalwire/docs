@@ -22,6 +22,7 @@ slug: /skills/builtin-skills
 | `swml_transfer` | Transfer to SWML endpoint | (none) |
 | `datasphere` | DataSphere document search | API credentials |
 | `native_vector_search` | Local vector search | search extras |
+| `mcp_gateway` | MCP server integration | MCP Gateway service |
 
 ### datetime
 
@@ -482,7 +483,7 @@ Local vector search using .swsearch index files.
 
 - `search_knowledge` - Search local vector index
 
-**Requirements:** Search extras installed (`pip install signalwire-agents[search]`)
+**Requirements:** Search extras installed (`pip install "signalwire-agents[search]"`)
 
 ```python
 from signalwire_agents import AgentBase
@@ -499,6 +500,79 @@ class LocalSearchAgent(AgentBase):
         })
 ```
 
+### mcp_gateway
+
+Connect to MCP (Model Context Protocol) servers via the MCP Gateway service. This skill dynamically creates SWAIG functions from MCP tools, enabling your agent to use any MCP-compatible tool.
+
+**Functions:** Dynamically created based on connected MCP services
+
+**Requirements:**
+
+- MCP Gateway service running (see [MCP Gateway](/sdks/agents-sdk/advanced/mcp-gateway))
+- Gateway URL and authentication credentials
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `gateway_url` | string | MCP Gateway service URL | Required |
+| `auth_user` | string | Basic auth username | None |
+| `auth_password` | string | Basic auth password | None |
+| `auth_token` | string | Bearer token (alternative auth) | None |
+| `services` | array | Services and tools to enable | All |
+| `session_timeout` | integer | Session timeout (seconds) | 300 |
+| `tool_prefix` | string | Prefix for function names | "mcp_" |
+| `retry_attempts` | integer | Connection retries | 3 |
+| `request_timeout` | integer | Request timeout (seconds) | 30 |
+| `verify_ssl` | boolean | Verify SSL certificates | true |
+
+**How it works:**
+
+1. Skill connects to gateway and discovers available tools
+2. Each MCP tool becomes a SWAIG function (e.g., `mcp_todo_add_todo`)
+3. Sessions persist per call_id, enabling stateful tools
+4. Session automatically closes when call ends
+
+**Common use cases:**
+
+- Integrating existing MCP ecosystem tools
+- Stateful operations that persist across a call
+- Sandboxed tool execution
+- Managing multiple tool services
+
+**Limitations:**
+
+- Requires running MCP Gateway service
+- Adds network latency (gateway hop)
+- Tools must be MCP-compatible
+
+```python
+from signalwire_agents import AgentBase
+
+
+class MCPAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="mcp-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.add_skill("mcp_gateway", {
+            "gateway_url": "http://localhost:8080",
+            "auth_user": "admin",
+            "auth_password": "secure-password",
+            "services": [
+                {"name": "todo", "tools": "*"},
+                {"name": "calculator", "tools": ["add", "multiply"]}
+            ]
+        })
+
+        self.prompt_add_section(
+            "Role",
+            "You help users manage tasks and perform calculations."
+        )
+```
+
+For detailed setup and configuration, see [MCP Gateway](/sdks/agents-sdk/advanced/mcp-gateway).
+
 ### Skills Summary Table
 
 | Skill | Functions | API Required | Multi-Instance |
@@ -513,5 +587,8 @@ class LocalSearchAgent(AgentBase):
 | `swml_transfer` | 1 | No | Yes |
 | `datasphere` | 1 | Yes | Yes |
 | `native_vector_search` | 1 | No | Yes |
+| `mcp_gateway` | Dynamic | No* | Yes |
+
+\* Requires MCP Gateway service, not external API
 
 
