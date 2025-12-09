@@ -461,8 +461,6 @@ Emitted when the playback starts.
   The playback that started. See [`RoomSessionPlayback`][video-roomsessionplayback].
 </APIField>
 
----
-
 ### onUpdated
 
 ▸ **RoomSessionPlayback**(`listen: {onUpdated: Callback }`)
@@ -474,8 +472,6 @@ Emitted when the playback is updated.
 <APIField name="playback" type="RoomSessionPlayback" required={true}>
   The playback that updated. See [`RoomSessionPlayback`][video-roomsessionplayback].
 </APIField>
-
----
 
 ### onEnded
 

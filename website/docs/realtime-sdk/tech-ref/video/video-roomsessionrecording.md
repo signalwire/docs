@@ -276,8 +276,6 @@ Emitted when the recording starts.
   The recording that started. See [`RoomSessionRecording`][video-roomsessionrecording].
 </APIField>
 
----
-
 ### onUpdated
 
 ▸ **RoomSessionRecording**(`{ listen: {onUpdated: Callback }}`)
@@ -289,8 +287,6 @@ Emitted when the recording is updated.
 <APIField name="recording" type="RoomSessionRecording" required={true}>
   The recording that updated. See [`RoomSessionRecording`][video-roomsessionrecording].
 </APIField>
-
----
 
 ### onEnded
 

@@ -120,8 +120,6 @@ await videoClient.listen({
   Whether the member is currently talking.
 </APIField>
 
----
-
 ## **Methods**
 
 ### audioMute
