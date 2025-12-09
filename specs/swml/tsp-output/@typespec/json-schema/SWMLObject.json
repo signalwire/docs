@@ -3600,6 +3600,11 @@
                     ],
                     "description": "The model to use for the AI. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`."
                 },
+                "ai_name": {
+                    "type": "string",
+                    "default": "computer",
+                    "description": "Sets the name the AI agent responds to for wake/activation purposes. When using `enable_pause`, `start_paused`, or `speak_when_spoken_to`, the user must say this name to get the agent's attention. The name matching is case-insensitive."
+                },
                 "ai_volume": {
                     "anyOf": [
                         {
@@ -3612,6 +3617,11 @@
                     "minimum": -50,
                     "maximum": 50,
                     "description": "Adjust the volume of the AI. Allowed values from `-50` - `50`."
+                },
+                "app_name": {
+                    "type": "string",
+                    "default": "swml app",
+                    "description": "A custom identifier for the AI application instance. This name is included in webhook payloads, allowing backend systems to identify which AI configuration made the request."
                 },
                 "asr_smart_format": {
                     "anyOf": [
@@ -3733,6 +3743,42 @@
                     ],
                     "description": "Controls the barge behavior. Allowed values are `\"complete\"`, `\"partial\"`, `\"all\"`, or boolean.\n**Default:** `\"complete,partial\"`"
                 },
+                "enable_inner_dialog": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "description": "Enables the inner dialog feature, which runs a separate AI process in the background\nthat analyzes the conversation and provides real-time insights to the main AI agent.\nThis gives the agent a form of \"internal thought process\" that can help it make better decisions."
+                },
+                "enable_pause": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "description": "Enables the pause/resume functionality for the AI agent. When enabled, a `pause_conversation`\nfunction is automatically added that the AI can call when the user says things like \"hold on\",\n\"wait\", or \"pause\". While paused, the agent stops responding until the user speaks the agent's\nname (set via `ai_name`) to resume. Cannot be used together with `speak_when_spoken_to`."
+                },
+                "enable_turn_detection": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "description": "Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending\npunctuation. When detected, the system can proactively finalize the speech recognition,\nreducing latency before the AI responds. Works with `turn_detection_timeout`."
+                },
                 "barge_match_string": {
                     "type": "string",
                     "description": "Takes a string, including a regular expression, defining barge behavior.\nFor example, this param can direct the AI to stop when the word 'hippopotomus' is input."
@@ -3776,6 +3822,13 @@
                     "type": "string",
                     "description": "Sets the prompt which binds the agent to its purpose."
                 },
+                "convo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/ConversationMessage"
+                    },
+                    "description": "Injects pre-existing conversation history into the AI session at startup. This allows you to seed the AI agent with context from a previous conversation or provide example interactions."
+                },
                 "conversation_id": {
                     "type": "string",
                     "description": "Used by `check_for_input` and `save_conversation` to identify an individual conversation."
@@ -3808,6 +3861,20 @@
                     "type": "string",
                     "format": "uri",
                     "description": "Each interaction between the AI and end user is posted in real time to the established URL."
+                },
+                "debug": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "description": "Enables debug mode for the AI session. When enabled, additional diagnostic information is logged including turn detection events, speech processing details, and internal state changes."
                 },
                 "direction": {
                     "anyOf": [
@@ -4002,6 +4069,43 @@
                     "maximum": 3600000,
                     "description": "Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values from `10,000` - `3,600,000`. **Default:** `600000` ms (10 minutes)."
                 },
+                "inner_dialog_model": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "gpt-4o-mini"
+                        },
+                        {
+                            "type": "string",
+                            "const": "gpt-4.1-mini"
+                        },
+                        {
+                            "type": "string",
+                            "const": "gpt-4.1-nano"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "description": "Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`."
+                },
+                "inner_dialog_prompt": {
+                    "type": "string",
+                    "default": "The assistant is intelligent and straightforward, does its job well and is not excessively polite.",
+                    "description": "The system prompt that guides the inner dialog AI's behavior. Only used when `enable_inner_dialog` is `true`."
+                },
+                "inner_dialog_synced": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "description": "When enabled, synchronizes the inner dialog with the main conversation flow, waiting for user input before injection. Only used when `enable_inner_dialog` is `true`."
+                },
                 "initial_sleep_ms": {
                     "anyOf": [
                         {
@@ -4073,6 +4177,19 @@
                     "maximum": 30,
                     "description": "Sets the maximum emotion intensity for the AI voice. Allowed values from `1` - `30`. Default is `30`."
                 },
+                "max_response_tokens": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "minimum": 1,
+                    "maximum": 16384,
+                    "description": "Sets the maximum number of tokens the AI model can generate in a single response. Lower values produce shorter responses and reduce latency."
+                },
                 "openai_asr_engine": {
                     "anyOf": [
                         {
@@ -4098,6 +4215,32 @@
                     "minimum": 10000,
                     "maximum": 600000,
                     "description": "Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`. **Default:** `120000` ms (2 minutes)."
+                },
+                "persist_global_data": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "description": "When enabled, the `global_data` object is automatically saved to a channel variable\nand restored when a new AI session starts on the same call. This allows data to persist\nacross multiple AI agent invocations within the same call."
+                },
+                "pom_format": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "markdown"
+                        },
+                        {
+                            "type": "string",
+                            "const": "xml"
+                        }
+                    ],
+                    "default": "markdown",
+                    "description": "Specifies the output format for structured prompts when using the `pom` array in prompt definitions. Valid values are `markdown` or `xml`."
                 },
                 "save_conversation": {
                     "anyOf": [
@@ -4148,6 +4291,30 @@
                     "minimum": 0,
                     "maximum": 600000,
                     "description": "Overall speech timeout, in ms. Allowed values from `0` - `600,000`. Default is `60000` ms."
+                },
+                "speak_when_spoken_to": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "description": "When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).\nThe user must say the agent's name to activate it for each interaction.\nCannot be used together with `enable_pause`."
+                },
+                "start_paused": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "description": "When enabled, the AI agent starts in a paused state and will not respond until the user\nspeaks the agent's name (set via `ai_name`). Automatically enables `enable_pause`."
                 },
                 "static_greeting": {
                     "type": "string",
@@ -4224,6 +4391,23 @@
                     ],
                     "description": "Allows SWAIG to set global data that persists across calls."
                 },
+                "swaig_post_swml_vars": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "description": "Controls whether SWML variables are included in SWAIG function webhook payloads.\nWhen set to `true`, all SWML variables are posted. When set to an array of strings,\nonly the specified variable names are included."
+                },
                 "thinking_model": {
                     "anyOf": [
                         {
@@ -4278,6 +4462,20 @@
                         }
                     ],
                     "description": "Pass a summary of a conversation from one AI agent to another. For example, transfer a call summary between support agents in two departments."
+                },
+                "turn_detection_timeout": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 250,
+                    "minimum": 0,
+                    "maximum": 10000,
+                    "description": "Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition.\nA shorter timeout results in faster response times but may cut off the user if they pause mid-sentence.\nSet to `0` to finalize immediately. Only used when `enable_turn_detection` is `true`."
                 },
                 "tts_number_format": {
                     "anyOf": [
@@ -4338,6 +4536,10 @@
                     ],
                     "description": "The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`."
                 },
+                "vad_config": {
+                    "type": "string",
+                    "description": "Configures Silero Voice Activity Detection (VAD) settings. Format: `\"threshold\"` or `\"threshold:frame_ms\"`.\nThe threshold (0-100) sets sensitivity for detecting voice activity.\nThe optional frame_ms (16-40) sets frame duration in milliseconds."
+                },
                 "wait_for_user": {
                     "anyOf": [
                         {
@@ -4348,6 +4550,10 @@
                         }
                     ],
                     "description": "When false, AI agent will initialize dialogue after call is setup. When true, agent will wait for the user to speak first."
+                },
+                "wake_prefix": {
+                    "type": "string",
+                    "description": "Specifies an additional prefix that must be spoken along with the agent's name (`ai_name`)\nto wake the agent from a paused state. For example, if `ai_name` is \"computer\" and\n`wake_prefix` is \"hey\", the user would need to say \"hey computer\" to activate the agent."
                 }
             },
             "unevaluatedProperties": {},
@@ -5160,6 +5366,32 @@
             "type": "integer",
             "minimum": 10000,
             "maximum": 600000
+        },
+        "ConversationMessage": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "$ref": "#/$defs/ConversationRole",
+                    "description": "The role of the message sender."
+                },
+                "content": {
+                    "type": "string",
+                    "description": "The text content of the message."
+                },
+                "lang": {
+                    "type": "string",
+                    "description": "Optional language code for the message (e.g., 'en', 'es', 'fr')."
+                }
+            },
+            "required": [
+                "role",
+                "content"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A message object representing a single turn in the conversation history.",
+            "title": "Conversation message object"
         },
         "Direction": {
             "type": "string",
@@ -6190,6 +6422,15 @@
             "unevaluatedProperties": {
                 "not": {}
             }
+        },
+        "ConversationRole": {
+            "type": "string",
+            "enum": [
+                "user",
+                "assistant",
+                "system"
+            ],
+            "title": "Conversation message role"
         },
         "POM": {
             "anyOf": [
@@ -9113,7 +9354,7 @@
                                     "minimum": -2147483648,
                                     "maximum": 900,
                                     "default": 300,
-                                    "description": "The duration to hold the caller in seconds."
+                                    "description": "The duration to hold the caller in seconds. Can be a number or an object with timeout property."
                                 }
                             },
                             "unevaluatedProperties": {

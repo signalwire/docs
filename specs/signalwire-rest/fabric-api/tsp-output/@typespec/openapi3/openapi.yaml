@@ -4572,11 +4572,19 @@ components:
         acknowledge_interruptions:
           type: boolean
           description: Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent.
+        ai_name:
+          type: string
+          description: Sets the name the AI agent responds to for wake/activation purposes. When using `enable_pause`, `start_paused`, or `speak_when_spoken_to`, the user must say this name to get the agent's attention.
+          default: computer
         ai_volume:
           type: integer
           minimum: -50
           maximum: 50
           description: Adjust the volume of the AI. Allowed values from `-50` - `50`.
+        app_name:
+          type: string
+          description: A custom identifier for the AI application instance. This name is included in webhook payloads.
+          default: swml app
         attention_timeout:
           anyOf:
             - $ref: '#/components/schemas/IntegerOrZero'
@@ -4618,6 +4626,11 @@ components:
           type: string
           description: Sets the prompt which binds the agent to its purpose.
           example: Place an order
+        convo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+          description: Injects pre-existing conversation history into the AI session at startup. This allows you to seed the AI agent with context from a previous conversation or provide example interactions.
         conversation_id:
           type: string
           description: Used by `check_for_input` and `save_conversation` to identify an individual conversation.
@@ -4632,6 +4645,11 @@ components:
           format: uri
           description: Each interaction between the AI and end user is posted in real time to the established URL.
           example: https://example.com
+        debug:
+          anyOf:
+            - type: boolean
+            - type: integer
+          description: Enables debug mode for the AI session.
         direction:
           type: array
           items:
@@ -4651,6 +4669,18 @@ components:
           minimum: 250
           maximum: 10000
           description: Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `250` - `10,000`.
+        enable_inner_dialog:
+          type: boolean
+          description: Enables the inner dialog feature for background conversation analysis.
+          default: false
+        enable_pause:
+          type: boolean
+          description: Enables the pause/resume functionality for the AI agent.
+          default: false
+        enable_turn_detection:
+          type: boolean
+          description: Enables intelligent turn detection that monitors partial speech transcripts.
+          default: true
         eleven_labs_stability:
           type: number
           description: The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.
@@ -4675,6 +4705,17 @@ components:
           minimum: 10000
           maximum: 3600000
           description: Amount of time, in ms, to wait before exiting the app due to inactivity. Allowed values from `10,000` - `3,600,000`.
+        inner_dialog_model:
+          type: string
+          description: Specifies the AI model to use for the inner dialog feature.
+        inner_dialog_prompt:
+          type: string
+          description: The system prompt that guides the inner dialog AI's behavior.
+          default: The assistant is intelligent and straightforward, does its job well and is not excessively polite.
+        inner_dialog_synced:
+          type: boolean
+          description: When enabled, synchronizes the inner dialog with the main conversation flow.
+          default: false
         input_poll_freq:
           type: string
           description: |-
@@ -4694,17 +4735,41 @@ components:
           type: string
           description: The local timezone setting for the AI. Value should use `IANA TZ ID`
           example: America/Ensenada
+        max_response_tokens:
+          type: integer
+          minimum: 1
+          maximum: 16384
+          description: Sets the maximum number of tokens the AI model can generate in a single response.
         outbound_attention_timeout:
           type: integer
           minimum: 10000
           maximum: 600000
           description: Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`.
+        persist_global_data:
+          type: boolean
+          description: When enabled, global_data persists across multiple AI agent invocations within the same call.
+          default: true
+        pom_format:
+          type: string
+          enum:
+            - markdown
+            - xml
+          description: Specifies the output format for structured prompts. Valid values are `markdown` or `xml`.
+          default: markdown
         save_conversation:
           type: boolean
           description: |-
             Send a summary of the conversation after the call ends.
             This requires a `post_url` to be set in the ai parameters and the `conversation_id` defined below.
             This eliminates the need for a `post_prompt` in the ai parameters.
+        speak_when_spoken_to:
+          type: boolean
+          description: When enabled, the AI agent remains silent until directly addressed by name.
+          default: false
+        start_paused:
+          type: boolean
+          description: When enabled, the AI agent starts in a paused state.
+          default: false
         swaig_allow_settings:
           type: boolean
           description: Allows tweaking any of the indicated settings, such as `barge_match_string`, using the returned SWML from the SWAIG function.
@@ -4714,15 +4779,34 @@ components:
         swaig_post_conversation:
           type: boolean
           description: Post entire conversation to any SWAIG call.
+        swaig_post_swml_vars:
+          anyOf:
+            - type: boolean
+            - type: array
+              items:
+                type: string
+          description: Controls whether SWML variables are included in SWAIG function webhook payloads.
         transfer_summary:
           type: boolean
           description: Pass a summary of a conversation from one AI agent to another. For example, transfer a call summary between support agents in two departments.
+        turn_detection_timeout:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition.
+          default: 250
+        vad_config:
+          type: string
+          description: 'Configures Silero Voice Activity Detection (VAD) settings. Format: `threshold` or `threshold:frame_ms`. The threshold (0-100) sets sensitivity for detecting voice activity. The optional frame_ms (16-40) sets frame duration in milliseconds.'
         verbose_logs:
           type: boolean
           description: Enable verbose logging.
         wait_for_user:
           type: boolean
           description: When false, AI agent will initialize dialogue after call is setup. When true, agent will wait for the user to speak first.
+        wake_prefix:
+          type: string
+          description: Specifies an additional prefix that must be spoken along with the agent's name to wake the agent.
       title: params object
     AIPostPrompt:
       type: object
@@ -6593,6 +6677,31 @@ components:
       additionalProperties:
         $ref: '#/components/schemas/ContextStepsUpdate'
       title: contexts
+    ConversationMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          allOf:
+            - $ref: '#/components/schemas/ConversationRole'
+          description: The role of the message sender.
+        content:
+          type: string
+          description: The text content of the message.
+        lang:
+          type: string
+          description: Optional language code for the message (e.g., 'en', 'es', 'fr').
+      description: A message object representing a single turn in the conversation history.
+      title: Conversation message object
+    ConversationRole:
+      type: string
+      enum:
+        - user
+        - assistant
+        - system
+      title: Conversation message role
     CxmlApplication:
       type: object
       required:
@@ -7938,7 +8047,7 @@ components:
                   type: integer
                   format: int32
                   maximum: 900
-                  description: The duration to hold the caller in seconds.
+                  description: The duration to hold the caller in seconds. Can be a number or an object with timeout property.
                   default: 300
           maximum: 900
           description: |-
@@ -10008,12 +10117,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/CallHandlerType'
           description: |-
-            Specify how the SIP endpoint will handle outbound calls. 
-            These options will control if the call is simply passed to the destination or controlled by a resource.
-            - **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
-            - **passthrough**: Passes the call to the destination with no additional logic.
-            - **block-pstn**: Passes the call to the destination while blocking PSTN destination.
-            - **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
+            Specify how the SIP endpoint will handle outbound calls.
+            - **default**: The SIP endpoint will pull the outbound policy setting from the [SIP Profile Settings](https://my.signalwire.com?page=sip_profile/edit). This allows centralized management of outbound call behavior across multiple endpoints from a single configuration.
+            - **passthrough**: The SIP endpoint will be allowed to dial PSTN numbers. This permits outbound calling to traditional phone numbers without restrictions.
+            - **block-pstn**: The SIP endpoint will be blocked from dialing PSTN numbers. Use this to restrict the endpoint from initiating calls to the public telephone network.
+            - **resource**: Outbound calls from this SIP endpoint will dial the specified resource and execute its instructions. Requires setting `calling_handler_resource_id` to a valid resource. This enables custom call handling workflows for outbound calls. See the [Fabric REST API](/rest/signalwire-rest/endpoints/fabric) for valid resource types.
           example: default
         calling_handler_resource_id:
           type: string
@@ -10122,12 +10230,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/CallHandlerType'
           description: |-
-            Specify how the SIP endpoint will handle outbound calls. 
-            These options will control if the call is simply passed to the destination or controlled by a resource.
-            - **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
-            - **passthrough**: Passes the call to the destination with no additional logic.
-            - **block-pstn**: Passes the call to the destination while blocking PSTN destination.
-            - **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
+            Specify how the SIP endpoint will handle outbound calls.
+            - **default**: The SIP endpoint will pull the outbound policy setting from the [SIP Profile Settings](https://my.signalwire.com?page=sip_profile/edit). This allows centralized management of outbound call behavior across multiple endpoints from a single configuration.
+            - **passthrough**: The SIP endpoint will be allowed to dial PSTN numbers. This permits outbound calling to traditional phone numbers without restrictions.
+            - **block-pstn**: The SIP endpoint will be blocked from dialing PSTN numbers. Use this to restrict the endpoint from initiating calls to the public telephone network.
+            - **resource**: Outbound calls from this SIP endpoint will dial the specified resource and execute its instructions. Requires setting `calling_handler_resource_id` to a valid resource. This enables custom call handling workflows for outbound calls. See the [Fabric REST API](/rest/signalwire-rest/endpoints/fabric) for valid resource types.
           example: default
         calling_handler_resource_id:
           type: string
@@ -10285,12 +10392,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/CallHandlerType'
           description: |-
-            Specify how the SIP endpoint will handle outbound calls. 
-            These options will control if the call is simply passed to the destination or controlled by a resource.
-            - **default**: The default behavior for Sip Endpoints. passes the call to the destination with no additional logic.
-            - **passthrough**: Passes the call to the destination with no additional logic.
-            - **block-pstn**: Passes the call to the destination while blocking PSTN destination.
-            - **resource**: Sets a resource to handle the call logic. This allows users ot inject calling logic into the call when calling a destination.
+            Specify how the SIP endpoint will handle outbound calls.
+            - **default**: The SIP endpoint will pull the outbound policy setting from the [SIP Profile Settings](https://my.signalwire.com?page=sip_profile/edit). This allows centralized management of outbound call behavior across multiple endpoints from a single configuration.
+            - **passthrough**: The SIP endpoint will be allowed to dial PSTN numbers. This permits outbound calling to traditional phone numbers without restrictions.
+            - **block-pstn**: The SIP endpoint will be blocked from dialing PSTN numbers. Use this to restrict the endpoint from initiating calls to the public telephone network.
+            - **resource**: Outbound calls from this SIP endpoint will dial the specified resource and execute its instructions. Requires setting `calling_handler_resource_id` to a valid resource. This enables custom call handling workflows for outbound calls. See the [Fabric REST API](/rest/signalwire-rest/endpoints/fabric) for valid resource types.
           example: default
         calling_handler_resource_id:
           type: string
