@@ -225,17 +225,19 @@ model AIParams {
   @example(700)
   end_of_speech_timeout?: integer | SWMLVar;
 
+  #deprecated "The `eleven_labs_stability` property is deprecated. Please use `languages[].params.stability` instead."
   @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
-  @minValue(0.01)
+  @minValue(0.0)
   @maxValue(1.0)
   @example(0.5)
-  eleven_labs_stability?: float | SWMLVar;
+  eleven_labs_stability?: float | SWMLVar = 0.50;
 
+  #deprecated "The `eleven_labs_similarity` property is deprecated. Please use `languages[].params.similarity` instead."
   @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
-  @minValue(0.01)
+  @minValue(0.0)
   @maxValue(1.0)
   @example(0.75)
-  eleven_labs_similarity?: float | SWMLVar;
+  eleven_labs_similarity?: float | SWMLVar = 0.75;
 
   @doc("If `true`, enables usage accounting. The default is `false`.")
   @example(true)
