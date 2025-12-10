@@ -144,17 +144,61 @@ agent = AgentBase(
 )
 ```
 
-#### Secure Function Tokens
+#### Secure Function Flag
+
+The `secure=True` flag pauses call recording during function execution. This is useful for sensitive operations but does **not** prevent data from reaching the LLM.
 
 ```python
-## Require token authentication for sensitive functions
 @agent.tool(
-    description="Process payment",
-    secure=True  # Requires valid token
+    description="Collect sensitive information",
+    secure=True  # Pauses recording during execution
 )
-def process_payment(amount: float, card_last_four: str) -> SwaigFunctionResult:
-    pass
+def collect_ssn(args: dict, raw_data: dict = None) -> SwaigFunctionResult:
+    # Recording is paused, but LLM still sees the data
+    ssn = args.get("ssn", "")
+    # Process securely...
+    return SwaigFunctionResult("Information received.")
 ```
+
+#### Secure Payment Processing
+
+For payment card collection, **never** collect card data through SWAIG function parameters. Use the `.pay()` method instead, which collects card data via IVR and sends it directly to your payment gateway—the LLM never sees the card number, CVV, or expiry.
+
+```python
+@agent.tool(
+    description="Process payment for order",
+    parameters={
+        "type": "object",
+        "properties": {
+            "amount": {"type": "string", "description": "Amount to charge"}
+        },
+        "required": ["amount"]
+    }
+)
+def process_payment(args: dict, raw_data: dict = None) -> SwaigFunctionResult:
+    amount = args.get("amount", "0.00")
+
+    # Card data collected via IVR, sent directly to payment gateway
+    # LLM never sees card number, CVV, or expiry
+    return (
+        SwaigFunctionResult(
+            "I'll collect your payment information now.",
+            post_process=True
+        )
+        .pay(
+            payment_connector_url="https://payments.example.com/charge",
+            charge_amount=amount,
+            input_method="dtmf",
+            security_code=True,
+            postal_code=True
+        )
+    )
+```
+
+| Approach | Card Data Exposure | Use Case |
+|----------|-------------------|----------|
+| `.pay()` method | Never reaches LLM | Payment processing (PCI compliant) |
+| `secure=True` | LLM sees data, recording paused | Non-payment sensitive data |
 
 #### Environment Variables
 
