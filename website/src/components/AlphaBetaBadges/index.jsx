@@ -18,7 +18,7 @@ function Base({ text, color }) {
       }}
     >
       <Link
-        to={`/sdks/overview/sdk-releases#${text.toLowerCase()}`}
+        to={`/sdks/#${text.toLowerCase()}`}
         style={{ color: "white" }}
         className="badge-link"
       >
