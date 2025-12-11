@@ -115,6 +115,255 @@ model CallAIMessageRequest {
   };
 }
 
+// ============================================
+// Live Transcribe Commands
+// ============================================
+
+alias TranscribeDirection = "local-caller" | "remote-caller";
+alias SpeechEngine = "deepgram" | "google";
+alias SupportedAIModels = "gpt-4o-mini" | "gpt-4.1-mini" | "gpt-4.1-nano";
+
+@summary("Start")
+model LiveTranscribeStartAction {
+  @doc("Starts live transcription of the call.")
+  start: {
+    @doc("The language to transcribe (e.g., 'en-US', 'es-ES').")
+    @example("en-US")
+    lang: string;
+
+    @doc("The direction(s) of the call to transcribe.")
+    @example(#["local-caller", "remote-caller"])
+    direction: TranscribeDirection[];
+
+    @doc("The webhook URL to receive transcription events.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("Whether to send real-time utterance events as speech is recognized.")
+    @example(true)
+    live_events?: boolean;
+
+    @doc("Whether to generate an AI summary when transcription ends.")
+    @example(true)
+    ai_summary?: boolean;
+
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
+    @example("Summarize the key points of this conversation.")
+    ai_summary_prompt?: string;
+
+    @doc("The speech recognition engine to use.")
+    @example("deepgram")
+    speech_engine?: SpeechEngine = "deepgram";
+
+    @doc("Speech timeout in milliseconds.")
+    @example(60000)
+    speech_timeout?: int32 = 60000;
+
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @example(300)
+    vad_silence_ms?: int32;
+
+    @doc("Voice activity detection threshold (0-1800).")
+    @example(400)
+    vad_thresh?: int32 = 400;
+
+    @doc("Debug level for logging (0-2).")
+    @example(0)
+    debug_level?: int32 = 0;
+  };
+}
+
+@summary("Summarize")
+model LiveTranscribeSummarizeAction {
+  @doc("Request an on-demand AI summary of the conversation.")
+  summarize: {
+    @doc("The webhook URL to receive the summary.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("The AI prompt that instructs how to summarize the conversation.")
+    @example("Provide a bullet-point summary of the main topics discussed.")
+    prompt?: string;
+  };
+}
+
+@summary("Stop")
+@doc("Stops the live transcription session.")
+enum LiveTranscribeStopAction {
+  stop,
+}
+
+alias LiveTranscribeAction = LiveTranscribeStartAction | LiveTranscribeSummarizeAction | LiveTranscribeStopAction;
+
+@summary("Live Transcribe")
+model CallLiveTranscribeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.live_transcribe` command is used to control live transcription on an active call.")
+  @example("calling.live_transcribe")
+  command: "calling.live_transcribe";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The transcription action to perform: start, stop, or summarize.")
+    action: LiveTranscribeAction;
+  };
+}
+
+// ============================================
+// Live Translate Commands
+// ============================================
+
+@summary("Filter Presets")
+@doc("""
+Preset translation filter values that adjust the tone or style of translated speech.
+
+- `polite` - Translates to a polite version, removing anything insulting while maintaining sentiment
+- `rude` - Translates to a rude and insulting version while maintaining sentiment
+- `professional` - Translates to sound professional, removing slang or lingo
+- `shakespeare` - Translates to sound like Shakespeare, speaking in iambic pentameter
+- `gen-z` - Translates to use Gen-Z slang and expressions
+""")
+enum TranslationFilterPreset {
+  polite,
+  rude,
+  professional,
+  shakespeare,
+  `gen-z`,
+}
+
+@summary("Custom Filter")
+@doc("Custom translation filter with a prompt prefix. Use `prompt:` followed by your custom instructions (e.g., `prompt:Use formal business language`).")
+@pattern("^prompt:.+$")
+scalar CustomTranslationFilter extends string;
+
+alias TranslationFilter = TranslationFilterPreset | CustomTranslationFilter;
+
+@summary("Start")
+model LiveTranslateStartAction {
+  @doc("Starts live translation of the call.")
+  start: {
+    @doc("The language to translate from (e.g., 'en-US').")
+    @example("en-US")
+    from_lang: string;
+
+    @doc("The language to translate to (e.g., 'es-ES').")
+    @example("es-ES")
+    to_lang: string;
+
+    @doc("The direction(s) of the call to translate.")
+    @example(#["local-caller", "remote-caller"])
+    direction: TranscribeDirection[];
+
+    @doc("The TTS voice for the source language.")
+    @example("elevenlabs.josh")
+    from_voice?: string;
+
+    @doc("The TTS voice for the target language.")
+    @example("elevenlabs.josh")
+    to_voice?: string;
+
+    @doc("Translation filter for the source language direction.")
+    @example("professional")
+    filter_from?: TranslationFilter;
+
+    @doc("Translation filter for the target language direction.")
+    @example("professional")
+    filter_to?: TranslationFilter;
+
+    @doc("The webhook URL to receive translation events.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("Whether to send real-time translation events.")
+    @example(true)
+    live_events?: boolean;
+
+    @doc("Whether to generate AI summaries in both languages when translation ends.")
+    @example(true)
+    ai_summary?: boolean;
+
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
+    @example("Summarize this translated conversation.")
+    ai_summary_prompt?: string;
+
+    @doc("The speech recognition engine to use.")
+    @example("deepgram")
+    speech_engine?: SpeechEngine = "deepgram";
+
+    @doc("Speech timeout in milliseconds.")
+    @example(60000)
+    speech_timeout?: int32 = 60000;
+
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @example(300)
+    vad_silence_ms?: int32;
+
+    @doc("Voice activity detection threshold (0-1800).")
+    @example(400)
+    vad_thresh?: int32 = 400;
+
+    @doc("Debug level for logging (0-2).")
+    @example(0)
+    debug_level?: int32 = 0;
+  };
+}
+
+@summary("Summarize")
+model LiveTranslateSummarizeAction {
+  @doc("Request an on-demand AI summary of the translated conversation.")
+  summarize: {
+    @doc("The webhook URL to receive the summary.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("The AI prompt that instructs how to summarize the conversation.")
+    @example("Summarize the key agreements reached in both languages.")
+    prompt?: string;
+  };
+}
+
+@summary("Inject")
+model LiveTranslateInjectAction {
+  @doc("Inject a message into the conversation to be translated and spoken.")
+  inject: {
+    @doc("The text message to inject and translate.")
+    @example("Please hold while I transfer you to a specialist.")
+    message: string;
+
+    @doc("The direction to send the translated message.")
+    @example("remote-caller")
+    direction: TranscribeDirection;
+  };
+}
+
+@summary("Stop")
+@doc("Stops the live translation session.")
+enum LiveTranslateStopAction {
+  stop,
+}
+
+alias LiveTranslateAction = LiveTranslateStartAction | LiveTranslateSummarizeAction | LiveTranslateInjectAction | LiveTranslateStopAction;
+
+@summary("Live Translate")
+model CallLiveTranslateRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.live_translate` command is used to control live translation on an active call.")
+  @example("calling.live_translate")
+  command: "calling.live_translate";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The translation action to perform: start, stop, summarize, or inject.")
+    action: LiveTranslateAction;
+  };
+}
+
 @summary("Create call")
 model CallCreateRequest {
   @doc("The `dial` command is used to create a new call.")
@@ -234,6 +483,10 @@ Call request union for JSON-RPC style method dispatch. Use the `command` field t
 - **`calling.ai_unhold`** - Resume an AI call from hold state. Reactivates the AI agent and continues the conversation from where it was paused.
 
 - **`calling.ai_message`** - Inject a message into an active AI conversation. Allows you to dynamically add context, instructions, or system messages to guide the AI agent's behavior during the call.
+
+- **`calling.live_transcribe`** - Control live transcription on an active call. Start real-time speech-to-text transcription, stop transcription, or request an on-demand AI summary of the conversation.
+
+- **`calling.live_translate`** - Control live translation on an active call. Start real-time language translation between call participants, stop translation, request summaries, or inject messages to be translated and spoken.
 """)
 union CallRequest {
   dial: CallCreateRequest,
@@ -242,4 +495,6 @@ union CallRequest {
   `calling.ai_hold`: CallHoldRequest,
   `calling.ai_unhold`: CallUnholdRequest,
   `calling.ai_message`: CallAIMessageRequest,
+  `calling.live_transcribe`: CallLiveTranscribeRequest,
+  `calling.live_translate`: CallLiveTranslateRequest,
 }
