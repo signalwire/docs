@@ -1,6 +1,6 @@
 <!-- Header -->
 <div align="center">
-    <img src="static/img/logo.svg" width="500" href="https://signalwire.com" />
+    <img src="website/static/img/logo.svg" width="500" href="https://signalwire.com" />
     <h1>SignalWire Docs</h1>
     <h4><i>An open-source docs site built with <a href="https://docusaurus.io/">🦕 Docusaurus</a></i></h4>
 </div>
@@ -20,7 +20,7 @@
     <img src="https://img.shields.io/github/stars/signalwire/docs" alt="GitHub Stars" href="https://github.com/signalwire/docs"/>
 </div>
 
-<img src="static/img/homepage.png" alt="Homepage"/>
+<img src="website/static/img/homepage.png" alt="Homepage"/>
 
 
 ## Contents
@@ -144,4 +144,5 @@ Contact Support via the [SignalWire Support Portal](https://support.signalwire.c
 <!-- Links -->
 [prs-issues-guide]: https://github.com/signalwire/signalwire-docs/wiki/Guidelines-to-Pull-Request-and-Issues
 [style-guide]: https://github.com/signalwire/signalwire-docs/wiki/Style-Guidelines
+
 [prs-deploy]: https://github.com/signalwire/signalwire-docs/wiki/Contributing-to-the-signalwire%E2%80%90docs-repository
