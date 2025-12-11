@@ -7,24 +7,47 @@ sidebar_label: MessagingSendResult
 
 ## **Properties**
 
-### code
+<APIField name="code" type="string" required={true}>
+  Numeric error or success code.
+</APIField>
 
-• **code**: `string`
+<APIField name="message" type="string" required={true}>
+  Error or success message.
+</APIField>
 
-Numeric error or success code.
+<APIField name="messageId" type="string" required={true}>
+  The unique identifier of the message.
+</APIField>
 
----
+## **Example**
 
-### message
+Sending an SMS and handling the result:
 
-• **message**: `string`
+```js
+import { SignalWire } from "@signalwire/realtime-api";
 
-Error or success message.
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
 
----
+const result = await client.messaging.send({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  body: "Hello from SignalWire!"
+});
 
-### messageId
+console.log("Message ID:", result.messageId);
+console.log("Code:", result.code);
+console.log("Message:", result.message);
+```
 
-• **messageId**: `string`
+Sending an MMS with media:
 
-The unique identifier of the message.
+```js
+const result = await client.messaging.send({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  body: "Check out this image!",
+  media: ["https://example.com/image.jpg"]
+});
+
+console.log("MMS sent with ID:", result.messageId);
+```
