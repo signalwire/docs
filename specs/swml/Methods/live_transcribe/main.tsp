@@ -27,26 +27,26 @@ model TranscribeStartAction {
     @doc("Whether to enable live events.")
     live_events?: boolean | SWMLVar;
 
-    @doc("The timeout for speech recognition.")
-    speech_timeout?: integer | SWMLVar;
+    @doc("Speech timeout in milliseconds.")
+    speech_timeout?: integer | SWMLVar = 60000;
 
-    @doc("Voice activity detection silence time in milliseconds.")
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
     vad_silence_ms?: integer | SWMLVar;
 
-    @doc("Voice activity detection threshold.")
-    vad_thresh?: integer | SWMLVar;
+    @doc("Voice activity detection threshold (0-1800).")
+    vad_thresh?: integer | SWMLVar = 400;
 
-    @doc("Debug level for logging")
-    debug_level?: integer | SWMLVar;
+    @doc("Debug level for logging (0-2).")
+    debug_level?: integer | SWMLVar = 0;
 
     @doc("The direction of the call that should be transcribed.")
     direction: TranscribeDirection[];
 
-    @doc("The speech engine to be used.")
-    speech_engine: string;
+    @doc("The speech engine to use for speech recognition.")
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-    @doc("The prompt for summarizaton.")
-    summary_prompt?: string;
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
+    ai_summary_prompt?: string;
   };
 }
 
@@ -66,7 +66,7 @@ model TranscribeSummarizeAction {
     @doc("The webhook URL to be called.")
     webhook?: string;
 
-    @doc("The prompt for summarizaton.")
+    @doc("The AI prompt that instructs how to summarize the conversation.")
     prompt?: string;
   };
 }
