@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "http_url_required",
       message: "This value must be an HTTP or HTTPS URL.",
       attribute: "status_callback_url",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#http_url_required",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-http-url-required",
     }
   ],
 })

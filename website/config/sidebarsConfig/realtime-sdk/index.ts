@@ -1,7 +1,8 @@
 import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
-const realtimeSdkTechRefSidebar: SidebarsConfig = {
-  realtimeSdkTechRefSidebar: [
+const realtimeSdkSidebars: SidebarsConfig = {
+  // Getting Started Sidebar
+  realtimeSdkOverviewSidebar: [
     {
       type: "category",
       label: "Realtime Server SDK",
@@ -15,6 +16,10 @@ const realtimeSdkTechRefSidebar: SidebarsConfig = {
         }
       ]
     },
+  ],
+
+  // Technical Reference Sidebar
+  realtimeSdkReferenceSidebar: [
     {
       type: "category",
       label: "Technical Reference",
@@ -27,6 +32,10 @@ const realtimeSdkTechRefSidebar: SidebarsConfig = {
         }
       ]
     },
+  ],
+
+  // Guides Sidebar
+  realtimeSdkGuidesSidebar: [
     {
       type: "category",
       label: "Guides",
@@ -38,8 +47,8 @@ const realtimeSdkTechRefSidebar: SidebarsConfig = {
           dirName: "guides"
         }
       ]
-    }
+    },
   ],
 };
 
-export default realtimeSdkTechRefSidebar;
+export default realtimeSdkSidebars;

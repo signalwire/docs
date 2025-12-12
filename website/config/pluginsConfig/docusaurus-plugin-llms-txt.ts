@@ -9,6 +9,8 @@
 
 import { PluginConfig } from '@docusaurus/types';
 import type { Options as PluginOptions } from '@signalwire/docusaurus-plugin-llms-txt';
+import rehypeTransformApiField from './rehype-transform-apifield';
+
 export const llmsTxtPlugin: PluginConfig = [
   "@signalwire/docusaurus-plugin-llms-txt",
   {
@@ -27,6 +29,13 @@ export const llmsTxtPlugin: PluginConfig = [
       includeBlog: false,
       includePages: false,
       includeGeneratedIndex: false,
+      beforeDefaultRehypePlugins: [
+        rehypeTransformApiField
+      ],
+      remarkStringify: {
+        rule: '-',
+        ruleRepetition: 3
+      },
       excludeRoutes: [
         "/attachments/**",
         "/cluecon-2024/**",

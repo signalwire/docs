@@ -1,0 +1,310 @@
+---
+title: detect_machine
+slug: /swml/methods/detect_machine
+description: Detect whether the other end of the call is a machine (fax, voicemail, etc.) or a human, using AMD and fax detection.
+tags: ['swml']
+---
+
+import APIField from "@site/src/components/APIField";
+
+[variables]: #variables
+[statuscallbacks]: #statuscallbacks
+
+A detection method that combines AMD (Answering Machine Detection) and fax detection.
+Detect whether the user on the other end of the call is a `machine` (fax, voicemail, etc.) or a `human`.
+The detection result(s) will be sent to the specified `status_url` as a POST request and will also be saved in the 
+`detect_result` [variable][variables].
+
+<APIField
+  name="detect_machine"
+  type="object"
+  required={true}
+>
+  An object that accepts the [`detect_machine parameters`](#detect_machine-parameters).
+</APIField>
+
+## **detect_machine parameters**
+
+<APIField
+  name="detect_machine.detect_message_end"
+  type="boolean"
+  default="false"
+>
+  If `true`, stops detection on beep / end of voicemail greeting.
+</APIField>
+
+<APIField
+  name="detect_machine.detectors"
+  type="string"
+  default="amd,fax"
+>
+  Comma-separated string of detectors to enable. **Valid Values:** `amd`, `fax`
+</APIField>
+
+<APIField
+  name="detect_machine.end_silence_timeout"
+  type="number"
+  default="1.0"
+>
+  How long to wait for voice activity to finish (in seconds).
+</APIField>
+
+<APIField
+  name="detect_machine.initial_timeout"
+  type="number"
+  default="4.5"
+>
+  How long to wait for initial voice activity before giving up (in seconds).
+</APIField>
+
+<APIField
+  name="detect_machine.machine_ready_timeout"
+  type="number"
+  default="value of the end_silence_timeout parameter"
+>
+  How long to wait for voice activity to finish before firing the READY event (in seconds).
+</APIField>
+
+<APIField
+  name="detect_machine.machine_voice_threshold"
+  type="number"
+  default="1.25"
+>
+  The number of seconds of ongoing voice activity required to classify as MACHINE.
+</APIField>
+
+<APIField
+  name="detect_machine.machine_words_threshold"
+  type="integer"
+  default="6"
+>
+  The minimum number of words that must be detected in a single utterance before classifying the call as MACHINE.
+</APIField>
+
+<APIField
+  name="detect_machine.status_url"
+  type="string"
+>
+  The HTTP(S) URL to deliver detector events to. Learn more about [status callbacks][statuscallbacks].
+</APIField>
+
+<APIField
+  name="detect_machine.timeout"
+  type="number"
+  default="30.0"
+>
+  The maximum time to run the detector (in seconds).
+</APIField>
+
+<APIField
+  name="detect_machine.tone"
+  type="string"
+  default="CED"
+>
+  The tone to detect. Only the remote side tone will be received. (`CED` or `CNG`) Used for fax detection.
+</APIField>
+
+<APIField
+  name="detect_machine.wait"
+  type="boolean"
+  default="true"
+>
+  If `false`, the detector will run asynchronously and `status_url` must be set. If `true`, the detector will wait for detection to complete before moving to the next SMWL instruction.
+</APIField>
+
+
+## **Variables**
+
+The following variables are available after the `detect_machine` method is executed and detection is complete.
+You can reference these variables in your SMWL script utilizing the `${variable}` syntax.
+
+<APIField
+  name="detect_result"
+  type="human | machine | fax | unknown"
+>
+  The result of detection.
+</APIField>
+
+<APIField
+  name="detect_machine_beep"
+  type="true | false"
+>
+  Whether a beep was detected. `true` if detected.
+</APIField>
+
+<APIField
+  name="detect_ms"
+  type="integer"
+>
+  The number of milliseconds the detection took.
+</APIField>
+
+
+## **StatusCallbacks**
+
+A POST request will be sent to `status_url` with a JSON payload like the following:
+
+<APIField
+  name="event_type"
+  type="string"
+>
+  The type of event, always `calling.call.detect` for this method.
+</APIField>
+
+<APIField
+  name="event_channel"
+  type="string"
+>
+  The channel for the event, includes the SWML session ID.
+</APIField>
+
+<APIField
+  name="timestamp"
+  type="number"
+>
+  Unix timestamp (float) when the event was generated.
+</APIField>
+
+<APIField
+  name="project_id"
+  type="string"
+>
+  The project ID associated with the call.
+</APIField>
+
+<APIField
+  name="space_id"
+  type="string"
+>
+  The space ID associated with the call.
+</APIField>
+
+<APIField
+  name="params"
+  type="object"
+>
+  An object containing detection-specific parameters.
+</APIField>
+
+<APIField
+  name="params.control_id"
+  type="string"
+>
+  The control ID for this detect operation.
+</APIField>
+
+<APIField
+  name="params.detect"
+  type="object"
+>
+  Detection result details (see subfields below).
+</APIField>
+
+<APIField
+  name="params.detect.type"
+  type="string"
+>
+  The type of detection. **Valid values:** `machine` or `fax`.
+</APIField>
+
+<APIField
+  name="params.detect.params.event"
+  type="string"
+>
+  The detection result. **Valid values:** `HUMAN`, `MACHINE`, `FAX`, `UNKNOWN`, `finished`.
+</APIField>
+
+<APIField
+  name="params.call_id"
+  type="string"
+>
+  The call ID.
+</APIField>
+
+<APIField
+  name="params.node_id"
+  type="string"
+>
+  The node handling the call.
+</APIField>
+
+<APIField
+  name="params.segment_id"
+  type="string"
+>
+  The segment ID for this part of the call.
+</APIField>
+
+### Raw JSON example
+
+```json
+{
+  "event_type": "calling.call.detect",
+  "event_channel": "swml:be38xxxx-8xxx-4xxxx-9fxx-bxxxxxxxxx",
+  "timestamp": 1745332535.668522,
+  "project_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "space_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "params": {
+    "control_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "detect": {
+      "type": "machine",
+      "params": {
+        "event": "HUMAN"
+      }
+    },
+    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "segment_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+}
+```
+
+---
+
+## **Examples**
+
+### Play the detection result
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - detect_machine:
+        status_url: 'https://example.com/detect-events'
+        timeout: 20
+    - play:
+        url: 'say:Detection result: ${detect_result}'
+```
+
+### Conditional actions based on the detection result
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - play:
+        url: "say: Welcome to the machine detection test."
+    - detect_machine:
+        status_url: "https://webhook.site/5c8abf82-b8c7-41c8-b5d6-b32a40068109"
+        detectors: "amd,fax"
+        wait: true
+    - cond:
+        - when: detect_result == 'machine'
+          then:
+            - play:
+                url: "say: You are a machine, goodbye."
+            - hangup: {}
+        - when: detect_result == 'human'
+          then:
+            - play:
+                url: "say: You are a human, hello."
+            - hangup: {}
+        - when: detect_result == 'fax'
+          then:
+            - play:
+                url: "say: You are a fax, goodbye."
+            - hangup: {}
+        - else:
+            - play:
+                url: "say: Unable to determine if you are a human, machine, or fax, goodbye. Result was ${detect_result}"
+            - hangup: {}

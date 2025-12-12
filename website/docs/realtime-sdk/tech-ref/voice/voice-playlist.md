@@ -51,10 +51,13 @@ Instantiates an empty Playlist. Use the [`add`][link] method to add media to thi
 
 #### Parameters
 
-| Name             | Type     | Description                                                                                    |
-|:-----------------|:---------|:-----------------------------------------------------------------------------------------------|
-| `params`<span className="optional-arg">Optional</span>        | `Object` | -                                                                                              |
-| `params.volume`<span className="optional-arg">Optional</span> | `number` | Default volume to apply to the media in the playlist, between -40dB and +40dB. Default is `0`. |
+<APIField name="params" type="object">
+  Object containing the parameters of the constructor.
+</APIField>
+
+<APIField name="params.volume" type="number" default="0">
+  Default volume to apply to the media in the playlist, between -40dB and +40dB.
+</APIField>
 
 #### Example
 
@@ -64,25 +67,13 @@ const playlist = new Voice.Playlist({ volume: 1.0 });
 
 ## **Properties**
 
-### media
+<APIField name="media" type="NestedArray<Object>">
+  The list of media items that have been added to this Playlist.
+</APIField>
 
-Get the list of media that have been added to this Playlist.
-
-**Syntax:** `Playlist.media`
-
-**Returns:** `NestedArray<Object>`
-
----
-
-### volume
-
-Default volume for the audio in the playlist.
-
-**Syntax:** `Playlist.volume`
-
-**Returns:** `undefined` \| `number`
-
-
+<APIField name="volume" type="number | undefined">
+  The default volume for the audio in the playlist, between -40dB and +40dB.
+</APIField>
 
 ## **Methods**
 
@@ -94,9 +85,9 @@ Adds the speecified media in series to the Playlist.
 
 #### Parameters
 
-| Name     | Type   | Description                                                                                               |
-|:---------|:-------|:----------------------------------------------------------------------------------------------------------|
-| `params`<span className="required-arg">Required</span> | Object | A media object. See [`Audio`][link-1], [`Ringtone`][link-2], [`Silence`][link-3], and [`TTS`][link-4]. |
+<APIField name="params" type="object" required={true}>
+  A media object. See [`Audio`][link-1], [`Ringtone`][link-2], [`Silence`][link-3], and [`TTS`][link-4].
+</APIField>
 
 #### Returns
 
@@ -107,7 +98,17 @@ Adds the speecified media in series to the Playlist.
 A playlist to play some audio, then a short silence, and finally a ringtone.
 
 ```js
-const playlist = new Voice.DeviceBuilder()
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const call = await client.voice.dialPhone({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  timeout: 30
+});
+
+const playlist = new Voice.Playlist()
   .add(
     Voice.Playlist.Audio({
       url: "https://cdn.signalwire.com/default-music/welcome.mp3",
@@ -116,7 +117,7 @@ const playlist = new Voice.DeviceBuilder()
   .add(Voice.Playlist.Silence({ duration: 1 }))
   .add(Voice.Playlist.Ringtone({ name: "it", duration: 5 }));
 
-call.play(playlist);
+await call.play(playlist);
 ```
 
 ---
@@ -129,10 +130,13 @@ An audio media.
 
 #### Parameters
 
-| Name         | Type     | Description           |
-|:-------------|:---------|:----------------------|
-| `params`<span className="required-arg">Required</span>     | `object` | -                     |
-| `params.url`<span className="required-arg">Required</span> | `string` | URL of media to play. |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.url" type="string" required={true}>
+  URL of media to play.
+</APIField>
 
 #### Returns
 
@@ -141,9 +145,22 @@ An audio media.
 #### Example
 
 ```js
-Voice.Playlist.Audio({
-  url: "https://cdn.signalwire.com/default-music/welcome.mp3",
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const call = await client.voice.dialPhone({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  timeout: 30
 });
+
+const playlist = new Voice.Playlist()
+  .add(Voice.Playlist.Audio({
+    url: "https://cdn.signalwire.com/default-music/welcome.mp3",
+  }));
+
+await call.play(playlist);
 ```
 
 ---
@@ -156,11 +173,17 @@ A ringtone media.
 
 #### Parameters
 
-| Name               | Type                                       | Description                            |
-|:-------------------|:-------------------------------------------|:---------------------------------------|
-| `params`<span className="required-arg">Required</span>           | `object`                                   | -                                      |
-| `params.duration`<span className="optional-arg">Optional</span> | `number`                                   | How long to play ringtone, in seconds. |
-| `params.name`<span className="required-arg">Required</span>      | [`RingtoneName`][types] | Name of the ringtone to play.          |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.name" type="RingtoneName" required={true}>
+  Name of the ringtone to play. See [`RingtoneName`][types].
+</APIField>
+
+<APIField name="params.duration" type="number">
+  How long to play ringtone, in seconds.
+</APIField>
 
 #### Returns
 
@@ -169,10 +192,23 @@ A ringtone media.
 #### Example
 
 ```js
-Voice.Playlist.Ringtone({
-  name: "it",
-  duration: 30,
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const call = await client.voice.dialPhone({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  timeout: 30
 });
+
+const playlist = new Voice.Playlist()
+  .add(Voice.Playlist.Ringtone({
+    name: "it",
+    duration: 30,
+  }));
+
+await call.play(playlist);
 ```
 
 ---
@@ -185,10 +221,13 @@ A silence interval.
 
 #### Parameters
 
-| Name              | Type     | Description                           |
-|:------------------|:---------|:--------------------------------------|
-| `params`<span className="required-arg">Required</span>          | `object` | -                                     |
-| `params.duration`<span className="required-arg">Required</span> | `number` | How long to play silence, in seconds. |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.duration" type="number" required={true}>
+  How long to play silence, in seconds.
+</APIField>
 
 #### Returns
 
@@ -197,9 +236,23 @@ A silence interval.
 #### Example
 
 ```js
-Voice.Playlist.Silence({
-  duration: 2,
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const call = await client.voice.dialPhone({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  timeout: 30
 });
+
+// Use silence to create a pause between other media
+const playlist = new Voice.Playlist()
+  .add(Voice.Playlist.TTS({ text: "Please hold." }))
+  .add(Voice.Playlist.Silence({ duration: 2 }))
+  .add(Voice.Playlist.TTS({ text: "Connecting you now." }));
+
+await call.play(playlist);
 ```
 
 ---
@@ -212,13 +265,25 @@ A TTS media.
 
 #### Parameters
 
-| Name               | Type                   | Description                                                                                                                                                                                      |
-| :----------------- | :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `params`<span className="required-arg">Required</span>           | `object`               | -                                                                                                                                                                                                |
-| `params.gender`<span className="optional-arg">Optional</span>   | `'female'` \| `'male'` | Gender of the voice. Defaults to `female`.                                                                                                                                                       |
-| `params.language`<span className="optional-arg">Optional</span> | `string`               | Language of the text in `ISO 639-1` (language name) + `ISO 3166` (country code). Defaults to `en-US`.<br />Supported languages can be found [here][link-5].                |
-| `params.text`<span className="required-arg">Required</span>      | `string`               | Text to play. SSML may be entered as a string wrapped in `<speak>` tags. <br />See our [supported voices and languages][voice-and-languages] documentation for usage and supported tags. |
-| `params.voice`<span className="optional-arg">Optional</span>    | `string`               | Voice to use (takes precedence on `gender`).<br />Supported voices can be found [here][link-5].                                                                            |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.text" type="string" required={true}>
+  Text to play. SSML may be entered as a string wrapped in `<speak>` tags. See our [supported voices and languages][voice-and-languages] documentation for usage and supported tags.
+</APIField>
+
+<APIField name="params.language" type="string" default='"en-US"'>
+  Language of the text in `ISO 639-1` (language name) + `ISO 3166` (country code). Supported languages can be found [here][link-5].
+</APIField>
+
+<APIField name="params.gender" type='"female" | "male"' default='"female"'>
+  Gender of the voice.
+</APIField>
+
+<APIField name="params.voice" type="string">
+  Voice to use (takes precedence over `gender`). Supported voices can be found [here][link-5].
+</APIField>
 
 #### Returns
 
@@ -229,18 +294,42 @@ A TTS media.
 #### Example
 
 ```js
-Voice.Playlist.TTS({
-  text: "Welcome to SignalWire!",
-  gender: "male",
-  language: "en-US",
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const call = await client.voice.dialPhone({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  timeout: 30
 });
+
+const playlist = new Voice.Playlist()
+  .add(Voice.Playlist.TTS({
+    text: "Welcome to SignalWire!",
+    gender: "male",
+    language: "en-US",
+  }));
+
+await call.play(playlist);
 ```
 
 ##### SSML Example
 
 ```js
-Voice.Playlist.TTS({
-  text: `<speak>
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const call = await client.voice.dialPhone({
+  from: "+1xxxxxxxxxx",
+  to: "+1yyyyyyyyyy",
+  timeout: 30
+});
+
+const playlist = new Voice.Playlist()
+  .add(Voice.Playlist.TTS({
+    text: `<speak>
       Here are <say-as interpret-as="characters">SSML</say-as> samples.
       I can pause <break time="3s"/>.
       I can speak in cardinals. Your number is <say-as interpret-as="cardinal">10</say-as>.
@@ -249,8 +338,9 @@ Voice.Playlist.TTS({
       I can also substitute phrases, like the <sub alias="World Wide Web Consortium">W3C</sub>.
       Finally, I can speak a paragraph with two sentences.
       <p><s>This is sentence one.</s><s>This is sentence two.</s></p>
-      </speak>
-      `,
-  voice: "polly.Joey-Neural",
-});
+    </speak>`,
+    voice: "polly.Joey-Neural",
+  }));
+
+await call.play(playlist);
 ```
