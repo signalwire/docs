@@ -25,6 +25,7 @@ import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 import ReleaseCard from "../../components/Blog/ReleaseCard";
 import Tables from "../../components/Tables";
 import APIBadge from "../../components/APIBadge";
+import APIField from "../../components/APIField";
 import InstallHero from "../../components/InstallHero";
 
 export default {
@@ -65,5 +66,6 @@ export default {
   ReleaseCard,
   Tables,
   APIBadge,
+  APIField,
   InstallHero
 };
