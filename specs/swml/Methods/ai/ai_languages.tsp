@@ -33,6 +33,22 @@ model LanguagesBase {
   #deprecated "The `engine` property is deprecated. Please include the engine in the voice field."
   @doc("The engine to use for the language. For example, 'elevenlabs'.")
   engine?: string;
+
+  @doc("TTS engine-specific parameters for this language.")
+  params?: LanguageParams;
+}
+
+@summary("LanguageParams")
+model LanguageParams {
+  @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice. IMPORTANT: Only works with ElevenLabs TTS engine.")
+  @minValue(0.0)
+  @maxValue(1.0)
+  stability?: float | SWMLVar = 0.50;
+
+  @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice. IMPORTANT: Only works with ElevenLabs TTS engine.")
+  @minValue(0.0)
+  @maxValue(1.0)
+  similarity?: float | SWMLVar = 0.75;
 }
 
 @summary("LanguagesWithSoloFillers")
