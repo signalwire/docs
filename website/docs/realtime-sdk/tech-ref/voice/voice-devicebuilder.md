@@ -13,6 +13,8 @@ sidebar_label: DeviceBuilder
 [types-1]: types.mdx#sipheader
 [voice-call]: voice-call.mdx#connect
 [voice-devicebuilder]: voice-devicebuilder.md
+[voicecallphoneparams]: types.mdx#voicecallphoneparams
+[voicecallsipparams]: types.mdx#voicecallsipparams
 
 A DeviceBuilder object allows you to specify a set of devices which should be dialed in sequence or parallel. You can then pass the device plan to the methods that support it, for example [Call.connect][voice-call].
 
@@ -21,7 +23,11 @@ A DeviceBuilder object allows you to specify a set of devices which should be di
 Creates a plan which specifies to dial a SIP endpoint. If there is no answer within 30 seconds, calls two phone numbers in parallel (as indicated by the array syntax). As soon as one of the two answers, the operation is considered successful.
 
 ```js
-const plan = new Voice.DeviceBuilder()
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const devices = new Voice.DeviceBuilder()
   .add(
     Voice.DeviceBuilder.Sip({
       from: "sip:user1@domain.com",
@@ -30,9 +36,12 @@ const plan = new Voice.DeviceBuilder()
     })
   )
   .add([
-    Voice.DeviceBuilder.Phone({ to: "+yyyyyy", timeout: 30 }),
-    Voice.DeviceBuilder.Phone({ to: "+zzzzzz", timeout: 30 }),
+    Voice.DeviceBuilder.Phone({ to: "+1yyyyyyyyyy", from: "+1xxxxxxxxxx", timeout: 30 }),
+    Voice.DeviceBuilder.Phone({ to: "+1zzzzzzzzzz", from: "+1xxxxxxxxxx", timeout: 30 }),
   ]);
+
+const call = await client.voice.dial(devices);
+console.log("Call answered:", call.id);
 ```
 
 ## **Constructors**
@@ -46,18 +55,16 @@ Instantiates an empty DeviceBuilder. Use the [`add`][link] method to add devices
 #### Example
 
 ```js
-const plan = new Voice.DeviceBuilder();
+import { Voice } from "@signalwire/realtime-api";
+
+const devices = new Voice.DeviceBuilder();
 ```
 
 ## **Properties**
 
-### devices
-
-Get the list of devices that have been added to this DeviceBuilder.
-
-**Syntax:** `DeviceBuilder.devices`
-
-**Returns:** `NestedArray<Object>`
+<APIField name="devices" type="NestedArray<Object>">
+  The list of devices that have been added to this DeviceBuilder.
+</APIField>
 
 ## **Methods**
 
@@ -76,9 +83,9 @@ You can pass either a device ([`Phone`][link-1] or [`Sip`][link-2]) or an array 
 
 #### Parameters
 
-| Name     | Type                   | Description                                                                      |
-|:---------|:-----------------------|:---------------------------------------------------------------------------------|
-| `device`<span className="required-arg">Required</span> | `Object` \| `object[]` | A single device or an array of devices. See [`Phone`][link-1] and [`Sip`][link-2]. |
+<APIField name="device" type="object | object[]" required={true}>
+  A single device or an array of devices. See [`Phone`][link-1] and [`Sip`][link-2].
+</APIField>
 
 #### Returns
 
@@ -86,33 +93,45 @@ You can pass either a device ([`Phone`][link-1] or [`Sip`][link-2]) or an array 
 
 #### Example
 
-Adding two devices in series. If `"+xxxxxx"` doesn't answer within 30 seconds, `"+yyyyyy"` will be called.
+Adding two devices in series. If `"+1xxxxxxxxxx"` doesn't answer within 30 seconds, `"+1yyyyyyyyyy"` will be called.
 
 ```js
-const plan = new Voice.DeviceBuilder()
-  .add(Voice.DeviceBuilder.Phone({ to: "+xxxxxx", timeout: 30 }))
-  .add(Voice.DeviceBuilder.Phone({ to: "+yyyyyy", timeout: 30 }));
+import { SignalWire, Voice } from "@signalwire/realtime-api";
 
-client.dial(plan);
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const devices = new Voice.DeviceBuilder()
+  .add(Voice.DeviceBuilder.Phone({ to: "+1xxxxxxxxxx", from: "+1aaaaaaaaaa", timeout: 30 }))
+  .add(Voice.DeviceBuilder.Phone({ to: "+1yyyyyyyyyy", from: "+1aaaaaaaaaa", timeout: 30 }));
+
+const call = await client.voice.dial(devices);
 ```
 
 Adding two devices in parallel. Both will ring simultaneously. As soon as
-either `"+xxxxxx"` or `"+yyyyyy"` answers, the other stops ringing.
+either `"+1xxxxxxxxxx"` or `"+1yyyyyyyyyy"` answers, the other stops ringing.
 
 ```js
-const plan = new Voice.DeviceBuilder().add([
-  Voice.DeviceBuilder.Phone({ to: "+xxxxxx", from: "+aaaaa", timeout: 30 }),
-  Voice.DeviceBuilder.Phone({ to: "+yyyyyy", from: "+bbbbb", timeout: 30 }),
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const devices = new Voice.DeviceBuilder().add([
+  Voice.DeviceBuilder.Phone({ to: "+1xxxxxxxxxx", from: "+1aaaaaaaaaa", timeout: 30 }),
+  Voice.DeviceBuilder.Phone({ to: "+1yyyyyyyyyy", from: "+1bbbbbbbbbb", timeout: 30 }),
 ]);
 
-client.dial(plan);
+const call = await client.voice.dial(devices);
 ```
 
 Mixing series and parallel. First calls the SIP device. If it doesn't
-answer, calls `"+yyyyyy"` and `"+zzzzzz"` simultaneously.
+answer, calls `"+1yyyyyyyyyy"` and `"+1zzzzzzzzzz"` simultaneously.
 
 ```js
-const plan = new Voice.DeviceBuilder()
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const devices = new Voice.DeviceBuilder()
   .add(
     Voice.DeviceBuilder.Sip({
       from: "sip:user1@domain.com",
@@ -121,83 +140,145 @@ const plan = new Voice.DeviceBuilder()
     })
   )
   .add([
-    Voice.DeviceBuilder.Phone({ to: "+yyyyyy", from: "+aaaaa", timeout: 30 }),
-    Voice.DeviceBuilder.Phone({ to: "+zzzzzz", from: "+bbbbb", timeout: 30 }),
+    Voice.DeviceBuilder.Phone({ to: "+1yyyyyyyyyy", from: "+1aaaaaaaaaa", timeout: 30 }),
+    Voice.DeviceBuilder.Phone({ to: "+1zzzzzzzzzz", from: "+1bbbbbbbbbb", timeout: 30 }),
   ]);
 
-client.dial(plan);
+const call = await client.voice.dial(devices);
 ```
 
 ---
 
 ### Phone
 
-▸ `Static` **Phone**(`params`): `Object`
+▸ `Static` **Phone**(`params`): [`VoiceCallPhoneParams`][voicecallphoneparams]
 
 Represents the configuration to call a phone device.
 
 #### Parameters
 
-| Name                        | Type       | Description                                                                                                                                                                                                                                                        |
-|:----------------------------|:-----------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `params`<span className="required-arg">Required</span>                    | `Object`   | -                                                                                                                                                                                                                                                                  |
-| `params.callStateEvents`<span className="optional-arg">Optional</span>    | `string[]` | An optional array of event names to be notified about. Allowed values are `created`, `ringing`, `answered`, and `ended`. Default is `ended`.                                                                                                                       |
-| `params.callStateUrl`<span className="optional-arg">Optional</span>       | `string`   | Optional webhook URL to which SignalWire will send call status change notifications. See the payload specifications under [`CallState`][callstate].                                                                                                          |
-| `params.to`<span className="required-arg">Required</span>                 | `string`   | Number to call, in E.164 format.                                                                                                                                                                                                                                   |
-| `params.from`<span className="required-arg">Required</span>               | `string`   | SignalWire number to use to initiate the call, in E.164 format.                                                                                                                                                                                                    |
-| `params.maxPricePerMinute`<span className="optional-arg">Optional</span> | `number`   | The optional maximum price in USD acceptable for the call to be created. If the rate for the call is greater than this value, the call will not be created. If not set, all calls will be created. Price can have a maximum of four decimal places, i.e. `0.0075`. |
-| `params.timeout`<span className="optional-arg">Optional</span>           | `number`   | Time to wait for the call to be answered, in seconds. Optional. Default is `30` seconds.                                                                                                                                                                           |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.to" type="string" required={true}>
+  Number to call, in E.164 format.
+</APIField>
+
+<APIField name="params.from" type="string" required={true}>
+  SignalWire number to use to initiate the call, in E.164 format.
+</APIField>
+
+<APIField name="params.timeout" type="number" default="30">
+  Time to wait for the call to be answered, in seconds.
+</APIField>
+
+<APIField name="params.callStateUrl" type="string">
+  Optional webhook URL to which SignalWire will send call status change notifications. See the payload specifications under [`CallState`][callstate].
+</APIField>
+
+<APIField name="params.callStateEvents" type="string[]" default='["ended"]'>
+  An optional array of event names to be notified about. Allowed values are `created`, `ringing`, `answered`, and `ended`.
+</APIField>
+
+<APIField name="params.maxPricePerMinute" type="number">
+  The optional maximum price in USD acceptable for the call to be created. If the rate for the call is greater than this value, the call will not be created. If not set, all calls will be created. Price can have a maximum of four decimal places, i.e. `0.0075`.
+</APIField>
 
 #### Returns
 
-`Object`
+[`VoiceCallPhoneParams`][voicecallphoneparams] - A device configuration object to pass to [`DeviceBuilder.add()`][link].
 
 #### Example
 
 ```js
-Voice.DeviceBuilder.Phone({
-  to: "+xxxxxx",
-  from: "+aaaaa",
-  timeout: 30,
-  callStateUrl: "http://mydomain.com/hook",
-  callStateEvents: ["ended", "answered"],
-});
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const devices = new Voice.DeviceBuilder()
+  .add(Voice.DeviceBuilder.Phone({
+    to: "+1yyyyyyyyyy",
+    from: "+1xxxxxxxxxx",
+    timeout: 30,
+    callStateUrl: "https://example.com/call-state-webhook",
+    callStateEvents: ["created", "ringing", "answered", "ended"],
+    maxPricePerMinute: 0.50
+  }));
+
+const call = await client.voice.dial(devices);
 ```
 
 ---
 
 ### Sip
 
-▸ `Static` **Sip**(`params`): `Object`
+▸ `Static` **Sip**(`params`): [`VoiceCallSipParams`][voicecallsipparams]
 
 Represents the configuration to call a SIP device.
 
 #### Parameters
 
-| Name                        | Type                                   | Description                                                                                                                                                                                                                                               |
-|:----------------------------|:---------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `params`<span className="required-arg">Required</span>                    | `Object`                               | -                                                                                                                                                                                                                                                         |
-| `params.from`<span className="required-arg">Required</span>               | `string`                               | SIP endpoint URI to use to initiate the call.                                                                                                                                                                                                             |
-| `params.callStateEvents`<span className="optional-arg">Optional</span>    | `string[]`                             | An optional array of event names to be notified about. Allowed values are `created`, `ringing`, `answered`, and `ended`. Default is `ended`.                                                                                                              |
-| `params.callStateUrl`<span className="optional-arg">Optional</span>       | `string`                               | Optional webhook URL to which SignalWire will send call status change notifications. See the payload specifications under [`CallState`][callstate].                                                                                                 |
-| `params.to`<span className="required-arg">Required</span>                 | `string`                               | SIP endpoint URI to call.                                                                                                                                                                                                                                 |
-| `params.codecs`<span className="optional-arg">Optional</span>            | [`SipCodec`][types][]   | Optional array of desired codecs in order of preference.                                                                                                                                                                                                  |
-| `params.headers`<span className="optional-arg">Optional</span>           | [`SipHeader`][types-1][] | Optional array of headers. Must be X- headers only.                                                                                                                                                                                                       |
-| `params.maxPricePerMinute`<span className="optional-arg">Optional</span> | `number`                               | The maximum price in USD acceptable for the call to be created. If the rate for the call is greater than this value, the call will not be created. If not set, all calls will be created. Price can have a maximum of four decimal places, i.e. `0.0075`. |
-| `params.timeout`<span className="optional-arg">Optional</span>           | `number`                               | Time to wait for the call to be answered, in seconds. Default is 30 seconds.                                                                                                                                                                              |
+<APIField name="params" type="object" required={true}>
+  Object containing the parameters of the method.
+</APIField>
+
+<APIField name="params.to" type="string" required={true}>
+  SIP endpoint URI to call.
+</APIField>
+
+<APIField name="params.from" type="string" required={true}>
+  SIP endpoint URI to use to initiate the call.
+</APIField>
+
+<APIField name="params.timeout" type="number" default="30">
+  Time to wait for the call to be answered, in seconds.
+</APIField>
+
+<APIField name="params.codecs" type="SipCodec[]">
+  Optional array of desired codecs in order of preference. See [`SipCodec`][types].
+</APIField>
+
+<APIField name="params.headers" type="SipHeader[]">
+  Optional array of headers. Must be X- headers only. See [`SipHeader`][types-1].
+</APIField>
+
+<APIField name="params.callStateUrl" type="string">
+  Optional webhook URL to which SignalWire will send call status change notifications. See the payload specifications under [`CallState`][callstate].
+</APIField>
+
+<APIField name="params.callStateEvents" type="string[]" default='["ended"]'>
+  An optional array of event names to be notified about. Allowed values are `created`, `ringing`, `answered`, and `ended`.
+</APIField>
+
+<APIField name="params.maxPricePerMinute" type="number">
+  The maximum price in USD acceptable for the call to be created. If the rate for the call is greater than this value, the call will not be created. If not set, all calls will be created. Price can have a maximum of four decimal places, i.e. `0.0075`.
+</APIField>
 
 #### Returns
 
-`Object`
+[`VoiceCallSipParams`][voicecallsipparams] - A device configuration object to pass to [`DeviceBuilder.add()`][link].
 
 #### Example
 
 ```js
-Voice.DeviceBuilder.Sip({
-  from: "sip:user1@domain.com",
-  to: "sip:user2@domain.com",
-  timeout: 30,
-  callStateUrl: "http://mydomain.com/hook",
-  callStateEvents: ["ended", "answered"],
-});
+import { SignalWire, Voice } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
+
+const devices = new Voice.DeviceBuilder()
+  .add(Voice.DeviceBuilder.Sip({
+    from: "sip:user1@domain.com",
+    to: "sip:user2@domain.com",
+    timeout: 30,
+    codecs: ["PCMU", "PCMA", "OPUS"],
+    headers: [
+      { name: "X-Custom-Header", value: "custom-value" }
+    ],
+    callStateUrl: "https://example.com/call-state-webhook",
+    callStateEvents: ["created", "ringing", "answered", "ended"],
+    maxPricePerMinute: 0.50
+  }));
+
+const call = await client.voice.dial(devices);
 ```
