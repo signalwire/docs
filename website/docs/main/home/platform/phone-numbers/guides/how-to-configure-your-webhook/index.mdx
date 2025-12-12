@@ -130,7 +130,7 @@ import { RestClient } from "@signalwire/compatibility-api";
 
 app.post("/mywebhook", (req, res) => {
   const valid = RestClient.validateRequest(
-    <--Signing Key copied from your credentials page-->,
+    "<--Signing Key copied from your credentials page-->",
     req.headers["x-signalwire-signature"],
     "https://example.ngrok.io/mywebhook",
     req.body
@@ -139,3 +139,39 @@ app.post("/mywebhook", (req, res) => {
 ```
 
 This method respond with a boolean value. You can continue your application's logic in the truth case and return unauthorized for the false case.
+
+## Webhook Connection Overrides
+
+SignalWire supports URL fragment parameters that can be added to your webhook URL to override default HTTP callback connection settings on a per-request basis. These overrides allow you to:
+
+- Set longer timeouts to better support intermittent network issues between SignalWire and your server
+- Set shorter timeouts to speed up failover to a fallback URL in case of an outage
+- Control the total timeout limit for all retries
+
+### Supported URL Fragment Parameters
+
+SignalWire allows per-request HTTP callback overrides using URL fragments:
+
+```
+https://your-server.com/endpoint#key=value&key2=value2
+```
+
+### Parameters
+
+| Parameter | Valid values | Default | Notes |
+|-----------|--------------|---------|-------|
+| Connect Timeout (`ct`) | 100 - 10000 (ms) | 5000 | The timeout in milliseconds SignalWire will wait to establish its TCP connection to your web server. |
+| Read Timeout (`rt`) | 100 - 15000 (ms) | 15000 | The amount of time in milliseconds after sending your webhook an HTTP request that SignalWire will wait for the initial HTTP response packet. Also applies to the amount of time SignalWire will wait between individual packets within your HTTP response. |
+| Total Time (`tt`) | 100 - 15000 (ms) | 15000 | The total time allowed for all timeouts including retries. If not set, the maximum limit is enforced. |
+
+### Examples
+
+#### Set Connect Timeout to 1 second
+```
+https://example.com/foo#ct=1000
+```
+
+#### Set Connect + Read Timeout to 1 second each
+```
+https://example.com/foo#ct=1000&rt=1000
+```

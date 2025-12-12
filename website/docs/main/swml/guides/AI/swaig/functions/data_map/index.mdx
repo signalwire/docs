@@ -69,11 +69,11 @@ This removes the need to host a server to perform certain actions conditionally,
 data_map:
   expressions:
     - pattern: \w+
-      string: '%{meta_data.table.%{lc:args.target}}'
+      string: '${meta_data.table.${lc:args.target}}'
       output:
         ...
     - pattern: .*
-      string: '%{args.target}'
+      string: '${args.target}'
       output:
         ...
 ```
@@ -84,7 +84,7 @@ data_map:
     - The `\w+` pattern is used to match a specific target value, while the `.*` pattern is a catch-all for any input.
 
 - **String Field:** The `string` field allows you to dynamically or statically set values based on the matched pattern.
-  - In the example, `%{meta_data.table.%{lc:args.target}}` fetches the target from the `SWAIG.functions.<function>.meta_data` field.
+  - In the example, `${meta_data.table.${lc:args.target}}` fetches the target from the `SWAIG.functions.<function>.meta_data` field.
 
 
     ```yaml andJson
@@ -133,7 +133,7 @@ data_map:
     - url: 'https://icanhazdadjoke.com/search?term={lc:args.type}'
       method: GET
       output:
-        response: 'Tell the user: %{array[0].results[0].joke}.'
+        response: 'Tell the user: ${array[0].results[0].joke}.'
         action:
           ...
 ```
@@ -199,7 +199,7 @@ However, they can also be used as a top level object within a Data Map.
 data_map:
   expressions:
     - pattern: \w+
-      string: '%{meta_data.table.%{lc:args.target}}'
+      string: '${meta_data.table.${lc:args.target}}'
       output:
         action:
           - say: Please stand by while I connect your call.
@@ -208,7 +208,7 @@ data_map:
               sections:
                 main:
                   - connect:
-                      to: '%{meta_data.table.%{lc:args.target}}'
+                      to: '${meta_data.table.${lc:args.target}}'
           - stop: 'true'
         response: 'transferred, the call has ended.'
 ```
@@ -231,20 +231,20 @@ the messages sent to the user.
 data_map:
   expressions:
     - pattern: .*
-      string: '%{args.target}'
+      string: '${args.target}'
       output:
         response: >-
-          I'm sorry, I was unable to transfer your call to %{args.target} due to being an invalid destination.
+          I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination.
 ```
 
 ##### Detailed Explanation
 
 - **Response Message:** The `response` field contains the message to be relayed to AI agent. This message
 can be instructive, informative, or conversational, depending on the context.
-  - In the example, `I'm sorry, I was unable to transfer your call to %{args.target} due to being an invalid destination.`
+  - In the example, `I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination.`
   is the message that will be sent to the AI agent if the `args.target` is not found in the `meta_data.table` object.
   This will cause the AI to inform the user that the transfer destination is invalid.
-  - The `%{args.target}` placeholder is used to dynamically insert the target value provided by the user into the response message.
+  - The `${args.target}` placeholder is used to dynamically insert the target value provided by the user into the response message.
 
 ### Actions
 
@@ -269,7 +269,7 @@ data_map:
     - url: 'https://icanhazdadjoke.com/search?term={lc:args.type}'
       method: GET
       output:
-        response: 'Tell the user: %{array[0].results[0].joke}.'
+        response: 'Tell the user: ${array[0].results[0].joke}.'
         action:
           - toggle_functions:
               - active: true
@@ -287,6 +287,21 @@ data_map:
 
 ---
 
+## **Variable Scopes in data_map**
+
+When working with `data_map`, you have access to several special variable scopes that are only available in SWAIG/AI contexts:
+
+- **`args`** - Function arguments passed to the SWAIG function
+- **`meta_data`** - Function-level metadata that persists across function calls
+- **`global_data`** - Application-wide data accessible across all functions
+- **`prompt_vars`** - Built-in template variables for call and AI session information
+
+For complete technical specifications, types, and properties, see the [SWAIG Variables Reference](/swml/methods/ai/swaig/functions/data_map).
+
+For general SWML variable scopes like `call`, `params`, and `vars`, see the [Variables Reference](/swml/variables).
+
+---
+
 ## **Utilizing Stored Values**
 
 When working with `data_map`, there are several ways to utilize stored values, such as `function.argument` (`args`),
@@ -299,8 +314,8 @@ When working with `data_map`, there are several ways to utilize stored values, s
 `functions` section of the SWAIG object. Initially, the value of the argument is empty, but
 as the user interacts with the AI, the value is updated based on the user's input.
 
-To access the value of a specific argument, use `%{args.<argument_name>}`. For example, if
-the argument is named `target`, you can access its value using `%{args.target}`.
+To access the value of a specific argument, use `${args.<argument_name>}`. For example, if
+the argument is named `target`, you can access its value using `${args.target}`.
 
 ### Global Data & Function Meta Data
 
@@ -314,24 +329,24 @@ or [`set_meta_data`](../../../set_meta_data.mdx) actions.
 
 #### Accessing Meta Data
 
-To access the value of a specific `meta_data` key, use `%{meta_data.<key>}`. For example,
-if the key is `table`, you can access its value with `%{meta_data.table}`.
+To access the value of a specific `meta_data` key, use `${meta_data.<key>}`. For example,
+if the key is `table`, you can access its value with `${meta_data.table}`.
 
-For `global_data`, access the value of a specific key using `%{global_data.<key>}`.
-For example, if the key is `table`, you can access its value with `%{global_data.table}`.
+For `global_data`, access the value of a specific key using `${global_data.<key>}`.
+For example, if the key is `table`, you can access its value with `${global_data.table}`.
 
 If your `meta_data` or `global_data` is an object, you can access a specific property using
-`%{meta_data.<key>.<property>}` or `%{global_data.<key>.<property>}`. For example, if
-the key is `table` and the property is `support`, you can access its value with `%{meta_data.table.support}`
-or `%{global_data.table.support}`.
+`${meta_data.<key>.<property>}` or `${global_data.<key>.<property>}`. For example, if
+the key is `table` and the property is `support`, you can access its value with `${meta_data.table.support}`
+or `${global_data.table.support}`.
 
 ### SWML Variables
 
 SWML variables (`vars`) store data created by a SWML [`request`](/swml/methods/request)
 or [`set`](/swml/methods/set) method.
 
-To access the value of a specific SWML variable, use `%{vars.<variable_name>}`. For example,
-if the variable is `joke`, you can access its value with `%{vars.joke}`.
+To access the value of a specific SWML variable, use `${vars.<variable_name>}`. For example,
+if the variable is `joke`, you can access its value with `${vars.joke}`.
 
 
 This structure helps efficiently manage and retrieve data within your SWML scripts, providing
@@ -396,7 +411,7 @@ sections:
               data_map:
                 expressions:
                   - pattern: \w+
-                    string: '%{meta_data.table.%{lc:args.target}}'
+                    string: '${meta_data.table.${lc:args.target}}'
                     output:
                       action:
                         - say: Please stand by while I connect your call.
@@ -405,14 +420,14 @@ sections:
                             sections:
                               main:
                                 - connect:
-                                    to: '%{meta_data.table.%{lc:args.target}}'
+                                    to: '${meta_data.table.${lc:args.target}}'
                         - stop: 'true'
                       response: 'transferred, the call has ended.'
                   - pattern: .*
-                    string: '%{args.target}'
+                    string: '${args.target}'
                     output:
                       response: >-
-                        I'm sorry, I was unable to transfer your call to %{args.target} due to being an invalid destination.
+                        I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination.
               meta_data:
                 table:
                   support: '+1XXXXXXXXXX'
@@ -430,7 +445,7 @@ sections:
                   - url: 'https://icanhazdadjoke.com/search?term={lc:args.type}'
                     method: GET
                     output:
-                      response: 'Tell the user: %{array[0].results[0].joke}.'
+                      response: 'Tell the user: ${array[0].results[0].joke}.'
                       action:
                         - toggle_functions:
                             - active: true

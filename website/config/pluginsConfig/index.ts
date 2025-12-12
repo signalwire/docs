@@ -20,19 +20,25 @@ import { showcasePlugin } from "./guide-showcase";
 import { llmsTxtPlugin } from "./docusaurus-plugin-llms-txt";
 import { realtimeSdkPlugin } from "./realtime-sdk-docs";
 import { browserSdkPlugin } from "./browser-sdk-docs";
+import { agentsSdkManualPlugin } from "./agents-sdk-docs";
+// import { signalwireSdkPlugin } from "./signalwire-client-sdk-docs";
 import { ogImagesPlugin } from "../ogImages/index";
 
 const plugins: PluginConfig[] = [
   openapiPlugin,
   sassPlugin,
-  markdownPrinterPlugin,
+  ...(process.env.CONFIG_ENABLE_MARKDOWN_PRINTER === "FALSE"
+    ? []
+    : [markdownPrinterPlugin]),
   showcasePlugin,
   require.resolve("../../src/plugins/docusaurus-plugin-image-alias"),
   ["plugin-image-zoom", {}],
   llmsTxtPlugin,
   realtimeSdkPlugin,
   browserSdkPlugin,
-  ogImagesPlugin,
+  agentsSdkManualPlugin,
+  // signalwireSdkPlugin,
+  ...(process.env.CONFIG_BUILD_OG_IMAGES === "FALSE" ? [] : [ogImagesPlugin]),
 ];
 
 export default plugins;

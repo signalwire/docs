@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "Required parameter is missing",
       attribute: "password",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })

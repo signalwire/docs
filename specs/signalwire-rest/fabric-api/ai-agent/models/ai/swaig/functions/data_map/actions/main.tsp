@@ -1,4 +1,8 @@
+import "./change_context.tsp";
+import "./change_step.tsp";
 import "./context_switch.tsp";
+import "./hangup.tsp";
+import "./hold.tsp";
 import "./playback_bg.tsp";
 import "./say.tsp";
 import "./set_global_data.tsp";
@@ -12,7 +16,11 @@ import "./user_input.tsp";
 
 @summary("Action union")
 union Action {
+  ChangeContextAction,
+  ChangeStepAction,
   ContextSwitchAction,
+  HangupAction,
+  HoldAction,
   PlaybackBGAction,
   SayAction,
   SetGlobalDataAction,

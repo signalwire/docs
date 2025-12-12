@@ -1,6 +1,6 @@
 import type { Plugin, Transformer } from 'unified';
 import type { Node, Parent } from 'unist';
-import { collectAnchors, isParent, isTableNode, resetTableRowIndex, createAPITable } from './utils';
+import { collectAnchors, isParent, isTableNode, resetTableRowIndex, createAPITable } from './utils/index.js';
 import { visit } from 'unist-util-visit';
 
 /**

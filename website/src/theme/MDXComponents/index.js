@@ -10,6 +10,7 @@ import { Language, LangItem } from "../../components/Language/Language";
 import LangSwitch from "../../components/Language/LangSwitch";
 import { AlphaBadge, BetaBadge } from "../../components/AlphaBetaBadges";
 import { APITable, APITableRow } from "../../components/APITable";
+import { SharedTable } from "../../components/SharedTable";
 import { UseCaseView, UseCaseLinks } from "../../components/HomepageFeatures";
 import Steps from "../../components/Steps";
 import Subtitle from "../../components/typography/Subtitle";
@@ -24,6 +25,7 @@ import { GuidesList, GuidesListMirror } from "../../components/GuidesList";
 import ReleaseCard from "../../components/Blog/ReleaseCard";
 import Tables from "../../components/Tables";
 import APIBadge from "../../components/APIBadge";
+import APIField from "../../components/APIField";
 import InstallHero from "../../components/InstallHero";
 
 export default {
@@ -43,6 +45,7 @@ export default {
 
   APITable,
   APITableRow,
+  SharedTable,
 
   Card,
   CardGroup,
@@ -63,5 +66,6 @@ export default {
   ReleaseCard,
   Tables,
   APIBadge,
+  APIField,
   InstallHero
 };

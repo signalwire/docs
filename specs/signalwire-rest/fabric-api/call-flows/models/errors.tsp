@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "title is required",
       attribute: "title",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
@@ -22,7 +22,7 @@ model CallFlowCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "document_version must be greater than current version",
       attribute: "document_version",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#invalid_parameter_value",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })

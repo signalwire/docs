@@ -19,8 +19,8 @@ Why is this change required? What problem does it solve?
 
 ## Checklist:
 
-- [ ] I have read and fully understand the [process for updating the REST API](https://github.com/signalwire/signalwire-docs/wiki/REST-API-Specs-&-Docs) 
-- [ ] [Mandatory fields](https://github.com/signalwire/signalwire-docs/wiki/REST-API-Specs-&-Docs#documentation-required-decorators) are present in the TypeSpec files.
+- [ ] I have read and fully understand the [process for updating the REST API](https://github.com/signalwire/docs/wiki/REST-API-Specs-&-Docs) 
+- [ ] [Mandatory fields](https://github.com/signalwire/docs/wiki/REST-API-Specs-&-Docs#documentation-required-decorators) are present in the TypeSpec files.
 - [ ] TypeSpec files successfully compiled OpenAPI spec files.
   - [ ] No new warnings were generated during the compilation process. 
 - [ ] OpenAPI spec files were validated with a SWAGGER UI tool to ensure they are correct.

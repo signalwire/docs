@@ -7,6 +7,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Copy root package files first for better caching
 COPY package*.json ./
 COPY .yarnrc* ./
+COPY tsconfig.json ./
 
 # Copy workspace package.json files for dependency resolution
 COPY website/package*.json ./website/
@@ -18,8 +19,11 @@ COPY website ./website
 COPY specs ./specs
 COPY tools ./tools
 
-# Install dependencies and run postinstall (builds specs and website)
+# Install dependencies and run postinstall (builds specs)
 RUN yarn install --frozen-lockfile
+
+# Build the website
+RUN yarn build:website
 
 # Switch to website directory for final output
 WORKDIR /app/website
@@ -29,5 +33,8 @@ FROM nginx
 COPY --from=builder /app/website/provisioning/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY --from=builder /app/website/provisioning/nginx/redirects.map /etc/nginx/redirects.map
 COPY --from=builder /app/website/build/ /usr/share/nginx/html
+
+# Test nginx configuration
+RUN nginx -t
 
 EXPOSE 80

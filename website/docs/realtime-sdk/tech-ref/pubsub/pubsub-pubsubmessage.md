@@ -9,50 +9,43 @@ Represents a message in a PubSub context.
 
 ## **Properties**
 
-### channel
+<APIField name="id" type="string" required={true}>
+  The id of this message.
+</APIField>
 
-The channel in which this message was sent.
+<APIField name="channel" type="string" required={true}>
+  The channel in which this message was sent.
+</APIField>
 
-**Syntax:** `PubSubMessage.channel()`
+<APIField name="content" type="any" required={true}>
+  The content of this message.
+</APIField>
 
-**Returns:** `string`
+<APIField name="publishedAt" type="Date" required={true}>
+  The date and time at which this message was published.
+</APIField>
 
----
+<APIField name="meta" type="any">
+  Any metadata associated to this message.
+</APIField>
 
-### content
+## **Example**
 
-The content of this message.
+Listening for PubSub messages and accessing `PubSubMessage` properties:
 
-**Syntax:** `PubSubMessage.content()`
+```js
+import { SignalWire } from "@signalwire/realtime-api";
 
-**Returns:** `string`
+const client = await SignalWire({ project: "your-project-id", token: "your-api-token" });
 
----
-
-### id
-
-The id of this message.
-
-**Syntax:** `PubSubMessage.id()`
-
-**Returns:** `string`
-
----
-
-### meta
-
-Any metadata associated to this message.
-
-**Syntax:** `PubSubMessage.meta()`
-
-**Returns:** `any`
-
----
-
-### publishedAt
-
-The date and time at which this message was published.
-
-**Syntax:** `PubSubMessage.publishedAt()`
-
-**Returns:** `Date`
+await client.pubSub.listen({
+  channels: ["my-channel"],
+  onMessageReceived: (message) => {
+    console.log("Message ID:", message.id);
+    console.log("Channel:", message.channel);
+    console.log("Content:", message.content);
+    console.log("Published at:", message.publishedAt);
+    console.log("Metadata:", message.meta);
+  }
+});
+```

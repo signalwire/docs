@@ -16,9 +16,11 @@ const updateCommandDescription = "The `update` command is used to update a exist
 
 const uuidDescription = "The unique identifying ID of a existing call.";
 
-const paramsDescription = "An object of parameters to that will be utilized by the active command.";
+const paramsDescription = "An object of parameters that will be utilized by the active command.";
 
-alias CallCreateRequestAlias = CallCreateParamsURL | CallCreateParamsSWML;
+alias CallCreateParamsAlias = CallCreateParamsURL | CallCreateParamsSWML;
+
+alias CallUpdateParamsAlias = CallUpdateParamsURL | CallUpdateParamsSWML;
 
 @summary("Hangup call")
 model CallHangupRequest {
@@ -48,7 +50,19 @@ model CallHoldRequest {
   command: "calling.ai_hold";
 
   @doc(paramsDescription)
-  params: {};
+  params: {
+    @doc("The duration to hold the caller in seconds.")
+    @example(300)
+    @maxValue(300)
+    timeout?: int32 = 300;
+
+    @doc("""
+      A system message added to the AI conversation before placing the caller on hold.
+      The AI will speak this message to the caller before hold music begins.
+      """)
+    @example("Please hold while I transfer you to a specialist.")
+    prompt?: string = "Tell the user you are putting them on hold.";
+  };
 }
 
 @summary("Unhold call")
@@ -62,7 +76,14 @@ model CallUnholdRequest {
   command: "calling.ai_unhold";
 
   @doc(paramsDescription)
-  params: {};
+  params: {
+    @doc("""
+      A system message added to the AI conversation when taking the caller off hold.
+      The AI will use this context when resuming the conversation.
+      """)
+    @example("The user has been connected to a specialist.")
+    prompt?: string = "The user has been taken off hold.";
+  };
 }
 
 @summary("Inject AI message")
@@ -101,7 +122,7 @@ model CallCreateRequest {
   command: "dial";
 
   @doc(paramsDescription)
-  params: CallCreateRequestAlias;
+  params: CallCreateParamsAlias;
 }
 
 model CallCreateParamsBase {
@@ -120,6 +141,20 @@ model CallCreateParamsBase {
   @doc("The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.")
   @example(CallFallbackURLExample)
   fallback_url?: string;
+
+  @doc("A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.")
+  @example("https://example.com/status_callback")
+  status_url?: url;
+
+  @doc("The call events that will be monitored and sent to the `status_url` when active.")
+  @example(#["answered", "ended"])
+  status_events?: (
+    | "answered"
+    | "queued"
+    | "initiated"
+    | "ringing"
+    | "ending"
+    | "ended")[];
 }
 
 @summary("Create call (URL)")
@@ -175,34 +210,36 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
 }
 
 @summary("Update call")
-@oneOf
-union UpdateCurrentCallRequest {
-  CallUpdateSWMLRequest,
-  CallUpdateURLRequest,
-}
-
-union CallUpdateRequest {
-  UpdateCurrentCallRequest,
-  CallHangupRequest,
-  CallHoldRequest,
-  CallUnholdRequest,
-  CallAIMessageRequest,
-}
-
-model CallUpdateRequestBase {
+model CallUpdateCurrentCallRequest {
   @doc(updateCommandDescription)
   @example("update")
   command: "update";
+
+  @doc(paramsDescription)
+  params: CallUpdateParamsAlias;
 }
 
-@summary("Update call (SWML)")
-model CallUpdateSWMLRequest is CallUpdateRequestBase {
-  @doc(paramsDescription)
-  params: CallUpdateParamsSWML;
-}
+@discriminated(#{discriminatorPropertyName: "command", envelope: "none"})
+@doc("""
+Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke:
 
-@summary("Update call (URL)")
-model CallUpdateURLRequest is CallUpdateRequestBase {
-  @doc(paramsDescription)
-  params: CallUpdateParamsURL;
+- **`dial`** - Create and initiate a new outbound call to a destination. Returns immediately with call details while the call is being established in the background.
+
+- **`update`** - Modify an active call's properties in real-time. Update call parameters such as routing, recording settings, or other call-specific configurations.
+
+- **`calling.end`** - Terminate an active call immediately. Disconnects all parties and ends the call session. Cannot be reversed once executed.
+
+- **`calling.ai_hold`** - Place an AI-powered call on hold. Pauses the AI conversation and typically plays hold music or a message to the caller. The AI agent becomes inactive until unhold.
+
+- **`calling.ai_unhold`** - Resume an AI call from hold state. Reactivates the AI agent and continues the conversation from where it was paused.
+
+- **`calling.ai_message`** - Inject a message into an active AI conversation. Allows you to dynamically add context, instructions, or system messages to guide the AI agent's behavior during the call.
+""")
+union CallRequest {
+  dial: CallCreateRequest,
+  update: CallUpdateCurrentCallRequest,
+  `calling.end`: CallHangupRequest,
+  `calling.ai_hold`: CallHoldRequest,
+  `calling.ai_unhold`: CallUnholdRequest,
+  `calling.ai_message`: CallAIMessageRequest,
 }

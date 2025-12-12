@@ -1,14 +1,16 @@
+import "../const.tsp";
+
 model Call {
   @doc("The unique identifier of the call on SignalWire. This can be used to update the call programmatically.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @example("0e9c80d7-a149-4917-892d-420043709f45")
   id: string;
 
   @doc("The origin number or address.")
-  @example("sip:from-sip@example-112233445566.sip.signalwire.com")
+  @example("+12069708643")
   from: string;
 
   @doc("The destination number or address.")
-  @example("sip:from-sip@example-112233445567.sip.signalwire.com")
+  @example("+18048390497")
   to: string;
 
   @doc("The direction of the call.")
@@ -20,33 +22,51 @@ model Call {
   status: "answered" | "queued" | "initiated" | "ringing" | "ending" | "ended";
 
   @doc("The duration of the call in seconds.")
-  @example(60)
-  duration: integer;
+  @example(null)
+  duration: integer | null;
 
   @doc("The duration of the call in milliseconds.")
-  @example(60000)
-  duration_ms: integer;
+  @example(null)
+  duration_ms: integer | null;
 
-  @doc("The billable duration of the call in seconds.")
-  @example(60)
-  billable_duration: integer;
+  @doc("The billable duration of the call in milliseconds.")
+  @example(null)
+  billing_ms: integer | null;
 
   @doc("Source of this call.")
   @example("realtime_api")
   source: "realtime_api";
 
   @doc("Type of this call.")
-  @example("relay_sip_call")
+  @example("relay_pstn_call")
   type: "relay_pstn_call" | "relay_sip_call" | "relay_webrtc_call";
 
+  @doc("The URL associated with this call.")
+  @example(null)
+  url: string | null;
+
+  @doc("Total charge for this call.")
+  @example(0)
+  charge: float64;
+
+  @doc("The date and time when the call was created.")
+  @example(UTC_TIME_EXAMPLE)
+  created_at: utcDateTime;
+
+  @doc("The parent call ID if this is a child call.")
+  @example(null)
+  parent_id: string | null;
+
   @doc("Details on charges associated with this call.")
-  charge: ChargeDetails[];
+  charge_details: ChargeDetails[];
 }
 
 model ChargeDetails {
   @doc("Description for this charge.")
+  @example("Text to Speech")
   description: string;
 
   @doc("Charged amount.")
-  amount: integer;
+  @example(0.121176)
+  amount: float;
 }
