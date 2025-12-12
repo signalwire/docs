@@ -12,15 +12,22 @@ import NewLegacy from '/docs/main/_common/dashboard/_ui-accordion.mdx'
 import CreateSWML from '/docs/main/_common/dashboard/create-swml-script.mdx'
 import CreateCXML from '/docs/main/_common/dashboard/create-cxml-script.mdx'
 
-# Making and Receiving Phone Calls
+<!-- Links -->
+[swml]: /swml "SignalWire Markup Language"
+[sw-api]: /rest/signalwire-rest "SignalWire API"
+[cxml]: /compatibility-api/cxml "cXML"
+[comp-api]: /rest/compatibility-api "Compatibility API"
 
-In this guide we are going to show how to make and receive phone calls using the following products:
+# Making and receiving phone calls
 
-- **SWML**
-  - SWML Script
-- **Compatibility API**
-  - REST APIs
-  - cXML Bins
+Follow this guide to make and receive your first phone calls using
+[SignalWire Markup Language (SWML)][swml] and
+the [SignalWire API][sw-api].
+
+We'll also show you how to accomplish the same goals using
+[cXML][cxml] and the
+[Compatibility API][comp-api],
+which are ideal for migrating existing Twilio applications to SignalWire.
 
 ## Prerequisites
 
@@ -33,9 +40,15 @@ Also, note that if your account is in [trial mode](/platform/dashboard/billing#t
 you'll need to upgrade it in order to call numbers other than your own verified numbers. 
 See [How to exit Trial Mode](/platform/dashboard/billing#trial-mode).
 
-To acquire a phone number, [Log in](https://signalwire.com/signin) to your SignalWire Space. From the [Phone Numbers section](https://my.signalwire.com/?phone_numbers), you can [buy a new phone number](/platform/phone-numbers/getting-started/buying-a-phone-number). You will need at least one number to make and receive calls.
+To acquire a phone number, 
+[log in](https://signalwire.com/signin) to your SignalWire Space. 
+From the [Phone Numbers section](https://my.signalwire.com/?phone_numbers), 
+[buy a new phone number](/platform/phone-numbers/getting-started/buying-a-phone-number). 
+You will need at least one number to make and receive calls.
 
-For what concerns your API credentials, find these in the API section of your Space, as shown in the following figure. You may need to create a new token if you never used one. Make sure that your token has the "Voice" scope enabled.
+Find your API tokens in the API section of your Space, as shown below. 
+You may need to create a new token if you never used one. 
+Make sure that your token has at least the "Voice" scope enabled.
 
 <Frame caption="You can find your Project ID and Token from the API tab in your SignalWire Space. Make sure your token has the 'Voice' scope enabled.">
 
@@ -45,7 +58,7 @@ For what concerns your API credentials, find these in the API section of your Sp
 
 <NewLegacy />
 
-## SWML
+## SWML {#swml}
 
 ### Receiving incoming calls
 
@@ -63,36 +76,203 @@ sections:
 
 Take note of the Request URL for the SWML Script that we created. You can even create a new script if you want to define a different behavior for incoming calls.
 
-To configure your number to handle incoming calls with an SWML Script, click the ["Phone Numbers" section](https://my.signalwire.com/?phone_numbers) within your SignalWire Space, and edit the settings of the specific number you would like to use to answer calls. Set "Handle calls using" to "a SWML Script", then select your SWML Script from the dropdown:
+To configure your number to handle incoming calls with an SWML Script, click the [Phone Numbers](https://my.signalwire.com/?phone_numbers) section within your SignalWire Space, and edit the settings of the specific number you would like to use to answer calls. 
+Set **Handle calls using** to **a SWML Script**, then select your SWML Script from the dropdown
 
 That's it! Inbound calls to this SignalWire number will execute the specified SWML Script.
 
-## Compatibility API
-
 ### Making your first call
 
-You now have all you need to make your first call, for example to your personal phone number.
+Outbound calls can be made via the SignalWire REST API's [Create a Call endpoint](/rest/signalwire-rest/endpoints/calling/call-commands).
+This is accomplished by sending a POST request using SWML in the request body to handle the call. 
+The SWML can be served via URL or passed inline directly as an escaped JSON string.
 
-We want to call a number and play an audio message which says "Welcome to
-SignalWire. This is my first call". We are going to define this behavior in a
-cXML bin, which is used to declare what should happen during a call.
+<Tabs>
+<TabItem value="URL" label="URL">
 
-<CreateCXML />
-
-Create a new bin, and paste the following XML in it:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say>Welcome to SignalWire. This is my first call.</Say>
-</Response>
+```bash
+curl -L -g 'https://Your_Space_Name.signalwire.com/api/calling/calls' \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-H "Authorization: Basic $(echo -n "${YOUR-PROJECT-ID}:${YOUR-API-TOKEN}" | base64)" \
+--data-raw '{
+  "command": "dial",
+  "params": {
+    "from": "sip:from-sip@example-112233445566.sip.signalwire.com",
+    "to": "+1xxxxxxxxxx",
+    "caller_id": "+1234567890",
+    "fallback_url": "https://example.com/fallback",
+    "status_url": "https://example.com/status_callback",
+    "status_events": [
+      "answered",
+      "ended"
+    ],
+    "url": "https://example.com/swml"
+  }
+}'
 ```
 
-The XML above uses the [&lt;Say>](/compatibility-api/cxml/voice/say)
-verb to play a text-to-speech message. Save the bin and take note of its Request
-URL.
+</TabItem>
+<TabItem value="object" label="SWML object">
 
-You are now ready to start the call using cURL:
+```bash
+curl -L -g 'https://Your_Space_Name.signalwire.com/api/calling/calls' \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-H "Authorization: Basic $(echo -n "${YOUR-PROJECT-ID}:${YOUR-API-TOKEN}" | base64)" \
+--data-raw '{
+  "command": "dial",
+  "params": {
+    "from": "sip:from-sip@example-112233445566.sip.signalwire.com",
+    "to": "+1xxxxxxxxxx",
+    "caller_id": "+1234567890",
+    "fallback_url": "https://example.com/fallback",
+    "status_url": "https://example.com/status_callback",
+    "status_events": [
+      "answered",
+      "ended"
+    ]
+  },
+  "swml": {
+    "version": "1.0.0",
+    "sections": {
+      "main": [
+        {
+          "play": "say:Hello from SignalWire!"
+        }
+      ]
+    }
+  }
+}'
+```
+
+</TabItem>
+<TabItem value="inline" label="Inline SWML">
+
+:::info Escape quotes
+
+To pass SWML as an inline string, quotes must be escaped, as shown in the example below.
+
+:::
+
+```bash
+curl -L -g 'https://Your_Space_Name.signalwire.com/api/calling/calls' \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-H "Authorization: Basic $(echo -n "${YOUR-PROJECT-ID}:${YOUR-API-TOKEN}" | base64)" \
+--data-raw '{
+  "command": "dial",
+  "params": {
+    "from": "sip:from-sip@example-112233445566.sip.signalwire.com",
+    "to": "+1xxxxxxxxxx",
+    "caller_id": "+1234567890",
+    "fallback_url": "https://example.com/fallback",
+    "status_url": "https://example.com/status_callback",
+    "status_events": [
+      "answered",
+      "ended"
+    ],
+	"swml": "{\"version\":\"1.0.0\",\"sections\":{\"main\":[{\"play\":\"say:Hello from SignalWire!\"}]}}"
+  }
+}'
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+## Compatibility API
+
+The [Compatibility API][comp-api] 
+is built to enable easy migration from the Twilio REST API.
+Likewise, [cXML][cxml] 
+is built for compatibility with TwiML.
+
+:::info
+
+If you're starting a new application from scratch, we recommend you follow the
+[SWML (SignalWire Markup Language) instructions](#swml) instead.
+
+:::
+
+<AccordionGroup> 
+
+<Accordion 
+	title="Receiving incoming calls"
+	description="Handle incoming calls with serverless cXML scripts"
+	>
+
+<Tabs groupId="newVlegacyUI">
+
+<TabItem value="newui" label="New Dashboard">
+    To handle incoming calls we need to configure the phone number in our
+    [SignalWire Space](https://signalwire.com/signin) to answer calls using a cXML
+    resource.
+    
+    If you're on the **new UI**, go to the **Resources** section from the sidebar, and create a new Resource.
+    In the new resource picker, select **Script** and create a **cXML script**.
+
+    <Frame>
+    ![Attach Phone Number](@image/dashboard/resources/new-cxml-bin.png)
+    </Frame>
+
+    Utilize the following cXML which uses the [&lt;Say>](/compatibility-api/cxml/voice/say)
+    verb to play a text-to-speech message:
+
+    ```xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Response>
+      <Say>Welcome to SignalWire. This is my first call.</Say>
+    </Response>
+    ```
+
+    Go to the **Phone Numbers** section from the sidebar, and
+    edit the phone number you want to answer calls with. From there, click on the
+    **Assign Resource** button for incoming calls, and select the newly created cXML script to connect.
+
+    <Frame>
+    ![Attach Resource](@image/dashboard/phone-numbers/assign-resource-voice.png)
+    </Frame>
+
+</TabItem>
+
+<TabItem value="legacyui" label="Legacy Dashboard">
+
+    To handle incoming calls we need to configure the phone number in our
+    [SignalWire Space](https://signalwire.com/signin) to answer calls using a SWML or cXML script.
+
+    Utilize the following cXML which uses the [&lt;Say>](/compatibility-api/cxml/voice/say)
+    verb to play a text-to-speech message:
+
+    ```xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Response>
+      <Say>Welcome to SignalWire. This is my first call.</Say>
+    </Response>
+    ```
+    Click the **Phone Numbers** section from your sidebar, and select the specific number you would like to use to answer calls. The same number we used before can work.
+
+    Make sure that "_Accept Calls As_" is set to "_Voice Calls_", "_Handle Calls Using_" is set to "_LaML Webhooks_" or "_SWML Scripts_",
+    and paste your Bin URL in as the value for "_When a Call Comes In_". Click "_Save_", and you're done!
+    Inbound calls to this SignalWire number will execute the specified bin.
+
+    <Frame>
+    ![Attach Phone Number](@image/dashboard/legacy/attach-phone-number-vid.webp)
+    </Frame>
+
+</TabItem>
+</Tabs>
+
+</Accordion>
+
+<Accordion 
+	title="Making your first call"
+	description="Make outbound calls using the Compatibility API"
+	>
+
+To call a number via cXML you can make a POST request to the Compatibility REST API's 
+[Create a Call](/rest/compatibility-api/endpoints/create-a-call) endpoint.
 
 ```bash
 curl -L -X POST 'https://{SpaceName}.signalwire.com/api/laml/2010-04-01/Accounts/{ProjectID}/Calls' \
@@ -108,6 +288,9 @@ Make sure to replace all occurrences of `{SpaceName}`, `{ProjectID}`,
 `{APIToken}`, `{BinRequestURL}`, `{+XXXXXXXXXX}`, and `{+YYYYYYYYYY}` with
 your actual values.
 
+In order to locate the `{BinRequestURL}`, navigate to your cXML script and copy the Request URL that is present.
+
+
 :::note
 
 Instead of your own bin, feel free to try one of ours: `<https://<spacename>.signalwire.com/laml-bins/f85376be-7fe1-439b-a24f-3113ff980804>`.
@@ -117,55 +300,15 @@ Instead of your own bin, feel free to try one of ours: `<https://<spacename>.sig
 Congratulations! Once the cURL request is executed, your personal phone number
 (`{+YYYYYYYYYY}`) will start ringing.
 
-### Receiving incoming calls
+</Accordion>
 
-<Tabs groupId="newVlegacyUI">
+</AccordionGroup>
 
-<TabItem value="newui" label="New Dashboard">
-    To handle incoming calls we need to configure the phone number in our
-    [SignalWire Space](https://signalwire.com/signin) to answer calls using a cXML
-    resource.
+## Next steps
 
-    If you're on the **new UI**, go to the "Phone Numbers" section from the sidebar, and
-    edit the phone number you want to answer calls from. There, click on the
-    "Assign Resource" button for incoming calls, and select the cXML or SWML script you'd like to connect. 
+SWML and cXML scripts allow you to handle incoming phone calls, 
+and REST APIs make it easy to trigger outbound calls. 
 
-    <Frame>
-    ![Attach Resource](@image/dashboard/phone-numbers/assign-resource-voice.png)
-    </Frame>
-
-</TabItem>
-
-<TabItem value="legacyui" label="Legacy Dashboard">
-
-    To handle incoming calls we need to configure the phone number in our
-    [SignalWire Space](https://signalwire.com/signin) to answer calls using a SWML or cXML script.
-
-    Take note of the Request URL for the bin that we created in the previous
-    section. You can even create a new bin if you want to define a different
-    behavior for incoming calls.
-
-    Click the "Phone Numbers" section from your sidebar, and select the specific number you would like to use to answer calls. The same number we used before can work.
-
-    Make sure that "_Accept Calls As_" is set to "_Voice Calls_", "_Handle Calls Using_" is set to "_LaML Webhooks_" or "_SWML Scripts_", 
-    and paste your Bin URL in as the value for "_When a Call Comes In_". Click "_Save_", and you're done! 
-    Inbound calls to this SignalWire number will execute the specified bin.
-
-    <Frame>
-    ![Attach Phone Number](@image/dashboard/legacy/attach-phone-number-vid.webp)
-    </Frame>
-
-</TabItem>
-</Tabs>
-
-
-
-# Wrapping up
-
-cXML bins allow you to program the behavior of phone calls, and REST APIs make it
-easy to trigger calls to any phone number. Find the documentation for our
-Compatibility API (XML and REST) [here](/compatibility-api/cxml).
-
-As we have seen, REST APIs are easy to get started with. In case you need more
-flexibility and real-time control on your calls, you may be interested in our
-guide about how to [make and receive calls in Node.js](/sdks/realtime-sdk/guides/voice/first-steps-with-voice).
+If you need more flexibility and real-time control on your calls, 
+you may be interested in our guide about how to 
+[make and receive calls in Node.js](/sdks/realtime-sdk/guides/voice/first-steps-with-voice).
