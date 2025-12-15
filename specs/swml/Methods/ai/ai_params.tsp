@@ -1,4 +1,5 @@
 import "@typespec/json-schema";
+import "../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -189,16 +190,6 @@ model AIParams {
   @minValue(250)
   @maxValue(10000)
   end_of_speech_timeout?: integer | SWMLVar;
-
-  @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
-  @minValue(0.01)
-  @maxValue(1.0)
-  eleven_labs_stability?: float | SWMLVar;
-
-  @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
-  @minValue(0.01)
-  @maxValue(1.0)
-  eleven_labs_similarity?: float | SWMLVar;
 
   @doc("If `true`, enables usage accounting. The default is `false`.")
   enable_accounting?: boolean | SWMLVar;
@@ -465,6 +456,18 @@ model AIParams {
     `wake_prefix` is "hey", the user would need to say "hey computer" to activate the agent.
     """)
   wake_prefix?: string;
+
+  #deprecated "The `eleven_labs_stability` property is deprecated. Please use `languages[].params.stability` instead."
+  @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
+  @minValue(0.0)
+  @maxValue(1.0)
+  eleven_labs_stability?: float | SWMLVar = 0.50;
+
+  #deprecated "The `eleven_labs_similarity` property is deprecated. Please use `languages[].params.similarity` instead."
+  @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
+  @minValue(0.0)
+  @maxValue(1.0)
+  eleven_labs_similarity?: float | SWMLVar = 0.75;
 
   ...TypeSpec.Record<unknown>;
 }
