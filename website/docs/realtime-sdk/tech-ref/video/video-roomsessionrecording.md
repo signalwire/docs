@@ -12,52 +12,37 @@ Represents a specific recording of a room session.
 
 ## **Properties**
 
-### duration
+<APIField name="id" type="string" required={true}>
+  The unique ID of this recording.
+</APIField>
 
-• `Optional` **duration**: `number`
+<APIField name="roomId" type="string" required={true}>
+  The ID of the room associated to this recording.
+</APIField>
 
-Duration, if available.
+<APIField name="roomSessionId" type="string" required={true}>
+  The ID of the room session associated to this recording.
+</APIField>
 
----
+<APIField name="state" type='"recording" | "paused" | "completed"' required={true}>
+  Current state.
+</APIField>
 
-### endedAt
+<APIField name="duration" type="number">
+  Duration, if available.
+</APIField>
 
-• `Optional` **endedAt**: `Date`
+<APIField name="startedAt" type="Date">
+  Start time, if available.
+</APIField>
 
-End time, if available.
+<APIField name="endedAt" type="Date">
+  End time, if available.
+</APIField>
 
----
-
-### id
-
-• **id**: `string`
-
-The unique ID of this recording.
-
----
-
-### roomSessionId
-
-• **roomSessionId**: `string`
-
-The ID of the room session associated to this recording.
-
----
-
-### startedAt
-
-• `Optional` **startedAt**: `Date`
-
-Start time, if available.
-
----
-
-### state
-
-• **state**: `"recording"` \| `"paused"` \| `"completed"`
-
-Current state.
-
+<APIField name="hasEnded" type="boolean" required={true}>
+  Whether the recording has ended. Returns `true` if the state is `"completed"`.
+</APIField>
 
 ## **Methods**
 
@@ -287,11 +272,9 @@ Emitted when the recording starts.
 
 #### Parameters
 
-| Name        | Type                                                    | Description                 |
-|:------------|:--------------------------------------------------------|:----------------------------|
-| `recording`<span className="required-arg">Required</span> | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that started. |
-
----
+<APIField name="recording" type="RoomSessionRecording" required={true}>
+  The recording that started. See [`RoomSessionRecording`][video-roomsessionrecording].
+</APIField>
 
 ### onUpdated
 
@@ -301,11 +284,9 @@ Emitted when the recording is updated.
 
 #### Parameters
 
-| Name        | Type                                                    | Description                 |
-|:------------|:--------------------------------------------------------|:----------------------------|
-| `recording`<span className="required-arg">Required</span> | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that updated. |
-
----
+<APIField name="recording" type="RoomSessionRecording" required={true}>
+  The recording that updated. See [`RoomSessionRecording`][video-roomsessionrecording].
+</APIField>
 
 ### onEnded
 
@@ -315,9 +296,9 @@ Emitted when the recording ends.
 
 #### Parameters
 
-| Name        | Type                                                    | Description               |
-|:------------|:--------------------------------------------------------|:--------------------------|
-| `recording`<span className="required-arg">Required</span> | [`RoomSessionRecording`][video-roomsessionrecording] | The recording that ended. |
+<APIField name="recording" type="RoomSessionRecording" required={true}>
+  The recording that ended. See [`RoomSessionRecording`][video-roomsessionrecording].
+</APIField>
 
 
 
