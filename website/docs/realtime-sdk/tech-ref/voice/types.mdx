@@ -5,6 +5,12 @@ sidebar_label: Types
 
 [here]: /voice/getting-started/voice-and-languages
 [voice-call]: ./voice-call.mdx#tap
+[devicebuilder-phone]: ./voice-devicebuilder.md#phone
+[devicebuilder-sip]: ./voice-devicebuilder.md#sip
+[devicebuilder-add]: ./voice-devicebuilder.md#add
+[callstate]: ./callstate.mdx
+[sipcodec]: #sipcodec
+[sipheader]: #sipheader
 
 # Types
 
@@ -14,21 +20,49 @@ Helper types.
 
 A configuration object to specify how to collect digits.
 
-| Name                   | Type     | Description                                                |
-|:-----------------------|:---------|:-----------------------------------------------------------|
-| `digits`               | `Object` | -                                                          |
-| `digits.max`           | `number` | Max number of digits to collect.                           |
-| `digits.digitTimeout`<span className="optional-arg">Optional</span> | `number` | Timeout in seconds between each digit.                     |
-| `digits.terminators`<span className="optional-arg">Optional</span>  | `string` | DTMF digits that will end the collection. Default not set. |
+<APIField name="digits" type="object" required={true}>
+  Object containing the digit collection configuration.
+</APIField>
+
+<APIField name="digits.max" type="number" required={true}>
+  Max number of digits to collect.
+</APIField>
+
+<APIField name="digits.digitTimeout" type="number" default="5.0">
+  Timeout in seconds between each digit.
+</APIField>
+
+<APIField name="digits.terminators" type="string">
+  DTMF digits that will end the collection.
+</APIField>
 
 #### Example
 
+Collecting digits using `call.collect()`:
+
 ```js
-{
-  max: 5,
-  digitTimeout: 3,
-  terminators: "#*"
-}
+const collectObj = await call.collect({
+  digits: {
+    max: 4,
+    digitTimeout: 5,
+    terminators: "#"
+  }
+});
+const { digits, terminator } = await collectObj.ended();
+```
+
+Prompting for digits with TTS using `call.promptTTS()`:
+
+```js
+const prompt = await call.promptTTS({
+  text: "Please enter your 4-digit PIN",
+  digits: {
+    max: 4,
+    digitTimeout: 5,
+    terminators: "#*"
+  }
+});
+const { type, digits, terminator } = await prompt.ended();
 ```
 
 ---
@@ -37,24 +71,59 @@ A configuration object to specify how to collect digits.
 
 A configuration object to specify how to collect speech.
 
-| Name                        | Type       | Description                                                                                                                                                                                                                                        |
-|:----------------------------|:-----------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `speech`                    | `Object`   | -                                                                                                                                                                                                                                                  |
-| `speech.endSilenceTimeout`<span className="optional-arg">Optional</span> | `number`   | How much silence to wait for end of speech. Default to 1 second.                                                                                                                                                                                   |
-| `speech.speechTimeout`<span className="optional-arg">Optional</span>     | `number`   | Maximum time to collect speech. Default to 60 seconds.                                                                                                                                                                                             |
-| `speech.language`<span className="optional-arg">Optional</span>          | `number`   | Language to detect. Default to `"en-US"`. Supported languages [here][here]                                                                                                                                                  |
-| `speech.hints`<span className="optional-arg">Optional</span>             | `string[]` | Array of expected phrases to detect.                                                                                                                                                                                                               |
-| `speech.model`<span className="optional-arg">Optional</span>             | `string`   | Enable enhanced speech recognition at an additional cost. Accepted values are `enhanced`, `enhanced.phone_call`, or `enhanced.video`. The value `enhanced` will automatically detect whether to optimize with the `phone_call` or `video` setting. |
+<APIField name="speech" type="object" required={true}>
+  Object containing the speech collection configuration.
+</APIField>
+
+<APIField name="speech.endSilenceTimeout" type="number" default="1.0">
+  How much silence to wait for end of speech in seconds.
+</APIField>
+
+<APIField name="speech.speechTimeout" type="number" default="60">
+  Maximum time to collect speech in seconds.
+</APIField>
+
+<APIField name="speech.language" type="string" default='"en-US"'>
+  Language to detect. Supported languages [here][here].
+</APIField>
+
+<APIField name="speech.hints" type="string[]">
+  Array of expected phrases to detect.
+</APIField>
+
+<APIField name="speech.model" type="string">
+  Enable enhanced speech recognition at an additional cost. Accepted values are `enhanced`, `enhanced.phone_call`, or `enhanced.video`. The value `enhanced` will automatically detect whether to optimize with the `phone_call` or `video` setting.
+</APIField>
 
 #### Example
 
+Collecting speech using `call.collect()`:
+
 ```js
-{
-  endSilenceTimeout: 1,
-  speechTimeout: 60,
-  language: "en-US",
-  hints: ["one", "two", "three", "four", "five"]
-}
+const collectObj = await call.collect({
+  speech: {
+    endSilenceTimeout: 2,
+    speechTimeout: 30,
+    language: "en-US",
+    hints: ["yes", "no", "maybe"]
+  }
+});
+const { speech, text } = await collectObj.ended();
+```
+
+Prompting for speech with TTS using `call.promptTTS()`:
+
+```js
+const prompt = await call.promptTTS({
+  text: "Please say yes or no",
+  speech: {
+    endSilenceTimeout: 1,
+    speechTimeout: 60,
+    language: "en-US",
+    hints: ["yes", "no"]
+  }
+});
+const { type, text } = await prompt.ended();
 ```
 
 ---
@@ -65,8 +134,20 @@ A codec for SIP. Possible values are: `"PCMU"`, `"PCMA"`, `"OPUS"`, `"G729"`, `"
 
 #### Example
 
+Using codecs when dialing a SIP endpoint with `Voice.DeviceBuilder.Sip()`:
+
 ```js
-"OPUS";
+import { Voice } from "@signalwire/realtime-api";
+
+const devices = new Voice.DeviceBuilder().add(
+  Voice.DeviceBuilder.Sip({
+    from: "sip:user1@domain.com",
+    to: "sip:user2@domain.com",
+    codecs: ["OPUS", "PCMU"]
+  })
+);
+
+const call = await client.voice.dial({ devices });
 ```
 
 ---
@@ -77,30 +158,187 @@ A header for SIP. It is an object with the following properties.
 
 #### Properties
 
-| Name    | Type     | Description         |
-|:--------|:---------|:--------------------|
-| `name`  | `string` | Name of the header  |
-| `value` | `string` | Value of the header |
+<APIField name="name" type="string" required={true}>
+  Name of the header.
+</APIField>
+
+<APIField name="value" type="string" required={true}>
+  Value of the header.
+</APIField>
 
 #### Example
 
+Using custom headers when dialing a SIP endpoint with `Voice.DeviceBuilder.Sip()`:
+
 ```js
-{ name: "X-Header-Name", value: "test" }
+import { Voice } from "@signalwire/realtime-api";
+
+const devices = new Voice.DeviceBuilder().add(
+  Voice.DeviceBuilder.Sip({
+    from: "sip:user1@domain.com",
+    to: "sip:user2@domain.com",
+    headers: [
+      { name: "X-Custom-Header", value: "my-value" },
+      { name: "X-Account-ID", value: "12345" }
+    ]
+  })
+);
+
+const call = await client.voice.dial({ devices });
 ```
 
 ---
 
 ### RingtoneName
 
-The name of a ringtone. Possible values are: `'at'`, `'au'`, `'bg'`, `'br'`, `'be'`, `'ch'`, `'cl'`, `'cn'`, `'cz'`, `'de'`, `'dk'`, `'ee'`, `'es'`, `'fi'`, `'fr'`, `'gr'`, `'hu'`, `'il'`, `'in'`, `'it'`, `'lt'`, `'jp'`, `'mx'`, `'my'`, `'nl'`, `'no'`, `'nz'`, `'ph'`, `'pl'`, `'pt'`, `'ru'`, `'se'`, `'sg'`, `'th'`, `'uk'`, `'us'`, `'tw'`, `'ve'`, `'za'`.
+The name of a ringtone, based on country-specific ring patterns.
+
+| Value | Country |
+|:------|:--------|
+| `at` | Austria |
+| `au` | Australia |
+| `be` | Belgium |
+| `bg` | Bulgaria |
+| `br` | Brazil |
+| `ch` | Switzerland |
+| `cl` | Chile |
+| `cn` | China |
+| `cz` | Czech Republic |
+| `de` | Germany |
+| `dk` | Denmark |
+| `ee` | Estonia |
+| `es` | Spain |
+| `fi` | Finland |
+| `fr` | France |
+| `gr` | Greece |
+| `hu` | Hungary |
+| `il` | Israel |
+| `in` | India |
+| `it` | Italy |
+| `jp` | Japan |
+| `lt` | Lithuania |
+| `mx` | Mexico |
+| `my` | Malaysia |
+| `nl` | Netherlands |
+| `no` | Norway |
+| `nz` | New Zealand |
+| `ph` | Philippines |
+| `pl` | Poland |
+| `pt` | Portugal |
+| `ru` | Russia |
+| `se` | Sweden |
+| `sg` | Singapore |
+| `th` | Thailand |
+| `tw` | Taiwan |
+| `uk` | United Kingdom |
+| `us` | United States |
+| `ve` | Venezuela |
+| `za` | South Africa |
 
 #### Example
 
+Playing a ringtone with `Voice.Playlist.Ringtone()`:
+
 ```js
-"it";
+import { Voice } from "@signalwire/realtime-api";
+
+const playlist = new Voice.Playlist()
+  .add(Voice.Playlist.Ringtone({ name: "us", duration: 10 }));
+
+await call.play(playlist);
+```
+
+Prompting with a ringtone using `call.promptRingtone()`:
+
+```js
+const prompt = await call.promptRingtone({
+  name: "it",
+  duration: 10,
+  digits: {
+    max: 1,
+    digitTimeout: 5
+  }
+});
+const { digits } = await prompt.ended();
 ```
 
 ---
+
+### VoiceCallPhoneParams
+
+A device configuration object for calling a phone number. Returned by [`Voice.DeviceBuilder.Phone()`][devicebuilder-phone] and passed to [`DeviceBuilder.add()`][devicebuilder-add].
+
+#### Properties
+
+<APIField name="type" type='"phone"' required={true}>
+  The device type. Always `"phone"` for phone devices.
+</APIField>
+
+<APIField name="to" type="string" required={true}>
+  Number to call, in E.164 format.
+</APIField>
+
+<APIField name="from" type="string">
+  SignalWire number to use to initiate the call, in E.164 format.
+</APIField>
+
+<APIField name="timeout" type="number" default="30">
+  Time to wait for the call to be answered, in seconds.
+</APIField>
+
+<APIField name="callStateUrl" type="string">
+  Webhook URL to which SignalWire will send call status change notifications. See [`CallState`][callstate].
+</APIField>
+
+<APIField name="callStateEvents" type="string[]" default='["ended"]'>
+  Array of event names to be notified about. Allowed values are `created`, `ringing`, `answered`, and `ended`.
+</APIField>
+
+### VoiceCallSipParams
+
+A device configuration object for calling a SIP endpoint. Returned by [`Voice.DeviceBuilder.Sip()`][devicebuilder-sip] and passed to [`DeviceBuilder.add()`][devicebuilder-add].
+
+#### Properties
+
+<APIField name="type" type='"sip"' required={true}>
+  The device type. Always `"sip"` for SIP devices.
+</APIField>
+
+<APIField name="to" type="string" required={true}>
+  SIP endpoint URI to call.
+</APIField>
+
+<APIField name="from" type="string" required={true}>
+  SIP endpoint URI to use to initiate the call.
+</APIField>
+
+<APIField name="timeout" type="number" default="30">
+  Time to wait for the call to be answered, in seconds.
+</APIField>
+
+<APIField name="codecs" type="SipCodec[]">
+  Array of desired codecs in order of preference. See [`SipCodec`][sipcodec].
+</APIField>
+
+<APIField name="headers" type="SipHeader[]">
+  Array of headers. Must be X- headers only. See [`SipHeader`][sipheader].
+</APIField>
+
+<APIField name="callStateUrl" type="string">
+  Webhook URL to which SignalWire will send call status change notifications. See [`CallState`][callstate].
+</APIField>
+
+<APIField name="callStateEvents" type="string[]" default='["ended"]'>
+  Array of event names to be notified about. Allowed values are `created`, `ringing`, `answered`, and `ended`.
+</APIField>
+
+<APIField name="webrtcMedia" type="boolean">
+  Whether to use WebRTC media.
+</APIField>
+
+<APIField name="sessionTimeout" type="number">
+  Session timeout in seconds.
+</APIField>
 
 ### TapDevice
 
@@ -109,50 +347,81 @@ This can be either an RTP device or a WebSocket device.
 
 #### Properties
 
-| Name   | Type              | Description                                                   |
-|:-------|:------------------|:--------------------------------------------------------------|
-| `type` | `"rtp"` \| `"ws"` | Type of this device (RTP or WebSocket).                       |
-| `...`  |                   | See below for the additional properties for each device type. |
+<APIField name="type" type='"rtp" | "ws"' required={true}>
+  Type of this device (RTP or WebSocket).
+</APIField>
 
 **RTP** (`type` = `"rtp"`)
 
 An RTP device has the following properties in addition to the general ones:
 
-| Name    | Type                                            | Description                                                                                      |
-| :------ | :---------------------------------------------- | :----------------------------------------------------------------------------------------------- |
-| `addr`  | `string`                                        | RTP IPv4 address.                                                                                |
-| `port`  | `string`                                        | RTP port.                                                                                        |
-| `codec` | `"OPUS"` \| `"PCMA"` \| `"PCMU"` \| `undefined` | Optional codec to use. It will be the same as the tapped audio if not set.                       |
-| `rate`<span className="optional-arg">Optional</span>  | `number`                                        | Optional sample rate in Hz. It will be the same as the tapped audio if not set.                  |
-| `ptime`<span className="optional-arg">Optional</span> | `number`                                        | Optional packetization time in milliseconds. It will be the same as the tapped audio if not set. |
+<APIField name="addr" type="string" required={true}>
+  RTP IPv4 address.
+</APIField>
+
+<APIField name="port" type="string" required={true}>
+  RTP port.
+</APIField>
+
+<APIField name="codec" type='"OPUS" | "PCMA" | "PCMU"'>
+  Optional codec to use. It will be the same as the tapped audio if not set.
+</APIField>
+
+<APIField name="rate" type="number">
+  Optional sample rate in Hz. It will be the same as the tapped audio if not set.
+</APIField>
+
+<APIField name="ptime" type="number">
+  Optional packetization time in milliseconds. It will be the same as the tapped audio if not set.
+</APIField>
 
 **WebSocket** (`type` = `"ws"`)
 
 A WebSocket device has the following properties in addition to the general ones:
 
-| Name    | Type                                            | Description                                                                     |
-|:--------|:------------------------------------------------|:--------------------------------------------------------------------------------|
-| `uri`   | `string`                                        | Destination URI.                                                                |
-| `codec` | `"OPUS"` \| `"PCMA"` \| `"PCMU"` \| `undefined` | Optional codec to use. It will be the same as the tapped audio if not set.      |
-| `rate`<span className="optional-arg">Optional</span>  | `number`                                        | Optional sample rate in Hz. It will be the same as the tapped audio if not set. |
+<APIField name="uri" type="string" required={true}>
+  Destination URI.
+</APIField>
+
+<APIField name="codec" type='"OPUS" | "PCMA" | "PCMU"'>
+  Optional codec to use. It will be the same as the tapped audio if not set.
+</APIField>
+
+<APIField name="rate" type="number">
+  Optional sample rate in Hz. It will be the same as the tapped audio if not set.
+</APIField>
 
 #### Example
 
-An RTP device:
+Tapping audio to a WebSocket endpoint using `call.tapAudio()`:
 
 ```js
-{
-  type: "rtp",
-  addr: "192.0.2.1",
-  port: "1234"
-}
+const tap = await call.tapAudio({
+  direction: "both",
+  device: {
+    type: "ws",
+    uri: "wss://example.domain.com/endpoint"
+  }
+});
+
+// Stop the tap when done
+await tap.stop();
 ```
 
-A WebSocket device:
+Tapping audio to an RTP endpoint using `call.tap()`:
 
 ```js
-{
-  type: "ws",
-  uri: "wss://example.domain.com/endpoint",
-}
+const tap = await call.tap({
+  audio: {
+    direction: "speak"
+  },
+  device: {
+    type: "rtp",
+    addr: "192.0.2.1",
+    port: "1234",
+    codec: "PCMU"
+  }
+});
+
+await tap.stop();
 ```

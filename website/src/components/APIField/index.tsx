@@ -2,6 +2,7 @@ import React, { ReactNode, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import Link from "@docusaurus/Link";
 import { useHistory } from "@docusaurus/router";
+import useBrokenLinks from "@docusaurus/useBrokenLinks";
 import styles from "./styles.module.css";
 
 export interface APIFieldProps {
@@ -43,6 +44,10 @@ export const APIField: React.FC<APIFieldProps> = ({
   // Create a URL-friendly ID from the final property name (after last dot)
   const finalPropertyName = name.substring(name.lastIndexOf(".") + 1);
   const fieldId = `field-${finalPropertyName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+  // Register anchor with Docusaurus broken links checker
+  const brokenLinks = useBrokenLinks();
+  brokenLinks.collectAnchor(fieldId);
 
   // State and ref for highlight effect
   const [isHighlighted, setIsHighlighted] = useState(false);
