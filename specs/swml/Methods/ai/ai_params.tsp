@@ -17,6 +17,31 @@ enum Direction {
   outbound,
 }
 
+@summary("Conversation message role")
+enum ConversationRole {
+  @doc("A message from the user.")
+  user,
+
+  @doc("A message from the AI assistant.")
+  assistant,
+
+  @doc("A system message providing instructions or context.")
+  system,
+}
+
+@summary("Conversation message object")
+@doc("A message object representing a single turn in the conversation history.")
+model ConversationMessage {
+  @doc("The role of the message sender.")
+  role: ConversationRole;
+
+  @doc("The text content of the message.")
+  content: string;
+
+  @doc("Optional language code for the message (e.g., 'en', 'es', 'fr').")
+  lang?: string;
+}
+
 @summary("params object")
 model AIParams {
   @doc("Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent.")
@@ -25,10 +50,16 @@ model AIParams {
   @doc("The model to use for the AI. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   ai_model?: SupportedAIModels;
 
+  @doc("Sets the name the AI agent responds to for wake/activation purposes. When using `enable_pause`, `start_paused`, or `speak_when_spoken_to`, the user must say this name to get the agent's attention. The name matching is case-insensitive.")
+  ai_name?: string = "computer";
+
   @doc("Adjust the volume of the AI. Allowed values from `-50` - `50`.")
   @minValue(-50)
   @maxValue(50)
   ai_volume?: integer | SWMLVar;
+
+  @doc("A custom identifier for the AI application instance. This name is included in webhook payloads, allowing backend systems to identify which AI configuration made the request.")
+  app_name?: string = "swml app";
 
   @doc("""
     If true, enables smart formatting in ASR (Automatic Speech Recognition).
@@ -82,6 +113,28 @@ model AIParams {
   enable_barge?: string | boolean | SWMLVar;
 
   @doc("""
+    Enables the inner dialog feature, which runs a separate AI process in the background
+    that analyzes the conversation and provides real-time insights to the main AI agent.
+    This gives the agent a form of "internal thought process" that can help it make better decisions.
+    """)
+  enable_inner_dialog?: boolean | SWMLVar = false;
+
+  @doc("""
+    Enables the pause/resume functionality for the AI agent. When enabled, a `pause_conversation`
+    function is automatically added that the AI can call when the user says things like "hold on",
+    "wait", or "pause". While paused, the agent stops responding until the user speaks the agent's
+    name (set via `ai_name`) to resume. Cannot be used together with `speak_when_spoken_to`.
+    """)
+  enable_pause?: boolean | SWMLVar = false;
+
+  @doc("""
+    Enables intelligent turn detection that monitors partial speech transcripts for sentence-ending
+    punctuation. When detected, the system can proactively finalize the speech recognition,
+    reducing latency before the AI responds. Works with `turn_detection_timeout`.
+    """)
+  enable_turn_detection?: boolean | SWMLVar = true;
+
+  @doc("""
     Takes a string, including a regular expression, defining barge behavior.
     For example, this param can direct the AI to stop when the word 'hippopotomus' is input.
     """)
@@ -101,6 +154,9 @@ model AIParams {
   @doc("Sets the prompt which binds the agent to its purpose.")
   conscience?: string;
 
+  @doc("Injects pre-existing conversation history into the AI session at startup. This allows you to seed the AI agent with context from a previous conversation or provide example interactions.")
+  convo?: ConversationMessage[];
+
   @doc("Used by `check_for_input` and `save_conversation` to identify an individual conversation.")
   conversation_id?: string;
 
@@ -114,6 +170,9 @@ model AIParams {
 
   @doc("Each interaction between the AI and end user is posted in real time to the established URL.")
   debug_webhook_url?: url;
+
+  @doc("Enables debug mode for the AI session. When enabled, additional diagnostic information is logged including turn detection events, speech processing details, and internal state changes.")
+  debug?: boolean | integer | SWMLVar;
 
   @doc("Forces the direction of the call to the assistant. Valid values are `inbound` and `outbound`.")
   direction?: Direction | SWMLVar;
@@ -206,6 +265,15 @@ model AIParams {
   @maxValue(3600000)
   inactivity_timeout?: integer | SWMLVar;
 
+  @doc("Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`.")
+  inner_dialog_model?: SupportedAIModels;
+
+  @doc("The system prompt that guides the inner dialog AI's behavior. Only used when `enable_inner_dialog` is `true`.")
+  inner_dialog_prompt?: string = "The assistant is intelligent and straightforward, does its job well and is not excessively polite.";
+
+  @doc("When enabled, synchronizes the inner dialog with the main conversation flow, waiting for user input before injection. Only used when `enable_inner_dialog` is `true`.")
+  inner_dialog_synced?: boolean | SWMLVar = false;
+
   @doc("Amount of time, in ms, to wait before starting the conversation. Allowed values from `0` - `300,000`.")
   @minValue(0)
   @maxValue(300000)
@@ -242,6 +310,11 @@ model AIParams {
   @maxValue(30)
   max_emotion?: integer | SWMLVar;
 
+  @doc("Sets the maximum number of tokens the AI model can generate in a single response. Lower values produce shorter responses and reduce latency.")
+  @minValue(1)
+  @maxValue(16384)
+  max_response_tokens?: integer | SWMLVar;
+
   @doc("The OpenAI ASR (Automatic Speech Recognition) engine to use. Allowed values are `nova-2` and `nova-3`. Defaults to `nova-3`.")
   openai_asr_engine?: "nova-2" | "nova-3";
 
@@ -249,6 +322,16 @@ model AIParams {
   @minValue(10000)
   @maxValue(600000)
   outbound_attention_timeout?: integer | SWMLVar;
+
+  @doc("""
+    When enabled, the `global_data` object is automatically saved to a channel variable
+    and restored when a new AI session starts on the same call. This allows data to persist
+    across multiple AI agent invocations within the same call.
+    """)
+  persist_global_data?: boolean | SWMLVar = true;
+
+  @doc("Specifies the output format for structured prompts when using the `pom` array in prompt definitions. Valid values are `markdown` or `xml`.")
+  pom_format?: "markdown" | "xml" = "markdown";
 
   @doc("""
     Send a summary of the conversation after the call ends.
@@ -272,6 +355,19 @@ model AIParams {
   @maxValue(600000)
   speech_timeout?: integer | SWMLVar;
 
+  @doc("""
+    When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).
+    The user must say the agent's name to activate it for each interaction.
+    Cannot be used together with `enable_pause`.
+    """)
+  speak_when_spoken_to?: boolean | SWMLVar = false;
+
+  @doc("""
+    When enabled, the AI agent starts in a paused state and will not respond until the user
+    speaks the agent's name (set via `ai_name`). Automatically enables `enable_pause`.
+    """)
+  start_paused?: boolean | SWMLVar = false;
+
   @doc("The static greeting to play when the call is answered. This will always play at the beginning of the call.")
   static_greeting?: string;
 
@@ -293,6 +389,13 @@ model AIParams {
   @doc("Allows SWAIG to set global data that persists across calls.")
   swaig_set_global_data?: boolean | SWMLVar;
 
+  @doc("""
+    Controls whether SWML variables are included in SWAIG function webhook payloads.
+    When set to `true`, all SWML variables are posted. When set to an array of strings,
+    only the specified variable names are included.
+    """)
+  swaig_post_swml_vars?: boolean | string[] | SWMLVar;
+
   @doc("The model to use for the AI's thinking capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   thinking_model?: SupportedAIModels;
 
@@ -310,6 +413,15 @@ model AIParams {
 
   @doc("Pass a summary of a conversation from one AI agent to another. For example, transfer a call summary between support agents in two departments.")
   transfer_summary?: boolean | SWMLVar;
+
+  @doc("""
+    Time in milliseconds to wait after detecting a potential end-of-turn before finalizing speech recognition.
+    A shorter timeout results in faster response times but may cut off the user if they pause mid-sentence.
+    Set to `0` to finalize immediately. Only used when `enable_turn_detection` is `true`.
+    """)
+  @minValue(0)
+  @maxValue(10000)
+  turn_detection_timeout?: integer | SWMLVar = 250;
 
   @doc("""
     The format for the AI agent to reference phone numbers. 
@@ -337,8 +449,22 @@ model AIParams {
   @doc("The model to use for the AI's vision capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   vision_model?: SupportedAIModels;
 
+  @doc("""
+    Configures Silero Voice Activity Detection (VAD) settings. Format: `"threshold"` or `"threshold:frame_ms"`.
+    The threshold (0-100) sets sensitivity for detecting voice activity.
+    The optional frame_ms (16-40) sets frame duration in milliseconds.
+    """)
+  vad_config?: string;
+
   @doc("When false, AI agent will initialize dialogue after call is setup. When true, agent will wait for the user to speak first.")
   wait_for_user?: boolean | SWMLVar;
+
+  @doc("""
+    Specifies an additional prefix that must be spoken along with the agent's name (`ai_name`)
+    to wake the agent from a paused state. For example, if `ai_name` is "computer" and
+    `wake_prefix` is "hey", the user would need to say "hey computer" to activate the agent.
+    """)
+  wake_prefix?: string;
 
   ...TypeSpec.Record<unknown>;
 }

@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "project_id is required",
       attribute: "project_id",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#missing_required_parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
     }
   ],
 })
@@ -22,7 +22,7 @@ model DialogflowAgentCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "language_code must be a valid language code",
       attribute: "language_code",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes/#invalid_parameter_value",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })

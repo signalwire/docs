@@ -13,6 +13,7 @@ dotenv.config({ path: '../.env' }); // Imports environment variables from the .e
 
 const config: Config = { 
 
+
   future: {
     v4: true,
     experimental_faster: true
@@ -25,11 +26,12 @@ const config: Config = {
       onBrokenMarkdownLinks: 'throw'
     }
   },
+
   themes: [
     '@signalwire/docusaurus-theme-llms-txt',
     "@docusaurus/theme-mermaid", // Imports the mermaid library for rendering diagrams
     "docusaurus-theme-openapi-docs", // Imports the openapi-docs theme for rendering OpenAPI documentation
-    ...(process.env.TYPESENSE_HOST && process.env.TYPESENSE_API_SEARCH_KEY && process.env.TYPESENSE_COLLECTION_NAME && process.env.TYPESENSE_EXPORTS ? 
+    ...(process.env.TYPESENSE_HOST && process.env.TYPESENSE_API_SEARCH_KEY && process.env.TYPESENSE_COLLECTION_NAME && (process.env.TYPESENSE_PORT || process.env.TYPESENSE_EXPORTS) ?
       ["docusaurus-theme-search-typesense"] : []), // Only include Typesense theme if env vars are set
   ],
 
@@ -54,6 +56,7 @@ const config: Config = {
 
   presets: presets, // All preset options can be modified at the /config/presets.js file.
   plugins: plugins, // plugins of the site. All plugin options can be modified at the /config/pluginsConfig/index.ts file.
+  
   
   themeConfig: {
     navbar: branding.navbar, // navbar of the site

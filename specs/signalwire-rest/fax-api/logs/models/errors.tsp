@@ -9,7 +9,7 @@ using Types.StatusCodes;
       code: "invalid_parameter",
       message: "Name must be present",
       attribute: "name",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter",
+      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
     }
   ],
 })

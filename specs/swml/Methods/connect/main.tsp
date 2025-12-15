@@ -117,6 +117,16 @@ model ConnectDeviceBase {
   call_state_url?: url;
 
   @doc("""
+    SWML to execute after the bridge completes. This defines what should happen after the call is connected and the bridge ends.
+    Can be either:
+    - A URL (http or https) that returns a SWML document
+    - An inline SWML document (as a JSON string)
+
+    **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
+    """)
+  transfer_after_bridge?: string | SWMLVar;
+
+  @doc("""
     An array of call state event names to be notified about.
     Allowed event names are:
         - `created`
@@ -129,7 +139,13 @@ model ConnectDeviceBase {
 
 @summary("ConnectDeviceSingle object")
 model ConnectDeviceSingle is ConnectDeviceBase {
-  @doc("The SIP URI or phone number to dial.")
+  @doc("""
+    Destination to dial. Can be:
+    - Phone number in E.164 format (e.g., "+15552345678")
+    - SIP URI (e.g., "sip:alice@example.com")
+    - Call Fabric Resource address (e.g., "/public/test_room")
+    - Queue (e.g., "queue:support")
+    """)
   to: string;
 }
 

@@ -1,0 +1,261 @@
+---
+title: prompt
+slug: /swml/methods/prompt
+description: Play a prompt and wait for input.
+tags: ['swml']
+---
+
+import APIField from "@site/src/components/APIField";
+
+Play a prompt and wait for input. The input can be received either as digits from the keypad, or from speech, or both depending on
+what [prompt parameters](#parameters) are set.
+
+
+<APIField
+  name="prompt"
+  type="object"
+  required={true}
+>
+  An object that accepts the [`prompt parameters`](#parameters).
+</APIField>
+
+
+
+## **prompt Parameters** {#parameters}
+
+<APIField
+  name="prompt.play"
+  type="string | string[]"
+  required={true}
+>
+  Either a [playable sound](#playable-sounds) or an array of [playable sounds](#playable-sounds)
+</APIField>
+
+<APIField
+  name="prompt.volume"
+  type="number"
+  default="0"
+>
+  Volume gain to apply to played URLs. Allowed values from `-40.0` to `40.0`.
+</APIField>
+
+<APIField
+  name="prompt.say_voice"
+  type="string"
+  default="Polly.Salli"
+>
+  Voice to use with `say:` for text to speech
+</APIField>
+
+<APIField
+  name="prompt.say_language"
+  type="string"
+  default="en-US"
+>
+  Language to use with `say:` for text to speech
+</APIField>
+
+<APIField
+  name="prompt.say_gender"
+  type="string"
+  default="female"
+>
+  Gender to use with `say:` for text to speech
+</APIField>
+
+<APIField
+  name="prompt.max_digits"
+  type="integer"
+  default="1"
+>
+  Number of digits to collect
+</APIField>
+
+<APIField
+  name="prompt.terminators"
+  type="string"
+>
+  Digits that terminate digit collection
+</APIField>
+
+<APIField
+  name="prompt.digit_timeout"
+  type="number"
+  default="5.0 seconds"
+>
+  Time in seconds to wait for next digit
+</APIField>
+
+<APIField
+  name="prompt.initial_timeout"
+  type="number"
+  default="5.0 seconds"
+>
+  Time in seconds to wait for start of input
+</APIField>
+
+<APIField
+  name="prompt.speech_timeout"
+  type="number"
+>
+  Max time in seconds to wait for speech result
+</APIField>
+
+<APIField
+  name="prompt.speech_end_timeout"
+  type="number"
+>
+  Time in seconds to wait for end of speech utterance
+</APIField>
+
+<APIField
+  name="prompt.speech_language"
+  type="string"
+>
+  Language to detect speech in
+</APIField>
+
+<APIField
+  name="prompt.speech_hints"
+  type="string[]"
+>
+  Expected words to match
+</APIField>
+
+<APIField
+  name="prompt.status_url"
+  type="string"
+>
+  HTTP or HTTPS URL to deliver prompt status events.
+</APIField>
+
+:::note
+
+By default, only digit input via keypad is enabled. When **at least one** speech input based parameter
+is set (`speech_timeout`, `speech_end_timeout`, `speech_language` or `speech_hints`), speech input is
+enabled and digit input is disabled.
+
+To enable speech and digit based input collection at once, set at least one speech input parameter
+and at least one digit input based parameter (`max_digits`, `terminators`, `digit_timeout`, and `initial_timeout`).
+
+:::
+
+## **Playable sounds**
+
+import PlayableSounds from "./_sharedtables/playable_sounds.mdx";
+
+<PlayableSounds />
+
+## **Variables**
+
+Read by the method:
+
+- **say_voice:** (in) - optional voice to use for text to speech.
+- **say_language:** (in) - optional language to use for text to speech.
+- **say_gender:** (in) - optional gender to use for text to speech.
+
+## **Possible values for Voice, Language, and Ringtone**
+
+import VoiceTable from "./_sharedtables/voicetable.mdx";
+
+<VoiceTable />
+
+### Set by the method
+
+- **prompt_result:** (out) - `failed`, `no_input`, `match_speech`, `match_digits`, or `no_match`.
+- **prompt_value:** (out) - the digits or utterance collected.
+- **prompt_digit_terminator:** (out) - digit terminator collected, if any.
+- **prompt_speech_confidence:** (out) - speech confidence measured, if any.
+
+## **Examples**
+
+The [`play` method](/swml/methods/play) also has examples related to playing sounds from URLs. The
+interface for playing sounds for `play` and `prompt` is identical.
+
+### Play prompt and wait for digit press
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - prompt:
+        play: 'say:Input a number'
+    - switch:
+        variable: prompt_value
+        default:
+          - play:
+              url: 'say:You didn''t press one'
+          - transfer:
+              dest: main
+        case:
+          '1':
+            - play:
+                url: 'say:You pressed one'
+```
+
+### Using terminators
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - prompt:
+        play: 'say:PIN number please'
+        max_digits: 10
+        terminators: '*#5'
+    - play:
+        url: 'say: ${prompt_value} was terminated by ${prompt_digit_terminator}'
+```
+
+### Play prompt and wait for digit or speech
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - prompt:
+        play: 'https://example.com/press_or_say_one.wav'
+        speech_language: en-US
+        max_digits: 1
+        speech_hints:
+          - one
+          - two
+          - three
+          - four
+          - five
+          - six
+          - seven
+          - eight
+          - nine
+    - switch:
+        variable: prompt_value
+        default:
+          - play:
+              url: 'https://example.com/bad_input.wav'
+          - transfer:
+              dest: main
+        case:
+          '1':
+            - transfer:
+                dest: 'https://example.com/sales.swml'
+          one:
+            - transfer:
+                dest: 'https://example.com/sales.swml'
+```
+
+### Play prompt and collect digits, then pass the data to an external action
+
+```yaml andJson
+version: 1.0.0
+sections:
+  main:
+    - prompt:
+        play: 'https://example.com/menu.wav'
+    - transfer:
+        dest: 'https://example.com/post_next_menu'
+```
+
+In this case, the URL listed in transfer will be sent an HTTP POST request
+with all the [out variables](#set-by-the-method) (like `prompt_value`) already set. For
+more details on this behavior, refer to [`transfer`](/swml/methods/transfer)
+statement's documentation.

@@ -3,7 +3,38 @@ import styles from "./Frame.module.css";
 import clsx from "clsx";
 import OgImage from "../../OgImage";
 
-function extractImagesFromParagraph(children: React.ReactNode): {
+// Adds className to img elements so it persists when medium-zoom clones them
+function addClassToImages(children: React.ReactNode, className?: string): React.ReactNode {
+  if (!className) return children;
+
+  if (React.isValidElement(children)) {
+    if (children.type === "img") {
+      return React.cloneElement(children, {
+        className: clsx(children.props.className, className),
+      });
+    }
+    if (children.props?.children) {
+      return React.cloneElement(children, {
+        children: addClassToImages(children.props.children, className),
+      });
+    }
+  }
+
+  if (Array.isArray(children)) {
+    return children.map((child, i) =>
+      React.isValidElement(child)
+        ? React.cloneElement(addClassToImages(child, className) as React.ReactElement, { key: i })
+        : child
+    );
+  }
+
+  return children;
+}
+
+function extractImagesFromParagraph(
+  children: React.ReactNode,
+  className?: string
+): {
   content: React.ReactNode;
   single: boolean;
 } {
@@ -15,7 +46,7 @@ function extractImagesFromParagraph(children: React.ReactNode): {
       const processedChildren = pChildren.map((child) => {
         if (React.isValidElement(child) && child.type === "figure") {
           return React.isValidElement(child) ? (
-            <div className={styles.imageWrapper}>{child.props?.children}</div>
+            <div className={styles.imageWrapper}>{addClassToImages(child.props?.children, className)}</div>
           ) : (
             child
           );
@@ -27,7 +58,7 @@ function extractImagesFromParagraph(children: React.ReactNode): {
 
     if (React.isValidElement(pChildren) && pChildren.type === "figure") {
       return {
-        content: <div className={styles.imageWrapper}>{pChildren.props?.children}</div>,
+        content: <div className={styles.imageWrapper}>{addClassToImages(pChildren.props?.children, className)}</div>,
         single,
       };
     }
@@ -37,9 +68,9 @@ function extractImagesFromParagraph(children: React.ReactNode): {
   return {
     content:
       React.isValidElement(children) && children.type === "figure" ? (
-        <div className={styles.imageWrapper}>{children.props?.children}</div>
+        <div className={styles.imageWrapper}>{addClassToImages(children.props?.children, className)}</div>
       ) : (
-        children
+        addClassToImages(children, className)
       ),
     single: false,
   };
@@ -77,12 +108,14 @@ export default function Frame({
   caption,
   children,
   ogImage = false,
+  className,
 }: {
   caption?: string;
   children: React.ReactNode;
   ogImage?: boolean;
+  className?: string;
 }) {
-  const { content: processedChildren, single } = extractImagesFromParagraph(children);
+  const { content: processedChildren, single } = extractImagesFromParagraph(children, className);
   const ogImageSrc = ogImage ? extractFirstImageSrc(children) : undefined;
 
   return (
