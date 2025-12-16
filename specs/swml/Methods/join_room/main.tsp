@@ -6,6 +6,7 @@ model JoinRoom {
   @summary("join_room")
   join_room: {
     @doc("The name of the room to join.")
+    @example("my-video-room")
     name: string;
   };
 }

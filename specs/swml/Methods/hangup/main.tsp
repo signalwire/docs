@@ -4,6 +4,7 @@ model Hangup {
   @summary("hangup")
   hangup: {
     @doc("The reason for hanging up the call.")
+    @example("busy")
     reason?: "hangup" | "busy" | "decline";
   };
 }

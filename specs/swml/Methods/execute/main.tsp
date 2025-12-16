@@ -6,6 +6,7 @@ model ExecuteSwitch {
     Name of the variable whose value needs to be compared. If not provided, it will check the `return_value` variable.
     Can be one of the listed set of variables, or a string to represent a custom variable.
     """)
+  @example("return_value")
   variable?: string;
 
   @doc("Object of values mapped to array of instructions to execute")
@@ -27,14 +28,17 @@ model Execute {
       - A URL (http or https) that returns a SWML document - Sends HTTP POST
       - An inline SWML document (as a JSON string)
       """)
+    @example("https://example.com/swml-handler")
     dest: string;
 
     @doc("Named parameters to send to section or URL")
+    @example(#{ caller_id: "+15551234567", language: "en-US" })
     params?: {
       ...TypeSpec.Record<unknown>;
     };
 
     @doc("User-defined metadata, ignored by SignalWire")
+    @example(#{ request_id: "req_abc123", source: "ivr" })
     meta?: {
       ...TypeSpec.Record<unknown>;
     };

@@ -4,6 +4,7 @@ model SendDigits {
   @doc("Send DTMF digits.")
   send_digits: {
     @doc("The DTMF digits to send.")
+    @example("1234#")
     digits: string;
   };
 }

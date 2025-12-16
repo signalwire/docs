@@ -9,42 +9,53 @@ model DetectMachine {
     """)
   detect_machine: {
     @doc("If `true`, stops detection on beep / end of voicemail greeting. Default `false`.")
+    @example(true)
     detect_message_end?: boolean | SWMLVar;
 
     @doc("Comma-separated string: detectors to enable. Default: `amd,fax`.")
+    @example("amd,fax")
     detectors?: string;
 
     @doc("How long to wait for voice to finish. Default 1.0.")
     @minValue(0.0)
+    @example(1.0)
     end_silence_timeout?: float | SWMLVar;
 
     @doc("How long to wait for initial voice before giving up. Default 4.5.")
     @minValue(0.0)
+    @example(4.5)
     initial_timeout?: float | SWMLVar;
 
     @doc("How long to wait for voice to finish before firing READY event. Default is `end_silence_timeout`.")
     @minValue(0.0)
+    @example(2.0)
     machine_ready_timeout?: float | SWMLVar;
 
     @doc("How much voice in ms to decide MACHINE. Default 1.25.")
     @minValue(0.0)
+    @example(1.25)
     machine_voice_threshold?: float | SWMLVar;
 
     @doc("How many words to count to decide MACHINE. Default 6.")
     @minValue(0)
+    @example(6)
     machine_words_threshold?: integer | SWMLVar;
 
     @doc("The http(s) URL to deliver detector events to.")
+    @example("https://example.com/amd-status")
     status_url?: string;
 
     @doc("The max time to run detector. Default 30.0 seconds.")
     @minValue(0.0)
+    @example(30.0)
     timeout?: float | SWMLVar;
 
     @doc("The tone to detect, will only receive remote side tone. Default `CED`.")
+    @example("CED")
     tone?: "CED" | "CNG";
 
     @doc("If `false`, the detector will run asynchronously and `status_url` must be set. Default `true`.")
+    @example(true)
     wait?: boolean | SWMLVar;
   };
 }

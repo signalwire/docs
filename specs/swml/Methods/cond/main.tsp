@@ -7,6 +7,7 @@ using TypeSpec.JsonSchema;
 @summary("CondReg object")
 model CondReg {
   @doc("The condition to be evaluated and act on.")
+  @example("vars.digit == '1'")
   when: string;
 
   @doc("The list of SWML instructions to be executed if the condition is `true`")

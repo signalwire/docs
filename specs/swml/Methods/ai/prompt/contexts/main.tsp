@@ -18,6 +18,7 @@ model ContextObjectBase {
   steps: ContextSteps[];
 
   @doc("A boolean value, if set to `true`, the conversation history will be reset and the agent will only have the context of the original system prompt.")
+  @example(true)
   isolated?: boolean;
 
   @doc("An array of objects that define the enter fillers for the context. Enter fillers are used when entering the context.")
@@ -30,11 +31,13 @@ model ContextObjectBase {
 @summary("ContextsPOMObject")
 model ContextsPOMObject is ContextObjectBase {
   @doc("An array of objects that define the POM for the context. POM is the Post-Prompt Object Model, which is used to define the flow of the conversation.")
+  @minItems(1)
   pom?: POM[];
 }
 
 model ContextsTextObject is ContextObjectBase {
   @doc("The text to send to the agent.")
+  @example("You are now helping the customer with their order.")
   text?: string;
 }
 

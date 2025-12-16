@@ -9,6 +9,7 @@ model Transfer {
       - A URL (http or https) that returns a SWML document - Sends HTTP POST
       - An inline SWML document (as a JSON string)
       """)
+    @example("https://example.com/transfer-handler")
     dest: string;
 
     @doc("""
@@ -16,6 +17,7 @@ model Transfer {
       Accepts an object mapping variable names to values.
       Default is not set.
       """)
+    @example(#{ department: "sales", priority: "high" })
     params?: {
       ...TypeSpec.Record<unknown>;
     };
@@ -25,6 +27,7 @@ model Transfer {
       Accepts an object mapping variable names to values.
       Default is not set.
       """)
+    @example(#{ transfer_reason: "escalation", original_agent: "agent_001" })
     meta?: {
       ...TypeSpec.Record<unknown>;
     };

@@ -8,5 +8,6 @@ model Sleep {
   @doc("The amount of time to sleep in milliseconds. Must be a `positive integer`. Can also be set to a `-1` integer for the sleep to never end.")
   @oneOf
   @minValue(-1)
+  @example(5000)
   sleep: integer | SWMLVar;
 }

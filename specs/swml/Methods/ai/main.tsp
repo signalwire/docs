@@ -14,11 +14,13 @@ model AIObject {
     or from the SWML `set_global_data` action. This data can be referenced `globally`.
     All contained information can be accessed and expanded within the prompt - for example, by using a template string.
     """)
+  @example(#{ company_name: "Acme Corp", support_hours: "9am-5pm EST" })
   global_data?: {
     ...TypeSpec.Record<unknown>;
   };
 
   @doc("Hints help the AI agent understand certain words or phrases better. Words that can commonly be misinterpreted can be added to the hints to help the AI speak more accurately.")
+  @example(#["pizza", "pepperoni"])
   hints?: (string | Hint)[];
 
   @doc("An array of JSON objects defining supported languages in the conversation.")
@@ -31,6 +33,7 @@ model AIObject {
   post_prompt?: AIPostPrompt;
 
   @doc("The URL to which to send status callbacks and reports. Authentication can also be set in the url in the format of `username:password@url`.")
+  @example("username:password@https://example.com")
   post_prompt_url?: url;
 
   @doc("An array of JSON objects to clarify the AI's pronunciation of words or expressions.")
@@ -39,8 +42,8 @@ model AIObject {
   @doc("Establishes the initial set of instructions and settings to configure the agent.")
   prompt: AIPrompt;
 
-  @doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
-  SWAIG?: SWAIG;
+  //@doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
+  //SWAIG?: SWAIG;
 }
 
 @summary("AI Type")
