@@ -9,6 +9,7 @@ scalar play_url extends string;
 @summary("PlayBase object")
 model PlayBase {
   @doc("If `true`, the call will automatically answer as the sound is playing. If `false`, you will start playing the audio during early media")
+  @example(true)
   auto_answer?: boolean | SWMLVar;
 
   @doc("""
@@ -18,27 +19,32 @@ model PlayBase {
     """)
   @minValue(-40)
   @maxValue(40)
+  @example(10)
   volume?: float | SWMLVar;
 
   @doc("""
     The voice to use for the text to speech.
     Default is `Polly.Salli`
     """)
+  @example("Polly.Joanna")
   say_voice?: string;
 
   @doc("""
     The language to use for the text to speech.
     Default is `en-US`
     """)
+  @example("en-US")
   say_language?: string;
 
   @doc("""
     Gender to use for the text to speech.
     Default is `female`.
     """)
+  @example("female")
   say_gender?: string;
 
   @doc("http or https URL to deliver play status events")
+  @example("https://example.com/play-status")
   status_url?: url;
 }
 
@@ -54,6 +60,7 @@ model PlayWithURL is PlayBase {
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play
     """)
+  @example("https://example.com/welcome.mp3")
   url: play_url | SWMLVar;
 }
 
@@ -68,6 +75,7 @@ model PlayWithURLS is PlayBase {
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play
     """)
+  @example(#["https://example.com/intro.mp3", "say:Welcome to our service", "silence:2"])
   urls: play_url[] | SWMLVar[];
 }
 

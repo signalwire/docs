@@ -1,6 +1,7 @@
 @summary("StopDenoise object")
 model StopDenoise {
   @summary("stop_denoise")
-  @doc("Stops the current denoise session.")
+  @doc("Stop noise reduction that was started with denoise.")
+  @example(#{})
   stop_denoise: {};
 }

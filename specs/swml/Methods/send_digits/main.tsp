@@ -1,9 +1,10 @@
 @summary("SendDigits object")
 model SendDigits {
   @summary("send_digits")
-  @doc("Send DTMF digits.")
+  @doc("Send digit presses as DTMF tones.")
   send_digits: {
-    @doc("The DTMF digits to send.")
+    @doc("The digits to send. Valid values are 0123456789*#ABCDWw. Character W is a 1 second delay, and w is a 500ms delay.")
+    @example("1234#")
     digits: string;
   };
 }

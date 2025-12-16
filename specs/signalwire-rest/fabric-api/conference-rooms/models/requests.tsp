@@ -58,7 +58,7 @@ model ConferenceRoomCreateRequest {
   @doc("Metadata of the conference.")
   @example(#{ foo: "bar" })
   meta?: {
-    ...Record<unknown>;
+    ...TypeSpec.Record<unknown>;
   };
 
   @doc("Syncs the participants audio and video.")
@@ -135,7 +135,7 @@ model ConferenceRoomUpdateRequest {
   @doc("Metadata of the conference.")
   @example(#{ foo: "bar" })
   meta?: {
-    ...Record<unknown>;
+    ...TypeSpec.Record<unknown>;
   };
 
   @doc("Syncs the participants audio and video.")
