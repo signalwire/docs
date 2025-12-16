@@ -97,7 +97,7 @@ union TranscribeAction {
 @summary("LiveTranscribe object")
 model LiveTranscribe {
   @summary("live_transcribe")
-  @doc("Starts live transcription of the call. The transcription will be sent to the specified URL.")
+  @doc("Start live transcription of the call. The transcription will be sent to the specified webhook URL.")
   live_transcribe: {
     @doc("The action to perform during live transcription.")
     action: TranscribeAction;

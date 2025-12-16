@@ -318,11 +318,20 @@ model AIParams {
   @example("gpt-4.1-nano")
   inner_dialog_model?: SupportedAIModels;
 
-  @doc("The system prompt that guides the inner dialog AI's behavior. Only used when `enable_inner_dialog` is `true`.")
+  @doc("""
+    The system prompt that guides the inner dialog AI's behavior. This prompt shapes how the background AI
+    analyzes the conversation and what kind of insights it provides to the main agent.
+    Only used when `enable_inner_dialog` is `true`.
+    """)
   @example("Analyze the conversation and provide insights to help the agent respond better.")
   inner_dialog_prompt?: string = "The assistant is intelligent and straightforward, does its job well and is not excessively polite.";
 
-  @doc("When enabled, synchronizes the inner dialog with the main conversation flow, waiting for user input before injection. Only used when `enable_inner_dialog` is `true`.")
+  @doc("""
+    When enabled, synchronizes the inner dialog with the main conversation flow.
+    This ensures the inner dialog AI waits for the main conversation turn to complete
+    before providing its analysis, rather than running fully asynchronously.
+    Only used when `enable_inner_dialog` is `true`.
+    """)
   @example(true)
   inner_dialog_synced?: boolean | SWMLVar = false;
 
@@ -376,8 +385,8 @@ model AIParams {
   @example(1024)
   max_response_tokens?: integer | SWMLVar;
 
-  @doc("The OpenAI ASR (Automatic Speech Recognition) engine to use. Allowed values are `nova-2` and `nova-3`. Defaults to `nova-3`.")
-  @example("nova-3")
+  @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2`, `deepgram:nova-3`, and other supported ASR engines.")
+  @example("deepgram:nova-3")
   openai_asr_engine?: "nova-2" | "nova-3";
 
   @doc("Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`. **Default:** `120000` ms (2 minutes).")
@@ -426,7 +435,8 @@ model AIParams {
 
   @doc("""
     When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).
-    The user must say the agent's name to activate it for each interaction.
+    This creates a "push-to-talk" style interaction where the agent only responds when explicitly
+    called upon, useful for scenarios where the agent should listen but not interrupt.
     Cannot be used together with `enable_pause`.
     """)
   @example(true)
@@ -435,6 +445,7 @@ model AIParams {
   @doc("""
     When enabled, the AI agent starts in a paused state and will not respond until the user
     speaks the agent's name (set via `ai_name`). Automatically enables `enable_pause`.
+    This is useful for scenarios where you want the agent to wait for explicit activation.
     """)
   @example(true)
   start_paused?: boolean | SWMLVar = false;

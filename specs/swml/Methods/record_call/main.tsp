@@ -5,8 +5,9 @@ model RecordCall {
   @summary("record_call")
   @doc("""
     Record call in the background.
-    Unlike the `record` method, the `record_call` method will start the recording and continue executing the SWML script without allowing the recording to happen in the background.
-    To stop call recordings started with `record_call`, use the `stop_call_record` method.
+    Unlike the record method, the record_call method will start the recording and continue executing
+    the SWML script while allowing the recording to happen in the background.
+    To stop call recordings started with record_call, use the stop_record_call method.
     """)
   record_call: {
     @doc("Identifier for this recording, to use with `stop_call_record`.")
@@ -46,8 +47,9 @@ model RecordCall {
     beep?: boolean | SWMLVar;
 
     @doc("""
-      Input sensitivity for the recording.
-      Default is `44.0`.
+      How sensitive the recording voice activity detector is to background noise.
+      A larger value is more sensitive. Allowed values from 0.0 to 100.0.
+      Default is 44.0.
       """)
     @example(44.0)
     input_sensitivity?: float | SWMLVar;

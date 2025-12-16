@@ -14,17 +14,17 @@ model Contexts {
 
 model ContextObjectBase {
   @summary("steps")
-  @doc("An array of objects that define the steps in the context. These steps are used to define the flow of the conversation.")
+  @doc("An array of step objects that define the conversation flow for this context. Steps execute sequentially unless otherwise specified.")
   steps: ContextSteps[];
 
-  @doc("A boolean value, if set to `true`, the conversation history will be reset and the agent will only have the context of the original system prompt.")
+  @doc("When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation.")
   @example(true)
   isolated?: boolean;
 
-  @doc("An array of objects that define the enter fillers for the context. Enter fillers are used when entering the context.")
+  @doc("Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.")
   enter_fillers?: FunctionFillers[];
 
-  @doc("An array of objects that define the exit fillers for the context. Exit fillers are used when exiting the context.")
+  @doc("Language-specific filler phrases played when leaving this context. Ensures natural transitions out of specialized modes.")
   exit_fillers?: FunctionFillers[];
 }
 

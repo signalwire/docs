@@ -1,57 +1,30 @@
 import "../_shared/fillers.tsp";
 
 model SWAIGInternalFiller {
-  @doc("""
-    This function is used to hangup the call.
-    Fillers will be played when the `hangup` function is called.
-    """)
+  @doc("Filler phrases played when the AI Agent is hanging up the call.")
   hangup?: FunctionFillers;
 
-  @doc("""
-    This function is used to check the current time.
-    Fillers will be played when the `check_time` function is called.
-    """)
+  @doc("Filler phrases played when the AI Agent is checking the time.")
   check_time?: FunctionFillers;
 
-  @doc("""
-    This function is used to wait for user input.
-    Fillers will be played when the `wait_for_user` function is called.
-    """)
+  @doc("Filler phrases played when the AI Agent is waiting for user input.")
   wait_for_user?: FunctionFillers;
 
-  @doc("""
-    This function is used to wait for a specified number of seconds.
-    Fillers will be played when the `wait_seconds` function is called.
-    """)
+  @doc("Filler phrases played during deliberate pauses or wait periods.")
   wait_seconds?: FunctionFillers;
 
-  @doc("""
-    This function is used to adjust the response latency of the AI Agent.
-    Fillers will be played when the `adjust_response_latency` function is called.
-    """)
+  @doc("Filler phrases played when the AI Agent is adjusting response timing.")
   adjust_response_latency?: FunctionFillers;
 
-  @doc("""
-    This function is used to proceed to the next step in the conversation flow.
-    Fillers will be played when the `next_step` function is called.
-    """)
+  @doc("Filler phrases played when transitioning between conversation steps when utilizing `prompt.contexts`.")
   next_step?: FunctionFillers;
 
-  @doc("""
-    This function is used to change the context of the conversation.
-    Fillers will be played when the `change_context` function is called.
-    """)
+  @doc("Filler phrases played when switching between conversation contexts when utilizing `prompt.contexts`.")
   change_context?: FunctionFillers;
 
-  @doc("""
-    This function is used to visually process input that the AI Agent has captured.
-    Fillers will be played when the `get_visual_input` function is called.
-    """)
+  @doc("Filler phrases played when the AI Agent is processing visual input. This function is enabled when `enable_vision` is set to `true` in `ai.params`.")
   get_visual_input?: FunctionFillers;
 
-  @doc("""
-    This function is used to get the ideal strategy for the current conversation state.
-    Fillers will be played when the ai utilizes the `thinking` capability and uses the `get_ideal_strategy` function.
-    """)
+  @doc("Filler phrases played when the AI Agent is thinking or considering options. This is utilized when `enable_thinking` is set to `true` in `ai.params`.")
   get_ideal_strategy?: FunctionFillers;
 }

@@ -3,7 +3,11 @@ import "../../Shared/Types/main.tsp";
 @summary("Record object")
 model Record {
   @summary("record")
-  @doc("Record the call audio in the foreground. Use this, for example, to record voicemails.")
+  @doc("""
+    Record the call audio in the foreground, pausing further SWML execution until recording ends.
+    Use this, for example, to record voicemails.
+    To record calls in the background in a non-blocking fashion, use the record_call method.
+    """)
   record: {
     @doc("""
       If true, record in stereo.
@@ -38,8 +42,9 @@ model Record {
     beep?: boolean | SWMLVar;
 
     @doc("""
-      Input sensitivity for the recording.
-      Default is `44.0`.
+      How sensitive the recording voice activity detector is to background noise.
+      A larger value is more sensitive. Allowed values from 0.0 to 100.0.
+      Default is 44.0.
       """)
     @example(44.0)
     input_sensitivity?: float | SWMLVar;

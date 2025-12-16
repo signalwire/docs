@@ -1,12 +1,16 @@
 @summary("Transfer object")
 model Transfer {
   @summary("transfer")
-  @doc("Transfer the execution of the script to a new URL or SWML Section.")
+  @doc("""
+    Transfer the execution of the script to a different SWML section, URL, or Relay application.
+    Once the transfer is complete, the script will continue executing SWML from the new location.
+    """)
   transfer: {
     @doc("""
-      Specifies where to transfer the call. The value can be one of:
-      - `<section_name>` - section in the SWML document to jump to
-      - A URL (http or https) that returns a SWML document - Sends HTTP POST
+      Specifies where to transfer to. The value can be one of:
+      - <section_name> - section in the SWML document to jump to
+      - A URL (http or https) - URL to fetch next document from. Sends HTTP POST.
+        Authentication can also be set in the URL in the format of username:password@url.
       - An inline SWML document (as a JSON string)
       """)
     @example("https://example.com/transfer-handler")

@@ -6,20 +6,20 @@ using TypeSpec.JsonSchema;
 
 @summary("CondReg object")
 model CondReg {
-  @doc("The condition to be evaluated and act on.")
+  @doc("The JavaScript condition to act on.")
   @example("vars.digit == '1'")
   when: string;
 
-  @doc("The list of SWML instructions to be executed if the condition is `true`")
+  @doc("Sequence of SWML methods to execute when the condition evaluates to true.")
   then: SWMLMethod[];
 
-  @doc("The list of SWML instructions to be executed if the condition is `false`.")
+  @doc("Sequence of SWML methods to execute when none of the other conditions evaluate to true.")
   `else`?: SWMLMethod[];
 }
 
 @summary("CondElse object")
 model CondElse {
-  @doc("The list of SWML instructions to be executed if the condition is `false`.")
+  @doc("Sequence of SWML methods to execute when none of the other conditions evaluate to true.")
   `else`: SWMLMethod[];
 }
 

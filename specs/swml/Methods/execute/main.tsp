@@ -20,7 +20,10 @@ model ExecuteSwitch {
 
 @summary("Execute object")
 model Execute {
-  @doc("Execute a section or URL as a subroutine and return back to current document.")
+  @doc("""
+    Execute a specified section or URL as a subroutine, and upon completion, return to the current document.
+    Use the return statement to pass any return values or objects back to the current document.
+    """)
   execute: {
     @doc("""
       Specifies what to execute. The value can be one of:
@@ -46,7 +49,10 @@ model Execute {
     @doc("The list of SWML instructions to be executed when the executed section or URL returns")
     on_return?: SWMLMethod[];
 
-    @doc("`switch` on `return_value` if result is an object (`{}`), or use as a cond if result is an array (`[]`)")
+    @doc("""
+      Action to take based on the result of the call. This will run once the peer leg of the call has ended.
+      Will use the switch method when the return_value is an object, and will use the cond method when the return_value is an array.
+      """)
     result?: ExecuteSwitch | Cond.cond;
   };
 }

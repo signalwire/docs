@@ -6,7 +6,7 @@ import "../../_shared/fillers.tsp";
 
 using TypeSpec.JsonSchema;
 
-const functionDescription: string = "The unique name for the function.";
+const functionDescription: string = "A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation.";
 
 @summary("functions")
 model SWAIGFunctionBase {
@@ -69,7 +69,10 @@ model SWAIGFunctionBase {
   @minProperties(1)
   data_map?: DataMap;
 
-  @doc("A boolean value, if set to `true`, it forces generic fillers to be skipped. Only function specific fillers will be played.")
+  @doc("""
+    Skips the top-level fillers specified in `ai.languages` (which includes `speech_fillers` and `function_fillers`).
+    When set to `true`, only function-specific fillers defined directly on `SWAIG.functions.fillers` will play.
+    """)
   @example(true)
   skip_fillers?: boolean | SWMLVar;
 
@@ -85,7 +88,7 @@ model SWAIGFunctionBase {
   @example(5)
   wait_file_loops?: integer | string;
 
-  @doc("Wait for fillers to finish before continuing. Default is not set.")
+  @doc("Whether to wait for fillers to finish playing before continuing with the function.")
   @example(true)
   wait_for_fillers?: boolean | SWMLVar;
 }

@@ -4,16 +4,24 @@ using TypeSpec.JsonSchema;
 
 @summary("LanguagesBase")
 model LanguagesBase {
-  @doc("Any arbirary name for the language object.")
+  @doc("Name of the language (e.g., 'French', 'English'). This value is used in the system prompt to instruct the LLM what language is being spoken.")
   @example("French")
   name: string;
 
-  @doc("The language code for the ai to hear. For example, 'fr-FR'.")
+  @doc("""
+    The language code for ASR (Automatic Speech Recognition) purposes. By default, SignalWire uses Deepgram's
+    Nova-3 STT engine, so this value should match a code from Deepgram's Nova-3 language codes.
+    If a different STT model was selected using the `openai_asr_engine` parameter, you must select a code supported by that engine.
+    """)
   @example("fr-FR")
   code: string;
 
-  @doc("Voice to use for the language. For example, 'fr-FR-Neural2-B'.")
-  @example("fr-FR-Neural2-B")
+  @doc("""
+    Voice to use for the language. String format: `<engine id>.<voice id>`.
+    Select engine from `gcloud`, `polly`, `elevenlabs`, `cartesia`, or `deepgram`.
+    For example, `gcloud.fr-FR-Neural2-B`.
+    """)
+  @example("gcloud.fr-FR-Neural2-B")
   voice: string;
 
   @doc("The model to use for the specified TTS engine. For example, 'arcana'.")
@@ -56,7 +64,11 @@ model LanguagesWithFillers is LanguagesBase {
   @example(#["great", "ok"])
   function_fillers?: string[];
 
-  @doc("An array of strings to be used as fillers in the conversation. This helps the AI break silence between responses.")
+  @doc("""
+    An array of strings to be used as fillers in the conversation. This helps the AI break silence between responses.
+    Note: `speech_fillers` are used between every 'turn' taken by the LLM, including at the beginning of the call.
+    For more targeted fillers, consider using `function_fillers`.
+    """)
   @example(#["umm", "hmm"])
   speech_fillers?: string[];
 }

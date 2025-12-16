@@ -1,6 +1,6 @@
 @summary("Hangup object")
 model Hangup {
-  @doc("Hangup the call.")
+  @doc("End the call with an optional reason.")
   @summary("hangup")
   hangup: {
     @doc("The reason for hanging up the call.")

@@ -4,10 +4,10 @@ import "../../Methods";
 model Prompt {
   @summary("prompt")
   @doc("""
-    Play a prompt and wait for digit or speech input.
-    Speech detection is not enabled unless at least one speech parameter is set.
-    If only speech parameters are set (and no digit parameters), digit detection is not enabled.
-    To enable both digit and speech detection, set at least one parameter for each.
+    Play a prompt and wait for input. The input can be received either as digits from the keypad,
+    or from speech, or both depending on what parameters are set.
+    By default, only digit input is enabled. To enable speech input, set at least one speech parameter.
+    To enable both digit and speech input, set at least one parameter for each.
     """)
   prompt: {
     @doc("""
@@ -92,7 +92,7 @@ model Prompt {
     @example("en-US")
     speech_language?: string;
 
-    @doc("Words or phrases to help the speech recognition.")
+    @doc("Expected words or phrases to help the speech recognition.")
     @example(#["sales", "support", "billing"])
     speech_hints?: string[] | SWMLVar[];
 

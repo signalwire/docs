@@ -11,8 +11,8 @@ model ContextStepsBase {
   name: string;
 
   @doc("""
-    The conditions that must be met for the conversation to proceed to the next step.
-    If a condition is not met, the conversation will not proceed to the next step.
+    The criteria that must be met for the AI to proceed to the next step.
+    The criteria is an instruction given to the AI.
     It's **highly** recommended you create a custom criteria for the step to get the intended behavior.
     """)
   @example("Customer wants to order Pizza")
@@ -22,7 +22,7 @@ model ContextStepsBase {
   @example(#["Take Order", "Confirm Order", "Confirm Address"])
   functions?: string[];
 
-  @doc("An array of valid contexts that the conversation can transition to from this step.")
+  @doc("An array of context names that the AI can transition to from this step. This must be a valid `contexts.name` that is present in your `contexts` object.")
   @example(#["Place Order", "Confirm Order"])
   valid_contexts?: string[];
 
@@ -30,7 +30,7 @@ model ContextStepsBase {
   @example(true)
   skip_user_turn?: boolean | SWMLVar;
 
-  @doc("A boolean value, if set to `true`, will end the contexts conversation and transition to a normal interaction.")
+  @doc("A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter.")
   @example(true)
   end?: boolean;
 

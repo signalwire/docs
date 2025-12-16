@@ -6,7 +6,7 @@ using TypeSpec.JsonSchema;
 
 @summary("EnterQueueObject object")
 model EnterQueueObject {
-  @doc("Name of the queue to enter.")
+  @doc("Name of the queue to enter. If a queue with this name does not exist, it will be automatically created.")
   @example("support-queue")
   queue_name: string;
 
@@ -35,7 +35,12 @@ model EnterQueueObject {
 
 @summary("EnterQueue object")
 model EnterQueue {
-  @doc("Place the call in a queue.")
+  @doc("""
+    Place the current call in a named queue where it will wait to be connected to an available agent or resource.
+    While waiting, callers will hear music or custom audio.
+    When an agent connects to the queue (using the connect method), the caller and agent are bridged together.
+    After the bridge completes, execution continues with the SWML script specified in transfer_after_bridge.
+    """)
   @summary("enter_queue")
   enter_queue: EnterQueueObject;
 }

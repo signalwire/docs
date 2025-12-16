@@ -5,7 +5,7 @@ model Tap {
   @summary("tap")
   @doc("Start background call tap. Media is streamed over Websocket or RTP to customer controlled URI.")
   tap: {
-    @doc("Destination of the tap media stream.")
+    @doc("Destination of the tap media stream: rtp://IP:port, ws://example.com, or wss://example.com.")
     @example("wss://example.com/tap-stream")
     uri: string;
 

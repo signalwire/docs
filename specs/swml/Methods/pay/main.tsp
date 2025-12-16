@@ -7,9 +7,8 @@ using TypeSpec.JsonSchema;
 
 model Pay {
   @doc("""
-    The `pay` object. Enables secure payment processing during a call.
-     When implemented, it handles the complete payment flow including data collection, validation, and processing through your configured
-     payment gateway.
+    Enables secure payment processing during voice calls. When implemented, it manages the entire payment flow
+    including data collection, validation, and processing through your configured payment gateway.
     """)
   pay: {
     @doc("""
@@ -37,11 +36,7 @@ model Pay {
     @example("dtmf")
     input?: "dtmf";
 
-    @doc("""
-      The language of the payment prompt. Default is `en-US`.
-
-      Supported languages can be found here: https://developer.signalwire.com/swml/methods/pay/language
-      """)
+    @doc("Language to use for prompts being played to the caller by the `pay` method. Default is `en-US`.")
     @example("en-US")
     language?: string;
 

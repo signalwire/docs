@@ -100,7 +100,10 @@ model JoinConferenceObject {
 
 @summary("JoinConference object")
 model JoinConference {
-  @doc("Join an ad-hoc audio conference with RELAY and CXML calls.")
+  @doc("""
+    Join an ad-hoc audio conference started on either the SignalWire or Compatibility API.
+    This method allows you to connect the current call to a named conference where multiple participants can communicate simultaneously.
+    """)
   @summary("join_conference")
   join_conference: JoinConferenceObject;
 }

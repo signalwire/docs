@@ -11,11 +11,11 @@ model SIPRefer {
     @example("https://example.com/refer-status")
     status_url?: url;
 
-    @doc("SIP authentication username")
+    @doc("Username to use for SIP authentication.")
     @example("sipuser")
     sip_auth_username?: string;
 
-    @doc("SIP authentication password")
+    @doc("Password to use for SIP authentication.")
     @example("sippassword")
     sip_auth_password?: string;
   };

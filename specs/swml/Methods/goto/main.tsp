@@ -2,11 +2,14 @@ import "../label";
 import "../../Shared/Types/main.tsp";
 @summary("Goto object")
 model Goto {
-  @doc("Jump to a specified label in the current SWML document.")
+  @doc("""
+    Jump to a label within the current section, optionally based on a condition.
+    The goto method will only navigate to a label within the same section.
+    """)
   goto: {
     label: Label.label;
 
-    @doc("The condition that triggers the `goto` jump.")
+    @doc("JavaScript expression to evaluate. When the condition evaluates to true, the goto jump is triggered.")
     @example("vars.retry_count < 3")
     when?: string;
 

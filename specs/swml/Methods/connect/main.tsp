@@ -83,7 +83,10 @@ model ConnectDeviceBase {
   @example(#["https://example.com/ringback.mp3"])
   ringback?: string[];
 
-  @doc("`switch` on `return_value` when object `{}` or `cond` when array `[]`")
+  @doc("""
+    Action to take based on the result of the call. This will run once the peer leg of the call has ended.
+    Will use the switch method when the return_value is an object, and will use the cond method when the return_value is an array.
+    """)
   result?: ConnectSwitch | Cond.cond;
 
   @doc("""
@@ -115,11 +118,11 @@ model ConnectDeviceBase {
   @example(30)
   confirm_timeout?: integer | SWMLVar;
 
-  @doc("Username for authentication.")
+  @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
   @example("sipuser")
   username?: string;
 
-  @doc("Password for authentication.")
+  @doc("SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
   @example("sippassword")
   password?: string;
 

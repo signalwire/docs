@@ -123,7 +123,7 @@ union TranslateAction {
 @summary("LiveTranslate object")
 model LiveTranslate {
   @summary("live_translate")
-  @doc("Starts a live translation session of the call. The translation will be sent to the specified URL.")
+  @doc("Start live translation of the call. The translation will be sent to the specified webhook URL.")
   live_translate: {
     @doc("The action to perform during live translation.")
     action: TranslateAction;

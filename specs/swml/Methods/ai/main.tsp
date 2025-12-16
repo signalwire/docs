@@ -10,9 +10,10 @@ using TypeSpec.JsonSchema;
 @summary("AI Object")
 model AIObject {
   @doc("""
-    A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script
-    or from the SWML `set_global_data` action. This data can be referenced `globally`.
-    All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+    A key-value object for storing data that persists throughout the AI session.
+    Can be set initially in the SWML script or modified during the conversation using the set_global_data action.
+    The global_data object is accessible everywhere in the AI session: prompts, AI parameters,
+    and SWML returned from SWAIG functions. Access properties using template strings (e.g. \${global_data.property_name}).
     """)
   @example(#{ company_name: "Acme Corp", support_hours: "9am-5pm EST" })
   global_data?: {
@@ -39,7 +40,11 @@ model AIObject {
   @doc("An array of JSON objects to clarify the AI's pronunciation of words or expressions.")
   pronounce?: Pronounce[];
 
-  @doc("Establishes the initial set of instructions and settings to configure the agent.")
+  @doc("""
+    Defines the AI agent's personality, goals, behaviors, and instructions for handling conversations.
+    The prompt establishes how the agent should interact with callers, what information it should gather,
+    and how it should respond to various scenarios. It is recommended to write prompts using markdown formatting.
+    """)
   prompt: AIPrompt;
 
   //@doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
@@ -48,7 +53,12 @@ model AIObject {
 
 @summary("AI Type")
 model AI {
-  @doc("Creates a new AI agent.")
+  @doc("""
+    Creates an AI agent that conducts voice conversations using automatic speech recognition (ASR),
+    large language models (LLMs), and text-to-speech (TTS) synthesis.
+    The agent processes caller speech in real-time, generates contextually appropriate responses,
+    and can execute custom functions to interact with external systems through SignalWire AI Gateway (SWAIG).
+    """)
   @summary("ai")
   ai: AIObject;
 }
