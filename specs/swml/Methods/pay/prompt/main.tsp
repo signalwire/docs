@@ -19,17 +19,19 @@ model PayPrompts {
     - `payment-failed`: The step used when the payment fails.
     - `payment-cancelled`: The step used when the payment is cancelled.
     """)
+  @example("payment-card-number")
   for: string;
 
   @doc("""
     Specifies which payment attempt(s) this prompt applies to. The value increments when a payment fails.
      Use a single number (e.g., "1") or space-separated numbers (e.g., "2 3") to target the specific attempts.
     """)
+  @example("1 2")
   attempts?: string;
 
   @doc("""
     Space-seperated list of card types that are allowed to be used for this prompt.
-    
+
     Supported card types:
         - `visa`
         - `mastercard`
@@ -40,11 +42,12 @@ model PayPrompts {
         - `jcb`
         - `diners-club`
     """)
+  @example("visa mastercard amex")
   card_type?: string;
 
   @doc("""
     Space-separated list of error types this prompt applies to
-    
+
     Available error types:
         - `timeout` - User input timeout
         - `invalid-card-number` - Failed card validation
@@ -54,7 +57,8 @@ model PayPrompts {
         - `invalid-postal-code` - Invalid postal code format
         - `session-in-progress` - Concurrent session attempt
         - `card-declined` - Payment declined
-    
+
     """)
+  @example("timeout invalid-card-number")
   error_type?: string;
 }
