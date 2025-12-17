@@ -7,6 +7,7 @@ model StopRecordCall {
       Identifier for the recording to stop.
       If not set, the last recording started will be stopped.
       """)
+    @example("recording_001")
     control_id?: string;
   };
 }
