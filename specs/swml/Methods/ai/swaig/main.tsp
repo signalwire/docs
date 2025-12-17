@@ -17,7 +17,8 @@ model SWAIG {
 
   @doc("""
     An array of objects to include remote function signatures.
-    The object fields are url to specify where the remote functions are defined and functions which is an array of the function names as strings.
+    This allows you to include functions that are defined in a remote location.
+    The object fields are `url` to specify where the remote functions are defined and `functions` which is an array of the function names as strings.
     """)
   includes?: SWAIGIncludes[];
 
@@ -26,8 +27,6 @@ model SWAIG {
     """)
   functions?: SWAIGFunction[];
 
-  @doc("""
-    These are the internal fillers that can be executed during the interaction with the AI while utilizing internal functions.
-    """)
+  @doc("An object containing filler phrases for internal SWAIG functions. These fillers are played while utilizing internal functions.")
   internal_fillers?: SWAIGInternalFiller;
 }

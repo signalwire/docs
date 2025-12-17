@@ -8,9 +8,11 @@ model HoldAction {
     """)
   @summary("hold")
   @maxValue(900)
-  hold: int32 | {
+  @example(120)
+  hold: int32 | SWMLVar | {
     @doc("The duration to hold the caller in seconds. Can be a number or an object with timeout property.")
     @maxValue(900)
-    timeout?: int32 = 300;
+    @example(300)
+    timeout?: int32 | SWMLVar = 300;
   };
 }
