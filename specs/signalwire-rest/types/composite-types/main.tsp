@@ -1,1 +1,1 @@
-alias number = integer | float;
+import "../../../_shared/types/main.tsp";
