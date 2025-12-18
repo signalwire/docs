@@ -19,32 +19,32 @@ model RecordCall {
       Default is `false`.
       """)
     @example(true)
-    stereo?: boolean | SWMLVar;
+    stereo?: boolean | SWMLVar = false;
 
     @doc("""
       The format to record in. It can be `wav` or `mp3`.
-      Default is `wav`.
+      Default is `"wav"`.
       """)
     @example("mp3")
-    format?: "wav" | "mp3";
+    format?: "wav" | "mp3" = "wav";
 
     @doc("""
       Direction of the audio to record: "speak" for what party says, "listen" for what party hears, "both" for what the party hears and says.
-      Default is `both`.
+      Default is `"both"`.
       """)
     @example("both")
-    direction?: "speak" | "listen" | "both";
+    direction?: "speak" | "listen" | "both" = "both";
 
-    @doc("String of digits that will stop the recording when pressed.")
+    @doc("String of digits that will stop the recording when pressed. Default is `\"\"` (empty).")
     @example("#*")
-    terminators?: string;
+    terminators?: string = "";
 
     @doc("""
       Play a beep before recording.
       Default is `false`.
       """)
     @example(true)
-    beep?: boolean | SWMLVar;
+    beep?: boolean | SWMLVar = false;
 
     @doc("""
       How sensitive the recording voice activity detector is to background noise.
@@ -59,14 +59,14 @@ model RecordCall {
       Default is `0.0` seconds.
       """)
     @example(0.0)
-    initial_timeout?: float | SWMLVar;
+    initial_timeout?: float | SWMLVar = 0.0;
 
     @doc("""
       Time in seconds to wait in silence before ending the recording.
       Default is `0.0` seconds.
       """)
     @example(0.0)
-    end_silence_timeout?: float | SWMLVar;
+    end_silence_timeout?: float | SWMLVar = 0.0;
 
     @doc("Maximum length of the recording in seconds.")
     @example(300)

@@ -15,12 +15,12 @@ model PlayBase {
   @doc("""
     Volume level for the audio file.
     Default is `0`.
-    Valid range is -40 to 40
+    Valid range is -40 to 40.
     """)
   @minValue(-40)
   @maxValue(40)
   @example(10)
-  volume?: float | SWMLVar;
+  volume?: float | SWMLVar = 0;
 
   @doc("""
     The voice to use for the text to speech.

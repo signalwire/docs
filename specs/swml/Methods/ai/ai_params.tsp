@@ -78,7 +78,7 @@ model AIParams {
 
   @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values from `10,000` - `600,000`. Set to `0` to disable. **Default:** `5000` ms.")
   @example(30000)
-  attention_timeout?: AttentionTimeout | 0 | SWMLVar;
+  attention_timeout?: AttentionTimeout | 0 | SWMLVar = 5000;
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
@@ -101,13 +101,13 @@ model AIParams {
   @example(true)
   asr_speaker_affinity?: boolean | SWMLVar;
 
-  @doc("If `true`, the AI will announce the function that is being executed on the call. The default is `false`.")
+  @doc("If `true`, the AI will announce the function that is being executed on the call. **Default:** `false`.")
   @example(false)
-  audible_debug?: boolean | SWMLVar;
+  audible_debug?: boolean | SWMLVar = false;
 
-  @doc("If `true`, the AI will announce latency information during the call. Useful for debugging. The default is `false`.")
+  @doc("If `true`, the AI will announce latency information during the call. Useful for debugging. **Default:** `false`.")
   @example(false)
-  audible_latency?: boolean | SWMLVar;
+  audible_latency?: boolean | SWMLVar = false;
 
   @doc("URL of audio file to play in the background while AI plays in foreground.")
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
@@ -168,13 +168,13 @@ model AIParams {
   @example(3)
   barge_min_words?: integer | SWMLVar;
 
-  @doc("If `true`, allows functions to be executed while the AI is being interrupted. The default is `true`.")
+  @doc("If `true`, allows functions to be executed while the AI is being interrupted. **Default:** `true`.")
   @example(true)
-  barge_functions?: boolean | SWMLVar;
+  barge_functions?: boolean | SWMLVar = true;
 
-  @doc("If `true`, enables response caching for improved performance. The default is `false`.")
+  @doc("If `true`, enables response caching for improved performance. **Default:** `false`.")
   @example(true)
-  cache_mode?: boolean | SWMLVar;
+  cache_mode?: boolean | SWMLVar = false;
 
   @doc("Sets the prompt which binds the agent to its purpose.")
   @example("Place an order")
@@ -217,13 +217,13 @@ model AIParams {
   @minValue(0)
   @maxValue(30000)
   @example(3000)
-  digit_timeout?: integer | SWMLVar;
+  digit_timeout?: integer | SWMLVar = 3000;
 
-  @doc("Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `250` - `10,000`. **Default:** `700` ms (Note: Documentation incorrectly lists 2000ms).")
+  @doc("Amount of silence, in ms, at the end of an utterance to detect end of speech. Allowed values from `250` - `10,000`. **Default:** `700` ms.")
   @minValue(250)
   @maxValue(10000)
   @example(700)
-  end_of_speech_timeout?: integer | SWMLVar;
+  end_of_speech_timeout?: integer | SWMLVar = 700;
 
   @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
   @minValue(0.01)
@@ -262,29 +262,29 @@ model AIParams {
   @example(52.0)
   energy_level?: float | SWMLVar;
 
-  @doc("Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. Default is `1000` ms.")
+  @doc("Amount of time, in ms, to wait for the first word after speech is detected. Allowed values from `0` - `10,000`. **Default:** `1000` ms.")
   @minValue(0)
   @maxValue(10000)
   @example(1000)
-  first_word_timeout?: integer | SWMLVar;
+  first_word_timeout?: integer | SWMLVar = 1000;
 
   @doc("""
     If `true`, the AI will wait for any `filler` to finish playing before executing a function.
     If `false`, the AI will execute a function asynchronously as the `filler` plays.
-    Default is `false`.
+    **Default:** `false`.
     """)
   @example(true)
-  function_wait_for_talking?: boolean | SWMLVar;
+  function_wait_for_talking?: boolean | SWMLVar = false;
 
-  @doc("If `true`, functions can be executed when there is no user response after a timeout. The default is `false`.")
+  @doc("If `true`, functions can be executed when there is no user response after a timeout. **Default:** `false`.")
   @example(true)
-  functions_on_no_response?: boolean | SWMLVar;
+  functions_on_no_response?: boolean | SWMLVar = false;
 
   @doc("""
     A final prompt that is fed into the AI when the `hard_stop_time` is reached.
     """)
   @example("Thank you for calling. The maximum call time has been reached. Goodbye!")
-  hard_stop_prompt?: string;
+  hard_stop_prompt?: string = "Explain to the user in the current language that you have run out of time to continue the conversation and you will have someone contact them soon.";
 
   @doc("""
     Specifies the maximum duration fopr the AI Agent to remain active before it exists the session.
@@ -312,7 +312,7 @@ model AIParams {
   @minValue(10000)
   @maxValue(3600000)
   @example(600000)
-  inactivity_timeout?: integer | SWMLVar;
+  inactivity_timeout?: integer | SWMLVar = 600000;
 
   @doc("Specifies the AI model to use for the inner dialog feature. Can be set to a different (often smaller/faster) model than the main conversation model. Only used when `enable_inner_dialog` is `true`.")
   @example("gpt-4.1-nano")
@@ -373,11 +373,11 @@ model AIParams {
   @example(true)
   llm_diarize_aware?: boolean | SWMLVar;
 
-  @doc("Sets the maximum emotion intensity for the AI voice. Allowed values from `1` - `30`. Default is `30`.")
+  @doc("Sets the maximum emotion intensity for the AI voice. Allowed values from `1` - `30`. **Default:** `30`.")
   @minValue(1)
   @maxValue(30)
   @example(15)
-  max_emotion?: integer | SWMLVar;
+  max_emotion?: integer | SWMLVar = 30;
 
   @doc("Sets the maximum number of tokens the AI model can generate in a single response. Lower values produce shorter responses and reduce latency.")
   @minValue(1)
@@ -393,7 +393,7 @@ model AIParams {
   @minValue(10000)
   @maxValue(600000)
   @example(120000)
-  outbound_attention_timeout?: integer | SWMLVar;
+  outbound_attention_timeout?: integer | SWMLVar = 120000;
 
   @doc("""
     When enabled, the `global_data` object is automatically saved to a channel variable
@@ -415,23 +415,23 @@ model AIParams {
   @example(true)
   save_conversation?: boolean | SWMLVar;
 
-  @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. Default is `1400` ms.")
+  @doc("Amount of time, in ms, to wait for a speech event. Allowed values from `0` - `10,000`. **Default:** `1400` ms.")
   @minValue(0)
   @maxValue(10000)
   @example(1400)
-  speech_event_timeout?: integer | SWMLVar;
+  speech_event_timeout?: integer | SWMLVar = 1400;
 
-  @doc("Number of quick stops to generate for speech. Allowed values from `0` - `10`. Default is `3`.")
+  @doc("Number of quick stops to generate for speech. Allowed values from `0` - `10`. **Default:** `3`.")
   @minValue(0)
   @maxValue(10)
   @example(3)
-  speech_gen_quick_stops?: integer | SWMLVar;
+  speech_gen_quick_stops?: integer | SWMLVar = 3;
 
-  @doc("Overall speech timeout, in ms. Allowed values from `0` - `600,000`. Default is `60000` ms.")
+  @doc("Overall speech timeout, in ms. Allowed values from `0` - `600,000`. **Default:** `60000` ms.")
   @minValue(0)
   @maxValue(600000)
   @example(60000)
-  speech_timeout?: integer | SWMLVar;
+  speech_timeout?: integer | SWMLVar = 60000;
 
   @doc("""
     When enabled, the AI agent remains silent until directly addressed by name (using `ai_name`).
@@ -521,14 +521,14 @@ model AIParams {
   @doc("""
     The format for the AI agent to reference phone numbers.
     Allowed values are `international` and `national`.
-    Defaults to `international`.
+    **Default:** `international`.
 
     **Example:**
     - `international`: `+12345678901`
     - `national`: `(234) 567-8901`
     """)
   @example("international")
-  tts_number_format?: "international" | "national";
+  tts_number_format?: "international" | "national" = "international";
 
   @doc("Enable verbose logging.")
   @example(true)

@@ -23,13 +23,13 @@ model Prompt {
 
     @doc("""
       Volume level for the audio file.
-      Default is 0.
+      Default is `0`.
       Valid range is -40 to 40.
       """)
     @minValue(-40.0)
     @maxValue(40.0)
     @example(0)
-    volume?: float;
+    volume?: float = 0;
 
     @doc("""
       The voice to use for the text to speech.
@@ -57,7 +57,7 @@ model Prompt {
       Default is `1`.
       """)
     @example(4)
-    max_digits?: integer | SWMLVar;
+    max_digits?: integer | SWMLVar = 1;
 
     @doc("""
       Digits that terminate digit collection.
@@ -71,14 +71,14 @@ model Prompt {
       Default is `5.0` seconds.
       """)
     @example(5.0)
-    digit_timeout?: float | SWMLVar;
+    digit_timeout?: float | SWMLVar = 5.0;
 
     @doc("""
       Time in seconds to wait for start of input.
       Default is `5.0` seconds.
       """)
     @example(10.0)
-    initial_timeout?: float | SWMLVar;
+    initial_timeout?: float | SWMLVar = 5.0;
 
     @doc("Max time in seconds to wait for speech result.")
     @example(15.0)

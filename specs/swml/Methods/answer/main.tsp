@@ -7,10 +7,10 @@ model Answer {
   @doc("Answer incoming call and set an optional maximum duration.")
   @summary("answer")
   answer: {
-    @doc("Maximum duration in seconds for the call. Cannot be less than 7 seconds. Defaults to 14400 seconds (4 hours).")
+    @doc("Maximum duration in seconds for the call. Cannot be less than 7 seconds. Defaults to `14400` seconds (4 hours).")
     @minValue(7)
     @example(3600)
-    max_duration?: integer | SWMLVar;
+    max_duration?: integer | SWMLVar = 14400;
 
     @doc("Comma-separated string of codecs to offer. Valid codecs are: PCMU, PCMA, G722, G729, AMR-WB, OPUS, VP8, H264.")
     @example("PCMU,PCMA,OPUS")
