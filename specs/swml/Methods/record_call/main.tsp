@@ -22,11 +22,11 @@ model RecordCall {
     stereo?: boolean | SWMLVar = false;
 
     @doc("""
-      The format to record in. It can be `wav` or `mp3`.
+      The format to record in. It can be `wav`, `mp3`, or `mp4`.
       Default is `"wav"`.
       """)
     @example("mp3")
-    format?: "wav" | "mp3" = "wav";
+    format?: "wav" | "mp3" | "mp4" = "wav";
 
     @doc("""
       Direction of the audio to record: "speak" for what party says, "listen" for what party hears, "both" for what the party hears and says.
@@ -49,10 +49,10 @@ model RecordCall {
     @doc("""
       How sensitive the recording voice activity detector is to background noise.
       A larger value is more sensitive. Allowed values from 0.0 to 100.0.
-      Default is 44.0.
+      Default is `44.0`.
       """)
     @example(44.0)
-    input_sensitivity?: float | SWMLVar;
+    input_sensitivity?: float | SWMLVar = 44.0;
 
     @doc("""
       Time in seconds to wait for the start of speech.

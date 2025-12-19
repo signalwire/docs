@@ -31,26 +31,17 @@ model Prompt {
     @example(0)
     volume?: float = 0;
 
-    @doc("""
-      The voice to use for the text to speech.
-      Default is `Polly.Salli`.
-      """)
+    @doc("The voice to use for the text to speech.")
     @example("Polly.Joanna")
-    say_voice?: string;
+    say_voice?: string = "Polly.Salli";
 
-    @doc("""
-      The language to use for the text to speech.
-      Default is `en-US`.
-      """)
+    @doc("The language to use for the text to speech.")
     @example("en-US")
-    say_language?: string;
+    say_language?: string = "en-US";
 
-    @doc("""
-      The gender to use for the text to speech.
-      Default is `female`.
-      """)
+    @doc("The gender to use for the text to speech.")
     @example("female")
-    say_gender?: string;
+    say_gender?: string = "female";
 
     @doc("""
       Number of digits to collect.
@@ -100,8 +91,8 @@ model Prompt {
       The engine that is selected for speech recognition. The engine must support the specified language.
       [Deepgram|Google| etc...] Default is not set (SignalWire picks the engine).
       """)
-    @example(#["Deepgram"])
-    speech_engine?: string[];
+    @example("Deepgram")
+    speech_engine?: string;
 
     @doc("http or https URL to deliver prompt status events")
     @example("https://example.com/prompt-status")

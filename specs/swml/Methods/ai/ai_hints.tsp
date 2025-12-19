@@ -16,7 +16,7 @@ model Hint {
   @example("support team")
   replace: string;
 
-  @doc("If true, the hint will be matched in a case-insensitive manner. Defaults to false.")
+  @doc("If true, the hint will be matched in a case-insensitive manner. **Default:** `false`.")
   @example(true)
-  ignore_case?: boolean | SWMLVar;
+  ignore_case?: boolean | SWMLVar = false;
 }

@@ -79,7 +79,7 @@ model ConnectDeviceBase {
   @example(1800)
   session_timeout?: integer | SWMLVar = 0;
 
-  @doc("Array of URIs to play as ringback tone.")
+  @doc("Array of URIs to play as ringback tone. If not specified, plays audio from the provider.")
   @example(#["https://example.com/ringback.mp3"])
   ringback?: string[];
 
@@ -110,7 +110,11 @@ model ConnectDeviceBase {
   @example(true)
   answer_on_bridge?: boolean | SWMLVar = false;
 
-  @doc("Confirmation object or string.")
+  @doc("""
+    Confirmation to execute when the call is connected. Can be either:
+    - A URL (string) that returns a SWML document
+    - An array of SWML methods to execute inline
+    """)
   @example("https://example.com/confirm.swml")
   confirm?: string | ValidConfirmMethods[];
 
@@ -128,9 +132,9 @@ model ConnectDeviceBase {
 
   @doc("Encryption setting to use. **Possible values:** `mandatory`, `optional`, `forbidden`")
   @example("optional")
-  encryption?: "mandatory" | "optional" | "forbidden";
+  encryption?: "mandatory" | "optional" | "forbidden" = "optional";
 
-  @doc("http or https URL to deliver call status events")
+  @doc("Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.")
   @example("https://example.com/call-status")
   call_state_url?: url;
 

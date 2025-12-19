@@ -4,11 +4,20 @@ using TypeSpec.JsonSchema;
 
 @summary("TranslateDirection enum")
 enum TranslateDirection {
-  @doc("Tranlate the remote caller.")
+  @doc("Translate the remote caller.")
   `remote-caller`,
 
   @doc("Translate the local caller.")
   `local-caller`,
+}
+
+@summary("SpeechEngine enum")
+enum SpeechEngine {
+  @doc("Use Deepgram for speech recognition.")
+  deepgram,
+
+  @doc("Use Google for speech recognition.")
+  google,
 }
 
 @summary("StartAction object")
@@ -43,30 +52,29 @@ model StartAction {
     @example(true)
     ai_summary?: boolean | SWMLVar;
 
-    @doc("The timeout for speech recognition.")
-    @example(30)
-    speech_timeout?: integer | SWMLVar;
+    @doc("The timeout for speech recognition in milliseconds.")
+    @example(30000)
+    speech_timeout?: integer | SWMLVar = 60000;
 
     @doc("Voice activity detection silence time in milliseconds.")
     @example(500)
-    vad_silence_ms?: integer | SWMLVar;
+    vad_silence_ms?: integer | SWMLVar = 300;
 
     @doc("Voice activity detection threshold.")
-    @example(3)
-    vad_thresh?: integer | SWMLVar;
+    @example(400)
+    vad_thresh?: integer | SWMLVar = 400;
 
-    @doc("Debug level for logging")
+    @doc("Debug level for logging.")
     @example(0)
-    debug_level?: integer | SWMLVar;
+    debug_level?: integer | SWMLVar = 0;
 
     @doc("The direction of the call that should be translated.")
     direction: TranslateDirection[];
 
-    @doc("The speech engine to be used.")
-    @example("google")
-    speech_engine: string;
+    @doc("The speech engine to use for transcription.")
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-    @doc("The prompt for summarizaton.")
+    @doc("The prompt for summarization.")
     @example("Summarize the key points of this bilingual conversation.")
     summary_prompt?: string;
   };
@@ -89,7 +97,7 @@ model SummarizeAction {
     @example("https://example.com/summary-webhook")
     webhook?: string;
 
-    @doc("The prompt for summarizaton.")
+    @doc("The prompt for summarization.")
     @example("Provide a brief summary of the translated conversation.")
     prompt?: string;
   };

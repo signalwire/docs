@@ -13,9 +13,9 @@ model DetectMachine {
     @example(true)
     detect_message_end?: boolean | SWMLVar = false;
 
-    @doc("Comma-separated string: detectors to enable. Default: `amd,fax`.")
+    @doc("Comma-separated string of detectors to enable. Valid values: `amd`, `fax`.")
     @example("amd,fax")
-    detectors?: string;
+    detectors?: string = "amd,fax";
 
     @doc("How long to wait for voice to finish. Default `1.0`.")
     @minValue(0.0)
@@ -53,14 +53,14 @@ model DetectMachine {
 
     @doc("The tone to detect, will only receive remote side tone. Default `CED`.")
     @example("CED")
-    tone?: "CED" | "CNG";
+    tone?: "CED" | "CNG" = "CED";
 
     @doc("""
       If false, the detector will run asynchronously and status_url must be set.
       If true, the detector will wait for detection to complete before moving to the next SWML instruction.
-      Default is `false`.
+      Default is `true`.
       """)
     @example(true)
-    wait?: boolean | SWMLVar = false;
+    wait?: boolean | SWMLVar = true;
   };
 }

@@ -13,10 +13,10 @@ model SIPRefer {
 
     @doc("Username to use for SIP authentication.")
     @example("sipuser")
-    sip_auth_username?: string;
+    username?: string;
 
     @doc("Password to use for SIP authentication.")
     @example("sippassword")
-    sip_auth_password?: string;
+    password?: string;
   };
 }

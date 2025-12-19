@@ -42,9 +42,6 @@ model Request {
     @example(5.0)
     connect_timeout?: float | SWMLVar = 0;
 
-    @doc("`switch` on `return_value` if result is an object (`{}`), or use as a cond if result is an array (`[]`).")
-    result?: Switch | Cond[];
-
     @doc("""
       Store parsed JSON response as variables.
       Default is `false`.
