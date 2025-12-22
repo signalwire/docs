@@ -36,6 +36,7 @@ model FunctionParameters {
   };
 
   @doc("An array of required property names from the `properties` object.")
+  @example(#["name1", "name2"])
   required?: string[];
 }
 
@@ -60,9 +61,11 @@ union SchemaType {
 @doc("Base interface for all property types")
 model FunctionBaseProperty {
   @doc("A description of the property.")
+  @example("Property description")
   description?: string;
 
   @doc("Whether the property can be null.")
+  @example(false)
   nullable?: boolean | SWMLVar;
 }
 
@@ -72,9 +75,11 @@ model StringProperty is FunctionBaseProperty {
   type: "string";
 
   @doc("An array of strings that are the possible values")
+  @example(#["value1", "value2", "value3"])
   `enum`?: string[];
 
   @doc("The default string value")
+  @example("default value")
   default?: string;
 
   /* Needs to be tested 
@@ -88,6 +93,7 @@ model StringProperty is FunctionBaseProperty {
     */
 
   @doc("Regular expression pattern")
+  @example("^[a-zA-Z0-9_.-]*$")
   pattern?: string;
 
   @doc("String format (email, date-time, etc.)")
@@ -100,9 +106,11 @@ model IntegerProperty is FunctionBaseProperty {
   type: "integer";
 
   @doc("An array of integers that are the possible values")
+  @example(#[1, 2, 3])
   `enum`?: integer[];
 
   @doc("The default integer value")
+  @example(5)
   default?: integer | SWMLVar;
 
   /* Needs to be tested
@@ -137,9 +145,11 @@ model NumberProperty is FunctionBaseProperty {
   type: "number";
 
   @doc("An array of integers that are the possible values")
+  @example(#[1, 2, 3])
   `enum`?: number[] | SWMLVar[];
 
   @doc("The default integer value")
+  @example(3)
   default?: number | SWMLVar;
 
   /* Needs to be tested
@@ -174,6 +184,7 @@ model BooleanProperty is FunctionBaseProperty {
   type: "boolean";
 
   @doc("The default boolean value")
+  @example(false)
   default?: boolean | SWMLVar;
 }
 
@@ -234,6 +245,7 @@ model ObjectProperty is FunctionBaseProperty {
   type: "object";
 
   @doc("The default object value")
+  @example(#{ key1: "value1", key2: 42 })
   default?: {
     ...TypeSpec.Record<unknown>;
   };
@@ -244,6 +256,7 @@ model ObjectProperty is FunctionBaseProperty {
   };
 
   @doc("Required property names")
+  @example(#["name1", "name2"])
   required?: string[];
 
   /* Needs to be tested
@@ -268,5 +281,6 @@ model NullProperty {
   type: "null";
 
   @doc("A description of the property.")
+  @example("Property Description")
   description: string;
 }
