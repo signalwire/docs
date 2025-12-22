@@ -1,0 +1,154 @@
+---
+slug: /compatibility-api/guides/signalwire-status-callbacks/10dlc-tcr-status-callbacks
+---
+
+
+# 10DLC Status Callbacks
+
+10DLC status callbacks allow you to receive real-time notifications when the state of your 10DLC registration changes. This feature enables you to monitor the lifecycle of your messaging brands, campaigns, number assignment orders, and number assignments.
+
+## 10DLC Status Callback Parameters
+
+The following parameters will be posted via an HTTP POST request to your webhook - you can use one or all of them depending on what type of information you are looking for.
+
+| Parameter Name               | Parameter Description                                                                                                                                                                          | Parameter Type |
+| :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------- |
+| `project_id`                 | The unique ID of the project this object is associated with.                                                                                                                                   | string         |
+| `event_at`                   | The timestamp of when the event occurred, in ISO 8601 format.                                                                                                                                  | string         |
+| `event_category`             | The category of the event. Can be one of: `brand`, `campaign`, `number_assignment_order`, or `number_assignment`.                                                                              | string         |
+| `event_type`                 | The specific type of event that occurred. See the Event Types section below for all possible values.                                                                                           | string         |
+| `state`                      | The current state of the object after the event. Possible values depend on the object type.                                                                                                    | string         |
+| `brand_id`                   | The unique identifier for the brand. Present in all event types.                                                                                                                               | string         |
+| `campaign_id`                | The unique identifier for the campaign. Present in campaign, number assignment order, and number assignment events.                                                                            | string         |
+| `number_assignment_order_id` | The unique identifier for the number assignment order. Present in number assignment order and number assignment events.                                                                        | string         |
+| `number_assignment_id`       | The unique identifier for the number assignment. Present only in number assignment events.                                                                                                     | string         |
+
+## Event Types and State Changes
+
+### Brand Events
+
+Brands can transition through the following states:
+
+| State Transition         | Event Type           | Description                                                          |
+| :----------------------- | :------------------- | :------------------------------------------------------------------- |
+| `pending` → `active`     | `brand_activated`    | The brand has been successfully verified and activated.              |
+| `pending` → `unverified` | `brand_unverified`   | The brand verification failed or additional information is required. |
+| `unverified` → `active`  | `brand_activated`    | The brand was previously unverified but is now active.               |
+
+**Example Brand Event:**
+
+```json
+{
+  "project_id": "4258d2a2-8f10-4215-8fec-190d7a36dc9a",
+  "event_at": "2024-06-27T19:09:40Z",
+  "event_category": "brand",
+  "event_type": "brand_activated",
+  "brand_id": "371ddf82-158d-4ceb-bb7b-7162ff4fa3d9",
+  "state": "active"
+}
+```
+
+### Campaign Events
+
+Campaigns can transition through the following states:
+
+| State Transition     | Event Type             | Description                                               |
+| :------------------- | :--------------------- | :-------------------------------------------------------- |
+| `pending` → `active` | `campaign_activated`   | The campaign has been approved and is now active.         |
+| `active` → `inactive`| `campaign_expired` | The campaign has been deactivated and can no longer send. |
+
+### Number Assignment Order Events
+
+Number assignment orders have only one possible state change:
+
+| State Transition      | Event Type                          | Description                                                         |
+| :-------------------- | :---------------------------------- | :------------------------------------------------------------------ |
+| `pending` → `processed`| `number_assignment_order_processed` | The number assignment order has been processed and numbers assigned.|
+
+
+### Number Assignment Events
+
+Number assignments can transition through the following states:
+
+| State Transition    | Event Type                    | Description                                                               |
+| :------------------ | :---------------------------- | :------------------------------------------------------------------------ |
+| `pending` → `failed`| `number_assignment_failed`    | The number assignment failed and the number was not assigned to campaign. |
+| `failed` → `pending`| `number_assignment_pending`   | A failed number assignment is being retried.                              |
+| `pending` → `active`| `number_assignment_activated` | The number has been successfully assigned to the campaign.                |
+
+## 10DLC Status Callbacks Application Example
+
+Below is an example of a simple 10DLC status tracker that will log every state change event to the console and store them in separate tables based on the event category. This example monitors brands, campaigns, and number assignments, providing real-time visibility into your 10DLC registration pipeline.
+
+The application will categorize events by type and log them to appropriate tables. For number assignment events, if any failures are detected, they will be logged to a separate failed assignments table for investigation. This allows you to quickly identify and address any issues with number provisioning.
+
+```python
+from flask import Flask, request
+import logging
+import pandas as pd
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO)
+app = Flask(__name__)
+
+brandEvents = []
+campaignEvents = []
+numberAssignmentOrderEvents = []
+numberAssignmentEvents = []
+failedAssignments = []
+
+@app.route("/10dlc-status", methods=['POST'])
+def handle_10dlc_callback():
+    project_id = request.values.get('project_id', None)
+    event_at = request.values.get('event_at', None)
+    event_category = request.values.get('event_category', None)
+    event_type = request.values.get('event_type', None)
+    state = request.values.get('state', None)
+    brand_id = request.values.get('brand_id', None)
+    campaign_id = request.values.get('campaign_id', None)
+    number_assignment_order_id = request.values.get('number_assignment_order_id', None)
+    number_assignment_id = request.values.get('number_assignment_id', None)
+
+    logging.info('10DLC Event - Category: {}, Type: {}, State: {}, Time: {}'.format(
+        event_category, event_type, state, event_at))
+
+    if event_category == 'brand':
+        brandEvents.append([brand_id, event_type, state, event_at, project_id])
+        df = pd.DataFrame(brandEvents, columns=('Brand ID', 'Event Type', 'State', 'Event Time', 'Project ID'))
+        print("\nBrand Events")
+        print(df.to_string())
+
+    elif event_category == 'campaign':
+        campaignEvents.append([campaign_id, brand_id, event_type, state, event_at, project_id])
+        df = pd.DataFrame(campaignEvents, columns=('Campaign ID', 'Brand ID', 'Event Type', 'State', 'Event Time', 'Project ID'))
+        print("\nCampaign Events")
+        print(df.to_string())
+
+    elif event_category == 'number_assignment_order':
+        numberAssignmentOrderEvents.append([number_assignment_order_id, campaign_id, brand_id, state, event_at, project_id])
+        df = pd.DataFrame(numberAssignmentOrderEvents, columns=('Order ID', 'Campaign ID', 'Brand ID', 'State', 'Event Time', 'Project ID'))
+        print("\nNumber Assignment Order Events")
+        print(df.to_string())
+
+    elif event_category == 'number_assignment':
+        numberAssignmentEvents.append([number_assignment_id, number_assignment_order_id, campaign_id, event_type, state, event_at, project_id])
+        df = pd.DataFrame(numberAssignmentEvents, columns=('Assignment ID', 'Order ID', 'Campaign ID', 'Event Type', 'State', 'Event Time', 'Project ID'))
+        print("\nNumber Assignment Events")
+        print(df.to_string())
+
+        if state == 'failed':
+            failedAssignments.append([number_assignment_id, number_assignment_order_id, campaign_id, event_at, project_id])
+            failed_df = pd.DataFrame(failedAssignments, columns=('Assignment ID', 'Order ID', 'Campaign ID', 'Failed At', 'Project ID'))
+            print("\nFailed Number Assignments")
+            print(failed_df.to_string())
+
+            if len(failedAssignments) >= 10:
+                failed_df.to_csv('failed_10dlc_assignments.csv', index=False, encoding='utf-8')
+                logging.warning('10 or more number assignment failures detected. CSV report generated.')
+                failedAssignments.clear()
+
+    return ('', 200)
+
+if __name__ == "__main__":
+    app.run()
+```
