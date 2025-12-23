@@ -3,8 +3,6 @@ title: <Gather>
 slug: /compatibility-api/cxml/voice/gather
 ---
 
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
 
 The `<Gather>` verb transcribes speech or collects digits during a call.
 
@@ -54,6 +52,83 @@ The following verbs can be nested within a `<Gather>`:
 - `<Say>`: reads supplied text back to the caller.
 
 ## Examples
+
+### Handle gathered input on your server
+
+
+This example demonstrates a complete flow: the initial cXML prompts the caller for input, and your server handles the POST request to process `Digits` or `SpeechResult` and respond with appropriate cXML.
+
+<Tabs>
+  <TabItem value="cxml" label="Request cXML">
+
+This cXML is served to SignalWire (e.g., as your webhook response). It prompts the caller for input and specifies your server's `action` URL to handle the result.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Gather input="speech dtmf" action="https://example.com/handle-gather" method="POST"
+            numDigits="1" hints="sales, support, billing" timeout="5" speechTimeout="auto">
+        <Say>
+            Press 1 or say sales for sales.
+            Press 2 or say support for technical support.
+            Press 3 or say billing for billing questions.
+        </Say>
+    </Gather>
+    <Say>We did not receive any input. Goodbye!</Say>
+</Response>
+```
+
+  </TabItem>
+
+  <TabItem value="server" label="Server Handler (Node.js)">
+
+When the caller provides input, SignalWire POSTs to your `action` URL with `Digits` (for DTMF) and/or `SpeechResult` and `Confidence` (for speech). Your server processes the input and returns cXML to continue the call.
+
+```javascript
+const express = require("express");
+const app = express();
+app.use(express.urlencoded({ extended: true }));
+
+app.post("/handle-gather", (req, res) => {
+  // Extract gathered input from POST body
+  const digits = req.body.Digits || "";
+  const speechResult = (req.body.SpeechResult || "").toLowerCase();
+  const confidence = parseFloat(req.body.Confidence) || 0;
+
+  // Also available: CallSid, From, To, and other standard parameters
+  const callSid = req.body.CallSid;
+
+  let responseXml = '<?xml version="1.0" encoding="UTF-8"?><Response>';
+
+  // Determine selection from DTMF or speech
+  if (digits === "1" || speechResult.includes("sales")) {
+    responseXml += "<Say>Connecting you to sales. Please hold.</Say>";
+    responseXml += "<Dial>+15551234567</Dial>";
+  } else if (digits === "2" || speechResult.includes("support")) {
+    responseXml += "<Say>Connecting you to technical support.</Say>";
+    responseXml += "<Dial>+15559876543</Dial>";
+  } else if (digits === "3" || speechResult.includes("billing")) {
+    responseXml += "<Say>Connecting you to billing.</Say>";
+    responseXml += "<Dial>+15555555555</Dial>";
+  } else {
+    // Invalid or no input - prompt again
+    responseXml += '<Gather input="speech dtmf" action="https://example.com/handle-gather" method="POST" numDigits="1" hints="sales, support, billing" timeout="5" speechTimeout="auto">';
+    responseXml += "<Say>Sorry, I didn't understand. Press 1 for sales, 2 for support, or 3 for billing.</Say>";
+    responseXml += "</Gather>";
+    responseXml += "<Say>We did not receive valid input. Goodbye!</Say>";
+  }
+
+  responseXml += "</Response>";
+
+  res.type("text/xml");
+  res.send(responseXml);
+});
+
+app.listen(3000, () => console.log("Server running on port 3000"));
+```
+
+  </TabItem>
+</Tabs>
 
 ### A Simple Gather
 
