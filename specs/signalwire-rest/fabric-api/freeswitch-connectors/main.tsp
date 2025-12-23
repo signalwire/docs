@@ -17,7 +17,15 @@ namespace FabricAPI.FreeswitchConnectors {
   @friendlyName("FreeSWITCH Connectors")
   interface FreeswitchConnectors {
     @summary("List FreeSWITCH Connectors")
-    @doc("A list of FreeSWITCH Connectors")
+    @doc("""
+      A list of FreeSWITCH Connectors
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | FreeswitchConnectorListResponse
       | StatusCode401
@@ -25,7 +33,15 @@ namespace FabricAPI.FreeswitchConnectors {
       | StatusCode500;
 
     @summary("Get FreeSWITCH Connector")
-    @doc("Returns a FreeSWITCH Connector by ID")
+    @doc("""
+      Returns a FreeSWITCH Connector by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...FreeswitchConnectorPathID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +52,15 @@ namespace FabricAPI.FreeswitchConnectors {
       | StatusCode500;
 
     @summary("Create FreeSWITCH Connector")
-    @doc("Creates a FreeSWITCH Connector")
+    @doc("""
+      Creates a FreeSWITCH Connector
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body request: FreeswitchConnectorCreateRequest):
       | {
@@ -49,7 +73,15 @@ namespace FabricAPI.FreeswitchConnectors {
       | StatusCode500;
 
     @summary("Update FreeSWITCH Connector")
-    @doc("Updates a FreeSWITCH Connector by ID")
+    @doc("""
+      Updates a FreeSWITCH Connector by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(
       ...FreeswitchConnectorPathID,
@@ -65,7 +97,15 @@ namespace FabricAPI.FreeswitchConnectors {
       | StatusCode500;
 
     @summary("Delete FreeSWITCH Connector")
-    @doc("Deletes a FreeSWITCH Connector by ID")
+    @doc("""
+      Deletes a FreeSWITCH Connector by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...FreeswitchConnectorPathID):
       | {

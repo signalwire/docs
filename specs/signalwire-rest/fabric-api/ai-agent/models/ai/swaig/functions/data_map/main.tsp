@@ -8,12 +8,18 @@ using TypeSpec.OpenAPI;
 @oneOf
 @summary("DataMap union")
 union DataMap {
-  @doc("An object that defines the output of the SWAIG function.")
+  @doc("""
+      An object that defines the output of the SWAIG function.
+      """)
   Output,
 
-  @doc("An array of objects that define patterns and corresponding actions.")
+  @doc("""
+      An array of objects that define patterns and corresponding actions.
+      """)
   Expression,
 
-  @doc("An array of objects that define external API calls.")
+  @doc("""
+      An array of objects that define external API calls.
+      """)
   Webhook,
 }

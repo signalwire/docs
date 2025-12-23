@@ -17,7 +17,15 @@ namespace FabricAPI.CXMLWebhooks {
   @friendlyName("cXML Webhooks")
   interface CXMLWebhooks {
     @summary("List cXML Webhooks")
-    @doc("A list of cXML Webhooks")
+    @doc("""
+      A list of cXML Webhooks
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | CXMLWebhookListResponse
       | StatusCode401
@@ -25,7 +33,15 @@ namespace FabricAPI.CXMLWebhooks {
       | StatusCode500;
 
     @summary("Get cXML Webhook")
-    @doc("Returns an cXML Webhook by ID")
+    @doc("""
+      Returns an cXML Webhook by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...CXMLWebhookID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +52,15 @@ namespace FabricAPI.CXMLWebhooks {
       | StatusCode500;
 
     @summary("Create cXML Webhook")
-    @doc("Creates an cXML Webhook")
+    @doc("""
+      Creates an cXML Webhook
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(...CXMLWebhookCreateRequest):
       | {
@@ -49,7 +73,15 @@ namespace FabricAPI.CXMLWebhooks {
       | StatusCode500;
 
     @summary("Update cXML Webhook")
-    @doc("Updates an cXML Webhook by ID")
+    @doc("""
+      Updates an cXML Webhook by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @patch(#{ implicitOptionality: true })
     update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest):
       | {
@@ -62,7 +94,15 @@ namespace FabricAPI.CXMLWebhooks {
       | StatusCode500;
 
     @summary("Delete cXML Webhook")
-    @doc("Deletes an cXML Webhook by ID")
+    @doc("""
+      Deletes an cXML Webhook by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...CXMLWebhookID):
       | {

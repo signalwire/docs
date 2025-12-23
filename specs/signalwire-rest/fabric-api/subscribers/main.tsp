@@ -22,7 +22,15 @@ namespace FabricAPI.Subscribers {
   @friendlyName("Subscribers")
   interface Subscribers {
     @summary("List Subscribers")
-    @doc("Retrieve a list of all subscribers")
+    @doc("""
+      Retrieve a list of all subscribers
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | SubscriberListResponse
       | StatusCode401
@@ -30,7 +38,15 @@ namespace FabricAPI.Subscribers {
       | StatusCode500;
 
     @summary("Create Subscriber")
-    @doc("Create a new Subscriber")
+    @doc("""
+      Create a new Subscriber
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body body: SubscriberRequest):
       | {
@@ -43,7 +59,15 @@ namespace FabricAPI.Subscribers {
       | StatusCode500;
 
     @summary("Get Subscriber")
-    @doc("Fetch an existing Subscriber")
+    @doc("""
+      Fetch an existing Subscriber
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     get(...SubscriberPathID):
       | {
           @statusCode statusCode: 200;
@@ -54,7 +78,15 @@ namespace FabricAPI.Subscribers {
       | StatusCode500;
 
     @summary("Update Subscriber")
-    @doc("Update an existing Subsriber")
+    @doc("""
+      Update an existing Subsriber
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(...SubscriberPathID, ...SubscriberRequest):
       | {
@@ -67,7 +99,15 @@ namespace FabricAPI.Subscribers {
       | StatusCode500;
 
     @summary("Delete Subscriber")
-    @doc("Delete an existing Subscriber")
+    @doc("""
+      Delete an existing Subscriber
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...SubscriberPathID):
       | {

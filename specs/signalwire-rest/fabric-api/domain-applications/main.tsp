@@ -20,6 +20,13 @@ namespace FabricAPI.DomainApplications {
       :::important
       Currently only supports `calling` as a handler and automatically defaults to it.
       :::
+      
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     @post
     assign(

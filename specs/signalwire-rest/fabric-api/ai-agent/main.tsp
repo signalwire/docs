@@ -17,11 +17,27 @@ namespace FabricAPI.AIAgents {
   @friendlyName("AI Agent: Custom")
   interface AIAgents {
     @summary("List AI Agents")
-    @doc("A list of AI Agents")
+    @doc("""
+      A list of AI Agents
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list(): AIAgentListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @summary("Get AI Agent")
-    @doc("Returns an AI Agent by ID")
+    @doc("""
+      Returns an AI Agent by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...AIAgentPathID):
       | {
           @statusCode statusCode: 200;
@@ -32,7 +48,15 @@ namespace FabricAPI.AIAgents {
       | StatusCode500;
 
     @summary("Create AI Agent")
-    @doc("Creates an AI Agent")
+    @doc("""
+      Creates an AI Agent
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(...AIAgentCreateRequest):
       | {
@@ -45,7 +69,15 @@ namespace FabricAPI.AIAgents {
       | StatusCode500;
 
     @summary("Update AI Agent")
-    @doc("Updates an AI Agent by ID")
+    @doc("""
+      Updates an AI Agent by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @patch(#{ implicitOptionality: true })
     update(...AIAgentPathID, ...AIAgentUpdateRequest):
       | {
@@ -58,7 +90,15 @@ namespace FabricAPI.AIAgents {
       | StatusCode500;
 
     @summary("Delete AI Agent")
-    @doc("Deletes an AI Agent by ID")
+    @doc("""
+      Deletes an AI Agent by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...AIAgentPathID):
       | {

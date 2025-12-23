@@ -17,7 +17,15 @@ namespace FabricAPI.SWMLWebhooks {
   @friendlyName("SWML Webhooks")
   interface SWMLWebhooks {
     @summary("List SWML Webhooks")
-    @doc("A list of SWML Webhooks")
+    @doc("""
+      A list of SWML Webhooks
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | SWMLWebhookListResponse
       | StatusCode401
@@ -25,7 +33,15 @@ namespace FabricAPI.SWMLWebhooks {
       | StatusCode500;
 
     @summary("Get SWML Webhook")
-    @doc("Returns an SWML Webhook by ID")
+    @doc("""
+      Returns an SWML Webhook by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...SWMLWebhookID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +52,15 @@ namespace FabricAPI.SWMLWebhooks {
       | StatusCode500;
 
     @summary("Create SWML Webhook")
-    @doc("Creates an SWML Webhook")
+    @doc("""
+      Creates an SWML Webhook
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(...SWMLWebhookCreateRequest):
       | {
@@ -49,7 +73,15 @@ namespace FabricAPI.SWMLWebhooks {
       | StatusCode500;
 
     @summary("Update SWML Webhook")
-    @doc("Updates an SWML Webhook by ID")
+    @doc("""
+      Updates an SWML Webhook by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @patch(#{ implicitOptionality: true })
     update(...SWMLWebhookID, ...SWMLWebhookUpdateRequest):
       | {
@@ -62,7 +94,15 @@ namespace FabricAPI.SWMLWebhooks {
       | StatusCode500;
 
     @summary("Delete SWML Webhook")
-    @doc("Deletes an SWML Webhook by ID")
+    @doc("""
+      Deletes an SWML Webhook by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...SWMLWebhookID):
       | {

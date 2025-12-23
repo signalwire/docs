@@ -19,7 +19,9 @@ namespace ChatAPI.Tokens {
       
       #### Permissions
       
-      The API token must include the following scopes: `Chat`.
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _Chat_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     create(...NewChatToken):
       | {

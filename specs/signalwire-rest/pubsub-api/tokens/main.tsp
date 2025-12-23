@@ -22,7 +22,9 @@ namespace PubSubAPI.Tokens {
       
       #### Permissions
       
-      The API token must include the following scopes: _PubSub_.
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _PubSub_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     @post
     @operationId("create_token")

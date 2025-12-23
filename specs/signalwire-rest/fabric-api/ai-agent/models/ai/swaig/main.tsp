@@ -5,10 +5,14 @@ import "./functions";
 
 @summary("swaig")
 model SWAIG {
-  @doc("Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set.")
+  @doc("""
+      Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set.
+      """)
   defaults?: SWAIGDefaults;
 
-  @doc("Prebuilt functions the AI agent is able to call from this list of available native functions")
+  @doc("""
+      Prebuilt functions the AI agent is able to call from this list of available native functions
+      """)
   native_functions?: SWAIGNativeFunction[];
 
   @doc("""
