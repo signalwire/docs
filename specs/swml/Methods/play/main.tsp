@@ -8,40 +8,31 @@ scalar play_url extends string;
 
 @summary("PlayBase object")
 model PlayBase {
-  @doc("If `true`, the call will automatically answer as the sound is playing. If `false`, you will start playing the audio during early media")
+  @doc("If `true`, the call will automatically answer as the sound is playing. If `false`, you will start playing the audio during early media. Default `true`.")
   @example(true)
-  auto_answer?: boolean | SWMLVar;
+  auto_answer?: boolean | SWMLVar = true;
 
   @doc("""
     Volume level for the audio file.
     Default is `0`.
-    Valid range is -40 to 40
+    Valid range is -40 to 40.
     """)
   @minValue(-40)
   @maxValue(40)
   @example(10)
-  volume?: float | SWMLVar;
+  volume?: float | SWMLVar = 0;
 
-  @doc("""
-    The voice to use for the text to speech.
-    Default is `Polly.Salli`
-    """)
+  @doc("The voice to use for the text to speech.")
   @example("Polly.Joanna")
-  say_voice?: string;
+  say_voice?: string = "Polly.Salli";
 
-  @doc("""
-    The language to use for the text to speech.
-    Default is `en-US`
-    """)
+  @doc("The language to use for the text to speech.")
   @example("en-US")
-  say_language?: string;
+  say_language?: string = "en-US";
 
-  @doc("""
-    Gender to use for the text to speech.
-    Default is `female`.
-    """)
+  @doc("Gender to use for the text to speech.")
   @example("female")
-  say_gender?: string;
+  say_gender?: string = "female";
 
   @doc("http or https URL to deliver play status events")
   @example("https://example.com/play-status")

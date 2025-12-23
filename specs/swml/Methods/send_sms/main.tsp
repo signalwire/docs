@@ -8,10 +8,7 @@ model SMSBase {
   @example("+15559876543")
   to_number: string;
 
-  @doc("""
-    Phone number the SMS message will be sent from.
-    Default is the calling party's caller ID number.
-    """)
+  @doc("Phone number the SMS message will be sent from in E.164 format.")
   @example("+15551234567")
   from_number: string;
 

@@ -30,7 +30,7 @@ model EnterQueueObject {
   @doc("Maximum time in seconds to wait in the queue before timeout. Default `3600`")
   @minValue(1)
   @example(1800)
-  wait_time?: integer | SWMLVar;
+  wait_time?: integer | SWMLVar = 3600;
 }
 
 @summary("EnterQueue object")

@@ -12,7 +12,7 @@ model Pronounce {
   @example("pissa")
   with: string;
 
-  @doc("Whether the pronunciation replacement should ignore case.")
+  @doc("Whether the pronunciation replacement should ignore case. **Default:** `true`.")
   @example(true)
-  ignore_case?: boolean | SWMLVar;
+  ignore_case?: boolean | SWMLVar = true;
 }

@@ -9,23 +9,14 @@ model Goto {
   goto: {
     label: Label.label;
 
-    @doc("JavaScript expression to evaluate. When the condition evaluates to true, the goto jump is triggered.")
+    @doc("A JavaScript condition that determines whether to perform the jump. If the condition evaluates to true, the jump is executed. If omitted, the jump is unconditional.")
     @example("vars.retry_count < 3")
     when?: string;
 
-    @doc("The maximum number of times to perform the jump. Must be a number between 1 and 100.")
+    @doc("The maximum number of times to perform the jump. Must be a number between 1 and 100. Default `100`.")
     @minValue(1)
     @maxValue(100)
     @example(3)
-    max?: integer | SWMLVar;
-
-    @doc("""
-      User-defined metadata to be stored with the jump. This metadata is ignored by SignalWire and the
-      default is not set.
-      """)
-    @example(#{ retry_reason: "timeout", timestamp: "2024-01-15T10:30:00Z" })
-    meta?: {
-      ...TypeSpec.Record<unknown>;
-    };
+    max?: integer | SWMLVar = 100;
   };
 }

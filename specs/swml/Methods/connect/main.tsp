@@ -67,7 +67,7 @@ model ConnectDeviceBase {
     Default is `false`.
     """)
   @example(true)
-  webrtc_media?: boolean | SWMLVar;
+  webrtc_media?: boolean | SWMLVar = false;
 
   @doc("""
     Time, in seconds, to set the SIP `Session-Expires` header in INVITE.
@@ -77,9 +77,9 @@ model ConnectDeviceBase {
     """)
   @minValue(1)
   @example(1800)
-  session_timeout?: integer | SWMLVar;
+  session_timeout?: integer | SWMLVar = 0;
 
-  @doc("Array of URIs to play as ringback tone.")
+  @doc("Array of URIs to play as ringback tone. If not specified, plays audio from the provider.")
   @example(#["https://example.com/ringback.mp3"])
   ringback?: string[];
 
@@ -94,23 +94,27 @@ model ConnectDeviceBase {
     Default is 60 seconds.
     """)
   @example(30)
-  timeout?: integer | SWMLVar;
+  timeout?: integer | SWMLVar = 60;
 
   @doc("""
     Maximum duration, in seconds, allowed for the call.
     Default is `14400` seconds.
     """)
   @example(3600)
-  max_duration?: integer | SWMLVar;
+  max_duration?: integer | SWMLVar = 14400;
 
   @doc("""
     Delay answer until the B-leg answers.
     Default is `false`.
     """)
   @example(true)
-  answer_on_bridge?: boolean | SWMLVar;
+  answer_on_bridge?: boolean | SWMLVar = false;
 
-  @doc("Confirmation object or string.")
+  @doc("""
+    Confirmation to execute when the call is connected. Can be either:
+    - A URL (string) that returns a SWML document
+    - An array of SWML methods to execute inline
+    """)
   @example("https://example.com/confirm.swml")
   confirm?: string | ValidConfirmMethods[];
 
@@ -128,9 +132,9 @@ model ConnectDeviceBase {
 
   @doc("Encryption setting to use. **Possible values:** `mandatory`, `optional`, `forbidden`")
   @example("optional")
-  encryption?: "mandatory" | "optional" | "forbidden";
+  encryption?: "mandatory" | "optional" | "forbidden" = "optional";
 
-  @doc("http or https URL to deliver call status events")
+  @doc("Webhook URL to send call status change notifications to. Authentication can also be set in the URL in the format of `username:password@url`.")
   @example("https://example.com/call-status")
   call_state_url?: url;
 

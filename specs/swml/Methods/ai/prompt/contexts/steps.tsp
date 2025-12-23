@@ -26,13 +26,13 @@ model ContextStepsBase {
   @example(#["Place Order", "Confirm Order"])
   valid_contexts?: string[];
 
-  @doc("A boolean value, if set to `true`, will skip the user's turn to respond in the conversation and proceed to the next step.")
+  @doc("A boolean value, if set to `true`, will skip the user's turn to respond in the conversation and proceed to the next step. **Default:** `false`.")
   @example(true)
-  skip_user_turn?: boolean | SWMLVar;
+  skip_user_turn?: boolean | SWMLVar = false;
 
-  @doc("A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter.")
+  @doc("A boolean value that determines if the step is the last in the context. If `true`, the context ends after this step. Cannot be used along with the `valid_steps` parameter. **Default:** `false`.")
   @example(true)
-  end?: boolean;
+  end?: boolean = false;
 
   @doc("""
     An array of valid steps that the conversation can proceed to from this step.

@@ -46,7 +46,7 @@ model PayPrompts {
   card_type?: string;
 
   @doc("""
-    Space-separated list of error types this prompt applies to
+    Space-separated list of error types this prompt applies to.
 
     Available error types:
         - `timeout` - User input timeout
@@ -55,9 +55,11 @@ model PayPrompts {
         - `invalid-date` - Invalid expiration date
         - `invalid-security-code` - Invalid CVV format
         - `invalid-postal-code` - Invalid postal code format
+        - `invalid-bank-routing-number` - Invalid bank routing number
+        - `invalid-bank-account-number` - Invalid bank account number
+        - `input-matching-failed` - Input matching failed
         - `session-in-progress` - Concurrent session attempt
         - `card-declined` - Payment declined
-
     """)
   @example("timeout invalid-card-number")
   error_type?: string;
