@@ -16,10 +16,26 @@ using Types.StatusCodes;
 namespace FabricAPI.SipEndpoints {
   @tag(SIP_ENDPOINTS_TAG)
   @friendlyName("SIP Endpoints")
-  @doc("SIP Endpoints API category.")
+  @doc("""
+      SIP Endpoints API category.
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
   interface SipEndpoints {
     @summary("List SIP Endpoints")
-    @doc("A list of SIP Endpoints")
+    @doc("""
+      A list of SIP Endpoints
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | SipEndpointListResponse[]
       | StatusCode401
@@ -27,7 +43,15 @@ namespace FabricAPI.SipEndpoints {
       | StatusCode500;
 
     @summary("Get SIP Endpoint")
-    @doc("Returns a SIP Endpoint by ID")
+    @doc("""
+      Returns a SIP Endpoint by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...SipEndpointPathID):
       | {
           @statusCode statusCode: 200;
@@ -38,7 +62,15 @@ namespace FabricAPI.SipEndpoints {
       | StatusCode500;
 
     @summary("Create SIP Endpoint")
-    @doc("Creates a SIP Endpoint")
+    @doc("""
+      Creates a SIP Endpoint
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body request: SipEndpointCreateRequest):
       | {
@@ -51,7 +83,15 @@ namespace FabricAPI.SipEndpoints {
       | StatusCode500;
 
     @summary("Update SIP Endpoint")
-    @doc("Updates a SIP Endpoint by ID")
+    @doc("""
+      Updates a SIP Endpoint by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(...SipEndpointPathID, @body request: SipEndpointUpdateRequest):
       | {
@@ -64,7 +104,15 @@ namespace FabricAPI.SipEndpoints {
       | StatusCode500;
 
     @summary("Delete SIP Endpoint")
-    @doc("Deletes a SIP Endpoint by ID")
+    @doc("""
+      Deletes a SIP Endpoint by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...SipEndpointPathID):
       | {

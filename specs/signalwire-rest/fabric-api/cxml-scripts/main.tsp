@@ -18,7 +18,15 @@ namespace FabricAPI.CXMLScripts {
   @summary("CXML Scripts")
   interface CXMLScripts {
     @summary("List cXML Scripts")
-    @doc("A list of cXML Scripts")
+    @doc("""
+      A list of cXML Scripts
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | CXMLScriptListResponse
       | StatusCode401
@@ -26,7 +34,15 @@ namespace FabricAPI.CXMLScripts {
       | StatusCode500;
 
     @summary("Get cXML Script")
-    @doc("Returns a cXML Script by ID")
+    @doc("""
+      Returns a cXML Script by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...CXMLScriptPathID):
       | {
           @statusCode statusCode: 200;
@@ -37,7 +53,15 @@ namespace FabricAPI.CXMLScripts {
       | StatusCode500;
 
     @summary("Create cXML Script")
-    @doc("Creates a cXML Script")
+    @doc("""
+      Creates a cXML Script
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body request: CXMLScriptCreateRequest):
       | {
@@ -50,7 +74,15 @@ namespace FabricAPI.CXMLScripts {
       | StatusCode500;
 
     @summary("Update cXML Script")
-    @doc("Updates a cXML Script by ID")
+    @doc("""
+      Updates a cXML Script by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(...CXMLScriptPathID, @body request: CXMLScriptUpdateRequest):
       | {
@@ -63,7 +95,15 @@ namespace FabricAPI.CXMLScripts {
       | StatusCode500;
 
     @summary("Delete cXML Script")
-    @doc("Deletes a cXML Script by ID")
+    @doc("""
+      Deletes a cXML Script by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...CXMLScriptPathID):
       | {

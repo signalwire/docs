@@ -12,11 +12,27 @@ namespace DatasphereAPI.Documents {
   @route("/documents")
   @tag("Documents")
   interface Documents {
-    @doc("A list of Datasphere Documents")
+    @doc("""
+      A list of Datasphere Documents.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("List Documents")
     list(): DocumentListResponse | StatusCode401 | StatusCode404;
 
-    @doc("Creates a Datasphere Document")
+    @doc("""
+      Creates a Datasphere Document.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("Create a Document")
     @post
     create(@body body: DocumentCreateRequest):
@@ -28,7 +44,15 @@ namespace DatasphereAPI.Documents {
       | StatusCode404
       | CreateStatusCode422;
 
-    @doc("Updates a Datasphere Document by ID")
+    @doc("""
+      Updates a Datasphere Document by ID.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("Update a Document")
     @patch(#{ implicitOptionality: true })
     update(...PathID, ...DocumentUpdateRequest):
@@ -40,14 +64,30 @@ namespace DatasphereAPI.Documents {
       | StatusCode404
       | SearchStatusCode422;
 
-    @doc("Deletes a Datasphere Document by ID")
+    @doc("""
+      Deletes a Datasphere Document by ID.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("Delete a Document")
     @delete
     delete(...PathID): {
       @statusCode statusCode: 204;
     } | StatusCode401 | StatusCode404;
 
-    @doc("Search Datasphere Documents")
+    @doc("""
+      Search Datasphere Documents.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @route("/search")
     @summary("Search Documents")
     @post
@@ -64,16 +104,40 @@ namespace DatasphereAPI.Chunks {
   @tag("Chunks")
   @friendlyName("Chunks")
   interface Chunks {
-    @doc("A list of chunks for a Datasphere Document.")
+    @doc("""
+      A list of chunks for a Datasphere Document.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("List Chunks")
     list(...DocumentPathID): ChunkListResponse | StatusCode401 | StatusCode404;
 
-    @doc("Retrieves a specific chunk for a Datasphere Document by ID.")
+    @doc("""
+      Retrieves a specific chunk for a Datasphere Document by ID.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("Retrieve Chunk")
     @route("/{chunkId}")
     get(...ChunkPathID): ChunkResponse | StatusCode401 | StatusCode404;
 
-    @doc("Deletes a specific chunk for a Datasphere Document by ID.")
+    @doc("""
+      Deletes a specific chunk for a Datasphere Document by ID.
+      
+      #### Permissions
+      
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _DataSphere_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @summary("Delete Chunk")
     @route("/{chunkId}")
     @delete

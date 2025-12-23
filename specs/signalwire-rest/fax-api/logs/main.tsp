@@ -21,7 +21,9 @@ namespace FaxAPI.Logs {
       
       #### Permissions 
       
-      The API token must include the following scopes: _Fax_.
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _Fax_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     list(...LogListRequest):
       | LogListResponse
@@ -35,7 +37,9 @@ namespace FaxAPI.Logs {
       
       #### Permissions
       
-      The API token must include the following scopes: _Fax_.
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _Fax_.
+      
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     read(...LogPathID):
       | LogResponse

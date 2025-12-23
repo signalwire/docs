@@ -19,7 +19,15 @@ namespace FabricAPI.EmbedsTokens {
   @friendlyName("Embeds Tokens")
   interface EmbedsTokens {
     @summary("Create Embeds Tokens")
-    @doc("Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.")
+    @doc("""
+      Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body body: EmbedsTokensRequest):
       | {

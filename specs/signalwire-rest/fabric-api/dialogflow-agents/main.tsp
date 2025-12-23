@@ -16,7 +16,15 @@ namespace FabricAPI.DialogflowAgents {
   @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgents {
     @summary("List Dialogflow Agents")
-    @doc("A list of Dialogflow Agents")
+    @doc("""
+      A list of Dialogflow Agents
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | DialogflowAgentListResponse
       | StatusCode401
@@ -24,7 +32,15 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode500;
 
     @summary("Get Dialogflow Agent")
-    @doc("Returns a Dialogflow Agent by ID")
+    @doc("""
+      Returns a Dialogflow Agent by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...DialogflowAgentPathID):
       | {
           @statusCode statusCode: 200;
@@ -35,7 +51,15 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode500;
 
     @summary("Update Dialogflow Agent")
-    @doc("Updates a Dialogflow Agent by ID")
+    @doc("""
+      Updates a Dialogflow Agent by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(
       ...DialogflowAgentPathID,
@@ -51,7 +75,15 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode500;
 
     @summary("Delete Dialogflow Agent")
-    @doc("Deletes a Dialogflow Agent by ID")
+    @doc("""
+      Deletes a Dialogflow Agent by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...DialogflowAgentPathID):
       | {
