@@ -5,7 +5,6 @@ union OmittedPromptProps {
 }
 
 model BedrockPromptBase {
-  @example("matthew")
   voice_id?: "tiffany" | "matthew" | "amy" | "lupe" | "carlos" = "matthew";
 }
 

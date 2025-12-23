@@ -12,7 +12,6 @@ model AmazonBedrockObject {
     or from the SWML `set_global_data` action. This data can be referenced `globally`.
     All contained information can be accessed and expanded within the prompt - for example, by using a template string.
     """)
-  @example(#{ company_name: "Acme Corp", support_hours: "9am-5pm EST" })
   global_data?: {
     ...TypeSpec.Record<unknown>;
   };
@@ -24,7 +23,6 @@ model AmazonBedrockObject {
   post_prompt?: BedrockPostPrompt;
 
   @doc("The URL to which to send status callbacks and reports. Authentication can also be set in the url in the format of `username:password@url`.")
-  @example("https://example.com/bedrock-callback")
   post_prompt_url?: url;
 
   @doc("Establishes the initial set of instructions and settings to configure the agent.")

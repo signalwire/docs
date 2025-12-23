@@ -4,24 +4,20 @@ using TypeSpec.JsonSchema;
 
 @summary("Answer object")
 model Answer {
-  @doc("Answer incoming call and set an optional maximum duration.")
+  @doc("Answers an incoming call.")
   @summary("answer")
   answer: {
-    @doc("Maximum duration in seconds for the call. Cannot be less than 7 seconds. Defaults to 14400 seconds (4 hours).")
+    @doc("Maximum time in seconds to wait for an answer. Cannot be less than `7` seconds. Defaults to 14400 seconds.")
     @minValue(7)
-    @example(3600)
     max_duration?: integer | SWMLVar;
 
-    @doc("Comma-separated string of codecs to offer. Valid codecs are: PCMU, PCMA, G722, G729, AMR-WB, OPUS, VP8, H264.")
-    @example("PCMU,PCMA,OPUS")
+    @doc("Comma-seperated string of codecs to offer.\n Valid codecs are: [`PCMU,PCMA,G722,G729,AMR-WB,OPUS,VP8,H264`]")
     codecs?: string;
 
-    @doc("Username to use for SIP authentication.")
-    @example("user123")
+    @doc("SIP authentication username")
     sip_auth_username?: string;
 
-    @doc("Password to use for SIP authentication.")
-    @example("securepassword")
+    @doc("SIP authentication password")
     sip_auth_password?: string;
   };
 }

@@ -4,19 +4,15 @@ model SIPRefer {
   @doc("Send SIP REFER to a SIP call.")
   sip_refer: {
     @doc("The SIP URI to send the REFER to.")
-    @example("sip:user@example.com")
     to_uri: string;
 
     @doc("The HTTP or HTTPS URL to send status callback events to.")
-    @example("https://example.com/refer-status")
     status_url?: url;
 
-    @doc("Username to use for SIP authentication.")
-    @example("sipuser")
+    @doc("SIP authentication username")
     sip_auth_username?: string;
 
-    @doc("Password to use for SIP authentication.")
-    @example("sippassword")
+    @doc("SIP authentication password")
     sip_auth_password?: string;
   };
 }

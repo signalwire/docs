@@ -7,7 +7,6 @@ model StopTap {
       ID of the tap to stop.
       If not set, it will shut off the most recent tap session.
       """)
-    @example("tap_001")
     control_id?: string;
   };
 }

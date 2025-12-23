@@ -13,7 +13,7 @@ model DataMap {
     """)
   output?: Output;
 
-  @doc("An array of objects that have pattern matching logic to process the user's input data. A user can define multiple expressions to match against the user's input data.")
+  @doc("An array of objects that define patterns and corresponding actions.")
   expressions?: Expression[];
 
   @doc("An array of objects that define external API calls.")

@@ -1,6 +1,5 @@
 @summary("Label object")
 model Label {
-  @doc("Mark any point of the SWML section with a label so that goto can jump to it.")
-  @example("greeting")
+  @doc("The name of the label in the current section to jump to.")
   label: string;
 }

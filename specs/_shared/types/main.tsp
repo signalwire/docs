@@ -1,1 +1,0 @@
-alias number = integer | float;

@@ -5,12 +5,10 @@ model Tap {
   @summary("tap")
   @doc("Start background call tap. Media is streamed over Websocket or RTP to customer controlled URI.")
   tap: {
-    @doc("Destination of the tap media stream: rtp://IP:port, ws://example.com, or wss://example.com.")
-    @example("wss://example.com/tap-stream")
+    @doc("Destination of the tap media stream.")
     uri: string;
 
     @doc("Identifier for this tap to use with `stop_tap`.")
-    @example("tap_001")
     control_id?: string;
 
     @doc("""
@@ -20,7 +18,6 @@ model Tap {
           `both` for what party hears and says.
           Default is `speak`
       """)
-    @example("both")
     direction?: "speak" | "listen" | "both";
 
     @doc("""
@@ -28,18 +25,15 @@ model Tap {
       Possible Values: [`PCMU`, `PCMA`]
       Default is `PCMU`
       """)
-    @example("PCMU")
     codec?: "PCMU" | "PCMA";
 
     @doc("""
       If `uri` is a `rtp://` this will set the packetization time of the media in milliseconds.
       Default is `20` miliseconds.
       """)
-    @example(20)
     rtp_ptime?: integer | SWMLVar;
 
     @doc("http or https URL to deliver tap status events")
-    @example("https://example.com/tap-status")
     status_url?: url;
   };
 }

@@ -3,18 +3,17 @@ import "../../Methods";
 @summary("Switch object")
 model Switch {
   @summary("switch")
-  @doc("Execute different instructions based on a variable's value.")
+  @doc("Execute a sequence of instructions depending on which value matches a variable.")
   switch: {
-    @doc("Name of the variable whose value needs to be compared.")
-    @example("prompt_result")
+    @doc("Name of the variable whose value needs to be compared")
     variable: string;
 
-    @doc("Object of key-mapped values to array of SWML methods to execute.")
+    @doc("Object of values mapped to array of instructions to execute")
     case: {
       ...TypeSpec.Record<SWMLMethod[]>;
     };
 
-    @doc("Array of SWML methods to execute if no cases match.")
+    @doc("Array of instructions to execute if no cases match")
     default?: SWMLMethod[];
   };
 }

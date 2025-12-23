@@ -92,7 +92,7 @@ model ConferenceRoom {
   @doc("Metadata of the conference.")
   @example(#{ foo: "bar" })
   meta: {
-    ...TypeSpec.Record<unknown>;
+    ...Record<unknown>;
   };
 
   @doc("Indicator if the Conference Room will prioritize showing participants utilizing the hand raised feature.")

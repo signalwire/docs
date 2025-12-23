@@ -8,7 +8,6 @@ model UserEvent {
     Any key-value pair in the object is sent to the client as an event type called `user_event`.
     """)
   user_event: {
-    @example(#{ type: "call_update", status: "connected", caller_name: "John Doe" })
     event: {
       ...TypeSpec.Record<unknown>;
     };

@@ -2,11 +2,10 @@ import "../../Methods";
 
 @summary("JoinRoom object")
 model JoinRoom {
-  @doc("Join a RELAY room. If the room doesn't exist, it creates a new room.")
+  @doc("Joins a RELAY room.")
   @summary("join_room")
   join_room: {
-    @doc("Name of the room to join. Allowed characters: A-Z, a-z, 0-9, underscore, and hyphen.")
-    @example("my-video-room")
+    @doc("The name of the room to join.")
     name: string;
   };
 }

@@ -32,7 +32,6 @@ enum CallStatus {
 @summary("ConnectSwitch object")
 model ConnectSwitch {
   @doc("Name of the variable whose value needs to be compared. If not provided, it will check the `connect_result` variable.")
-  @example("connect_result")
   variable?: string;
 
   @doc("Object of values mapped to array of instructions to execute")
@@ -47,7 +46,6 @@ model ConnectSwitch {
 @summary("ConnectDeviceBase object")
 model ConnectDeviceBase {
   @doc("The caller ID to use when dialing the number.")
-  @example("+15551234567")
   from?: string;
 
   @doc("Custom SIP headers to add to INVITE. It Has no effect on calls to phone numbers.")
@@ -58,7 +56,6 @@ model ConnectDeviceBase {
     It has no effect on calls to phone numbers.
     Based on SignalWire settings.
     """)
-  @example("PCMU,PCMA,OPUS")
   codecs?: string;
 
   @doc("""
@@ -66,7 +63,6 @@ model ConnectDeviceBase {
     It has no effect on calls to phone numbers.
     Default is `false`.
     """)
-  @example(true)
   webrtc_media?: boolean | SWMLVar;
 
   @doc("""
@@ -76,62 +72,48 @@ model ConnectDeviceBase {
     Based on SignalWire settings.
     """)
   @minValue(1)
-  @example(1800)
   session_timeout?: integer | SWMLVar;
 
   @doc("Array of URIs to play as ringback tone.")
-  @example(#["https://example.com/ringback.mp3"])
   ringback?: string[];
 
-  @doc("""
-    Action to take based on the result of the call. This will run once the peer leg of the call has ended.
-    Will use the switch method when the return_value is an object, and will use the cond method when the return_value is an array.
-    """)
+  @doc("`switch` on `return_value` when object `{}` or `cond` when array `[]`")
   result?: ConnectSwitch | Cond.cond;
 
   @doc("""
     Time, in seconds, to wait for the call to be answered.
     Default is 60 seconds.
     """)
-  @example(30)
   timeout?: integer | SWMLVar;
 
   @doc("""
     Maximum duration, in seconds, allowed for the call.
     Default is `14400` seconds.
     """)
-  @example(3600)
   max_duration?: integer | SWMLVar;
 
   @doc("""
     Delay answer until the B-leg answers.
     Default is `false`.
     """)
-  @example(true)
   answer_on_bridge?: boolean | SWMLVar;
 
   @doc("Confirmation object or string.")
-  @example("https://example.com/confirm.swml")
   confirm?: string | ValidConfirmMethods[];
 
   @doc("The amount of time, in seconds, to wait for the `confirm` URL to return a response")
-  @example(30)
   confirm_timeout?: integer | SWMLVar;
 
-  @doc("SIP username to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
-  @example("sipuser")
+  @doc("Username for authentication.")
   username?: string;
 
-  @doc("SIP password to use for authentication when dialing a SIP URI. Has no effect on calls to phone numbers.")
-  @example("sippassword")
+  @doc("Password for authentication.")
   password?: string;
 
   @doc("Encryption setting to use. **Possible values:** `mandatory`, `optional`, `forbidden`")
-  @example("optional")
   encryption?: "mandatory" | "optional" | "forbidden";
 
   @doc("http or https URL to deliver call status events")
-  @example("https://example.com/call-status")
   call_state_url?: url;
 
   @doc("""
@@ -142,7 +124,6 @@ model ConnectDeviceBase {
 
     **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
     """)
-  @example("https://example.com/after-bridge.swml")
   transfer_after_bridge?: string | SWMLVar;
 
   @doc("""
@@ -165,7 +146,6 @@ model ConnectDeviceSingle is ConnectDeviceBase {
     - Call Fabric Resource address (e.g., "/public/test_room")
     - Queue (e.g., "queue:support")
     """)
-  @example("+15559876543")
   to: string;
 }
 

@@ -7,56 +7,44 @@ using TypeSpec.JsonSchema;
 @summary("JoinConferenceObject object")
 model JoinConferenceObject {
   @doc("Name of conference")
-  @example("my-conference-room")
   name: string;
 
   @doc("Whether to join the conference in a muted state. If set to `true`, the participant will be muted upon joining. Default `false`")
-  @example(false)
   muted?: boolean | SWMLVar;
 
   @doc("Sets the behavior of the beep sound when joining or leaving the conference. Default `true`")
-  @example("onEnter")
   beep?: "true" | "false" | "onEnter" | "onExit";
 
   @doc("Starts the conference when the main participant joins. This means the start action will not wait on more participants to join before starting. Default `true`")
-  @example(true)
   start_on_enter?: boolean | SWMLVar;
 
   @doc("Ends the conference when the main participant leaves. This means the end action will not wait on more participants to leave before ending. Default `false`")
-  @example(false)
   end_on_exit?: boolean | SWMLVar;
 
   @doc("A URL that will play media when the conference is put on hold. Default hold music will be played if not set")
-  @example("https://example.com/hold-music.mp3")
   wait_url?: url | SWMLVar;
 
   @doc("The maximum number of participants allowed in the conference. If the limit is reached, new participants will not be able to join. Default `250`")
   @minValue(1)
   @maxValue(250)
-  @example(50)
   max_participants?: integer | SWMLVar;
 
   @doc("Enables or disables recording of the conference. Default `do-not-record`")
-  @example("record-from-start")
   record?: "do-not-record" | "record-from-start";
 
   @doc("Specifies the geographical region where the conference will be hosted. Default not set")
-  @example("us-east")
   region?: string;
 
   @doc("If set to `trim-silence`, it will remove silence from the start of the recording. If set to `do-not-trim`, it will keep the silence. Default `trim-silence`")
-  @example("trim-silence")
   trim?: "trim-silence" | "do-not-trim";
 
   @doc("""
     Coach accepts a call SID of a call that is currently connected to an in-progress conference.
     Specifying a call SID that does not exist or is no longer connected will result in a failure.
     """)
-  @example("b3877ee3-6f3c-4985-8066-6d24e3f65e12")
   coach?: string;
 
   @doc("The events to listen for and send to the status callback URL. Default not set")
-  @example("join")
   status_callback_event?:
     | "start"
     | "end"
@@ -69,23 +57,18 @@ model JoinConferenceObject {
     | "announcement";
 
   @doc("The URL to which status events will be sent. This URL must be publicly accessible and able to handle HTTP requests. Default not set")
-  @example("https://example.com/conference-status")
   status_callback?: url;
 
   @doc("The HTTP method to use when sending status events to the status callback URL. Default `POST`")
-  @example("POST")
   status_callback_method?: "GET" | "POST";
 
   @doc("The URL to which recording status events will be sent. This URL must be publicly accessible and able to handle HTTP requests. Default not set")
-  @example("https://example.com/recording-status")
   recording_status_callback?: url;
 
   @doc("The HTTP method to use when sending recording status events to the recording status callback URL. Default `POST`")
-  @example("POST")
   recording_status_callback_method?: "GET" | "POST";
 
   @doc("The events to listen for and send to the recording status callback URL. Default not set")
-  @example("completed")
   recording_status_callback_event?: "in-progress" | "completed" | "absent";
 
   @doc("""
@@ -100,10 +83,7 @@ model JoinConferenceObject {
 
 @summary("JoinConference object")
 model JoinConference {
-  @doc("""
-    Join an ad-hoc audio conference started on either the SignalWire or Compatibility API.
-    This method allows you to connect the current call to a named conference where multiple participants can communicate simultaneously.
-    """)
+  @doc("Join an ad-hoc audio conference with RELAY and CXML calls.")
   @summary("join_conference")
   join_conference: JoinConferenceObject;
 }

@@ -10,40 +10,34 @@ model AIPromptBase {
   @doc("Limits the amount of tokens that the AI agent may generate when creating its response")
   @minValue(0)
   @maxValue(4096)
-  @example(256)
   max_tokens?: int32 = 256;
 
   @doc("Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.")
   @minValue(0.0)
   @maxValue(1.5)
-  @example(0.7)
   temperature?: float | SWMLVar;
 
   @doc("Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random.")
   @minValue(0.0)
   @maxValue(1.0)
-  @example(0.9)
   top_p?: float | SWMLVar;
 
   @doc("""
-    Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0.
+    Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0. 
     Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
     """)
   @minValue(0.0)
   @maxValue(1.0)
-  @example(0.6)
   confidence?: float | SWMLVar;
 
   @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics.")
   @minValue(-2.0)
   @maxValue(2.0)
-  @example(0.0)
   presence_penalty?: float | SWMLVar;
 
   @doc("Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim.")
   @minValue(-2.0)
   @maxValue(2.0)
-  @example(0.0)
   frequency_penalty?: float | SWMLVar;
 }
 
@@ -67,7 +61,6 @@ model AIPromptPom is AIPromptBase {
 
 model AIPromptText is AIPromptBase {
   @doc("The instructions to send to the agent.")
-  @example("Your name is Franklin and you are taking orders for Franklin's Pizza. Begin by greeting the caller, and ask if they'd like to place an order for pickup or delivery.")
   text: string;
 
   @doc("""
@@ -80,13 +73,11 @@ model AIPromptText is AIPromptBase {
 
 model AIPostPromptText is AIPromptBase {
   @doc("The instructions to send to the agent.")
-  @example("Summarize the conversation and provide any follow-up action items.")
   text: string;
 }
 
 model AIPostPromptPom is AIPromptBase {
   @doc("The instructions to send to the agent.")
-  @minItems(1)
   pom: POM[];
 }
 
