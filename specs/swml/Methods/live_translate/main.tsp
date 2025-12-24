@@ -94,7 +94,7 @@ model StartAction {
     direction: TranslateDirection[];
 
     @doc("The speech engine to use for speech recognition.")
-    @example("google")
+    @example(SpeechEngine.google)
     speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
     @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
