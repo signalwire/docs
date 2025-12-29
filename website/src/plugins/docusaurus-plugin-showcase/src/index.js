@@ -123,6 +123,11 @@ module.exports = function(context, options) {
         parseFrontMatter: DEFAULT_PARSE_FRONT_MATTER,
       });
 
+      // Skip draft files
+      if (frontMatter.draft === true) {
+        return;
+      }
+
       let { missingTags, missingTitle, missingDescription } = false;
       let invalidTags = [];
       let article = {};
