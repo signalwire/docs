@@ -204,7 +204,7 @@ module.exports = function(context, options) {
       }
 
       // Tags warnings silenced (exclusion logic preserved)
-      if (missingTitle || missingDescription || invalidTags.length > 0) {
+      if (missingTags || missingTitle || missingDescription || invalidTags.length > 0) {
         if (missingTitle || missingDescription) {
           this.logWithColor("orange", "  ✘ " + filePath);
           missingTitle ? this.logWithColor("yellow", "    - Title: ✘") : "";
