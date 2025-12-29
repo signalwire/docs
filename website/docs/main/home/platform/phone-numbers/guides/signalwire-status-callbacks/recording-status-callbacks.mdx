@@ -1,0 +1,75 @@
+---
+slug: /compatibility-api/guides/signalwire-status-callbacks/recording-status-callbacks
+---
+
+# Recording Status Callbacks
+
+A vital feature for working with inbound/outbound calls is call recording. If you're actively recording a call, the recording may not be available immediately. When there is a high volume of calls, it can be difficult to individually retrieve/handle each recording within your portal.
+
+Recording status callbacks will allow SignalWire to make an HTTP request to your specified callback URL with the recording file as well as some other additional parameters. Your app can use these parameters to handle the recording whether by uploading the recording somewhere, pushing to external storage, sending via email, or maybe even using SignalWire SMS to forward the recording URL.
+
+## Recording Status Callback Parameters
+
+The following parameters will be posted via an HTTP request to your webhook - you can use one or all of them depending on what type of information you are looking for.
+
+| Parameter Name      | Parameter Description                                                                           | Parameter Type |
+| :------------------ | :---------------------------------------------------------------------------------------------- | :------------- |
+| `AccountSid`        | The unique ID of the project this call is associated with.                                      | String         |
+| `CallSid`           | A unique identifier for the call. May be used to later retrieve this message from the REST API. | String         |
+| `RecordingSid`      | The unique identifier for the recording.                                                        | String         |
+| `RecordingUrl`      | The URL for the audio recording.                                                                | String         |
+| `RecordingStatus`   | The status of the recording.                                                                    | String         |
+| `RecordingDuration` | The duration, in seconds, of the recording.                                                     | Integer        |
+| `RecordingChannels` | The number of channels in the recording.                                                        | Integer        |
+| `RecordingSource`   | The type of call that initiated the recording.                                                  | String         |
+
+## How to Set Recording Status Callbacks & Recording Status Callback Events
+
+You can set up recording status callbacks in your API request for an [outgoing call](/rest/compatibility-api/endpoints/create-a-call) or by using [Dial](pathname:///compatibility-api/cxml/voice/dial), [Conference](pathname:///compatibility-api/cxml/voice/conference-noun), or [Record](pathname:///compatibility-api/cxml/voice/record).
+
+You can use `recordingStatusCallbackEvent` to specify multiple events that you want your callback URL to receive HTTP requests for, but if you do not specify it will default to `completed`.
+
+Call Recordings have three possible statuses.
+
+| Call Status   | Status Description                                                                                |
+| :------------ | :------------------------------------------------------------------------------------------------ |
+| `in-progress` | This status occurs as soon as the call recording has begun                                        |
+| `completed`   | This status occurs when the file is available for access.                                         |
+| `absent`      | The call recording was too short to be processed or the call was silent so no audio was detected. |
+
+You can also fetch recordings individually or delete recordings using our 
+[retrieve recording API endpoint](/rest/compatibility-api/endpoints/retrieve-recording) 
+and [delete recording API](/rest/compatibility-api/endpoints/delete-recording).
+
+## Recording Status Callback Application Example
+
+Below is an example of an application that could be used to process incoming recordings and forward them to a specific person. We need to use `request.form.get('ParameterName')` in order to gather the `CallSid` and `RecordingUrl` parameters and store them in their own variables. If you want to include more parameters either to print to console or include in the message, you can gather them using the same format here.
+
+We then create a SignalWire client object with our project details and authentication. All that's left there is to create a message object and send all of the necessary information within the `Body` with the `To` number being the end destination number and the `From` number being a SignalWire number.
+
+```python
+from flask import Flask, request
+from signalwire.rest import Client as signalwire_client
+
+app = Flask(__name__)
+
+
+@app.route("/sendRecording", methods=["POST"])
+def message():
+    # accept incoming parameters and store them. Feel free to add any extra parameters that you would like to print to
+    # to console or add to your message. This example will show CallSID and recording URL.
+    call_sid = request.form.get('CallSid')
+    recording_url = request.form.get('RecordingUrl')
+
+    # create a client object connected to our account & project
+  client = signalwire_client("ProjectID", "AuthToken", signalwire_space_url = 'YOURSPACE.signalwire.com')
+
+    # create a text message and send ourselves the text
+    m = client.messages.create(
+        body='You have received a voicemail. Listen to the recording here: "' + recording_url +
+             '". The Call SID is ' + call_sid,
+        from_='+1xxxxxxxxxx',
+        to='+1xxxxxxxxxx'
+    )
+    return recording_url
+```
