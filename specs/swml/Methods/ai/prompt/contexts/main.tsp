@@ -7,7 +7,7 @@ using TypeSpec.JsonSchema;
 @summary("contexts")
 model Contexts {
   @doc("The default context to use at the beginning of the conversation. Additional context steps can be defined as any other key in the object.")
-  default?: ContextsObject;
+  default: ContextsObject;
 
   ...TypeSpec.Record<ContextsObject>;
 }
@@ -17,9 +17,9 @@ model ContextObjectBase {
   @doc("An array of step objects that define the conversation flow for this context. Steps execute sequentially unless otherwise specified.")
   steps: ContextSteps[];
 
-  @doc("When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation.")
+  @doc("When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation. **Default:** `false`.")
   @example(true)
-  isolated?: boolean;
+  isolated?: boolean = false;
 
   @doc("Language-specific filler phrases played when transitioning into this context. Helps provide smooth context switches.")
   enter_fillers?: FunctionFillers[];
