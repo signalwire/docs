@@ -1,0 +1,54 @@
+---
+slug: /compatibility-api/guides/signalwire-status-callbacks/transcription-status-callbacks
+---
+
+# Transcription Status Callbacks    
+
+If you are already using recordings, you may also want to transcribe them as well. Transcription callbacks will allow SignalWire to make an HTTP request to your specified callback URL with the transcription text as well as some other additional parameters. Your app can use these parameters to handle the transcription by uploading to your CRM, sending via email, or maybe even using SignalWire SMS to forward the body of the transcription.
+
+### Transcription Status Callback Parameters
+
+The following parameters will be posted via an HTTP request to your webhook - you can use one or all of them depending on what type of information you are looking for.
+
+| Parameter Title       | Parameter Description                                                                                  | Parameter Type |
+| :-------------------- | :----------------------------------------------------------------------------------------------------- | :------------- |
+| `TranscriptionSid`    | The unique, 34 character ID of the transcription.                                                      | String         |
+| `TranscriptionText`   | The text of the transcription.                                                                         | String         |
+| `TranscriptionStatus` | The status of the transcription (completed or failed).                                                 | String         |
+| `TranscriptionUrl`    | The URL for the transcription's REST API resource.                                                     | String         |
+| `RecordingSid`        | The unique, 34 character identifier for the recording from which the transcription was generated from. | String         |
+| `RecordingUrl`        | The URL for the audio recording from which the transcription was generated from.                       | String         |
+
+## How to Set Transcription Status Callbacks
+
+You can set up transcription status callbacks by using [Record](pathname:///compatibility-api/cxml/voice/record) and setting `transcribe` to True and `transcribeCallback` to your webhook URL.
+
+You can also fetch transcriptions individually or delete transcriptions using our [retrieve transcription API endpoint](/rest/compatibility-api/endpoints/retrieve-transcription) and [delete transcription API endpoint](/rest/compatibility-api/endpoints/delete-transcription).
+
+## Transcription Status Callback Application Example
+
+Below is an example of an application that could be used for transcription status callbacks to process incoming transcriptions and forward them to someone's phone number. We need to use `request.form.get('ParameterName')` in order to gather the `CallSid`, `TranscriptionText`, and `From` number parameters and store them in their own variables. If you want to include more parameters either to print to console or include in the message, you can gather them using the same format here.
+
+We then create a SignalWire client object with our project details and authentication. All that's left there is to create a message object and send all of the necessary information within the `Body` with the `To` number being the end destination number and the `From` number being a SignalWire number.
+
+```python
+@app.route("/message", methods=["POST"])
+def message():
+    # gather necessary paramters and store them in an accessible variable
+    call_sid = request.form.get('CallSid')
+    transcription_text = request.form.get('TranscriptionText')
+    from_number = request.form.get('From')
+
+    # create a client object connected to our account & project
+    client = signalwire_client("ProjectID", "AuthToken", signalwire_space_url = 'YOURSPACE.signalwire.com')
+
+    # create a text message and the text with necessary parameters
+    m = client.messages.create(
+        body='You have received a voicemail from the number ' + from_number +
+             '. The voicemail transcription is as follows: "' + transcription_text +
+             '" and the Call SID is ' + call_sid,
+        from_='+1xxxxxxxxxx',
+        to='+1xxxxxxxxxx'
+    )
+    return transcription_text
+```
