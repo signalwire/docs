@@ -17,6 +17,13 @@ namespace FabricAPI.FabricAddresses {
     @doc("""
       A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).
+      
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     list():
       | FabricAddressesResponse
@@ -28,6 +35,13 @@ namespace FabricAPI.FabricAddresses {
     @doc("""
       Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).
+      
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     read(...FabricAddressID):
       | {

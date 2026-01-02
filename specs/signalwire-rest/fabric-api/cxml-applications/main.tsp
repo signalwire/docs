@@ -17,7 +17,15 @@ namespace FabricAPI.CxmlApplications {
   @friendlyName("cXML Applications")
   interface CxmlApplications {
     @summary("List cXML Applications")
-    @doc("A list of cXML Applications")
+    @doc("""
+      A list of cXML Applications
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | CxmlApplicationListResponse
       | StatusCode401
@@ -25,7 +33,15 @@ namespace FabricAPI.CxmlApplications {
       | StatusCode500;
 
     @summary("Get cXML Application")
-    @doc("Returns a cXML Application by ID")
+    @doc("""
+      Returns a cXML Application by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...CxmlApplicationPathID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +52,15 @@ namespace FabricAPI.CxmlApplications {
       | StatusCode500;
 
     @summary("Update cXML Application")
-    @doc("Updates a cXML Application by ID")
+    @doc("""
+      Updates a cXML Application by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(
       ...CxmlApplicationPathID,
@@ -52,7 +76,15 @@ namespace FabricAPI.CxmlApplications {
       | StatusCode500;
 
     @summary("Delete LAML Application")
-    @doc("Deletes a LAML Application by ID")
+    @doc("""
+      Deletes a LAML Application by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...CxmlApplicationPathID):
       | {
