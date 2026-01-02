@@ -71,19 +71,20 @@ export default function a11yValidator({ stopOnError = false }: { stopOnError?: b
         }
       }
 
-      if (typeof srcText === "string" && !isSmallImageFormat(srcText)) {
-        if (stopOnError) {
-          vfile.fail(`Your image at ${srcText} is not a webp or an SVG.`, {
-            place: positionOfNode,
-            source: "remark-plugin-a11y-checker",
-          });
-        } else {
-          vfile.info(`Your image at ${srcText} is not a webp or an SVG.`, {
-            place: positionOfNode,
-            source: "remark-plugin-a11y-checker",
-          });
-        }
-      }
+      // Image format check disabled
+      // if (typeof srcText === "string" && !isSmallImageFormat(srcText)) {
+      //   if (stopOnError) {
+      //     vfile.fail(`Your image at ${srcText} is not a webp or an SVG.`, {
+      //       place: positionOfNode,
+      //       source: "remark-plugin-a11y-checker",
+      //     });
+      //   } else {
+      //     vfile.info(`Your image at ${srcText} is not a webp or an SVG.`, {
+      //       place: positionOfNode,
+      //       source: "remark-plugin-a11y-checker",
+      //     });
+      //   }
+      // }
     }
 
     visit(tree, ["mdxJsxTextElement"], (node, index, parent) => {

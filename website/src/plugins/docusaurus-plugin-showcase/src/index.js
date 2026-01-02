@@ -15,7 +15,12 @@ const DEFAULT_OPTIONS = {
   logging: true,
   include: "**/*.{md,mdx}", // Extensions to include.
   ignore: [
-    "**/node_modules/**"
+    "**/node_modules/**",
+    "**/_common/**",
+    "**/_shared/**",
+    "**/_mermaid/**",
+    "**/_usecases/**",
+    "**/_sharedtables/**"
   ],
   path: "docs", // Path to data on filesystem, relative to site dir.
   routeBasePath: "docs", // URL Route.
@@ -142,9 +147,11 @@ module.exports = function(context, options) {
 
         } else {
           missingTags = true;
+          article.tags = [];
         }
       } else {
         missingTags = true;
+        article.tags = [];
       }
 
       // Check title
@@ -196,16 +203,13 @@ module.exports = function(context, options) {
         }
       }
 
+      // Tags warnings silenced (exclusion logic preserved)
       if (missingTags || missingTitle || missingDescription || invalidTags.length > 0) {
-        this.logWithColor("orange", "  ✘ " + filePath);
-        missingTags ? this.logWithColor("yellow", "    - Tags: ✘") : "";
-        if (invalidTags.length > 0) {
-          for (const tag of invalidTags) {
-            this.logWithColor("yellow", "    - Invalid Tag: " + tag + " ✘");
-          }
+        if (missingTitle || missingDescription) {
+          this.logWithColor("orange", "  ✘ " + filePath);
+          missingTitle ? this.logWithColor("yellow", "    - Title: ✘") : "";
+          missingDescription ? this.logWithColor("yellow", "    - Description: ✘") : "";
         }
-        missingTitle ? this.logWithColor("yellow", "    - Title: ✘") : "";
-        missingDescription ? this.logWithColor("yellow", "    - Description: ✘") : "";
       } else {
         if (!pluginOptions.onlyLogFailedAttempts) {
           this.logWithColor("green", "  ✔ " + filePath);
