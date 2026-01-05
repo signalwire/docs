@@ -1,7 +1,54 @@
 ```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+from datetime import datetime
 
+appointments = []
+
+agent = AgentBase(name="scheduler", route="/scheduler")
+agent.prompt_add_section("Role", "You help customers schedule appointments.")
+agent.prompt_add_section("Guidelines", """
+- Collect customer name, date, and preferred time
+- Confirm all details before booking
+- Send SMS confirmation when booking is complete
+""")
+agent.add_language("English", "en-US", "rime.spore")
+
+@agent.tool(description="Check if a time slot is available")
+def check_availability(date: str, time: str) -> SwaigFunctionResult:
+    # Check against existing appointments
+    for apt in appointments:
+        if apt["date"] == date and apt["time"] == time:
+            return SwaigFunctionResult(f"Sorry, {date} at {time} is not available.")
+    return SwaigFunctionResult(f"{date} at {time} is available.")
+
+@agent.tool(description="Book an appointment")
+def book_appointment(
+    name: str,
+    phone: str,
+    date: str,
+    time: str
+) -> SwaigFunctionResult:
+    appointments.append({
+        "name": name,
+        "phone": phone,
+        "date": date,
+        "time": time,
+        "booked_at": datetime.now().isoformat()
+    })
+    return (
+        SwaigFunctionResult(f"Appointment booked for {name} on {date} at {time}.")
+        .send_sms(
+            to_number=phone,
+            from_number="+15559876543",
+            body=f"Your appointment is confirmed for {date} at {time}."
+        )
+    )
+
+if __name__ == "__main__":
+    agent.run()
 ```
 
 import UseCaseLinks from "@site/src/components/HomepageFeatures/UseCaseLinks"
 
-<UseCaseLinks links={[{title:"📚 Agents SDK docs", link:"/sdks/agents-sdk"}, {title:"View the full example →", link:"https://github.com/signalwire/digital_employees"}]}/>
+<UseCaseLinks links={[{title:"📚 Agents SDK docs", link:"/sdks/agents-sdk"}, {title:"InfoGatherer prefab →", link:"/sdks/agents-sdk/prefabs/info-gatherer"}]}/>
