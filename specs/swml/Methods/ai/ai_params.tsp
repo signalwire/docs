@@ -374,8 +374,8 @@ model AIParams {
   @example(1024)
   max_response_tokens?: integer | SWMLVar;
 
-  @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2`, `deepgram:nova-3`, and other supported ASR engines.")
-  @example("deepgram:nova-3")
+  @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `nova-2` and `nova-3`.")
+  @example("nova-3")
   openai_asr_engine?: "nova-2" | "nova-3";
 
   @doc("Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`. **Default:** `120000` ms (2 minutes).")
