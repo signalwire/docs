@@ -65,17 +65,23 @@ This removes the need to host a server to perform certain actions conditionally,
 
 ### Example
 
-```yaml andJson
-data_map:
-  expressions:
-    - pattern: \w+
-      string: '${meta_data.table.${lc:args.target}}'
-      output:
-        ...
-    - pattern: .*
-      string: '${args.target}'
-      output:
-        ...
+```json
+{
+  "data_map": {
+    "expressions": [
+      {
+        "pattern": "\\w+",
+        "string": "${meta_data.table.${lc:args.target}}",
+        "output": {}
+      },
+      {
+        "pattern": ".*",
+        "string": "${args.target}",
+        "output": {}
+      }
+    ]
+  }
+}
 ```
 
 - **Pattern Matching:** The `pattern` field contains a [Perl Compatible Regular Expressions (PCRE)](https://www.pcre.org/) to match specific data in the input.
@@ -87,11 +93,15 @@ data_map:
   - In the example, `${meta_data.table.${lc:args.target}}` fetches the target from the `SWAIG.functions.<function>.meta_data` field.
 
 
-    ```yaml andJson
-    meta_data:
-      table:
-        support: '+1XXXXXXXXXX'
-        sales: '+1YYYYYYYYY'
+    ```json
+    {
+      "meta_data": {
+        "table": {
+          "support": "+1XXXXXXXXXX",
+          "sales": "+1YYYYYYYYY"
+        }
+      }
+    }
     ```
 
     It parses the `table` object and retrieves the target based on the `args.target` value. The `lc:`
@@ -127,15 +137,21 @@ including actions to be taken and responses to be fed to the AI agent.
 
 ### Example
 
-```yaml andJson
-data_map:
-  webhooks:
-    - url: 'https://icanhazdadjoke.com/search?term={lc:args.type}'
-      method: GET
-      output:
-        response: 'Tell the user: ${array[0].results[0].joke}.'
-        action:
-          ...
+```json
+{
+  "data_map": {
+    "webhooks": [
+      {
+        "url": "https://icanhazdadjoke.com/search?term={lc:args.type}",
+        "method": "GET",
+        "output": {
+          "response": "Tell the user: ${array[0].results[0].joke}.",
+          "action": []
+        }
+      }
+    ]
+  }
+}
 ```
 
 ### Detailed Explanation
@@ -195,24 +211,45 @@ However, they can also be used as a top level object within a Data Map.
 
 **Example:**
 
-```yaml andJson
-data_map:
-  expressions:
-    - pattern: \w+
-      string: '${meta_data.table.${lc:args.target}}'
-      output:
-        action:
-          - say: Please stand by while I connect your call.
-          - SWML:
-              version: 1.0.0
-              sections:
-                main:
-                  - connect:
-                      to: '${meta_data.table.${lc:args.target}}'
-          - stop: 'true'
-        response: 'transferred, the call has ended.'
+```json
+{
+  "data_map": {
+    "expressions": [
+      {
+        "pattern": "\\w+",
+        "string": "${meta_data.table.${lc:args.target}}",
+        "output": {
+          "action": [
+            { "say": "Please stand by while I connect your call." },
+            {
+              "transfer": true,
+              "SWML": {
+                "version": "1.0.0",
+                "sections": {
+                  "main": [
+                    {
+                      "connect": {
+                        "to": "${meta_data.table.${lc:args.target}}"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            { "stop": true }
+          ],
+          "response": "transferred, the call has ended."
+        }
+      }
+    ]
+  }
+}
 ```
+:::warning
 
+When passing a SWML object that includes a `connect` (or other method that transfers the call) in `output.action[]`, your script must be JSON, and `"transfer": true,` must be included before the SWML in the same action object. Refer to the example above.
+
+:::
 ### Responses
 
 Responses in `data_map` are used to provide feedback to the AI agent based on the user's input or external data.
@@ -227,14 +264,20 @@ the messages sent to the user.
 
 **Example:**
 
-```yaml andJson
-data_map:
-  expressions:
-    - pattern: .*
-      string: '${args.target}'
-      output:
-        response: >-
-          I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination.
+```json
+{
+  "data_map": {
+    "expressions": [
+      {
+        "pattern": ".*",
+        "string": "${args.target}",
+        "output": {
+          "response": "I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination."
+        }
+      }
+    ]
+  }
+}
 ```
 
 ##### Detailed Explanation
@@ -263,19 +306,28 @@ including an AI's context, functions, meta_data, playbacks, and more. The action
 
 **Example:**
 
-```yaml andJson
-data_map:
-  webhooks:
-    - url: 'https://icanhazdadjoke.com/search?term={lc:args.type}'
-      method: GET
-      output:
-        response: 'Tell the user: ${array[0].results[0].joke}.'
-        action:
-          - toggle_functions:
-              - active: true
-                function: transfer
-              - active: false
-                function: get_joke
+```json
+{
+  "data_map": {
+    "webhooks": [
+      {
+        "url": "https://icanhazdadjoke.com/search?term={lc:args.type}",
+        "method": "GET",
+        "output": {
+          "response": "Tell the user: ${array[0].results[0].joke}.",
+          "action": [
+            {
+              "toggle_functions": [
+                { "active": true, "function": "transfer" },
+                { "active": false, "function": "get_joke" }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
 ```
 
 ##### Detailed Explanation
@@ -367,91 +419,115 @@ Replace the following placeholders with actual values for this SWML script to wo
 
 :::
 
-```yaml andJson
-sections:
-  main:
-    - ai:
-        prompt:
-          text: >-
-            Your name is Frank. You help transfer to the right department. Use
-            the 'get_joke' function to get a joke.
-
-            ## Greetings
-            Greet the user, and inform them that your name is Frank and you can help assist them in transferring the call to Support or Sales. However, let them know the only way to be transferred is to hear a joke.
-
-            ## Rules
-            - A user cannot be transferred until they have asked for at least one joke throughout the call.
-            - When a user is able to be transferred, use the 'transfer' function. Only provide one joke to the user.
-            - If the user asks for more jokes after the first one, tell them you are no longer giving out jokes, but can help with transferring the call to a different department.
-
-            ## Steps to follow
-            1. Greet the user.
-            2. Tell them they can be transferred to either support or sales, but first they need to hear a joke.
-            3. If the user asks for a joke, first ask what kind of joke they want to hear, then use the 'get_joke' function.
-              3.1. If the user doesn't want to hear a joke, tell them you can't transfer them until they hear a joke.
-              3.2. If the joke returned from the function is empty, tell the user you couldn't find a joke.
-              3.3. Do not make up a joke if the function returns empty.
-            4. Tell the user the joke.
-              4.1. If the user asks for another joke, tell them you can't give them another joke, but you can transfer them to the right department.
-            5. If the user asks to be transferred, use the 'transfer' function.
-
-        post_prompt: Summarize the call as a json object
-        post_prompt_url: 'https://example.site.com/summarize'
-        SWAIG:
-          functions:
-            - function: transfer
-              active: 'false'
-              purpose: use to transfer to a target
-              argument:
-                type: object
-                properties:
-                  target:
-                    description: the target to transfer to
-                    type: string
-              data_map:
-                expressions:
-                  - pattern: \w+
-                    string: '${meta_data.table.${lc:args.target}}'
-                    output:
-                      action:
-                        - say: Please stand by while I connect your call.
-                        - SWML:
-                            version: 1.0.0
-                            sections:
-                              main:
-                                - connect:
-                                    to: '${meta_data.table.${lc:args.target}}'
-                        - stop: 'true'
-                      response: 'transferred, the call has ended.'
-                  - pattern: .*
-                    string: '${args.target}'
-                    output:
-                      response: >-
-                        I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination.
-              meta_data:
-                table:
-                  support: '+1XXXXXXXXXX'
-                  sales: '+1YYYYYYYYYY'
-            - function: get_joke
-              purpose: used to get a joke
-              argument:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    description: Type of joke to get
-              data_map:
-                webhooks:
-                  - url: 'https://icanhazdadjoke.com/search?term={lc:args.type}'
-                    method: GET
-                    output:
-                      response: 'Tell the user: ${array[0].results[0].joke}.'
-                      action:
-                        - toggle_functions:
-                            - active: true
-                              function: transfer
-                            - active: false
-                              function: get_joke
+```json
+{
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "Your name is Frank. You help transfer to the right department. Use the 'get_joke' function to get a joke.\n\n## Greetings\nGreet the user, and inform them that your name is Frank and you can help assist them in transferring the call to Support or Sales. However, let them know the only way to be transferred is to hear a joke.\n\n## Rules\n- A user cannot be transferred until they have asked for at least one joke throughout the call.\n- When a user is able to be transferred, use the 'transfer' function. Only provide one joke to the user.\n- If the user asks for more jokes after the first one, tell them you are no longer giving out jokes, but can help with transferring the call to a different department.\n\n## Steps to follow\n1. Greet the user.\n2. Tell them they can be transferred to either support or sales, but first they need to hear a joke.\n3. If the user asks for a joke, first ask what kind of joke they want to hear, then use the 'get_joke' function.\n  3.1. If the user doesn't want to hear a joke, tell them you can't transfer them until they hear a joke.\n  3.2. If the joke returned from the function is empty, tell the user you couldn't find a joke.\n  3.3. Do not make up a joke if the function returns empty.\n4. Tell the user the joke.\n  4.1. If the user asks for another joke, tell them you can't give them another joke, but you can transfer them to the right department.\n5. If the user asks to be transferred, use the 'transfer' function."
+          },
+          "post_prompt": "Summarize the call as a json object",
+          "post_prompt_url": "https://example.site.com/summarize",
+          "SWAIG": {
+            "functions": [
+              {
+                "function": "transfer",
+                "active": "false",
+                "description": "use to transfer to a target",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "target": {
+                      "description": "the target to transfer to",
+                      "type": "string"
+                    }
+                  }
+                },
+                "data_map": {
+                  "expressions": [
+                    {
+                      "pattern": "\\w+",
+                      "string": "${meta_data.table.${lc:args.target}}",
+                      "output": {
+                        "action": [
+                          { "say": "Please stand by while I connect your call." },
+                          {
+                            "transfer": true,
+                            "SWML": {
+                              "version": "1.0.0",
+                              "sections": {
+                                "main": [
+                                  {
+                                    "connect": {
+                                      "to": "${meta_data.table.${lc:args.target}}"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          { "stop": true }
+                        ],
+                        "response": "transferred, the call has ended."
+                      }
+                    },
+                    {
+                      "pattern": ".*",
+                      "string": "${args.target}",
+                      "output": {
+                        "response": "I'm sorry, I was unable to transfer your call to ${args.target} due to being an invalid destination."
+                      }
+                    }
+                  ]
+                },
+                "meta_data": {
+                  "table": {
+                    "support": "+1XXXXXXXXXX",
+                    "sales": "+1YYYYYYYYYY"
+                  }
+                }
+              },
+              {
+                "function": "get_joke",
+                "description": "used to get a joke",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Type of joke to get"
+                    }
+                  }
+                },
+                "data_map": {
+                  "webhooks": [
+                    {
+                      "url": "https://icanhazdadjoke.com/search?term={lc:args.type}",
+                      "method": "GET",
+                      "output": {
+                        "response": "Tell the user: ${array[0].results[0].joke}.",
+                        "action": [
+                          {
+                            "toggle_functions": [
+                              { "active": true, "function": "transfer" },
+                              { "active": false, "function": "get_joke" }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
 ```
 
 ---
