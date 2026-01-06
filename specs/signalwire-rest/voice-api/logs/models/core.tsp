@@ -85,3 +85,32 @@ model VoiceLog {
   @example(null)
   parent_id: string | null;
 }
+
+@doc("Event entry for a voice log")
+model LogEvent {
+  @doc("Timestamp when the event occurred.")
+  @example(UTC_TIME_EXAMPLE)
+  event_at: utcDateTime;
+
+  @doc("Log level of the event.")
+  @example("info")
+  level: "info" | "warning" | "error" | "debug";
+
+  @doc("Name of the event.")
+  @example("calling_call_initiated")
+  name: string;
+
+  @doc("Additional details about the event. Structure varies by event type.")
+  @example(#{})
+  details: {};
+
+  @format("uuid")
+  @doc("Unique identifier for the project.")
+  @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
+  project_id: uuid;
+
+  @format("uuid")
+  @doc("Unique identifier for the log.")
+  @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
+  log_id: uuid;
+}
