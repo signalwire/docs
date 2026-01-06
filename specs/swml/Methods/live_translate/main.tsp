@@ -74,16 +74,16 @@ model StartAction {
     @example(true)
     ai_summary?: boolean | SWMLVar;
 
-    @doc("Speech timeout in milliseconds.")
-    @example(30)
+    @doc("The timeout for speech recognition in milliseconds.")
+    @example(30000)
     speech_timeout?: integer | SWMLVar = 60000;
 
     @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
     @example(500)
-    vad_silence_ms?: integer | SWMLVar;
+    vad_silence_ms?: integer | SWMLVar = 300;
 
     @doc("Voice activity detection threshold (0-1800).")
-    @example(3)
+    @example(400)
     vad_thresh?: integer | SWMLVar = 400;
 
     @doc("Debug level for logging (0-2).")
@@ -120,7 +120,6 @@ model SummarizeAction {
     @doc("The webhook URL to be called.")
     @example("https://example.com/summary-webhook")
     webhook?: string;
-
 
     @doc("The AI prompt that instructs how to summarize the conversation.")
     @example("Provide a brief summary of the translated conversation.")
