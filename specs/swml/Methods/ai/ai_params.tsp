@@ -3,8 +3,6 @@ import "../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
-alias SupportedAIModels = "gpt-4o-mini" | "gpt-4.1-mini" | "gpt-4.1-nano" | string;
-
 @minValue(10000)
 @maxValue(600000)
 scalar AttentionTimeout extends integer;
