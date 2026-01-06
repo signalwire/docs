@@ -30,26 +30,23 @@ model Request {
 
     @doc("""
       Maximum time in seconds to wait for a response.
-      Default is `5.0` seconds.
+      Default is `0` (no timeout).
       """)
     @example(10.0)
-    timeout?: float | SWMLVar;
+    timeout?: float | SWMLVar = 0;
 
     @doc("""
       Maximum time in seconds to wait for a connection.
-      Default is `5.0` seconds.
+      Default is `0` (no timeout).
       """)
     @example(5.0)
-    connect_timeout?: float | SWMLVar;
-
-    @doc("`switch` on `return_value` if result is an object (`{}`), or use as a cond if result is an array (`[]`).")
-    result?: Switch | Cond[];
+    connect_timeout?: float | SWMLVar = 0;
 
     @doc("""
       Store parsed JSON response as variables.
       Default is `false`.
       """)
     @example(true)
-    save_variables?: boolean | SWMLVar;
+    save_variables?: boolean | SWMLVar = false;
   };
 }

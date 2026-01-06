@@ -23,41 +23,32 @@ model Prompt {
 
     @doc("""
       Volume level for the audio file.
-      Default is 0.
+      Default is `0`.
       Valid range is -40 to 40.
       """)
     @minValue(-40.0)
     @maxValue(40.0)
     @example(0)
-    volume?: float;
+    volume?: float = 0;
 
-    @doc("""
-      The voice to use for the text to speech.
-      Default is `Polly.Salli`.
-      """)
+    @doc("The voice to use for the text to speech.")
     @example("Polly.Joanna")
-    say_voice?: string;
+    say_voice?: string = "Polly.Salli";
 
-    @doc("""
-      The language to use for the text to speech.
-      Default is `en-US`.
-      """)
+    @doc("The language to use for the text to speech.")
     @example("en-US")
-    say_language?: string;
+    say_language?: string = "en-US";
 
-    @doc("""
-      The gender to use for the text to speech.
-      Default is `female`.
-      """)
+    @doc("The gender to use for the text to speech.")
     @example("female")
-    say_gender?: string;
+    say_gender?: string = "female";
 
     @doc("""
       Number of digits to collect.
       Default is `1`.
       """)
     @example(4)
-    max_digits?: integer | SWMLVar;
+    max_digits?: integer | SWMLVar = 1;
 
     @doc("""
       Digits that terminate digit collection.
@@ -71,14 +62,14 @@ model Prompt {
       Default is `5.0` seconds.
       """)
     @example(5.0)
-    digit_timeout?: float | SWMLVar;
+    digit_timeout?: float | SWMLVar = 5.0;
 
     @doc("""
       Time in seconds to wait for start of input.
       Default is `5.0` seconds.
       """)
     @example(10.0)
-    initial_timeout?: float | SWMLVar;
+    initial_timeout?: float | SWMLVar = 5.0;
 
     @doc("Max time in seconds to wait for speech result.")
     @example(15.0)
@@ -100,8 +91,8 @@ model Prompt {
       The engine that is selected for speech recognition. The engine must support the specified language.
       [Deepgram|Google| etc...] Default is not set (SignalWire picks the engine).
       """)
-    @example(#["Deepgram"])
-    speech_engine?: string[];
+    @example("Deepgram")
+    speech_engine?: string;
 
     @doc("http or https URL to deliver prompt status events")
     @example("https://example.com/prompt-status")
