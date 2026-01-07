@@ -26,3 +26,9 @@ model LogListResponse {
 
 @doc("Response model for voice log retrieve endpoint")
 model LogRetrieveResponse is VoiceLog;
+
+@doc("Response model for log events list endpoint")
+model LogEventsListResponse {
+  @doc("Array of event entries for the log")
+  data: LogEvent[];
+}
