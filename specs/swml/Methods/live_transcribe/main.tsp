@@ -11,15 +11,6 @@ enum TranscribeDirection {
   `local-caller`,
 }
 
-@summary("SpeechEngine enum")
-enum SpeechEngine {
-  @doc("Use Deepgram for speech recognition.")
-  deepgram,
-
-  @doc("Use Google for speech recognition.")
-  google,
-}
-
 @summary("TranscribeStartAction object")
 model TranscribeStartAction {
   @doc("Starts live transcription of the call. The transcription will be sent to the specified URL.")
@@ -44,27 +35,28 @@ model TranscribeStartAction {
     @example(30000)
     speech_timeout?: integer | SWMLVar = 60000;
 
-    @doc("Voice activity detection silence time in milliseconds.")
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
     @example(500)
     vad_silence_ms?: integer | SWMLVar = 300;
 
-    @doc("Voice activity detection threshold.")
+    @doc("Voice activity detection threshold (0-1800).")
     @example(400)
     vad_thresh?: integer | SWMLVar = 400;
 
-    @doc("Debug level for logging.")
+    @doc("Debug level for logging (0-2).")
     @example(0)
     debug_level?: integer | SWMLVar = 0;
 
     @doc("The direction of the call that should be transcribed.")
     direction: TranscribeDirection[];
 
-    @doc("The speech engine to use for transcription.")
+    @doc("The speech engine to use for speech recognition.")
+    @example(SpeechEngine.google)
     speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-    @doc("The prompt for summarization.")
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
     @example("Summarize the key points of this conversation.")
-    summary_prompt?: string;
+    ai_summary_prompt?: string;
   };
 }
 
