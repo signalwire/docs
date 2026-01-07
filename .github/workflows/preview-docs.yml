@@ -3,11 +3,13 @@ name: preview-docs
 on: pull_request
 
 jobs:
-  run:
+  preview:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+    outputs:
+      preview_url: ${{ steps.generate-docs.outputs.preview_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,9 +26,20 @@ jobs:
           echo "$OUTPUT"
           URL=$(echo "$OUTPUT" | grep -oP 'Published docs to \K.*(?= \()')
           echo "Preview URL: $URL"
+          echo "preview_url=$URL" >> $GITHUB_OUTPUT
           echo "🌿 Preview your docs: $URL" > preview_url.txt
 
       - name: Comment URL in PR
         uses: thollander/actions-comment-pull-request@v2.4.3
         with:
           filePath: preview_url.txt
+
+  check-links:
+    needs: preview
+    if: needs.preview.outputs.preview_url != ''
+    uses: ./.github/workflows/ferns-links-check.yml
+    with:
+      sitemap_url: ${{ needs.preview.outputs.preview_url }}/sitemap.xml
+      is_pr_check: true
+      pr_number: ${{ github.event.pull_request.number }}
+    secrets: inherit
