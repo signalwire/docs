@@ -8,8 +8,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    outputs:
-      preview_url: ${{ steps.generate-docs.outputs.preview_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,12 +32,15 @@ jobs:
         with:
           filePath: preview_url.txt
 
-  check-links:
-    needs: preview
-    if: needs.preview.outputs.preview_url != ''
-    uses: ./.github/workflows/ferns-links-check.yml
-    with:
-      sitemap_url: ${{ needs.preview.outputs.preview_url }}/sitemap.xml
-      is_pr_check: true
-      pr_number: ${{ github.event.pull_request.number }}
-    secrets: inherit
+      - name: Save preview data for link checker
+        run: |
+          mkdir -p preview-data
+          echo "${{ steps.generate-docs.outputs.preview_url }}" > preview-data/preview_url.txt
+          echo "${{ github.event.pull_request.number }}" > preview-data/pr_number.txt
+
+      - name: Upload preview data artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-data
+          path: preview-data/
+          retention-days: 1

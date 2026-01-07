@@ -1,7 +1,7 @@
 name: Check Links
 
 on:
-  # Run M/W/F mornings
+  # Run weekday mornings
   schedule:
     - cron: '0 10 * * 1,2,3,4,5'
   workflow_dispatch:
@@ -10,34 +10,79 @@ on:
         description: 'Sitemap URL to check (defaults to production)'
         required: false
         default: 'https://buildwithfern.com/learn/sitemap.xml'
-  # Called from preview-docs.yml after preview deployment
-  workflow_call:
-    inputs:
-      sitemap_url:
-        description: 'Sitemap URL to check'
-        required: true
-        type: string
-      is_pr_check:
-        description: 'Whether this is a PR check (skips Slack, comments on PR instead)'
-        required: false
-        type: boolean
-        default: true
-      pr_number:
-        description: 'PR number to comment on (required for PR checks)'
-        required: false
-        type: number
+  # Triggered after preview-docs workflow completes
+  workflow_run:
+    workflows: ["preview-docs"]
+    types:
+      - completed
 
 permissions:
   contents: write
   pull-requests: write
+  checks: write
 
 jobs:
   check-links:
     name: Check links
     runs-on: ubuntu-latest
+    # Only run if: scheduled/manual OR workflow_run succeeded
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Download preview data (PR checks only)
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: preview-data
+          path: preview-data/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Set up environment variables
+        id: setup
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_run" ]; then
+            # PR check - read from artifact
+            PREVIEW_URL=$(cat preview-data/preview_url.txt)
+            PR_NUMBER=$(cat preview-data/pr_number.txt)
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+            echo "sitemap_url=${PREVIEW_URL}/sitemap.xml" >> $GITHUB_OUTPUT
+            echo "is_pr_check=true" >> $GITHUB_OUTPUT
+            echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            echo "head_sha=${HEAD_SHA}" >> $GITHUB_OUTPUT
+            echo "Running PR check for PR #${PR_NUMBER} with sitemap: ${PREVIEW_URL}/sitemap.xml"
+          else
+            # Scheduled/manual run
+            SITEMAP_URL="${{ inputs.sitemap_url || 'https://buildwithfern.com/learn/sitemap.xml' }}"
+            echo "sitemap_url=${SITEMAP_URL}" >> $GITHUB_OUTPUT
+            echo "is_pr_check=false" >> $GITHUB_OUTPUT
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            echo "head_sha=" >> $GITHUB_OUTPUT
+            echo "Running scheduled/manual check with sitemap: ${SITEMAP_URL}"
+          fi
+
+      - name: Create check run (PR checks only)
+        id: create_check
+        if: steps.setup.outputs.is_pr_check == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: check } = await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Link Checker',
+              head_sha: '${{ steps.setup.outputs.head_sha }}',
+              status: 'in_progress',
+              started_at: new Date().toISOString(),
+              output: {
+                title: 'Checking links...',
+                summary: 'The link checker is running on the preview deployment.'
+              }
+            });
+            core.setOutput('check_run_id', check.id);
+            console.log(`Created check run ${check.id}`);
 
       - name: Create lychee config
         run: |
@@ -89,8 +134,7 @@ jobs:
 
       - name: Fetch sitemap and extract URLs
         run: |
-          # Use input sitemap URL if provided, otherwise default to production
-          SITEMAP_URL="${{ inputs.sitemap_url || 'https://buildwithfern.com/learn/sitemap.xml' }}"
+          SITEMAP_URL="${{ steps.setup.outputs.sitemap_url }}"
           echo "Fetching sitemap from: $SITEMAP_URL"
           curl -s "$SITEMAP_URL" | grep -oP '(?<=<loc>)[^<]+' > urls.txt
           echo "Found $(wc -l < urls.txt) URLs in sitemap"
@@ -746,17 +790,19 @@ jobs:
       - name: Comment on PR with broken links (PR checks only)
         # Only comment on the PR for PR checks, not scheduled runs
         if: |
-          inputs.is_pr_check == true &&
-          inputs.pr_number != '' &&
+          steps.setup.outputs.is_pr_check == 'true' &&
+          steps.setup.outputs.pr_number != '' &&
           (steps.check_failures.outputs.has_other_failures == 'true' || steps.retry429.outputs.has_429_failures == 'true' || steps.verify_github.outputs.has_missing == 'true')
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.setup.outputs.pr_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const prNumber = ${{ inputs.pr_number || 0 }};
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
 
             if (!prNumber) {
               console.log('No PR number provided, skipping comment');
@@ -791,35 +837,46 @@ jobs:
               return;
             }
 
-            // Build the comment content
-            let comment = `## 🔗 Broken Links Detected\n\n`;
-            comment += `@Fern Writer Please fix the broken links detected by the link checker.\n\n`;
+            // Build the comment content with a table
+            let comment = `## 🔗 Broken Links Report\n\n`;
+            comment += `| Status | URL | Category |\n`;
+            comment += `|--------|-----|----------|\n`;
 
             if (brokenLinksContent.trim()) {
-              comment += `### Broken Links\n\n`;
               const lines = brokenLinksContent.trim().split('\n');
               for (const line of lines) {
                 const match = line.match(/\[(\d+)\].*<([^>]+)>/);
                 if (match) {
-                  comment += `- [${match[1]}] ${match[2]}\n`;
-                } else {
-                  comment += `- ${line}\n`;
+                  comment += `| ${match[1]} | ${match[2]} | Broken Link |\n`;
                 }
               }
-              comment += '\n';
             }
 
             if (urls429Content.trim()) {
-              comment += `### Rate-Limited URLs (429) Still Failing After Retry\n\n`;
-              comment += urls429Content.trim() + '\n\n';
+              const lines = urls429Content.trim().split('\n');
+              for (const line of lines) {
+                // Format: - [STATUS] URL or just URL
+                const match = line.match(/\[(\d+)\]\s*(.+)/) || line.match(/-?\s*(.+)/);
+                if (match) {
+                  const status = match[1].match(/^\d+$/) ? match[1] : '429';
+                  const url = match[2] || match[1];
+                  comment += `| ${status} | ${url.trim()} | Rate Limited |\n`;
+                }
+              }
             }
 
             if (githubMissingContent.trim()) {
-              comment += `### GitHub URLs Missing Locally\n\n`;
-              comment += githubMissingContent.trim() + '\n\n';
+              const lines = githubMissingContent.trim().split('\n');
+              for (const line of lines) {
+                // Format: - [LOCAL_MISSING] URL (details)
+                const match = line.match(/\[LOCAL_MISSING\]\s*([^\s(]+)/);
+                if (match) {
+                  comment += `| 404 | ${match[1]} | GitHub Missing |\n`;
+                }
+              }
             }
 
-            comment += `---\n`;
+            comment += `\n---\n`;
             comment += `[View workflow run](https://github.com/${owner}/${repo}/actions/runs/${context.runId})\n`;
 
             // Post comment on the PR
@@ -835,7 +892,7 @@ jobs:
       - name: Send Slack notification for broken links (daily checks only)
         # Only send Slack notification for scheduled/manual runs, not PR checks
         if: |
-          inputs.is_pr_check != true &&
+          steps.setup.outputs.is_pr_check != 'true' &&
           (steps.check_failures.outputs.has_other_failures == 'true' || steps.retry429.outputs.has_429_failures == 'true' || steps.verify_github.outputs.has_missing == 'true')
         uses: actions/github-script@v7
         env:
@@ -927,6 +984,96 @@ jobs:
             } catch (error) {
               console.error(`Error sending Slack notification: ${error.message}`);
             }
+
+      - name: Update check run (PR checks only)
+        if: always() && steps.setup.outputs.is_pr_check == 'true' && steps.create_check.outputs.check_run_id
+        uses: actions/github-script@v7
+        env:
+          CHECK_RUN_ID: ${{ steps.create_check.outputs.check_run_id }}
+          HAS_FAILURES: ${{ steps.check_failures.outputs.has_other_failures == 'true' || steps.retry429.outputs.has_429_failures == 'true' || steps.verify_github.outputs.has_missing == 'true' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const checkRunId = parseInt(process.env.CHECK_RUN_ID, 10);
+            const hasFailures = process.env.HAS_FAILURES === 'true';
+
+            // Read broken links files for summary
+            let brokenLinksContent = '';
+            let urls429Content = '';
+            let githubMissingContent = '';
+
+            try {
+              brokenLinksContent = fs.readFileSync('broken-links.txt', 'utf8');
+            } catch (e) {}
+
+            try {
+              urls429Content = fs.readFileSync('urls-429-still-failing.txt', 'utf8');
+            } catch (e) {}
+
+            try {
+              githubMissingContent = fs.readFileSync('github-missing.txt', 'utf8');
+            } catch (e) {}
+
+            // Build summary
+            let summary = '';
+            let title = '';
+
+            if (hasFailures) {
+              title = 'Broken links detected';
+              summary = '## 🔗 Broken Links Found\n\n';
+              summary += '| Status | URL | Category |\n';
+              summary += '|--------|-----|----------|\n';
+
+              if (brokenLinksContent.trim()) {
+                const lines = brokenLinksContent.trim().split('\n');
+                for (const line of lines) {
+                  const match = line.match(/\[(\d+)\].*<([^>]+)>/);
+                  if (match) {
+                    summary += `| ${match[1]} | ${match[2]} | Broken Link |\n`;
+                  }
+                }
+              }
+
+              if (urls429Content.trim()) {
+                const lines = urls429Content.trim().split('\n');
+                for (const line of lines) {
+                  const match = line.match(/\[(\d+)\]\s*(.+)/) || line.match(/-?\s*(.+)/);
+                  if (match) {
+                    const status = match[1].match(/^\d+$/) ? match[1] : '429';
+                    const url = match[2] || match[1];
+                    summary += `| ${status} | ${url.trim()} | Rate Limited |\n`;
+                  }
+                }
+              }
+
+              if (githubMissingContent.trim()) {
+                const lines = githubMissingContent.trim().split('\n');
+                for (const line of lines) {
+                  const match = line.match(/\[LOCAL_MISSING\]\s*([^\s(]+)/);
+                  if (match) {
+                    summary += `| 404 | ${match[1]} | GitHub Missing |\n`;
+                  }
+                }
+              }
+            } else {
+              title = 'All links valid';
+              summary = '## ✅ No Broken Links Found\n\nAll links in the documentation are valid.';
+            }
+
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: checkRunId,
+              status: 'completed',
+              conclusion: hasFailures ? 'failure' : 'success',
+              completed_at: new Date().toISOString(),
+              output: {
+                title: title,
+                summary: summary
+              }
+            });
+
+            console.log(`Updated check run ${checkRunId} with conclusion: ${hasFailures ? 'failure' : 'success'}`);
 
       - name: Fail if there are broken links
         if: steps.check_failures.outputs.has_other_failures == 'true' || steps.retry429.outputs.has_429_failures == 'true' || steps.verify_github.outputs.has_missing == 'true'
