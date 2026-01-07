@@ -224,18 +224,6 @@ model AIParams {
   @example(700)
   end_of_speech_timeout?: integer | SWMLVar = 700;
 
-  @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
-  @minValue(0.01)
-  @maxValue(1.0)
-  @example(0.5)
-  eleven_labs_stability?: float | SWMLVar;
-
-  @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
-  @minValue(0.01)
-  @maxValue(1.0)
-  @example(0.75)
-  eleven_labs_similarity?: float | SWMLVar;
-
   @doc("If `true`, enables usage accounting. The default is `false`.")
   @example(true)
   enable_accounting?: boolean | SWMLVar;
@@ -388,8 +376,8 @@ model AIParams {
   @example(1024)
   max_response_tokens?: integer | SWMLVar;
 
-  @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `deepgram:nova-2`, `deepgram:nova-3`, and other supported ASR engines.")
-  @example("deepgram:nova-3")
+  @doc("The ASR (Automatic Speech Recognition) engine to use. Common values include `nova-2` and `nova-3`.")
+  @example("nova-3")
   openai_asr_engine?: string = "gcloud_speech_v2_async";
 
   @doc("Sets a time duration for the outbound call recipient to respond to the AI agent before timeout, in a range from `10000` to `600000`. **Default:** `120000` ms (2 minutes).")
@@ -573,6 +561,20 @@ model AIParams {
     """)
   @example("hey")
   wake_prefix?: string;
+
+  #deprecated "The `eleven_labs_stability` property is deprecated. Please use `languages[].params.stability` instead."
+  @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
+  @minValue(0.0)
+  @maxValue(1.0)
+  @example(0.5)
+  eleven_labs_stability?: float | SWMLVar = 0.50;
+
+  #deprecated "The `eleven_labs_similarity` property is deprecated. Please use `languages[].params.similarity` instead."
+  @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
+  @minValue(0.0)
+  @maxValue(1.0)
+  @example(0.75)
+  eleven_labs_similarity?: float | SWMLVar = 0.75;
 
   ...TypeSpec.Record<unknown>;
 }
