@@ -13,38 +13,39 @@ model AIPromptBase {
   @example(256)
   max_tokens?: int32 = 256;
 
-  @doc("Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.")
+  @doc("Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random. **Default:** `1.0`.")
   @minValue(0.0)
   @maxValue(1.5)
   @example(0.7)
-  temperature?: float | SWMLVar;
+  temperature?: float | SWMLVar = 1.0;
 
-  @doc("Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random.")
+  @doc("Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random. **Default:** `1.0`.")
   @minValue(0.0)
   @maxValue(1.0)
   @example(0.9)
-  top_p?: float | SWMLVar;
+  top_p?: float | SWMLVar = 1.0;
 
   @doc("""
     Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0.
     Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
+    **Default:** `0.6`.
     """)
   @minValue(0.0)
   @maxValue(1.0)
   @example(0.6)
-  confidence?: float | SWMLVar;
+  confidence?: float | SWMLVar = 0.6;
 
-  @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics.")
+  @doc("Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics. **Default:** `0`.")
   @minValue(-2.0)
   @maxValue(2.0)
   @example(0.0)
-  presence_penalty?: float | SWMLVar;
+  presence_penalty?: float | SWMLVar = 0;
 
-  @doc("Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim.")
+  @doc("Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim. **Default:** `0`.")
   @minValue(-2.0)
   @maxValue(2.0)
   @example(0.0)
-  frequency_penalty?: float | SWMLVar;
+  frequency_penalty?: float | SWMLVar = 0;
 }
 
 model AIPromptPom is AIPromptBase {

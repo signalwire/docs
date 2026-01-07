@@ -36,9 +36,9 @@ model SWAIGFunctionBase {
     """)
   argument?: FunctionParameters;
 
-  @doc("Whether the function is active. Default is `true`.")
+  @doc("Whether the function is active. **Default:** `true`.")
   @example(true)
-  active?: boolean | SWMLVar;
+  active?: boolean | SWMLVar = true;
 
   @doc("""
     A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
@@ -72,9 +72,10 @@ model SWAIGFunctionBase {
   @doc("""
     Skips the top-level fillers specified in `ai.languages` (which includes `speech_fillers` and `function_fillers`).
     When set to `true`, only function-specific fillers defined directly on `SWAIG.functions.fillers` will play.
+    **Default:** `false`.
     """)
   @example(true)
-  skip_fillers?: boolean | SWMLVar;
+  skip_fillers?: boolean | SWMLVar = false;
 
   @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
   @example("username:password:https://statuscallback.com")
@@ -88,9 +89,9 @@ model SWAIGFunctionBase {
   @example(5)
   wait_file_loops?: integer | string;
 
-  @doc("Whether to wait for fillers to finish playing before continuing with the function.")
+  @doc("Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.")
   @example(true)
-  wait_for_fillers?: boolean | SWMLVar;
+  wait_for_fillers?: boolean | SWMLVar = false;
 }
 
 model UserSWAIGFunction is SWAIGFunctionBase {
