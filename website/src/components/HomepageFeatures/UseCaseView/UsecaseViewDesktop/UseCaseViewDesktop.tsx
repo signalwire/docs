@@ -21,6 +21,8 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
           gap: 3,
           flexDirection: "column",
           height: "calc(100% - 18px)",
+          overflow: "hidden",
+          overflowY: "auto",
         }}
       >
         {Object.keys(data).map((useCase, idx) => (
