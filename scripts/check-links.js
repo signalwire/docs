@@ -266,7 +266,6 @@ function runLychee(urlsFile, options = {}) {
 
     const lychee = spawn('lychee', args, {
       stdio: ['inherit', 'inherit', 'inherit'],
-      shell: true,
     });
 
     lychee.on('close', (code) => {
