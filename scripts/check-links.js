@@ -22,8 +22,8 @@
  *   LOGGER_LEVEL  Set log verbosity: error, warn, info, debug, trace (default: info)
  */
 
-import { execSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { execSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Logger } from './utils/logger.js';
@@ -252,41 +252,52 @@ function runLychee(urls, options = {}) {
   log.step('Checking HTTP links with lychee...');
   log.newline();
 
-  return new Promise((resolve) => {
-    // Use --files-from to read input URLs from stdin (pages to crawl for links)
-    const args = ['--config', LYCHEE_CONFIG, '--files-from', '-'];
+  // Write URLs to temp file for lychee to read
+  const tempFile = join(REPO_ROOT, '.link-check', 'urls.txt');
+  mkdirSync(dirname(tempFile), { recursive: true });
+  writeFileSync(tempFile, urls.join('\n'));
 
-    if (options.noProgress) {
-      args.push('--no-progress');
-    }
-    if (options.format) {
-      args.push('--format', options.format);
-    }
+  const args = ['--config', LYCHEE_CONFIG, '--files-from', tempFile];
 
-    const lychee = spawn('lychee', args, {
-      stdio: ['pipe', 'inherit', 'inherit'],
-    });
+  if (options.noProgress) {
+    args.push('--no-progress');
+  }
+  if (options.format) {
+    args.push('--format', options.format);
+  }
 
-    // Pipe page URLs to lychee's stdin - lychee will crawl each page for links
-    lychee.stdin.write(urls.join('\n'));
-    lychee.stdin.end();
-
-    lychee.on('close', (code) => {
-      log.debug(`Lychee exited with code ${code}`);
-
-      if (code === LYCHEE_EXIT.SUCCESS) {
-        resolve({ exitCode: code, failed: false });
-      } else if (code === LYCHEE_EXIT.LINK_FAILURES) {
-        resolve({ exitCode: code, failed: true });
-      } else if (code === LYCHEE_EXIT.CONFIG_ERROR) {
-        log.error('Lychee config error - check lychee.toml');
-        resolve({ exitCode: code, failed: true });
-      } else {
-        log.error(`Lychee runtime error (exit code ${code})`);
-        resolve({ exitCode: code, failed: true });
-      }
-    });
+  // Run lychee - capture stdout for JSON parsing, inherit stderr for progress
+  const result = spawnSync('lychee', args, {
+    stdio: ['inherit', 'pipe', 'inherit'],
+    encoding: 'utf8',
   });
+
+  // Print stdout so it appears in logs and can be captured by shell
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+
+  // Clean up temp file
+  try {
+    unlinkSync(tempFile);
+  } catch {
+    // Ignore cleanup errors
+  }
+
+  const code = result.status;
+  log.debug(`Lychee exited with code ${code}`);
+
+  if (code === LYCHEE_EXIT.SUCCESS) {
+    return { exitCode: code, failed: false };
+  } else if (code === LYCHEE_EXIT.LINK_FAILURES) {
+    return { exitCode: code, failed: true };
+  } else if (code === LYCHEE_EXIT.CONFIG_ERROR) {
+    log.error('Lychee config error - check lychee.toml');
+    return { exitCode: code, failed: true };
+  } else {
+    log.error(`Lychee runtime error (exit code ${code})`);
+    return { exitCode: code, failed: true };
+  }
 }
 
 // ============================================
@@ -363,7 +374,7 @@ Environment Variables:
     log.newline();
     log.info('Skipping HTTP link checking (--skip-http)');
   } else {
-    const httpResult = await runLychee(sitemapUrls, {
+    const httpResult = runLychee(sitemapUrls, {
       noProgress,
       format: lycheeFormat,
     });
