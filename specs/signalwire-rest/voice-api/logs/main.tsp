@@ -33,7 +33,7 @@ namespace VoiceAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-      
+
       #### Permissions
       
       The API token used to authenticate must have the following scopes enabled to make a successful request: _Voice_.
@@ -42,6 +42,21 @@ namespace VoiceAPI.Logs {
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+
+    @summary("List Log Events")
+    @doc("""
+      List all events for a specific log.
+
+      #### Permissions
+
+      The API token must include the following scopes: _Voice_.
+      """)
+    @route("/{id}/events")
+    listEvents(...LogPathID):
+      | LogEventsListResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;

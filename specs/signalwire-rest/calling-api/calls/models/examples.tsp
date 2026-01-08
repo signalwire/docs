@@ -65,3 +65,115 @@ const aiMessageExample = #{
     },
   },
 };
+
+// Live Transcribe examples
+const liveTranscribeStartExample = #{
+  request: #{
+    command: "calling.live_transcribe",
+    id: callId,
+    params: #{
+      action: #{
+        start: #{
+          lang: "en-US",
+          direction: #["local-caller", "remote-caller"],
+          webhook: "https://example.com/transcription-events",
+          live_events: true,
+          ai_summary: true,
+          ai_summary_prompt: "Summarize the key points of this conversation.",
+          ai_model: "gpt-4.1-nano",
+          speech_engine: "deepgram",
+        },
+      },
+    },
+  },
+};
+
+const liveTranscribeStopExample = #{
+  request: #{
+    command: "calling.live_transcribe",
+    id: callId,
+    params: #{
+      action: "stop",
+    },
+  },
+};
+
+const liveTranscribeSummarizeExample = #{
+  request: #{
+    command: "calling.live_transcribe",
+    id: callId,
+    params: #{
+      action: #{
+        summarize: #{
+          webhook: "https://example.com/summary",
+          prompt: "Provide a bullet-point summary of the main topics discussed.",
+        },
+      },
+    },
+  },
+};
+
+// Live Translate examples
+const liveTranslateStartExample = #{
+  request: #{
+    command: "calling.live_translate",
+    id: callId,
+    params: #{
+      action: #{
+        start: #{
+          from_lang: "en-US",
+          to_lang: "es-ES",
+          direction: #["local-caller", "remote-caller"],
+          from_voice: "elevenlabs.josh",
+          to_voice: "elevenlabs.josh",
+          filter_from: "professional",
+          webhook: "https://example.com/translation-events",
+          live_events: true,
+          ai_summary: true,
+          ai_model: "gpt-4.1-nano",
+          speech_engine: "deepgram",
+        },
+      },
+    },
+  },
+};
+
+const liveTranslateStopExample = #{
+  request: #{
+    command: "calling.live_translate",
+    id: callId,
+    params: #{
+      action: "stop",
+    },
+  },
+};
+
+const liveTranslateSummarizeExample = #{
+  request: #{
+    command: "calling.live_translate",
+    id: callId,
+    params: #{
+      action: #{
+        summarize: #{
+          webhook: "https://example.com/summary",
+          prompt: "Summarize the key agreements reached in both languages.",
+        },
+      },
+    },
+  },
+};
+
+const liveTranslateInjectExample = #{
+  request: #{
+    command: "calling.live_translate",
+    id: callId,
+    params: #{
+      action: #{
+        inject: #{
+          message: "Please hold while I transfer you to a specialist.",
+          direction: "remote-caller",
+        },
+      },
+    },
+  },
+};
