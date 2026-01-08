@@ -13,24 +13,24 @@
  *   node scripts/check-links.js --format json       # Use JSON output for lychee
  *
  * The script:
- *   1. Fetches sitemap and writes URLs to .link-check/sitemap-urls.txt
+ *   1. Fetches sitemap URLs
  *   2. Extracts GitHub blob/tree/tag URLs from source files
  *   3. Verifies GitHub URLs locally (without HTTP requests)
- *   4. Runs lychee to check HTTP links from the sitemap
+ *   4. Pipes sitemap URLs to lychee for HTTP link checking
  *
  * Environment Variables:
  *   LOGGER_LEVEL  Set log verbosity: error, warn, info, debug, trace (default: info)
  */
 
 import { execSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Logger } from './utils/logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(__dirname);
-const OUTPUT_DIR = join(REPO_ROOT, '.link-check');
+const GITHUB_REPOS_DIR = join(REPO_ROOT, '.link-check', '.github-repos');
 
 const log = new Logger();
 const LYCHEE_CONFIG = join(REPO_ROOT, 'lychee.toml');
@@ -191,8 +191,7 @@ function verifyGitHubUrl(url, reposDir) {
 function verifyGitHubUrls(urls) {
   if (urls.length === 0) return { passed: 0, failed: 0, errors: [] };
 
-  const reposDir = join(OUTPUT_DIR, '.github-repos');
-  mkdirSync(reposDir, { recursive: true });
+  mkdirSync(GITHUB_REPOS_DIR, { recursive: true });
 
   // Clone repos first
   const repos = new Set();
@@ -204,7 +203,7 @@ function verifyGitHubUrls(urls) {
   log.step('Cloning repositories for verification...');
   for (const repo of repos) {
     const [org, name] = repo.split('/');
-    const repoDir = join(reposDir, `${org}_${name}`);
+    const repoDir = join(GITHUB_REPOS_DIR, `${org}_${name}`);
     if (!existsSync(repoDir)) {
       log.info(`  Cloning ${repo}...`);
       cloneRepo(`https://github.com/${repo}`, repoDir);
@@ -218,7 +217,7 @@ function verifyGitHubUrls(urls) {
   const errors = [];
 
   for (const url of urls) {
-    const result = verifyGitHubUrl(url, reposDir);
+    const result = verifyGitHubUrl(url, GITHUB_REPOS_DIR);
     if (result.valid) {
       collector.success(url);
       passed++;
@@ -249,14 +248,14 @@ const LYCHEE_EXIT = {
   CONFIG_ERROR: 3,
 };
 
-function runLychee(urlsFile, options = {}) {
+function runLychee(urls, options = {}) {
   log.step('Checking HTTP links with lychee...');
   log.newline();
 
   return new Promise((resolve) => {
-    const args = ['--config', LYCHEE_CONFIG, '--files-from', urlsFile];
+    // Use --files-from to read input URLs from stdin (pages to crawl for links)
+    const args = ['--config', LYCHEE_CONFIG, '--files-from', '-'];
 
-    // Add optional flags
     if (options.noProgress) {
       args.push('--no-progress');
     }
@@ -265,8 +264,12 @@ function runLychee(urlsFile, options = {}) {
     }
 
     const lychee = spawn('lychee', args, {
-      stdio: ['inherit', 'inherit', 'inherit'],
+      stdio: ['pipe', 'inherit', 'inherit'],
     });
+
+    // Pipe page URLs to lychee's stdin - lychee will crawl each page for links
+    lychee.stdin.write(urls.join('\n'));
+    lychee.stdin.end();
 
     lychee.on('close', (code) => {
       log.debug(`Lychee exited with code ${code}`);
@@ -325,21 +328,17 @@ Environment Variables:
   log.header('Link Checker');
   log.newline();
 
-  mkdirSync(OUTPUT_DIR, { recursive: true });
-
-  // 1. Fetch sitemap and write URLs
+  // 1. Fetch sitemap URLs
   const sitemapUrls = await fetchSitemap(sitemapUrl);
-  const sitemapFile = join(OUTPUT_DIR, 'sitemap-urls.txt');
-  writeFileSync(sitemapFile, sitemapUrls.join('\n'));
   log.info(`Found ${sitemapUrls.length} URLs in sitemap`);
-  log.debug(`Wrote URLs to ${sitemapFile}`);
+  log.debug(`Sample URLs: ${sitemapUrls.slice(0, 3).join(', ')}${sitemapUrls.length > 3 ? '...' : ''}`);
 
-  // 2. Extract GitHub URLs
+  // 2. Extract GitHub URLs from source files
   const githubUrls = extractGitHubUrls();
-  const githubFile = join(OUTPUT_DIR, 'github-urls.txt');
-  writeFileSync(githubFile, githubUrls.join('\n'));
   log.info(`Found ${githubUrls.length} GitHub URLs to verify`);
-  log.debug(`Wrote URLs to ${githubFile}`);
+  if (githubUrls.length > 0) {
+    log.debug(`Sample GitHub URLs: ${githubUrls.slice(0, 3).join(', ')}${githubUrls.length > 3 ? '...' : ''}`);
+  }
 
   log.newline();
 
@@ -359,12 +358,12 @@ Environment Variables:
     log.info(`GitHub: ${githubResult.passed} passed, ${githubResult.failed} failed`);
   }
 
-  // 4. Run lychee on sitemap URLs
+  // 4. Run lychee on sitemap URLs (piped via stdin)
   if (skipHttp) {
     log.newline();
     log.info('Skipping HTTP link checking (--skip-http)');
   } else {
-    const httpResult = await runLychee(sitemapFile, {
+    const httpResult = await runLychee(sitemapUrls, {
       noProgress,
       format: lycheeFormat,
     });

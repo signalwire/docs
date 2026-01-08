@@ -25,12 +25,6 @@ jobs:
           URL=$(echo "$OUTPUT" | grep -oP 'Published docs to \K.*(?= \()')
           echo "Preview URL: $URL"
           echo "preview_url=$URL" >> $GITHUB_OUTPUT
-          echo "🌿 Preview your docs: $URL" > preview_url.txt
-
-      - name: Comment URL in PR
-        uses: thollander/actions-comment-pull-request@v2.4.3
-        with:
-          filePath: preview_url.txt
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -46,48 +40,52 @@ jobs:
         id: check-links
         run: |
           set +e
-          node scripts/check-links.js --sitemap "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" --no-progress --format json 2>&1 | tee .link-check/lychee-output.json
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+          OUTPUT=$(node scripts/check-links.js --sitemap "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" --no-progress --format json 2>&1)
+          EXIT_CODE=$?
+          echo "exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT
+          # Store output as multiline string
+          echo "output<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Comment link check result
+      - name: Comment PR status
         uses: actions/github-script@v7
         env:
           EXIT_CODE: ${{ steps.check-links.outputs.exit_code }}
+          PREVIEW_URL: ${{ steps.generate-docs.outputs.preview_url }}
+          LYCHEE_OUTPUT: ${{ steps.check-links.outputs.output }}
         with:
           script: |
-            const fs = require('fs');
             const failed = process.env.EXIT_CODE !== '0';
-            const MARKER = '<!-- link-checker-bot -->';
+            const previewUrl = process.env.PREVIEW_URL;
+            const lycheeOutput = process.env.LYCHEE_OUTPUT || '';
+            const MARKER = '<!-- preview-docs-bot -->';
 
             let body = MARKER + '\n';
+
             if (failed) {
               body += `## ❌ Link Check Failed\n\n`;
 
               // Try to parse lychee JSON output
               try {
-                const outputPath = '.link-check/lychee-output.json';
-                if (fs.existsSync(outputPath)) {
-                  const raw = fs.readFileSync(outputPath, 'utf8');
-                  // Find the JSON object in the output (skip any non-JSON lines)
-                  const jsonMatch = raw.match(/\{[\s\S]*\}$/);
-                  if (jsonMatch) {
-                    const report = JSON.parse(jsonMatch[0]);
-                    const failures = report.fail_map || {};
-                    const failedUrls = Object.entries(failures);
+                const jsonMatch = lycheeOutput.match(/\{[\s\S]*\}$/);
+                if (jsonMatch) {
+                  const report = JSON.parse(jsonMatch[0]);
+                  const failures = report.fail_map || {};
+                  const failedUrls = Object.entries(failures);
 
-                    if (failedUrls.length > 0) {
-                      body += `Found ${failedUrls.length} broken link(s):\n\n`;
-                      body += `| URL | Status |\n|-----|--------|\n`;
+                  if (failedUrls.length > 0) {
+                    body += `Found ${failedUrls.length} broken link(s):\n\n`;
+                    body += `| URL | Status |\n|-----|--------|\n`;
 
-                      const maxLinks = 20;
-                      failedUrls.slice(0, maxLinks).forEach(([url, errors]) => {
-                        const status = errors.map(e => e.status || 'Error').join(', ');
-                        body += `| ${url} | ${status} |\n`;
-                      });
+                    const maxLinks = 20;
+                    failedUrls.slice(0, maxLinks).forEach(([url, errors]) => {
+                      const status = errors.map(e => e.status || 'Error').join(', ');
+                      body += `| ${url} | ${status} |\n`;
+                    });
 
-                      if (failedUrls.length > maxLinks) {
-                        body += `\n*...and ${failedUrls.length - maxLinks} more. See full report below.*\n`;
-                      }
+                    if (failedUrls.length > maxLinks) {
+                      body += `\n*...and ${failedUrls.length - maxLinks} more. See full report below.*\n`;
                     }
                   }
                 }
@@ -95,10 +93,11 @@ jobs:
                 body += `Broken links were found in the preview.\n`;
               }
             } else {
-              body += `## ✅ Link Check Passed\n\n`;
-              body += `All links are valid.`;
+              body += `## 🌿 Preview\n\n`;
+              body += `${previewUrl}\n\n`;
+              body += `✅ All links are valid.`;
             }
-            body += `\n\n---\n[View full report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            body += `\n\n---\n[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
