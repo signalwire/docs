@@ -36,82 +36,51 @@ jobs:
         with:
           tool: lychee
 
-      # Performance comparison: lychee-action vs custom script
-      - name: Fetch sitemap URLs for action test
-        run: |
-          curl -s "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" | grep -oP '(?<=<loc>)[^<]+' > /tmp/sitemap-urls.txt
-          echo "Found $(wc -l < /tmp/sitemap-urls.txt) URLs in sitemap"
-
-      - name: "[Perf Test] lychee-action"
-        id: lychee-action
-        uses: lycheeverse/lychee-action@v2
-        with:
-          args: >-
-            --config lychee.toml
-            --no-progress
-            --max-concurrency 20
-            --files-from /tmp/sitemap-urls.txt
-          output: /tmp/lychee-action-report.md
-          format: markdown
-          fail: false
-          jobSummary: false
-
-      - name: "[Perf Test] Custom script"
+      - name: Check links
         id: check-links
         run: |
           set +e
-          # Use tee to show output in real-time while capturing to file
-          node scripts/check-links.js --sitemap "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" --format json 2>&1 | tee /tmp/lychee-output.txt
-          EXIT_CODE=${PIPESTATUS[0]}
-          # Save for PR comment
-          echo "exit_code=${EXIT_CODE}" >> $GITHUB_OUTPUT
-          echo "output<<EOF" >> $GITHUB_OUTPUT
-          cat /tmp/lychee-output.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          node scripts/check-links.js \
+            --sitemap "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" \
+            --no-progress \
+            --output /tmp/link-report.md
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: Comment PR status
         uses: actions/github-script@v7
         env:
           EXIT_CODE: ${{ steps.check-links.outputs.exit_code }}
           PREVIEW_URL: ${{ steps.generate-docs.outputs.preview_url }}
-          LYCHEE_OUTPUT: ${{ steps.check-links.outputs.output }}
         with:
           script: |
+            const fs = require('fs');
             const failed = process.env.EXIT_CODE !== '0';
             const previewUrl = process.env.PREVIEW_URL;
-            const lycheeOutput = process.env.LYCHEE_OUTPUT || '';
-            const MARKER = '<!-- preview-docs-bot -->';
 
+            // Read the report file
+            let report = '';
+            try {
+              report = fs.readFileSync('/tmp/link-report.md', 'utf8');
+            } catch (e) {
+              // File may not exist if script failed early
+            }
+
+            const MARKER = '<!-- preview-docs-bot -->';
             let body = MARKER + '\n';
 
             if (failed) {
               body += `## ❌ Link Check Failed\n\n`;
-
-              // Try to parse lychee JSON output
-              try {
-                const jsonMatch = lycheeOutput.match(/\{[\s\S]*\}$/);
-                if (jsonMatch) {
-                  const report = JSON.parse(jsonMatch[0]);
-                  const failures = report.fail_map || {};
-                  const failedUrls = Object.entries(failures);
-
-                  if (failedUrls.length > 0) {
-                    body += `Found ${failedUrls.length} broken link(s):\n\n`;
-                    body += `| URL | Status |\n|-----|--------|\n`;
-
-                    const maxLinks = 20;
-                    failedUrls.slice(0, maxLinks).forEach(([url, errors]) => {
-                      const status = errors.map(e => e.status || 'Error').join(', ');
-                      body += `| ${url} | ${status} |\n`;
-                    });
-
-                    if (failedUrls.length > maxLinks) {
-                      body += `\n*...and ${failedUrls.length - maxLinks} more. See full report below.*\n`;
-                    }
-                  }
+              body += `**Preview:** ${previewUrl}\n\n`;
+              if (report) {
+                // Extract just the broken links section from the report
+                const brokenSection = report.match(/## ❌ [\s\S]*?(?=##|$)/);
+                if (brokenSection) {
+                  body += brokenSection[0];
+                } else {
+                  body += report;
                 }
-              } catch (e) {
-                body += `Broken links were found in the preview.\n`;
+              } else {
+                body += `Broken links were found in the preview. Check the workflow logs for details.\n`;
               }
             } else {
               body += `## 🌿 Preview\n\n`;
@@ -142,6 +111,14 @@ jobs:
                 body
               });
             }
+
+      - name: Upload link report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-report
+          path: /tmp/link-report.md
+          if-no-files-found: ignore
 
       - name: Exit with link check result
         if: steps.check-links.outputs.exit_code != '0'

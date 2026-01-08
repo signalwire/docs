@@ -11,50 +11,18 @@ on:
         description: 'Sitemap URL (defaults to production)'
         required: false
         default: ''
-  # PR preview checks - triggered after preview-docs completes
-  workflow_run:
-    workflows: ["preview-docs"]
-    types:
-      - completed
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   check-links:
     name: Check links
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Download preview data (PR checks only)
-        if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@v4
-        with:
-          name: preview-data
-          path: preview-data/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
-
-      - name: Set up environment
-        id: setup
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_run" ]; then
-            PREVIEW_URL=$(cat preview-data/preview_url.txt)
-            PR_NUMBER=$(cat preview-data/pr_number.txt)
-            echo "sitemap_url=${PREVIEW_URL}/sitemap.xml" >> $GITHUB_OUTPUT
-            echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-          else
-            SITEMAP_URL="${{ inputs.sitemap_url }}"
-            if [ -z "$SITEMAP_URL" ]; then
-              SITEMAP_URL="https://signalwire.docs.buildwithfern.com/sitemap.xml"
-            fi
-            echo "sitemap_url=${SITEMAP_URL}" >> $GITHUB_OUTPUT
-          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -66,62 +34,35 @@ jobs:
         with:
           tool: lychee
 
+      - name: Determine sitemap URL
+        id: setup
+        run: |
+          SITEMAP_URL="${{ inputs.sitemap_url }}"
+          if [ -z "$SITEMAP_URL" ]; then
+            SITEMAP_URL="https://signalwire.docs.buildwithfern.com/sitemap.xml"
+          fi
+          echo "sitemap_url=${SITEMAP_URL}" >> $GITHUB_OUTPUT
+
       - name: Run link checker
         id: check
         run: |
           set +e
-          node scripts/check-links.js --sitemap "${{ steps.setup.outputs.sitemap_url }}"
+          node scripts/check-links.js \
+            --sitemap "${{ steps.setup.outputs.sitemap_url }}" \
+            --no-progress \
+            --output /tmp/link-report.md
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
-      - name: Comment on PR
-        if: github.event_name == 'workflow_run' && steps.setup.outputs.pr_number != ''
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.setup.outputs.pr_number }}
-          EXIT_CODE: ${{ steps.check.outputs.exit_code }}
+      - name: Upload link report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const prNumber = parseInt(process.env.PR_NUMBER, 10);
-            if (!prNumber) return;
+          name: link-report
+          path: /tmp/link-report.md
+          if-no-files-found: ignore
 
-            const failed = process.env.EXIT_CODE !== '0';
-            const MARKER = '<!-- link-checker-bot -->';
-
-            let body = MARKER + '\n';
-            if (failed) {
-              body += `## ❌ Link Check Failed\n\n`;
-              body += `Broken links were found in the preview.\n`;
-            } else {
-              body += `## ✅ Link Check Passed\n\n`;
-              body += `All links are valid.`;
-            }
-            body += `\n\n---\n[View full report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
-
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-            });
-
-            const existing = comments.find(c => c.body.includes(MARKER));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body
-              });
-            }
-
-      - name: Slack notification (daily failures only)
-        if: github.event_name != 'workflow_run' && steps.check.outputs.exit_code != '0'
+      - name: Slack notification (on failure)
+        if: steps.check.outputs.exit_code != '0'
         env:
           SLACK_TOKEN: ${{ secrets.FERN_WRITER_SLACK_TOKEN }}
         run: |
