@@ -31,32 +31,32 @@ model TranscribeStartAction {
     @example(true)
     live_events?: boolean | SWMLVar;
 
-    @doc("The timeout for speech recognition.")
-    @example(30)
-    speech_timeout?: integer | SWMLVar;
+    @doc("The timeout for speech recognition in milliseconds.")
+    @example(30000)
+    speech_timeout?: integer | SWMLVar = 60000;
 
-    @doc("Voice activity detection silence time in milliseconds.")
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
     @example(500)
-    vad_silence_ms?: integer | SWMLVar;
+    vad_silence_ms?: integer | SWMLVar = 300;
 
-    @doc("Voice activity detection threshold.")
-    @example(3)
-    vad_thresh?: integer | SWMLVar;
+    @doc("Voice activity detection threshold (0-1800).")
+    @example(400)
+    vad_thresh?: integer | SWMLVar = 400;
 
-    @doc("Debug level for logging")
+    @doc("Debug level for logging (0-2).")
     @example(0)
-    debug_level?: integer | SWMLVar;
+    debug_level?: integer | SWMLVar = 0;
 
     @doc("The direction of the call that should be transcribed.")
     direction: TranscribeDirection[];
 
-    @doc("The speech engine to be used.")
-    @example("google")
-    speech_engine: string;
+    @doc("The speech engine to use for speech recognition.")
+    @example(SpeechEngine.google)
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
-    @doc("The prompt for summarizaton.")
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
     @example("Summarize the key points of this conversation.")
-    summary_prompt?: string;
+    ai_summary_prompt?: string;
   };
 }
 
@@ -77,7 +77,7 @@ model TranscribeSummarizeAction {
     @example("https://example.com/summary-webhook")
     webhook?: string;
 
-    @doc("The prompt for summarizaton.")
+    @doc("The prompt for summarization.")
     @example("Provide a brief summary of the conversation including main topics discussed.")
     prompt?: string;
   };
