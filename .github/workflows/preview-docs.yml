@@ -36,7 +36,27 @@ jobs:
         with:
           tool: lychee
 
-      - name: Run link checker
+      # Performance comparison: lychee-action vs custom script
+      - name: Fetch sitemap URLs for action test
+        run: |
+          curl -s "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" | grep -oP '(?<=<loc>)[^<]+' > /tmp/sitemap-urls.txt
+          echo "Found $(wc -l < /tmp/sitemap-urls.txt) URLs in sitemap"
+
+      - name: "[Perf Test] lychee-action"
+        id: lychee-action
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --config lychee.toml
+            --no-progress
+            --max-concurrency 20
+            --files-from /tmp/sitemap-urls.txt
+          output: /tmp/lychee-action-report.md
+          format: markdown
+          fail: false
+          jobSummary: false
+
+      - name: "[Perf Test] Custom script"
         id: check-links
         run: |
           set +e
