@@ -20,9 +20,7 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
           display: "flex",
           gap: 3,
           flexDirection: "column",
-          height: "100%",
-          overflowY: "auto",
-          overflowX: "hidden",
+          height: "calc(100% - 18px)",
         }}
       >
         {Object.keys(data).map((useCase, idx) => (
@@ -30,13 +28,13 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
             key={idx}
             className={clsx(style.ucbutton, idx === selUseCaseIdx ? style.selected : "")}
             onClick={(e) => setSelUseCaseIdx(idx)}
-            style={{ minHeight: 50, flexShrink: 0 }}
+            style={{ flex: 1, maxHeight: 65 }}
           >
             {useCase}
           </button>
         ))}
       </div>
-      <div style={{ width: "calc(100% - 210px)", height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ width: "calc(100% - 210px)" }}>
         <div
           style={{
             overflow: "hidden",
@@ -45,7 +43,6 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
             overflowX: "auto",
             overflowY: "hidden",
             marginBottom: 7,
-            flexShrink: 0,
           }}
         >
           {Object.keys(Object.values(data)[selUseCaseIdx]).map((paradigm, idx) => (
@@ -62,7 +59,7 @@ export default function UseCaseViewDesktop({ data }: { data: UseCases }) {
             </button>
           ))}
         </div>
-        <div style={{ width: "100%", flex: 1, overflow: "hidden", minHeight: 0 }}>
+        <div style={{ width: "100%", marginTop: 3 }}>
           {Object.values(Object.values(data)[selUseCaseIdx])[selParadigmIdx]}
         </div>
       </div>
