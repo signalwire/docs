@@ -350,9 +350,10 @@ function runLychee(urls, options = {}) {
     args.push('--no-progress');
   }
 
-  if (excludeGithub) {
-    args.push('--exclude', '^https://github\\.com/');
-  }
+  // Note: GitHub exclusion is now handled in lychee.toml to avoid
+  // command-line --exclude overriding config file exclude patterns.
+  // The excludeGithub option is kept for documentation but the actual
+  // exclusion happens via the config file.
 
   // Run lychee
   const result = spawnSync('lychee', args, {
@@ -788,42 +789,27 @@ Examples:
     }
 
     // 8. Compile final failures
-    // Filter function to exclude JS script fetches and other non-content URLs
-    const shouldExcludeUrl = (url) => {
-      if (!url) return true;
-      // Exclude Vercel analytics/insights scripts
-      if (url.includes('_vercel/') && url.includes('/script')) return true;
-      // Exclude other common JS/CSS asset patterns that aren't actual content links
-      if (url.match(/\.(js|css|woff2?|ttf|eot|ico)(\?|$)/)) return true;
-      return false;
-    };
+    // Note: URL filtering (Vercel analytics, JS scripts, etc.) is handled by lychee.toml
+    // exclude patterns, so we don't need to filter here.
 
     // Add client errors (real broken links)
     for (const { url, status, sourceUrl } of allClientErrors) {
-      if (!shouldExcludeUrl(url)) {
-        results.finalFailures.push({ url, status, sourceUrl });
-      }
+      results.finalFailures.push({ url, status, sourceUrl });
     }
 
     // Add rate-limited URLs that didn't recover
     for (const failure of results.retryResults.stillFailing) {
-      if (!shouldExcludeUrl(failure.url)) {
-        results.finalFailures.push(failure);
-      }
+      results.finalFailures.push(failure);
     }
 
     // Add server errors that couldn't be verified locally
     for (const failure of results.fallbackResults.stillFailing) {
-      if (!shouldExcludeUrl(failure.url)) {
-        results.finalFailures.push(failure);
-      }
+      results.finalFailures.push(failure);
     }
 
     // Add other errors
     for (const { url, error, sourceUrl } of allOtherErrors) {
-      if (!shouldExcludeUrl(url)) {
-        results.finalFailures.push({ url, error, sourceUrl });
-      }
+      results.finalFailures.push({ url, error, sourceUrl });
     }
   }
 
