@@ -63,8 +63,8 @@ const LYCHEE_CONFIG = join(REPO_ROOT, 'lychee.toml');
 
 const RETRY_CONFIG = {
   maxAttempts: 4,
-  initialDelayMs: 5000,  // 5 seconds
-  maxDelayMs: 60000,     // 60 seconds
+  initialDelayMs: 15000,  // 15 seconds (matches Fern's retry timing)
+  maxDelayMs: 120000,     // 120 seconds
   backoffMultiplier: 2,
 };
 
@@ -512,39 +512,46 @@ async function retryRateLimitedUrls(urls) {
 // ============================================
 
 function tryLocalVerificationFallback(serverErrors) {
-  const githubErrors = serverErrors.filter(({ url }) =>
+  const githubBlobTreeErrors = serverErrors.filter(({ url }) =>
     url.match(/^https:\/\/github\.com\/[^/]+\/[^/]+\/(blob|tree|releases\/tag)\//)
   );
 
-  if (githubErrors.length === 0) {
-    return { verified: [], stillFailing: serverErrors };
+  if (githubBlobTreeErrors.length === 0 && serverErrors.length === 0) {
+    return { verified: [], stillFailing: [], externalGithub5xx: [] };
   }
 
-  log.step(`Attempting local verification for ${githubErrors.length} GitHub 5xx errors...`);
+  if (githubBlobTreeErrors.length > 0) {
+    log.step(`Attempting local verification for ${githubBlobTreeErrors.length} GitHub 5xx errors...`);
+  }
 
   const verified = [];
   const stillFailing = [];
+  const externalGithub5xx = [];  // External GitHub URLs with 5xx (likely rate limiting)
 
   // Ensure repos are cloned
   mkdirSync(GITHUB_REPOS_DIR, { recursive: true });
 
-  for (const { url, error, status } of serverErrors) {
-    // Check if it's a GitHub blob/tree/tag URL
+  for (const { url, error, status, sourceUrl } of serverErrors) {
+    // Check if it's a GitHub blob/tree/tag URL (can be verified locally)
     if (url.match(/^https:\/\/github\.com\/[^/]+\/[^/]+\/(blob|tree|releases\/tag)\//)) {
       const result = verifyGitHubUrl(url, GITHUB_REPOS_DIR);
       if (result.valid) {
         log.debug(`  ✓ Verified locally (5xx but exists): ${url}`);
         verified.push(url);
       } else {
-        stillFailing.push({ url, error, status, localError: result.error });
+        stillFailing.push({ url, error, status, sourceUrl, localError: result.error });
       }
+    } else if (url.match(/^https:\/\/github\.com\//)) {
+      // External GitHub URL with 5xx - likely rate limiting, mark as informational
+      log.debug(`  ⚠ External GitHub 5xx (likely rate limiting): ${url}`);
+      externalGithub5xx.push({ url, error, status, sourceUrl });
     } else {
       // Non-GitHub URL with 5xx - keep as failure
-      stillFailing.push({ url, error, status });
+      stillFailing.push({ url, error, status, sourceUrl });
     }
   }
 
-  return { verified, stillFailing };
+  return { verified, stillFailing, externalGithub5xx };
 }
 
 // ============================================
@@ -592,6 +599,9 @@ function printSummary(results) {
   // Fallback results
   if (fallbackResults.verified.length > 0) {
     log.info(`5xx errors: ${fallbackResults.verified.length} verified locally (false positives)`);
+  }
+  if (fallbackResults.externalGithub5xx && fallbackResults.externalGithub5xx.length > 0) {
+    log.info(`External GitHub 5xx: ${fallbackResults.externalGithub5xx.length} (likely rate limiting, manual validation recommended)`);
   }
 
   // Final failures
@@ -656,6 +666,17 @@ function writeReport(outputFile, results) {
   if (fallbackResults.verified.length > 0) {
     report += `## Verified Locally (5xx False Positives)\n\n`;
     report += `${fallbackResults.verified.length} GitHub URLs returned 5xx but exist locally.\n\n`;
+  }
+
+  if (fallbackResults.externalGithub5xx && fallbackResults.externalGithub5xx.length > 0) {
+    report += `## External GitHub URLs - 5xx (Likely Rate Limiting, Manual Validation Recommended)\n\n`;
+    report += `_These links returned 5xx errors during automated checking. They are likely valid but rate-limited. Please validate manually._\n\n`;
+    for (const { url, status, sourceUrl } of fallbackResults.externalGithub5xx) {
+      report += `- [${status}] ${url}`;
+      if (sourceUrl) report += ` (found on: ${sourceUrl})`;
+      report += '\n';
+    }
+    report += '\n';
   }
 
   writeFileSync(outputFile, report);
@@ -729,7 +750,7 @@ Examples:
     httpMain: { results: null, failed: false },
     githubHttp: { results: null, failed: false },
     retryResults: { recovered: [], stillFailing: [] },
-    fallbackResults: { verified: [], stillFailing: [] },
+    fallbackResults: { verified: [], stillFailing: [], externalGithub5xx: [] },
     finalFailures: [],
   };
 
