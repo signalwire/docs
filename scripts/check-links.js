@@ -408,21 +408,23 @@ function categorizeLycheeFailures(results) {
     return failures;
   }
 
-  for (const [url, errors] of Object.entries(results.error_map)) {
+  for (const [sourceUrl, errors] of Object.entries(results.error_map)) {
     for (const error of errors) {
       // Extract status code - lychee format: { status: { text: "...", code: 404 } }
+      // error.url is the actual broken link, sourceUrl is the page where it was found
       const statusCode = error.status?.code;
       const statusText = error.status?.text || '';
+      const brokenUrl = error.url || sourceUrl;
 
       if (statusCode === 429 || statusText.includes('429')) {
-        failures.rateLimited.push({ url, error, status: statusCode });
+        failures.rateLimited.push({ url: brokenUrl, error, status: statusCode, sourceUrl });
       } else if (statusCode >= 500 && statusCode < 600) {
-        failures.serverErrors.push({ url, error, status: statusCode });
+        failures.serverErrors.push({ url: brokenUrl, error, status: statusCode, sourceUrl });
       } else if (statusCode >= 400 && statusCode < 500) {
-        failures.clientErrors.push({ url, error, status: statusCode });
+        failures.clientErrors.push({ url: brokenUrl, error, status: statusCode, sourceUrl });
       } else {
         // Network errors, timeouts, etc. - statusCode may be undefined
-        failures.other.push({ url, error, status: statusCode || statusText });
+        failures.other.push({ url: brokenUrl, error, status: statusCode || statusText, sourceUrl });
       }
     }
   }
