@@ -11,6 +11,22 @@ on:
         description: 'Sitemap URL (defaults to production)'
         required: false
         default: ''
+  # Allow other workflows to call this
+  workflow_call:
+    inputs:
+      sitemap_url:
+        description: 'Sitemap URL to check'
+        required: true
+        type: string
+      notify_slack:
+        description: 'Send Slack notification on failure'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PRODUCTION_SITEMAP_URL: https://signalwire.docs.buildwithfern.com/sitemap.xml
+  SLACK_CHANNEL_ID: C062YDM9GR1
 
 permissions:
   contents: read
@@ -29,6 +45,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Cache lychee
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/lychee
+          key: lychee-${{ runner.os }}
+
       - name: Install lychee
         uses: taiki-e/install-action@v2
         with:
@@ -37,9 +59,11 @@ jobs:
       - name: Determine sitemap URL
         id: setup
         run: |
-          SITEMAP_URL="${{ inputs.sitemap_url }}"
-          if [ -z "$SITEMAP_URL" ]; then
-            SITEMAP_URL="https://signalwire.docs.buildwithfern.com/sitemap.xml"
+          # workflow_call input takes precedence, then workflow_dispatch input, then default
+          if [ -n "${{ inputs.sitemap_url }}" ]; then
+            SITEMAP_URL="${{ inputs.sitemap_url }}"
+          else
+            SITEMAP_URL="${{ env.PRODUCTION_SITEMAP_URL }}"
           fi
           echo "sitemap_url=${SITEMAP_URL}" >> $GITHUB_OUTPUT
 
@@ -62,14 +86,16 @@ jobs:
           if-no-files-found: ignore
 
       - name: Slack notification (on failure)
-        if: steps.check.outputs.exit_code != '0'
+        if: |
+          steps.check.outputs.exit_code != '0' && 
+          (github.event_name == 'schedule' || inputs.notify_slack == true)
         env:
           SLACK_TOKEN: ${{ secrets.FERN_WRITER_SLACK_TOKEN }}
         run: |
           curl -X POST https://slack.com/api/chat.postMessage \
             -H "Authorization: Bearer $SLACK_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"channel\":\"C062YDM9GR1\",\"text\":\"❌ Daily link check found broken links.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>\"}"
+            -d "{\"channel\":\"${{ env.SLACK_CHANNEL_ID }}\",\"text\":\"❌ Daily link check found broken links.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>\"}"
 
       - name: Exit with result
         if: steps.check.outputs.exit_code != '0'

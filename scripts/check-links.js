@@ -29,7 +29,7 @@
  */
 
 import { execSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, unlinkSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Logger } from './utils/logger.js';
@@ -38,6 +38,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = dirname(__dirname);
 const LINK_CHECK_DIR = join(REPO_ROOT, '.link-check');
 const GITHUB_REPOS_DIR = join(LINK_CHECK_DIR, '.github-repos');
+
+// ============================================
+// Cleanup
+// ============================================
+
+function cleanup() {
+  if (existsSync(LINK_CHECK_DIR)) {
+    log.debug(`Cleaning up: ${LINK_CHECK_DIR}`);
+    try {
+      rmSync(LINK_CHECK_DIR, { recursive: true, force: true });
+    } catch (err) {
+      log.debug(`Failed to cleanup: ${err.message}`);
+    }
+  }
+}
 
 const log = new Logger();
 const LYCHEE_CONFIG = join(REPO_ROOT, 'lychee.toml');
@@ -802,6 +817,9 @@ Examples:
   if (outputFile) {
     writeReport(outputFile, results);
   }
+
+  // Cleanup cloned repositories
+  cleanup();
 
   // Exit with appropriate code
   process.exit(allPassed ? 0 : 1);
