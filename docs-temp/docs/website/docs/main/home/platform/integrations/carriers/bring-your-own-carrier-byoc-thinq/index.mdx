@@ -1,0 +1,117 @@
+---
+title: ThinQ
+slug: /platform/integrations/carriers/thinq
+x-custom:
+  ported_from_readme: true
+  tags:
+    - sdk:compatibility
+    - language:ruby
+    - product:voice
+---
+
+
+SignalWire allows you to easily integrate with your existing providers via SIP as a Bring Your Own Carrier (BYOC).  
+[thinQ](https://www.thinq.com/) is a voice API platform that can be integrated with SignalWire as BYOC.  Follow the steps below to have inbound calls from thinQ routed to SignalWire as well as outbound calls from SignalWire routed to thinQ.
+
+Check SignalWire SIP settings
+-----------------------------
+
+The first step is to check the SIP settings in your SignalWire Space. 
+
+Go to **SIP > SIP Settings**.  Leave the default settings as is.
+
+<figure>
+  <img className="img-800" src={require("./544a9af-sip_settings.webP").default} alt="A screenshot of the SIP Settings tab of the SIP page." />
+</figure>
+
+Create a SIP Domain Application
+-------------------------------
+
+Go to **SIP > Domain Apps > Create a Domain App**
+
+<figure>
+  <img className="img-800" src={require("./05cec88-create_domain_app.webP").default} alt="A screenshot of the Domain Apps tab of the SIP page, with a blue button labeled 'Create a Domain App'." />
+</figure>
+
+Name the Domain App **thinQBYOC** and input **BYOC** for the APP URL.  
+Click Save.
+
+<figure>
+  <img className="img-800" src={require("./799bebe-edit_domain_app.webP").default} alt="A screenshot of the New Domain App page." />
+</figure>
+
+Copy the URL generated for the Domain App as you’ll need it during your inbound routing profile setup inside thinQ.
+
+Create an Inbound Routing Profile at thinQ
+------------------------------------------
+
+Go to **thinQ.io > Inbound > Routing Profiles > Inbound Profiles**
+
+Click on a new profile, and use **SignalWire-YourCompanyName** or just **SignalWire** as the name.
+
+Select **DNS A** for Type and enter the full SignalWire Domain App URL for Address. 
+
+<figure>
+  <img className="img-800" src={require("./ab65522-thinq_routing.webP").default} alt="A screenshot of the Add Routing Profile popup in the thinQ interface." />
+</figure>
+
+
+:::info Multiple SIP Domains for different applications
+
+You may want to create multiple SIP Domains on SignalWire for different applications, which would allow you to create additional routing profiles. Be sure your naming system is descriptive so you recognize what it matches within SignalWire.
+
+:::
+
+Configuring SignalWire for thinQ Outbound Call Routing
+------------------------------------------------------
+
+Go to **thinq.io > Outbound > Trunks > Add New**.
+
+<figure>
+  <img className="img-800" src={require("./926d611-thinq_outbound.webP").default} alt="A screenshot of the Trunks pane of the Outbound tab of the thinQ interface, with a red arrow pointing to the button labeled 'Add New'." />
+</figure>
+
+Give the trunk a name and then choose the thinQ Profile that you want to associate the trunk with from the **Select Trunk Type** drop-down and select **Connect**.
+
+For **Select your trunk carrier**, click **SignalWire** and then click **Save**.
+
+<figure>
+  <img className="img-800" src={require("./132676c-thinq_trunk.webP").default} alt="A screenshot of the Create Outbound Trunk page, with a red arrow pointing to the SignalWire logo." />
+</figure>
+
+Navigate to **thinq.io > Outbound > Trunks** and click on the Token icon to the right of your newly created SignalWire Trunk.  This token and your thinQ Account ID will be needed to configure the SIP URI in SignalWire. This is required for routing outbound calls from SignalWire through thinQ. 
+
+<figure>
+  <img className="img-800" src={require("./e6b6e90-thinq_token.webP").default} alt="A screenshot of the Token popup, allowing the user to copy the trunk token." />
+</figure>
+
+Making Outbound Calls via the cXML API
+-----------------------------------------------
+
+Take a look a a full example using Ruby:
+
+```ruby
+require ‘signalwire/sdk’
+client = Signalwire::REST::Client.new ‘your-project’, ‘your-token’, signalwire_space_url: “example.signalwire.com”
+
+call = client.calls.create(
+url: ‘http://YOURSPACE.signalwire.com/YOUR-LAML-BIN-ID’,
+to: ‘sip:12155551212@wap.thinq.com?X-account-id=0123&X-account-token=4567890;transport=udp?header1=foo&header2=bar’,
+from: ‘+15559988777’,
+sip_auth_username: ‘user’,
+sip_auth_password: ‘pass’
+)
+```
+
+```bash
+curl https://<YOURSPACE>.signalwire.com/api/laml/2010-04-01/Accounts/<YOURACCOUNTSID>/Calls.json \
+  -X POST \
+  --data-urlencode "Url=http://your-application.com/docs/voice.xml" \
+  --data-urlencode "sip:12155551212@wap.thinq.com?X-account-id=0123&X-account-token=4567890;transport=udp?header1=foo&header2=bar" \
+  --data-urlencode "From=+15550011222" \
+  --data-urlencode "SipAuthUsername=user" \
+  --data-urlencode "SipAuthPassword=pass" \
+  -u "YourProjectID:YourAuthToken"
+```
+
+[Check out thinQ's blog post!](https://www.thinq.com/blog/signalwire-with-thinq-integration-inbound-outbound-voice)

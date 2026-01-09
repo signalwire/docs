@@ -1,0 +1,155 @@
+---
+slug: /compatibility-api/client-sdks/methods/messaging/create
+title: Create
+---
+
+# Create a message
+
+Use this endpoint for the [Media](./index.mdx) method to send an outbound message from one of your SignalWire phone numbers.
+
+## Parameters
+
+| Parameter                                                                                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
+| :------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `To` <span className="required-arg">Required</span>                                                                | The recipient of the outbound message formatted in E.164 format.                                                                                                                                                                                                                                                                                                                                                 |
+| `From` <span className="required-arg">Required</span>                                                              | One of your SignalWire phone numbers or short codes used as the sender of the message. You must use one of your project's phone numbers or short codes that you have purchased from SignalWire and which are capable of messaging.                                                                                                                                                                               |
+| `Body` <span class="required-arg">required*</span><span class="optional-arg">if MediaUrl is not present</span> | The body of the message you want to send, up to a maximum of 1600 characters per message.                                                                                                                                                                                                                                                                                                                        |
+| `MediaUrl` <span class="required-arg">required*</span><span class="optional-arg">if Body is not present</span> | URL of media you wish to attach and send with the message. Include multiple `MediaUrl` arguments if you which to send more than one media per message, up to a maximum of 10 media URLs per message. There is a limit of 5MB for the total combined media size per message. See the [MIME Types](/compatibility-api/cxml/messaging#mime-types) section for a full list of content types supported by SignalWire. |
+| `ApplicationSid` <span className="optional-arg">Optional</span>                                                    | The [SID](/platform/dashboard/guides/what-is-a-sid/) of a SignalWire cXML application used to configure the message's `MessageStatusCallback` attribute. If `ApplicationSid` and `StatusCallback` are specified, `StatusCallback` will take precedence.                                                                                                                                                                             |
+| `MaxPrice` <span className="optional-arg">Optional</span>                                                          | The maximum price in USD acceptable for the message to be sent. Once your message is queued, the cost to send the message is calculated and if it is greater than `MaxPrice`, the message will be set as `failed` and not sent. You will not be charged. If `MaxPrice` is not set, all messages will be sent. The price can have a maximum of four decimal places, i.e. 0.0075.                                  |
+| `StatusCallback` <span className="optional-arg">Optional</span>                                                    | A URL endpoint to receive callbacks each time the status of the message changes from `queued`, `failed`, `sent`, `delivered` or `undelivered`. See detailed information on the [status callback parameters](./index.mdx#statuscallback-parameters) sent during the callback.                                                                                                                                     |
+| `ValidityPeriod` <span className="optional-arg">Optional</span>                                                    | The number of seconds a message will allow being queued before canceling. When sending high volume of messages, messages can sit in your sending queue. If the message should only be sent in in a specific timeframe, use `ValidityPeriod` to ensure you don't send messages after time-sensitive operations. It is not recommended to set a validity period of less than 5 seconds. Default value is `14400`   |
+| `MessagingServiceSid` <span className="optional-arg">Optional</span>                                               | The ID of a SignalWire Number Group to be used to automatically choose the best number from the number group to improve deliverability and optimize throughput. Only `From` or `MessagingServiceSid` need be set. If `MessagingServiceSid` is set, it will take precedence over any value of `From`.                                                                                                             |
+
+---
+
+## Request
+
+In this example, we will send an outbound message from one of your SignalWire phone numbers.
+
+<Tabs groupId="compatibility-sdks">
+
+<TabItem value="shell" label="cURL">
+
+```shell
+curl https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Messages.json \
+  -X POST \
+  --data-urlencode "From=+15551234567" \
+  --data-urlencode "Body=Hello World\!" \
+  --data-urlencode "To=+15557654321" \
+  -u "YourProjectID:YourAuthToken"
+```
+
+</TabItem>
+
+<TabItem value="node" label="Node.js">
+
+```javascript
+const { RestClient } = require('@signalwire/compatibility-api')
+const client = RestClient('YourProjectID', 'YourAuthToken', { signalwireSpaceUrl: 'example.signalwire.com' })
+
+client.messages
+      .create({from: '+15551234567', body: 'Hello World!', to: '+15557654321'})
+      .then(message => console.log(message.sid))
+      .done();
+```
+
+</TabItem>
+
+<TabItem value="csharp" label="C#">
+
+```csharp
+using System;
+using System.Collections.Generic;
+using Twilio;
+using Twilio.Rest.Api.V2010.Account;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        TwilioClient.Init("YourProjectID", "YourAuthToken", new Dictionary<string, object> { ["signalwireSpaceUrl"] = "{SPACE}.signalwire.com" });
+
+        var message = MessageResource.Create(
+            from: new Twilio.Types.PhoneNumber("+15551234567"),
+            body: "Hello World!",
+            to: new Twilio.Types.PhoneNumber("+15557654321")
+        );
+
+        Console.WriteLine(message.Sid);
+    }
+}
+```
+
+</TabItem>
+
+<TabItem value="python" label="Python">
+
+```python
+from signalwire.rest import Client as signalwire_client
+
+client = signalwire_client("YourProjectID", "YourAuthToken", signalwire_space_url = 'example.signalwire.com')
+
+message = client.messages.create(
+                              from_='+15551234567',
+                              body='Hello World!',
+                              to='+15557654321'
+                          )
+
+print(message.sid)
+```
+
+</TabItem>
+
+<TabItem value="ruby" label="Ruby">
+
+```ruby
+require 'signalwire/sdk'
+
+@client = Signalwire::REST::Client.new 'YourProjectID', 'YourAuthToken', signalwire_space_url: "example.signalwire.com"
+
+message = @client.messages.create(
+                             from: '+15551234567',
+                             body: 'Hello World!',
+                             to: '+15557654321'
+                           )
+
+puts message.sid
+```
+
+</TabItem>
+
+</Tabs>
+
+---
+
+## Responses
+
+<h4><span class="badge badge--success">201</span> CREATED</h4>
+
+```json
+{
+    "account_sid": "ea108133-d6b3-407c-9536-9fad8a929a6a",
+    "api_version": "2010-04-01",
+    "body": "Hello World",
+    "num_segments": 1,
+    "num_media": 0,
+    "date_created": "Mon, 13 Aug 2018 23:08:35 +0000",
+    "date_sent": null,
+    "date_updated": "Mon, 13 Aug 2018 23:08:35 +0000",
+    "direction": "outbound-api",
+    "error_code": null,
+    "error_message": null,
+    "from": "+15551234567",
+    "price": null,
+    "price_unit": "USD",
+    "sid": "b3877c40-da60-4998-90ad-b792e98472af",
+    "status": "queued",
+    "to": "+15557654321",
+    "messaging_service_sid": null,
+    "uri": "/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/b3877c40-da60-4998-90ad-b792e98472af",
+    "subresource_uris": {
+        "media": "/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/b3877c40-da60-4998-90ad-b792e98472af/Media"
+    }
+}
+```

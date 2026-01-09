@@ -1,0 +1,126 @@
+---
+title: RELAY JS SDK 3.29 Release
+authors: [Nirav]
+tags: [sdk, release]
+date: 2025-07-05
+---
+
+We are happy to announce **JavaScript SDK 3.29**.
+
+Upgrading is straightforward with our release process, which adheres to [Semantic Versioning](https://semver.org/).
+Minor versions are guaranteed to not have breaking changes, so you can upgrade with confidence.
+
+<ReleaseCard library="@signalwire/js" version="3.29" releaseType="minor"/>
+
+{/* truncate */}
+
+## Summary
+
+This release improves the websocket connection and stability significantly. 
+It also focuses on **microphone controls**, **participant management**, and **Call Fabric SDK enhancements**. 
+Key additions include new microphone control features (auto gain, echo cancellation, noise suppression), 
+the ability to mute/unmute all participants simultaneously, and improved Call Fabric SDK functionality with 
+`fromFabricAddressId` parameter support and configurable default media parameters. Additionally, this release 
+fixes critical issues with push notifications, improves WebSocket reconnection handling, and resolves 
+various type interface inconsistencies for a more stable development experience.
+
+---
+
+## Added
+
+### 1. Microphone controls for self and other members
+
+Added support for microphone control features including auto gain, echo cancellation, and noise suppression.
+
+**New FabricMemberContract controls:**
+- `member.auto_gain`
+- `member.echo_cancellation`
+- `member.noise_suppression`
+
+**New function support:**
+
+```ts
+await FabricRoomSession.setAudioFlags({
+  autoGain: false,
+  echoCancellation: false,
+  noiseSuppression: false,
+});
+```
+
+### 2. Mute/unmute controls for all participants
+
+Added support for muting and unmuting audio and video for all participants in both audio-only and video calls.
+
+```ts
+// Mute all members' audio
+await FabricRoomSession.audioMute({ memberId: "all" });
+
+// Unmute all members' audio
+await FabricRoomSession.audioUnmute({ memberId: "all" });
+
+// Mute all members' video
+await FabricRoomSession.videoMute({ memberId: "all" });
+
+// Unmute all members' video
+await FabricRoomSession.videoUnmute({ memberId: "all" });
+```
+
+### 3. CF SDK: Support for `fromFabricAddressId` parameter
+
+Added the ability to pass `fromFabricAddressId` when dialing.
+
+```ts
+const call = await SignalWireClient.dial({
+  // ... other parameters
+  to: "...",
+  fromFabricAddressId: "valid_subscriber_id", // Optional
+  // ... other parameters
+});
+```
+
+### 4. CF SDK: Default media parameters
+
+Added support for configuring default media parameters during call setup.
+
+```ts
+await call.dial({
+  applyLocalVideoOverlay: false, // Should the SDK apply local video overlay? Default: true
+  applyMemberOverlay: true, // Should the SDK apply member video overlays? Default: true
+  stopCameraWhileMuted: true, // Should the SDK stop the camera when muted? Default: true
+  stopMicrophoneWhileMuted: true, // Should the SDK stop the mic when muted? Default: true
+  mirrorLocalVideoOverlay: false, // Should the SDK mirror the local video overlay? Default: true
+});
+```
+
+
+## Fixed
+
+### 1. Handle push notifications without enabling websocket connection
+
+Added an optional `handlePushNotification` method to allow developers to receive push notifications without being online via websocket.
+
+```ts
+SignalWireContract.handlePushNotification(params: HandlePushNotificationParams)
+```
+
+Previously, receiving push notifications required calling `SignalWireContract.online()` which automatically made you online on websocket as well.
+If user is online from both websocket and push notification simultaneously, the call would hang up because the server couldn't
+distinguish that both notification endpoints belonged to the same device.
+
+### 2. CF SDK: Raise hand functionality
+
+Fixed raise hand call and member capability issues.
+
+### 3. Pagination interfaces
+
+Exposed pagination interfaces for better type safety:
+- `PaginatedResponse`
+- `PaginatedResult`
+
+### 4. WebSocket reconnection improvements
+
+Improved WebSocket reconnections and re-subscription to voice call topics after socket reconnects.
+
+### 5. Type interface fixes
+
+Fixed type interfaces for `getMessages` and `getMembers` methods.

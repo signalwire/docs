@@ -1,0 +1,258 @@
+---
+title: RELAY JS SDK 3.28.1 Release
+authors: [Nirav]
+tags: [sdk, release]
+date: 2025-03-05
+---
+
+We are happy to announce **JavaScript SDK 3.28.1**.
+
+Upgrading is straightforward with our release process, which adheres to [Semantic Versioning](https://semver.org/).
+Minor versions are guaranteed to not have breaking changes, so you can upgrade with confidence.
+
+<ReleaseCard library="@signalwire/js" version="3.28.1" releaseType="minor"/>
+
+{/* truncate */}
+
+## Summary
+
+This release introduces **Call Fabric** and **Video SDK** enhancements, including new APIs for room management, 
+media renegotiation, member overlays, chat messaging, user hand raising, and more. In the Call Fabric interface, several
+types and interfaces have been refined or added for better clarity, and default call behavior is now audio-only for a 
+more optimized initial setup. Additionally, we've introduced convenient methods for sorting addresses, reattaching calls,
+and handling conversations. Numerous fixes address type inconsistencies, event handling, and memory leaks, 
+ensuring a more stable and efficient development experience.
+
+---
+
+## Added
+
+### 1. Lock/Unlock Methods
+
+New `lock` and `unlock` methods on `FabricRoomSession` to restrict and restore entry to a specific room.
+
+```ts
+await call.lock()
+await call.unlock()
+```
+
+### 2. Set Member Position API
+
+Allows you to move a member to a specific position within the room layout.
+
+```ts
+await roomSession.setPositions({ positions: { self: "standard-2" }})
+```
+
+### 3. Member Overlays
+
+Expose overlays on top of video elements for each member to display additional member information or custom UI for the Call Fabric and Video SDK.
+
+### 4. Raise/Lower Hand
+
+Call Fabric SDK now supports raising and lowering the participant's hand.
+
+```ts
+await roomSession.setRaisedHand({ raised: true })
+await roomSession.setRaisedHand({ raised: false })
+```
+
+### 5. Chat Namespace in Call Fabric
+
+New chat methods to handle sending and receiving chat messages within a room or call context.
+
+```ts
+const messages = await client.chat.getMessages({ addressId: 'id' })
+const sub = await client.chat.subscribe({ addressId: 'id', onMessage: console.log })
+await client.chat.sendMessage({ addressId: 'id', text: 'hello' })
+```
+
+### 6. Reattach Method
+
+A new `reattach` method has been introduced for the Call Fabric client to reattach a call without starting from scratch.
+
+```ts
+const call = await client.reattach({
+  to: `/public/${roomName}`,
+  rootElement: document.getElementById('rootElement'),
+})
+```
+
+### 7. Expose Room Layout
+
+The `FabricRoomSession` object now provides direct access to the current room layout.
+
+```ts
+const call = await client.dial({ ... })
+await call.start()
+call.currentLayout;
+```
+
+### 8. Sort Parameters on Addresses
+
+You can now use `sort` parameters when fetching addresses on the server side for more organized data retrieval.
+
+```ts
+const response = await client.address.getAddresses({
+  type: 'room',
+  sortBy: 'name',
+  sortOrder: 'desc',
+  pageSize: 3,
+})
+```
+
+### 9. User Variables Param
+
+Added a `userVariables` parameter to both `DialOption` and `SignalWireClientParams` to send additional metadata.
+
+```ts
+const call = await SignalWire({
+  ...params,
+  userVariables: { name: 'Jane Doe', email: 'john.doe@gmail.com' },
+})
+
+// Or
+const call = await client.dial({
+  ...params,
+  userVariables: { name: 'Jane Doe', email: 'john.doe@gmail.com' },
+})
+```
+
+### 10. New Media APIs with Renegotiation
+
+Dynamically set or change the audio/video direction (`sendonly`, `recvonly`, `sendrecv`, `inactive`) and apply new `MediaTrackConstraints` during an active session.
+
+```ts
+await updateMedia({
+  audio: {
+    enable: true,
+    direction: 'send' | 'sendrecv',
+    constraints?: MediaTrackConstraints
+  },
+  video: {
+    enable: false,
+    direction: 'none' | 'receive'
+  }
+})
+
+await setVideoDirection('send' | 'sendrecv' | 'none' | 'receive')
+await setAudioDirection('send' | 'sendrecv' | 'none' | 'receive')
+```
+
+### 11. Screen Share Feature
+
+Screen sharing is now baked into the Call Fabric SDK for simpler real-time collaboration.
+
+```ts
+const screenShare = await call 
+    .startScreenShare({
+      audio: true,
+      video: true,
+      ...opts,
+    })
+    .catch((error) => {
+      console.error('ScreenShare Error', error)
+    })
+
+await screenShare.hangup()
+```
+
+### 12. Conversations Join API
+
+Seamlessly join existing conversations in the CF SDK.
+
+```ts
+await client.conversation.join({
+  addressId: id,
+})
+```
+
+### 13. Fetch Address by Name
+
+New `name` parameter to `client.address.getAddress` for retrieving addresses using their name.
+
+```ts
+const addressByName = await client.address.getAddress({ name: "john doe" })
+```
+
+## Changed
+
+### 1. Remove Implicit Re-authentication
+
+Call Fabric SDK no longer tries to automatically reauthenticate, giving you full control over session auth flow.
+
+The `onRefreshToken` is no longer available for the CF SDK that performed the implicit re-authentication.
+
+With the new changes, the application needs to call the `updateToken` function to perform the explicit re-authentication.
+
+```ts
+await client.updateToken('newToken');
+```
+
+### 2. Default Audio-Only
+Dialing a Call Fabric room (e.g. `client.dial()`) defaults to audio-only unless otherwise specified.
+
+```ts
+const call = await client.dial({address: `/public/${roomName}`}) // now defaults to audio-only
+const call = await client.dial({address: `/public/${roomName}?channel=video`}) // use channel parameter to explicitly request video
+```
+
+### 3. User Params Priority for `client.dial`
+User-defined parameters (e.g., `audio`, `video`, `negotiateAudio`, `negotiateVideo`) now override or get higher priority than the channel specified in the resource address when dialing a call with `client.dial`.
+
+### 4. Screen Share Error Handling
+`Call.startScreenShare()` now throws an error if the user denies screen sharing permission.
+
+### 5. Internal Video Layout Layer
+The `InternalVideoLayoutLayer` interface type is now publicly exposed.
+
+### 6. Enumerate Devices by Kind
+Browser SDKs can now leverage a more specialized `enumerateDevicesByKind` method for microphone, camera, and more.
+
+```ts
+import { enumerateDevicesByKind } from '@signalwire/js'
+const devices = await enumerateDevicesByKind('videoinput') // "videoinput", "audioinput" or "audiooutput"
+```
+
+### 7. Expose FabricRoomSession Type
+Types for `FabricRoomSession` are now exported for easier type-checking and integration.
+
+### 8. Address ID in Conversation
+The CF SDK `ConversationContract` now exposes the `addressId` for more direct resource referencing
+
+### 9. Negotiate Audio/Video
+You can set the audio/video negotiation parameters to better control media usage while dialing a call.
+
+```ts
+const call = await client.dial({
+  address: `/public/room`,
+  negotiateAudio: true,
+  negotiateVideo: false,
+})
+```
+
+### 10. Updated Conversation/Address Schemas
+New properties were added to `ConversationMessage`, `GetAddressResponse`, and `GetSubscriberInfoResponse` interfaces for expanded functionality.
+
+### 11. Unsubscribe from Conversations
+CF SDK allows unsubscribing from conversation updates, giving you more fine-grained control over event listening.
+
+```ts
+const { unsubscribe } = await client.conversation.subscribe(() => { /* ... */ })
+unsubscribe();
+```
+
+### 12. Dedicated Types for Video and Fabric SDKs
+Clear separation of types for each SDK to reduce confusion and potential collisions. The Video SDK and the Call Fabric SDK are now distinct types.
+For example, `FabricRoomSession` and `VideoRoomSession` are now distinct types which both derive from `BaseRoomSession`.
+
+## Fixed
+
+1. New types have been added and incorrect type definitions have been fixed:
+    - `ConversationMessageEventParams.type` is now `string` instead of `MessageType`
+    - `ConversationContract` has been added
+    - Types for `VideoLayout` and other layout related types fixed 
+2. Chat Messages filtering for previous and next pages have been fixed
+3. The `getAddress` method now returns a normalized response
+4. Local `audio_muted` and `video_muted` state for `Call` will now reflect the actual state
+5. Typos in type names have been fixed for `ConversationChatMessagesSubscribeParams` and `ConversationChatMessagesSubscribeResult`

@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  # TypeSense search server (ephemeral - no data persistence)
+  typesense:
+    image: typesense/typesense:29.0
+    container_name: typesense-local
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense-data:/data  # Named volume for ephemeral storage
+    command: '--data-dir /data --api-key=local-dev-api-key-12345 --enable-cors'
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8108 && printf 'GET /health HTTP/1.1\r\nConnection: close\r\n\r\n' >&3 && head -n1 <&3 | grep '200' && exec 3>&-"]
+      interval: 10s
+      timeout: 1s
+      retries: 5
+      start_period: 10s
+    networks:
+      - docs-network
+
+  # TypeSense documentation scraper
+  # NOTE: Requires local dev server running at localhost:3000 (run 'yarn start --host 0.0.0.0' first)
+  docs-scraper:
+    image: typesense/docsearch-scraper:0.9.1
+    container_name: docs-scraper
+    entrypoint: []  # Override default entrypoint to run custom setup
+    volumes:
+      - ./website:/tmp/search:ro
+    environment:
+      - TYPESENSE_API_KEY=local-dev-api-key-12345
+      - TYPESENSE_HOST=typesense
+      - TYPESENSE_PORT=8108
+      - TYPESENSE_PROTOCOL=http
+      - CONFIG=/tmp/typesense.local.json
+    depends_on:
+      typesense:
+        condition: service_healthy
+    # Auto-generate local config and scrape from host dev server
+    command: >
+      sh -c "
+        echo 'Generating typesense.local.json from typesense.json...' &&
+        sed -e 's|https\?://developer.signalwire.com|http://host.docker.internal:3000|g' /tmp/search/typesense.json > /tmp/typesense.local.json &&
+        echo 'Config generated. Waiting for local dev server at http://host.docker.internal:3000...' &&
+        until wget --spider --quiet http://host.docker.internal:3000 2>/dev/null; do
+          echo 'Dev server not ready yet, waiting 5s... (Make sure you run: yarn start)' &&
+          sleep 5;
+        done &&
+        echo 'Dev server is ready! Starting documentation scraper...' &&
+        pipenv run python -m src.index &&
+        echo 'Scraping complete! Search is now available at http://localhost:3000'
+      "
+    networks:
+      - docs-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  docs-network:
+    name: docs-local-network
+    driver: bridge
+
+volumes:
+  typesense-data:
