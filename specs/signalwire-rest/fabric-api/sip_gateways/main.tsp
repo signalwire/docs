@@ -16,7 +16,15 @@ namespace FabricAPI.SipGateways {
   @friendlyName("SIP Gateway")
   interface SipGateways {
     @summary("List SIP Gateways")
-    @doc("Returns a paginated list of SIP Gateways for the authenticated project.")
+    @doc("""
+      Returns a paginated list of SIP Gateways for the authenticated project.
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | SipGatewayListResponse
       | StatusCode401
@@ -24,7 +32,15 @@ namespace FabricAPI.SipGateways {
       | StatusCode500;
 
     @summary("Get SIP Gateway")
-    @doc("Returns an SIP Gateway by ID")
+    @doc("""
+      Returns an SIP Gateway by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...SipGatewayID):
       | {
           @statusCode statusCode: 200;
@@ -35,7 +51,15 @@ namespace FabricAPI.SipGateways {
       | StatusCode500;
 
     @summary("Create SIP Gateway")
-    @doc("Creates a SIP Gateway that can be used to dial external SIP entities.")
+    @doc("""
+      Creates a SIP Gateway that can be used to dial external SIP entities.
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(...SipGatewayRequest):
       | {
@@ -48,7 +72,15 @@ namespace FabricAPI.SipGateways {
       | StatusCode500;
 
     @summary("Update SIP Gateway")
-    @doc("Updates a SIP Gateway by ID")
+    @doc("""
+      Updates a SIP Gateway by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @patch(#{ implicitOptionality: true })
     update(...SipGatewayID, ...SipGatewayRequest):
       | {
@@ -61,7 +93,15 @@ namespace FabricAPI.SipGateways {
       | StatusCode500;
 
     @summary("Delete SIP Gateway")
-    @doc("Deletes a SIP Gateway} by ID")
+    @doc("""
+      Deletes a SIP Gateway} by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...SipGatewayID):
       | {

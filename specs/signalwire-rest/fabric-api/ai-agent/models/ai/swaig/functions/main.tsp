@@ -4,18 +4,26 @@ import "./parameters.tsp";
 
 @summary("functions")
 model SWAIGFunction {
-  @doc("A unique name for the function. For example, 'get_weather'.")
+  @doc("""
+      A unique name for the function. For example, 'get_weather'.
+      """)
   @example("get_weather")
   function: string;
 
-  @doc("A description of the context and purpose of the function, to explain to the agent when to use it.")
+  @doc("""
+      A description of the context and purpose of the function, to explain to the agent when to use it.
+      """)
   @example("Get the weather information")
   description: string;
 
-  @doc("A JSON object defining the input that should be passed to the function. The fields of this object are the following two parameters.")
+  @doc("""
+      A JSON object defining the input that should be passed to the function. The fields of this object are the following two parameters.
+      """)
   parameters?: FunctionParameters;
 
-  @doc("Whether the function is active. Default is `true`.")
+  @doc("""
+      Whether the function is active. Default is `true`.
+      """)
   active?: boolean;
 
   @doc("""
@@ -28,7 +36,9 @@ model SWAIGFunction {
     ...TypeSpec.Record<unknown>;
   };
 
-  @doc("Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.")
+  @doc("""
+      Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.
+      """)
   meta_data_token?: string;
 
   @doc("""
@@ -37,15 +47,21 @@ model SWAIGFunction {
     """)
   data_map?: DataMap;
 
-  @doc("Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`")
+  @doc("""
+      Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`
+      """)
   @example("username:password:https://statuscallback.com")
   web_hook_url?: string;
 
-  @doc("A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continuously play. Default is not set.")
+  @doc("""
+      A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continuously play. Default is not set.
+      """)
   @example("https://cdn.signalwire.com/default-music/welcome.mp3")
   wait_file?: url;
 
-  @doc("The number of times to loop playing the file. Default is not set.")
+  @doc("""
+      The number of times to loop playing the file. Default is not set.
+      """)
   @example(5)
   wait_file_loops?: integer | string;
 }

@@ -18,7 +18,15 @@ namespace FabricAPI.CallFlows {
   @friendlyName("Call Flows")
   interface CallFlows {
     @summary("List Call Flows")
-    @doc("A list of Call Flows")
+    @doc("""
+      A list of Call Flows
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | CallFlowListResponse
       | StatusCode401
@@ -26,7 +34,15 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @summary("Get Call Flow")
-    @doc("Returns a Call Flow by ID")
+    @doc("""
+      Returns a Call Flow by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...CallFlowPathID):
       | {
           @statusCode statusCode: 200;
@@ -37,7 +53,15 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @summary("Create Call Flow")
-    @doc("Creates a Call Flow")
+    @doc("""
+      Creates a Call Flow
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body request: CallFlowCreateRequest):
       | {
@@ -50,7 +74,15 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @summary("Update Call Flow")
-    @doc("Updates a Call Flow by ID")
+    @doc("""
+      Updates a Call Flow by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(...CallFlowPathID, @body request: CallFlowUpdateRequest):
       | {
@@ -63,7 +95,15 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @summary("Delete Call Flow")
-    @doc("Deletes a Call Flow by ID")
+    @doc("""
+      Deletes a Call Flow by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...CallFlowPathID):
       | {
