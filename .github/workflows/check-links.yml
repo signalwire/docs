@@ -30,9 +30,12 @@ on:
         default: false
 
 env:
-  PRODUCTION_SITEMAP_URL: https://signalwire.docs.buildwithfern.com/sitemap.xml
-  SLACK_CHANNEL_ID: C062YDM9GR1
-  FERN_WRITER_SLACK_ID: U0A7B6R92GJ
+  # White-label configuration - set these as repository variables/secrets
+  # DOCS_SITEMAP_URL: Production sitemap URL (required)
+  # SLACK_CHANNEL_ID: Slack channel for notifications (optional)
+  # SLACK_NOTIFY_USER_ID: Slack user ID to tag (optional)
+  # SLACK_BOT_TOKEN: Slack bot token for sending messages (optional)
+  PRODUCTION_SITEMAP_URL: ${{ vars.DOCS_SITEMAP_URL || 'https://signalwire.docs.buildwithfern.com/sitemap.xml' }}
 
 permissions:
   contents: write
@@ -163,14 +166,33 @@ jobs:
           steps.create-pr.outputs.pr_url != '' &&
           (github.event_name == 'schedule' || inputs.notify_slack == true)
         env:
-          SLACK_TOKEN: ${{ secrets.FERN_WRITER_SLACK_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_USER: ${{ secrets.SLACK_NOTIFY_USER_ID }}
         run: |
+          # Check if Slack is configured
+          if [ -z "$SLACK_TOKEN" ]; then
+            echo "SLACK_BOT_TOKEN not set, skipping Slack notification"
+            exit 0
+          fi
+          if [ -z "$SLACK_CHANNEL" ]; then
+            echo "SLACK_CHANNEL_ID not set, skipping Slack notification"
+            exit 0
+          fi
+          
+          # Build message - include user mention if configured
+          if [ -n "$SLACK_USER" ]; then
+            MESSAGE="<@$SLACK_USER> The daily link checker found broken links that need to be fixed.\n\n*PR:* ${{ steps.create-pr.outputs.pr_url }}\n\nPlease review the broken links report and fix the issues following the instructions in the PR description."
+          else
+            MESSAGE="The daily link checker found broken links that need to be fixed.\n\n*PR:* ${{ steps.create-pr.outputs.pr_url }}\n\nPlease review the broken links report and fix the issues following the instructions in the PR description."
+          fi
+          
           curl -X POST https://slack.com/api/chat.postMessage \
             -H "Authorization: Bearer $SLACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
-              \"channel\": \"${{ env.SLACK_CHANNEL_ID }}\",
-              \"text\": \"<@${{ env.FERN_WRITER_SLACK_ID }}> The daily link checker found broken links that need to be fixed.\n\n*PR:* ${{ steps.create-pr.outputs.pr_url }}\n\nPlease review the broken links report and fix the issues following the instructions in the PR description.\"
+              \"channel\": \"$SLACK_CHANNEL\",
+              \"text\": \"$MESSAGE\"
             }"
 
       - name: Slack notification (no PR)
@@ -179,14 +201,25 @@ jobs:
           steps.create-pr.outputs.pr_url == '' &&
           (github.event_name == 'schedule' || inputs.notify_slack == true)
         env:
-          SLACK_TOKEN: ${{ secrets.FERN_WRITER_SLACK_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
+          # Check if Slack is configured
+          if [ -z "$SLACK_TOKEN" ]; then
+            echo "SLACK_BOT_TOKEN not set, skipping Slack notification"
+            exit 0
+          fi
+          if [ -z "$SLACK_CHANNEL" ]; then
+            echo "SLACK_CHANNEL_ID not set, skipping Slack notification"
+            exit 0
+          fi
+          
           curl -X POST https://slack.com/api/chat.postMessage \
             -H "Authorization: Bearer $SLACK_TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
-              \"channel\": \"${{ env.SLACK_CHANNEL_ID }}\",
-              \"text\": \"❌ Daily link check found broken links.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>\"
+              \"channel\": \"$SLACK_CHANNEL\",
+              \"text\": \"The daily link check found broken links.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>\"
             }"
 
       - name: Exit with result
