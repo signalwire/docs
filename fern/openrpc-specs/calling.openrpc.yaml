@@ -1,0 +1,455 @@
+openrpc: 1.3.2
+info:
+  title: Calling API (JSON-RPC)
+  description: |
+    JSON-RPC API to create and manage SignalWire's Calls.
+    This is an alternative representation of the Calling API using the JSON-RPC 2.0 protocol.
+  version: 0.0.0
+  contact:
+    name: SignalWire Support
+    url: https://signalwire.com
+servers:
+  - name: production
+    url: https://your-space.signalwire.com/api/calling/rpc
+    description: SignalWire JSON-RPC endpoint
+methods:
+  - name: call.create
+    summary: Create a new call
+    description: |
+      Creates a new call with the specified dial command and parameters.
+      This method initiates an outbound call using SignalWire's AI-powered calling capabilities.
+    tags:
+      - name: Calls
+    params:
+      - name: dial
+        description: The dial command configuration for the call
+        required: true
+        schema:
+          $ref: '#/components/schemas/DialCommand'
+    result:
+      name: CallResult
+      description: The created call object
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - code: -32001
+        message: Unauthorized
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+              description: Authentication failed
+      - code: -32002
+        message: Not Found
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+              description: Resource not found
+      - code: -32003
+        message: Validation Error
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+              description: Request validation failed
+    examples:
+      - name: Create AI Call
+        description: Create a new AI-powered outbound call
+        params:
+          - name: dial
+            value:
+              type: phone
+              params:
+                to_number: "+15551234567"
+                from_number: "+15559876543"
+                timeout: 30
+              ai:
+                prompt:
+                  text: "You are a helpful customer service agent for Acme Corp."
+                params:
+                  ai_model: gpt-4o-mini
+        result:
+          name: CallResult
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            status: "initiated"
+            direction: "outbound"
+
+  - name: call.update
+    summary: Update an existing call
+    description: |
+      Updates an existing call with the specified command and parameters.
+      This method can be used to inject AI messages, hold/unhold calls, and perform other call control operations.
+    tags:
+      - name: Calls
+    params:
+      - name: id
+        description: The unique identifier of the call to update
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: command
+        description: The command to execute on the call
+        required: true
+        schema:
+          type: string
+          enum:
+            - calling.ai_message
+            - calling.ai_hold
+            - calling.ai_unhold
+            - calling.hangup
+      - name: params
+        description: Additional parameters for the command
+        required: false
+        schema:
+          $ref: '#/components/schemas/CommandParams'
+    result:
+      name: CallResult
+      description: The updated call object
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - code: -32001
+        message: Unauthorized
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+      - code: -32002
+        message: Not Found
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+      - code: -32003
+        message: Validation Error
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+    examples:
+      - name: Inject AI Message
+        description: Send a message to the AI conversation to modify behavior
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: command
+            value: "calling.ai_message"
+          - name: params
+            value:
+              role: "system"
+              message_text: "You are now in expert mode. Provide detailed technical responses."
+        result:
+          name: CallResult
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            status: "active"
+      - name: Hold Call
+        description: Put an active AI call on hold
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: command
+            value: "calling.ai_hold"
+          - name: params
+            value: {}
+        result:
+          name: CallResult
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            status: "on_hold"
+      - name: Unhold Call
+        description: Resume an AI call that was previously put on hold
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: command
+            value: "calling.ai_unhold"
+          - name: params
+            value: {}
+        result:
+          name: CallResult
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            status: "active"
+
+  - name: call.hangup
+    summary: Hang up a call
+    description: Terminates an active call.
+    tags:
+      - name: Calls
+    params:
+      - name: id
+        description: The unique identifier of the call to hang up
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: reason
+        description: Optional reason for hanging up the call
+        required: false
+        schema:
+          type: string
+          enum:
+            - normal
+            - busy
+            - cancel
+            - decline
+    result:
+      name: HangupResult
+      description: Confirmation of call termination
+      schema:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          status:
+            type: string
+            enum:
+              - ended
+          ended_at:
+            type: string
+            format: date-time
+    examples:
+      - name: Hang Up Call
+        description: Terminate an active call
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: reason
+            value: "normal"
+        result:
+          name: HangupResult
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            status: "ended"
+            ended_at: "2024-01-15T10:30:00Z"
+
+components:
+  schemas:
+    DialCommand:
+      type: object
+      description: Configuration for dialing a call
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          description: The type of call to dial
+          enum:
+            - phone
+            - sip
+        params:
+          $ref: '#/components/schemas/DialParams'
+        ai:
+          $ref: '#/components/schemas/AIConfig'
+
+    DialParams:
+      type: object
+      description: Parameters for the dial command
+      required:
+        - to_number
+        - from_number
+      properties:
+        to_number:
+          type: string
+          description: The destination phone number in E.164 format
+        from_number:
+          type: string
+          description: The caller ID phone number in E.164 format
+        timeout:
+          type: integer
+          description: Timeout in seconds for the call to be answered
+          default: 30
+          minimum: 1
+          maximum: 120
+
+    AIConfig:
+      type: object
+      description: AI agent configuration for the call
+      required:
+        - prompt
+      properties:
+        prompt:
+          $ref: '#/components/schemas/AIPrompt'
+        params:
+          $ref: '#/components/schemas/AIParams'
+        SWAIG:
+          $ref: '#/components/schemas/SWAIG'
+        hints:
+          type: array
+          items:
+            type: string
+          description: Words or phrases to help the AI understand better
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+          description: Supported languages for the conversation
+
+    AIPrompt:
+      type: object
+      description: The prompt configuration for the AI agent
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The main prompt text that defines the AI agent's behavior
+        temperature:
+          type: number
+          description: Controls randomness in AI responses (0-1)
+          minimum: 0
+          maximum: 1
+          default: 0.7
+        top_p:
+          type: number
+          description: Controls diversity of AI responses
+          minimum: 0
+          maximum: 1
+          default: 0.9
+
+    AIParams:
+      type: object
+      description: Additional parameters for AI behavior
+      properties:
+        ai_model:
+          type: string
+          description: The AI model to use
+          enum:
+            - gpt-4o-mini
+            - gpt-4.1-mini
+            - gpt-4.1-nano
+          default: gpt-4o-mini
+        ai_volume:
+          type: integer
+          description: Adjust the volume of the AI (-50 to 50)
+          minimum: -50
+          maximum: 50
+          default: 0
+        attention_timeout:
+          type: integer
+          description: Time in ms to wait before prompting user to respond
+          minimum: 10000
+          maximum: 600000
+          default: 5000
+        end_of_speech_timeout:
+          type: integer
+          description: Silence duration in ms to detect end of speech
+          minimum: 250
+          maximum: 10000
+          default: 700
+        energy_level:
+          type: number
+          description: Energy level in dB for speech detection
+          minimum: 0
+          maximum: 100
+          default: 52
+
+    SWAIG:
+      type: object
+      description: SignalWire AI Gateway configuration for custom functions
+      properties:
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWAIGFunction'
+          description: Array of custom functions available to the AI
+        defaults:
+          type: object
+          description: Default settings for SWAIG functions
+
+    SWAIGFunction:
+      type: object
+      description: A custom function that can be called by the AI
+      required:
+        - name
+        - purpose
+      properties:
+        name:
+          type: string
+          description: The name of the function
+        purpose:
+          type: string
+          description: Description of what the function does
+        argument:
+          type: object
+          description: Schema for the function arguments
+        web_hook_url:
+          type: string
+          format: uri
+          description: URL to call when the function is invoked
+
+    Language:
+      type: object
+      description: Language configuration
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          description: ISO 639-1 language code
+        name:
+          type: string
+          description: Human-readable language name
+        voice:
+          type: string
+          description: Voice to use for this language
+
+    CommandParams:
+      type: object
+      description: Parameters for call update commands
+      properties:
+        role:
+          type: string
+          description: Role for AI message injection
+          enum:
+            - system
+            - user
+            - assistant
+        message_text:
+          type: string
+          description: Text content for AI message injection
+
+    CallResponse:
+      type: object
+      description: Response object for call operations
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the call
+        status:
+          type: string
+          description: Current status of the call
+          enum:
+            - initiated
+            - ringing
+            - active
+            - on_hold
+            - ended
+        direction:
+          type: string
+          description: Direction of the call
+          enum:
+            - inbound
+            - outbound
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the call was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the call was last updated
