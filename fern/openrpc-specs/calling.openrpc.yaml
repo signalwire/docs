@@ -4,452 +4,1113 @@ info:
   description: |
     JSON-RPC API to create and manage SignalWire's Calls.
     This is an alternative representation of the Calling API using the JSON-RPC 2.0 protocol.
-  version: 0.0.0
+    Each method corresponds to a specific call command from the REST API.
+  version: 1.0.0
   contact:
     name: SignalWire Support
     url: https://signalwire.com
+  license:
+    name: MIT
+    url: https://github.com/signalwire/docs/blob/main/LICENSE
+  termsOfService: https://signalwire.com/legal/signalwire-cloud-agreement
 servers:
   - name: production
-    url: https://your-space.signalwire.com/api/calling/rpc
+    url: https://{space_name}.signalwire.com/api/calling/rpc
     description: SignalWire JSON-RPC endpoint
+    variables:
+      space_name:
+        default: your-space
+        description: The domain of your SignalWire space
 methods:
-  - name: call.create
-    summary: Create a new call
+  - name: calling.dial
+    summary: Create a new outbound call
     description: |
-      Creates a new call with the specified dial command and parameters.
-      This method initiates an outbound call using SignalWire's AI-powered calling capabilities.
+      Initiates a new outbound call to a destination. Returns immediately with call details 
+      while the call is being established in the background.
+      Either `url` or `swml` must be provided to specify call handling instructions.
     tags:
       - name: Calls
     params:
-      - name: dial
-        description: The dial command configuration for the call
+      - name: from
+        description: The address that initiates the call. Can be either an E.164 formatted number (+xxxxxxxxxxx) or a SIP endpoint (sip:xxx@yyy.zzz).
         required: true
         schema:
-          $ref: '#/components/schemas/DialCommand'
+          type: string
+          example: "+15551234567"
+      - name: to
+        description: The address that receives the call. Can be either an E.164 formatted number (+xxxxxxxxxxx) or a SIP endpoint (sip:xxx@yyy.zzz).
+        required: true
+        schema:
+          type: string
+          example: "+15559876543"
+      - name: url
+        description: The URL to handle the call. This webhook should return SWML instructions for handling the call. Either `url` or `swml` must be included.
+        required: false
+        schema:
+          type: string
+          format: uri
+          example: "https://example.com/swml"
+      - name: swml
+        description: Inline SWML passed as a string containing instructions for handling the call. Either `url` or `swml` must be included.
+        required: false
+        schema:
+          type: string
+          example: "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['say:Hello from SignalWire!']}}]}}"
+      - name: caller_id
+        description: The number in E.164 format or identifier of the caller.
+        required: false
+        schema:
+          type: string
+          example: "+15551234567"
+      - name: fallback_url
+        description: The fallback URL to handle the call if the primary URL fails. Should contain SWML instructions.
+        required: false
+        schema:
+          type: string
+          format: uri
+          example: "https://example.com/fallback"
+      - name: status_url
+        description: A URL that will receive status updates of the current call. Events defined in `status_events` will be delivered here.
+        required: false
+        schema:
+          type: string
+          format: uri
+          example: "https://example.com/status_callback"
+      - name: status_events
+        description: The call events that will be monitored and sent to the `status_url` when active.
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - answered
+              - queued
+              - initiated
+              - ringing
+              - ending
+              - ended
+          example:
+            - answered
+            - ended
     result:
-      name: CallResult
-      description: The created call object
+      name: CallResponse
+      description: The created call object with status and metadata
       schema:
         $ref: '#/components/schemas/CallResponse'
     errors:
-      - code: -32001
-        message: Unauthorized
-        data:
-          type: object
-          properties:
-            error:
-              type: string
-              description: Authentication failed
-      - code: -32002
-        message: Not Found
-        data:
-          type: object
-          properties:
-            error:
-              type: string
-              description: Resource not found
-      - code: -32003
-        message: Validation Error
-        data:
-          type: object
-          properties:
-            error:
-              type: string
-              description: Request validation failed
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
     examples:
-      - name: Create AI Call
-        description: Create a new AI-powered outbound call
+      - name: Create call with URL
+        description: Create a new outbound call using a webhook URL for SWML instructions
         params:
-          - name: dial
+          - name: from
+            value: "+15551234567"
+          - name: to
+            value: "+15559876543"
+          - name: url
+            value: "https://example.com/swml"
+          - name: caller_id
+            value: "+15551234567"
+          - name: status_url
+            value: "https://example.com/status_callback"
+          - name: status_events
             value:
-              type: phone
-              params:
-                to_number: "+15551234567"
-                from_number: "+15559876543"
-                timeout: 30
-              ai:
-                prompt:
-                  text: "You are a helpful customer service agent for Acme Corp."
-                params:
-                  ai_model: gpt-4o-mini
+              - answered
+              - ended
         result:
-          name: CallResult
+          name: CallResponse
           value:
-            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-            status: "initiated"
-            direction: "outbound"
+            id: "0e9c80d7-a149-4917-892d-420043709f45"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "queued"
+            duration: null
+            duration_ms: null
+            billing_ms: null
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: "https://example.com/swml"
+            charge: 0
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
 
-  - name: call.update
+  - name: calling.update
     summary: Update an existing call
     description: |
-      Updates an existing call with the specified command and parameters.
-      This method can be used to inject AI messages, hold/unhold calls, and perform other call control operations.
+      Modifies an active call's properties in real-time. Update call parameters such as 
+      routing, recording settings, or other call-specific configurations.
+      Either `url` or `swml` must be provided to specify new call handling instructions.
     tags:
       - name: Calls
     params:
       - name: id
-        description: The unique identifier of the call to update
+        description: The unique identifying ID of the existing call to update.
         required: true
         schema:
           type: string
           format: uuid
-      - name: command
-        description: The command to execute on the call
-        required: true
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - name: url
+        description: The URL to handle the call with new SWML instructions. Either `url` or `swml` must be included.
+        required: false
+        schema:
+          type: string
+          format: uri
+          example: "https://example.com/swml"
+      - name: swml
+        description: Inline SWML passed as a string containing new instructions for handling the call. Either `url` or `swml` must be included.
+        required: false
+        schema:
+          type: string
+      - name: fallback_url
+        description: The fallback URL to handle the call if the primary URL fails.
+        required: false
+        schema:
+          type: string
+          format: uri
+          example: "https://example.com/fallback"
+      - name: status
+        description: Set to `canceled` to cancel a not yet connected call, or `completed` to end a call that is in progress.
+        required: false
         schema:
           type: string
           enum:
-            - calling.ai_message
-            - calling.ai_hold
-            - calling.ai_unhold
-            - calling.hangup
-      - name: params
-        description: Additional parameters for the command
-        required: false
-        schema:
-          $ref: '#/components/schemas/CommandParams'
+            - canceled
+            - completed
+          example: "canceled"
     result:
-      name: CallResult
+      name: CallResponse
       description: The updated call object
       schema:
         $ref: '#/components/schemas/CallResponse'
     errors:
-      - code: -32001
-        message: Unauthorized
-        data:
-          type: object
-          properties:
-            error:
-              type: string
-      - code: -32002
-        message: Not Found
-        data:
-          type: object
-          properties:
-            error:
-              type: string
-      - code: -32003
-        message: Validation Error
-        data:
-          type: object
-          properties:
-            error:
-              type: string
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
     examples:
-      - name: Inject AI Message
-        description: Send a message to the AI conversation to modify behavior
+      - name: Update call with new URL
+        description: Update an existing call with a new SWML webhook URL
         params:
           - name: id
             value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          - name: command
-            value: "calling.ai_message"
-          - name: params
-            value:
-              role: "system"
-              message_text: "You are now in expert mode. Provide detailed technical responses."
+          - name: url
+            value: "https://example.com/new-swml"
+          - name: fallback_url
+            value: "https://example.com/fallback"
         result:
-          name: CallResult
+          name: CallResponse
           value:
             id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
             status: "active"
-      - name: Hold Call
-        description: Put an active AI call on hold
-        params:
-          - name: id
-            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          - name: command
-            value: "calling.ai_hold"
-          - name: params
-            value: {}
-        result:
-          name: CallResult
-          value:
-            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-            status: "on_hold"
-      - name: Unhold Call
-        description: Resume an AI call that was previously put on hold
-        params:
-          - name: id
-            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          - name: command
-            value: "calling.ai_unhold"
-          - name: params
-            value: {}
-        result:
-          name: CallResult
-          value:
-            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-            status: "active"
+            duration: 30
+            duration_ms: 30000
+            billing_ms: 30000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: "https://example.com/new-swml"
+            charge: 0.01
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
 
-  - name: call.hangup
-    summary: Hang up a call
-    description: Terminates an active call.
+  - name: calling.end
+    summary: Terminate an active call
+    description: |
+      Terminates an active call immediately. Disconnects all parties and ends the call session.
+      Cannot be reversed once executed.
     tags:
       - name: Calls
     params:
       - name: id
-        description: The unique identifier of the call to hang up
+        description: The unique identifying ID of the call to terminate.
         required: true
         schema:
           type: string
           format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
       - name: reason
-        description: Optional reason for hanging up the call
+        description: The reason for hanging up the call.
         required: false
         schema:
           type: string
           enum:
-            - normal
+            - hangup
             - busy
-            - cancel
-            - decline
+          example: "hangup"
     result:
-      name: HangupResult
-      description: Confirmation of call termination
+      name: CallResponse
+      description: The terminated call object
       schema:
-        type: object
-        properties:
-          id:
-            type: string
-            format: uuid
-          status:
-            type: string
-            enum:
-              - ended
-          ended_at:
-            type: string
-            format: date-time
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
     examples:
-      - name: Hang Up Call
-        description: Terminate an active call
+      - name: End call normally
+        description: Terminate an active call with normal hangup reason
         params:
           - name: id
             value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           - name: reason
-            value: "normal"
+            value: "hangup"
         result:
-          name: HangupResult
+          name: CallResponse
           value:
             id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
             status: "ended"
-            ended_at: "2024-01-15T10:30:00Z"
+            duration: 120
+            duration_ms: 120000
+            billing_ms: 120000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.05
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
 
-components:
-  schemas:
-    DialCommand:
-      type: object
-      description: Configuration for dialing a call
-      required:
-        - type
-        - params
-      properties:
-        type:
+  - name: calling.ai_hold
+    summary: Place an AI call on hold
+    description: |
+      Places an AI-powered call on hold. Pauses the AI conversation and typically plays 
+      hold music or a message to the caller. The AI agent becomes inactive until unhold.
+    tags:
+      - name: Calls
+      - name: AI
+    params:
+      - name: id
+        description: The unique identifying ID of the call to place on hold.
+        required: true
+        schema:
           type: string
-          description: The type of call to dial
-          enum:
-            - phone
-            - sip
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - name: timeout
+        description: The duration to hold the caller in seconds. Maximum is 300 seconds.
+        required: false
+        schema:
+          type: integer
+          format: int32
+          maximum: 300
+          default: 300
+          example: 300
+      - name: prompt
+        description: A system message added to the AI conversation before placing the caller on hold. The AI will speak this message to the caller before hold music begins.
+        required: false
+        schema:
+          type: string
+          default: "Tell the user you are putting them on hold."
+          example: "Please hold while I transfer you to a specialist."
+    result:
+      name: CallResponse
+      description: The call object now on hold
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
+    examples:
+      - name: Hold call with custom prompt
+        description: Place an AI call on hold with a custom message
         params:
-          $ref: '#/components/schemas/DialParams'
-        ai:
-          $ref: '#/components/schemas/AIConfig'
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: timeout
+            value: 120
+          - name: prompt
+            value: "Please hold while I transfer you to a specialist."
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 60
+            duration_ms: 60000
+            billing_ms: 60000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.02
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
 
-    DialParams:
-      type: object
-      description: Parameters for the dial command
-      required:
-        - to_number
-        - from_number
-      properties:
-        to_number:
+  - name: calling.ai_unhold
+    summary: Resume an AI call from hold
+    description: |
+      Resumes an AI call from hold state. Reactivates the AI agent and continues 
+      the conversation from where it was paused.
+    tags:
+      - name: Calls
+      - name: AI
+    params:
+      - name: id
+        description: The unique identifying ID of the call to take off hold.
+        required: true
+        schema:
           type: string
-          description: The destination phone number in E.164 format
-        from_number:
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - name: prompt
+        description: A system message added to the AI conversation when taking the caller off hold. The AI will use this context when resuming the conversation.
+        required: false
+        schema:
           type: string
-          description: The caller ID phone number in E.164 format
-        timeout:
-          type: integer
-          description: Timeout in seconds for the call to be answered
-          default: 30
-          minimum: 1
-          maximum: 120
-
-    AIConfig:
-      type: object
-      description: AI agent configuration for the call
-      required:
-        - prompt
-      properties:
-        prompt:
-          $ref: '#/components/schemas/AIPrompt'
+          default: "The user has been taken off hold."
+          example: "The user has been connected to a specialist."
+    result:
+      name: CallResponse
+      description: The call object now resumed
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
+    examples:
+      - name: Unhold call with context
+        description: Resume an AI call from hold with context about what happened
         params:
-          $ref: '#/components/schemas/AIParams'
-        SWAIG:
-          $ref: '#/components/schemas/SWAIG'
-        hints:
-          type: array
-          items:
-            type: string
-          description: Words or phrases to help the AI understand better
-        languages:
-          type: array
-          items:
-            $ref: '#/components/schemas/Language'
-          description: Supported languages for the conversation
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: prompt
+            value: "The user has been connected to a specialist who can help with their billing issue."
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 90
+            duration_ms: 90000
+            billing_ms: 90000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.03
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
 
-    AIPrompt:
-      type: object
-      description: The prompt configuration for the AI agent
-      required:
-        - text
-      properties:
-        text:
+  - name: calling.ai_message
+    summary: Inject a message into an AI conversation
+    description: |
+      Injects a message into an active AI conversation. Allows you to dynamically add 
+      context, instructions, or system messages to guide the AI agent's behavior during the call.
+    tags:
+      - name: Calls
+      - name: AI
+    params:
+      - name: id
+        description: The unique identifying ID of the call to inject the message into.
+        required: true
+        schema:
           type: string
-          description: The main prompt text that defines the AI agent's behavior
-        temperature:
-          type: number
-          description: Controls randomness in AI responses (0-1)
-          minimum: 0
-          maximum: 1
-          default: 0.7
-        top_p:
-          type: number
-          description: Controls diversity of AI responses
-          minimum: 0
-          maximum: 1
-          default: 0.9
-
-    AIParams:
-      type: object
-      description: Additional parameters for AI behavior
-      properties:
-        ai_model:
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - name: role
+        description: |
+          The role that the message is from. Each role type has a different purpose:
+          - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it.
+          - `user`: Inject a message as if the caller said it. The AI will respond to it as if the caller just spoke.
+          - `assistant`: Inject a message as if the AI said it. The AI will treat this as its own previous response.
+        required: true
+        schema:
           type: string
-          description: The AI model to use
-          enum:
-            - gpt-4o-mini
-            - gpt-4.1-mini
-            - gpt-4.1-nano
-          default: gpt-4o-mini
-        ai_volume:
-          type: integer
-          description: Adjust the volume of the AI (-50 to 50)
-          minimum: -50
-          maximum: 50
-          default: 0
-        attention_timeout:
-          type: integer
-          description: Time in ms to wait before prompting user to respond
-          minimum: 10000
-          maximum: 600000
-          default: 5000
-        end_of_speech_timeout:
-          type: integer
-          description: Silence duration in ms to detect end of speech
-          minimum: 250
-          maximum: 10000
-          default: 700
-        energy_level:
-          type: number
-          description: Energy level in dB for speech detection
-          minimum: 0
-          maximum: 100
-          default: 52
-
-    SWAIG:
-      type: object
-      description: SignalWire AI Gateway configuration for custom functions
-      properties:
-        functions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SWAIGFunction'
-          description: Array of custom functions available to the AI
-        defaults:
-          type: object
-          description: Default settings for SWAIG functions
-
-    SWAIGFunction:
-      type: object
-      description: A custom function that can be called by the AI
-      required:
-        - name
-        - purpose
-      properties:
-        name:
-          type: string
-          description: The name of the function
-        purpose:
-          type: string
-          description: Description of what the function does
-        argument:
-          type: object
-          description: Schema for the function arguments
-        web_hook_url:
-          type: string
-          format: uri
-          description: URL to call when the function is invoked
-
-    Language:
-      type: object
-      description: Language configuration
-      required:
-        - code
-        - name
-      properties:
-        code:
-          type: string
-          description: ISO 639-1 language code
-        name:
-          type: string
-          description: Human-readable language name
-        voice:
-          type: string
-          description: Voice to use for this language
-
-    CommandParams:
-      type: object
-      description: Parameters for call update commands
-      properties:
-        role:
-          type: string
-          description: Role for AI message injection
           enum:
             - system
             - user
             - assistant
-        message_text:
+          example: "system"
+      - name: message_text
+        description: The text content that will be sent to the AI.
+        required: true
+        schema:
           type: string
-          description: Text content for AI message injection
+          example: "You are now in expert mode. Provide detailed technical responses."
+    result:
+      name: CallResponse
+      description: The call object after message injection
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
+    examples:
+      - name: Inject system message
+        description: Inject a system message to change AI behavior mid-conversation
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: role
+            value: "system"
+          - name: message_text
+            value: "You are now in expert mode. Provide detailed technical responses and use industry terminology."
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 45
+            duration_ms: 45000
+            billing_ms: 45000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.015
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
 
+  - name: calling.live_transcribe
+    summary: Control live transcription on a call
+    description: |
+      Controls live transcription on an active call. Start real-time speech-to-text transcription, 
+      stop transcription, or request an on-demand AI summary of the conversation.
+    tags:
+      - name: Calls
+      - name: Transcription
+    params:
+      - name: id
+        description: The unique identifying ID of the call.
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - name: action
+        description: |
+          The transcription action to perform. Can be one of:
+          - An object with `start` key to begin transcription
+          - An object with `summarize` key to request an AI summary
+          - The string `stop` to end transcription
+        required: true
+        schema:
+          oneOf:
+            - $ref: '#/components/schemas/LiveTranscribeStartAction'
+            - $ref: '#/components/schemas/LiveTranscribeSummarizeAction'
+            - $ref: '#/components/schemas/LiveTranscribeStopAction'
+    result:
+      name: CallResponse
+      description: The call object after transcription action
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
+    examples:
+      - name: Start transcription
+        description: Start live transcription with English language
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: action
+            value:
+              start:
+                lang: "en-US"
+                direction:
+                  - "local-caller"
+                  - "remote-caller"
+                webhook: "https://example.com/transcription-webhook"
+                live_events: true
+                ai_summary: true
+                ai_summary_prompt: "Summarize the key points of this conversation."
+                speech_engine: "deepgram"
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 30
+            duration_ms: 30000
+            billing_ms: 30000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.01
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
+      - name: Stop transcription
+        description: Stop live transcription on a call
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: action
+            value: "stop"
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 60
+            duration_ms: 60000
+            billing_ms: 60000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.02
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
+
+  - name: calling.live_translate
+    summary: Control live translation on a call
+    description: |
+      Controls live translation on an active call. Start real-time language translation 
+      between call participants, stop translation, request summaries, or inject messages 
+      to be translated and spoken.
+    tags:
+      - name: Calls
+      - name: Translation
+    params:
+      - name: id
+        description: The unique identifying ID of the call.
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+      - name: action
+        description: |
+          The translation action to perform. Can be one of:
+          - An object with `start` key to begin translation
+          - An object with `summarize` key to request an AI summary
+          - An object with `inject` key to inject a translated message
+          - The string `stop` to end translation
+        required: true
+        schema:
+          oneOf:
+            - $ref: '#/components/schemas/LiveTranslateStartAction'
+            - $ref: '#/components/schemas/LiveTranslateSummarizeAction'
+            - $ref: '#/components/schemas/LiveTranslateInjectAction'
+            - $ref: '#/components/schemas/LiveTranslateStopAction'
+    result:
+      name: CallResponse
+      description: The call object after translation action
+      schema:
+        $ref: '#/components/schemas/CallResponse'
+    errors:
+      - $ref: '#/components/errors/Unauthorized'
+      - $ref: '#/components/errors/NotFound'
+      - $ref: '#/components/errors/ValidationError'
+      - $ref: '#/components/errors/InternalError'
+    examples:
+      - name: Start translation
+        description: Start live translation between English and Spanish
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: action
+            value:
+              start:
+                from_lang: "en-US"
+                to_lang: "es-ES"
+                direction:
+                  - "local-caller"
+                  - "remote-caller"
+                from_voice: "elevenlabs.josh"
+                to_voice: "elevenlabs.josh"
+                filter_from: "professional"
+                filter_to: "professional"
+                webhook: "https://example.com/translation-webhook"
+                live_events: true
+                ai_summary: true
+                speech_engine: "deepgram"
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 30
+            duration_ms: 30000
+            billing_ms: 30000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.01
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
+      - name: Inject translated message
+        description: Inject a message to be translated and spoken to the remote caller
+        params:
+          - name: id
+            value: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          - name: action
+            value:
+              inject:
+                message: "Please hold while I transfer you to a specialist."
+                direction: "remote-caller"
+        result:
+          name: CallResponse
+          value:
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            from: "+15551234567"
+            to: "+15559876543"
+            direction: "outbound-api"
+            status: "active"
+            duration: 45
+            duration_ms: 45000
+            billing_ms: 45000
+            source: "realtime_api"
+            type: "relay_pstn_call"
+            url: null
+            charge: 0.015
+            created_at: "2024-05-06T12:20:00Z"
+            parent_id: null
+            charge_details: []
+
+components:
+  schemas:
     CallResponse:
       type: object
       description: Response object for call operations
+      required:
+        - id
+        - from
+        - to
+        - direction
+        - status
+        - duration
+        - duration_ms
+        - billing_ms
+        - source
+        - type
+        - url
+        - charge
+        - created_at
+        - parent_id
+        - charge_details
       properties:
         id:
           type: string
-          format: uuid
-          description: Unique identifier for the call
-        status:
+          description: The unique identifier of the call on SignalWire. This can be used to update the call programmatically.
+          example: "0e9c80d7-a149-4917-892d-420043709f45"
+        from:
           type: string
-          description: Current status of the call
-          enum:
-            - initiated
-            - ringing
-            - active
-            - on_hold
-            - ended
+          description: The origin number or address.
+          example: "+12069708643"
+        to:
+          type: string
+          description: The destination number or address.
+          example: "+18048390497"
         direction:
           type: string
-          description: Direction of the call
           enum:
-            - inbound
-            - outbound
+            - outbound-api
+          description: The direction of the call.
+          example: "outbound-api"
+        status:
+          type: string
+          enum:
+            - answered
+            - queued
+            - initiated
+            - ringing
+            - ending
+            - ended
+          description: The status of the call.
+          example: "queued"
+        duration:
+          type: integer
+          nullable: true
+          description: The duration of the call in seconds.
+        duration_ms:
+          type: integer
+          nullable: true
+          description: The duration of the call in milliseconds.
+        billing_ms:
+          type: integer
+          nullable: true
+          description: The billable duration of the call in milliseconds.
+        source:
+          type: string
+          enum:
+            - realtime_api
+          description: Source of this call.
+          example: "realtime_api"
+        type:
+          type: string
+          enum:
+            - relay_pstn_call
+            - relay_sip_call
+            - relay_webrtc_call
+          description: Type of this call.
+          example: "relay_pstn_call"
+        url:
+          type: string
+          nullable: true
+          description: The URL associated with this call.
+        charge:
+          type: number
+          format: double
+          description: Total charge for this call.
+          example: 0
         created_at:
           type: string
           format: date-time
-          description: Timestamp when the call was created
-        updated_at:
+          description: The date and time when the call was created.
+          example: "2024-05-06T12:20:00Z"
+        parent_id:
           type: string
-          format: date-time
-          description: Timestamp when the call was last updated
+          nullable: true
+          description: The parent call ID if this is a child call.
+        charge_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChargeDetails'
+          description: Details on charges associated with this call.
+
+    ChargeDetails:
+      type: object
+      required:
+        - description
+        - amount
+      properties:
+        description:
+          type: string
+          description: Description for this charge.
+          example: "Text to Speech"
+        amount:
+          type: number
+          description: Charged amount.
+          example: 0.121176
+
+    LiveTranscribeStartAction:
+      type: object
+      required:
+        - start
+      properties:
+        start:
+          type: object
+          required:
+            - lang
+            - direction
+          properties:
+            lang:
+              type: string
+              description: The language to transcribe (e.g., 'en-US', 'es-ES').
+              example: "en-US"
+            direction:
+              type: array
+              items:
+                type: string
+                enum:
+                  - local-caller
+                  - remote-caller
+              description: The direction(s) of the call to transcribe.
+              example:
+                - "local-caller"
+                - "remote-caller"
+            webhook:
+              type: string
+              description: The webhook URL to receive transcription events.
+              example: "https://example.com/webhook"
+            live_events:
+              type: boolean
+              description: Whether to send real-time utterance events as speech is recognized.
+              example: true
+            ai_summary:
+              type: boolean
+              description: Whether to generate an AI summary when transcription ends.
+              example: true
+            ai_summary_prompt:
+              type: string
+              description: The AI prompt that instructs how to summarize the conversation.
+              example: "Summarize the key points of this conversation."
+            speech_engine:
+              type: string
+              enum:
+                - deepgram
+                - google
+              description: The speech recognition engine to use.
+              default: "deepgram"
+              example: "deepgram"
+            speech_timeout:
+              type: integer
+              format: int32
+              description: Speech timeout in milliseconds.
+              default: 60000
+              example: 60000
+            vad_silence_ms:
+              type: integer
+              format: int32
+              description: Voice activity detection silence time in milliseconds.
+              example: 300
+            vad_thresh:
+              type: integer
+              format: int32
+              description: Voice activity detection threshold (0-1800).
+              default: 400
+              example: 400
+            debug_level:
+              type: integer
+              format: int32
+              description: Debug level for logging (0-2).
+              default: 0
+              example: 0
+
+    LiveTranscribeSummarizeAction:
+      type: object
+      required:
+        - summarize
+      properties:
+        summarize:
+          type: object
+          properties:
+            webhook:
+              type: string
+              description: The webhook URL to receive the summary.
+              example: "https://example.com/webhook"
+            prompt:
+              type: string
+              description: The AI prompt that instructs how to summarize the conversation.
+              example: "Provide a bullet-point summary of the main topics discussed."
+
+    LiveTranscribeStopAction:
+      type: string
+      enum:
+        - stop
+      description: Stops the live transcription session.
+
+    LiveTranslateStartAction:
+      type: object
+      required:
+        - start
+      properties:
+        start:
+          type: object
+          required:
+            - from_lang
+            - to_lang
+            - direction
+          properties:
+            from_lang:
+              type: string
+              description: The language to translate from (e.g., 'en-US').
+              example: "en-US"
+            to_lang:
+              type: string
+              description: The language to translate to (e.g., 'es-ES').
+              example: "es-ES"
+            direction:
+              type: array
+              items:
+                type: string
+                enum:
+                  - local-caller
+                  - remote-caller
+              description: The direction(s) of the call to translate.
+              example:
+                - "local-caller"
+                - "remote-caller"
+            from_voice:
+              type: string
+              description: The TTS voice for the source language.
+              example: "elevenlabs.josh"
+            to_voice:
+              type: string
+              description: The TTS voice for the target language.
+              example: "elevenlabs.josh"
+            filter_from:
+              type: string
+              description: Translation filter for the source language direction. Can be a preset (polite, rude, professional, shakespeare, gen-z) or custom prompt.
+              example: "professional"
+            filter_to:
+              type: string
+              description: Translation filter for the target language direction. Can be a preset or custom prompt.
+              example: "professional"
+            webhook:
+              type: string
+              description: The webhook URL to receive translation events.
+              example: "https://example.com/webhook"
+            live_events:
+              type: boolean
+              description: Whether to send real-time translation events.
+              example: true
+            ai_summary:
+              type: boolean
+              description: Whether to generate AI summaries in both languages when translation ends.
+              example: true
+            ai_summary_prompt:
+              type: string
+              description: The AI prompt that instructs how to summarize the conversation.
+              example: "Summarize this translated conversation."
+            speech_engine:
+              type: string
+              enum:
+                - deepgram
+                - google
+              description: The speech recognition engine to use.
+              default: "deepgram"
+              example: "deepgram"
+            speech_timeout:
+              type: integer
+              format: int32
+              description: Speech timeout in milliseconds.
+              default: 60000
+              example: 60000
+            vad_silence_ms:
+              type: integer
+              format: int32
+              description: Voice activity detection silence time in milliseconds.
+              example: 300
+            vad_thresh:
+              type: integer
+              format: int32
+              description: Voice activity detection threshold (0-1800).
+              default: 400
+              example: 400
+            debug_level:
+              type: integer
+              format: int32
+              description: Debug level for logging (0-2).
+              default: 0
+              example: 0
+
+    LiveTranslateSummarizeAction:
+      type: object
+      required:
+        - summarize
+      properties:
+        summarize:
+          type: object
+          properties:
+            webhook:
+              type: string
+              description: The webhook URL to receive the summary.
+              example: "https://example.com/webhook"
+            prompt:
+              type: string
+              description: The AI prompt that instructs how to summarize the conversation.
+              example: "Summarize the key agreements reached in both languages."
+
+    LiveTranslateInjectAction:
+      type: object
+      required:
+        - inject
+      properties:
+        inject:
+          type: object
+          required:
+            - message
+            - direction
+          properties:
+            message:
+              type: string
+              description: The text message to inject and translate.
+              example: "Please hold while I transfer you to a specialist."
+            direction:
+              type: string
+              enum:
+                - local-caller
+                - remote-caller
+              description: The direction to send the translated message.
+              example: "remote-caller"
+
+    LiveTranslateStopAction:
+      type: string
+      enum:
+        - stop
+      description: Stops the live translation session.
+
+  errors:
+    Unauthorized:
+      code: -32001
+      message: Unauthorized
+      data:
+        type: object
+        properties:
+          error:
+            type: string
+            enum:
+              - Unauthorized
+
+    NotFound:
+      code: -32002
+      message: Not Found
+      data:
+        type: object
+        properties:
+          error:
+            type: string
+            enum:
+              - Not Found
+
+    ValidationError:
+      code: -32003
+      message: Validation Error
+      data:
+        type: object
+        properties:
+          errors:
+            type: array
+            items:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: Error type.
+                code:
+                  type: string
+                  description: Error code.
+                message:
+                  type: string
+                  description: Error details.
+                attribute:
+                  type: string
+                  description: Request parameter associated with this error.
+                url:
+                  type: string
+                  description: Link to developer resource for this error.
+
+    InternalError:
+      code: -32004
+      message: Internal Server Error
+      data:
+        type: object
+        properties:
+          error:
+            type: string
+            enum:
+              - Internal Server Error
