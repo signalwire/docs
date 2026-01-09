@@ -20,7 +20,7 @@
 
     <Frame 
       caption="Viewing details for a Subscriber in the Resources tab of the SignalWire Dashboard.">
-      ![Subscribers](@image/dashboard/resources/subscriber.webp)
+      ![Subscribers.](@image/dashboard/resources/subscriber.webp)
     </Frame>
 
   </div>
