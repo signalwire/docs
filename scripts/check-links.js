@@ -603,6 +603,9 @@ function printSummary(results) {
     for (const failure of finalFailures.slice(0, 20)) {
       const status = failure.status || failure.error || 'unknown';
       log.info(`  • [${status}] ${failure.url}`);
+      if (failure.sourceUrl) {
+        log.info(`    Found on: ${failure.sourceUrl}`);
+      }
     }
     if (finalFailures.length > 20) {
       log.info(`  ... and ${finalFailures.length - 20} more`);
@@ -627,10 +630,11 @@ function writeReport(outputFile, results) {
     report += '## ✅ All links are valid!\n\n';
   } else {
     report += `## ❌ ${finalFailures.length} Broken Link(s)\n\n`;
-    report += '| URL | Status |\n|-----|--------|\n';
+    report += '| Broken URL | Status | Found On |\n|------------|--------|----------|\n';
     for (const failure of finalFailures) {
       const status = failure.status || failure.error || 'unknown';
-      report += `| ${failure.url} | ${status} |\n`;
+      const sourceUrl = failure.sourceUrl || 'N/A';
+      report += `| ${failure.url} | ${status} | ${sourceUrl} |\n`;
     }
     report += '\n';
   }
@@ -784,24 +788,42 @@ Examples:
     }
 
     // 8. Compile final failures
+    // Filter function to exclude JS script fetches and other non-content URLs
+    const shouldExcludeUrl = (url) => {
+      if (!url) return true;
+      // Exclude Vercel analytics/insights scripts
+      if (url.includes('_vercel/') && url.includes('/script')) return true;
+      // Exclude other common JS/CSS asset patterns that aren't actual content links
+      if (url.match(/\.(js|css|woff2?|ttf|eot|ico)(\?|$)/)) return true;
+      return false;
+    };
+
     // Add client errors (real broken links)
-    for (const { url, status } of allClientErrors) {
-      results.finalFailures.push({ url, status });
+    for (const { url, status, sourceUrl } of allClientErrors) {
+      if (!shouldExcludeUrl(url)) {
+        results.finalFailures.push({ url, status, sourceUrl });
+      }
     }
 
     // Add rate-limited URLs that didn't recover
     for (const failure of results.retryResults.stillFailing) {
-      results.finalFailures.push(failure);
+      if (!shouldExcludeUrl(failure.url)) {
+        results.finalFailures.push(failure);
+      }
     }
 
     // Add server errors that couldn't be verified locally
     for (const failure of results.fallbackResults.stillFailing) {
-      results.finalFailures.push(failure);
+      if (!shouldExcludeUrl(failure.url)) {
+        results.finalFailures.push(failure);
+      }
     }
 
     // Add other errors
-    for (const { url, error } of allOtherErrors) {
-      results.finalFailures.push({ url, error });
+    for (const { url, error, sourceUrl } of allOtherErrors) {
+      if (!shouldExcludeUrl(url)) {
+        results.finalFailures.push({ url, error, sourceUrl });
+      }
     }
   }
 
