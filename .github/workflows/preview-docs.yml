@@ -3,7 +3,7 @@ name: preview-docs
 on: pull_request
 
 jobs:
-  run:
+  preview:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,13 +33,178 @@ jobs:
         env:
           FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
         run: |
-          OUTPUT=$(fern generate --docs --instance signalwire.docs.buildwithfern.com --preview 2>&1) || true
+          OUTPUT=$(fern generate --docs --instance signalwire.docs.buildwithfern.com --preview 2>&1)
+          FERN_EXIT_CODE=$?
           echo "$OUTPUT"
+          
+          if [ $FERN_EXIT_CODE -ne 0 ]; then
+            echo "::error::Fern preview generation failed with exit code $FERN_EXIT_CODE"
+            exit 1
+          fi
+          
           URL=$(echo "$OUTPUT" | grep -oP 'Published docs to \K.*(?= \()')
+          if [ -z "$URL" ]; then
+            echo "::error::Could not extract preview URL from Fern output"
+            exit 1
+          fi
+          
           echo "Preview URL: $URL"
-          echo "🌿 Preview your docs: $URL" > preview_url.txt
+          echo "preview_url=$URL" >> $GITHUB_OUTPUT
 
-      - name: Comment URL in PR
-        uses: thollander/actions-comment-pull-request@v2.4.3
+      - name: Post initial PR comment
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.generate-docs.outputs.preview_url }}
         with:
-          filePath: preview_url.txt
+          script: |
+            const previewUrl = process.env.PREVIEW_URL;
+            const MARKER = '<!-- preview-docs-bot -->';
+            
+            let body = MARKER + '\n';
+            body += `## 🌿 Preview\n\n`;
+            body += `${previewUrl}\n\n`;
+            body += `⏳ Link check in progress...`;
+            body += `\n\n---\n[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
+      - name: Wait for sitemap availability
+        run: |
+          SITEMAP_URL="${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml"
+          echo "Waiting for sitemap to be available: $SITEMAP_URL"
+          
+          for i in {1..6}; do
+            if curl -sf "$SITEMAP_URL" > /dev/null 2>&1; then
+              echo "Sitemap is available"
+              exit 0
+            fi
+            echo "Attempt $i: Sitemap not ready, waiting 5 seconds..."
+            sleep 5
+          done
+          
+          echo "::warning::Sitemap may not be fully available yet, proceeding anyway"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache lychee
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/lychee
+          key: lychee-${{ runner.os }}
+
+      - name: Install lychee
+        uses: taiki-e/install-action@v2
+        with:
+          tool: lychee
+
+      - name: Check links
+        id: check-links
+        run: |
+          set +e
+          node scripts/check-links.js \
+            --sitemap "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" \
+            --no-progress \
+            --output /tmp/link-report.md
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Comment PR status
+        uses: actions/github-script@v7
+        env:
+          EXIT_CODE: ${{ steps.check-links.outputs.exit_code }}
+          PREVIEW_URL: ${{ steps.generate-docs.outputs.preview_url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const failed = process.env.EXIT_CODE !== '0';
+            const previewUrl = process.env.PREVIEW_URL;
+
+            // Read the report file
+            let report = '';
+            try {
+              report = fs.readFileSync('/tmp/link-report.md', 'utf8');
+            } catch (e) {
+              // File may not exist if script failed early
+            }
+
+            const MARKER = '<!-- preview-docs-bot -->';
+            let body = MARKER + '\n';
+
+            if (failed) {
+              body += `## ❌ Link Check Failed\n\n`;
+              body += `**Preview:** ${previewUrl}\n\n`;
+              if (report) {
+                // Extract just the broken links section from the report
+                const brokenSection = report.match(/## ❌ [\s\S]*?(?=##|$)/);
+                if (brokenSection) {
+                  body += brokenSection[0];
+                } else {
+                  body += report;
+                }
+              } else {
+                body += `Broken links were found in the preview. Check the workflow logs for details.\n`;
+              }
+            } else {
+              body += `## 🌿 Preview\n\n`;
+              body += `${previewUrl}\n\n`;
+              body += `✅ All links are valid.`;
+            }
+            body += `\n\n---\n[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
+      - name: Upload link report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-report
+          path: /tmp/link-report.md
+          if-no-files-found: ignore
+
+      - name: Exit with link check result
+        if: steps.check-links.outputs.exit_code != '0'
+        run: exit 1
