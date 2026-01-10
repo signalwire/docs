@@ -20,7 +20,9 @@ the intermediate results it gets.
 Whether you're using a SWAIG data map's expression or a webhook, the `back_to_back_functions` feature
 can be enabled inside the `action` block of the function.
 
-```yaml andJson
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
 functions:
   - function: getIntermediateValue
     description: Get some information from server
@@ -33,6 +35,36 @@ functions:
             action:
               - back_to_back_functions: true
 ```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "functions": [
+    {
+      "function": "getIntermediateValue",
+      "description": "Get some information from server",
+      "data_map": {
+        "webhooks": [
+          {
+            "url": "example.com/intermediate",
+            "method": "GET",
+            "output": {
+              "response": "process the intermediate `${value}` using the `finalStep` function.",
+              "action": [
+                {
+                  "back_to_back_functions": true
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
 With `back_to_back_functions` set to `true`, AI will automatically invoke the `finalStep` function with required arguments.
 
@@ -50,7 +82,9 @@ graph LR;
 
 This pipeline can be realised with the following SWML:
 
-```yaml andJson
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
 version: 1.0.0
 sections:
   main:
@@ -119,6 +153,120 @@ sections:
                     output:
                       response: 'The decrypted message is ${original}'
 ```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      "answer",
+      {
+        "ai": {
+          "prompt": {
+            "text": "Say \"Hi\". 1. Get the secret message using the `getSecretMessage` function. 2. Decode it using the `decode` function. 3. Decrypt it using the `decrypt` function. The key is 'blue'. 4. Say the decrypted message, then hang up."
+          },
+          "params": {
+            "swaig_allow_swml": true
+          },
+          "SWAIG": {
+            "functions": [
+              {
+                "function": "getSecretMessage",
+                "description": "Get the secret message from the server",
+                "data_map": {
+                  "webhooks": [
+                    {
+                      "url": "https://<NGROK UUID>.ngrok-free.app/secret_information",
+                      "method": "GET",
+                      "output": {
+                        "response": "The secret data was acquired. It is `${b64}`. Decode it using the `decode` function.",
+                        "action": [
+                          {
+                            "back_to_back_functions": true
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "function": "decode",
+                "description": "Decode the given message",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "encoded_message": {
+                      "type": "string",
+                      "description": "The encoded message to decode"
+                    }
+                  }
+                },
+                "data_map": {
+                  "webhooks": [
+                    {
+                      "url": "https://<NGROK UUID>.ngrok-free.app/decode?enc=${args.encoded_message}",
+                      "method": "GET",
+                      "output": {
+                        "response": "The decoded message is `${decoded_message}`. Use the `decrypt` function to decrypt it.",
+                        "action": [
+                          {
+                            "toggle_functions": [
+                              {
+                                "active": true,
+                                "function": "decrypt"
+                              }
+                            ]
+                          },
+                          {
+                            "back_to_back_functions": true
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "function": "decrypt",
+                "active": false,
+                "description": "Decrypt the given message",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "encrypted_message": {
+                      "type": "string",
+                      "description": "The encrypted message to decrypt"
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "The key used for decoding"
+                    }
+                  }
+                },
+                "data_map": {
+                  "webhooks": [
+                    {
+                      "url": "https://<NGROK UUID>.ngrok-free.app/decrypt?enc=${args.encrypted_message}&key=${args.key}",
+                      "method": "GET",
+                      "output": {
+                        "response": "The decrypted message is ${original}"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
 There are a few things to note in the example above:
 

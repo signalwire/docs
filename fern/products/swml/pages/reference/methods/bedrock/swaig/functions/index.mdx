@@ -10,40 +10,58 @@ description: Functions that can be executed during the interaction with the Amaz
 
 An array of JSON objects to define functions that can be executed during the interaction with the Amazon Bedrock agent.
 
-**SWAIG.functions** (type: object[])
+<ParamField path="SWAIG.functions" type="object[]">
   An array of JSON objects that accept the [`functions Parameters`](#parameters).
+</ParamField>
+
 
 ## **functions Parameters**
 
-**functions[].description** (type: string) *required*
+<ParamField path="functions[].description" type="string" required={true}>
   A description of the context and purpose of the function, to explain to the agent when to use it.
+</ParamField>
 
-**functions[].function** (type: string) *required*
+
+<ParamField path="functions[].function" type="string" required={true}>
   A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functoins are SignalWire functions that will be executed at certain points in the conversation. To learn more about reserved functions, see [Reserved Functions][reserved-functions].
+</ParamField>
 
-**functions[].active** (type: boolean) Default: `true`
+
+<ParamField path="functions[].active" type="boolean" default="true">
   Whether the function is active.
+</ParamField>
 
-**functions[].data_map** (type: object)
+
+<ParamField path="functions[].data_map" type="object">
   An object containing properties to process or validate the input, perform actions based on the input, or connect to external APIs or services in a serverless fashion.
-
+  
   See [`data_map`](./ai_swaig.data_map/index.mdx) for additional details.
+</ParamField>
 
-**functions[].parameters** (type: object)
+
+<ParamField path="functions[].parameters" type="object">
   A JSON object that defines the expected user input parameters and their validation rules for the function.
-
+  
   See [`parameters`](./parameters/index.mdx) for additional details.
+</ParamField>
 
-**functions[].meta_data** (type: object)
+
+<ParamField path="functions[].meta_data" type="object">
   A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML [`set_meta_data` action](./ai_swaig.data_map/data_map.output.mdx#actions). This data can be referenced **locally** to the function. All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+</ParamField>
 
-**functions[].meta_data_token** (type: string) Default: `Set by SignalWire`
+
+<ParamField path="functions[].meta_data_token" type="string" default="Set by SignalWire">
   Scoping token for `meta_data`. If not supplied, metadata will be scoped to function's `web_hook_url`.
+</ParamField>
 
-**functions[].web_hook_url** (type: string)
+
+<ParamField path="functions[].web_hook_url" type="string">
   Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url`.
-
+  
   See [`web_hook_url`](./functions.web_hook_url.mdx) for details on the request body.
+</ParamField>
+
 
 ## **Reserved Functions**
 
@@ -58,14 +76,20 @@ Otherwise, your function may not work as expected.
 
 ### List of Reserved Functions
 
-**start_hook** (type: string)
+<ParamField path="start_hook" type="string">
   Triggered when the call is answered. Sends the set properties of the function to the defined `web_hook_url`.
+</ParamField>
 
-**stop_hook** (type: string)
+
+<ParamField path="stop_hook" type="string">
   Triggered when the call is ended. Sends the set properties of the function to the defined `web_hook_url`.
+</ParamField>
 
-**summarize_conversation** (type: string)
+
+<ParamField path="summarize_conversation" type="string">
   Triggered when the call is ended. The [`post_prompt`][post-prompt] must be defined for this function to be triggered. Provides a summary of the conversation and any set properties to the defined `web_hook_url`.
+</ParamField>
+
 
 :::important Where are my function properties?
 If the AI is not returning the properties you set in your SWAIG function, it may be because a reserved function was triggered before
@@ -114,7 +138,9 @@ sequenceDiagram
 
 ### Using SWAIG Functions
 
-```yaml andJson
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
 version: 1.0.0
 sections:
   main:
@@ -158,3 +184,73 @@ sections:
                     type: string
                     description: The name of the user.
 ```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "amazon_bedrock": {
+          "post_prompt_url": "https://example.com/my-api",
+          "prompt": {
+            "text": "You are a helpful assistant that can provide information to users about a destination.\nAt the start of the conversation, always ask the user for their name.\nYou can use the appropriate function to get the phone number, address,\nor weather information.\n"
+          },
+          "post_prompt": {
+            "text": "Summarize the conversation."
+          },
+          "SWAIG": {
+            "includes": [
+              {
+                "functions": [
+                  "get_phone_number",
+                  "get_address"
+                ],
+                "url": "https://example.com/functions",
+                "user": "me",
+                "pass": "secret"
+              }
+            ],
+            "defaults": {
+              "web_hook_url": "https://example.com/my-webhook",
+              "web_hook_auth_user": "me",
+              "web_hook_auth_pass": "secret"
+            },
+            "functions": [
+              {
+                "function": "get_weather",
+                "description": "To determine what the current weather is in a provided location.",
+                "parameters": {
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "The name of the city to find the weather from."
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              {
+                "function": "summarize_conversation",
+                "description": "Summarize the conversation.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the user."
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
