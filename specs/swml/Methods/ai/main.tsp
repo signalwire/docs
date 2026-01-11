@@ -47,8 +47,8 @@ model AIObject {
     """)
   prompt: AIPrompt;
 
-  //@doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
-  //SWAIG?: SWAIG;
+  @doc("An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.")
+  SWAIG?: SWAIG;
 }
 
 @summary("AI Type")
