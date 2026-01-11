@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi3";
+import "../../../../swml";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -119,9 +120,7 @@ model CallAIMessageRequest {
 // Live Transcribe Commands
 // ============================================
 
-alias TranscribeDirection = "local-caller" | "remote-caller";
-alias SpeechEngine = "deepgram" | "google";
-alias SupportedAIModels = "gpt-4o-mini" | "gpt-4.1-mini" | "gpt-4.1-nano";
+// TranscribeDirection, SpeechEngine, and SupportedAIModels are imported from the SWML module
 
 @summary("Start")
 model LiveTranscribeStartAction {
@@ -132,7 +131,7 @@ model LiveTranscribeStartAction {
     lang: string;
 
     @doc("The direction(s) of the call to transcribe.")
-    @example(#["local-caller", "remote-caller"])
+    @example(#[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`])
     direction: TranscribeDirection[];
 
     @doc("The webhook URL to receive transcription events.")
@@ -152,8 +151,8 @@ model LiveTranscribeStartAction {
     ai_summary_prompt?: string;
 
     @doc("The speech recognition engine to use.")
-    @example("deepgram")
-    speech_engine?: SpeechEngine = "deepgram";
+    @example(SpeechEngine.deepgram)
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
     @doc("Speech timeout in milliseconds.")
     @example(60000)
@@ -216,30 +215,7 @@ model CallLiveTranscribeRequest {
 // Live Translate Commands
 // ============================================
 
-@summary("Filter Presets")
-@doc("""
-Preset translation filter values that adjust the tone or style of translated speech.
-
-- `polite` - Translates to a polite version, removing anything insulting while maintaining sentiment
-- `rude` - Translates to a rude and insulting version while maintaining sentiment
-- `professional` - Translates to sound professional, removing slang or lingo
-- `shakespeare` - Translates to sound like Shakespeare, speaking in iambic pentameter
-- `gen-z` - Translates to use Gen-Z slang and expressions
-""")
-enum TranslationFilterPreset {
-  polite,
-  rude,
-  professional,
-  shakespeare,
-  `gen-z`,
-}
-
-@summary("Custom Filter")
-@doc("Custom translation filter with a prompt prefix. Use `prompt:` followed by your custom instructions (e.g., `prompt:Use formal business language`).")
-@pattern("^prompt:.+$")
-scalar CustomTranslationFilter extends string;
-
-alias TranslationFilter = TranslationFilterPreset | CustomTranslationFilter;
+// TranslationFilterPreset, CustomTranslationFilter, and TranslationFilter are imported from the SWML module
 
 @summary("Start")
 model LiveTranslateStartAction {
@@ -254,7 +230,7 @@ model LiveTranslateStartAction {
     to_lang: string;
 
     @doc("The direction(s) of the call to translate.")
-    @example(#["local-caller", "remote-caller"])
+    @example(#[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`])
     direction: TranscribeDirection[];
 
     @doc("The TTS voice for the source language.")
@@ -290,8 +266,8 @@ model LiveTranslateStartAction {
     ai_summary_prompt?: string;
 
     @doc("The speech recognition engine to use.")
-    @example("deepgram")
-    speech_engine?: SpeechEngine = "deepgram";
+    @example(SpeechEngine.deepgram)
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
 
     @doc("Speech timeout in milliseconds.")
     @example(60000)
@@ -334,7 +310,7 @@ model LiveTranslateInjectAction {
     message: string;
 
     @doc("The direction to send the translated message.")
-    @example("remote-caller")
+    @example(TranscribeDirection.`remote-caller`)
     direction: TranscribeDirection;
   };
 }
@@ -418,9 +394,8 @@ model CallCreateParamsURL is CallCreateParamsBase {
 
 @summary("Create call (SWML)")
 model CallCreateParamsSWML is CallCreateParamsBase {
-  @doc("Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
-  @example(CallSWMLExample)
-  swml: string;
+  @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  swml: SWMLObject;
 }
 
 @summary("Update call")
@@ -443,9 +418,8 @@ model CallUpdateParamsBase {
 
 @summary("Update call (SWML)")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
-  @doc("Inline SWML, passed as a string, containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
-  @example(CallSWMLExample)
-  swml: string;
+  @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
+  swml: SWMLObject;
 }
 
 @summary("Update call (URL)")

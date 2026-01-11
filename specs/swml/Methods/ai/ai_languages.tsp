@@ -27,7 +27,7 @@ model LanguagesBase {
 
   @doc("The model to use for the specified TTS engine. For example, 'arcana'.")
   @example("arcana")
-  model?: string;
+  `model`?: string;
 
   @doc("""
     Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
