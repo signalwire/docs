@@ -199,6 +199,10 @@ components:
             Defines the AI agent's personality, goals, behaviors, and instructions for handling conversations.
             The prompt establishes how the agent should interact with callers, what information it should gather,
             and how it should respond to various scenarios. It is recommended to write prompts using markdown formatting.
+        SWAIG:
+          allOf:
+            - $ref: '#/components/schemas/SWAIG'
+          description: An array of JSON objects to create user-defined functions/endpoints that can be executed during the dialogue.
       title: AI Object
     AIParams:
       type: object
@@ -1241,6 +1245,7 @@ components:
       title: AIPromptBase
     Action:
       anyOf:
+        - $ref: '#/components/schemas/SWMLAction'
         - $ref: '#/components/schemas/ChangeContextAction'
         - $ref: '#/components/schemas/ChangeStepAction'
         - $ref: '#/components/schemas/ContextSwitchAction'
@@ -4648,6 +4653,113 @@ components:
             Jump to a label within the current section, optionally based on a condition.
             The goto method will only navigate to a label within the same section.
       title: Goto object
+    HangUpHookSWAIGFunction:
+      type: object
+      required:
+        - description
+        - function
+      properties:
+        description:
+          type: string
+          description: A description of the context and purpose of the function, to explain to the agent when to use it.
+          example: Get the weather information
+        purpose:
+          type: string
+          description: |-
+            The purpose field has been deprecated and is replaced by the `description` field.
+            A description of the context and purpose of the function, to explain to the agent when to use it.
+          deprecated: true
+          example: Get the weather information
+        parameters:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: A JSON object that defines the expected user input parameters and their validation rules for the function.
+        fillers:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: A JSON object defining the fillers that should be played when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.
+        argument:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: |-
+            The argument field has been deprecated and is replaced by the `parameters` field. 
+            A JSON object defining the input that should be passed to the function. 
+            The fields of this object are the following two parameters.
+          deprecated: true
+        active:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether the function is active. **Default:** `true`.
+          example: true
+          default: true
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: |-
+            A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
+            This data can be referenced locally to the function.
+            All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+            Default is not set.
+          example:
+            api_key: key_123
+            endpoint: https://api.example.com
+        meta_data_token:
+          type: string
+          description: Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.
+          example: my-function-scope
+        data_map:
+          allOf:
+            - $ref: '#/components/schemas/DataMap'
+          minProperties: 1
+          description: |-
+            An object that processes function inputs and executes operations through expressions, webhooks, or direct output.
+            Properties are evaluated in strict priority order:
+            1. expressions
+            2. webhooks
+            3. output
+
+            Evaluation stops at the first property that returns a valid output result, similar to a return statement in a function.
+            Any subsequent properties are ignored when a valid output is returned.
+            If a valid output is not returned from any of the properties, a generic error message is returned.
+        skip_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Skips the top-level fillers specified in `ai.languages` (which includes `speech_fillers` and `function_fillers`).
+            When set to `true`, only function-specific fillers defined directly on `SWAIG.functions.fillers` will play.
+            **Default:** `false`.
+          example: true
+          default: false
+        web_hook_url:
+          type: string
+          description: Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`
+          example: username:password:https://statuscallback.com
+        wait_file:
+          type: string
+          format: uri
+          description: A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.
+          example: https://cdn.signalwire.com/default-music/welcome.mp3
+        wait_file_loops:
+          anyOf:
+            - type: integer
+            - type: string
+          description: The number of times to loop playing the file. Default is not set.
+          example: 5
+        wait_for_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.
+          example: true
+          default: false
+        function:
+          type: string
+          enum:
+            - hangup_hook
+          description: A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation. For the stop_hook function, the function name is 'stop_hook'.
+      title: functions
     Hangup:
       type: object
       required:
@@ -6624,6 +6736,36 @@ components:
           description: Optional if `media` is present. The body of the SMS message.
           example: Check out this image!
       title: SMSWithMedia object
+    SWAIG:
+      type: object
+      properties:
+        defaults:
+          allOf:
+            - $ref: '#/components/schemas/SWAIGDefaults'
+          description: Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set.
+        native_functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWAIGNativeFunction'
+          description: Prebuilt functions the AI agent is able to call from this list of available native functions
+        includes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWAIGIncludes'
+          description: |-
+            An array of objects to include remote function signatures.
+            This allows you to include functions that are defined in a remote location.
+            The object fields are `url` to specify where the remote functions are defined and `functions` which is an array of the function names as strings.
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWAIGFunction'
+          description: An array of JSON objects to define functions that can be executed during the interaction with the AI. Default is not set.
+        internal_fillers:
+          allOf:
+            - $ref: '#/components/schemas/SWAIGInternalFiller'
+          description: An object containing filler phrases for internal SWAIG functions. These fillers are played while utilizing internal functions.
+      title: swaig
     SWAIGDefaults:
       type: object
       properties:
@@ -6632,6 +6774,12 @@ components:
           description: Default URL to send status callbacks and reports to. Authentication can also be set in the url in the format of `username:password@url.`
           example: username:password@https://example.com
       title: defaults
+    SWAIGFunction:
+      anyOf:
+        - $ref: '#/components/schemas/UserSWAIGFunction'
+        - $ref: '#/components/schemas/StartUpHookSWAIGFunction'
+        - $ref: '#/components/schemas/HangUpHookSWAIGFunction'
+        - $ref: '#/components/schemas/SummarizeConversationSWAIGFunction'
     SWAIGIncludes:
       type: object
       required:
@@ -6658,6 +6806,45 @@ components:
             customer_id: cust_123
             session_type: support
       title: includes
+    SWAIGInternalFiller:
+      type: object
+      properties:
+        hangup:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when the AI Agent is hanging up the call.
+        check_time:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when the AI Agent is checking the time.
+        wait_for_user:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when the AI Agent is waiting for user input.
+        wait_seconds:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played during deliberate pauses or wait periods.
+        adjust_response_latency:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when the AI Agent is adjusting response timing.
+        next_step:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when transitioning between conversation steps when utilizing `prompt.contexts`.
+        change_context:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when switching between conversation contexts when utilizing `prompt.contexts`.
+        get_visual_input:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when the AI Agent is processing visual input. This function is enabled when `enable_vision` is set to `true` in `ai.params`.
+        get_ideal_strategy:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: Filler phrases played when the AI Agent is thinking or considering options. This is utilized when `enable_thinking` is set to `true` in `ai.params`.
     SWAIGNativeFunction:
       type: string
       enum:
@@ -6666,6 +6853,17 @@ components:
         - wait_for_user
         - adjust_response_latency
       title: native_functions
+    SWMLAction:
+      type: object
+      required:
+        - SWML
+      properties:
+        SWML:
+          allOf:
+            - $ref: '#/components/schemas/SWMLObject'
+          description: A SWML object to be executed.
+          title: SWML
+      title: SWMLAction object
     SWMLMethod:
       anyOf:
         - $ref: '#/components/schemas/Answer'
@@ -7000,6 +7198,113 @@ components:
             - direction
           description: Starts live translation of the call. The translation will be sent to the specified URL.
       title: StartAction object
+    StartUpHookSWAIGFunction:
+      type: object
+      required:
+        - description
+        - function
+      properties:
+        description:
+          type: string
+          description: A description of the context and purpose of the function, to explain to the agent when to use it.
+          example: Get the weather information
+        purpose:
+          type: string
+          description: |-
+            The purpose field has been deprecated and is replaced by the `description` field.
+            A description of the context and purpose of the function, to explain to the agent when to use it.
+          deprecated: true
+          example: Get the weather information
+        parameters:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: A JSON object that defines the expected user input parameters and their validation rules for the function.
+        fillers:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: A JSON object defining the fillers that should be played when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.
+        argument:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: |-
+            The argument field has been deprecated and is replaced by the `parameters` field. 
+            A JSON object defining the input that should be passed to the function. 
+            The fields of this object are the following two parameters.
+          deprecated: true
+        active:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether the function is active. **Default:** `true`.
+          example: true
+          default: true
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: |-
+            A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
+            This data can be referenced locally to the function.
+            All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+            Default is not set.
+          example:
+            api_key: key_123
+            endpoint: https://api.example.com
+        meta_data_token:
+          type: string
+          description: Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.
+          example: my-function-scope
+        data_map:
+          allOf:
+            - $ref: '#/components/schemas/DataMap'
+          minProperties: 1
+          description: |-
+            An object that processes function inputs and executes operations through expressions, webhooks, or direct output.
+            Properties are evaluated in strict priority order:
+            1. expressions
+            2. webhooks
+            3. output
+
+            Evaluation stops at the first property that returns a valid output result, similar to a return statement in a function.
+            Any subsequent properties are ignored when a valid output is returned.
+            If a valid output is not returned from any of the properties, a generic error message is returned.
+        skip_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Skips the top-level fillers specified in `ai.languages` (which includes `speech_fillers` and `function_fillers`).
+            When set to `true`, only function-specific fillers defined directly on `SWAIG.functions.fillers` will play.
+            **Default:** `false`.
+          example: true
+          default: false
+        web_hook_url:
+          type: string
+          description: Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`
+          example: username:password:https://statuscallback.com
+        wait_file:
+          type: string
+          format: uri
+          description: A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.
+          example: https://cdn.signalwire.com/default-music/welcome.mp3
+        wait_file_loops:
+          anyOf:
+            - type: integer
+            - type: string
+          description: The number of times to loop playing the file. Default is not set.
+          example: 5
+        wait_for_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.
+          example: true
+          default: false
+        function:
+          type: string
+          enum:
+            - startup_hook
+          description: A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation. For the start_hook function, the function name is 'start_hook'.
+      title: functions
     StopAction:
       type: object
       required:
@@ -7152,6 +7457,116 @@ components:
           enum:
             - summarize
       title: SummarizeAction union
+    SummarizeConversationSWAIGFunction:
+      type: object
+      required:
+        - description
+        - function
+      properties:
+        description:
+          type: string
+          description: A description of the context and purpose of the function, to explain to the agent when to use it.
+          example: Get the weather information
+        purpose:
+          type: string
+          description: |-
+            The purpose field has been deprecated and is replaced by the `description` field.
+            A description of the context and purpose of the function, to explain to the agent when to use it.
+          deprecated: true
+          example: Get the weather information
+        parameters:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: A JSON object that defines the expected user input parameters and their validation rules for the function.
+        fillers:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: A JSON object defining the fillers that should be played when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.
+        argument:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: |-
+            The argument field has been deprecated and is replaced by the `parameters` field. 
+            A JSON object defining the input that should be passed to the function. 
+            The fields of this object are the following two parameters.
+          deprecated: true
+        active:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether the function is active. **Default:** `true`.
+          example: true
+          default: true
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: |-
+            A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
+            This data can be referenced locally to the function.
+            All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+            Default is not set.
+          example:
+            api_key: key_123
+            endpoint: https://api.example.com
+        meta_data_token:
+          type: string
+          description: Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.
+          example: my-function-scope
+        data_map:
+          allOf:
+            - $ref: '#/components/schemas/DataMap'
+          minProperties: 1
+          description: |-
+            An object that processes function inputs and executes operations through expressions, webhooks, or direct output.
+            Properties are evaluated in strict priority order:
+            1. expressions
+            2. webhooks
+            3. output
+
+            Evaluation stops at the first property that returns a valid output result, similar to a return statement in a function.
+            Any subsequent properties are ignored when a valid output is returned.
+            If a valid output is not returned from any of the properties, a generic error message is returned.
+        skip_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Skips the top-level fillers specified in `ai.languages` (which includes `speech_fillers` and `function_fillers`).
+            When set to `true`, only function-specific fillers defined directly on `SWAIG.functions.fillers` will play.
+            **Default:** `false`.
+          example: true
+          default: false
+        web_hook_url:
+          type: string
+          description: Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`
+          example: username:password:https://statuscallback.com
+        wait_file:
+          type: string
+          format: uri
+          description: A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.
+          example: https://cdn.signalwire.com/default-music/welcome.mp3
+        wait_file_loops:
+          anyOf:
+            - type: integer
+            - type: string
+          description: The number of times to loop playing the file. Default is not set.
+          example: 5
+        wait_for_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.
+          example: true
+          default: false
+        function:
+          type: string
+          enum:
+            - summarize_conversation
+          description: A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation.. For the summarize_conversation function, the function name is 'summarize_conversation'.
+      description: |-
+        An internal reserved function that generates a summary of the conversation and sends any specified properties to the configured webhook after the conversation has ended.
+        This ensures that key parts of the conversation, as interpreted by the LLM, are reliably captured and delivered to the webhook.
+      title: functions
     Switch:
       type: object
       required:
@@ -7593,6 +8008,112 @@ components:
           title: user_input
           example: I would like to speak to a manager
       title: UserInputAction object
+    UserSWAIGFunction:
+      type: object
+      required:
+        - description
+        - function
+      properties:
+        description:
+          type: string
+          description: A description of the context and purpose of the function, to explain to the agent when to use it.
+          example: Get the weather information
+        purpose:
+          type: string
+          description: |-
+            The purpose field has been deprecated and is replaced by the `description` field.
+            A description of the context and purpose of the function, to explain to the agent when to use it.
+          deprecated: true
+          example: Get the weather information
+        parameters:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: A JSON object that defines the expected user input parameters and their validation rules for the function.
+        fillers:
+          allOf:
+            - $ref: '#/components/schemas/FunctionFillers'
+          description: A JSON object defining the fillers that should be played when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.
+        argument:
+          allOf:
+            - $ref: '#/components/schemas/FunctionParameters'
+          description: |-
+            The argument field has been deprecated and is replaced by the `parameters` field. 
+            A JSON object defining the input that should be passed to the function. 
+            The fields of this object are the following two parameters.
+          deprecated: true
+        active:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether the function is active. **Default:** `true`.
+          example: true
+          default: true
+        meta_data:
+          type: object
+          additionalProperties: {}
+          description: |-
+            A powerful and flexible environmental variable which can accept arbitrary data that is set initially in the SWML script or from the SWML set_meta_data action.
+            This data can be referenced locally to the function.
+            All contained information can be accessed and expanded within the prompt - for example, by using a template string.
+            Default is not set.
+          example:
+            api_key: key_123
+            endpoint: https://api.example.com
+        meta_data_token:
+          type: string
+          description: Scoping token for meta_data. If not supplied, metadata will be scoped to function's `web_hook_url`. Default is set by SignalWire.
+          example: my-function-scope
+        data_map:
+          allOf:
+            - $ref: '#/components/schemas/DataMap'
+          minProperties: 1
+          description: |-
+            An object that processes function inputs and executes operations through expressions, webhooks, or direct output.
+            Properties are evaluated in strict priority order:
+            1. expressions
+            2. webhooks
+            3. output
+
+            Evaluation stops at the first property that returns a valid output result, similar to a return statement in a function.
+            Any subsequent properties are ignored when a valid output is returned.
+            If a valid output is not returned from any of the properties, a generic error message is returned.
+        skip_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: |-
+            Skips the top-level fillers specified in `ai.languages` (which includes `speech_fillers` and `function_fillers`).
+            When set to `true`, only function-specific fillers defined directly on `SWAIG.functions.fillers` will play.
+            **Default:** `false`.
+          example: true
+          default: false
+        web_hook_url:
+          type: string
+          description: Function-specific URL to send status callbacks and reports to. Takes precedence over a default setting. Authentication can also be set in the url in the format of `username:password@url.`
+          example: username:password:https://statuscallback.com
+        wait_file:
+          type: string
+          format: uri
+          description: A file to play while the function is running. `wait_file_loops` can specify the amount of times that files should continously play. Default is not set.
+          example: https://cdn.signalwire.com/default-music/welcome.mp3
+        wait_file_loops:
+          anyOf:
+            - type: integer
+            - type: string
+          description: The number of times to loop playing the file. Default is not set.
+          example: 5
+        wait_for_fillers:
+          anyOf:
+            - type: boolean
+            - $ref: '#/components/schemas/SWMLVar'
+          description: Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.
+          example: true
+          default: false
+        function:
+          type: string
+          description: A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation.
+          example: get_weather
+      title: functions
     ValidConfirmMethods:
       anyOf:
         - $ref: '#/components/schemas/Cond'
