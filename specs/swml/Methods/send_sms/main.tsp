@@ -41,7 +41,7 @@ model SMSWithMedia is SMSBase {
 
 alias SMSPlan = SMSWithBody | SMSWithMedia;
 
-@summary("SendSMS object")
+@summary("send_sms Method")
 model SendSMS {
   @summary("send_sms")
   @doc("Send an outbound SMS or MMS message to a PSTN phone number.")

@@ -1,6 +1,6 @@
 import "../../Methods";
 
-@summary("JoinRoom object")
+@summary("join_room Method")
 model JoinRoom {
   @doc("Join a RELAY room. If the room doesn't exist, it creates a new room.")
   @summary("join_room")

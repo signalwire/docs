@@ -1,6 +1,6 @@
 import "../../Shared/Types/main.tsp";
 
-@summary("Record object")
+@summary("record Method")
 model Record {
   @summary("record")
   @doc("""

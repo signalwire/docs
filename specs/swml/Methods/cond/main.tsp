@@ -30,7 +30,7 @@ union CondParams {
   CondElse,
 }
 
-@summary("Cond object")
+@summary("cond Method")
 model Cond {
   @summary("cond")
   @doc("Execute a sequence of instructions depending on the value of a JavaScript condition.")

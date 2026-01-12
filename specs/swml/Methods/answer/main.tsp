@@ -2,7 +2,7 @@ import "@typespec/json-schema";
 import "../../Shared/Types/main.tsp";
 using TypeSpec.JsonSchema;
 
-@summary("Answer object")
+@summary("answer Method")
 model Answer {
   @doc("Answer incoming call and set an optional maximum duration.")
   @summary("answer")

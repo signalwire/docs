@@ -1,4 +1,4 @@
-@summary("ReceiveFax object")
+@summary("receive_fax Method")
 model ReceiveFax {
   @summary("receive_fax")
   @doc("Receive a fax being delivered to this call.")

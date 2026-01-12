@@ -1,6 +1,6 @@
 import "../../Methods";
 
-@summary("Switch object")
+@summary("switch Method")
 model Switch {
   @summary("switch")
   @doc("Execute different instructions based on a variable's value.")

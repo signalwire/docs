@@ -1,6 +1,6 @@
 import "../../Shared/Types/main.tsp";
 
-@summary("DetectMachine Object")
+@summary("detect_machine Method")
 model DetectMachine {
   @doc("""
     A detection method that combines AMD (Answering Machine Detection) and fax detection.

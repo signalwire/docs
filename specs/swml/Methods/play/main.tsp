@@ -72,7 +72,7 @@ model PlayWithURLS is PlayBase {
 
 alias PlayUnion = PlayWithURL | PlayWithURLS;
 
-@summary("Play object")
+@summary("play Method")
 model Play {
   @oneOf
   @summary("play")

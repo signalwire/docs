@@ -1,4 +1,4 @@
-@summary("Set object")
+@summary("set Method")
 model Set {
   @summary("set")
   @doc("""

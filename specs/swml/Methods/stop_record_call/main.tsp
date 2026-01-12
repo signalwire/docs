@@ -1,4 +1,4 @@
-@summary("StopRecordCall object")
+@summary("stop_record_call Method")
 model StopRecordCall {
   @summary("stop_record_call")
   @doc("Stop an active background recording.")

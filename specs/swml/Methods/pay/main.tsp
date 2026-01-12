@@ -5,6 +5,7 @@ import "./prompt/main.tsp";
 
 using TypeSpec.JsonSchema;
 
+@summary("pay Method")
 model Pay {
   @doc("""
     Enables secure payment processing during voice calls. When implemented, it manages the entire payment flow

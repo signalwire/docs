@@ -1,6 +1,6 @@
 import "../../Methods";
 
-@summary("Request object")
+@summary("request Method")
 model Request {
   @summary("request")
   @doc("Send a GET, POST, PUT, or DELETE request to a remote URL.")

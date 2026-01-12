@@ -1,4 +1,4 @@
-@summary("Transfer object")
+@summary("transfer Method")
 model Transfer {
   @summary("transfer")
   @doc("""

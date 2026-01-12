@@ -2,7 +2,7 @@ import "@typespec/json-schema";
 import "../../Shared/Types/main.tsp";
 using TypeSpec.JsonSchema;
 
-@summary("Sleep object")
+@summary("sleep Method")
 model Sleep {
   @summary("sleep")
   @doc("Pause execution for a specified duration.")

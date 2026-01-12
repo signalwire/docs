@@ -1,6 +1,6 @@
 import "../../Shared/Types/main.tsp";
 
-@summary("Tap object")
+@summary("tap Method")
 model Tap {
   @summary("tap")
   @doc("Start background call tap. Media is streamed over Websocket or RTP to customer controlled URI.")

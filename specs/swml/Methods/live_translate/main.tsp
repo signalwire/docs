@@ -152,7 +152,7 @@ union TranslateAction {
   InjectAction,
 }
 
-@summary("LiveTranslate object")
+@summary("live_translate Method")
 model LiveTranslate {
   @summary("live_translate")
   @doc("Start live translation of the call. The translation will be sent to the specified webhook URL.")

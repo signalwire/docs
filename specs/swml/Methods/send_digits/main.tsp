@@ -1,4 +1,4 @@
-@summary("SendDigits object")
+@summary("send_digits Method")
 model SendDigits {
   @summary("send_digits")
   @doc("Send digit presses as DTMF tones.")

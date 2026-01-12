@@ -1,4 +1,4 @@
-@summary("StopTap object")
+@summary("stop_tap Method")
 model StopTap {
   @summary("stop_tap")
   @doc("Stop an active tap stream.")

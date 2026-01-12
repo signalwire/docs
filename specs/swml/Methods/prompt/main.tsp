@@ -1,6 +1,6 @@
 import "../../Methods";
 
-@summary("Prompt object")
+@summary("prompt Method")
 model Prompt {
   @summary("prompt")
   @doc("""

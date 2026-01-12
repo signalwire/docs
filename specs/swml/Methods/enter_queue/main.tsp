@@ -33,7 +33,7 @@ model EnterQueueObject {
   wait_time?: integer | SWMLVar = 3600;
 }
 
-@summary("EnterQueue object")
+@summary("enter_queue Method")
 model EnterQueue {
   @doc("""
     Place the current call in a named queue where it will wait to be connected to an available agent or resource.

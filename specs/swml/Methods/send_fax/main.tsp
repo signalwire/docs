@@ -1,4 +1,4 @@
-@summary("SendFax object")
+@summary("send_fax Method")
 model SendFax {
   @summary("send_fax")
   @doc("Send a fax.")

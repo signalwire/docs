@@ -18,7 +18,7 @@ model ExecuteSwitch {
   default?: SWMLMethod[];
 }
 
-@summary("Execute object")
+@summary("execute Method")
 model Execute {
   @doc("""
     Execute a specified section or URL as a subroutine, and upon completion, return to the current document.

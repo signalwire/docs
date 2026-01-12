@@ -1,6 +1,6 @@
 import "../label";
 import "../../Shared/Types/main.tsp";
-@summary("Goto object")
+@summary("goto Method")
 model Goto {
   @doc("""
     Jump to a label within the current section, optionally based on a condition.

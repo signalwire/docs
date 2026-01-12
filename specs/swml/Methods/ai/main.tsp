@@ -51,7 +51,7 @@ model AIObject {
   SWAIG?: SWAIG;
 }
 
-@summary("AI Type")
+@summary("ai Method")
 model AI {
   @doc("""
     Creates an AI agent that conducts voice conversations using automatic speech recognition (ASR),

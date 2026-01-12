@@ -98,7 +98,7 @@ model JoinConferenceObject {
   result?: Switch.switch | Cond.cond;
 }
 
-@summary("JoinConference object")
+@summary("join_conference Method")
 model JoinConference {
   @doc("""
     Join an ad-hoc audio conference started on either the SignalWire or Compatibility API.

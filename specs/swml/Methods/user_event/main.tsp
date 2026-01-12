@@ -1,4 +1,4 @@
-@summary("user_event Object")
+@summary("user_event Method")
 model UserEvent {
   @doc("""
     Allows the user to set and send events to the connected client on the call.

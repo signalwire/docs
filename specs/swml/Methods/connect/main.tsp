@@ -200,7 +200,7 @@ alias ConnectDevice =
   | ConnectDeviceParallel
   | ConnectDeviceSerialParallel;
 
-@summary("Connect object")
+@summary("connect Method")
 model Connect {
   @doc("Dial a SIP URI or phone number.")
   @oneOf

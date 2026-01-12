@@ -1,4 +1,4 @@
-@summary("SIPRefer object")
+@summary("sip_refer Method")
 model SIPRefer {
   @summary("sip_refer")
   @doc("Send SIP REFER to a SIP call.")

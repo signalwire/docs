@@ -34,6 +34,7 @@ model AmazonBedrockObject {
   SWAIG?: BedrockSWAIG;
 }
 
+@summary("amazon_bedrock Method")
 model AmazonBedrock {
   @doc("Creates a new Bedrock AI Agent")
   amazon_bedrock: AmazonBedrockObject;
