@@ -23,7 +23,7 @@ alias CallCreateParamsAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
 alias CallUpdateParamsAlias = CallUpdateParamsURL | CallUpdateParamsSWML;
 
-@summary("Hangup call")
+@summary("calling.end")
 model CallHangupRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -40,7 +40,7 @@ model CallHangupRequest {
     reason?: "hangup" | "busy";
   };
 }
-@summary("Hold call")
+@summary("calling.ai_hold")
 model CallHoldRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -66,7 +66,7 @@ model CallHoldRequest {
   };
 }
 
-@summary("Unhold call")
+@summary("calling.ai_unhold")
 model CallUnholdRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -87,7 +87,7 @@ model CallUnholdRequest {
   };
 }
 
-@summary("Inject AI message")
+@summary("calling.ai_message")
 model CallAIMessageRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -194,7 +194,7 @@ enum LiveTranscribeStopAction {
 
 alias LiveTranscribeAction = LiveTranscribeStartAction | LiveTranscribeSummarizeAction | LiveTranscribeStopAction;
 
-@summary("Live Transcribe")
+@summary("calling.live_transcribe")
 model CallLiveTranscribeRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -323,7 +323,7 @@ enum LiveTranslateStopAction {
 
 alias LiveTranslateAction = LiveTranslateStartAction | LiveTranslateSummarizeAction | LiveTranslateInjectAction | LiveTranslateStopAction;
 
-@summary("Live Translate")
+@summary("calling.live_translate")
 model CallLiveTranslateRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -340,7 +340,7 @@ model CallLiveTranslateRequest {
   };
 }
 
-@summary("Create call")
+@summary("dial")
 model CallCreateRequest {
   @doc("The `dial` command is used to create a new call.")
   @example("dial")
@@ -382,7 +382,7 @@ model CallCreateParamsBase {
     | "ended")[];
 }
 
-@summary("Create call (URL)")
+@summary("dial (URL)")
 model CallCreateParamsURL is CallCreateParamsBase {
   @doc("""
     The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
@@ -392,13 +392,13 @@ model CallCreateParamsURL is CallCreateParamsBase {
   url: string;
 }
 
-@summary("Create call (SWML)")
+@summary("dial (Inline SWML)")
 model CallCreateParamsSWML is CallCreateParamsBase {
   @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
   swml: SWMLObject;
 }
 
-@summary("Update call")
+@summary("update")
 model CallUpdateParamsBase {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -416,13 +416,13 @@ model CallUpdateParamsBase {
   status?: "canceled" | "completed";
 }
 
-@summary("Update call (SWML)")
+@summary("update (Inline SWML)")
 model CallUpdateParamsSWML is CallUpdateParamsBase {
   @doc("Inline SWML object containing SWML instructions for handling the call. Either `url` or `swml` must be included for a new call.")
   swml: SWMLObject;
 }
 
-@summary("Update call (URL)")
+@summary("update (URL)")
 model CallUpdateParamsURL is CallUpdateParamsBase {
   @doc("""
     The URL to handle the call. This parameter allows you to specify a webhook or different route in your code containing SWML instructions for handling the call.
@@ -432,7 +432,7 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
   url: string;
 }
 
-@summary("Update call")
+@summary("update")
 model CallUpdateCurrentCallRequest {
   @doc(updateCommandDescription)
   @example("update")

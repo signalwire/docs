@@ -23,42 +23,42 @@ namespace CallingAPI.Calls {
     @opExample(
       #{ parameters: dialCallExample },
       #{
-        title: "Create new call",
+        title: "dial",
         description: "Initiate a new outbound call with the dial command",
       }
     )
     @opExample(
       #{ parameters: updateCallExample },
       #{
-        title: "Update active call",
+        title: "update",
         description: "Modify an existing call's parameters in real-time",
       }
     )
     @opExample(
       #{ parameters: hangupCallExample },
       #{
-        title: "End call",
+        title: "calling.end",
         description: "Terminate an active call immediately",
       }
     )
     @opExample(
       #{ parameters: holdCallExample },
       #{
-        title: "Hold active call",
+        title: "calling.ai_hold",
         description: "Put an active AI call on hold, pausing the conversation",
       }
     )
     @opExample(
       #{ parameters: unholdCallExample },
       #{
-        title: "Unhold active call",
+        title: "calling.ai_unhold",
         description: "Resume an AI call that was previously put on hold",
       }
     )
     @opExample(
       #{ parameters: aiMessageExample },
       #{
-        title: "Inject AI message",
+        title: "calling.ai_message",
         description: "Send a message to the AI conversation to modify behavior or add context",
       }
     )
