@@ -67,7 +67,7 @@ model LanguageParams {
   similarity?: float | SWMLVar = 0.75;
 }
 
-@summary("LanguagesWithSoloFillers")
+@summary("Language with Fillers (Deprecated)")
 model LanguagesWithSoloFillers is LanguagesBase {
   #deprecated "The `fillers` property is deprecated. Please use `function_fillers` and `speech_fillers` instead."
   @doc("An array of strings to be used as fillers in the conversation. This will be used for both speech and function fillers if provided.")
@@ -75,7 +75,7 @@ model LanguagesWithSoloFillers is LanguagesBase {
   fillers?: string[];
 }
 
-@summary("LanguagesWithFillers")
+@summary("Language with Speech and Function Fillers")
 model LanguagesWithFillers is LanguagesBase {
   @doc("An array of strings to be used as fillers in the conversation when calling a `swaig function`. This helps the AI break silence between responses. The filler is played asynchronously during the function call.")
   @example(#["great", "ok"])

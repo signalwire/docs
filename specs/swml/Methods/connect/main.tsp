@@ -160,7 +160,7 @@ model ConnectDeviceBase {
   call_state_events?: CallStatus[] = #[CallStatus.ended];
 }
 
-@summary("ConnectDeviceSingle object")
+@summary("Single Destination")
 model ConnectDeviceSingle is ConnectDeviceBase {
   @doc("""
     Destination to dial. Can be:
@@ -173,18 +173,18 @@ model ConnectDeviceSingle is ConnectDeviceBase {
   to: string;
 }
 
-@summary("ConnectDeviceSerial object")
+@summary("Serial Dialing")
 model ConnectDeviceSerial is ConnectDeviceBase {
   serial: ConnectDeviceSingle[];
 }
 
-@summary("ConnectDeviceParallel object")
+@summary("Parallel Dialing")
 model ConnectDeviceParallel is ConnectDeviceBase {
   @doc("Array of destinations to dial simultaneously.")
   parallel: ConnectDeviceSingle[];
 }
 
-@summary("ConnectDeviceSerialParallel object")
+@summary("Serial-Parallel Dialing")
 model ConnectDeviceSerialParallel is ConnectDeviceBase {
   @doc("""
     Array of arrays.

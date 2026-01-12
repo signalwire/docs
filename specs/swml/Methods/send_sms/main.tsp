@@ -21,14 +21,14 @@ model SMSBase {
   tags?: string[];
 }
 
-@summary("SMSWithBody object")
+@summary("SMS with Text Body")
 model SMSWithBody is SMSBase {
   @doc("Required if `media` is not present. The body of the SMS message.")
   @example("Your order has been confirmed. Thank you!")
   body: string;
 }
 
-@summary("SMSWithMedia object")
+@summary("SMS with Media")
 model SMSWithMedia is SMSBase {
   @doc("Required if `body` is not present. Array of media URLs to include in the message.")
   @example(#["https://example.com/image.png"])

@@ -4,7 +4,7 @@ import "../../Methods";
 
 using TypeSpec.JsonSchema;
 
-@summary("CondReg object")
+@summary("Condition with When/Then")
 model CondReg {
   @doc("The JavaScript condition to act on.")
   @example("vars.digit == '1'")
@@ -17,7 +17,7 @@ model CondReg {
   `else`?: SWMLMethod[];
 }
 
-@summary("CondElse object")
+@summary("Else Fallback")
 model CondElse {
   @doc("Sequence of SWML methods to execute when none of the other conditions evaluate to true.")
   `else`: SWMLMethod[];

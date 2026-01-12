@@ -39,7 +39,7 @@ model PlayBase {
   status_url?: url;
 }
 
-@summary("PlayWithURL object")
+@summary("Single URL")
 @doc("Play with a single URL")
 model PlayWithURL is PlayBase {
   @doc("""
@@ -55,7 +55,7 @@ model PlayWithURL is PlayBase {
   url: play_url | SWMLVar;
 }
 
-@summary("PlayWithURLS object")
+@summary("Multiple URLs")
 model PlayWithURLS is PlayBase {
   @doc("""
     Array of URLs to play.

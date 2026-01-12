@@ -5,7 +5,6 @@ import "../../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
-@summary("AIPromptBase")
 model AIPromptBase {
   @doc("Limits the amount of tokens that the AI agent may generate when creating its response")
   @minValue(0)
@@ -48,6 +47,7 @@ model AIPromptBase {
   frequency_penalty?: float | SWMLVar = 0;
 }
 
+@summary("Prompt with POM")
 model AIPromptPom is AIPromptBase {
   @doc("""
     Prompt Object Model (POM) is a structured data format for composing, organizing, and rendering prompt instructions for AI agents.
@@ -66,6 +66,7 @@ model AIPromptPom is AIPromptBase {
   contexts?: Contexts;
 }
 
+@summary("Prompt with Text")
 model AIPromptText is AIPromptBase {
   @doc("The instructions to send to the agent.")
   @example("Your name is Franklin and you are taking orders for Franklin's Pizza. Begin by greeting the caller, and ask if they'd like to place an order for pickup or delivery.")
@@ -79,12 +80,14 @@ model AIPromptText is AIPromptBase {
   contexts?: Contexts;
 }
 
+@summary("Post-Prompt with Text")
 model AIPostPromptText is AIPromptBase {
   @doc("The instructions to send to the agent.")
   @example("Summarize the conversation and provide any follow-up action items.")
   text: string;
 }
 
+@summary("Post-Prompt with POM")
 model AIPostPromptPom is AIPromptBase {
   @doc("The instructions to send to the agent.")
   @minItems(1)

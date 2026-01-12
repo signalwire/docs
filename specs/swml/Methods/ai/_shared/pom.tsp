@@ -22,6 +22,7 @@ model PomSectionBase {
   numberedBullets?: boolean | SWMLVar;
 }
 
+@summary("Section with Body")
 @doc("Content model with body text and optional bullets")
 model PomSectionBodyContent is PomSectionBase {
   @doc("Body text for the section")
@@ -34,6 +35,7 @@ model PomSectionBodyContent is PomSectionBase {
   bullets?: string[];
 }
 
+@summary("Section with Bullets")
 @doc("Content model with bullets and optional body")
 model PomSectionBulletsContent is PomSectionBase {
   @doc("Body text for the section (optional)")
