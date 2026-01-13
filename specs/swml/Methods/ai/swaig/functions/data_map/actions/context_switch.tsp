@@ -1,4 +1,4 @@
-@summary("ContextSwitchAction object")
+@summary("context_switch Action")
 model ContextSwitchAction {
   @doc("A JSON object containing the context to switch to. Default is not set.")
   @summary("context_switch")

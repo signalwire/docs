@@ -1,4 +1,4 @@
-@summary("HoldAction object")
+@summary("hold Action")
 model HoldAction {
   @doc("""
     Places the caller on hold while playing hold music (configured via params.hold_music).

@@ -1,4 +1,4 @@
-@summary("UserInputAction object")
+@summary("user_input Action")
 model UserInputAction {
   @summary("user_input")
   @doc("Used to inject text into the users queue as if they input the data themselves.")

@@ -1,4 +1,4 @@
-@summary("PlaybackBGAction object")
+@summary("playback_bg Action")
 model PlaybackBGAction {
   @doc("A JSON object containing the audio file to play.")
   @summary("playback_bg")

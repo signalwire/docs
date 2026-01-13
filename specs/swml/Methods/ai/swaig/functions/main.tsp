@@ -94,26 +94,26 @@ model SWAIGFunctionBase {
   wait_for_fillers?: boolean | SWMLVar = false;
 }
 
-@summary("User-Defined Function")
+@summary("SWAIG Function")
 model UserSWAIGFunction is SWAIGFunctionBase {
   @doc("${functionDescription}")
   @example("get_weather")
   function: string;
 }
 
-@summary("Startup Hook Function")
+@summary("startup_hook Function")
 model StartUpHookSWAIGFunction is SWAIGFunctionBase {
   @doc("${functionDescription} For the start_hook function, the function name is 'start_hook'.")
   function: "startup_hook";
 }
 
-@summary("Hangup Hook Function")
+@summary("hangup_hook Function")
 model HangUpHookSWAIGFunction is SWAIGFunctionBase {
   @doc("${functionDescription} For the stop_hook function, the function name is 'stop_hook'.")
   function: "hangup_hook";
 }
 
-@summary("Summarize Conversation Function")
+@summary("summarize_conversation Function")
 @doc("""
   An internal reserved function that generates a summary of the conversation and sends any specified properties to the configured webhook after the conversation has ended.
   This ensures that key parts of the conversation, as interpreted by the LLM, are reliably captured and delivered to the webhook.

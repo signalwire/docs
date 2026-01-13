@@ -122,7 +122,7 @@ model CallAIMessageRequest {
 
 // TranscribeDirection, SpeechEngine, and SupportedAIModels are imported from the SWML module
 
-@summary("Start")
+@summary("start Action")
 model LiveTranscribeStartAction {
   @doc("Starts live transcription of the call.")
   start: {
@@ -172,7 +172,7 @@ model LiveTranscribeStartAction {
   };
 }
 
-@summary("Summarize")
+@summary("summarize Action")
 model LiveTranscribeSummarizeAction {
   @doc("Request an on-demand AI summary of the conversation.")
   summarize: {
@@ -186,7 +186,7 @@ model LiveTranscribeSummarizeAction {
   };
 }
 
-@summary("Stop")
+@summary("stop Action")
 @doc("Stops the live transcription session.")
 enum LiveTranscribeStopAction {
   stop,
@@ -217,7 +217,7 @@ model CallLiveTranscribeRequest {
 
 // TranslationFilterPreset, CustomTranslationFilter, and TranslationFilter are imported from the SWML module
 
-@summary("Start")
+@summary("start Action")
 model LiveTranslateStartAction {
   @doc("Starts live translation of the call.")
   start: {
@@ -287,7 +287,7 @@ model LiveTranslateStartAction {
   };
 }
 
-@summary("Summarize")
+@summary("summarize Action")
 model LiveTranslateSummarizeAction {
   @doc("Request an on-demand AI summary of the translated conversation.")
   summarize: {
@@ -301,7 +301,7 @@ model LiveTranslateSummarizeAction {
   };
 }
 
-@summary("Inject")
+@summary("inject Action")
 model LiveTranslateInjectAction {
   @doc("Inject a message into the conversation to be translated and spoken.")
   inject: {
@@ -315,7 +315,7 @@ model LiveTranslateInjectAction {
   };
 }
 
-@summary("Stop")
+@summary("stop Action")
 @doc("Stops the live translation session.")
 enum LiveTranslateStopAction {
   stop,

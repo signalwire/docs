@@ -1,4 +1,4 @@
-@summary("ToggleFunctionsAction object")
+@summary("toggle_functions Action")
 model ToggleFunctionsAction {
   @summary("toggle_functions")
   @doc("Whether to toggle the functions on or off.")

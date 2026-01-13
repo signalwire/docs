@@ -1,4 +1,4 @@
-@summary("StopAction object")
+@summary("stop Action")
 model StopAction {
   @summary("stop")
   @doc("Whether to stop the conversation.")
