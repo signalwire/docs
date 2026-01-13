@@ -23,9 +23,9 @@ namespace CallingAPI.Calls {
     @opExample(
       #{ parameters: liveTranslateStartExample },
       #{
-        title: "calling.live_translate",
-        description: "Start real-time language translation between call participants",
-      }
+      title: "calling.live_translate",
+      description: "Start real-time language translation between call participants",
+    }
     )
     @opExample(
       #{ parameters: liveTranscribeStartExample },
