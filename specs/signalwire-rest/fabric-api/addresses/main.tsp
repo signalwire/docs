@@ -16,7 +16,7 @@ namespace FabricAPI.FabricAddresses {
     @summary("List Fabric Addresses")
     @doc("""
       A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
-      generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).
+      generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/subscriber-tokens-create).
       """)
     list():
       | FabricAddressesResponse
@@ -27,7 +27,7 @@ namespace FabricAPI.FabricAddresses {
     @summary("Get Fabric Address")
     @doc("""
       Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
-      generated using the [Create Subscriber Token endpoint](/rest/signalwire-rest/endpoints/fabric/subscriber-tokens-create).
+      generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/subscriber-tokens-create).
       """)
     read(...FabricAddressID):
       | {
