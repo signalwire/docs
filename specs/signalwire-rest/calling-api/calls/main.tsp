@@ -23,9 +23,9 @@ namespace CallingAPI.Calls {
     @opExample(
       #{ parameters: liveTranslateStartExample },
       #{
-      title: "calling.live_translate",
-      description: "Start real-time language translation between call participants",
-    }
+        title: "calling.live_translate",
+        description: "Start real-time language translation between call participants",
+      }
     )
     @opExample(
       #{ parameters: liveTranscribeStartExample },
@@ -74,6 +74,13 @@ namespace CallingAPI.Calls {
       #{
         title: "dial",
         description: "Initiate a new outbound call with the dial command",
+      }
+    )
+    @opExample(
+      #{ parameters: ignoredExample },
+      #{
+        title: "_ignored",
+        description: "This example is intentionally ignored by Fern generation",
       }
     )
     @post

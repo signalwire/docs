@@ -92,7 +92,7 @@ const liveTranscribeStopExample = #{
     command: "calling.live_transcribe",
     id: callId,
     params: #{
-      action: "stop",
+      action: LiveTranscribeStopAction.stop,
     },
   },
 };
@@ -172,6 +172,18 @@ const liveTranslateInjectExample = #{
           direction: "remote-caller",
         },
       },
+    },
+  },
+};
+
+// Placeholder example that will be ignored by Fern (last example in OpenAPI is skipped)
+const ignoredExample = #{
+  request: #{
+    command: "dial",
+    params: #{
+      from: "+10000000000",
+      to: "+10000000001",
+      url: "https://example.com/ignored",
     },
   },
 };
