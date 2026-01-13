@@ -1,0 +1,227 @@
+name: Check Links
+
+on:
+  # Daily check of production (weekdays at 10am UTC)
+  schedule:
+    - cron: '0 10 * * 1-5'
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      sitemap_url:
+        description: 'Sitemap URL (defaults to production)'
+        required: false
+        default: ''
+      create_pr:
+        description: 'Create a PR with broken links report'
+        required: false
+        type: boolean
+        default: false
+  # Allow other workflows to call this
+  workflow_call:
+    inputs:
+      sitemap_url:
+        description: 'Sitemap URL to check'
+        required: true
+        type: string
+      notify_slack:
+        description: 'Send Slack notification on failure'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # White-label configuration - set these as repository variables/secrets
+  # DOCS_SITEMAP_URL: Production sitemap URL (required)
+  # SLACK_CHANNEL_ID: Slack channel for notifications (optional)
+  # SLACK_NOTIFY_USER_ID: Slack user ID to tag (optional)
+  # SLACK_BOT_TOKEN: Slack bot token for sending messages (optional)
+  PRODUCTION_SITEMAP_URL: ${{ vars.DOCS_SITEMAP_URL || 'https://signalwire.docs.buildwithfern.com/sitemap.xml' }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-links:
+    name: Check links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache lychee
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/lychee
+          key: lychee-${{ runner.os }}
+
+      - name: Install lychee
+        uses: taiki-e/install-action@v2
+        with:
+          tool: lychee
+
+      - name: Determine sitemap URL
+        id: setup
+        run: |
+          # workflow_call input takes precedence, then workflow_dispatch input, then default
+          if [ -n "${{ inputs.sitemap_url }}" ]; then
+            SITEMAP_URL="${{ inputs.sitemap_url }}"
+          else
+            SITEMAP_URL="${{ env.PRODUCTION_SITEMAP_URL }}"
+          fi
+          echo "sitemap_url=${SITEMAP_URL}" >> $GITHUB_OUTPUT
+
+      - name: Run link checker
+        id: check
+        run: |
+          set +e
+          node scripts/check-links.js \
+            --sitemap "${{ steps.setup.outputs.sitemap_url }}" \
+            --no-progress \
+            --output /tmp/link-report.md
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Upload link report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-report
+          path: /tmp/link-report.md
+          if-no-files-found: ignore
+
+      - name: Create PR with broken links report
+        id: create-pr
+        if: |
+          steps.check.outputs.exit_code != '0' && 
+          (github.event_name == 'schedule' || inputs.create_pr == true)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create branch name with timestamp
+          BRANCH_NAME="fix/broken-links-$(date +%Y%m%d-%H%M%S)"
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          
+          # Create and checkout new branch
+          git checkout -b "$BRANCH_NAME"
+          
+          # Create broken links directory and file
+          mkdir -p .github/broken-links
+          cp /tmp/link-report.md .github/broken-links/broken-links.md
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Commit and push
+          git add .github/broken-links/broken-links.md
+          git commit -m "chore: add broken links report for fixing"
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR
+          PR_BODY="## Broken Links Detected
+
+          The daily link checker found broken links in the documentation that need to be fixed.
+
+          ### Instructions for @Fern Writer
+
+          1. For each URL listed in \`.github/broken-links/broken-links.md\`, identify the source file containing the broken link
+          2. Try to find the correct replacement URL. Common fixes include:
+             - Updating outdated commit SHAs to the latest commit
+             - Fixing URL-encoded paths
+             - Updating renamed file paths
+          3. **IMPORTANT:** If you cannot confidently find a correct replacement (e.g., the only signal is a 5xx/503 error, connection reset, or rate limiting), **do NOT remove or modify the link**. Instead, leave it unchanged and add a PR comment on the relevant line asking for manual validation.
+          4. Only update links/paths contained in this PR, not other links that follow a similar pattern
+          5. Run \`fern docs dev\` locally to verify your changes don't break anything
+          6. Push your fix to this PR branch
+          7. After CI posts a preview link, use it to verify that your changes actually fix the underlying issue
+          8. Delete the scaffold file (\`.github/broken-links/broken-links.md\`) as part of your fix
+
+          ### Broken Links Report
+
+          See \`.github/broken-links/broken-links.md\` for the full report.
+
+          ---
+          *This PR was automatically created by the daily link checker workflow.*
+          [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          
+          PR_URL=$(gh pr create \
+            --title "fix: broken links detected by daily link checker" \
+            --body "$PR_BODY" \
+            --base main \
+            --head "$BRANCH_NAME")
+          
+          echo "pr_url=${PR_URL}" >> $GITHUB_OUTPUT
+          PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
+          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Slack notification with PR
+        if: |
+          steps.check.outputs.exit_code != '0' && 
+          steps.create-pr.outputs.pr_url != '' &&
+          (github.event_name == 'schedule' || inputs.notify_slack == true)
+        env:
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_USER: ${{ secrets.SLACK_NOTIFY_USER_ID }}
+        run: |
+          # Check if Slack is configured
+          if [ -z "$SLACK_TOKEN" ]; then
+            echo "SLACK_BOT_TOKEN not set, skipping Slack notification"
+            exit 0
+          fi
+          if [ -z "$SLACK_CHANNEL" ]; then
+            echo "SLACK_CHANNEL_ID not set, skipping Slack notification"
+            exit 0
+          fi
+          
+          # Build message - include user mention if configured
+          if [ -n "$SLACK_USER" ]; then
+            MESSAGE="<@$SLACK_USER> The daily link checker found broken links that need to be fixed.\n\n*PR:* ${{ steps.create-pr.outputs.pr_url }}\n\nPlease review the broken links report and fix the issues following the instructions in the PR description."
+          else
+            MESSAGE="The daily link checker found broken links that need to be fixed.\n\n*PR:* ${{ steps.create-pr.outputs.pr_url }}\n\nPlease review the broken links report and fix the issues following the instructions in the PR description."
+          fi
+          
+          curl -X POST https://slack.com/api/chat.postMessage \
+            -H "Authorization: Bearer $SLACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"channel\": \"$SLACK_CHANNEL\",
+              \"text\": \"$MESSAGE\"
+            }"
+
+      - name: Slack notification (no PR)
+        if: |
+          steps.check.outputs.exit_code != '0' && 
+          steps.create-pr.outputs.pr_url == '' &&
+          (github.event_name == 'schedule' || inputs.notify_slack == true)
+        env:
+          SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL_ID }}
+        run: |
+          # Check if Slack is configured
+          if [ -z "$SLACK_TOKEN" ]; then
+            echo "SLACK_BOT_TOKEN not set, skipping Slack notification"
+            exit 0
+          fi
+          if [ -z "$SLACK_CHANNEL" ]; then
+            echo "SLACK_CHANNEL_ID not set, skipping Slack notification"
+            exit 0
+          fi
+          
+          curl -X POST https://slack.com/api/chat.postMessage \
+            -H "Authorization: Bearer $SLACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"channel\": \"$SLACK_CHANNEL\",
+              \"text\": \"The daily link check found broken links.\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>\"
+            }"
+
+      - name: Exit with result
+        if: steps.check.outputs.exit_code != '0'
+        run: exit 1
