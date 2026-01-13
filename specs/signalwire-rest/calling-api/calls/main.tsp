@@ -21,45 +21,10 @@ namespace CallingAPI.Calls {
     This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
     """)
     @opExample(
-      #{ parameters: liveTranslateStartExample },
+      #{ parameters: dialCallExample },
       #{
-        title: "calling.live_translate",
-        description: "Start real-time language translation between call participants",
-      }
-    )
-    @opExample(
-      #{ parameters: liveTranscribeStartExample },
-      #{
-        title: "calling.live_transcribe",
-        description: "Start real-time speech-to-text transcription on an active call",
-      }
-    )
-    @opExample(
-      #{ parameters: aiMessageExample },
-      #{
-        title: "calling.ai_message",
-        description: "Send a message to the AI conversation to modify behavior or add context",
-      }
-    )
-    @opExample(
-      #{ parameters: unholdCallExample },
-      #{
-        title: "calling.ai_unhold",
-        description: "Resume an AI call that was previously put on hold",
-      }
-    )
-    @opExample(
-      #{ parameters: holdCallExample },
-      #{
-        title: "calling.ai_hold",
-        description: "Put an active AI call on hold, pausing the conversation",
-      }
-    )
-    @opExample(
-      #{ parameters: hangupCallExample },
-      #{
-        title: "calling.end",
-        description: "Terminate an active call immediately",
+        title: "dial",
+        description: "Initiate a new outbound call with the dial command",
       }
     )
     @opExample(
@@ -70,10 +35,45 @@ namespace CallingAPI.Calls {
       }
     )
     @opExample(
-      #{ parameters: dialCallExample },
+      #{ parameters: hangupCallExample },
       #{
-        title: "dial",
-        description: "Initiate a new outbound call with the dial command",
+        title: "calling.end",
+        description: "Terminate an active call immediately",
+      }
+    )
+    @opExample(
+      #{ parameters: holdCallExample },
+      #{
+        title: "calling.ai_hold",
+        description: "Put an active AI call on hold, pausing the conversation",
+      }
+    )
+    @opExample(
+      #{ parameters: unholdCallExample },
+      #{
+        title: "calling.ai_unhold",
+        description: "Resume an AI call that was previously put on hold",
+      }
+    )
+    @opExample(
+      #{ parameters: aiMessageExample },
+      #{
+        title: "calling.ai_message",
+        description: "Send a message to the AI conversation to modify behavior or add context",
+      }
+    )
+    @opExample(
+      #{ parameters: liveTranscribeStartExample },
+      #{
+        title: "calling.live_transcribe",
+        description: "Start real-time speech-to-text transcription on an active call",
+      }
+    )
+    @opExample(
+      #{ parameters: liveTranslateStartExample },
+      #{
+        title: "calling.live_translate",
+        description: "Start real-time language translation between call participants",
       }
     )
     @post
