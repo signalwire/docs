@@ -133,11 +133,17 @@ model AIParams {
   @doc("Enables intelligent turn detection that monitors partial speech transcripts.")
   enable_turn_detection?: boolean = true;
 
+  #deprecated "The `eleven_labs_stability` property is deprecated. Please use `languages[].params.stability` instead."
   @doc("The stability slider determines how stable the voice is and the randomness between each generation. Lowering this slider introduces a broader emotional range for the voice.")
-  eleven_labs_stability?: float;
+  @minValue(0.0)
+  @maxValue(1.0)
+  eleven_labs_stability?: float = 0.50;
 
+  #deprecated "The `eleven_labs_similarity` property is deprecated. Please use `languages[].params.similarity` instead."
   @doc("The similarity slider dictates how closely the AI should adhere to the original voice when attempting to replicate it. The higher the similarity, the closer the AI will sound to the original voice.")
-  eleven_labs_similarity?: float;
+  @minValue(0.0)
+  @maxValue(1.0)
+  eleven_labs_similarity?: float = 0.75;
 
   @doc("Amount of energy necessary for bot to hear you (in dB). Allowed values from `0.0` - `100.0`.")
   @minValue(0.0)
