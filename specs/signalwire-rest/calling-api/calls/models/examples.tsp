@@ -92,7 +92,7 @@ const liveTranscribeStopExample = #{
     command: "calling.live_transcribe",
     id: callId,
     params: #{
-      action: LiveTranscribeStopAction.stop,
+      action: "stop",
     },
   },
 };
@@ -122,7 +122,7 @@ const liveTranslateStartExample = #{
         start: #{
           from_lang: "en-US",
           to_lang: "es-ES",
-          direction: #[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`],
+          direction: #[TranslateDirection.`local-caller`, TranslateDirection.`remote-caller`],
           from_voice: "elevenlabs.josh",
           to_voice: "elevenlabs.josh",
           filter_from: "professional",
