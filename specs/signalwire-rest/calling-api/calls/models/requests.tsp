@@ -1,9 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi3";
 import "../../../../swml";
-// Import SWML live_transcribe and live_translate action types for reuse
-import "../../../../swml/Methods/live_transcribe/main.tsp";
-import "../../../../swml/Methods/live_translate/main.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -123,8 +120,79 @@ model CallAIMessageRequest {
 // Live Transcribe Commands
 // ============================================
 
-// Reusing TranscribeAction from SWML module (includes TranscribeStartAction, TranscribeSummarizeAction, and "stop")
-// TranscribeDirection, SpeechEngine are also imported from SWML
+// TranscribeDirection, SpeechEngine, and SupportedAIModels are imported from the SWML module
+
+@summary("start Action")
+model LiveTranscribeStartAction {
+  @doc("Starts live transcription of the call.")
+  start: {
+    @doc("The language to transcribe (e.g., 'en-US', 'es-ES').")
+    @example("en-US")
+    lang: string;
+
+    @doc("The direction(s) of the call to transcribe.")
+    @example(#[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`])
+    direction: TranscribeDirection[];
+
+    @doc("The webhook URL to receive transcription events.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("Whether to send real-time utterance events as speech is recognized.")
+    @example(true)
+    live_events?: boolean;
+
+    @doc("Whether to generate an AI summary when transcription ends.")
+    @example(true)
+    ai_summary?: boolean;
+
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
+    @example("Summarize the key points of this conversation.")
+    ai_summary_prompt?: string;
+
+    @doc("The speech recognition engine to use.")
+    @example(SpeechEngine.deepgram)
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
+
+    @doc("Speech timeout in milliseconds.")
+    @example(60000)
+    speech_timeout?: int32 = 60000;
+
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @example(300)
+    vad_silence_ms?: int32;
+
+    @doc("Voice activity detection threshold (0-1800).")
+    @example(400)
+    vad_thresh?: int32 = 400;
+
+    @doc("Debug level for logging (0-2).")
+    @example(0)
+    debug_level?: int32 = 0;
+  };
+}
+
+@summary("summarize Action")
+model LiveTranscribeSummarizeAction {
+  @doc("Request an on-demand AI summary of the conversation.")
+  summarize: {
+    @doc("The webhook URL to receive the summary.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("The AI prompt that instructs how to summarize the conversation.")
+    @example("Provide a bullet-point summary of the main topics discussed.")
+    prompt?: string;
+  };
+}
+
+@summary("stop Action")
+@doc("Stops the live transcription session.")
+enum LiveTranscribeStopAction {
+  stop,
+}
+
+alias LiveTranscribeAction = LiveTranscribeStartAction | LiveTranscribeSummarizeAction | LiveTranscribeStopAction;
 
 @summary("calling.live_transcribe")
 model CallLiveTranscribeRequest {
@@ -139,7 +207,7 @@ model CallLiveTranscribeRequest {
   @doc(paramsDescription)
   params: {
     @doc("The transcription action to perform: start, stop, or summarize.")
-    action: TranscribeAction;
+    action: LiveTranscribeAction;
   };
 }
 
@@ -147,8 +215,113 @@ model CallLiveTranscribeRequest {
 // Live Translate Commands
 // ============================================
 
-// Reusing TranslateAction from SWML module (includes StartAction, SummarizeAction, InjectAction, and "stop")
-// TranslationFilterPreset, CustomTranslationFilter, TranslationFilter, and TranslateDirection are also imported from SWML
+// TranslationFilterPreset, CustomTranslationFilter, and TranslationFilter are imported from the SWML module
+
+@summary("start Action")
+model LiveTranslateStartAction {
+  @doc("Starts live translation of the call.")
+  start: {
+    @doc("The language to translate from (e.g., 'en-US').")
+    @example("en-US")
+    from_lang: string;
+
+    @doc("The language to translate to (e.g., 'es-ES').")
+    @example("es-ES")
+    to_lang: string;
+
+    @doc("The direction(s) of the call to translate.")
+    @example(#[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`])
+    direction: TranscribeDirection[];
+
+    @doc("The TTS voice for the source language.")
+    @example("elevenlabs.josh")
+    from_voice?: string;
+
+    @doc("The TTS voice for the target language.")
+    @example("elevenlabs.josh")
+    to_voice?: string;
+
+    @doc("Translation filter for the source language direction.")
+    @example("professional")
+    filter_from?: TranslationFilter;
+
+    @doc("Translation filter for the target language direction.")
+    @example("professional")
+    filter_to?: TranslationFilter;
+
+    @doc("The webhook URL to receive translation events.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("Whether to send real-time translation events.")
+    @example(true)
+    live_events?: boolean;
+
+    @doc("Whether to generate AI summaries in both languages when translation ends.")
+    @example(true)
+    ai_summary?: boolean;
+
+    @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
+    @example("Summarize this translated conversation.")
+    ai_summary_prompt?: string;
+
+    @doc("The speech recognition engine to use.")
+    @example(SpeechEngine.deepgram)
+    speech_engine?: SpeechEngine = SpeechEngine.deepgram;
+
+    @doc("Speech timeout in milliseconds.")
+    @example(60000)
+    speech_timeout?: int32 = 60000;
+
+    @doc("Voice activity detection silence time in milliseconds. Default depends on speech engine: `300` for Deepgram, `500` for Google.")
+    @example(300)
+    vad_silence_ms?: int32;
+
+    @doc("Voice activity detection threshold (0-1800).")
+    @example(400)
+    vad_thresh?: int32 = 400;
+
+    @doc("Debug level for logging (0-2).")
+    @example(0)
+    debug_level?: int32 = 0;
+  };
+}
+
+@summary("summarize Action")
+model LiveTranslateSummarizeAction {
+  @doc("Request an on-demand AI summary of the translated conversation.")
+  summarize: {
+    @doc("The webhook URL to receive the summary.")
+    @example("https://example.com/webhook")
+    webhook?: string;
+
+    @doc("The AI prompt that instructs how to summarize the conversation.")
+    @example("Summarize the key agreements reached in both languages.")
+    prompt?: string;
+  };
+}
+
+@summary("inject Action")
+model LiveTranslateInjectAction {
+  @doc("Inject a message into the conversation to be translated and spoken.")
+  inject: {
+    @doc("The text message to inject and translate.")
+    @example("Please hold while I transfer you to a specialist.")
+    message: string;
+
+    @doc("The direction to send the translated message.")
+    @example(TranscribeDirection.`remote-caller`)
+    direction: TranscribeDirection;
+  };
+}
+
+@summary("stop Action")
+@doc("Stops the live translation session.")
+enum LiveTranslateStopAction {
+  stop,
+}
+
+alias LiveTranslateAction = LiveTranslateStartAction | LiveTranslateSummarizeAction | LiveTranslateInjectAction | LiveTranslateStopAction;
 
 @summary("calling.live_translate")
 model CallLiveTranslateRequest {
@@ -163,7 +336,7 @@ model CallLiveTranslateRequest {
   @doc(paramsDescription)
   params: {
     @doc("The translation action to perform: start, stop, summarize, or inject.")
-    action: TranslateAction;
+    action: LiveTranslateAction;
   };
 }
 
