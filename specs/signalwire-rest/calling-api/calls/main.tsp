@@ -21,13 +21,6 @@ namespace CallingAPI.Calls {
     This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
     """)
     @opExample(
-      #{ parameters: liveTranslateStartExample },
-      #{
-        title: "calling.live_translate",
-        description: "Start real-time language translation between call participants",
-      }
-    )
-    @opExample(
       #{ parameters: liveTranscribeStartExample },
       #{
         title: "calling.live_transcribe",
@@ -74,6 +67,13 @@ namespace CallingAPI.Calls {
       #{
         title: "dial",
         description: "Initiate a new outbound call with the dial command",
+      }
+    )
+    @opExample(
+      #{ parameters: liveTranslateStartExample },
+      #{
+        title: "calling.live_translate",
+        description: "Start real-time language translation between call participants",
       }
     )
     @post
