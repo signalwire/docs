@@ -62,6 +62,20 @@ namespace CallingAPI.Calls {
         description: "Send a message to the AI conversation to modify behavior or add context",
       }
     )
+    @opExample(
+      #{ parameters: liveTranscribeStartExample },
+      #{
+        title: "calling.live_transcribe",
+        description: "Start real-time speech-to-text transcription on an active call",
+      }
+    )
+    @opExample(
+      #{ parameters: liveTranslateStartExample },
+      #{
+        title: "calling.live_translate",
+        description: "Start real-time language translation between call participants",
+      }
+    )
     @post
     @operationId("call-commands")
     callCommand(@body request: CallRequest):
