@@ -21,45 +21,10 @@ namespace CallingAPI.Calls {
     This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
     """)
     @opExample(
-      #{ parameters: dialCallExample },
+      #{ parameters: liveTranslateStartExample },
       #{
-        title: "dial",
-        description: "Initiate a new outbound call with the dial command",
-      }
-    )
-    @opExample(
-      #{ parameters: updateCallExample },
-      #{
-        title: "update",
-        description: "Modify an existing call's parameters in real-time",
-      }
-    )
-    @opExample(
-      #{ parameters: hangupCallExample },
-      #{
-        title: "calling.end",
-        description: "Terminate an active call immediately",
-      }
-    )
-    @opExample(
-      #{ parameters: holdCallExample },
-      #{
-        title: "calling.ai_hold",
-        description: "Put an active AI call on hold, pausing the conversation",
-      }
-    )
-    @opExample(
-      #{ parameters: unholdCallExample },
-      #{
-        title: "calling.ai_unhold",
-        description: "Resume an AI call that was previously put on hold",
-      }
-    )
-    @opExample(
-      #{ parameters: aiMessageExample },
-      #{
-        title: "calling.ai_message",
-        description: "Send a message to the AI conversation to modify behavior or add context",
+        title: "calling.live_translate",
+        description: "Start real-time language translation between call participants",
       }
     )
     @opExample(
@@ -70,10 +35,45 @@ namespace CallingAPI.Calls {
       }
     )
     @opExample(
-      #{ parameters: liveTranslateStartExample },
+      #{ parameters: aiMessageExample },
       #{
-        title: "calling.live_translate",
-        description: "Start real-time language translation between call participants",
+        title: "calling.ai_message",
+        description: "Send a message to the AI conversation to modify behavior or add context",
+      }
+    )
+    @opExample(
+      #{ parameters: unholdCallExample },
+      #{
+        title: "calling.ai_unhold",
+        description: "Resume an AI call that was previously put on hold",
+      }
+    )
+    @opExample(
+      #{ parameters: holdCallExample },
+      #{
+        title: "calling.ai_hold",
+        description: "Put an active AI call on hold, pausing the conversation",
+      }
+    )
+    @opExample(
+      #{ parameters: hangupCallExample },
+      #{
+        title: "calling.end",
+        description: "Terminate an active call immediately",
+      }
+    )
+    @opExample(
+      #{ parameters: updateCallExample },
+      #{
+        title: "update",
+        description: "Modify an existing call's parameters in real-time",
+      }
+    )
+    @opExample(
+      #{ parameters: dialCallExample },
+      #{
+        title: "dial",
+        description: "Initiate a new outbound call with the dial command",
       }
     )
     @post
