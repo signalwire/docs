@@ -12,6 +12,7 @@ Variables can be:
 Example: `\${global_data.customer_name}` will be replaced with the value of `customer_name` from the global_data object at runtime.
 """)
 @pattern("^[\\$%]\\{.*\\}$")
+@summary("SWML Variable Reference")
 scalar SWMLVar extends string;
 
 alias SupportedAIModels = "gpt-4o-mini" | "gpt-4.1-mini" | "gpt-4.1-nano" | string;
