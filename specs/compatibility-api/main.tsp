@@ -10,6 +10,7 @@ import "./calls/main.tsp";
 import "./conferences/main.tsp";
 import "./faxes/main.tsp";
 import "./incoming-phone-numbers/main.tsp";
+import "./imported-phone-numbers/main.tsp";
 import "./laml-bins/main.tsp";
 import "./messages/main.tsp";
 import "./recordings/main.tsp";
