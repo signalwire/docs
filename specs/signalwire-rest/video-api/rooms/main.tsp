@@ -7,78 +7,70 @@ import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
-using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/rooms")
-@tag(ROOMS_TAG)
 namespace VideoAPI.Rooms {
-  @post
-  @operationId("create_room")
-  @summary("Create a Room")
-  @doc("Create a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op createRoom(@body body: CreateRoomRequest): RoomResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+  @tag(ROOMS_TAG)
+  @friendlyName("Rooms")
+  interface Rooms {
+    @summary("Create a Room")
+    @doc("Create a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @post
+    create(@body body: CreateRoomRequest): RoomResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
-  @get
-  @operationId("list_rooms")
-  @summary("List Rooms")
-  @doc("List rooms.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op listRooms(
-    @query
-    @doc("Specifies whether or not to include information about the room's active session (if any)")
-    include_active_session?: boolean
-  ): ListRoomsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+    @summary("List Rooms")
+    @doc("List rooms.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    list(
+      @query
+      @doc("Specifies whether or not to include information about the room's active session (if any)")
+      include_active_session?: boolean
+    ): ListRoomsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
-  @route("/{name}")
-  @get
-  @operationId("get_room_by_name")
-  @summary("Find a Room by Name")
-  @doc("Find a room by name.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op getRoomByName(
-    @path
-    @doc("Unique name of the room")
-    name: string,
+    @summary("Find a Room by Name")
+    @doc("Find a room by name.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @route("/{name}")
+    getByName(
+      @path
+      @doc("Unique name of the room")
+      name: string,
 
-    @query
-    @doc("Specifies whether or not to include information about the room's active session (if any)")
-    include_active_session?: boolean
-  ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
-}
+      @query
+      @doc("Specifies whether or not to include information about the room's active session (if any)")
+      include_active_session?: boolean
+    ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-@route("/rooms/{id}")
-@tag(ROOMS_TAG)
-namespace VideoAPI.RoomsById {
-  @get
-  @operationId("get_room")
-  @summary("Find a Room by ID")
-  @doc("Find a room by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op getRoom(
-    @path
-    @doc("Unique ID of the room")
-    id: string
-  ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    @summary("Find a Room by ID")
+    @doc("Find a room by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @route("/{id}")
+    read(
+      @path
+      @doc("Unique ID of the room")
+      id: string
+    ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-  @put
-  @operationId("update_room")
-  @summary("Update a Room")
-  @doc("Update a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op updateRoom(
-    @path
-    @doc("Unique ID of the room")
-    id: string,
+    @summary("Update a Room")
+    @doc("Update a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @route("/{id}")
+    @put
+    update(
+      @path
+      @doc("Unique ID of the room")
+      id: string,
 
-    @body body: UpdateRoomRequest
-  ): RoomResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
+      @body body: UpdateRoomRequest
+    ): RoomResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
 
-  @delete
-  @operationId("delete_room")
-  @summary("Delete a Room")
-  @doc("Delete a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op deleteRoom(
-    @path
-    @doc("Unique ID of the room")
-    id: string
-  ): {
-    @statusCode statusCode: 204;
-  } | StatusCode401 | StatusCode404 | StatusCode500;
+    @summary("Delete a Room")
+    @doc("Delete a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @route("/{id}")
+    @delete
+    delete(
+      @path
+      @doc("Unique ID of the room")
+      id: string
+    ): {
+      @statusCode statusCode: 204;
+    } | StatusCode401 | StatusCode404 | StatusCode500;
+  }
 }

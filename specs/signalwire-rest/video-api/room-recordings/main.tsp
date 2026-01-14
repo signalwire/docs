@@ -8,51 +8,46 @@ import "../room-sessions/models.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
-using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_recordings")
-@tag(ROOM_RECORDINGS_TAG)
 namespace VideoAPI.RoomRecordings {
-  @get
-  @operationId("list_room_recordings")
-  @summary("List Room Recordings")
-  @doc("A list of all Room Recordings.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op listRoomRecordings(
-    @query
-    @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
-    @example(900)
-    media_ttl?: int32
-  ): ListRoomRecordingsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
-}
+  @tag(ROOM_RECORDINGS_TAG)
+  @friendlyName("Room Recordings")
+  interface RoomRecordings {
+    @summary("List Room Recordings")
+    @doc("A list of all Room Recordings.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    list(
+      @query
+      @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
+      @example(900)
+      media_ttl?: int32
+    ): ListRoomRecordingsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
-@route("/room_recordings/{id}")
-@tag(ROOM_RECORDINGS_TAG)
-namespace VideoAPI.RoomRecordingsById {
-  @get
-  @operationId("get_room_recording")
-  @summary("Find a Room Recording by ID")
-  @doc("A detailed summary of a particular Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op getRoomRecording(
-    @path
-    @doc("ID of room recording to return")
-    id: string,
+    @summary("Find a Room Recording by ID")
+    @doc("A detailed summary of a particular Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @route("/{id}")
+    read(
+      @path
+      @doc("ID of room recording to return")
+      id: string,
 
-    @query
-    @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
-    @example(900)
-    media_ttl?: int32
-  ): RoomRecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
+      @query
+      @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
+      @example(900)
+      media_ttl?: int32
+    ): RoomRecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-  @delete
-  @operationId("delete_room_recording")
-  @summary("Delete a Room Recording.")
-  @doc("Delete a Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op deleteRoomRecording(
-    @path
-    @doc("ID of room recording to return")
-    id: string
-  ): {
-    @statusCode statusCode: 204;
-  } | StatusCode401 | StatusCode404 | StatusCode500;
+    @summary("Delete a Room Recording.")
+    @doc("Delete a Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @route("/{id}")
+    @delete
+    delete(
+      @path
+      @doc("ID of room recording to return")
+      id: string
+    ): {
+      @statusCode statusCode: 204;
+    } | StatusCode401 | StatusCode404 | StatusCode500;
+  }
 }
