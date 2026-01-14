@@ -13,13 +13,13 @@ model RoomBaseProperties {
   @example("This room will be used for full company all hands meetings")
   description?: string;
 
-  @doc("The maximum number of members in the room at a time. Must be at least one to a maximum of 300. Defaults to 20.")
+  @doc("The maximum number of members in the room at a time. Must be at least one to a maximum of 300.")
   @example(20)
-  max_members?: int32;
+  max_members?: int32 = 20;
 
-  @doc("The room's resolution. Allowed values are `720p` or `1080p`. Defaults to `720p`.")
+  @doc("The room's resolution. Allowed values are `720p` or `1080p`.")
   @example("720p")
-  quality?: string;
+  quality?: string = "720p";
 
   @doc("Room does not accept new participants before this time. Overridable by token. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")
   @example(utcDateTime.fromISO("2022-01-01T00:00:00Z"))
@@ -37,9 +37,9 @@ model RoomBaseProperties {
   @example(120)
   remove_after_seconds_elapsed?: int32;
 
-  @doc("The room's initial layout. Defaults to `grid-responsive`. See documentation for a full list of supported layouts.")
+  @doc("The room's initial layout. See documentation for a full list of supported layouts.")
   @example("grid-responsive")
-  layout?: string;
+  layout?: string = "grid-responsive";
 
   @doc("Specifies whether to start recording a Room Session when one is started for this Room")
   @example(true)

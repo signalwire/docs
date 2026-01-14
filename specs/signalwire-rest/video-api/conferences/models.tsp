@@ -17,45 +17,45 @@ enum ConferenceSize {
 
 @doc("Theme color properties for conferences.")
 model ConferenceThemeColors {
-  @doc("Used for CTA buttons and selected items. Defaults to `#044EF4`")
+  @doc("Used for CTA buttons and selected items.")
   @example("#044EF4")
-  dark_primary?: string;
+  dark_primary?: string = "#044EF4";
 
-  @doc("Main background color. Defaults to `#FFFFFF`")
+  @doc("Main background color.")
   @example("#FFFFFF")
-  dark_background?: string;
+  dark_background?: string = "#FFFFFF";
 
-  @doc("Main foreground color. Defaults to `#1D2127`")
+  @doc("Main foreground color.")
   @example("#1D2127")
-  dark_foreground?: string;
+  dark_foreground?: string = "#1D2127";
 
-  @doc("Used for success indications. Defaults to `#17BB58`")
+  @doc("Used for success indications.")
   @example("#17BB58")
-  dark_success?: string;
+  dark_success?: string = "#17BB58";
 
-  @doc("Used for error indications. Defaults to `#F42C50`")
+  @doc("Used for error indications.")
   @example("#F42C50")
-  dark_negative?: string;
+  dark_negative?: string = "#F42C50";
 
-  @doc("Used for CTA buttons and selected items. Defaults to `#044EF4`")
+  @doc("Used for CTA buttons and selected items.")
   @example("#044EF4")
-  light_primary?: string;
+  light_primary?: string = "#044EF4";
 
-  @doc("Main background color. Defaults to `#FFFFFF`")
+  @doc("Main background color.")
   @example("#FFFFFF")
-  light_background?: string;
+  light_background?: string = "#FFFFFF";
 
-  @doc("Main foreground color. Defaults to `#1D2127`")
+  @doc("Main foreground color.")
   @example("#1D2127")
-  light_foreground?: string;
+  light_foreground?: string = "#1D2127";
 
-  @doc("Used for success indications. Defaults to `#17BB58`")
+  @doc("Used for success indications.")
   @example("#17BB58")
-  light_success?: string;
+  light_success?: string = "#17BB58";
 
-  @doc("Used for error indications. Defaults to `#F42C50`")
+  @doc("Used for error indications.")
   @example("#F42C50")
-  light_negative?: string;
+  light_negative?: string = "#F42C50";
 }
 
 @doc("Base conference properties.")
@@ -80,17 +80,17 @@ model ConferenceBaseProperties {
   @example(utcDateTime.fromISO("2022-12-31T23:59:59Z"))
   join_until?: utcDateTime;
 
-  @doc("The conference's resolution. Allowed values are `720p` or `1080p`. Defaults to `720p`.")
+  @doc("The conference's resolution. Allowed values are `720p` or `1080p`.")
   @example("720p")
-  quality?: string;
+  quality?: string = "720p";
 
-  @doc("The conference's initial layout. Defaults to `grid-responsive`. See documentation for a full list of supported layouts.")
+  @doc("The conference's initial layout. See documentation for a full list of supported layouts.")
   @example("grid-responsive")
-  layout?: string;
+  layout?: string = "grid-responsive";
 
-  @doc("The size of the video conference. Allowed values are `small`, `medium` and `large`. Defaults to `medium`. See documentation for a list of size limitations.")
-  @example("small")
-  size?: string;
+  @doc("The size of the video conference. Allowed values are `small`, `medium` and `large`. See documentation for a list of size limitations.")
+  @example("medium")
+  size?: string = "medium";
 
   @doc("Specifies whether to start recording a Conference Session when one is started for this Conference")
   @example(true)
@@ -100,9 +100,9 @@ model ConferenceBaseProperties {
   @example(true)
   enable_room_previews?: boolean;
 
-  @doc("Enables group chat for all participants of the room. Defaults to `true`.")
+  @doc("Enables group chat for all participants of the room.")
   @example(true)
-  enable_chat?: boolean;
+  enable_chat?: boolean = true;
 
   ...ConferenceThemeColors;
 }

@@ -37,7 +37,7 @@ model RoomSessionResponse {
   @example(120)
   remove_after_seconds_elapsed?: int32;
 
-  @doc("The Room Session's initial layout. Defaults to `grid-responsive`. See documentation for a full list of supported layouts.")
+  @doc("The Room Session's initial layout. See documentation for a full list of supported layouts.")
   @example("grid-responsive")
   layout?: string;
 
