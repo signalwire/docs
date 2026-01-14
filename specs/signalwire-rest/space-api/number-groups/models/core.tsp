@@ -47,27 +47,37 @@ model NumberGroup {
   phone_number_count?: int32;
 }
 
+@doc("Phone number representation within a membership.")
+model MembershipPhoneNumber {
+  @doc("The unique identifier of the phone number.")
+  @format("uuid")
+  id?: uuid;
+
+  @doc("The name given to the phone number.")
+  @example("Jenny")
+  name?: string;
+
+  @doc("The phone number in E.164 format.")
+  @example("+15558675309")
+  number?: string;
+
+  @doc("The capabilities of the phone number.")
+  @example(#["voice", "sms", "mms", "fax"])
+  capabilities?: string[];
+}
+
 @doc("Number group membership model.")
 model NumberGroupMembership {
-  @doc("The unique identifier of the membership.")
+  @doc("The unique identifier of the Number Group Membership on SignalWire. This can be used to delete the membership programmatically.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   id: uuid;
 
-  @doc("The number group ID.")
+  @doc("The unique identifier of the Number Group this membership is associated with.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   number_group_id: uuid;
 
-  @doc("The phone number ID.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
-  phone_number_id: uuid;
-
-  @doc("The phone number in E.164 format.")
-  @example("+15551234567")
-  phone_number?: string;
-
-  @doc("Timestamp when the membership was created.")
-  created_at?: utcDateTime;
+  @doc("A representation of the phone number this membership is associated with.")
+  phone_number?: MembershipPhoneNumber;
 }

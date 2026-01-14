@@ -4,19 +4,21 @@ using TypeSpec.Http;
 
 @doc("Request body for updating the SIP profile.")
 model UpdateSipProfileRequest {
-  @doc("The default codecs for SIP endpoints.")
+  @doc("String representing the domain_identifier portion of the profile. Must be unique across your project.")
+  @example("example")
+  domain_identifier?: string;
+
+  @doc("A list of codecs this profile will support. Currently supported values are: OPUS, G722, PCMU, PCMA, VP8, H264.")
   default_codecs?: string[];
 
-  @doc("The default ciphers for SIP endpoints.")
+  @doc("A list of encryption ciphers this profile will support. Currently supported values are: AEAD_AES_256_GCM_8, AES_256_CM_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32, AES_CM_128_HMAC_SHA1_32.")
   default_ciphers?: string[];
 
-  @doc("The default encryption setting for SIP endpoints.")
-  default_encryption?: "required" | "optional" | "default";
+  @doc("A string representing whether connections to an endpoint that uses this profile require encryption or if encryption is optional. Encryption will always be used if possible. Possible values are required or optional.")
+  @example("optional")
+  default_encryption?: "required" | "optional";
 
-  @doc("The default call handler setting for SIP endpoints.")
-  default_call_handler?: "default" | "passthrough" | "block-pstn" | "resource";
-
-  @doc("The default resource ID for call handling.")
-  @format("uuid")
-  default_calling_handler_resource_id?: uuid;
+  @doc("The e164 formatted number you wish to set as the originating number when dialing PSTN phone numbers from a SIP Endpoint that uses this profile. Specify null or an empty string to randomly choose a purchased or verified number from within the project.")
+  @example("+15551234567")
+  default_send_as?: string;
 }

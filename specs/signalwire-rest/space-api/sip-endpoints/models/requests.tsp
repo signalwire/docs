@@ -4,68 +4,178 @@ using TypeSpec.Http;
 
 @doc("Request body for creating a SIP endpoint.")
 model CreateSipEndpointRequest {
-  @doc("The username for the SIP endpoint.")
-  @example("user123")
+  @doc("String representing the username portion of the endpoint. Must be unique across your project and must not contain white space characters or @.")
+  @example("c3p0")
   username: string;
 
-  @doc("The password for the SIP endpoint.")
+  @doc("A password to authenticate registrations to this endpoint.")
+  @example("yavinOrBust")
   password: string;
 
-  @doc("The caller ID for the SIP endpoint.")
-  @example("+15551234567")
+  @doc("Friendly Caller ID used as the CNAM when dialing a phone number or the From when dialing another SIP Endpoint.")
+  @example("C-3P0")
   caller_id?: string;
 
-  @doc("The codecs enabled for the SIP endpoint.")
-  codecs?: string[];
+  @doc("When dialing a PSTN phone number, you must send it From a number you have purchased or verified. send_as indicates which number this endpoint has set as its origination. random indicates it will randomly choose a purchased or verified number from within the project.")
+  @example("random")
+  send_as?: string;
 
-  @doc("The ciphers enabled for the SIP endpoint.")
+  @doc("A list of encryption ciphers this endpoint will support.")
   ciphers?: string[];
 
-  @doc("The encryption setting for the SIP endpoint.")
-  encryption?: "required" | "optional" | "default";
+  @doc("A list of codecs this endpoint will support.")
+  codecs?: string[];
 
-  @doc("The call handler setting for the SIP endpoint.")
-  call_handler?: "default" | "passthrough" | "block-pstn" | "resource";
+  @doc("A string representing whether connections to this endpoint require encryption or if encryption is optional. Possible values are default, required, optional.")
+  @example("required")
+  encryption?: "default" | "required" | "optional";
 
-  @doc("The resource ID for call handling when call_handler is 'resource'.")
+  @doc("What type of handler you want to run on inbound calls.")
+  @example("ai_agent")
+  call_handler?: "relay_context" | "relay_topic" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
+
+  @doc("A string representing the LaML URL to access when a call is received. This is only used (and required) when call_handler is set to laml_webhooks.")
+  call_request_url?: string;
+
+  @doc("A string representing the HTTP method to use with call_request_url. Valid values are GET and POST.")
+  @example("POST")
+  call_request_method?: string;
+
+  @doc("A string representing the LaML URL to access when the call to call_request_url fails. This is only used (and required) when call_handler is set to laml_webhooks.")
+  call_fallback_url?: string;
+
+  @doc("A string representing the HTTP method to use with call_fallback_url. Valid values are GET and POST.")
+  @example("POST")
+  call_fallback_method?: string;
+
+  @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to laml_webhooks.")
+  call_status_callback_url?: string;
+
+  @doc("A string representing the HTTP method to use with call_status_callback_url. Valid values are GET and POST.")
+  @example("POST")
+  call_status_callback_method?: string;
+
+  @doc("A string representing the ID of the LaML application to forward incoming calls to. This is only used (and required) when call_handler is set to laml_application.")
+  call_laml_application_id?: string;
+
+  @doc("A string representing the Relay topic to forward incoming calls to. This is only used (and required) when call_handler is set to relay_topic.")
+  @example("office")
+  call_relay_topic?: string;
+
+  @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to relay_topic.")
+  @example("https://myapplication/handle_relay_callbacks")
+  call_relay_topic_status_callback_url?: string;
+
+  @doc("A string representing the Relay context to forward incoming calls to. This is only used (and required) when call_handler is set to relay_context.")
+  @example("office")
+  call_relay_context?: string;
+
+  @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to relay_context.")
+  @example("https://myapplication/handle_relay_callbacks")
+  call_relay_context_status_callback_url?: string;
+
+  @doc("A string representing the ID of the Video Room to forward incoming calls to. This is only used (and required) when call_handler is set to video_room.")
   @format("uuid")
-  calling_handler_resource_id?: uuid;
+  call_video_room_id?: string;
 
-  @doc("The send_as value for the SIP endpoint.")
-  @example("Support")
-  send_as?: string;
+  @doc("A string representing the ID of the Call Flow to forward incoming calls to. This is only used (and required) when call_handler is set to call_flow.")
+  @format("uuid")
+  call_flow_id?: string;
+
+  @doc("A string representing the ID of the AI Agent to forward incoming calls to. This is only used (and required) when call_handler is set to ai_agent.")
+  @format("uuid")
+  call_ai_agent_id?: string;
+
+  @doc("A string representing a URL of a SWML script to respond to incoming calls. This is only used (and required) when call_handler is set to relay_script.")
+  @example("https://dev.signalwire.com/relay-bins/f9d13f68-f71e-4042-95bb-b07b9e2f2f92")
+  call_relay_script_url?: string;
 }
 
 @doc("Request body for updating a SIP endpoint.")
 model UpdateSipEndpointRequest {
-  @doc("The username for the SIP endpoint.")
-  @example("user123")
+  @doc("String representing the username portion of the endpoint. Must be unique across your project and must not contain white space characters or @.")
+  @example("c3p0")
   username?: string;
 
-  @doc("The password for the SIP endpoint.")
+  @doc("A password to authenticate registrations to this endpoint.")
+  @example("yavinOrBust")
   password?: string;
 
-  @doc("The caller ID for the SIP endpoint.")
-  @example("+15551234567")
+  @doc("Friendly Caller ID used as the CNAM when dialing a phone number or the From when dialing another SIP Endpoint.")
+  @example("C-3P0")
   caller_id?: string;
 
-  @doc("The codecs enabled for the SIP endpoint.")
-  codecs?: string[];
+  @doc("When dialing a PSTN phone number, you must send it From a number you have purchased or verified. send_as indicates which number this endpoint has set as its origination. random indicates it will randomly choose a purchased or verified number from within the project.")
+  @example("random")
+  send_as?: string;
 
-  @doc("The ciphers enabled for the SIP endpoint.")
+  @doc("A list of encryption ciphers this endpoint will support.")
   ciphers?: string[];
 
-  @doc("The encryption setting for the SIP endpoint.")
-  encryption?: "required" | "optional" | "default";
+  @doc("A list of codecs this endpoint will support.")
+  codecs?: string[];
 
-  @doc("The call handler setting for the SIP endpoint.")
-  call_handler?: "default" | "passthrough" | "block-pstn" | "resource";
+  @doc("A string representing whether connections to this endpoint require encryption or if encryption is optional. Possible values are default, required, optional.")
+  @example("required")
+  encryption?: "default" | "required" | "optional";
 
-  @doc("The resource ID for call handling when call_handler is 'resource'.")
+  @doc("What type of handler you want to run on inbound calls.")
+  @example("ai_agent")
+  call_handler?: "relay_context" | "relay_topic" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
+
+  @doc("A string representing the LaML URL to access when a call is received. This is only used (and required) when call_handler is set to laml_webhooks.")
+  call_request_url?: string;
+
+  @doc("A string representing the HTTP method to use with call_request_url. Valid values are GET and POST.")
+  @example("POST")
+  call_request_method?: string;
+
+  @doc("A string representing the LaML URL to access when the call to call_request_url fails. This is only used (and required) when call_handler is set to laml_webhooks.")
+  call_fallback_url?: string;
+
+  @doc("A string representing the HTTP method to use with call_fallback_url. Valid values are GET and POST.")
+  @example("POST")
+  call_fallback_method?: string;
+
+  @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to laml_webhooks.")
+  call_status_callback_url?: string;
+
+  @doc("A string representing the HTTP method to use with call_status_callback_url. Valid values are GET and POST.")
+  @example("POST")
+  call_status_callback_method?: string;
+
+  @doc("A string representing the ID of the LaML application to forward incoming calls to. This is only used (and required) when call_handler is set to laml_application.")
+  call_laml_application_id?: string;
+
+  @doc("A string representing the Relay topic to forward incoming calls to. This is only used (and required) when call_handler is set to relay_topic.")
+  @example("office")
+  call_relay_topic?: string;
+
+  @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to relay_topic.")
+  @example("https://myapplication/handle_relay_callbacks")
+  call_relay_topic_status_callback_url?: string;
+
+  @doc("A string representing the Relay context to forward incoming calls to. This is only used (and required) when call_handler is set to relay_context.")
+  @example("office")
+  call_relay_context?: string;
+
+  @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to relay_context.")
+  @example("https://myapplication/handle_relay_callbacks")
+  call_relay_context_status_callback_url?: string;
+
+  @doc("A string representing the ID of the Video Room to forward incoming calls to. This is only used (and required) when call_handler is set to video_room.")
   @format("uuid")
-  calling_handler_resource_id?: uuid;
+  call_video_room_id?: string;
 
-  @doc("The send_as value for the SIP endpoint.")
-  @example("Support")
-  send_as?: string;
+  @doc("A string representing the ID of the Call Flow to forward incoming calls to. This is only used (and required) when call_handler is set to call_flow.")
+  @format("uuid")
+  call_flow_id?: string;
+
+  @doc("A string representing the ID of the AI Agent to forward incoming calls to. This is only used (and required) when call_handler is set to ai_agent.")
+  @format("uuid")
+  call_ai_agent_id?: string;
+
+  @doc("A string representing a URL of a SWML script to respond to incoming calls. This is only used (and required) when call_handler is set to relay_script.")
+  @example("https://dev.signalwire.com/relay-bins/f9d13f68-f71e-4042-95bb-b07b9e2f2f92")
+  call_relay_script_url?: string;
 }

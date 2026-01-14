@@ -5,57 +5,58 @@ using Types;
 
 @doc("MFA request model.")
 model MfaRequest {
-  @doc("The phone number to send the MFA code to.")
-  @example("+15551234567")
+  @doc("The E164 number to use as the destination.")
+  @example("+14043287382")
   to: string;
 
-  @doc("The phone number to send the MFA code from.")
-  @example("+15559876543")
+  @doc("The E164 number from your account to use as the origin of the message. SignalWire will use a special verified number if not specified.")
+  @example("+12029167968")
   from?: string;
 
-  @doc("The message template for the MFA code. Use {{code}} as placeholder.")
-  @example("Your verification code is {{code}}")
+  @doc("Specify a custom message to send before the token. The message must fit within one segment; either 160 characters or 70 characters when using non-GSM symbols.")
+  @example("Here is your code")
   message?: string;
 
-  @doc("The length of the verification code.")
+  @doc("The number of characters in the token, from 4 to 20. Defaults to 6.")
   @example(6)
   token_length?: int32 = 6;
 
-  @doc("The number of seconds the code is valid.")
-  @example(300)
-  valid_for?: int32 = 300;
+  @doc("The number of seconds the token is considered valid for. Defaults to 3600, with a maximum of 604800.")
+  @example(3600)
+  valid_for?: int32 = 3600;
 
-  @doc("The maximum number of verification attempts allowed.")
+  @doc("The number of allowed verification attempts, including the first one, from 1 to 20. Defaults to 3.")
   @example(3)
   max_attempts?: int32 = 3;
 
-  @doc("Whether to allow alphanumeric codes.")
-  allow_alpha?: boolean = false;
+  @doc("Set to true or false, whether to include letters or just numbers in the token. Defaults to false (numbers only).")
+  @example(false)
+  allow_alphas?: boolean = false;
 }
 
 @doc("MFA response model.")
 model MfaResponse {
-  @doc("The unique identifier of the MFA request.")
+  @doc("The MFA request ID. Save this for verification.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   id: uuid;
 
-  @doc("The phone number the MFA code was sent to.")
-  @example("+15551234567")
+  @doc("Whether the request was successfully queued.")
+  @example(true)
+  success: boolean;
+
+  @doc("The destination of the MFA request.")
+  @example("+15554422333")
   to: string;
 
-  @doc("Whether the MFA request was successful.")
-  success: boolean;
+  @doc("Can be sms for a text message or call for a phone call.")
+  @example("call")
+  channel: string;
 }
 
 @doc("MFA verification request model.")
 model MfaVerifyRequest {
-  @doc("The unique identifier of the MFA request to verify.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
-  id: uuid;
-
-  @doc("The verification code to verify.")
+  @doc("The token to verify.")
   @example("123456")
   token: string;
 }

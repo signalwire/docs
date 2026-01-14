@@ -11,58 +11,70 @@ model RecordingPathID {
   id: uuid;
 }
 
-@doc("Recording status.")
-enum RecordingStatus {
-  InProgress: "in-progress",
-  Completed: "completed",
-  Failed: "failed",
-}
-
 @doc("Recording model.")
 model Recording {
-  @doc("The unique identifier of the recording.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @doc("Unique ID of the recording.")
+  @example("d369a402-7b43-4512-8735-9d5e1f387814")
   @format("uuid")
   id: uuid;
 
-  @doc("The call SID associated with the recording.")
-  @example("CA1234567890abcdef1234567890abcdef")
-  call_sid?: string;
+  @doc("Unique ID of the project.")
+  @example("d369a402-7b43-4512-8735-9d5e1f387814")
+  @format("uuid")
+  project_id: uuid;
 
-  @doc("The conference SID associated with the recording.")
-  conference_sid?: string;
+  @doc("ID of the PSTN leg associated with the recording.")
+  @format("uuid")
+  relay_pstn_leg_id?: uuid;
 
-  @doc("The duration of the recording in seconds.")
-  @example(120)
-  duration?: int32;
+  @doc("ID of the SIP leg associated with the recording.")
+  @format("uuid")
+  relay_sip_leg_id?: uuid;
 
-  @doc("The status of the recording.")
-  status?: RecordingStatus;
+  @doc("ID of the WebRTC leg associated with the recording.")
+  @format("uuid")
+  relay_webrtc_leg_id?: uuid;
 
-  @doc("The number of channels in the recording.")
-  @example(1)
-  channels?: int32;
+  @doc("Date and time when the recording was created.")
+  @example("2024-10-17T14:14:53Z")
+  created_at: utcDateTime;
 
-  @doc("The source of the recording.")
-  @example("StartCallRecordingAPI")
-  source?: string;
+  @doc("Date and time when the recording was last updated.")
+  @example("2024-10-17T14:14:53Z")
+  updated_at: utcDateTime;
 
-  @doc("The URL to access the recording.")
-  @example("https://api.signalwire.com/api/relay/rest/recordings/3fa85f64-5717-4562-b3fc-2c963f66afa6/audio")
-  uri?: string;
+  @doc("Duration of the recording in seconds.")
+  @example(2)
+  duration_in_seconds: int32;
 
-  @doc("The URL to access the recording audio.")
-  audio_url?: string;
+  @doc("Error code if the recording failed.")
+  error_code?: string;
 
-  @doc("Timestamp when the recording started.")
-  start_time?: utcDateTime;
+  @doc("Price of the recording.")
+  @example(0.05)
+  price: float64;
 
-  @doc("Timestamp when the recording ended.")
-  end_time?: utcDateTime;
+  @doc("Currency unit for the price.")
+  @example("USD")
+  price_unit: string;
 
-  @doc("Timestamp when the recording was created.")
-  created_at?: utcDateTime;
+  @doc("Status of the recording.")
+  @example("completed")
+  status: string;
 
-  @doc("Timestamp when the recording was last updated.")
-  updated_at?: utcDateTime;
+  @doc("URL of the recording file.")
+  @example("https://example.com/recording.mp3")
+  url: string;
+
+  @doc("Indicates whether the recording is stereo.")
+  @example(false)
+  stereo: boolean;
+
+  @doc("Size of the recording file in bytes.")
+  @example(10)
+  byte_size?: int32;
+
+  @doc("Audio track of the recording.")
+  @example("inbound")
+  track: string;
 }

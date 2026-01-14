@@ -18,12 +18,15 @@ namespace SpaceAPI.VerifiedCallerIds {
     @operationId("list_verified_caller_ids")
     @summary("List all Verified Caller IDs")
     @doc("""
-      Returns a list of your verified caller IDs.
+      Returns a list of your Verified Caller IDs. The caller IDs are returned sorted by creation date, with the most recent caller IDs appearing first. The list is filterable by sending in any of the following parameters.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(): VerifiedCallerIdListResponse | StatusCode401 | StatusCode500;
+    list(
+      @query @doc("String representing the name assigned to the caller ID. Will return all Verified Caller IDs containing this value as a substring.") filter_name?: string,
+      @query @doc("String representing the number assigned to the caller ID. Will return all Verified Caller IDs containing this value as a substring.") filter_number?: string
+    ): VerifiedCallerIdListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_verified_caller_id")
     @summary("Create a Verified Caller ID")
