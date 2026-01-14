@@ -38,6 +38,32 @@ namespace Types.StatusCodes {
     errors: StatusCode422Error[];
   }
 
+  @doc("Flat validation error response (not wrapped in errors array).")
+  @error
+  model ValidationError {
+    @statusCode statusCode: 422;
+
+    @doc("Error type.")
+    @example("validation_error")
+    type: string;
+
+    @doc("Error code.")
+    @example("invalid_parameter")
+    code: string;
+
+    @doc("Error details.")
+    @example("A required parameter is missing or invalid.")
+    message: string;
+
+    @doc("Request parameter associated with this error.")
+    @example("parameter_name")
+    attribute?: string;
+
+    @doc("Link to developer resource for this error.")
+    @example("https://developer.signalwire.com/rest/overview/error-codes")
+    url: string;
+  }
+
   @error
   model StatusCode403 {
     @statusCode statusCode: 403;
