@@ -1,11 +1,14 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
+import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using Types.StatusCodes;
 
 @route("/room_sessions")
 @tag(ROOM_SESSIONS_TAG)
@@ -29,7 +32,7 @@ namespace VideoAPI.RoomSessions {
     @doc("Return Sessions currently in this state. Possible values are: completed and in-progress.")
     @example("completed")
     status?: string
-  ): ListRoomSessionsResponse | VideoError;
+  ): ListRoomSessionsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 }
 
 @route("/room_sessions/{id}")
@@ -43,7 +46,7 @@ namespace VideoAPI.RoomSessionsById {
     @path
     @doc("Unique ID of the Room Session")
     id: string
-  ): RoomSessionResponse | VideoError;
+  ): RoomSessionResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }
 
 @route("/room_sessions/{id}/recordings")
@@ -62,7 +65,7 @@ namespace VideoAPI.RoomSessionRecordings {
     @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
     @example(900)
     media_ttl?: int32
-  ): ListRoomSessionRecordingsResponse | VideoError;
+  ): ListRoomSessionRecordingsResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }
 
 @route("/room_sessions/{id}/members")
@@ -76,5 +79,5 @@ namespace VideoAPI.RoomSessionMembers {
     @path
     @doc("Unique ID of the Room Session")
     id: string
-  ): ListRoomSessionMembersResponse | VideoError;
+  ): ListRoomSessionMembersResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }

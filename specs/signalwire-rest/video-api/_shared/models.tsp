@@ -32,32 +32,6 @@ enum VideoQuality {
   `1080p`,
 }
 
-@doc("Video API error response.")
-@error
-model VideoError {
-  @statusCode statusCode: 400 | 401 | 422;
-
-  @doc("Error type.")
-  @example("validation_error")
-  type: string;
-
-  @doc("Error code.")
-  @example("invalid_parameter")
-  code: string;
-
-  @doc("Error details.")
-  @example("Name must be present")
-  message: string;
-
-  @doc("Request parameter associated with this error.")
-  @example("name")
-  attribute?: string;
-
-  @doc("Link to developer resource for this error.")
-  @example("https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter")
-  url: string;
-}
-
 @doc("Active session information for a room.")
 model ActiveSession {
   @doc("Unique ID of the session.")

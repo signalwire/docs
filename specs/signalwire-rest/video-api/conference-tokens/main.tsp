@@ -1,11 +1,14 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
+import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using Types.StatusCodes;
 
 @route("/conferences/{id}/conference_tokens")
 @tag(CONFERENCE_TOKENS_TAG)
@@ -18,7 +21,7 @@ namespace VideoAPI.ConferenceTokensByConference {
     @path
     @doc("Unique id of a video conference")
     id: string
-  ): ListConferenceTokensResponse | VideoError;
+  ): ListConferenceTokensResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 }
 
 @route("/conference_tokens/{id}")
@@ -32,7 +35,7 @@ namespace VideoAPI.ConferenceTokens {
     @path
     @doc("Unique ID of the Conference Token")
     id: string
-  ): ConferenceTokenResponse | VideoError;
+  ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }
 
 @route("/conference_tokens/{id}/reset")
@@ -46,5 +49,5 @@ namespace VideoAPI.ConferenceTokensReset {
     @path
     @doc("Unique ID of the Conference Token")
     id: string
-  ): ConferenceTokenResponse | VideoError;
+  ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }

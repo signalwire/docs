@@ -1,12 +1,15 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
+import "../_shared/errors.tsp";
 import "../room-sessions/models.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using Types.StatusCodes;
 
 @route("/room_recordings")
 @tag(ROOM_RECORDINGS_TAG)
@@ -20,7 +23,7 @@ namespace VideoAPI.RoomRecordings {
     @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
     @example(900)
     media_ttl?: int32
-  ): ListRoomRecordingsResponse | VideoError;
+  ): ListRoomRecordingsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 }
 
 @route("/room_recordings/{id}")
@@ -39,7 +42,7 @@ namespace VideoAPI.RoomRecordingsById {
     @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
     @example(900)
     media_ttl?: int32
-  ): RoomRecordingResponse | VideoError;
+  ): RoomRecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
   @delete
   @operationId("delete_room_recording")
@@ -51,5 +54,5 @@ namespace VideoAPI.RoomRecordingsById {
     id: string
   ): {
     @statusCode statusCode: 204;
-  } | VideoError;
+  } | StatusCode401 | StatusCode404 | StatusCode500;
 }

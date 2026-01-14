@@ -1,12 +1,15 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
+import "../_shared/errors.tsp";
 import "../streams/models.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using Types.StatusCodes;
 
 @route("/conferences")
 @tag(CONFERENCES_TAG)
@@ -15,7 +18,7 @@ namespace VideoAPI.Conferences {
   @operationId("create_video_conference")
   @summary("Create a Video Conference")
   @doc("Create a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op createVideoConference(@body body: CreateConferenceRequest): ConferenceResponse | VideoError;
+  op createVideoConference(@body body: CreateConferenceRequest): ConferenceResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
   @get
   @operationId("list_video_conferences")
@@ -25,7 +28,7 @@ namespace VideoAPI.Conferences {
     @query
     @doc("Specifies whether or not to include information about the conference's active session (if any)")
     include_active_session?: boolean
-  ): ListConferencesResponse | VideoError;
+  ): ListConferencesResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 }
 
 @route("/conferences/{id}")
@@ -43,7 +46,7 @@ namespace VideoAPI.ConferencesById {
     @query
     @doc("Specifies whether or not to include information about the conference's active session (if any)")
     include_active_session?: boolean
-  ): ConferenceResponse | VideoError;
+  ): ConferenceResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
   @put
   @operationId("update_video_conference")
@@ -55,7 +58,7 @@ namespace VideoAPI.ConferencesById {
     id: string,
 
     @body body: UpdateConferenceRequest
-  ): ConferenceResponse | VideoError;
+  ): ConferenceResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
 
   @delete
   @operationId("delete_video_conference")
@@ -67,7 +70,7 @@ namespace VideoAPI.ConferencesById {
     id: string
   ): {
     @statusCode statusCode: 204;
-  } | VideoError;
+  } | StatusCode401 | StatusCode404 | StatusCode500;
 }
 
 @route("/conferences/{id}/streams")
@@ -82,7 +85,7 @@ namespace VideoAPI.ConferenceStreams {
     @doc("Unique id of a video conference")
     @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
     id: string
-  ): ListStreamsResponse | VideoError;
+  ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
   @post
   @operationId("create_stream_by_conference_id")
@@ -95,5 +98,5 @@ namespace VideoAPI.ConferenceStreams {
     id: string,
 
     @body body: CreateStreamRequest
-  ): StreamResponse | VideoError;
+  ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 }

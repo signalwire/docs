@@ -1,8 +1,5 @@
 import "@typespec/http";
-import "../../../types/status-codes";
 
 using TypeSpec.Http;
-using Types.StatusCodes;
 
-@doc("Validation error response for token operations.")
-model TokenValidationError is ValidationError;
+// Note: Error models are now defined in errors.tsp using the shared StatusCode422 pattern

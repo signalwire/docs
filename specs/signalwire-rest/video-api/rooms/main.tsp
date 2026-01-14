@@ -1,11 +1,14 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
+import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using Types.StatusCodes;
 
 @route("/rooms")
 @tag(ROOMS_TAG)
@@ -14,7 +17,7 @@ namespace VideoAPI.Rooms {
   @operationId("create_room")
   @summary("Create a Room")
   @doc("Create a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
-  op createRoom(@body body: CreateRoomRequest): RoomResponse | VideoError;
+  op createRoom(@body body: CreateRoomRequest): RoomResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
   @get
   @operationId("list_rooms")
@@ -24,7 +27,7 @@ namespace VideoAPI.Rooms {
     @query
     @doc("Specifies whether or not to include information about the room's active session (if any)")
     include_active_session?: boolean
-  ): ListRoomsResponse | VideoError;
+  ): ListRoomsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
   @route("/{name}")
   @get
@@ -39,7 +42,7 @@ namespace VideoAPI.Rooms {
     @query
     @doc("Specifies whether or not to include information about the room's active session (if any)")
     include_active_session?: boolean
-  ): RoomResponse | VideoError;
+  ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
 }
 
 @route("/rooms/{id}")
@@ -53,7 +56,7 @@ namespace VideoAPI.RoomsById {
     @path
     @doc("Unique ID of the room")
     id: string
-  ): RoomResponse | VideoError;
+  ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
   @put
   @operationId("update_room")
@@ -65,7 +68,7 @@ namespace VideoAPI.RoomsById {
     id: string,
 
     @body body: UpdateRoomRequest
-  ): RoomResponse | VideoError;
+  ): RoomResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
 
   @delete
   @operationId("delete_room")
@@ -77,5 +80,5 @@ namespace VideoAPI.RoomsById {
     id: string
   ): {
     @statusCode statusCode: 204;
-  } | VideoError;
+  } | StatusCode401 | StatusCode404 | StatusCode500;
 }

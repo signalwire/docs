@@ -1,11 +1,14 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
+import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using Types.StatusCodes;
 
 @route("/rooms/{id}/streams")
 @tag(STREAMS_TAG)
@@ -19,7 +22,7 @@ namespace VideoAPI.RoomStreams {
     @doc("Unique id of a video room")
     @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
     id: string
-  ): ListStreamsResponse | VideoError;
+  ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
   @post
   @operationId("create_stream_by_room_id")
@@ -32,7 +35,7 @@ namespace VideoAPI.RoomStreams {
     id: string,
 
     @body body: CreateStreamRequest
-  ): StreamResponse | VideoError;
+  ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 }
 
 @route("/streams/{id}")
@@ -46,7 +49,7 @@ namespace VideoAPI.Streams {
     @path
     @doc("Unique ID of the stream")
     id: string
-  ): StreamResponse | VideoError;
+  ): StreamResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
   @put
   @operationId("update_stream")
@@ -58,7 +61,7 @@ namespace VideoAPI.Streams {
     id: string,
 
     @body body: UpdateStreamRequest
-  ): StreamResponse | VideoError;
+  ): StreamResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
 
   @delete
   @operationId("delete_stream")
@@ -70,5 +73,5 @@ namespace VideoAPI.Streams {
     id: string
   ): {
     @statusCode statusCode: 204;
-  } | VideoError;
+  } | StatusCode401 | StatusCode404 | StatusCode500;
 }

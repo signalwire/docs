@@ -3,6 +3,7 @@ import "../../types";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/errors.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -29,7 +30,9 @@ namespace ProjectAPI.Tokens {
           @statusCode statusCode: 200;
           @body body: TokenResponse;
         }
-      | TokenValidationError;
+      | StatusCode401
+      | TokenStatusCode422
+      | StatusCode500;
 
     @summary("Update an API Token")
     @doc("""
@@ -48,13 +51,20 @@ namespace ProjectAPI.Tokens {
           @statusCode statusCode: 200;
           @body body: TokenResponse;
         }
-      | TokenValidationError;
+      | StatusCode401
+      | StatusCode404
+      | TokenStatusCode422
+      | StatusCode500;
 
     @summary("Delete an API Token")
     @doc("Delete an API Token. This action cannot be undone.")
     @delete
-    delete(@path @doc("The unique identifier of the token that you want to update.") token_id: string): {
-      @statusCode statusCode: 204;
-    };
+    delete(@path @doc("The unique identifier of the token that you want to update.") token_id: string):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
