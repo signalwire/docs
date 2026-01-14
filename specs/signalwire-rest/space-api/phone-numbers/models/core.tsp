@@ -199,41 +199,98 @@ model AvailablePhoneNumber {
 
 @doc("Phone number lookup result.")
 model PhoneNumberLookup {
-  @doc("The phone number in E.164 format.")
+  @doc("The Country code associated with the number.")
+  @example(1)
+  country_code_number?: int32;
+
+  @doc("Number in the countries national format.")
+  @example("5551234567")
+  national_number?: string;
+
+  @doc("Whether the number supplied is a possible number.")
+  @example(true)
+  possible_number?: boolean;
+
+  @doc("Whether the number supplied is a valid number.")
+  @example(true)
+  valid_number?: boolean;
+
+  @doc("The E164 number formatted in national format.")
+  @example("(555) 123-4567")
+  national_number_formatted?: string;
+
+  @doc("The E164 number formatted in international format.")
+  @example("+1 555-123-4567")
+  international_number_formatted?: string;
+
+  @doc("The number in E164 format.")
   @example("+15551234567")
-  e164: string;
+  e164?: string;
 
-  @doc("The carrier information.")
-  carrier?: CarrierInfo;
+  @doc("The location of the number based on its area code and NPA.")
+  @example("Texas")
+  location?: string;
 
-  @doc("The caller name information.")
-  caller_name?: CallerNameInfo;
+  @doc("The ISO3166 alpha 2 country code associated with the number.")
+  @example("US")
+  country_code?: string;
+
+  @doc("The time zones associated with the number.")
+  timezones?: string[];
+
+  @doc("The type of number based on its area code and NPA.")
+  @example("Fixed Line or Mobile")
+  number_type?: string;
+
+  @doc("Carrier information. Adding include=carrier to your request will do a live lookup to determine the current carrier information about this number.")
+  carrier?: CarrierLookupInfo;
+
+  @doc("Caller ID information. Adding include=cnam to your request will do a live lookup to determine the current caller ID information about this number.")
+  cnam?: CnamInfo;
 }
 
-@doc("Carrier information.")
-model CarrierInfo {
-  @doc("The carrier name.")
+@doc("Carrier lookup information.")
+model CarrierLookupInfo {
+  @doc("The LRN associated with the number.")
+  @example("15551234567")
+  lrn?: string;
+
+  @doc("The Service Profile Identifier associated with the number.")
+  @example("683X")
+  spid?: string;
+
+  @doc("The Operating Company Number associated with the number.")
+  @example("12345")
+  ocn?: string;
+
+  @doc("The Local Access and Transport Area number associated with the number.")
+  @example("99999")
+  lata?: string;
+
+  @doc("The City associated with the number.")
+  @example("Aberdeen")
+  city?: string;
+
+  @doc("The State/Province/Region associated with the number.")
+  @example("WA")
+  state?: string;
+
+  @doc("The Jurisdiction associated with the number.")
+  @example("indeterminate")
+  jurisdiction?: string;
+
+  @doc("The LEC or Carrier of the number.")
   @example("Verizon")
-  name?: string;
+  lec?: string;
 
-  @doc("The carrier type.")
-  @example("mobile")
-  type?: string;
-
-  @doc("The mobile country code.")
-  mobile_country_code?: string;
-
-  @doc("The mobile network code.")
-  mobile_network_code?: string;
+  @doc("The type of line the number is. Generally either wireless or landline.")
+  @example("landline")
+  linetype?: string;
 }
 
-@doc("Caller name information.")
-model CallerNameInfo {
-  @doc("The caller name.")
-  @example("John Doe")
-  caller_name?: string;
-
-  @doc("The caller type.")
-  @example("CONSUMER")
-  caller_type?: string;
+@doc("Caller ID (CNAM) information.")
+model CnamInfo {
+  @doc("The caller ID associated with the number.")
+  @example("John Smith")
+  caller_id?: string;
 }

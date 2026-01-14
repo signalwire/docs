@@ -165,15 +165,23 @@ namespace SpaceAPI.PhoneNumberLookup {
   @friendlyName("Phone Number Lookup")
   interface PhoneNumberLookup {
     @operationId("lookup_phone_number")
-    @summary("Lookup a Phone Number")
+    @summary("Phone Number Lookup")
     @doc("""
-      Looks up information about a phone number.
+      This endpoint allows you to look up validity and formatting
+      information about a number. You can optionally lookup additional
+      information about the number such as carrier and caller ID data.
 
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
     @route("/{e164_number}")
     @get
-    lookup(...E164NumberPath): PhoneNumberLookupResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    lookup(
+      ...E164NumberPath,
+
+      @query
+      @doc("Further number information to include in the response, some of which are billable. You can specify: carrier (Lookup full carrier information for the number), cnam (Lookup Caller ID information for the number). Separate multiple values with a comma: include=carrier,cnam.")
+      include?: string
+    ): PhoneNumberLookupResponse | StatusCode401 | StatusCode404 | StatusCode500;
   }
 }

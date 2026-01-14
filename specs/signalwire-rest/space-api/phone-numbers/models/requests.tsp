@@ -68,11 +68,17 @@ model UpdatePhoneNumberRequest {
 
 @doc("Request body for importing a phone number.")
 model ImportPhoneNumberRequest {
-  @doc("The phone number to import in E.164 format.")
-  @example("+15551234567")
+  @doc("The phone number to import in E.164 format. Number must be between 5 and 30 characters with no special characters besides a leading +.")
+  @example("+49152234333323")
+  @minLength(5)
+  @maxLength(30)
   number: string;
 
-  @doc("The friendly name for the phone number.")
-  @example("Imported Line")
-  name?: string;
+  @doc("The type of phone number being imported.")
+  @example("longcode")
+  number_type: "longcode" | "tollfree";
+
+  @doc("The capabilities to enable for this phone number. Can include any combination of SMS, Voice, Fax, and MMS. If not provided, defaults to all capabilities.")
+  @example(#["sms", "fax"])
+  capabilities?: ("sms" | "voice" | "fax" | "mms")[];
 }
