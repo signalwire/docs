@@ -77,7 +77,7 @@ model AIParams {
 
   @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values from `10,000` - `600,000`. Set to `0` to disable. **Default:** `5000` ms.")
   @example(30000)
-  attention_timeout?: AttentionTimeout | 0 | SWMLVar = 5000;
+  attention_timeout?: AttentionTimeout | 0 | SWMLVar;
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
@@ -127,7 +127,7 @@ model AIParams {
     **Default:** `"complete,partial"`
     """)
   @example("complete,partial")
-  enable_barge?: string | boolean | SWMLVar = "complete,partial";
+  enable_barge?: string | boolean | SWMLVar = string("complete,partial");
 
   @doc("""
     Enables the inner dialog feature, which runs a separate AI process in the background
