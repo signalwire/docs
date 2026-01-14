@@ -6,12 +6,14 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/dialogflow_agents/{id}/addresses")
 namespace FabricAPI.DialogflowAgent.Addresses {
   @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgentAddresses {
+    @operationId("list_dialogflow_agent_addresses")
     @summary("List Dialogflow Agent Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific Dialogflow Agent.")
     list(...DialogflowAgentAddressPathID):

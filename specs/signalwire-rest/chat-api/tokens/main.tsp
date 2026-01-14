@@ -1,10 +1,12 @@
 import "@typespec/http";
+import "@typespec/openapi";
 import "../../types";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/tokens")
@@ -12,6 +14,7 @@ namespace ChatAPI.Tokens {
   @tag("Tokens")
   @friendlyName("Tokens")
   interface ChatTokens {
+    @operationId("create_chat_token")
     @summary("Generate a new Chat Token")
     @doc("""
       Generate a Chat Token to be used to authenticate clients to the Chat Service.

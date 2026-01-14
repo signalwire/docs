@@ -9,35 +9,39 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/dialogflow_agents")
 namespace FabricAPI.DialogflowAgents {
   @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgents {
+    @operationId("list_dialogflow_agents")
     @summary("List Dialogflow Agents")
     @doc("A list of Dialogflow Agents")
     list():
       | DialogflowAgentListResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Get Dialogflow Agent")
-    @doc("Returns a Dialogflow Agent by ID")
-    read(...DialogflowAgentPathID):
+        @operationId("get_dialogflow_agent")
+        @summary("Get Dialogflow Agent")
+        @doc("Returns a Dialogflow Agent by ID")
+        read(...DialogflowAgentPathID):
       | {
           @statusCode statusCode: 200;
           @body dialogflow_agent: DialogflowAgentResponse;
         }
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Update Dialogflow Agent")
-    @doc("Updates a Dialogflow Agent by ID")
-    @put
-    update(
+        @operationId("update_dialogflow_agent")
+        @summary("Update Dialogflow Agent")
+        @doc("Updates a Dialogflow Agent by ID")
+        @put
+        update(
       ...DialogflowAgentPathID,
       @body request: DialogflowAgentUpdateRequest,
     ):
@@ -48,12 +52,13 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode401
       | StatusCode404
       | DialogflowAgentUpdateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Delete Dialogflow Agent")
-    @doc("Deletes a Dialogflow Agent by ID")
-    @delete
-    delete(...DialogflowAgentPathID):
+        @operationId("delete_dialogflow_agent")
+        @summary("Delete Dialogflow Agent")
+        @doc("Deletes a Dialogflow Agent by ID")
+        @delete
+        delete(...DialogflowAgentPathID):
       | {
           @statusCode statusCode: 204;
         }

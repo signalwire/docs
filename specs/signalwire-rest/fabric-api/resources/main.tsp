@@ -9,6 +9,7 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources")
@@ -16,29 +17,32 @@ namespace FabricAPI.Resources {
   @tag(RESOURCES_TAG)
   @friendlyName("Resources")
   interface Resources {
+    @operationId("list_resources")
     @summary("List Resources")
     @doc("A list of Fabric Resources")
     list():
       | ResourceListResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Get Resource")
-    @doc("Returns a Resource by ID")
-    read(...ResourcePathID):
+        @operationId("get_resource")
+        @summary("Get Resource")
+        @doc("Returns a Resource by ID")
+        read(...ResourcePathID):
       | {
           @statusCode statusCode: 200;
           @body resource: ResourceResponse;
         }
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Delete Resource")
-    @doc("Deletes a Resource by ID")
-    @delete
-    delete(...ResourcePathID):
+        @operationId("delete_resource")
+        @summary("Delete Resource")
+        @doc("Deletes a Resource by ID")
+        @delete
+        delete(...ResourcePathID):
       | {
           @statusCode statusCode: 204;
         }

@@ -6,12 +6,14 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/freeswitch_connectors/{id}/addresses")
 namespace FabricAPI.FreeswitchConnectorAddresses {
   @tag(FREESWITCH_CONNECTOR_TAG)
   interface FreeswitchConnectorAddresses {
+    @operationId("list_freeswitch_connector_addresses")
     @summary("List FreeSWITCH Connector Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.")
     list(...FreeswitchConnectorAddressPathID):

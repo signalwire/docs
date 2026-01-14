@@ -8,6 +8,7 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/phone_routes")
@@ -15,6 +16,7 @@ namespace FabricAPI.PhoneRoutes {
   @tag(PHONE_ROUTES_TAG)
   @friendlyName("Phone Routes")
   interface PhoneRoutes {
+    @operationId("assign_resource_phone_route")
     @summary("Assign a Resource to a Phone Route")
     @doc("""
       This endpoint assigns a specific resource to a phone route, allowing inbound calls & messages to be handled by the resource.

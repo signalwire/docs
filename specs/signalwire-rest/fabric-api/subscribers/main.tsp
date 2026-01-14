@@ -1,5 +1,6 @@
 // Import necessary modules or types
 import "@typespec/http";
+import "@typespec/openapi";
 import "./models/core.tsp";
 import "./subscriber-sip-endpoint";
 import "./subscriber-addresses";
@@ -13,6 +14,7 @@ import "./models/errors.tsp";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 // Define the API path for subscribers
@@ -21,18 +23,20 @@ namespace FabricAPI.Subscribers {
   @tag(SUBSCRIBERS_TAG)
   @friendlyName("Subscribers")
   interface Subscribers {
+    @operationId("list_subscribers")
     @summary("List Subscribers")
     @doc("Retrieve a list of all subscribers")
     list():
       | SubscriberListResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Create Subscriber")
-    @doc("Create a new Subscriber")
-    @post
-    create(@body body: SubscriberRequest):
+        @operationId("create_subscriber")
+        @summary("Create Subscriber")
+        @doc("Create a new Subscriber")
+        @post
+        create(@body body: SubscriberRequest):
       | {
           @statusCode statusCode: 201;
           @body subscriber: SubscriberResponse;
@@ -40,23 +44,25 @@ namespace FabricAPI.Subscribers {
       | StatusCode401
       | StatusCode404
       | SubscriberCreateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Get Subscriber")
-    @doc("Fetch an existing Subscriber")
-    get(...SubscriberPathID):
+        @operationId("get_subscriber")
+        @summary("Get Subscriber")
+        @doc("Fetch an existing Subscriber")
+        get(...SubscriberPathID):
       | {
           @statusCode statusCode: 200;
           @body body: SubscriberResponse;
         }
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Update Subscriber")
-    @doc("Update an existing Subsriber")
-    @put
-    update(...SubscriberPathID, ...SubscriberRequest):
+        @operationId("update_subscriber")
+        @summary("Update Subscriber")
+        @doc("Update an existing Subsriber")
+        @put
+        update(...SubscriberPathID, ...SubscriberRequest):
       | {
           @statusCode statusCode: 200;
           @body body: SubscriberResponse;
@@ -64,12 +70,13 @@ namespace FabricAPI.Subscribers {
       | StatusCode401
       | StatusCode404
       | SubscriberUpdateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Delete Subscriber")
-    @doc("Delete an existing Subscriber")
-    @delete
-    delete(...SubscriberPathID):
+        @operationId("delete_subscriber")
+        @summary("Delete Subscriber")
+        @doc("Delete an existing Subscriber")
+        @delete
+        delete(...SubscriberPathID):
       | {
           @statusCode statusCode: 204;
         }

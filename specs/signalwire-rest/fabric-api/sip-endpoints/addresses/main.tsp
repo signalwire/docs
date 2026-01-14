@@ -6,12 +6,14 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_endpoints/{id}/addresses")
 namespace FabricAPI.SipEndpoint.Addresses {
   @tag(SIP_ENDPOINTS_TAG)
   interface SipEndpointAddresses {
+    @operationId("list_sip_endpoint_addresses")
     @summary("List SIP Endpoint Addresses")
     @doc("A list of SIP Endpoint Addresses.")
     list(...SipEndpointAddressPathID):

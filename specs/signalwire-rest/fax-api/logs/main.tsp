@@ -8,6 +8,7 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
@@ -15,6 +16,7 @@ namespace FaxAPI.Logs {
   @tag(LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
+    @operationId("list_fax_logs")
     @summary("List Logs")
     @doc("""
       List the available logs.
@@ -29,6 +31,7 @@ namespace FaxAPI.Logs {
       | FaxLogsListStatusCode422
       | StatusCode500;
 
+    @operationId("get_fax_log")
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
