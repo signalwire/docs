@@ -7,6 +7,7 @@ import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_tokens")
@@ -14,6 +15,7 @@ namespace VideoAPI.RoomTokens {
   @tag(ROOM_TOKENS_TAG)
   @friendlyName("Room Tokens")
   interface RoomTokens {
+    @operationId("create_room_token")
     @summary("Generate a new Video Room Token")
     @doc("Generate a Room Token allowing a client to join a Room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @post

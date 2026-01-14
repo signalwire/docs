@@ -7,6 +7,7 @@ import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_sessions")
@@ -14,6 +15,7 @@ namespace VideoAPI.RoomSessions {
   @tag(ROOM_SESSIONS_TAG)
   @friendlyName("Room Sessions")
   interface RoomSessions {
+    @operationId("list_room_sessions")
     @summary("List Room Sessions")
     @doc("A list of past and in-progress Room Sessions.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -33,6 +35,7 @@ namespace VideoAPI.RoomSessions {
       status?: string
     ): ListRoomSessionsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("get_room_session")
     @summary("Find a Room Session by ID")
     @doc("Find a Room Session by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -42,6 +45,7 @@ namespace VideoAPI.RoomSessions {
       id: string
     ): RoomSessionResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
+    @operationId("list_room_recordings_by_session")
     @summary("List a Room Session's Recordings")
     @doc("A list of Room Recordings for a particular Room Session.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}/recordings")
@@ -56,6 +60,7 @@ namespace VideoAPI.RoomSessions {
       media_ttl?: int32
     ): ListRoomSessionRecordingsResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
+    @operationId("list_room_session_members_by_session")
     @summary("List a Room Session's Members")
     @doc("A list of Members for a particular Room Session.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}/members")
