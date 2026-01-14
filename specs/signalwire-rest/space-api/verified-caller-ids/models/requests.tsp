@@ -4,7 +4,7 @@ using TypeSpec.Http;
 
 @doc("Request body for creating a verified caller ID.")
 model CreateVerifiedCallerIdRequest {
-  @doc("String representing the phone number for the caller ID. This must be a valid, routeable phone number in E.164 format that is able to receive a voice phone call for verification.")
+  @doc("String representing the phone number for the caller ID. This must be a valid, routeable phone number in [E.164 format](https://en.wikipedia.org/wiki/E.164) that is able to receive a voice phone call for verification.")
   @example("+15551234567")
   number: string;
 

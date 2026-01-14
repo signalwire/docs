@@ -142,7 +142,9 @@ namespace SpaceAPI.ImportedPhoneNumbers {
     @operationId("import_phone_number")
     @summary("Import a Phone Number")
     @doc("""
-      Imports a phone number from an external provider.
+      Import a phone number hosted elsewhere into your SignalWire Space.
+
+      **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
 
       #### Permissions
       The API token must include the following scopes: _Numbers_.
