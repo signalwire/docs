@@ -49,7 +49,7 @@ namespace ProjectAPI.Tokens {
       
       Valid options are: calling, chat, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
-    @patch
+    @patch(#{implicitOptionality: true})
     update(@path token_id: string, ...UpdateTokenRequest):
       | {
           @statusCode statusCode: 200;
