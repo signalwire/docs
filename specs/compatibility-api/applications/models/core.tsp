@@ -78,9 +78,9 @@ model Application {
   @example("http://example.com")
   status_callback?: string;
 
-  @doc("Whether the request to the `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
-  @example("POST")
-  staus_callback_method?: string;
+    @doc("Whether the request to the `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
+    @example("POST")
+    status_callback_method?: string;
 
   @doc("The URI for this Application.")
   @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Applications/b3877c40-da60-4998-90ad-b792e98472af.json")
