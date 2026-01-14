@@ -37,14 +37,6 @@ model ConferenceParticipantResponse {
   ...ConferenceParticipant;
 }
 
-@doc("Response containing a list of conference streams.")
-model ConferenceStreamListResponse {
-  ...Pagination;
-
-  @doc("List of streams.")
-  streams?: ConferenceStream[];
-}
-
 @doc("Response containing a single conference stream.")
 model ConferenceStreamResponse {
   ...ConferenceStream;

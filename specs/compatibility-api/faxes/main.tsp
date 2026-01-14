@@ -24,7 +24,7 @@ namespace CompatibilityAPI.Faxes {
       """)
     list(
       ...FaxesAccountSidPath,
-      @query @doc("The date, in ISO 8601 format, on or after which the fax was sent.") DateCreatedOnOrAfter?: string,
+      @query @doc("The date, in ISO 8601 format, after which the fax was sent.") DateCreatedAfter?: string,
       @query @doc("The date, in ISO 8601 format, on or before which the fax was sent.") DateCreatedOnOrBefore?: string,
       @query @doc("The phone number, in E.164 format, the fax was sent from.") From?: string,
       @query @doc("The phone number, in E.164 format, the fax was sent to.") To?: string,

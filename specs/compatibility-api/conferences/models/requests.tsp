@@ -50,18 +50,37 @@ model UpdateConferenceParticipantRequest {
 
 @doc("Request body for creating a conference stream.")
 model CreateConferenceStreamRequest {
-  @doc("The URL to stream audio to.")
-  Url: string;
-
-  @doc("The name of the stream.")
+  @doc("Unique name for the Stream, per Conference. It is used to stop a Stream by name.")
+  @example("my_conference_stream")
   Name?: string;
 
-  @doc("The track to stream. Default is `both_tracks`.")
+  @doc("This attribute can be one of inbound_track, outbound_track, both_tracks. Default is `both_tracks`.")
+  @example("both_tracks")
   Track?: "inbound_track" | "outbound_track" | "both_tracks" = "both_tracks";
 
-  @doc("The URL to send status callbacks to.")
+  @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
+  @example("GET")
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
+
+  @doc("The URL to request to when stream is available.")
   StatusCallback?: string;
 
-  @doc("The HTTP method for status callbacks. Default is `POST`.")
-  StatusCallbackMethod?: "GET" | "POST" = "POST";
+  @doc("Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is wss. For security reasons ws is NOT supported.")
+  @example("wss://your-application.com/audiostream")
+  Url?: string;
+
+  @doc("The audio codec to use for the stream.")
+  @example("PCMU")
+  StreamCodec?: "PCMU" | "PCMA" | "L16" | "L16@16000h" | "L16@24000h";
+
+  @doc("Enable real-time streaming for the conference stream.")
+  @example(true)
+  StreamRealTime?: boolean;
+}
+
+@doc("Request body for updating a conference stream.")
+model UpdateConferenceStreamRequest {
+  @doc("The status of the stream.")
+  @example("stopped")
+  Status: "in-progress" | "stopped";
 }
