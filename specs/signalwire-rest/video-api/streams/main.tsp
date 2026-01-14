@@ -9,18 +9,18 @@ import "./models.tsp";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@route("/rooms/{room_id}/streams")
+@route("/rooms/{id}/streams")
 namespace VideoAPI.RoomStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Room Streams")
   interface RoomStreams {
-    @summary("List Streams by Room Id")
+    @summary("List Streams by Room")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
       @path
       @doc("Unique id of a video room")
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-      room_id: string
+      id: string
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @summary("Create a Stream for a Room")
@@ -30,7 +30,7 @@ namespace VideoAPI.RoomStreams {
       @path
       @doc("Unique id of a video room")
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-      room_id: string,
+      id: string,
 
       @body body: CreateStreamRequest
     ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;

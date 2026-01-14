@@ -9,7 +9,7 @@ import "./models.tsp";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
-@route("/conferences/{conference_id}/conference_tokens")
+@route("/conferences/{id}/conference_tokens")
 namespace VideoAPI.ConferenceTokensByConference {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens by Conference")
@@ -19,7 +19,7 @@ namespace VideoAPI.ConferenceTokensByConference {
     list(
       @path
       @doc("Unique id of a video conference")
-      conference_id: string
+      id: string
     ): ListConferenceTokensResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
   }
 }

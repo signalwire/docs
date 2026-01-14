@@ -67,18 +67,18 @@ namespace VideoAPI.Conferences {
   }
 }
 
-@route("/conferences/{conference_id}/streams")
+@route("/conferences/{id}/streams")
 namespace VideoAPI.ConferenceStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Conference Streams")
   interface ConferenceStreams {
-    @summary("List Streams by Conference Id")
+    @summary("List Streams by Conference")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
       @path
       @doc("Unique id of a video conference")
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-      conference_id: string
+      id: string
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @summary("Create a Stream for a Conference")
@@ -88,7 +88,7 @@ namespace VideoAPI.ConferenceStreams {
       @path
       @doc("Unique id of a video conference")
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-      conference_id: string,
+      id: string,
 
       @body body: CreateStreamRequest
     ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
