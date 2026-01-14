@@ -93,11 +93,11 @@ model Recording {
 
   @doc("How the recording was made.")
   @example("DialVerb")
-  source?: string;
+  source?: RecordingSource;
 
   @doc("The status of the recording.")
   @example("stopped")
-  status?: string;
+  status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
   error_code?: string;

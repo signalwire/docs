@@ -44,6 +44,13 @@ enum ConferenceRegion {
   Jp1: "jp1",
 }
 
+@doc("Conference status.")
+enum ConferenceStatus {
+  Init: "init",
+  InProgress: "in-progress",
+  Completed: "completed",
+}
+
 @doc("Conference subresource URIs.")
 model ConferenceSubresourceUris {
   @doc("Links to the participants.")
@@ -74,14 +81,14 @@ model Conference {
 
   @doc("The region where this conference audio was mixed.")
   @example("us1")
-  region?: string;
+  region?: ConferenceRegion;
 
   @doc("The unique identifier for this conference.")
   sid?: string;
 
   @doc("The status of this conference.")
   @example("completed")
-  status?: string;
+  status?: ConferenceStatus;
 
   @doc("The URI for this conference.")
   uri?: string;

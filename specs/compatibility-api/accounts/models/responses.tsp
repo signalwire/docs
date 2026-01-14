@@ -8,8 +8,8 @@ model AccountListResponse {
   @doc("Pagination links.")
   links?: Pagination;
 
-  @doc("List of accounts.")
-  accounts?: Account[];
+  @doc("List of applications/accounts.")
+  applications?: Account[];
 }
 
 @doc("Response containing a single account.")

@@ -64,7 +64,7 @@ model Transcription {
 
   @doc("The status of the transcription.")
   @example("failed")
-  status?: string;
+  status?: TranscriptionStatus;
 
   @doc("The text content of a transcription.")
   transcription_text?: string;

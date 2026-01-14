@@ -50,8 +50,8 @@ model CreateCallRequest {
   @doc("Number of milliseconds to wait for initial voice before giving up. Default is `5000` milliseconds.")
   MachineDetectionSilenceTimeout?: int32 = 5000;
 
-  @doc("How many milliseconds of voice to decide it is a machine. Must be at least `1000` to a maximum of `6000`. Default is `1800` milliseconds.")
-  MachineDetectionSpeechThreshold?: int32 = 1800;
+  @doc("How many milliseconds of voice to decide it is a machine. Must be at least `1000` to a maximum of `6000`. Default is `2400` milliseconds.")
+  MachineDetectionSpeechThreshold?: int32 = 2400;
 
   @doc("Number of milliseconds to wait for voice to finish. Must be at least `500` to a maximum of `5000`. Default is `1200` milliseconds.")
   MachineDetectionSpeechEndThreshold?: int32 = 1200;

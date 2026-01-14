@@ -47,6 +47,12 @@ enum AnsweredBy {
   Machine: "machine",
 }
 
+@doc("Stream status.")
+enum StreamStatus {
+  InProgress: "in-progress",
+  Stopped: "stopped",
+}
+
 @doc("Call subresource URIs.")
 model CallSubresourceUris {
   @doc("The URI for notifications.")
@@ -67,7 +73,7 @@ model Call {
 
   @doc("Who/what the call was answered by. Possible values are `human` or `machine`.")
   @example("machine")
-  answered_by?: string;
+  answered_by?: AnsweredBy;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
@@ -83,7 +89,7 @@ model Call {
 
   @doc("The direction of the call. Possible values are `inbound` or `outbound`.")
   @example("inbound")
-  direction?: string;
+  direction?: CallDirection;
 
   @doc("The duration, in seconds, of the call.")
   @example(20)
@@ -131,7 +137,7 @@ model Call {
 
   @doc("The status of the call.")
   @example("queued")
-  status?: string;
+  status?: CallStatus;
 
   @doc("A Map of available sub-resources.")
   subresource_uris?: CallSubresourceUris;
@@ -208,6 +214,10 @@ model CallStream {
   @format("uuid")
   account_sid?: string;
 
+  @doc("The version of the SignalWire API.")
+  @example("2010-04-01")
+  api_version?: string;
+
   @doc("The unique identifier for the call.")
   @format("uuid")
   call_sid?: string;
@@ -218,6 +228,9 @@ model CallStream {
   @doc("The date, in RFC 2822 GMT format, this stream was updated.")
   date_updated?: string;
 
+  @doc("The error code for the stream.")
+  error_code?: int32;
+
   @doc("The name of the stream.")
   name?: string;
 
@@ -226,7 +239,7 @@ model CallStream {
   sid?: string;
 
   @doc("The status of the stream.")
-  status?: string;
+  status?: StreamStatus;
 
   @doc("The URI for the stream.")
   uri?: string;

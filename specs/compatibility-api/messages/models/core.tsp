@@ -86,7 +86,7 @@ model Message {
 
   @doc("The direction of the message.")
   @example("outbound-api")
-  direction?: string;
+  direction?: MessageDirection;
 
   @doc("If an error has occurred on the message, the error code will give you a specific code.")
   error_code?: string;
@@ -112,7 +112,7 @@ model Message {
 
   @doc("Current status of the message.")
   @example("sent")
-  status?: string;
+  status?: MessageStatus;
 
   @doc("The phone number in E.164 format that received the message.")
   @example("+15557654321")

@@ -60,7 +60,7 @@ model IncomingPhoneNumber {
 
   @doc("Whether or not a registered address with SignalWire is required.")
   @example("none")
-  address_requirements?: string;
+  address_requirements?: AddressRequirements;
 
   @doc("The unique identifier for the address associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")
@@ -89,7 +89,7 @@ model IncomingPhoneNumber {
 
   @doc("Whether the phone route has an active E911 address associated.")
   @example("active")
-  emergency_status?: string;
+  emergency_status?: EmergencyStatus;
 
   @doc("A formatted version of the number.")
   @example("310-338-6745")
@@ -101,7 +101,7 @@ model IncomingPhoneNumber {
 
   @doc("The origin of the phone number.")
   @example("signalwire")
-  origin?: string;
+  origin?: PhoneNumberOrigin;
 
   @doc("The incoming number in E.164 format.")
   @example("+13103386745")

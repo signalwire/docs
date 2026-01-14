@@ -77,7 +77,7 @@ model Fax {
 
   @doc("The direction of the fax. Possible values are `inbound` or `outbound`.")
   @example("outbound")
-  direction?: string;
+  direction?: FaxDirection;
 
   @doc("The phone number, in E.164 format, the fax was sent from.")
   @example("+13103383454")
@@ -102,7 +102,7 @@ model Fax {
 
   @doc("The quality of the fax.")
   @example("standard")
-  quality?: string;
+  quality?: FaxQuality;
 
   @doc("The unique identifier of the fax.")
   @example("b3877c40-da60-4998-90ad-b792e98472fx")
@@ -110,7 +110,7 @@ model Fax {
 
   @doc("The status of the fax.")
   @example("queued")
-  status?: string;
+  status?: FaxStatus;
 
   @doc("The phone number, in E.164 format, the fax was sent to.")
   @example("+13104456789")
