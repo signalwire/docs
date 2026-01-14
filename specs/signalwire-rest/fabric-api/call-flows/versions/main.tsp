@@ -7,24 +7,27 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/call_flow/{id}/versions")
 namespace FabricAPI.CallFlow.Versions {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowVersions {
+    @operationId("list_call_flow_versions")
     @summary("List Call Flow Versions")
     @doc("Returns a list of versions of a Call Flow.")
     list(...CallFlowVersionPathID):
       | CallFlowVersionListResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Deploy a Call Flow Version")
-    @doc("Deploys a specific version of a Call Flow.")
-    @post
-    deploy(
+        @operationId("deploy_call_flow_version")
+        @summary("Deploy a Call Flow Version")
+        @doc("Deploys a specific version of a Call Flow.")
+        @post
+        deploy(
       ...CallFlowVersionPathID,
       @body request: CallFlowVersionDeployRequest,
     ):

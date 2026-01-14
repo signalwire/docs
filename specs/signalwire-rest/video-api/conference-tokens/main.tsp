@@ -7,6 +7,7 @@ import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/conferences/{id}/conference_tokens")
@@ -14,6 +15,7 @@ namespace VideoAPI.ConferenceTokensByConference {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens by Conference")
   interface ConferenceTokensByConference {
+    @operationId("list_conference_tokens")
     @summary("List Conference Tokens")
     @doc("List conference tokens.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -29,6 +31,7 @@ namespace VideoAPI.ConferenceTokens {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens")
   interface ConferenceTokens {
+    @operationId("get_conference_token")
     @summary("Find a Conference Token by ID")
     @doc("Find a conference token by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -38,6 +41,7 @@ namespace VideoAPI.ConferenceTokens {
       id: string
     ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
+    @operationId("reset_conference_token")
     @summary("Reset a Conference Token by ID")
     @doc("Reset a conference token by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}/reset")

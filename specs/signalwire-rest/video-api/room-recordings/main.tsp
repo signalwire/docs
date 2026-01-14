@@ -8,6 +8,7 @@ import "../room-sessions/models.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_recordings")
@@ -15,6 +16,7 @@ namespace VideoAPI.RoomRecordings {
   @tag(ROOM_RECORDINGS_TAG)
   @friendlyName("Room Recordings")
   interface RoomRecordings {
+    @operationId("list_room_recordings")
     @summary("List Room Recordings")
     @doc("A list of all Room Recordings.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -24,6 +26,7 @@ namespace VideoAPI.RoomRecordings {
       media_ttl?: int32
     ): ListRoomRecordingsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("get_room_recording")
     @summary("Find a Room Recording by ID")
     @doc("A detailed summary of a particular Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -38,6 +41,7 @@ namespace VideoAPI.RoomRecordings {
       media_ttl?: int32
     ): RoomRecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
+    @operationId("delete_room_recording")
     @summary("Delete a Room Recording.")
     @doc("Delete a Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")

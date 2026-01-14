@@ -9,6 +9,7 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/swml_scripts")
@@ -16,29 +17,32 @@ namespace FabricAPI.SwmlScripts {
   @tag(SWML_SCRIPTS_TAG)
   @friendlyName("SWML Scripts")
   interface SwmlScripts {
+    @operationId("list_swml_scripts")
     @summary("List SWML Scripts")
     @doc("A list of SWML Scripts")
     list():
       | SwmlScriptListResponse[]
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Get SWML Script")
-    @doc("Returns a SWML Script by ID")
-    read(...SwmlScriptPathID):
+        @operationId("get_swml_script")
+        @summary("Get SWML Script")
+        @doc("Returns a SWML Script by ID")
+        read(...SwmlScriptPathID):
       | {
           @statusCode statusCode: 200;
           @body swml_script: SwmlScriptResponse;
         }
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Create SWML Script")
-    @doc("Creates a SWML Script")
-    @post
-    create(@body request: SwmlScriptCreateRequest):
+        @operationId("create_swml_script")
+        @summary("Create SWML Script")
+        @doc("Creates a SWML Script")
+        @post
+        create(@body request: SwmlScriptCreateRequest):
       | {
           @statusCode statusCode: 200;
           @body swml_script: SwmlScriptResponse;
@@ -46,12 +50,13 @@ namespace FabricAPI.SwmlScripts {
       | StatusCode401
       | StatusCode404
       | SwmlScriptCreateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Update SWML Script")
-    @doc("Updates a SWML Script by ID")
-    @put
-    update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
+        @operationId("update_swml_script")
+        @summary("Update SWML Script")
+        @doc("Updates a SWML Script by ID")
+        @put
+        update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
       | {
           @statusCode statusCode: 200;
           @body swml_script: SwmlScriptResponse;
@@ -59,12 +64,13 @@ namespace FabricAPI.SwmlScripts {
       | StatusCode401
       | StatusCode404
       | SwmlScriptUpdateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Delete SWML Script")
-    @doc("Deletes a SWML Script by ID")
-    @delete
-    delete(...SwmlScriptPathID):
+        @operationId("delete_swml_script")
+        @summary("Delete SWML Script")
+        @doc("Deletes a SWML Script by ID")
+        @delete
+        delete(...SwmlScriptPathID):
       | {
           @statusCode statusCode: 204;
         }

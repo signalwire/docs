@@ -8,12 +8,14 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/domain_applications")
 namespace FabricAPI.DomainApplications {
   @tag(DOMAIN_APPLICATIONS_TAG)
   interface DomainApplications {
+    @operationId("assign_resource_domain_application")
     @summary("Assign a resource as a call handler for a Domain Application.")
     @doc("""
       This endpoint assigns a specific resource to a Domain Application, allowing inbound calls to be handled by the resource.

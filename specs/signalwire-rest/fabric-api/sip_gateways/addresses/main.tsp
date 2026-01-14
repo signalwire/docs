@@ -6,6 +6,7 @@ import "./models/requests.tsp";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_gateways/{resource_id}/addresses")
@@ -13,6 +14,7 @@ namespace FabricAPI.SipGateways.Addresses {
   @tag(SIP_GATEWAY_TAG)
   @friendlyName("SIP Gateway")
   interface RelayApplicationAddresses {
+    @operationId("list_sip_gateway_addresses")
     @summary("List Fabric Addresses assigned to a SIP Gateway")
     @doc("Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.")
     readAddressesByResourceId(...SipGatewayAddressRequest):

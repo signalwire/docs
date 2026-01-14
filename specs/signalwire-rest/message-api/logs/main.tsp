@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "@typespec/openapi";
 import "../../types/status-codes/main.tsp";
 import "../tags.tsp";
 import "./models/core.tsp";
@@ -7,6 +8,7 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
@@ -14,6 +16,7 @@ namespace MessageAPI.Logs {
   @tag(MESSAGE_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
+    @operationId("list_message_logs")
     @summary("List Logs")
     @doc("""
       List the available logs.
@@ -28,6 +31,7 @@ namespace MessageAPI.Logs {
       | MessageLogsListStatusCode422
       | StatusCode500;
 
+    @operationId("get_message_log")
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.

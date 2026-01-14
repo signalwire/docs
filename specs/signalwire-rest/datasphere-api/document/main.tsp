@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
@@ -6,52 +7,58 @@ import "./models/errors.tsp";
 import "../../types";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 namespace DatasphereAPI.Documents {
   @route("/documents")
   @tag("Documents")
   interface Documents {
+    @operationId("list_documents")
     @doc("A list of Datasphere Documents")
     @summary("List Documents")
-    list(): DocumentListResponse | StatusCode401 | StatusCode404;
+    list(): DocumentListResponse    | StatusCode401 | StatusCode404;
 
-    @doc("Creates a Datasphere Document")
-    @summary("Create a Document")
-    @post
-    create(@body body: DocumentCreateRequest):
+        @operationId("create_document")
+        @doc("Creates a Datasphere Document")
+        @summary("Create a Document")
+        @post
+        create(@body body: DocumentCreateRequest):
       | {
           @statusCode statusCode: 201;
           @body document: Document;
         }
       | StatusCode401
       | StatusCode404
-      | CreateStatusCode422;
+          | CreateStatusCode422;
 
-    @doc("Updates a Datasphere Document by ID")
-    @summary("Update a Document")
-    @patch(#{ implicitOptionality: true })
-    update(...PathID, ...DocumentUpdateRequest):
+        @operationId("update_document")
+        @doc("Updates a Datasphere Document by ID")
+        @summary("Update a Document")
+        @patch(#{ implicitOptionality: true })
+        update(...PathID, ...DocumentUpdateRequest):
       | {
           @statusCode statusCode: 200;
           @body document: Document;
         }
       | StatusCode401
       | StatusCode404
-      | SearchStatusCode422;
+          | SearchStatusCode422;
 
-    @doc("Deletes a Datasphere Document by ID")
-    @summary("Delete a Document")
-    @delete
-    delete(...PathID): {
+        @operationId("delete_document")
+        @doc("Deletes a Datasphere Document by ID")
+        @summary("Delete a Document")
+        @delete
+        delete(...PathID):{
       @statusCode statusCode: 204;
-    } | StatusCode401 | StatusCode404;
+        } | StatusCode401 | StatusCode404;
 
-    @doc("Search Datasphere Documents")
-    @route("/search")
-    @summary("Search Documents")
-    @post
-    search(...DocumentSearchRequest):
+        @operationId("search_documents")
+        @doc("Search Datasphere Documents")
+        @route("/search")
+        @summary("Search Documents")
+        @post
+        search(...DocumentSearchRequest):
       | Chunk[]
       | StatusCode401
       | StatusCode404
@@ -64,20 +71,23 @@ namespace DatasphereAPI.Chunks {
   @tag("Chunks")
   @friendlyName("Chunks")
   interface Chunks {
+    @operationId("list_document_chunks")
     @doc("A list of chunks for a Datasphere Document.")
     @summary("List Chunks")
-    list(...DocumentPathID): ChunkListResponse | StatusCode401 | StatusCode404;
+        list(...DocumentPathID): ChunkListResponse | StatusCode401 | StatusCode404;
 
-    @doc("Retrieves a specific chunk for a Datasphere Document by ID.")
-    @summary("Retrieve Chunk")
-    @route("/{chunkId}")
-    get(...ChunkPathID): ChunkResponse | StatusCode401 | StatusCode404;
+        @operationId("get_document_chunk")
+        @doc("Retrieves a specific chunk for a Datasphere Document by ID.")
+        @summary("Retrieve Chunk")
+        @route("/{chunkId}")
+        get(...ChunkPathID): ChunkResponse | StatusCode401 | StatusCode404;
 
-    @doc("Deletes a specific chunk for a Datasphere Document by ID.")
-    @summary("Delete Chunk")
-    @route("/{chunkId}")
-    @delete
-    delete(...ChunkPathID): {
+        @operationId("delete_document_chunk")
+        @doc("Deletes a specific chunk for a Datasphere Document by ID.")
+        @summary("Delete Chunk")
+        @route("/{chunkId}")
+        @delete
+        delete(...ChunkPathID):{
       @statusCode statusCode: 204;
     } | StatusCode401 | StatusCode404;
   }

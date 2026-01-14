@@ -7,6 +7,7 @@ import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
@@ -14,6 +15,7 @@ namespace VideoAPI.Logs {
   @tag(LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
+    @operationId("list_logs")
     @summary("List Logs")
     @doc("List the available logs.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -43,6 +45,7 @@ namespace VideoAPI.Logs {
       page_size?: int32
     ): ListLogsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("get_log")
     @summary("Find a Log by ID")
     @doc("Find a log by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")

@@ -5,6 +5,7 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @useAuth(BearerAuth)
@@ -13,6 +14,7 @@ namespace FabricAPI.FabricAddresses {
   @tag(FABRIC_ADDRESS_TAG)
   @friendlyName("Fabric Address")
   interface FabricAddresses {
+    @operationId("list_fabric_addresses")
     @summary("List Fabric Addresses")
     @doc("""
       A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
@@ -22,9 +24,10 @@ namespace FabricAPI.FabricAddresses {
       | FabricAddressesResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Get Fabric Address")
+        @operationId("get_fabric_address")
+        @summary("Get Fabric Address")
     @doc("""
       Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/subscriber-tokens-create).

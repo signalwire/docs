@@ -8,6 +8,7 @@ import "../streams/models.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/conferences")
@@ -15,11 +16,13 @@ namespace VideoAPI.Conferences {
   @tag(CONFERENCES_TAG)
   @friendlyName("Conferences")
   interface Conferences {
+    @operationId("create_video_conference")
     @summary("Create a Video Conference")
     @doc("Create a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @post
     create(@body body: CreateConferenceRequest): ConferenceResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("list_video_conferences")
     @summary("List Video Conferences")
     @doc("List Video Conferences.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -28,6 +31,7 @@ namespace VideoAPI.Conferences {
       include_active_session?: boolean
     ): ListConferencesResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("get_video_conference")
     @summary("Find a Video Conference by ID")
     @doc("Find a Video Conference by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -41,6 +45,7 @@ namespace VideoAPI.Conferences {
       include_active_session?: boolean
     ): ConferenceResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
+    @operationId("update_video_conference")
     @summary("Update a Video Conference")
     @doc("Update a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -53,6 +58,7 @@ namespace VideoAPI.Conferences {
       @body body: UpdateConferenceRequest
     ): ConferenceResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("delete_video_conference")
     @summary("Delete a Video Conference")
     @doc("Delete a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -72,6 +78,7 @@ namespace VideoAPI.ConferenceStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Conference Streams")
   interface ConferenceStreams {
+    @operationId("list_conference_streams")
     @summary("List Streams by Conference")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -81,6 +88,7 @@ namespace VideoAPI.ConferenceStreams {
       id: string
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("create_conference_stream")
     @summary("Create a Stream for a Conference")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     @post

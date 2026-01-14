@@ -9,6 +9,7 @@ import "../../types";
 import "../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/cxml_scripts")
@@ -17,29 +18,32 @@ namespace FabricAPI.CXMLScripts {
   @friendlyName("CXML Scripts")
   @summary("CXML Scripts")
   interface CXMLScripts {
+    @operationId("list_cxml_scripts")
     @summary("List cXML Scripts")
     @doc("A list of cXML Scripts")
     list():
       | CXMLScriptListResponse
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Get cXML Script")
-    @doc("Returns a cXML Script by ID")
-    read(...CXMLScriptPathID):
+        @operationId("get_cxml_script")
+        @summary("Get cXML Script")
+        @doc("Returns a cXML Script by ID")
+        read(...CXMLScriptPathID):
       | {
           @statusCode statusCode: 200;
           @body cxml_script: CXMLScriptResponse;
         }
       | StatusCode401
       | StatusCode404
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Create cXML Script")
-    @doc("Creates a cXML Script")
-    @post
-    create(@body request: CXMLScriptCreateRequest):
+        @operationId("create_cxml_script")
+        @summary("Create cXML Script")
+        @doc("Creates a cXML Script")
+        @post
+        create(@body request: CXMLScriptCreateRequest):
       | {
           @statusCode statusCode: 200;
           @body cxml_script: CXMLScriptResponse;
@@ -47,12 +51,13 @@ namespace FabricAPI.CXMLScripts {
       | StatusCode401
       | StatusCode404
       | CXMLScriptCreateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Update cXML Script")
-    @doc("Updates a cXML Script by ID")
-    @put
-    update(...CXMLScriptPathID, @body request: CXMLScriptUpdateRequest):
+        @operationId("update_cxml_script")
+        @summary("Update cXML Script")
+        @doc("Updates a cXML Script by ID")
+        @put
+        update(...CXMLScriptPathID, @body request: CXMLScriptUpdateRequest):
       | {
           @statusCode statusCode: 200;
           @body cxml_script: CXMLScriptResponse;
@@ -60,12 +65,13 @@ namespace FabricAPI.CXMLScripts {
       | StatusCode401
       | StatusCode404
       | CXMLScriptUpdateStatusCode422
-      | StatusCode500;
+          | StatusCode500;
 
-    @summary("Delete cXML Script")
-    @doc("Deletes a cXML Script by ID")
-    @delete
-    delete(...CXMLScriptPathID):
+        @operationId("delete_cxml_script")
+        @summary("Delete cXML Script")
+        @doc("Deletes a cXML Script by ID")
+        @delete
+        delete(...CXMLScriptPathID):
       | {
           @statusCode statusCode: 204;
         }

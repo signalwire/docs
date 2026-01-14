@@ -6,12 +6,14 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/addresses")
 namespace FabricAPI.Resource.Addresses {
   @tag(RESOURCES_TAG)
   interface ResourceAddresses {
+    @operationId("list_resource_addresses")
     @summary("List Resource Addresses")
     @doc("This endpoint is used to retrieve addresses associated with a specific Resource.")
     list(...ResourceAddressPathID):

@@ -8,12 +8,14 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/sip_endpoints")
 namespace FabricAPI.SipEndpoints.Resource {
   @tag(SIP_ENDPOINTS_TAG)
   interface ResourceSipEndpoints {
+    @operationId("assign_resource_sip_endpoint")
     @summary("Assign a Resource to a SIP endpoint")
     @doc("""
       This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.

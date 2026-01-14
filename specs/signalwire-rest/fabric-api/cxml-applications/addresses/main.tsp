@@ -6,12 +6,14 @@ import "../../../types";
 import "../../tags.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/cxml_applications/{id}/addresses")
 namespace FabricAPI.CxmlApplication.Addresses {
   @tag(CXML_APPLICATIONS_TAG)
   interface CxmlApplicationAddresses {
+    @operationId("list_cxml_application_addresses")
     @summary("List cXML Application Addresses")
     @doc("This endpoint returns a list of addresses associated with a specific LaML Application.")
     list(...CxmlApplicationAddressPathID):

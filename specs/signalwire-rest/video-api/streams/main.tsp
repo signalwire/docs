@@ -7,6 +7,7 @@ import "../_shared/errors.tsp";
 import "./models.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/rooms/{id}/streams")
@@ -14,6 +15,7 @@ namespace VideoAPI.RoomStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Room Streams")
   interface RoomStreams {
+    @operationId("list_room_streams")
     @summary("List Streams by Room")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     list(
@@ -23,6 +25,7 @@ namespace VideoAPI.RoomStreams {
       id: string
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("create_room_stream")
     @summary("Create a Stream for a Room")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     @post
@@ -42,6 +45,7 @@ namespace VideoAPI.Streams {
   @tag(STREAMS_TAG)
   @friendlyName("Streams")
   interface Streams {
+    @operationId("get_stream")
     @summary("Find a Stream by ID")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -51,6 +55,7 @@ namespace VideoAPI.Streams {
       id: string
     ): StreamResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
+    @operationId("update_stream")
     @summary("Update a Stream")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
@@ -63,6 +68,7 @@ namespace VideoAPI.Streams {
       @body body: UpdateStreamRequest
     ): StreamResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
 
+    @operationId("delete_stream")
     @summary("Delete a Stream")
     @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}")
