@@ -1,0 +1,78 @@
+import "@typespec/http";
+import "@typespec/openapi";
+import "./models/core.tsp";
+import "./models/requests.tsp";
+import "./models/responses.tsp";
+import "./models/errors.tsp";
+import "./addresses";
+import "../../types";
+import "../tags.tsp";
+
+using TypeSpec.Http;
+using Types.StatusCodes;
+
+@route("/resources/relay_applications")
+namespace FabricAPI.RelayApplications {
+  @tag(RELAY_APPLICATION_TAG)
+  @friendlyName("Relay Applications")
+  interface RelayApplications {
+    @summary("List Relay Applications")
+    @doc("A list of Relay Applications")
+    list():
+      | RelayApplicationListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+
+    @summary("Get Relay Application")
+    @doc("Returns a Relay Application by ID")
+    read(...RelayApplicationPathID):
+      | {
+          @statusCode statusCode: 200;
+          @body relay_application: RelayApplicationResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+
+    @summary("Create Relay Application")
+    @doc("Creates a Relay Application")
+    @post
+    create(@body request: RelayApplicationCreateRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body relay_application: RelayApplicationResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | RelayApplicationCreateStatusCode422
+      | StatusCode500;
+
+    @summary("Update Relay Application")
+    @doc("Updates a Relay Application by ID")
+    @put
+    update(
+      ...RelayApplicationPathID,
+      @body request: RelayApplicationUpdateRequest,
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body relay_application: RelayApplicationResponse;
+        }
+      | StatusCode401
+      | StatusCode404
+      | RelayApplicationUpdateStatusCode422
+      | StatusCode500;
+
+    @summary("Delete Relay Application")
+    @doc("Deletes a Relay Application by ID")
+    @delete
+    delete(...RelayApplicationPathID):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
+  }
+}

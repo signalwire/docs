@@ -689,7 +689,7 @@ function writeReport(outputFile, results) {
 
 async function main() {
   const args = process.argv.slice(2);
-  let sitemapUrl = 'https://signalwire.docs.buildwithfern.com/sitemap.xml';
+  let sitemapUrl = null; // Will use default from config if not specified
   let skipGithub = false;
   let skipHttp = false;
   let noProgress = false;
@@ -703,10 +703,10 @@ async function main() {
     if (args[i] === '--output' && args[i + 1]) outputFile = args[++i];
     if (args[i] === '-h' || args[i] === '--help') {
       console.log(`
-Usage: node scripts/check-links.js [options]
+Usage: node scripts/check-links.js --sitemap <url> [options]
 
 Options:
-  --sitemap <url>   Check a specific sitemap URL (default: production)
+  --sitemap <url>   Sitemap URL to check (required)
   --skip-github     Skip GitHub URL verification (both local and HTTP)
   --skip-http       Skip all HTTP link checking (lychee)
   --no-progress     Disable progress output (for CI)
@@ -717,13 +717,13 @@ Environment Variables:
 
 Examples:
   # Check production docs
-  node scripts/check-links.js
+  node scripts/check-links.js --sitemap https://signalwire.docs.buildwithfern.com/sitemap.xml
 
   # Check a preview deployment
   node scripts/check-links.js --sitemap https://preview-xxx.docs.buildwithfern.com/sitemap.xml
 
-  # Quick local check (skip GitHub for speed)
-  node scripts/check-links.js --skip-github
+  # Quick check (skip GitHub for speed)
+  node scripts/check-links.js --sitemap <url> --skip-github
 `);
       process.exit(0);
     }
@@ -731,6 +731,13 @@ Examples:
 
   log.header('Link Checker');
   log.newline();
+
+  // Sitemap URL is required
+  if (!sitemapUrl) {
+    log.error('Error: --sitemap <url> is required');
+    log.info('Example: node scripts/check-links.js --sitemap https://example.docs.buildwithfern.com/sitemap.xml');
+    process.exit(1);
+  }
 
   // 1. Fetch sitemap URLs
   const sitemapUrls = await fetchSitemap(sitemapUrl);

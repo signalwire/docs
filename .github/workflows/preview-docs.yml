@@ -12,29 +12,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Fern CLI tool
-        run: npm install -g fern-api
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
-      - name: Generate preview URL
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build and generate preview
         id: generate-docs
         env:
           FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
         run: |
-          OUTPUT=$(fern generate --docs --instance signalwire.docs.buildwithfern.com --preview 2>&1)
-          FERN_EXIT_CODE=$?
+          OUTPUT=$(yarn build 2>&1)
+          BUILD_EXIT_CODE=$?
           echo "$OUTPUT"
-          
-          if [ $FERN_EXIT_CODE -ne 0 ]; then
-            echo "::error::Fern preview generation failed with exit code $FERN_EXIT_CODE"
+
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "::error::Build failed with exit code $BUILD_EXIT_CODE"
             exit 1
           fi
-          
+
           URL=$(echo "$OUTPUT" | grep -oP 'Published docs to \K.*(?= \()')
           if [ -z "$URL" ]; then
             echo "::error::Could not extract preview URL from Fern output"
             exit 1
           fi
-          
+
           echo "Preview URL: $URL"
           echo "preview_url=$URL" >> $GITHUB_OUTPUT
 
@@ -46,7 +51,7 @@ jobs:
           script: |
             const previewUrl = process.env.PREVIEW_URL;
             const MARKER = '<!-- preview-docs-bot -->';
-            
+
             let body = MARKER + '\n';
             body += `## 🌿 Preview\n\n`;
             body += `${previewUrl}\n\n`;
@@ -80,7 +85,7 @@ jobs:
         run: |
           SITEMAP_URL="${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml"
           echo "Waiting for sitemap to be available: $SITEMAP_URL"
-          
+
           for i in {1..6}; do
             if curl -sf "$SITEMAP_URL" > /dev/null 2>&1; then
               echo "Sitemap is available"
@@ -89,13 +94,8 @@ jobs:
             echo "Attempt $i: Sitemap not ready, waiting 5 seconds..."
             sleep 5
           done
-          
-          echo "::warning::Sitemap may not be fully available yet, proceeding anyway"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+          echo "::warning::Sitemap may not be fully available yet, proceeding anyway"
 
       - name: Cache lychee
         uses: actions/cache@v4
@@ -112,7 +112,7 @@ jobs:
         id: check-links
         run: |
           set +e
-          node scripts/check-links.js \
+          yarn check-links \
             --sitemap "${{ steps.generate-docs.outputs.preview_url }}/sitemap.xml" \
             --no-progress \
             --output /tmp/link-report.md
