@@ -51,6 +51,12 @@ enum ConferenceStatus {
   Completed: "completed",
 }
 
+@doc("Conference participant status.")
+enum ParticipantStatus {
+  Completed: "completed",
+  InProgress: "in-progress",
+}
+
 @doc("Conference subresource URIs.")
 model ConferenceSubresourceUris {
   @doc("Links to the participants.")
@@ -124,7 +130,7 @@ model ConferenceParticipant {
   date_created?: string;
 
   @doc("The status of the conference call.")
-  status?: string;
+  status?: ParticipantStatus;
 
   @doc("The date, in RFC 2822 format, this conference participant was updated.")
   @example("Tue, 25 Sept 2018 20:00:00 +0000")

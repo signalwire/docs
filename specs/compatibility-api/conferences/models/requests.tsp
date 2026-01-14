@@ -16,6 +16,16 @@ model UpdateConferenceRequest {
 
 @doc("Request body for updating a conference participant.")
 model UpdateConferenceParticipantRequest {
+  @doc("The URL to send conference announcements to.")
+  AnnounceUrl?: string;
+
+  @doc("Whether the request to `AnnounceUrl` is a `GET` or a `POST`. Default is `POST`.")
+  @example("POST")
+  AnnounceMethod?: "GET" | "POST" = "POST";
+
+  @doc("Whether or not to play the beep sound when updating the Participant.")
+  Beep?: boolean;
+
   @doc("Whether the participant is coaching another call.")
   @example(false)
   Coaching?: boolean;
