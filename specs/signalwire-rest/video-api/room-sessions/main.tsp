@@ -45,7 +45,7 @@ namespace VideoAPI.RoomSessions {
       id: string
     ): RoomSessionResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("list_room_recordings_by_session")
+    @operationId("list_room_session_recordings")
     @summary("List a Room Session's Recordings")
     @doc("A list of Room Recordings for a particular Room Session.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}/recordings")
@@ -60,7 +60,7 @@ namespace VideoAPI.RoomSessions {
       media_ttl?: int32
     ): ListRoomSessionRecordingsResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("list_room_session_members_by_session")
+    @operationId("list_room_session_members")
     @summary("List a Room Session's Members")
     @doc("A list of Members for a particular Room Session.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{id}/members")
