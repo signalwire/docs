@@ -18,12 +18,18 @@ namespace SpaceAPI.NumberGroups {
     @operationId("list_number_groups")
     @summary("List all Number Groups")
     @doc("""
-      Returns a list of your number groups.
+      Returns a list of your Number Groups. The groups are returned sorted
+      by creation date, with the most recent appearing first. The list is
+      filterable by sending in any of the following parameters.
 
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(): NumberGroupListResponse | StatusCode401 | StatusCode500;
+    list(
+      @query
+      @doc("The name given to the number group to distinguish different groups within your project. Will return all Number Groups containing this value as a substring.")
+      filter_name?: string
+    ): NumberGroupListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_number_group")
     @summary("Create a Number Group")

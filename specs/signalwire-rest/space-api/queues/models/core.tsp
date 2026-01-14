@@ -20,69 +20,80 @@ model QueueIdPath {
 }
 
 model QueueMemberPathID {
-  @doc("Unique ID of the queue member (call SID).")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @doc("The unique identifier (ID) of the queue member.")
+  @example("596e2dea-a269-4765-a0b4-01b82d11c120")
+  @format("uuid")
   @path
-  call_sid: string;
+  id: uuid;
 }
 
 @doc("Queue model.")
 model Queue {
   @doc("The unique identifier of the queue.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @example("aae131db-214c-46f5-88b6-92004f8467cf")
   @format("uuid")
   id: uuid;
 
-  @doc("The name of the queue.")
-  @example("Support Queue")
-  name: string;
+  @doc("The project ID associated with this queue.")
+  @example("c6c4679b-716a-456a-9e41-a03821005005")
+  @format("uuid")
+  project_id: uuid;
+
+  @doc("The friendly name of the queue.")
+  @example("test")
+  friendly_name: string;
 
   @doc("The maximum number of callers allowed in the queue.")
-  @example(100)
-  max_size?: int32 = 100;
+  @example(5)
+  max_size?: int32;
 
   @doc("The current number of callers in the queue.")
-  @example(5)
+  @example(0)
   current_size?: int32;
 
   @doc("The average wait time in seconds.")
-  @example(120)
+  @example(0)
   average_wait_time?: int32;
 
+  @doc("The URL of this queue.")
+  @example("/api/relay/rest/queues/aae131db-214c-46f5-88b6-92004f8467cf")
+  uri?: string;
+
   @doc("Timestamp when the queue was created.")
-  created_at?: utcDateTime;
+  date_created?: utcDateTime;
 
   @doc("Timestamp when the queue was last updated.")
-  updated_at?: utcDateTime;
+  date_updated?: utcDateTime;
 }
 
 @doc("Queue member model.")
 model QueueMember {
-  @doc("The call SID of the queue member.")
-  @example("CA1234567890abcdef1234567890abcdef")
-  call_sid: string;
-
-  @doc("The queue ID.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @doc("The call ID of the queue member.")
+  @example("596e2dea-a269-4765-a0b4-01b82d11c120")
   @format("uuid")
-  queue_id: uuid;
+  call_id: uuid;
 
-  @doc("The phone number of the caller.")
-  @example("+15551234567")
-  from?: string;
+  @doc("The ID of the project associated with this queue member.")
+  @example("d421473b-d696-449a-a1a1-4ddd83d2d0e5")
+  project_id: string;
 
-  @doc("The phone number called.")
-  @example("+15559876543")
-  to?: string;
+  @doc("The ID of the queue associated with this queue member.")
+  @example("596e2dea-a269-4765-a0b4-01b82d11c120")
+  queue_id: string;
 
-  @doc("The position in the queue.")
-  @example(1)
-  position?: int32;
+  @doc("Queue member position in the queue.")
+  @example(2)
+  position: int32;
 
-  @doc("The wait time in seconds.")
-  @example(60)
+  @doc("The URL of this queue member.")
+  @example("/api/relay/rest/queues/596e2dea-a269-4765-a0b4-01b82d11c120/members/596e2dea-a269-4765-a0b4-01b82d11c120")
+  uri: string;
+
+  @doc("Wait time in seconds since the member was enqueued. If not yet enqueued, it will be null.")
+  @example(172975)
   wait_time?: int32;
 
-  @doc("Timestamp when the member joined the queue.")
+  @doc("When the queue member was last enqueued.")
+  @example("2025-06-22T17:44:08.126Z")
   date_enqueued?: utcDateTime;
 }

@@ -4,107 +4,171 @@ using TypeSpec.Http;
 
 @doc("Request body for creating a brand.")
 model CreateBrandRequest {
-  @doc("The name of the brand.")
-  @example("Acme Corp")
-  name: string;
+  @doc("Brand/Marketing/DBA name of the business if applicable.")
+  @example("My Brand")
+  name?: string;
 
-  @doc("The display name of the brand.")
-  @example("Acme Corporation")
-  display_name?: string;
+  @doc("The legal name of the business.")
+  @example("BrandCo")
+  company_name: string;
 
-  @doc("The entity type of the brand.")
-  @example("PRIVATE_PROFIT")
-  entity_type: string;
+  @doc("A company contact email for this brand.")
+  @example("brand_info@example.com")
+  contact_email: string;
 
-  @doc("The EIN/Tax ID of the brand.")
+  @doc("A contact phone number for this brand.")
+  @example("+18995551212")
+  contact_phone: string;
+
+  @doc("Country of registration.")
+  @example("United States")
+  ein_issuing_country: string;
+
+  @doc("What type of legal entity is the organization? (PRIVATE_PROFIT, PUBLIC_PROFIT, NON_PROFIT)")
+  @example("Private Company")
+  legal_entity_type: string;
+
+  @doc("Company EIN Number/Tax ID.")
   @example("12-3456789")
   ein?: string;
 
-  @doc("The country of the brand.")
-  @example("US")
-  country?: string;
+  @doc("Full company address.")
+  @example("123 Brand St, Hill Valley CA, 91905")
+  company_address: string;
 
-  @doc("The street address of the brand.")
-  street?: string;
+  @doc("An optional Vertical for the brand (REAL_ESTATE, HEALTHCARE, ENERGY, ENTERTAINMENT, RETAIL, AGRICULTURE, INSURANCE, EDUCATION, HOSPITALITY, FINANCIAL, GAMBLING, CONSTRUCTION, NGO, MANUFACTURING, GOVERNMENT, TECHNOLOGY, COMMUNICATION).")
+  @example("Healthcare")
+  company_vertical?: string;
 
-  @doc("The city of the brand.")
-  city?: string;
+  @doc("Link to the company website.")
+  @example("www.example.com")
+  company_website?: string;
 
-  @doc("The state of the brand.")
-  state?: string;
+  @doc("If you are your own Campaign Service Provider, this is the approved Brand ID (Mandatory for CSPs, otherwise please omit).")
+  csp_brand_reference?: string;
 
-  @doc("The postal code of the brand.")
-  postal_code?: string;
+  @doc("This value must be true for all self-registered brands.")
+  @example(false)
+  csp_self_registered?: boolean;
 
-  @doc("The website of the brand.")
-  website?: string;
-
-  @doc("The vertical/industry of the brand.")
-  vertical?: string;
-}
-
-@doc("Request body for updating a brand.")
-model UpdateBrandRequest {
-  @doc("The display name of the brand.")
-  @example("Acme Corporation")
-  display_name?: string;
-
-  @doc("The website of the brand.")
-  website?: string;
+  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes.")
+  @example("https://example.com/handle_callback")
+  status_callback_url?: string;
 }
 
 @doc("Request body for creating a campaign.")
 model CreateCampaignRequest {
-  @doc("The brand ID associated with the campaign.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
-  brand_id: uuid;
+  @doc("A name for the campaign.")
+  @example("My Campaign")
+  name?: string;
 
-  @doc("The name of the campaign.")
-  @example("Marketing Campaign")
-  name: string;
+  @doc("An SMS Use Case category for the campaign (2FA, ACCOUNT_NOTIFICATION, AGENTS_FRANCHISES, CARRIER_EXEMPT, CHARITY, CUSTOMER_CARE, DELIVERY_NOTIFICATION, EMERGENCY, FRAUD_ALERT, HIGHER_EDUCATION, K12_EDUCATION, LOW_VOLUME_MIXED, MARKETING, MIXED, POLITICAL, POLITICAL_SECTION_527, POLLING_VOTING, PROXY, PUBLIC_SERVICE_ANNOUNCEMENT, SECURITY_ALERT, SOCIAL, SWEEPSTAKE, TRIAL, UCAAS_HIGH_VOLUME, UCAAS_LOW_VOLUME).")
+  @example("MARKETING")
+  sms_use_case?: string;
 
-  @doc("The description of the campaign.")
-  @example("Marketing messages for promotions")
+  @doc("A sub use case category for MIXED or LOW_VOLUME_MIXED campaigns (CUSTOMER_CARE, HIGHER_EDUCATION, POLLING_VOTING, PUBLIC_SERVICE_ANNOUNCEMENT, MARKETING, SECURITY_ALERT, 2FA, ACCOUNT_NOTIFICATION, DELIVERY_NOTIFICATION, FRAUD_ALERT).")
+  sub_use_cases?: string[];
+
+  @doc("Campaign Verify token. Required if sms use case is POLITICAL_SECTION_527.")
+  campaign_verify_token?: string;
+
+  @doc("A description for the campaign. Please use at least 40 characters.")
   description?: string;
 
-  @doc("The use case of the campaign.")
-  @example("MARKETING")
-  use_case: string;
+  @doc("Sample message template/content. At least two samples are required and up to five can be provided. Please use at least 20 characters.")
+  @example("this is a sample message your customer might receive")
+  sample1?: string;
 
-  @doc("Sample messages for the campaign.")
-  sample_messages?: string[];
+  @doc("Sample 2.")
+  @example("this is a sample message your customer might receive")
+  sample2?: string;
 
-  @doc("Whether the campaign includes embedded links.")
-  has_embedded_links?: boolean;
+  @doc("Sample 3.")
+  sample3?: string;
 
-  @doc("Whether the campaign includes embedded phone numbers.")
-  has_embedded_phone?: boolean;
+  @doc("Sample 4.")
+  sample4?: string;
 
-  @doc("Whether the campaign includes age-gated content.")
-  age_gated?: boolean;
+  @doc("Sample 5.")
+  sample5?: string;
 
-  @doc("Whether the campaign is for direct lending.")
+  @doc("If your messaging content will be modified in any way beyond what you shared in your templates, please describe the nature of how the content will change.")
+  dynamic_templates?: string;
+
+  @doc("Please describe the call to action/message flow your intended recipients will experience.")
+  @example("Users will opt in to receive messages from their doctor through a written form and we will send them an opt in message. Appointment reminders will then be sent ahead of their appointments.")
+  message_flow?: string;
+
+  @doc("Please share the message subscribers receive when they opt in.")
+  @example("Thanks for subscribing. Reply STOP to cancel at any time.")
+  opt_in_message?: string;
+
+  @doc("Please share the message subscribers receive when they opt out.")
+  @example("You have successfully been opted out. Reply START to opt back in at any time.")
+  opt_out_message?: string;
+
+  @doc("Please share the message subscribers receive when they request help.")
+  @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
+  help_message?: string;
+
+  @doc("You can share any opt in keywords that subscribers can use here. Default = START")
+  @example("Start,Subscribe,Opt In")
+  opt_in_keywords?: string;
+
+  @doc("You can share any opt out keywords that subscribers can use here. Default = STOP")
+  @example("Stop,Opt Out,Unsubscribe")
+  opt_out_keywords?: string;
+
+  @doc("You can share any help keywords that subscribers can use here. Default = HELP")
+  @example("Help,Support,Request Call")
+  help_keywords?: string;
+
+  @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
+  @example(true)
+  number_pooling_required?: boolean;
+
+  @doc("If you will be using number pooling, please provide an explanation as to why it is needed.")
+  @example("We have customer reps in every state and they each need their own number with local area code.")
+  number_pooling_per_campaign?: string;
+
+  @doc("Will this campaign include content related to direct lending or other loan agreements?")
+  @example(true)
   direct_lending?: boolean;
 
-  @doc("Whether subscribers opted in.")
-  subscriber_optin?: boolean;
+  @doc("Will you be using an embedded link of any kind? Note that public URL shorteners (bitly, tinyurl) will not be accepted.")
+  @example(false)
+  embedded_link?: boolean;
 
-  @doc("Whether subscribers can opt out.")
-  subscriber_optout?: boolean;
+  @doc("Are you using an embedded phone number (except the required HELP information contact phone number)?")
+  @example(false)
+  embedded_phone?: boolean;
 
-  @doc("Whether subscriber help is available.")
-  subscriber_help?: boolean;
+  @doc("Will this campaign include any age gated content as defined by carrier and CTA guidelines?")
+  @example(true)
+  age_gated_content?: boolean;
+
+  @doc("Is there any intent of this campaign to generate leads?")
+  @example(true)
+  lead_generation?: boolean;
+
+  @doc("If you are your own Campaign Service Provider, what is the approved Campaign ID? (Mandatory for CSPs, otherwise please omit)")
+  @example("1231231")
+  csp_campaign_reference?: string;
+
+  @doc("Optional: Specify a URL to receive webhook notifications when your campaign's state changes.")
+  @example("https://example.com/handle_callback")
+  status_callback_url?: string;
+
+  @doc("I agree to the terms and conditions which do not allow me to use this campaign for affiliate marketing.")
+  @example(true)
+  terms_and_conditions?: boolean;
 }
 
 @doc("Request body for updating a campaign.")
 model UpdateCampaignRequest {
-  @doc("The description of the campaign.")
-  @example("Marketing messages for promotions")
-  description?: string;
-
-  @doc("Sample messages for the campaign.")
-  sample_messages?: string[];
+  @doc("A name for the campaign.")
+  @example("My Campaign")
+  name?: string;
 }
 
 @doc("Request body for assigning a number to a campaign.")
@@ -113,4 +177,40 @@ model AssignNumberRequest {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   phone_number_id: uuid;
+}
+
+@doc("Query parameters for filtering brands.")
+model ListBrandsQuery {
+  @doc("The name given to the brand. Will return all Brands containing this value as a substring.")
+  @query
+  filter_name?: string;
+
+  @doc("The state of the brand in the registration process, such as pending or complete. Will return all Brands with this value.")
+  @query
+  filter_state?: string;
+}
+
+@doc("Query parameters for filtering campaigns.")
+model ListCampaignsQuery {
+  @doc("The name given to the campaign. Will return all Campaigns containing this value as a substring.")
+  @query
+  filter_name?: string;
+
+  @doc("The state of the campaign in the registration process, such as pending or complete. Will return all campaigns with this value.")
+  @query
+  filter_state?: string;
+}
+
+@doc("Query parameters for filtering number assignments.")
+model ListAssignmentsQuery {
+  @doc("The state of the assignments in the registration process, such as pending or complete. Will return all assignments with this value.")
+  @query
+  filter_state?: string;
+}
+
+@doc("Query parameters for filtering orders.")
+model ListOrdersQuery {
+  @doc("The state of the orders in the registration process, such as pending or processed. Will return all orders with this value.")
+  @query
+  filter_state?: string;
 }

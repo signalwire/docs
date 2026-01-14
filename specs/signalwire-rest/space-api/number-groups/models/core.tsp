@@ -29,23 +29,22 @@ model NumberGroupMembershipPathID {
 
 @doc("Number group model.")
 model NumberGroup {
-  @doc("The unique identifier of the number group.")
+  @doc("The unique identifier of the Number Group on SignalWire. This can be used to update or delete the group programmatically.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   id: uuid;
 
-  @doc("The name of the number group.")
-  @example("Sales Team Numbers")
+  @doc("The name given to the number group. Helps to distinguish different groups within your project.")
+  @example("My Number Group")
   name: string;
 
-  @doc("Whether the number group is sticky.")
-  sticky?: boolean;
+  @doc("Whether the number group uses the same 'From' number for outbound requests to a number, or chooses a random one. Defaults to false.")
+  @example(false)
+  sticky_sender?: boolean;
 
-  @doc("Timestamp when the number group was created.")
-  created_at?: utcDateTime;
-
-  @doc("Timestamp when the number group was last updated.")
-  updated_at?: utcDateTime;
+  @doc("The number of phone numbers within the group.")
+  @example(4)
+  phone_number_count?: int32;
 }
 
 @doc("Number group membership model.")

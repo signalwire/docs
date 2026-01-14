@@ -51,6 +51,13 @@ model DomainApplication {
   @example("helpdesk")
   user?: string;
 
+  @doc("Whether the domain application will enforce IP authentication for incoming requests.")
+  @example(true)
+  ip_auth_enabled?: boolean;
+
+  @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
+  ip_auth?: string[];
+
   @doc("Specify how the domain application will handle calls.")
   call_handler?: DomainAppCallHandler;
 
@@ -61,6 +68,15 @@ model DomainApplication {
   @doc("A string representing a URL to send status change messages to.")
   @example("https://myapplication/handle_relay_callbacks")
   call_relay_topic_status_callback_url?: string;
+
+  #deprecated "Use call_relay_application instead."
+  @doc("Deprecated. Use call_relay_application instead.")
+  @example("office")
+  call_relay_context?: string;
+
+  #deprecated "Use call_relay_topic_status_callback_url instead."
+  @doc("Deprecated. Use call_relay_topic_status_callback_url instead.")
+  call_relay_context_status_callback_url?: string;
 
   @doc("A string representing the Relay Application to forward incoming calls to.")
   @example("my-relay-app")
@@ -117,4 +133,14 @@ model DomainApplication {
 
   @doc("A string representing the version of your Call Flow you'd like to use.")
   call_flow_version?: "working_copy" | "current_deployed";
+
+  @doc("A string representing whether connections to this domain application require encryption or if encryption is optional. Valid values are optional and required.")
+  @example("required")
+  encryption?: string;
+
+  @doc("A list of codecs this domain application will support. Currently supported values are: OPUS, G722, PCMU, PCMA, VP8, and H264.")
+  codecs?: string[];
+
+  @doc("A list of encryption ciphers this domain application will support. Currently supported values are: AEAD_AES_256_GCM_8, AES_256_CM_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32, and AES_CM_128_HMAC_SHA1_32.")
+  ciphers?: string[];
 }

@@ -18,12 +18,23 @@ namespace SpaceAPI.PhoneNumbers {
     @operationId("list_phone_numbers")
     @summary("List all Phone Numbers")
     @doc("""
-      Returns a list of your phone numbers.
+      Returns a list of your Phone Numbers. The phone numbers are returned
+      sorted by creation date, with the most recent phone numbers appearing
+      first. The list is filterable by sending in any of the following
+      parameters.
 
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(): PhoneNumberListResponse | StatusCode401 | StatusCode500;
+    list(
+      @query
+      @doc("The name given to the phone number. Will return all Phone Numbers containing this value as a substring.")
+      filter_name?: string,
+
+      @query
+      @doc("The phone number in E164 format. Will return all Phone Numbers containing this value as a substring.")
+      filter_number?: string
+    ): PhoneNumberListResponse | StatusCode401 | StatusCode500;
 
     @operationId("purchase_phone_number")
     @summary("Purchase a Phone Number")
