@@ -144,85 +144,24 @@ model UpdateCallRequest {
 
 @doc("Request body for creating a call stream.")
 model CreateCallStreamRequest {
-  @doc("Unique name for the Stream, per Call. It is used to stop a Stream by name.")
-  @example("my_first_stream")
+  @doc("The URL to stream audio to.")
+  Url: string;
+
+  @doc("The name of the stream.")
   Name?: string;
 
-  @doc("This attribute can be one of inbound_track, outbound_track, both_tracks. Default is `both_tracks`.")
-  @example("both_tracks")
+  @doc("The track to stream. Default is `both_tracks`.")
   Track?: "inbound_track" | "outbound_track" | "both_tracks" = "both_tracks";
 
-  @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
-  @example("GET")
-  StatusCallbackMethod?: "GET" | "POST" = "POST";
-
-  @doc("The URL to request to when stream is available.")
-  @example("null")
+  @doc("The URL to send status callbacks to.")
   StatusCallback?: string;
 
-  @doc("Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is wss. For security reasons ws is NOT supported.")
-  @example("wss://your-application.com/audiostream")
-  Url?: string;
-
-  @doc("Custom parameter name to pass towards the wss server")
-  @example("FirstName")
-  @encodedName("application/x-www-form-urlencoded", "Parameter1.Name")
-  Parameter1Name?: string;
-
-  @doc("Custom parameter value to pass towards the wss server")
-  @example("Jane")
-  @encodedName("application/x-www-form-urlencoded", "Parameter1.Value")
-  Parameter1Value?: string;
-
-  @doc("Custom parameter name to pass towards the wss server")
-  @example("FirstName")
-  @encodedName("application/x-www-form-urlencoded", "Parameter2.Name")
-  Parameter2Name?: string;
-
-  @doc("Custom parameter value to pass towards the wss server")
-  @example("Jane")
-  @encodedName("application/x-www-form-urlencoded", "Parameter2.Value")
-  Parameter2Value?: string;
+  @doc("The HTTP method for status callbacks. Default is `POST`.")
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
 }
 
 @doc("Request body for updating a call stream.")
 model UpdateCallStreamRequest {
-  @doc("The status of the stream.")
-  Status: "in-progress" | "stopped";
-}
-
-@doc("Request body for creating a recording.")
-model CreateRecordingRequest {
-  @doc("The number of channels in the recording. Can be `mono` (both legs of call recorded under one channel into one recording file) or `dual` (each leg of call recorded in separate channels into one recording file).")
-  RecordingChannels?: "mono" | "dual";
-
-  @doc("The URL to request when recording is available.")
-  @example("null")
-  RecordingStatusCallback?: string;
-
-  @doc("The different recording statuses. Possible values are `completed`, `in-progress`, and `absent`. To specify multiple events, separate with a space. Defaults to `completed`.")
-  @example("completed")
-  RecordingStatusCallbackEvent?: "completed" | "in-progress" | "absent";
-
-  @doc("Whether the request to `RecordingStatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
-  @example("GET")
-  RecordingStatusCallbackMethod?: "GET" | "POST" = "POST";
-
-  @doc("Specifies whether to record the `inbound` audio to SignalWire from the called party or the `outbound` audio from SignalWire to the called party or `both` the inbound and outbound audio. Defaults to `both`.")
-  @example("inbound")
-  RecordingTrack?: "inbound" | "outbound" | "both" = "both";
-
-  @doc("Whether leading and trailing silence is trimmed from a recording. Possible values are `trim-silence` and `do-not-trim`. Default is `trim-silence`.")
-  @example("trim-silence")
-  Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
-}
-
-@doc("Request body for updating a recording.")
-model UpdateRecordingRequest {
-  @doc("The status of the recording.")
-  Status: "paused" | "in-progress" | "stopped";
-
-  @doc("What to do while recording is paused.")
-  @example("silence")
-  PauseBehavior?: "skip" | "silence";
+  @doc("The status to update the stream to.")
+  Status: "stopped";
 }

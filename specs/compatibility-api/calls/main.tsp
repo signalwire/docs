@@ -83,42 +83,73 @@ namespace CompatibilityAPI.Calls {
     delete(...CallsAccountSidPath, ...CallSidPath): StatusCode204 | StatusCode401 | StatusCode404;
   }
 
-  @tag(RECORDINGS_TAG)
-  @friendlyName("Recordings")
+  @tag(CALL_RECORDINGS_TAG)
+  @friendlyName("Call Recordings")
   @route("/{CallSid}/Recordings")
   interface CallRecordings {
-    @operationId("create_recording")
-    @summary("Create a Recording.")
+    @operationId("list_call_recordings")
+    @summary("List Call Recordings")
     @doc("""
-      Create a recording.
+      List all recordings for a call.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    list(...CallsAccountSidPath, ...CallSidPathForRecording): CallRecordingListResponse | StatusCode401;
+
+    @operationId("create_call_recording")
+    @summary("Create a Call Recording")
+    @doc("""
+      Create a recording for a call.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...CallsAccountSidPath, ...CallSidPathForRecording, @body body: CreateRecordingRequest): CallRecordingResponse | StatusCode401 | StatusCode400;
+    create(...CallsAccountSidPath, ...CallSidPathForRecording): CallRecordingResponse | StatusCode401 | StatusCode400;
 
-    @operationId("update_recording")
-    @summary("Update a Recording")
+    @operationId("get_call_recording")
+    @summary("Retrieve a Call Recording")
     @doc("""
-      Pause, resume or stop a Recording. You can control what happens while recording is paused (replace pause with silence or skip it).
+      Retrieve a recording for a call.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @post
     @route("/{Sid}")
-    update(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath, @body body: UpdateRecordingRequest): CallRecordingResponse | StatusCode401 | StatusCode404;
+    read(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath): CallRecordingResponse | StatusCode401 | StatusCode404;
+
+    @operationId("delete_call_recording")
+    @summary("Delete a Call Recording")
+    @doc("""
+      Delete a recording for a call.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @delete
+    @route("/{Sid}")
+    delete(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath): StatusCode204 | StatusCode401 | StatusCode404;
   }
 
   @tag(CALL_STREAMS_TAG)
-  @friendlyName("Streams")
+  @friendlyName("Call Streams")
   @route("/{CallSid}/Streams")
   interface CallStreams {
-    @operationId("create_stream")
-    @summary("Create a Stream.")
+    @operationId("list_call_streams")
+    @summary("List Call Streams")
     @doc("""
-      Create a stream.
+      List all streams for a call.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    list(...CallsAccountSidPath, ...CallSidPathForRecording): CallStreamListResponse | StatusCode401;
+
+    @operationId("create_call_stream")
+    @summary("Create a Call Stream")
+    @doc("""
+      Create a stream for a call.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
@@ -126,16 +157,27 @@ namespace CompatibilityAPI.Calls {
     @post
     create(...CallsAccountSidPath, ...CallSidPathForRecording, @body body: CreateCallStreamRequest): CallStreamResponse | StatusCode401 | StatusCode400;
 
-    @operationId("update_stream")
-    @summary("Stop a Stream")
+    @operationId("get_call_stream")
+    @summary("Retrieve a Call Stream")
     @doc("""
-      Stop a Stream.
+      Retrieve a stream for a call.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @post
     @route("/{Sid}")
-    update(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath, @body body: UpdateCallStreamRequest): CallStreamResponse | StatusCode401 | StatusCode404;
+    read(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath): CallStreamResponse | StatusCode401 | StatusCode404;
+
+    @operationId("delete_call_stream")
+    @summary("Delete a Call Stream")
+    @doc("""
+      Delete a stream for a call.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @delete
+    @route("/{Sid}")
+    delete(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath): StatusCode204 | StatusCode401 | StatusCode404;
   }
 }
