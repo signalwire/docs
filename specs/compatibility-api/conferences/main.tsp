@@ -113,48 +113,27 @@ namespace CompatibilityAPI.Conferences {
   @friendlyName("Conference Streams")
   @route("/{ConferenceSid}/Streams")
   interface ConferenceStreams {
-    @operationId("list_conference_streams")
-    @summary("List Conference Streams")
-    @doc("""
-      List all streams for a conference.
-
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
-      """)
-    list(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant): ConferenceStreamListResponse | StatusCode401;
-
     @operationId("create_conference_stream")
-    @summary("Create a Conference Stream")
+    @summary("Create a Conference Stream.")
     @doc("""
-      Create a stream for a conference.
+      Create a stream for an existing conference.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, @body body: CreateConferenceStreamRequest): ConferenceStreamResponse | StatusCode401 | StatusCode400;
+    create(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, @body body: CreateConferenceStreamRequest): ConferenceStreamResponse | StatusCode401 | StatusCode400 | StatusCode422;
 
-    @operationId("get_conference_stream")
-    @summary("Retrieve a Conference Stream")
+    @operationId("update_conference_stream")
+    @summary("Update Conference Stream")
     @doc("""
-      Retrieve a stream for a conference.
+      Update an existing conference stream. Commonly used to stop/start streams or modify stream properties.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
+    @post
     @route("/{Sid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ConferenceSidPath): ConferenceStreamResponse | StatusCode401 | StatusCode404;
-
-    @operationId("delete_conference_stream")
-    @summary("Delete a Conference Stream")
-    @doc("""
-      Delete a stream for a conference.
-
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
-      """)
-    @delete
-    @route("/{Sid}")
-    delete(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ConferenceSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    update(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ConferenceSidPath, @body body: UpdateConferenceStreamRequest): ConferenceStreamResponse | StatusCode401 | StatusCode404;
   }
 }
