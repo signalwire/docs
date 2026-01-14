@@ -136,7 +136,7 @@ model DomainApplication {
 
   @doc("A string representing whether connections to this domain application require encryption or if encryption is optional. Valid values are optional and required.")
   @example("required")
-  encryption?: string;
+  encryption?: "optional" | "required";
 
   @doc("A list of codecs this domain application will support. Currently supported values are: OPUS, G722, PCMU, PCMA, VP8, and H264.")
   codecs?: string[];

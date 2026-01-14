@@ -43,7 +43,7 @@ model VerifiedCallerId {
 
   @doc("String representing the verification status for the caller ID. Current values are Verified and Awaiting Verification.")
   @example("Awaiting Verification")
-  status?: string;
+  status?: "Verified" | "Awaiting Verification";
 }
 
 @doc("Verification request model.")

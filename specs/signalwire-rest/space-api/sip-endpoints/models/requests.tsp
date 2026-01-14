@@ -39,21 +39,21 @@ model CreateSipEndpointRequest {
 
   @doc("A string representing the HTTP method to use with call_request_url. Valid values are GET and POST.")
   @example("POST")
-  call_request_method?: string;
+  call_request_method?: "GET" | "POST";
 
   @doc("A string representing the LaML URL to access when the call to call_request_url fails. This is only used (and required) when call_handler is set to laml_webhooks.")
   call_fallback_url?: string;
 
   @doc("A string representing the HTTP method to use with call_fallback_url. Valid values are GET and POST.")
   @example("POST")
-  call_fallback_method?: string;
+  call_fallback_method?: "GET" | "POST";
 
   @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to laml_webhooks.")
   call_status_callback_url?: string;
 
   @doc("A string representing the HTTP method to use with call_status_callback_url. Valid values are GET and POST.")
   @example("POST")
-  call_status_callback_method?: string;
+  call_status_callback_method?: "GET" | "POST";
 
   @doc("A string representing the ID of the LaML application to forward incoming calls to. This is only used (and required) when call_handler is set to laml_application.")
   call_laml_application_id?: string;
@@ -128,21 +128,21 @@ model UpdateSipEndpointRequest {
 
   @doc("A string representing the HTTP method to use with call_request_url. Valid values are GET and POST.")
   @example("POST")
-  call_request_method?: string;
+  call_request_method?: "GET" | "POST";
 
   @doc("A string representing the LaML URL to access when the call to call_request_url fails. This is only used (and required) when call_handler is set to laml_webhooks.")
   call_fallback_url?: string;
 
   @doc("A string representing the HTTP method to use with call_fallback_url. Valid values are GET and POST.")
   @example("POST")
-  call_fallback_method?: string;
+  call_fallback_method?: "GET" | "POST";
 
   @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to laml_webhooks.")
   call_status_callback_url?: string;
 
   @doc("A string representing the HTTP method to use with call_status_callback_url. Valid values are GET and POST.")
   @example("POST")
-  call_status_callback_method?: string;
+  call_status_callback_method?: "GET" | "POST";
 
   @doc("A string representing the ID of the LaML application to forward incoming calls to. This is only used (and required) when call_handler is set to laml_application.")
   call_laml_application_id?: string;

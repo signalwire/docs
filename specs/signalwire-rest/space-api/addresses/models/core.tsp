@@ -58,7 +58,7 @@ model Address {
 
   @doc("If the address is divided into multiple sub-addresses, this identifies how the address is divided.")
   @example("Apartment")
-  address_type?: string;
+  address_type?: AddressType;
 
   @doc("If the address is divided into multiple sub-addresses, this identifies the particular sub-address.")
   @example("42")

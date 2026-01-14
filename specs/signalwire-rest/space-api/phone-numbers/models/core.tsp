@@ -3,6 +3,56 @@ import "../../../types";
 using TypeSpec.Http;
 using Types;
 
+@doc("HTTP method type.")
+enum HttpMethod {
+  GET: "GET",
+  POST: "POST",
+}
+
+@doc("Call receive mode.")
+enum CallReceiveMode {
+  voice: "voice",
+  fax: "fax",
+}
+
+@doc("Phone number type.")
+enum PhoneNumberType {
+  tollfree: "toll-free",
+  longcode: "longcode",
+}
+
+@doc("Phone number capability.")
+enum PhoneNumberCapability {
+  voice: "voice",
+  sms: "sms",
+  mms: "mms",
+  fax: "fax",
+}
+
+@doc("Call handler type for phone numbers.")
+enum PhoneNumberCallHandler {
+  relay_context: "relay_context",
+  relay_topic: "relay_topic",
+  relay_script: "relay_script",
+  relay_application: "relay_application",
+  relay_connector: "relay_connector",
+  relay_sip_endpoint: "relay_sip_endpoint",
+  relay_verto_endpoint: "relay_verto_endpoint",
+  laml_webhooks: "laml_webhooks",
+  laml_application: "laml_application",
+  dialogflow: "dialogflow",
+  video_room: "video_room",
+}
+
+@doc("Message handler type for phone numbers.")
+enum PhoneNumberMessageHandler {
+  relay_context: "relay_context",
+  relay_topic: "relay_topic",
+  relay_application: "relay_application",
+  laml_webhooks: "laml_webhooks",
+  laml_application: "laml_application",
+}
+
 model PhoneNumberPathID {
   @doc("Unique ID of the phone number.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
@@ -34,43 +84,43 @@ model PhoneNumber {
   name?: string;
 
   @doc("A list of communication methods this phone number supports. Possible values are: voice, fax, sms, mms.")
-  capabilities?: string[];
+  capabilities?: PhoneNumberCapability[];
 
   @doc("The type of number this is defined as. Possible values are: toll-free or longcode.")
   @example("toll-free")
-  number_type?: string;
+  number_type?: PhoneNumberType;
 
   @doc("The E911 address ID associated with this phone number.")
   e911_address_id?: string;
 
   @doc("What type of handler you want to run on inbound calls.")
   @example("relay_context")
-  call_handler?: string;
+  call_handler?: PhoneNumberCallHandler;
 
   @doc("How do you want to receive the incoming call. Possible values are: voice or fax. Default is voice.")
   @example("voice")
-  call_receive_mode?: string;
+  call_receive_mode?: CallReceiveMode = CallReceiveMode.voice;
 
   @doc("The URL to make a request to when using the laml_webhooks call handler.")
   call_request_url?: string;
 
   @doc("The HTTP method to use when making a request to the call_request_url. Possible values are: POST or GET. Default is POST.")
   @example("POST")
-  call_request_method?: string;
+  call_request_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The fallback URL to make a request to when using the laml_webhooks call handler and the call_request_url fails.")
   call_fallback_url?: string;
 
   @doc("The HTTP method to use when making a request to the call_fallback_url. Possible values are: POST or GET. Default is POST.")
   @example("POST")
-  call_fallback_method?: string;
+  call_fallback_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The URL to make status callbacks to when using the laml_webhooks call handler.")
   call_status_callback_url?: string;
 
   @doc("The HTTP method to use when making a request to the call_status_callback_url. Possible values are: POST or GET. Default is POST.")
   @example("POST")
-  call_status_callback_method?: string;
+  call_status_callback_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The ID of the LaML Application to use when using the laml_application call handler.")
   call_laml_application_id?: string;
@@ -118,21 +168,21 @@ model PhoneNumber {
 
   @doc("What type of handler you want to run on inbound messages. Possible values are: relay_context, relay_topic, relay_application, laml_webhooks, laml_application.")
   @example("relay_application")
-  message_handler?: string;
+  message_handler?: PhoneNumberMessageHandler;
 
   @doc("The URL to make a request to when using the laml_webhooks message handler.")
   message_request_url?: string;
 
   @doc("The HTTP method to use when making a request to the message_request_url. Possible values are: POST or GET. Default is POST.")
   @example("POST")
-  message_request_method?: string;
+  message_request_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The fallback URL to make a request to when using the laml_webhooks message handler and the message_request_url fails.")
   message_fallback_url?: string;
 
   @doc("The HTTP method to use when making a request to the message_fallback_url. Possible values are: POST or GET. Default is POST.")
   @example("POST")
-  message_fallback_method?: string;
+  message_fallback_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The ID of the LaML Application to use when using the laml_application message handler.")
   message_laml_application_id?: string;
