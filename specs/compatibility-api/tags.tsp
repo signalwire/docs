@@ -58,6 +58,11 @@ const INCOMING_PHONE_NUMBERS_TAG_METADATA = #{
   description: "Manage phone numbers in your project.",
 };
 
+const IMPORTED_PHONE_NUMBERS_TAG = "Imported Phone Numbers";
+const IMPORTED_PHONE_NUMBERS_TAG_METADATA = #{
+  description: "Import phone numbers hosted elsewhere into your SignalWire Space.",
+};
+
 const LAML_BINS_TAG = "cXML Bins";
 const LAML_BINS_TAG_METADATA = #{
   description: "Manage cXML bins for storing XML instructions.",

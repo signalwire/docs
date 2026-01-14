@@ -47,7 +47,7 @@ namespace CompatibilityAPI.Calls {
     @post
     create(...CallsAccountSidPath, @body body: CreateCallRequest): CallResponse | StatusCode401 | StatusCode400;
 
-    @operationId("get_call")
+    @operationId("retrieve_a_call")
     @summary("Retrieve a Call")
     @doc("""
       Retrieve a call.
@@ -58,7 +58,7 @@ namespace CompatibilityAPI.Calls {
     @route("/{Sid}")
     read(...CallsAccountSidPath, ...CallSidPath): CallResponse | StatusCode401 | StatusCode404;
 
-    @operationId("update_call")
+    @operationId("update_a_call")
     @summary("Update a Call")
     @doc("""
       Update a call.
@@ -69,6 +69,18 @@ namespace CompatibilityAPI.Calls {
     @post
     @route("/{Sid}")
     update(...CallsAccountSidPath, ...CallSidPath, @body body: UpdateCallRequest): CallResponse | StatusCode401 | StatusCode404;
+
+    @operationId("delete_a_call")
+    @summary("Delete a Call")
+    @doc("""
+      Delete a call record from your account. If the delete is successful, a 204 response, with no body, will be returned.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @delete
+    @route("/{Sid}")
+    delete(...CallsAccountSidPath, ...CallSidPath): StatusCode204 | StatusCode401 | StatusCode404;
   }
 
   @tag(CALL_RECORDINGS_TAG)

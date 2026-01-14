@@ -4,7 +4,7 @@ using TypeSpec.Http;
 model UpdateConferenceRequest {
   @doc("Whether the request to `AnnounceUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  AnnounceMethod?: "GET" | "POST";
+  AnnounceMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to send conference announcements to.")
   AnnounceUrl?: string;
@@ -29,7 +29,7 @@ model UpdateConferenceParticipantRequest {
 
   @doc("Whether the request to `HoldUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  HoldMethod?: "GET" | "POST";
+  HoldMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to send hold music to that will be played when participant is on hold.")
   HoldUrl?: string;
@@ -46,12 +46,12 @@ model CreateConferenceStreamRequest {
   @doc("The name of the stream.")
   Name?: string;
 
-  @doc("The track to stream.")
-  Track?: "inbound_track" | "outbound_track" | "both_tracks";
+  @doc("The track to stream. Default is `both_tracks`.")
+  Track?: "inbound_track" | "outbound_track" | "both_tracks" = "both_tracks";
 
   @doc("The URL to send status callbacks to.")
   StatusCallback?: string;
 
-  @doc("The HTTP method for status callbacks.")
-  StatusCallbackMethod?: "GET" | "POST";
+  @doc("The HTTP method for status callbacks. Default is `POST`.")
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
 }

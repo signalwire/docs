@@ -81,7 +81,7 @@ namespace CompatibilityAPI.Messages {
   @friendlyName("Message Media")
   @route("/{MessageSid}/Media")
   interface MessageMedia {
-    @operationId("list_message_media")
+    @operationId("list_media")
     @summary("List Message Media")
     @doc("""
       List all media for a message.
@@ -91,7 +91,7 @@ namespace CompatibilityAPI.Messages {
       """)
     list(...MessagesAccountSidPath, ...MessageSidPathForMedia): MessageMediaListResponse | StatusCode401;
 
-    @operationId("get_message_media")
+    @operationId("retrieve_media")
     @summary("Retrieve Message Media")
     @doc("""
       Retrieve media for a message.

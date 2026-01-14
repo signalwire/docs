@@ -26,14 +26,14 @@ model CreateIncomingPhoneNumberRequest {
 
   @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  SmsFallbackMethod?: "GET" | "POST";
+  SmsFallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request if errors occur when fetching SmsUrl.")
   SmsFallbackUrl?: string;
 
   @doc("Whether the request to SmsUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  SmsMethod?: "GET" | "POST";
+  SmsMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request when an incoming SMS is received.")
   SmsUrl?: string;
@@ -44,7 +44,7 @@ model CreateIncomingPhoneNumberRequest {
 
   @doc("Whether the request to StatusCallback is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  StatusCallbackMethod?: "GET" | "POST";
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The unique identifier for the Trunk associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472tr")
@@ -58,7 +58,7 @@ model CreateIncomingPhoneNumberRequest {
 
   @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  VoiceFallbackMethod?: "GET" | "POST";
+  VoiceFallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request if errors occur when fetching `Url`.")
   @example("example.com")
@@ -66,15 +66,32 @@ model CreateIncomingPhoneNumberRequest {
 
   @doc("Whether the request to Url is a `GET` or a `POST`. Default is `POST`.")
   @example("GET")
-  VoiceMethod?: "GET" | "POST";
+  VoiceMethod?: "GET" | "POST" = "POST";
 
   @doc("Whether this number can receive calls or fax. Default is voice.")
   @example("voice")
-  VoiceReceiveMode?: "voice" | "fax";
+  VoiceReceiveMode?: "voice" | "fax" = "voice";
 
   @doc("The URL to request when an incoming call is received.")
   @example("http://your-application.com/docs/voice.xml")
   VoiceUrl?: string;
+}
+
+@doc("Request body for importing a phone number.")
+model ImportPhoneNumberRequest {
+  @doc("The phone number to import in E.164 format. Number must be between 5 and 30 characters with no special characters besides a leading `+`.")
+  @example("+49152234333323")
+  @minLength(5)
+  @maxLength(30)
+  number: string;
+
+  @doc("The type of phone number being imported.")
+  @example("longcode")
+  number_type: "longcode" | "tollfree";
+
+  @doc("The capabilities to enable for this phone number. Can include any combination of SMS, Voice, Fax, and MMS. If not provided, defaults to all capabilities (SMS, Voice, Fax, and MMS). Cannot be an empty array.")
+  @example(#["sms", "fax"])
+  capabilities?: ("sms" | "voice" | "fax" | "mms")[];
 }
 
 @doc("Request body for updating an incoming phone number.")

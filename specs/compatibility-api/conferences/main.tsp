@@ -73,7 +73,7 @@ namespace CompatibilityAPI.Conferences {
       @query @doc("Whether or not a participant is on hold.") Hold?: boolean,
     ): ConferenceParticipantListResponse | StatusCode401;
 
-    @operationId("get_participant")
+    @operationId("retrieve_participant")
     @summary("Retrieve a Participant")
     @doc("""
       Retrieve a single participant.

@@ -14,7 +14,7 @@ namespace CompatibilityAPI.Faxes {
   @tag(FAXES_TAG)
   @friendlyName("Faxes")
   interface Faxes {
-    @operationId("list_faxes")
+    @operationId("list_all_faxes")
     @summary("List all Faxes")
     @doc("""
       List all faxes.
@@ -81,7 +81,7 @@ namespace CompatibilityAPI.Faxes {
   @friendlyName("Fax Media")
   @route("/{FaxSid}/Media")
   interface FaxMedia {
-    @operationId("list_fax_media")
+    @operationId("list_all_fax_media")
     @summary("List Fax Media")
     @doc("""
       List all media for a fax.
@@ -91,7 +91,7 @@ namespace CompatibilityAPI.Faxes {
       """)
     list(...FaxesAccountSidPath, ...FaxSidPathForMedia): FaxMediaListResponse | StatusCode401;
 
-    @operationId("get_fax_media")
+    @operationId("retrieve_medias")
     @summary("Retrieve Fax Media")
     @doc("""
       Retrieve media for a fax.
@@ -101,5 +101,17 @@ namespace CompatibilityAPI.Faxes {
       """)
     @route("/{Sid}")
     read(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): FaxMediaResponse | StatusCode401 | StatusCode404;
+
+    @operationId("delete_fax_media")
+    @summary("Delete Fax Media")
+    @doc("""
+      Delete media for a fax.
+
+      #### Permissions
+      The API token must include the following scopes: _Fax_.
+      """)
+    @delete
+    @route("/{Sid}")
+    delete(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): StatusCode204 | StatusCode401 | StatusCode404;
   }
 }

@@ -24,7 +24,7 @@ model CreateCallRequest {
 
   @doc("Whether the request to `FallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("GET")
-  FallbackMethod?: "GET" | "POST";
+  FallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL SignalWire will request if errors occur when fetching the `Url`.")
   @example("https://your-api-endpoint.com/path")
@@ -34,7 +34,7 @@ model CreateCallRequest {
   MachineDetection?: "Enable" | "DetectMessageEnd" | "none";
 
   @doc("Whether or not to execute machine detection asynchronously.")
-  AsyncAmd?: boolean;
+  AsyncAmd?: boolean = false;
 
   @doc("The URL to request when the machine detection is completed.")
   @example("https://your-api-endpoint.com/path")
@@ -47,27 +47,27 @@ model CreateCallRequest {
   @doc("Whether or not to report partial (interim) results to the callback url.")
   AsyncAmdPartialResults?: boolean;
 
-  @doc("Number of milliseconds to wait for initial voice before giving up.")
-  MachineDetectionSilenceTimeout?: int32;
+  @doc("Number of milliseconds to wait for initial voice before giving up. Default is `5000` milliseconds.")
+  MachineDetectionSilenceTimeout?: int32 = 5000;
 
-  @doc("How many milliseconds of voice to decide it is a machine.")
-  MachineDetectionSpeechThreshold?: int32;
+  @doc("How many milliseconds of voice to decide it is a machine. Must be at least `1000` to a maximum of `6000`. Default is `1800` milliseconds.")
+  MachineDetectionSpeechThreshold?: int32 = 1800;
 
-  @doc("Number of milliseconds to wait for voice to finish.")
-  MachineDetectionSpeechEndThreshold?: int32;
+  @doc("Number of milliseconds to wait for voice to finish. Must be at least `500` to a maximum of `5000`. Default is `1200` milliseconds.")
+  MachineDetectionSpeechEndThreshold?: int32 = 1200;
 
-  @doc("The time SignalWire will wait for machine detection before timing out.")
-  MachineDetectionTimeout?: int32;
+  @doc("The time SignalWire will wait for machine detection before timing out. Default is `30` seconds.")
+  MachineDetectionTimeout?: int32 = 30;
 
-  @doc("How many words to count to decide it is a machine.")
-  MachineWordsThreshold?: int32;
+  @doc("How many words to count to decide it is a machine. Must be at least one to a maximum of `100`. Default is `6`.")
+  MachineWordsThreshold?: int32 = 6;
 
   @doc("The maximum price in USD acceptable for the call to be created.")
   @example("0.0075")
   MaxPricePerMinute?: float32;
 
   @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.")
-  Method?: "GET" | "POST";
+  Method?: "GET" | "POST" = "POST";
 
   @doc("Whether or not to record a call.")
   Record?: boolean;
@@ -79,13 +79,13 @@ model CreateCallRequest {
   @example("https://your-api-endpoint.com/path")
   RecordingStatusCallback?: string;
 
-  @doc("Whether the request to `RecordingStatusCallback` URL is a `GET` or a `POST`.")
+  @doc("Whether the request to `RecordingStatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  RecordingStatusCallbackMethod?: "GET" | "POST";
+  RecordingStatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("Specifies whether to record the `inbound`, `outbound`, or `both` audio.")
+  @doc("Specifies whether to record the `inbound`, `outbound`, or `both` audio. Defaults to `both`.")
   @example("both")
-  RecordingTrack?: "inbound" | "outbound" | "both";
+  RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
   @doc("The username to authenticate the caller when making an outbound SIP call.")
   SipAuthUsername?: string;
@@ -101,20 +101,20 @@ model CreateCallRequest {
   @example("https://your-api-endpoint.com/path")
   StatusCallback?: string;
 
-  @doc("The status events that trigger a SignalWire webhook.")
+  @doc("The status events that trigger a SignalWire webhook. Defaults to `completed`.")
   StatusCallbackEvent?: string[];
 
-  @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`.")
+  @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
   @example("GET")
-  StatusCallbackMethod?: "GET" | "POST";
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("The time SignalWire will wait before assuming the call has no answer.")
+  @doc("The time SignalWire will wait before assuming the call has no answer. Max wait time is `600 seconds`. Default is `60` seconds.")
   @example("60")
-  Timeout?: string;
+  Timeout?: string = "60";
 
-  @doc("Whether leading and trailing silence is trimmed from a recording.")
+  @doc("Whether leading and trailing silence is trimmed from a recording. Possible values are `trim-silence` or `do-not-trim`. Default is `trim-silence`.")
   @example("trim-silence")
-  Trim?: "trim-silence" | "do-not-trim";
+  Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
 }
 
 @doc("Request body for updating a call.")
@@ -150,14 +150,14 @@ model CreateCallStreamRequest {
   @doc("The name of the stream.")
   Name?: string;
 
-  @doc("The track to stream.")
-  Track?: "inbound_track" | "outbound_track" | "both_tracks";
+  @doc("The track to stream. Default is `both_tracks`.")
+  Track?: "inbound_track" | "outbound_track" | "both_tracks" = "both_tracks";
 
   @doc("The URL to send status callbacks to.")
   StatusCallback?: string;
 
-  @doc("The HTTP method for status callbacks.")
-  StatusCallbackMethod?: "GET" | "POST";
+  @doc("The HTTP method for status callbacks. Default is `POST`.")
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
 }
 
 @doc("Request body for updating a call stream.")

@@ -33,7 +33,7 @@ model CreateMessageRequest {
 
   @doc("The number of seconds a message will allow being queued before canceling. Default value is `14400`.")
   @example(14400)
-  ValidityPeriod?: int32;
+  ValidityPeriod?: int32 = 14400;
 
   @doc("If a number group was used when sending an outbound message, the number group's ID will be present.")
   MessagingServiceSid?: string;
