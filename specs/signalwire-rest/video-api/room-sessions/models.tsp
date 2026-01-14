@@ -6,9 +6,11 @@ using TypeSpec.Http;
 @doc("Room session response object.")
 model RoomSessionResponse {
   @doc("Unique ID of the session.")
+  @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
   id?: string;
 
   @doc("Unique ID of the Room if the Session was created from a Room and was not an auto-created Session.")
+  @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
   room_id?: string;
 
   @doc("The named identifier of room session.")
@@ -20,12 +22,15 @@ model RoomSessionResponse {
   display_name?: string;
 
   @doc("Room Session does not accept new Members before this time.")
+  @example(utcDateTime.fromISO("2022-01-01T00:00:00Z"))
   join_from?: utcDateTime;
 
   @doc("Room Session stops accepting new Members at this time.")
+  @example(utcDateTime.fromISO("2022-12-31T23:59:59Z"))
   join_until?: utcDateTime;
 
   @doc("Remove Members from the Room Session at this time.")
+  @example(utcDateTime.fromISO("2022-12-31T23:59:59Z"))
   remove_at?: utcDateTime;
 
   @doc("Remove Members after they are in the Room Session for N seconds.")
@@ -49,9 +54,11 @@ model RoomSessionResponse {
   quality?: string;
 
   @doc("Start time of the session.")
+  @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
   start_time?: utcDateTime;
 
   @doc("End time of the session.")
+  @example(utcDateTime.fromISO("2022-01-01T11:00:00Z"))
   end_time?: utcDateTime;
 
   @doc("How long, in seconds, the Room Session lasted.")
@@ -63,9 +70,11 @@ model RoomSessionResponse {
   status?: string;
 
   @doc("Whether a recording was automatically started when this Room Session began.")
+  @example(true)
   record_on_start?: boolean;
 
   @doc("Whether a video with a preview of the content of the room is to be generated.")
+  @example(true)
   enable_room_previews?: boolean;
 
   @doc("If room previews are enabled and the room session is in progress, this is the URL of the preview video.")
@@ -89,9 +98,11 @@ model ListRoomSessionsResponse {
 @doc("Room recording response object.")
 model RoomRecordingResponse {
   @doc("Unique ID of the Room Recording")
+  @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
   id?: string;
 
   @doc("Unique ID of the Room Session the Room Recording was made in.")
+  @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
   room_session_id?: string;
 
   @doc("Status of the recording.")
@@ -99,9 +110,11 @@ model RoomRecordingResponse {
   status?: string;
 
   @doc("Timestamp of when the Room Recording started.")
+  @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
   started_at?: utcDateTime;
 
   @doc("Timestamp of when the Room Recording stopped.")
+  @example(utcDateTime.fromISO("2022-01-01T11:00:00Z"))
   finished_at?: utcDateTime;
 
   @doc("The length of the Room Recording in seconds.")
@@ -121,9 +134,11 @@ model RoomRecordingResponse {
   uri?: string;
 
   @doc("Timestamp when the recording was created.")
+  @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
   created_at?: utcDateTime;
 
   @doc("Timestamp when the recording was last updated.")
+  @example(utcDateTime.fromISO("2022-01-01T11:00:00Z"))
   updated_at?: utcDateTime;
 }
 
@@ -139,18 +154,23 @@ model ListRoomSessionRecordingsResponse {
 @doc("Room session member response object.")
 model RoomSessionMemberResponse {
   @doc("Unique ID of the Member")
+  @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
   id?: string;
 
   @doc("Display name of the Member")
+  @example("John Smith")
   name?: string;
 
   @doc("Unique ID of the Room Session.")
+  @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
   room_session_id?: string;
 
   @doc("Timestamp of when the Member joined the Room Session")
+  @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
   join_time?: utcDateTime;
 
   @doc("Timestamp of when the Member left the Room Session")
+  @example(utcDateTime.fromISO("2022-01-01T11:00:00Z"))
   leave_time?: utcDateTime;
 
   @doc("How long the Member stayed in the Room Session, in seconds.")

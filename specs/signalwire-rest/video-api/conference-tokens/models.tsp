@@ -6,6 +6,7 @@ using TypeSpec.Http;
 @doc("Conference token response object.")
 model ConferenceTokenResponse {
   @doc("Unique ID of the Conference Token")
+  @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
   id?: string;
 
   @doc("Name of the Conference Token")

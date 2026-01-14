@@ -73,9 +73,11 @@ model ConferenceBaseProperties {
   description?: string;
 
   @doc("Conference does not accept new participants before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")
+  @example(utcDateTime.fromISO("2022-01-01T00:00:00Z"))
   join_from?: utcDateTime;
 
   @doc("Conference stops accepting new participants at this time, but keeps running until all participants leave. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")
+  @example(utcDateTime.fromISO("2022-12-31T23:59:59Z"))
   join_until?: utcDateTime;
 
   @doc("The conference's resolution. Allowed values are `720p` or `1080p`. Defaults to `720p`.")
@@ -91,12 +93,15 @@ model ConferenceBaseProperties {
   size?: string;
 
   @doc("Specifies whether to start recording a Conference Session when one is started for this Conference")
+  @example(true)
   record_on_start?: boolean;
 
   @doc("Whether a video with a preview of the content of the conference is to be generated.")
+  @example(true)
   enable_room_previews?: boolean;
 
   @doc("Enables group chat for all participants of the room. Defaults to `true`.")
+  @example(true)
   enable_chat?: boolean;
 
   ...ConferenceThemeColors;
@@ -115,14 +120,17 @@ model UpdateConferenceRequest {
 @doc("Conference response object.")
 model ConferenceResponse {
   @doc("A unique identifier for the video conference")
+  @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
   id?: string;
 
   ...ConferenceBaseProperties;
 
   @doc("Timestamp when the conference was created.")
+  @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
   created_at?: utcDateTime;
 
   @doc("Timestamp when the conference was last updated.")
+  @example(utcDateTime.fromISO("2022-01-01T11:00:00Z"))
   updated_at?: utcDateTime;
 
   @doc("Active session information for the conference.")

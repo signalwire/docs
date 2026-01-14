@@ -39,12 +39,15 @@ model CreateRoomTokenRequest {
   permissions?: string[];
 
   @doc("The user can't join the room before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")
+  @example(utcDateTime.fromISO("2022-01-01T00:00:00Z"))
   join_from?: utcDateTime;
 
   @doc("The user can't join the room after this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")
+  @example(utcDateTime.fromISO("2022-12-31T23:59:59Z"))
   join_until?: utcDateTime;
 
   @doc("Remove user from the room at this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")
+  @example(utcDateTime.fromISO("2022-12-31T23:59:59Z"))
   remove_at?: utcDateTime;
 
   @doc("Remove user after they are in the room for N seconds.")
@@ -104,18 +107,23 @@ model RoomTokenResponse {
 @doc("Room token validation error item.")
 model RoomTokenValidationErrorItem {
   @doc("Error type.")
+  @example("validation_error")
   type?: string;
 
   @doc("Error code.")
+  @example("invalid_parameter")
   code?: string;
 
   @doc("Error message.")
+  @example("room_name must be present")
   message?: string;
 
   @doc("Attribute associated with the error.")
+  @example("room_name")
   attribute?: string;
 
   @doc("URL for more information.")
+  @example("https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter")
   url?: string;
 }
 
