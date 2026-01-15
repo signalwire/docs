@@ -68,6 +68,44 @@ async function parseSpec(specPath) {
 }
 
 /**
+ * Resolve a $ref pointer to its actual value in the spec.
+ * Handles nested refs and circular ref detection.
+ *
+ * @param {object} obj - Object that may contain a $ref
+ * @param {object} spec - Full spec object
+ * @param {Set} visited - Set of visited ref paths for circular detection
+ * @returns {object} Resolved object or original if no ref
+ */
+function resolveRef(obj, spec, visited = new Set()) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (!obj.$ref) return obj;
+
+  const refPath = obj.$ref;
+
+  // Circular ref detection
+  if (visited.has(refPath)) {
+    return { _circular: refPath, ...obj };
+  }
+  visited.add(refPath);
+
+  // Parse the ref path (e.g., '#/components/parameters/AccountSid')
+  const parts = refPath.replace('#/', '').split('/');
+  let resolved = spec;
+
+  for (const part of parts) {
+    resolved = resolved?.[part];
+    if (!resolved) break;
+  }
+
+  if (!resolved) {
+    return obj; // Return original if ref not found
+  }
+
+  // Recursively resolve if the resolved object also has a $ref
+  return resolveRef(resolved, spec, new Set(visited));
+}
+
+/**
  * Extract schema from a content object (handles different content types)
  */
 function extractContentSchema(content) {
@@ -126,15 +164,19 @@ function extractEndpoints(spec) {
         tags: operation.tags || [],
       };
 
-      // Extract parameters (path, query, header)
+      // Extract parameters (path, query, header) - resolve $refs first
       if (operation.parameters && operation.parameters.length > 0) {
-        endpoint.parameters = operation.parameters.map((param) => ({
-          name: param.name,
-          in: param.in,
-          required: param.required || false,
-          description: param.description || null,
-          schema: param.schema || null,
-        }));
+        endpoint.parameters = operation.parameters.map((param) => {
+          // Resolve parameter ref if present
+          const resolved = resolveRef(param, spec);
+          return {
+            name: resolved.name,
+            in: resolved.in,
+            required: resolved.required || false,
+            description: resolved.description || null,
+            schema: resolved.schema || null,
+          };
+        });
       }
 
       // Extract request body
