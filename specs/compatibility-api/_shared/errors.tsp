@@ -70,10 +70,17 @@ model StatusCode422 {
   @body error: ErrorResponse;
 }
 
-@doc("422 Unprocessable Entity response with errors array format.")
-model StatusCode422Array {
+@doc("Error response with errors array of strings format.")
+model ErrorStringArrayResponse {
+  @doc("List of validation error messages.")
+  @example(#["Validation error message"])
+  errors: string[];
+}
+
+@doc("422 Unprocessable Entity response with errors array of strings format.")
+model StatusCode422StringArray {
   @statusCode statusCode: 422;
-  @body body: ErrorArrayResponse;
+  @body body: ErrorStringArrayResponse;
 }
 
 @doc("204 No Content response.")

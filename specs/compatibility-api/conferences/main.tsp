@@ -138,7 +138,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPathForParticipant,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateConferenceStreamRequest,
-    ): ConferenceStreamResponse | StatusCode401 | StatusCode400 | StatusCode422Array;
+    ): ConferenceStreamResponse | StatusCode401 | StatusCode400 | StatusCode422StringArray;
 
     @operationId("update_conference_stream")
     @summary("Update Conference Stream")
@@ -155,7 +155,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPathForParticipant,
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: UpdateConferenceStreamRequest,
-    ): ConferenceStreamResponse | StatusCode401 | StatusCode404 | StatusCode422Array;
+      @body body: UpdateConferenceStreamRequest,
+    ): ConferenceStreamResponse | StatusCode401 | StatusCode404 | StatusCode422StringArray;
   }
 }

@@ -127,7 +127,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: UpdateCallRecordingRequest,
+      @body body: UpdateCallRecordingRequest,
     ): CallRecordingResponse | StatusCode401 | StatusCode404;
   }
 
@@ -166,7 +166,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: UpdateCallStreamRequest,
+      @body body: UpdateCallStreamRequest,
     ): CallStreamResponse | StatusCode401 | StatusCode404;
   }
 }

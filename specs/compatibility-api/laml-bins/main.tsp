@@ -39,7 +39,7 @@ namespace CompatibilityAPI.LamlBins {
     create(
       ...LamlBinsAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: CreateLamlBinRequest,
+      @body body: CreateLamlBinRequest,
     ): LamlBinResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_cxml_application")

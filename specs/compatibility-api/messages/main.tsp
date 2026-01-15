@@ -43,7 +43,7 @@ namespace CompatibilityAPI.Messages {
     create(
       ...MessagesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: CreateMessageRequest,
+      @body body: CreateMessageRequest,
     ): MessageResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_message")
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.Messages {
       ...MessagesAccountSidPath,
       ...MessageSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: UpdateMessageRequest,
+      @body body: UpdateMessageRequest,
     ): MessageResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_message")
