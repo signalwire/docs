@@ -32,6 +32,6 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
     ): {
       @statusCode statusCode: 201;
       @body body: IncomingPhoneNumber;
-    } | StatusCode401 | StatusCode400 | StatusCode422;
+    } | StatusCode401 | StatusCode400 | StatusCode422ImportedPhoneNumber;
   }
 }

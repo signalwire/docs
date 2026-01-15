@@ -112,3 +112,28 @@ model StatusCode422Token {
   @statusCode statusCode: 422;
   @body body: TokenValidationError;
 }
+
+@doc("Error response model with string code for ImportedPhoneNumbers.")
+model ImportedPhoneNumberError {
+  @doc("The error code.")
+  @example("10000")
+  code?: string;
+
+  @doc("A human-readable error message.")
+  @example("Number type can't be blank")
+  message?: string;
+
+  @doc("A URL to more information about the error.")
+  @example("https://developer.signalwire.com/rest/compatibility-api/overview/error-codes")
+  more_info?: string;
+
+  @doc("The HTTP status code.")
+  @example(400)
+  status?: int32;
+}
+
+@doc("422 Unprocessable Entity response for ImportedPhoneNumbers.")
+model StatusCode422ImportedPhoneNumber {
+  @statusCode statusCode: 422;
+  @body body: ImportedPhoneNumberError;
+}
