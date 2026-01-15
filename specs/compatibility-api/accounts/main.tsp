@@ -27,7 +27,7 @@ namespace CompatibilityAPI.Accounts {
       @doc("A named unique identifier for the resource. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.")
       @example("My Friendly Name")
       FriendlyName?: string,
-    ): AccountListResponse | StatusCode401;
+    ): AccountListResponse | CompatibilityStatusCode401;
 
     @operationId("create_subprojects")
     @summary("Create Subprojects")
@@ -41,7 +41,7 @@ namespace CompatibilityAPI.Accounts {
     create(
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateSubprojectRequest,
-    ): AccountResponse | StatusCode401 | StatusCode400;
+    ): AccountResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("get_account")
     @summary("Find an Account by ID")
@@ -51,7 +51,7 @@ namespace CompatibilityAPI.Accounts {
       #### Permissions
       The API token must include the following scopes: _Management_.
       """)
-    read(...AccountPathSid): AccountResponse | StatusCode401 | StatusCode404;
+    read(...AccountPathSid): AccountResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_account")
     @summary("Update an Account")
@@ -67,6 +67,6 @@ namespace CompatibilityAPI.Accounts {
       ...AccountPathSid,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateAccountRequest,
-    ): AccountResponse | StatusCode401 | StatusCode404;
+    ): AccountResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

@@ -1,7 +1,7 @@
 using TypeSpec.Http;
 
 @doc("Error response model.")
-model ErrorResponse {
+model CompatibilityErrorResponse {
   @doc("Error code.")
   @example(20003)
   code: int32;
@@ -20,7 +20,7 @@ model ErrorResponse {
 }
 
 @doc("Error item in the errors array format.")
-model ErrorArrayItem {
+model CompatibilityErrorArrayItem {
   @doc("The numeric string identifying the API error code")
   @example("30010")
   code?: string;
@@ -35,61 +35,61 @@ model ErrorArrayItem {
 }
 
 @doc("Error response with errors array format.")
-model ErrorArrayResponse {
+model CompatibilityErrorArrayResponse {
   @doc("A list of errors")
-  errors?: ErrorArrayItem[];
+  errors?: CompatibilityErrorArrayItem[];
 }
 
 @doc("The request was invalid or cannot be processed. Check the error details for more information.")
-model StatusCode400 {
+model CompatibilityStatusCode400 {
   @statusCode statusCode: 400;
-  @body error: ErrorResponse;
+  @body error: CompatibilityErrorResponse;
 }
 
 @doc("The request was invalid. Review the errors array for specific issues with your request.")
-model StatusCode400Array {
+model CompatibilityStatusCode400Array {
   @statusCode statusCode: 400;
-  @body body: ErrorArrayResponse;
+  @body body: CompatibilityErrorArrayResponse;
 }
 
 @doc("Authentication failed. Please verify your credentials and try again.")
-model StatusCode401 {
+model CompatibilityStatusCode401 {
   @statusCode statusCode: 401;
-  @body error: ErrorResponse;
+  @body error: CompatibilityErrorResponse;
 }
 
 @doc("The requested resource was not found. Please verify the resource identifier.")
-model StatusCode404 {
+model CompatibilityStatusCode404 {
   @statusCode statusCode: 404;
-  @body error: ErrorResponse;
+  @body error: CompatibilityErrorResponse;
 }
 
 @doc("The request could not be processed due to validation errors. Check the error details for more information.")
-model StatusCode422 {
+model CompatibilityStatusCode422 {
   @statusCode statusCode: 422;
-  @body error: ErrorResponse;
+  @body error: CompatibilityErrorResponse;
 }
 
 @doc("Error response with errors array of strings format.")
-model ErrorStringArrayResponse {
+model CompatibilityErrorStringArrayResponse {
   @doc("List of validation error messages.")
   @example(#["Validation error message"])
   errors: string[];
 }
 
 @doc("The request could not be processed due to validation errors. Review the errors array for specific issues.")
-model StatusCode422StringArray {
+model CompatibilityStatusCode422StringArray {
   @statusCode statusCode: 422;
-  @body body: ErrorStringArrayResponse;
+  @body body: CompatibilityErrorStringArrayResponse;
 }
 
 @doc("204 No Content response.")
-model StatusCode204 {
+model CompatibilityStatusCode204 {
   @statusCode statusCode: 204;
 }
 
 @doc("Token validation error response model.")
-model TokenValidationError {
+model CompatibilityTokenValidationError {
   @doc("Error type.")
   type?: string;
 
@@ -108,13 +108,13 @@ model TokenValidationError {
 }
 
 @doc("The token request could not be processed due to validation errors. Check the error details for the specific issue.")
-model StatusCode422Token {
+model CompatibilityStatusCode422Token {
   @statusCode statusCode: 422;
-  @body body: TokenValidationError;
+  @body body: CompatibilityTokenValidationError;
 }
 
 @doc("Error response model with string code for ImportedPhoneNumbers.")
-model ImportedPhoneNumberError {
+model CompatibilityImportedPhoneNumberError {
   @doc("The error code.")
   @example("10000")
   code?: string;
@@ -133,7 +133,7 @@ model ImportedPhoneNumberError {
 }
 
 @doc("The phone number import request could not be processed due to validation errors. Check the error details for more information.")
-model StatusCode422ImportedPhoneNumber {
+model CompatibilityStatusCode422ImportedPhoneNumber {
   @statusCode statusCode: 422;
-  @body body: ImportedPhoneNumberError;
+  @body body: CompatibilityImportedPhoneNumberError;
 }

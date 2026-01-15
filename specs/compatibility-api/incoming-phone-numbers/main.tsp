@@ -28,7 +28,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       @query @doc("Only show numbers with this friendly name.") FriendlyName?: string,
       @query @doc("Only show numbers that are marked as beta.") Beta?: boolean,
       @query @doc("Only show numbers that match this origin.") Origin?: string,
-    ): IncomingPhoneNumberListResponse | StatusCode401;
+    ): IncomingPhoneNumberListResponse | CompatibilityStatusCode401;
 
     @operationId("create_incoming_phone_number")
     @summary("Create an Incoming Phone Number")
@@ -43,7 +43,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       ...IncomingPhoneNumbersAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateIncomingPhoneNumberRequest,
-    ): IncomingPhoneNumberResponse | StatusCode401 | StatusCode400;
+    ): IncomingPhoneNumberResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("retrieve_incoming_phone_number")
     @summary("Retrieve an incoming phone number")
@@ -54,7 +54,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @route("/{Sid}")
-    read(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): IncomingPhoneNumberResponse | StatusCode401 | StatusCode404;
+    read(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): IncomingPhoneNumberResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_incoming_phone_number")
     @summary("Update an incoming phone number")
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       ...IncomingPhoneNumberSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateIncomingPhoneNumberRequest,
-    ): IncomingPhoneNumberResponse | StatusCode401 | StatusCode404;
+    ): IncomingPhoneNumberResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_incoming_phone_number")
     @summary("Delete an incoming phone number")
@@ -83,6 +83,6 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       """)
     @delete
     @route("/{Sid}")
-    delete(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

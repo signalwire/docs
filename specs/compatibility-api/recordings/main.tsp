@@ -26,7 +26,7 @@ namespace CompatibilityAPI.Recordings {
       @query @doc("The date, in RFC 2822 format, on which the recording was created.") DateCreated?: string,
       @query @doc("The unique identifier for the call that is associated with this recording.") CallSid?: string,
       @query @doc("The unique identifier for the conference that is associated with this recording.") ConferenceSid?: string,
-    ): RecordingListResponse | StatusCode401;
+    ): RecordingListResponse | CompatibilityStatusCode401;
 
     @operationId("retrieve_recording")
     @summary("Retrieve a Recording.")
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.Recordings {
       The API token must include the following scopes: _Voice_. This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
       """)
     @route("/{Sid}")
-    read(...RecordingsAccountSidPath, ...RecordingSidPath): RecordingResponse | StatusCode401 | StatusCode404;
+    read(...RecordingsAccountSidPath, ...RecordingSidPath): RecordingResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_recording")
     @summary("Delete a Recording.")
@@ -83,6 +83,6 @@ namespace CompatibilityAPI.Recordings {
       """)
     @delete
     @route("/{Sid}")
-    delete(...RecordingsAccountSidPath, ...RecordingSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...RecordingsAccountSidPath, ...RecordingSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

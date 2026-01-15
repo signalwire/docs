@@ -26,7 +26,7 @@ namespace CompatibilityAPI.Queues {
       ...QueuesAccountSidPath,
       @query @doc("A description that distinguishes a queue.") @example("Queue1") FriendlyName?: string,
       @query @doc("The maximum number of calls that are allowed to wait in a queue.") @example("123") MaxSize?: string,
-    ): QueueListResponse | StatusCode401;
+    ): QueueListResponse | CompatibilityStatusCode401;
 
     @operationId("create_queue")
     @summary("Create a Queue.")
@@ -41,7 +41,7 @@ namespace CompatibilityAPI.Queues {
       ...QueuesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateQueueRequest,
-    ): QueueResponse | StatusCode401 | StatusCode400;
+    ): QueueResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("retrieve_queue")
     @summary("Retrieve a Queue.")
@@ -52,7 +52,7 @@ namespace CompatibilityAPI.Queues {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{Sid}")
-    read(...QueuesAccountSidPath, ...QueueSidPath): QueueResponse | StatusCode401 | StatusCode404;
+    read(...QueuesAccountSidPath, ...QueueSidPath): QueueResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_queue")
     @summary("Update a Queue.")
@@ -69,7 +69,7 @@ namespace CompatibilityAPI.Queues {
       ...QueueSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateQueueRequest,
-    ): QueueResponse | StatusCode401 | StatusCode404;
+    ): QueueResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_queue")
     @summary("Delete a Queue.")
@@ -81,7 +81,7 @@ namespace CompatibilityAPI.Queues {
       """)
     @delete
     @route("/{Sid}")
-    delete(...QueuesAccountSidPath, ...QueueSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...QueuesAccountSidPath, ...QueueSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 
   @tag(QUEUE_MEMBERS_TAG)
@@ -96,7 +96,7 @@ namespace CompatibilityAPI.Queues {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(...QueuesAccountSidPath, ...QueueSidPathForMembers): QueueMemberListResponse | StatusCode401;
+    list(...QueuesAccountSidPath, ...QueueSidPathForMembers): QueueMemberListResponse | CompatibilityStatusCode401;
 
     @operationId("retrieve_queue_member")
     @summary("Retrieve a Queue Member")
@@ -107,7 +107,7 @@ namespace CompatibilityAPI.Queues {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{CallSid}")
-    read(...QueuesAccountSidPath, ...QueueSidPathForMembers, ...QueueMemberCallSidPath): QueueMemberResponse | StatusCode401 | StatusCode404;
+    read(...QueuesAccountSidPath, ...QueueSidPathForMembers, ...QueueMemberCallSidPath): QueueMemberResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_queue_member")
     @summary("Update a Queue Member")
@@ -125,6 +125,6 @@ namespace CompatibilityAPI.Queues {
       ...QueueMemberCallSidPath,
       @query @doc("The URL to handle after dequeuing the member. This parameter lets you specify a webhook or different route in your code containing XML instructions.") Url: string,
       @query @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.") Method?: "GET" | "POST",
-    ): QueueMemberResponse | StatusCode401 | StatusCode404;
+    ): QueueMemberResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }
