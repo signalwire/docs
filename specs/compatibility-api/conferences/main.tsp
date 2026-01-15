@@ -51,7 +51,12 @@ namespace CompatibilityAPI.Conferences {
       """)
     @post
     @route("/{Sid}")
-    update(...ConferencesAccountSidPath, ...ConferenceSidPath, @body body: UpdateConferenceRequest): ConferenceResponse | StatusCode401 | StatusCode404;
+    update(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateConferenceRequest,
+    ): ConferenceResponse | StatusCode401 | StatusCode404;
   }
 
   @tag(CONFERENCE_PARTICIPANTS_TAG)
@@ -94,7 +99,13 @@ namespace CompatibilityAPI.Conferences {
       """)
     @post
     @route("/{CallSid}")
-    update(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath, @body body: UpdateConferenceParticipantRequest): ConferenceParticipantResponse | StatusCode401 | StatusCode404;
+    update(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ParticipantCallSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateConferenceParticipantRequest,
+    ): ConferenceParticipantResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_participant")
     @summary("Delete a Participant")
@@ -122,7 +133,12 @@ namespace CompatibilityAPI.Conferences {
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, @body body: CreateConferenceStreamRequest): ConferenceStreamResponse | StatusCode401 | StatusCode400 | StatusCode422;
+    create(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateConferenceStreamRequest,
+    ): ConferenceStreamResponse | StatusCode401 | StatusCode400 | StatusCode422;
 
     @operationId("update_conference_stream")
     @summary("Update Conference Stream")
@@ -134,6 +150,12 @@ namespace CompatibilityAPI.Conferences {
       """)
     @post
     @route("/{Sid}")
-    update(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ConferenceSidPath, @body body: UpdateConferenceStreamRequest): ConferenceStreamResponse | StatusCode401 | StatusCode404 | StatusCode422;
+    update(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ConferenceSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateConferenceStreamRequest,
+    ): ConferenceStreamResponse | StatusCode401 | StatusCode404 | StatusCode422;
   }
 }

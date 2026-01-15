@@ -45,7 +45,11 @@ namespace CompatibilityAPI.Calls {
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...CallsAccountSidPath, @body body: CreateCallRequest): CallResponse | StatusCode401 | StatusCode400;
+    create(
+      ...CallsAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateCallRequest,
+    ): CallResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_a_call")
     @summary("Retrieve a Call")
@@ -68,7 +72,12 @@ namespace CompatibilityAPI.Calls {
       """)
     @post
     @route("/{Sid}")
-    update(...CallsAccountSidPath, ...CallSidPath, @body body: UpdateCallRequest): CallResponse | StatusCode401 | StatusCode404;
+    update(
+      ...CallsAccountSidPath,
+      ...CallSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateCallRequest,
+    ): CallResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_a_call")
     @summary("Delete a Call")
@@ -96,7 +105,12 @@ namespace CompatibilityAPI.Calls {
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...CallsAccountSidPath, ...CallSidPathForRecording, @body body: CreateCallRecordingRequest): CallRecordingResponse | StatusCode401 | StatusCode400;
+    create(
+      ...CallsAccountSidPath,
+      ...CallSidPathForRecording,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateCallRecordingRequest,
+    ): CallRecordingResponse | StatusCode401 | StatusCode400;
 
     @operationId("update_recording")
     @summary("Update a Recording")
@@ -108,7 +122,13 @@ namespace CompatibilityAPI.Calls {
       """)
     @post
     @route("/{Sid}")
-    update(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath, @body body: UpdateCallRecordingRequest): CallRecordingResponse | StatusCode401 | StatusCode404;
+    update(
+      ...CallsAccountSidPath,
+      ...CallSidPathForRecording,
+      ...CallSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateCallRecordingRequest,
+    ): CallRecordingResponse | StatusCode401 | StatusCode404;
   }
 
   @tag(CALL_STREAMS_TAG)
@@ -124,7 +144,12 @@ namespace CompatibilityAPI.Calls {
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...CallsAccountSidPath, ...CallSidPathForRecording, @body body: CreateCallStreamRequest): CallStreamResponse | StatusCode401 | StatusCode400;
+    create(
+      ...CallsAccountSidPath,
+      ...CallSidPathForRecording,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateCallStreamRequest,
+    ): CallStreamResponse | StatusCode401 | StatusCode400;
 
     @operationId("update_stream")
     @summary("Stop a Stream")
@@ -136,6 +161,12 @@ namespace CompatibilityAPI.Calls {
       """)
     @post
     @route("/{Sid}")
-    update(...CallsAccountSidPath, ...CallSidPathForRecording, ...CallSidPath, @body body: UpdateCallStreamRequest): CallStreamResponse | StatusCode401 | StatusCode404;
+    update(
+      ...CallsAccountSidPath,
+      ...CallSidPathForRecording,
+      ...CallSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateCallStreamRequest,
+    ): CallStreamResponse | StatusCode401 | StatusCode404;
   }
 }

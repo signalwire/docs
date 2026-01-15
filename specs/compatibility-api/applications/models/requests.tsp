@@ -63,7 +63,7 @@ model CreateApplicationRequest {
 model UpdateApplicationRequest {
   @doc("A named unique identifier for the resource. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.")
   @example("My Friendly Name")
-  FriendlyName?: string;
+  FriendlyName: string;
 
   @doc("If a message's `ApplicationSid` is set to this Application's `Sid`, when a message receives a status change, SignalWire will send a `POST` request to this URL with the message's details.")
   @example("http://www.example.com/sms-status-callback")

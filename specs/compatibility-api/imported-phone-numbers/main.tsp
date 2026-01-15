@@ -25,7 +25,11 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @post
-    create(...ImportedPhoneNumbersAccountSidPath, @body body: ImportPhoneNumberRequest): {
+    create(
+      ...ImportedPhoneNumbersAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: ImportPhoneNumberRequest,
+    ): {
       @statusCode statusCode: 201;
       @body body: IncomingPhoneNumber;
     } | StatusCode401 | StatusCode400 | StatusCode422;

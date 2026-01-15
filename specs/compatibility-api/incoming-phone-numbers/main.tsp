@@ -39,7 +39,11 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @post
-    create(...IncomingPhoneNumbersAccountSidPath, @body body: CreateIncomingPhoneNumberRequest): IncomingPhoneNumberResponse | StatusCode401 | StatusCode400;
+    create(
+      ...IncomingPhoneNumbersAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateIncomingPhoneNumberRequest,
+    ): IncomingPhoneNumberResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_incoming_phone_number")
     @summary("Retrieve an incoming phone number")
@@ -62,7 +66,12 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       """)
     @post
     @route("/{Sid}")
-    update(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath, @body body: UpdateIncomingPhoneNumberRequest): IncomingPhoneNumberResponse | StatusCode401 | StatusCode404;
+    update(
+      ...IncomingPhoneNumbersAccountSidPath,
+      ...IncomingPhoneNumberSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateIncomingPhoneNumberRequest,
+    ): IncomingPhoneNumberResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_incoming_phone_number")
     @summary("Delete an incoming phone number")

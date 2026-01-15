@@ -38,7 +38,10 @@ namespace CompatibilityAPI.Accounts {
       The API token must include the following scopes: _Management_.
       """)
     @post
-    create(@body body: CreateSubprojectRequest): AccountResponse | StatusCode401 | StatusCode400;
+    create(
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateSubprojectRequest,
+    ): AccountResponse | StatusCode401 | StatusCode400;
 
     @operationId("get_account")
     @summary("Find an Account by ID")
@@ -60,6 +63,10 @@ namespace CompatibilityAPI.Accounts {
       """)
     @post
     @route("/{Sid}")
-    update(...AccountPathSid, @body body: UpdateAccountRequest): AccountResponse | StatusCode401 | StatusCode404;
+    update(
+      ...AccountPathSid,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateAccountRequest,
+    ): AccountResponse | StatusCode401 | StatusCode404;
   }
 }

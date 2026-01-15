@@ -36,7 +36,11 @@ namespace CompatibilityAPI.LamlBins {
       The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
       """)
     @post
-    create(...LamlBinsAccountSidPath, @body body: CreateLamlBinRequest): LamlBinResponse | StatusCode401 | StatusCode400;
+    create(
+      ...LamlBinsAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateLamlBinRequest,
+    ): LamlBinResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_cxml_application")
     @summary("Retrieve a cXML Bin")
@@ -59,7 +63,12 @@ namespace CompatibilityAPI.LamlBins {
       """)
     @post
     @route("/{Sid}")
-    update(...LamlBinsAccountSidPath, ...LamlBinSidPath, @body body: UpdateLamlBinRequest): LamlBinResponse | StatusCode401 | StatusCode404;
+    update(
+      ...LamlBinsAccountSidPath,
+      ...LamlBinSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateLamlBinRequest,
+    ): LamlBinResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_cxml_application")
     @summary("Delete a cXML Bin")

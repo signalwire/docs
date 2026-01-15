@@ -7,6 +7,10 @@ using TypeSpec.Http;
 model ConferenceListResponse {
   ...Pagination;
 
+  @doc("The unique identifier for the account that created this conference.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ca")
+  account_sid?: string;
+
   @doc("List of conferences.")
   conferences?: Conference[];
 }

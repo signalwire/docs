@@ -15,7 +15,7 @@ model CreateLamlBinRequest {
 model UpdateLamlBinRequest {
   @doc("A friendly name given to the cXML bin.")
   @example("Death Star IVR")
-  Name?: string;
+  Name: string;
 
   @doc("The contents of the cXML bins.")
   @example("<Response><Say>Hello!</Say></Response>")

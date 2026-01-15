@@ -24,10 +24,11 @@ namespace CompatibilityAPI.Messages {
       """)
     list(
       ...MessagesAccountSidPath,
-      @query @doc("The date, in RFC 2822 format, on which the message was created.") DateCreated?: string,
-      @query @doc("The date, in RFC 2822 format, on which the message was sent.") DateSent?: string,
-      @query @doc("The phone number, in E.164 format, that sent the message.") From?: string,
-      @query @doc("The phone number, in E.164 format, that received the message.") To?: string,
+      @query @doc("Only return messages sent on this particular date, formatted as YYYY-MM-DD in UTC. You can also append `<` or `>` to return a range of messages.") DateSent?: string,
+      @query @doc("The phone number in E.164 format. For inbound messages, this will be the remote phone number who sent the message. For outbound messages, this will be one of your SignalWire phone numbers.") From?: string,
+      @query @doc("The phone number in E.164 format that received the message. For inbound messages, this is one of your SignalWire phone numbers; for outbound messages, this is the remote phone number that received the message.") To?: string,
+      @query @doc("Current status of the message.") Status?: "queued" | "sending" | "sent" | "delivered" | "undelivered" | "failed" | "receiving" | "received",
+      @query @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.") PageSize?: int32,
     ): MessageListResponse | StatusCode401;
 
     @operationId("create_message")
@@ -39,7 +40,11 @@ namespace CompatibilityAPI.Messages {
       The API token must include the following scopes: _Messaging_.
       """)
     @post
-    create(...MessagesAccountSidPath, @body body: CreateMessageRequest): MessageResponse | StatusCode401 | StatusCode400;
+    create(
+      ...MessagesAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateMessageRequest,
+    ): MessageResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_message")
     @summary("Retrieve a Message")
@@ -62,7 +67,12 @@ namespace CompatibilityAPI.Messages {
       """)
     @post
     @route("/{Sid}")
-    update(...MessagesAccountSidPath, ...MessageSidPath, @body body: UpdateMessageRequest): MessageResponse | StatusCode401 | StatusCode404;
+    update(
+      ...MessagesAccountSidPath,
+      ...MessageSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateMessageRequest,
+    ): MessageResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_message")
     @summary("Delete a Message")
@@ -89,7 +99,12 @@ namespace CompatibilityAPI.Messages {
       #### Permissions
       The API token must include the following scopes: _Messaging_.
       """)
-    list(...MessagesAccountSidPath, ...MessageSidPathForMedia): MessageMediaListResponse | StatusCode401;
+    list(
+      ...MessagesAccountSidPath,
+      ...MessageSidPathForMedia,
+      @query @doc("The date and time the message was sent in RFC 2822 format.") DateCreated?: string,
+      @query @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.") PageSize?: int32,
+    ): MessageMediaListResponse | StatusCode401;
 
     @operationId("retrieve_media")
     @summary("Retrieve Message Media")

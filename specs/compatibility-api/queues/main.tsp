@@ -37,7 +37,11 @@ namespace CompatibilityAPI.Queues {
       The API token must include the following scopes: _Voice_.
       """)
     @post
-    create(...QueuesAccountSidPath, @body body: CreateQueueRequest): QueueResponse | StatusCode401 | StatusCode400;
+    create(
+      ...QueuesAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateQueueRequest,
+    ): QueueResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_queue")
     @summary("Retrieve a Queue.")
@@ -60,7 +64,12 @@ namespace CompatibilityAPI.Queues {
       """)
     @post
     @route("/{Sid}")
-    update(...QueuesAccountSidPath, ...QueueSidPath, @body body: UpdateQueueRequest): QueueResponse | StatusCode401 | StatusCode404;
+    update(
+      ...QueuesAccountSidPath,
+      ...QueueSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateQueueRequest,
+    ): QueueResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_queue")
     @summary("Delete a Queue.")
@@ -110,6 +119,12 @@ namespace CompatibilityAPI.Queues {
       """)
     @post
     @route("/{CallSid}")
-    update(...QueuesAccountSidPath, ...QueueSidPathForMembers, ...QueueMemberCallSidPath, @body body: UpdateQueueMemberRequest): QueueMemberResponse | StatusCode401 | StatusCode404;
+    update(
+      ...QueuesAccountSidPath,
+      ...QueueSidPathForMembers,
+      ...QueueMemberCallSidPath,
+      @query @doc("The URL to handle after dequeuing the member. This parameter lets you specify a webhook or different route in your code containing XML instructions.") Url: string,
+      @query @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.") Method?: "GET" | "POST",
+    ): QueueMemberResponse | StatusCode401 | StatusCode404;
   }
 }

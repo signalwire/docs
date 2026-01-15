@@ -39,7 +39,11 @@ namespace CompatibilityAPI.Faxes {
       The API token must include the following scopes: _Fax_.
       """)
     @post
-    create(...FaxesAccountSidPath, @body body: SendFaxRequest): FaxResponse | StatusCode401 | StatusCode400;
+    create(
+      ...FaxesAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: SendFaxRequest,
+    ): FaxResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_fax")
     @summary("Retrieve a fax.")
@@ -62,7 +66,12 @@ namespace CompatibilityAPI.Faxes {
       """)
     @post
     @route("/{Sid}")
-    update(...FaxesAccountSidPath, ...FaxSidPath, @body body: UpdateFaxRequest): FaxResponse | StatusCode401 | StatusCode404;
+    update(
+      ...FaxesAccountSidPath,
+      ...FaxSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateFaxRequest,
+    ): FaxResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_fax")
     @summary("Delete a Fax")

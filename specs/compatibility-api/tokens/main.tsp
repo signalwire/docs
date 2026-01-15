@@ -20,7 +20,11 @@ namespace CompatibilityAPI.Tokens {
       Generate an API Token for a project to be used to authenticate requests within the project.
       """)
     @post
-    create(...TokensAccountSidPath, @body body: CreateTokenRequest): TokenResponse | StatusCode401 | StatusCode422;
+    create(
+      ...TokensAccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateTokenRequest,
+    ): TokenResponse | StatusCode401 | StatusCode422;
 
     @operationId("update_token")
     @summary("Update an API Token")

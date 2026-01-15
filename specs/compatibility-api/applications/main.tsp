@@ -39,7 +39,11 @@ namespace CompatibilityAPI.Applications {
       The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
       """)
     @post
-    create(...AccountSidPath, @body body: CreateApplicationRequest): ApplicationResponse | StatusCode401 | StatusCode400;
+    create(
+      ...AccountSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: CreateApplicationRequest,
+    ): ApplicationResponse | StatusCode401 | StatusCode400;
 
     @operationId("get_application")
     @summary("Find an Application by ID")
@@ -62,7 +66,12 @@ namespace CompatibilityAPI.Applications {
       """)
     @post
     @route("/{Sid}")
-    update(...AccountSidPath, ...ApplicationPathSid, @body body: UpdateApplicationRequest): ApplicationResponse | StatusCode401 | StatusCode404;
+    update(
+      ...AccountSidPath,
+      ...ApplicationPathSid,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateApplicationRequest,
+    ): ApplicationResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_application")
     @summary("Delete an Application")

@@ -4,11 +4,11 @@ using TypeSpec.Http;
 model CreateIncomingPhoneNumberRequest {
   @doc("The area code of your new number.")
   @example("310")
-  AreaCode?: string;
+  AreaCode: string;
 
   @doc("The incoming number in E.164 format.")
   @example("+13103386745")
-  PhoneNumber?: string;
+  PhoneNumber: string;
 
   @doc("The unique identifier for the address associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")

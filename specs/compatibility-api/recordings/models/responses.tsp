@@ -7,6 +7,18 @@ using TypeSpec.Http;
 model RecordingListResponse {
   ...Pagination;
 
+  @doc("The name of object.")
+  @example("0")
+  end?: string;
+
+  @doc("The name of object.")
+  @example("0")
+  start?: string;
+
+  @doc("The unique identifier for this account.")
+  @example("b720796a0-8ee9-4350-83bd-2d07a3121f1e")
+  account_sid?: string;
+
   @doc("List of recordings.")
   recordings?: Recording[];
 }
