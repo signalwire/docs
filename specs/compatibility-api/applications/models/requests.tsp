@@ -38,7 +38,7 @@ model CreateApplicationRequest {
   @example("POST")
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("Whether or not to look up a caller's ID from the database. Possible values are `true` or `false`. Default is `false`.")
+  @doc("Whether or not to look up a caller's ID from the database.")
   @example(false)
   VoiceCallerIdLookup?: boolean = false;
 

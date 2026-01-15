@@ -76,8 +76,8 @@ model Fax {
   @example("2018-11-27T20:00:00Z")
   date_updated?: string;
 
-    @doc("The direction of the fax. Possible values are `inbound` or `outbound`.")
-    direction?: FaxDirection;
+  @doc("The direction of the fax.")
+  direction?: FaxDirection;
 
   @doc("The phone number, in E.164 format, the fax was sent from.")
   @example("+13103383454")

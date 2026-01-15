@@ -86,7 +86,7 @@ model Application {
   @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Applications/b3877c40-da60-4998-90ad-b792e98472af.json")
   uri?: string;
 
-  @doc("Whether or not to look up a caller's ID from the database. Possible values are `true` or `false`. Default is `false`.")
+  @doc("Whether or not to look up a caller's ID from the database.")
   @example(false)
   voice_caller_id_lookup?: boolean;
 

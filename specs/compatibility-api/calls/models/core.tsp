@@ -77,8 +77,8 @@ model Call {
   @example("Call annotation text")
   annotation?: string;
 
-    @doc("Who/what the call was answered by. Possible values are `human` or `machine`.")
-    answered_by?: AnsweredBy;
+  @doc("Who/what the call was answered by.")
+  answered_by?: AnsweredBy;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
@@ -92,8 +92,8 @@ model Call {
   @example("Wed, 19 Sept 2018 21:00:00 +0000")
   date_updated?: string;
 
-    @doc("The direction of the call. Possible values are `inbound` or `outbound`.")
-    direction?: CallDirection;
+  @doc("The direction of the call.")
+  direction?: CallDirection;
 
   @doc("The duration, in seconds, of the call.")
   @example(20)
@@ -180,7 +180,7 @@ model CallRecording {
   @example("2071320d-ee82-4578-84e0-379fb227eb77")
   conference_sid?: string;
 
-  @doc("The number of channels in a recording. Possible values are `1` or `2`.")
+  @doc("The number of channels in a recording.")
   @example(1)
   channels?: 1 | 2;
 

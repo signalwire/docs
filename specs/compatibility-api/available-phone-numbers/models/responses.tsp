@@ -27,7 +27,7 @@ model AvailablePhoneNumberByCountryResponse {
   @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US/Local")
   uri?: string;
 
-  @doc("New numbers on SignalWire are marked as `beta`. Possible values are `true` or `false`.")
+  @doc("New numbers on SignalWire are marked as `beta`.")
   beta?: boolean;
 
   @doc("The country the number is from.")

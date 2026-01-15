@@ -157,7 +157,7 @@ model UpdateIncomingPhoneNumberRequest {
   @example("POST")
   VoiceMethod?: "GET" | "POST";
 
-  @doc("Whether this number can receive calls or fax. Possible values are voice or fax.")
+  @doc("Whether this number can receive calls or fax.")
   @example("voice")
   VoiceReceiveMode?: "voice" | "fax";
 

@@ -36,7 +36,7 @@ model PhoneNumberCapabilities {
 
 @doc("Available phone number model.")
 model AvailablePhoneNumber {
-  @doc("New numbers on SignalWire are marked as `beta`. Possible values are `true` or `false`.")
+  @doc("New numbers on SignalWire are marked as `beta`.")
   @example(false)
   beta?: boolean;
 

@@ -147,9 +147,8 @@ model Account {
   @example("b3877c40-da60-4998-90ad-b792e98472af")
   sid?: string;
 
-  @doc("The status of the Project. Possible values are: active, suspended, or closed.")
-  @example("active")
-  status?: string;
+  @doc("The status of the Project.")
+  status?: AccountStatus;
 
   @doc("Whether or not the project is a sub-project.")
   @example(false)
@@ -158,9 +157,8 @@ model Account {
   @doc("A Map of sub-resources that are linked to the given Project.")
   subresource_uris?: SubresourceUris;
 
-  @doc("The type of the Project. Possible values are: Trial and Full.")
-  @example("Full")
-  type?: string;
+  @doc("The type of the Project.")
+  type?: AccountType;
 
   @doc("The URI for the Project.")
   @format("uri")

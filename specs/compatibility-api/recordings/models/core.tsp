@@ -60,7 +60,7 @@ model Recording {
   @example("2071320d-ee82-4578-84e0-379fb227eb77")
   conference_sid?: string;
 
-  @doc("The number of channels in a recording. Possible values are `1` or `2`.")
+  @doc("The number of channels in a recording.")
   @example(1)
   channels?: int32;
 

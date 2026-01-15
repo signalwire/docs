@@ -127,7 +127,7 @@ model CreateCallRequest {
   @example("60")
   Timeout?: string = "60";
 
-  @doc("Whether leading and trailing silence is trimmed from a recording. Possible values are `trim-silence` or `do-not-trim`. Default is `trim-silence`.")
+  @doc("Whether leading and trailing silence is trimmed from a recording.")
   @example("trim-silence")
   Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
 }
@@ -219,7 +219,7 @@ model CreateCallRecordingRequest {
   @example("https://your-api-endpoint.com/recording-status")
   RecordingStatusCallback?: string;
 
-  @doc("The different recording statuses. Possible values are `completed`, `in-progress`, and `absent`. To specify multiple events, separate with a space. Defaults to `completed`.")
+  @doc("The different recording statuses. To specify multiple events, separate with a space.")
   @example("completed")
   RecordingStatusCallbackEvent?: "completed" | "in-progress" | "absent";
 
@@ -231,7 +231,7 @@ model CreateCallRecordingRequest {
   @example("inbound")
   RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
-  @doc("Whether leading and trailing silence is trimmed from a recording. Possible values are `trim-silence` and `do-not-trim`. Default is `trim-silence`.")
+  @doc("Whether leading and trailing silence is trimmed from a recording.")
   @example("trim-silence")
   Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
 }
