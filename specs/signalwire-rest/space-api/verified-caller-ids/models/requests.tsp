@@ -23,3 +23,14 @@ model VerifyCallerIdRequest {
   @example("123456")
   verification_code: string;
 }
+
+@doc("Request body for updating a verified caller ID.")
+model UpdateVerifiedCallerIdRequest {
+  @doc("String representing the name portion of the caller ID.")
+  @example("C-3P0")
+  name?: string;
+
+  @doc("String representing the extension of the phone number for the caller ID.")
+  @example("1234")
+  extension?: string;
+}

@@ -49,7 +49,7 @@ namespace SpaceAPI.NumberGroups {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_number_group")
+    @operationId("retrieve_number_group")
     @summary("Retrieve a Number Group")
     @doc("""
       Retrieves the details of a number group.
@@ -96,7 +96,7 @@ namespace SpaceAPI.NumberGroups {
       | StatusCode500;
 
     @operationId("list_number_group_memberships")
-    @summary("List Number Group Memberships")
+    @summary("List all Number Group Memberships")
     @doc("""
       Returns a list of phone numbers in a number group.
 
@@ -107,8 +107,8 @@ namespace SpaceAPI.NumberGroups {
     @get
     listMemberships(...NumberGroupIdPath): NumberGroupMembershipListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("add_number_group_membership")
-    @summary("Add Phone Number to Number Group")
+    @operationId("create_number_group_membership")
+    @summary("Create a Number Group Membership")
     @doc("""
       Adds a phone number to a number group.
 
@@ -134,7 +134,7 @@ namespace SpaceAPI.NumberGroupMemberships {
   @tag(NUMBER_GROUP_MEMBERSHIP_TAG)
   @friendlyName("Number Group Membership")
   interface NumberGroupMemberships {
-    @operationId("get_number_group_membership")
+    @operationId("retrieve_number_group_membership")
     @summary("Retrieve a Number Group Membership")
     @doc("""
       Retrieves the details of a number group membership.

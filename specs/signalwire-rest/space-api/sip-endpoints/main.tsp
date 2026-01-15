@@ -16,7 +16,7 @@ namespace SpaceAPI.SipEndpoints {
   @friendlyName("SIP Endpoints")
   interface SipEndpoints {
     @operationId("list_sip_endpoints")
-    @summary("List all SIP Endpoints")
+    @summary("List all SIP Endpoints.")
     @doc("""
       Returns a list of your SIP endpoints.
 
@@ -43,7 +43,7 @@ namespace SpaceAPI.SipEndpoints {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_sip_endpoint")
+    @operationId("retrieve_sip_endpoint")
     @summary("Retrieve a SIP Endpoint")
     @doc("""
       Retrieves the details of a SIP endpoint.

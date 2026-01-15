@@ -29,7 +29,7 @@ model CreateAddressRequest {
   street_name: string;
 
   @doc("If the address is divided into multiple sub-addresses, this identifies how the address is divided. Possible values are: Apartment, Basement, Building, Department, Floor, Office, Penthouse, Suite, Trailer, Unit.")
-  @example("Apartment")
+  @example(AddressType.Apartment)
   address_type?: AddressType;
 
   @doc("If the address is divided into multiple sub-addresses, this identifies the particular sub-address.")

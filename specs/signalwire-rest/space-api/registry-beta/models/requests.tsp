@@ -56,6 +56,25 @@ model CreateBrandRequest {
   status_callback_url?: string;
 }
 
+@doc("Request body for updating a brand.")
+model UpdateBrandRequest {
+  @doc("Brand/Marketing/DBA name of the business if applicable.")
+  @example("My Brand")
+  name?: string;
+
+  @doc("A company contact email for this brand.")
+  @example("brand_info@example.com")
+  contact_email?: string;
+
+  @doc("A contact phone number for this brand.")
+  @example("+18995551212")
+  contact_phone?: string;
+
+  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes.")
+  @example("https://example.com/handle_callback")
+  status_callback_url?: string;
+}
+
 @doc("Request body for creating a campaign.")
 model CreateCampaignRequest {
   @doc("A name for the campaign.")
@@ -169,6 +188,14 @@ model UpdateCampaignRequest {
   @doc("A name for the campaign.")
   @example("My Campaign")
   name?: string;
+}
+
+@doc("Request body for creating an order.")
+model CreateOrderRequest {
+  @doc("The phone number ID to assign to the campaign.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
+  phone_number_id: uuid;
 }
 
 @doc("Request body for assigning a number to a campaign.")

@@ -40,7 +40,6 @@ using TypeSpec.OpenAPI;
 @info(#{
   title: "RELAY REST API",
   version: "1.0.0",
-  description: "Welcome to SignalWire's Relay REST API. Relay is the next generation of interactive communication APIs available at SignalWire, and the REST API is a set of endpoints that make interacting with Relay, simple and familiar.",
   contact: CONTACT_INFO,
   license: LICENSE_INFO,
   termsOfService: TERMS_OF_SERVICE,

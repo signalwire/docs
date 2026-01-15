@@ -15,8 +15,8 @@ namespace SpaceAPI.SipProfile {
   @tag(SIP_PROFILE_TAG)
   @friendlyName("SIP Profile")
   interface SipProfile {
-    @operationId("get_sip_profile")
-    @summary("Retrieve SIP Profile")
+    @operationId("retrieve_sip_profile")
+    @summary("Retrieve a SIP Profile")
     @doc("""
       Retrieves the SIP profile settings for your project.
 
@@ -27,7 +27,7 @@ namespace SpaceAPI.SipProfile {
     read(): SipProfileResponse | StatusCode401 | StatusCode500;
 
     @operationId("update_sip_profile")
-    @summary("Update SIP Profile")
+    @summary("Update a SIP Profile")
     @doc("""
       Updates the SIP profile settings for your project.
 

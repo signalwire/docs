@@ -3,6 +3,14 @@ import "../../../types";
 using TypeSpec.Http;
 using Types;
 
+model MfaRequestIdPath {
+  @doc("The MFA request ID.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
+  @path
+  mfa_request_id: uuid;
+}
+
 @doc("MFA request model.")
 model MfaRequest {
   @doc("The E164 number to use as the destination.")

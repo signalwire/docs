@@ -51,7 +51,7 @@ namespace SpaceAPI.DomainApplications {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_domain_application")
+    @operationId("retrieve_domain_application")
     @summary("Retrieve a Domain Application")
     @doc("""
       Retrieves the details of a Domain Application that has been previously created.

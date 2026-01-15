@@ -54,7 +54,7 @@ namespace SpaceAPI.PhoneNumbers {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_phone_number")
+    @operationId("retrieve_phone_number")
     @summary("Retrieve a Phone Number")
     @doc("""
       Retrieves the details of a phone number.
@@ -100,8 +100,8 @@ namespace SpaceAPI.PhoneNumbers {
       | StatusCode404
       | StatusCode500;
 
-    @operationId("search_phone_numbers")
-    @summary("Search Available Phone Numbers")
+    @operationId("search_available_phone_numbers")
+    @summary("Search for available Phone Numbers to Purchase")
     @doc("""
       Searches for available phone numbers to purchase.
 
@@ -139,7 +139,7 @@ namespace SpaceAPI.ImportedPhoneNumbers {
   @tag(IMPORTED_PHONE_NUMBERS_TAG)
   @friendlyName("Imported Phone Numbers")
   interface ImportedPhoneNumbers {
-    @operationId("import_phone_number")
+    @operationId("create_imported_phone_number")
     @summary("Import a Phone Number")
     @doc("""
       Import a phone number hosted elsewhere into your SignalWire Space.

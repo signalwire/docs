@@ -36,11 +36,9 @@ model Recording {
   relay_webrtc_leg_id?: uuid;
 
   @doc("Date and time when the recording was created.")
-  @example("2024-10-17T14:14:53Z")
   created_at: utcDateTime;
 
   @doc("Date and time when the recording was last updated.")
-  @example("2024-10-17T14:14:53Z")
   updated_at: utcDateTime;
 
   @doc("Duration of the recording in seconds.")

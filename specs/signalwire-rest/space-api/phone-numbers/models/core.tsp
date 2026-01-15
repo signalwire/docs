@@ -87,39 +87,39 @@ model PhoneNumber {
   capabilities?: PhoneNumberCapability[];
 
   @doc("The type of number this is defined as. Possible values are: toll-free or longcode.")
-  @example("toll-free")
+  @example(PhoneNumberType.tollfree)
   number_type?: PhoneNumberType;
 
   @doc("The E911 address ID associated with this phone number.")
   e911_address_id?: string;
 
   @doc("What type of handler you want to run on inbound calls.")
-  @example("relay_context")
+  @example(PhoneNumberCallHandler.relay_context)
   call_handler?: PhoneNumberCallHandler;
 
   @doc("How do you want to receive the incoming call. Possible values are: voice or fax. Default is voice.")
-  @example("voice")
+  @example(CallReceiveMode.voice)
   call_receive_mode?: CallReceiveMode = CallReceiveMode.voice;
 
   @doc("The URL to make a request to when using the laml_webhooks call handler.")
   call_request_url?: string;
 
   @doc("The HTTP method to use when making a request to the call_request_url. Possible values are: POST or GET. Default is POST.")
-  @example("POST")
+  @example(HttpMethod.POST)
   call_request_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The fallback URL to make a request to when using the laml_webhooks call handler and the call_request_url fails.")
   call_fallback_url?: string;
 
   @doc("The HTTP method to use when making a request to the call_fallback_url. Possible values are: POST or GET. Default is POST.")
-  @example("POST")
+  @example(HttpMethod.POST)
   call_fallback_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The URL to make status callbacks to when using the laml_webhooks call handler.")
   call_status_callback_url?: string;
 
   @doc("The HTTP method to use when making a request to the call_status_callback_url. Possible values are: POST or GET. Default is POST.")
-  @example("POST")
+  @example(HttpMethod.POST)
   call_status_callback_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The ID of the LaML Application to use when using the laml_application call handler.")
@@ -167,21 +167,21 @@ model PhoneNumber {
   call_video_room_id?: string;
 
   @doc("What type of handler you want to run on inbound messages. Possible values are: relay_context, relay_topic, relay_application, laml_webhooks, laml_application.")
-  @example("relay_application")
+  @example(PhoneNumberMessageHandler.relay_application)
   message_handler?: PhoneNumberMessageHandler;
 
   @doc("The URL to make a request to when using the laml_webhooks message handler.")
   message_request_url?: string;
 
   @doc("The HTTP method to use when making a request to the message_request_url. Possible values are: POST or GET. Default is POST.")
-  @example("POST")
+  @example(HttpMethod.POST)
   message_request_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The fallback URL to make a request to when using the laml_webhooks message handler and the message_request_url fails.")
   message_fallback_url?: string;
 
   @doc("The HTTP method to use when making a request to the message_fallback_url. Possible values are: POST or GET. Default is POST.")
-  @example("POST")
+  @example(HttpMethod.POST)
   message_fallback_method?: HttpMethod = HttpMethod.POST;
 
   @doc("The ID of the LaML Application to use when using the laml_application message handler.")

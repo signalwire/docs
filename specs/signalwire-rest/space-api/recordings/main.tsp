@@ -14,8 +14,8 @@ namespace SpaceAPI.Recordings {
   @tag(RECORDINGS_TAG)
   @friendlyName("Recordings")
   interface Recordings {
-    @operationId("list_recordings")
-    @summary("List all Recordings")
+    @operationId("Recordings_list")
+    @summary("List Relay Recordings")
     @doc("""
       Returns a list of your recordings.
 
@@ -36,8 +36,8 @@ namespace SpaceAPI.Recordings {
       status?: string
     ): RecordingListResponse | StatusCode401 | StatusCode500;
 
-    @operationId("get_recording")
-    @summary("Retrieve a Recording")
+    @operationId("Recordings_get")
+    @summary("Get Relay Recording")
     @doc("""
       Retrieves the details of a recording.
 
@@ -46,8 +46,8 @@ namespace SpaceAPI.Recordings {
       """)
     read(...RecordingPathID): RecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("delete_recording")
-    @summary("Delete a Recording")
+    @operationId("Recordings_delete")
+    @summary("Delete Relay Recording")
     @doc("""
       Deletes a recording.
 
