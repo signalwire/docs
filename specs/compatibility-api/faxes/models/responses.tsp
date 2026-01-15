@@ -3,9 +3,19 @@ import "../../_shared/pagination.tsp";
 
 using TypeSpec.Http;
 
+@doc("Meta information for fax list response.")
+model FaxMeta {
+  ...Pagination;
+
+  @doc("The name of the object.")
+  @example("faxes")
+  key?: string;
+}
+
 @doc("Response containing a list of faxes.")
 model FaxListResponse {
-  ...Pagination;
+  @doc("Pagination and metadata information.")
+  meta?: FaxMeta;
 
   @doc("List of faxes.")
   faxes?: Fax[];

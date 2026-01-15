@@ -85,13 +85,25 @@ model CreateIncomingPhoneNumberRequest {
 
 @doc("Request body for updating an incoming phone number.")
 model UpdateIncomingPhoneNumberRequest {
+  @doc("The unique identifier for an account to which the number should be transferred to.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ac")
+  AccountSid?: string;
+
   @doc("The unique identifier for the address associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")
   AddressSid?: string;
 
+  @doc("The unique identifier of the address associated with E911 for this phone number.")
+  @example("null")
+  EmergencyAddressSid?: string;
+
   @doc("A formatted version of the number.")
   @example("310-338-6745")
   FriendlyName?: string;
+
+  @doc("The unique identifier for the identity associated with this phone number.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ri")
+  IdentitySid?: string;
 
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472sa")
@@ -144,6 +156,10 @@ model UpdateIncomingPhoneNumberRequest {
   @doc("Whether the request to Url is a `GET` or a `POST`.")
   @example("POST")
   VoiceMethod?: "GET" | "POST";
+
+  @doc("Whether this number can receive calls or fax. Possible values are voice or fax.")
+  @example("voice")
+  VoiceReceiveMode?: "voice" | "fax";
 
   @doc("The URL to request when an incoming call is received.")
   @example("http://your-application.com/docs/voice.xml")

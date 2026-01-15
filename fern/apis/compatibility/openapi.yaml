@@ -3560,10 +3560,22 @@ components:
         uri:
           type: string
           description: The URI for the API call.
-        countries:
+          example: /api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US/Local
+        beta:
+          type: boolean
+          description: New numbers on SignalWire are marked as `beta`. Possible values are `true` or `false`.
+        country:
+          type: string
+          description: The country the number is from.
+          example: United States
+        country_code:
+          type: string
+          description: The ISO country code of the number.
+          example: US
+        subresource_uris:
           allOf:
-            - $ref: '#/components/schemas/CountryResource'
-          description: Country resources.
+            - $ref: '#/components/schemas/CountrySubresourceUris'
+          description: URIs for subresources.
       description: Response containing a list of available phone number resources.
     Call:
       type: object
@@ -4314,30 +4326,6 @@ components:
           description: Links to the recordings.
           example: /api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Conferences/b3877c40-da60-4998-90ad-b792e98472cf/Recordings.json
       description: Conference subresource URIs.
-    CountryResource:
-      type: object
-      properties:
-        beta:
-          type: boolean
-          description: New numbers on SignalWire are marked as `beta`.
-          example: false
-        country:
-          type: string
-          description: The country the number is from.
-          example: United States
-        country_code:
-          type: string
-          description: The ISO country code of the number.
-          example: US
-        subresource_uris:
-          allOf:
-            - $ref: '#/components/schemas/CountrySubresourceUris'
-          description: URIs for subresources.
-        uri:
-          type: string
-          description: The URI for the API call.
-          example: /api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US.json
-      description: Country resource for available phone numbers.
     CountrySubresourceUris:
       type: object
       properties:
@@ -5119,31 +5107,10 @@ components:
     FaxListResponse:
       type: object
       properties:
-        uri:
-          type: string
-          description: The URI of the current page.
-          example: /api/laml/2010-04-01/Accounts?Page=0&PageSize=50
-        first_page_uri:
-          type: string
-          description: The URI of the first page.
-          example: /api/laml/2010-04-01/Accounts?Page=0&PageSize=50
-        next_page_uri:
-          type: string
-          description: The URI of the next page.
-          example: /api/laml/2010-04-01/Accounts?Page=1&PageSize=50
-        previous_page_uri:
-          type: string
-          description: The URI of the previous page.
-        page:
-          type: integer
-          format: int32
-          description: The current page number.
-          example: 0
-        page_size:
-          type: integer
-          format: int32
-          description: The number of items per page.
-          example: 50
+        meta:
+          allOf:
+            - $ref: '#/components/schemas/FaxMeta'
+          description: Pagination and metadata information.
         faxes:
           type: array
           items:
@@ -5248,6 +5215,39 @@ components:
           description: The URL for the media.
           example: /fax/v1/Faxes/b3877c40-da60-4998-90ad-b792e98472fx/Media/b3877c40-da60-4998-90ad-b792e98472me
       description: Response containing a single fax media.
+    FaxMeta:
+      type: object
+      properties:
+        uri:
+          type: string
+          description: The URI of the current page.
+          example: /api/laml/2010-04-01/Accounts?Page=0&PageSize=50
+        first_page_uri:
+          type: string
+          description: The URI of the first page.
+          example: /api/laml/2010-04-01/Accounts?Page=0&PageSize=50
+        next_page_uri:
+          type: string
+          description: The URI of the next page.
+          example: /api/laml/2010-04-01/Accounts?Page=1&PageSize=50
+        previous_page_uri:
+          type: string
+          description: The URI of the previous page.
+        page:
+          type: integer
+          format: int32
+          description: The current page number.
+          example: 0
+        page_size:
+          type: integer
+          format: int32
+          description: The number of items per page.
+          example: 50
+        key:
+          type: string
+          description: The name of the object.
+          example: faxes
+      description: Meta information for fax list response.
     FaxQuality:
       type: string
       enum:
@@ -5379,6 +5379,11 @@ components:
     IncomingPhoneNumber:
       type: object
       properties:
+        account_id:
+          type: string
+          format: uuid
+          description: The unique identifier for the account that is associated with this phone number.
+          example: b3877c40-da60-4998-90ad-b792e98472ac
         account_sid:
           type: string
           format: uuid
@@ -5500,6 +5505,10 @@ components:
           type: string
           description: The URL to request when an incoming call is received.
           example: http://your-application.com/docs/voice.xml
+        country_code:
+          type: string
+          description: The country code for this phone number.
+          example: US
       description: Incoming phone number model.
     IncomingPhoneNumberCapabilities:
       type: object
@@ -5562,6 +5571,11 @@ components:
     IncomingPhoneNumberResponse:
       type: object
       properties:
+        account_id:
+          type: string
+          format: uuid
+          description: The unique identifier for the account that is associated with this phone number.
+          example: b3877c40-da60-4998-90ad-b792e98472ac
         account_sid:
           type: string
           format: uuid
@@ -5683,6 +5697,10 @@ components:
           type: string
           description: The URL to request when an incoming call is received.
           example: http://your-application.com/docs/voice.xml
+        country_code:
+          type: string
+          description: The country code for this phone number.
+          example: US
       description: Response containing a single incoming phone number.
     LamlBin:
       type: object
@@ -7198,14 +7216,26 @@ components:
     UpdateIncomingPhoneNumberRequest:
       type: object
       properties:
+        AccountSid:
+          type: string
+          description: The unique identifier for an account to which the number should be transferred to.
+          example: b3877c40-da60-4998-90ad-b792e98472ac
         AddressSid:
           type: string
           description: The unique identifier for the address associated with this phone number.
           example: b3877c40-da60-4998-90ad-b792e98472ad
+        EmergencyAddressSid:
+          type: string
+          description: The unique identifier of the address associated with E911 for this phone number.
+          example: 'null'
         FriendlyName:
           type: string
           description: A formatted version of the number.
           example: 310-338-6745
+        IdentitySid:
+          type: string
+          description: The unique identifier for the identity associated with this phone number.
+          example: b3877c40-da60-4998-90ad-b792e98472ri
         SmsApplicationSid:
           type: string
           description: The unique identifier for the application associated with SMS handling on this phone number.
@@ -7273,6 +7303,13 @@ components:
             - POST
           description: Whether the request to Url is a `GET` or a `POST`.
           example: POST
+        VoiceReceiveMode:
+          type: string
+          enum:
+            - voice
+            - fax
+          description: Whether this number can receive calls or fax. Possible values are voice or fax.
+          example: voice
         VoiceUrl:
           type: string
           description: The URL to request when an incoming call is received.
