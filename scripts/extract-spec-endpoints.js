@@ -50,9 +50,16 @@ function parseArgs(args) {
 }
 
 /**
- * Load and bundle an OpenAPI spec.
- * Uses bundle() instead of dereference() to avoid circular reference issues.
- * Internal $refs are kept as pointers, external refs are resolved.
+ * Load and dereference an OpenAPI spec.
+ * Uses dereference() to fully resolve all $ref pointers, replacing each
+ * reference with its resolved value. This results in a spec with no $ref
+ * pointers, which is ideal for programmatic usage and comparison.
+ *
+ * For specs with circular references, the 'ignore' option leaves circular
+ * refs as-is while dereferencing everything else.
+ *
+ * @param {string} specPath - Path to the OpenAPI spec file
+ * @returns {Promise<{api: object, hasCircularRefs: boolean}>}
  */
 async function parseSpec(specPath) {
   const absolutePath = path.resolve(specPath);
@@ -61,48 +68,21 @@ async function parseSpec(specPath) {
     throw new Error(`Spec file not found: ${absolutePath}`);
   }
 
-  // Bundle resolves external refs but keeps internal $refs as pointers
-  // This avoids circular reference issues with recursive schemas
-  const api = await SwaggerParser.bundle(absolutePath);
-  return api;
-}
+  const parser = new SwaggerParser();
 
-/**
- * Resolve a $ref pointer to its actual value in the spec.
- * Handles nested refs and circular ref detection.
- *
- * @param {object} obj - Object that may contain a $ref
- * @param {object} spec - Full spec object
- * @param {Set} visited - Set of visited ref paths for circular detection
- * @returns {object} Resolved object or original if no ref
- */
-function resolveRef(obj, spec, visited = new Set()) {
-  if (!obj || typeof obj !== 'object') return obj;
-  if (!obj.$ref) return obj;
+  // Dereference all $refs, replacing each with its resolved value
+  // Use 'ignore' for circular refs to prevent errors while still
+  // dereferencing all non-circular references
+  const api = await parser.dereference(absolutePath, {
+    dereference: {
+      circular: 'ignore', // Leave circular refs as-is, dereference everything else
+    },
+  });
 
-  const refPath = obj.$ref;
+  // Check if the spec contains circular references
+  const hasCircularRefs = parser.$refs.circular;
 
-  // Circular ref detection
-  if (visited.has(refPath)) {
-    return { _circular: refPath, ...obj };
-  }
-  visited.add(refPath);
-
-  // Parse the ref path (e.g., '#/components/parameters/AccountSid')
-  const parts = refPath.replace('#/', '').split('/');
-  let resolved = spec;
-
-  for (const part of parts) {
-    resolved = resolved?.[part];
-    if (!resolved) break;
-  }
-
-  if (!resolved) {
-    return obj; // Return original if ref not found
-  }
-
-  // Recursively resolve if the resolved object also has a $ref
-  return resolveRef(resolved, spec, new Set(visited));
+  return { api, hasCircularRefs };
 }
 
 /**
@@ -164,19 +144,17 @@ function extractEndpoints(spec) {
         tags: operation.tags || [],
       };
 
-      // Extract parameters (path, query, header) - resolve $refs first
+      // Extract parameters (path, query, header)
+      // Note: All $refs are already resolved by dereference(), so we can
+      // access properties directly without manual ref resolution
       if (operation.parameters && operation.parameters.length > 0) {
-        endpoint.parameters = operation.parameters.map((param) => {
-          // Resolve parameter ref if present
-          const resolved = resolveRef(param, spec);
-          return {
-            name: resolved.name,
-            in: resolved.in,
-            required: resolved.required || false,
-            description: resolved.description || null,
-            schema: resolved.schema || null,
-          };
-        });
+        endpoint.parameters = operation.parameters.map((param) => ({
+          name: param.name,
+          in: param.in,
+          required: param.required || false,
+          description: param.description || null,
+          schema: param.schema || null,
+        }));
       }
 
       // Extract request body
@@ -233,23 +211,28 @@ async function main() {
 
   try {
     logProgress(`Parsing spec: ${args.spec}`);
-    const spec = await parseSpec(args.spec);
+    const { api, hasCircularRefs } = await parseSpec(args.spec);
+
+    if (hasCircularRefs) {
+      logProgress(`Warning: Spec contains circular references (left as $ref pointers)`);
+    }
 
     logProgress(`Extracting endpoints...`);
-    const endpoints = extractEndpoints(spec);
+    const endpoints = extractEndpoints(api);
 
     logProgress(`Found ${endpoints.length} endpoints`);
 
     const output = {
       specInfo: {
-        title: spec.info?.title || null,
-        version: spec.info?.version || null,
-        description: spec.info?.description || null,
+        title: api.info?.title || null,
+        version: api.info?.version || null,
+        description: api.info?.description || null,
       },
+      hasCircularRefs,
       endpointCount: endpoints.length,
       endpoints,
-      // Include schema definitions so AI can look up $ref pointers
-      schemas: spec.components?.schemas || {},
+      // Include schema definitions for reference (all $refs resolved inline)
+      schemas: api.components?.schemas || {},
     };
 
     const jsonOutput = args.pretty ? JSON.stringify(output, null, 2) : JSON.stringify(output);

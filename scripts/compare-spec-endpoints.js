@@ -1,9 +1,13 @@
 /**
  * OpenAPI Spec Comparison Tool
  *
- * Compares two OpenAPI spec extractions to identify discrepancies in endpoints,
- * request bodies, responses, and parameters. Properly handles $ref resolution
- * including nested refs and allOf compositions.
+ * Compares two OpenAPI spec extractions (from extract-spec-endpoints.js) to identify
+ * discrepancies in endpoints, request bodies, responses, and parameters.
+ *
+ * Note: The extraction script uses swagger-parser's dereference() method to fully
+ * resolve all $ref pointers at extraction time. This means the JSON files passed
+ * to this script should have no $refs (except for circular refs which are left as-is).
+ * The ref resolution functions below are kept for backwards compatibility and edge cases.
  *
  * Usage:
  *   node scripts/compare-spec-endpoints.js --original <path> --generated <path> [--output <path>] [--pretty]
