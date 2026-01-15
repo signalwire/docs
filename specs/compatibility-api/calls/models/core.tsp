@@ -74,7 +74,8 @@ model Call {
   account_sid?: string;
 
   @doc("The annotation for the call.")
-  annotation?: string;
+  @example(null)
+  annotation?: string | null;
 
     @doc("Who/what the call was answered by. Possible values are `human` or `machine`.")
     answered_by?: AnsweredBy;
@@ -218,7 +219,8 @@ model CallRecording {
     status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
-  error_code?: string;
+  @example(null)
+  error_code?: string | null;
 
   @doc("The URI of the recording.")
   uri?: string;
@@ -252,7 +254,8 @@ model CallStream {
   date_updated?: string;
 
   @doc("The error code for the stream.")
-  error_code?: int32;
+  @example(null)
+  error_code?: int32 | null;
 
   @doc("The name of the stream.")
   @example("my_first_stream")

@@ -89,7 +89,8 @@ model IncomingPhoneNumber {
   date_updated?: string;
 
   @doc("The unique identifier of the address associated with E911 for this phone number.")
-  emergency_address_sid?: string;
+  @example(null)
+  emergency_address_sid?: string | null;
 
     @doc("Whether the phone route has an active E911 address associated.")
     emergency_status?: EmergencyStatus;
@@ -114,21 +115,24 @@ model IncomingPhoneNumber {
   sid?: string;
 
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
-  sms_application_sid?: string;
+  @example(null)
+  sms_application_sid?: string | null;
 
   @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   sms_fallback_method?: string;
 
   @doc("The URL to request if errors occur when fetching SmsUrl.")
-  sms_fallback_url?: string;
+  @example(null)
+  sms_fallback_url?: string | null;
 
   @doc("Whether the request to SmsUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   sms_method?: string;
 
   @doc("The URL to request when an incoming SMS is received.")
-  sms_url?: string;
+  @example(null)
+  sms_url?: string | null;
 
   @doc("The URL to request to pass status updates to.")
   @example("example.com")
@@ -147,7 +151,8 @@ model IncomingPhoneNumber {
   uri?: string;
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
-  voice_application_sid?: string;
+  @example(null)
+  voice_application_sid?: string | null;
 
   @doc("Whether or not to look up a caller's name in the database.")
   @example(false)

@@ -23,21 +23,24 @@ model CreateIncomingPhoneNumberRequest {
   IdentitySid?: string;
 
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
-  SmsApplicationSid?: string;
+  @example(null)
+  SmsApplicationSid?: string | null;
 
   @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   SmsFallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request if errors occur when fetching SmsUrl.")
-  SmsFallbackUrl?: string;
+  @example(null)
+  SmsFallbackUrl?: string | null;
 
   @doc("Whether the request to SmsUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   SmsMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request when an incoming SMS is received.")
-  SmsUrl?: string;
+  @example(null)
+  SmsUrl?: string | null;
 
   @doc("The URL to request to pass status updates to.")
   @example("example.com")
@@ -52,7 +55,8 @@ model CreateIncomingPhoneNumberRequest {
   TrunkSid?: string;
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
-  VoiceApplicationSid?: string;
+  @example(null)
+  VoiceApplicationSid?: string | null;
 
   @doc("Whether or not to look up a caller's name in the database.")
   @example(false)
@@ -90,21 +94,24 @@ model UpdateIncomingPhoneNumberRequest {
   FriendlyName?: string;
 
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
-  SmsApplicationSid?: string;
+  @example(null)
+  SmsApplicationSid?: string | null;
 
   @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`.")
   @example("POST")
   SmsFallbackMethod?: "GET" | "POST";
 
   @doc("The URL to request if errors occur when fetching SmsUrl.")
-  SmsFallbackUrl?: string;
+  @example(null)
+  SmsFallbackUrl?: string | null;
 
   @doc("Whether the request to SmsUrl is a `GET` or a `POST`.")
   @example("POST")
   SmsMethod?: "GET" | "POST";
 
   @doc("The URL to request when an incoming SMS is received.")
-  SmsUrl?: string;
+  @example(null)
+  SmsUrl?: string | null;
 
   @doc("The URL to request to pass status updates to.")
   @example("example.com")
@@ -115,10 +122,12 @@ model UpdateIncomingPhoneNumberRequest {
   StatusCallbackMethod?: "GET" | "POST";
 
   @doc("The unique identifier for the Trunk associated with this phone number.")
-  TrunkSid?: string;
+  @example(null)
+  TrunkSid?: string | null;
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
-  VoiceApplicationSid?: string;
+  @example(null)
+  VoiceApplicationSid?: string | null;
 
   @doc("Whether or not to look up a caller's name in the database.")
   @example(false)
