@@ -15,7 +15,7 @@ namespace ProjectAPI.Tokens {
   @tag("Tokens")
   @friendlyName("Tokens")
   interface ProjectTokens {
-    @operationId("create_api_token")
+    @operationId("create_token")
     @summary("Generate a new API Token")
     @doc("""
       Generate an API Token for a project to be used to authenticate requests within the project.
@@ -37,7 +37,7 @@ namespace ProjectAPI.Tokens {
       | TokenStatusCode422
       | StatusCode500;
 
-    @operationId("update_api_token")
+    @operationId("update_token")
     @summary("Update an API Token")
     @doc("""
       Update an API Token's name or permissions.
@@ -60,7 +60,7 @@ namespace ProjectAPI.Tokens {
       | TokenStatusCode422
       | StatusCode500;
 
-    @operationId("delete_api_token")
+    @operationId("delete_token")
     @summary("Delete an API Token")
     @doc("Delete an API Token. This action cannot be undone.")
     @delete
