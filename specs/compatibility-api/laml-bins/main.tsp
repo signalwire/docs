@@ -25,7 +25,7 @@ namespace CompatibilityAPI.LamlBins {
     list(
       ...LamlBinsAccountSidPath,
       @query @doc("A friendly name given to the cXML bin.") @example("Death Star IVR") Name?: string,
-    ): LamlBinListResponse | StatusCode401;
+    ): LamlBinListResponse | CompatibilityStatusCode401;
 
     @operationId("create_cxml_application")
     @summary("Create an cXML Bin")
@@ -40,7 +40,7 @@ namespace CompatibilityAPI.LamlBins {
       ...LamlBinsAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateLamlBinRequest,
-    ): LamlBinResponse | StatusCode401 | StatusCode400;
+    ): LamlBinResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("retrieve_cxml_application")
     @summary("Retrieve a cXML Bin")
@@ -51,7 +51,7 @@ namespace CompatibilityAPI.LamlBins {
       The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
       """)
     @route("/{Sid}")
-    read(...LamlBinsAccountSidPath, ...LamlBinSidPath): LamlBinResponse | StatusCode401 | StatusCode404;
+    read(...LamlBinsAccountSidPath, ...LamlBinSidPath): LamlBinResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_cxml_application")
     @summary("Update a cXML Bin")
@@ -68,7 +68,7 @@ namespace CompatibilityAPI.LamlBins {
       ...LamlBinSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateLamlBinRequest,
-    ): LamlBinResponse | StatusCode401 | StatusCode404;
+    ): LamlBinResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_cxml_application")
     @summary("Delete a cXML Bin")
@@ -80,6 +80,6 @@ namespace CompatibilityAPI.LamlBins {
       """)
     @delete
     @route("/{Sid}")
-    delete(...LamlBinsAccountSidPath, ...LamlBinSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...LamlBinsAccountSidPath, ...LamlBinSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

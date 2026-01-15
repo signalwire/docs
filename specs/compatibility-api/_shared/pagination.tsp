@@ -23,3 +23,12 @@ model Pagination {
   @example(50)
   page_size?: int32;
 }
+
+@doc("Pagination information with key property for list responses.")
+model PaginationWithKey {
+  ...Pagination;
+
+  @doc("The name of the object")
+  @example("faxes")
+  key?: string;
+}

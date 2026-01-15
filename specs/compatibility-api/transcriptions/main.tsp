@@ -21,7 +21,7 @@ namespace CompatibilityAPI.Transcriptions {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(...TranscriptionsAccountSidPath): TranscriptionListResponse | StatusCode401;
+    list(...TranscriptionsAccountSidPath): TranscriptionListResponse | CompatibilityStatusCode401;
 
     @operationId("retrieve_transcription")
     @summary("Retrieve a Transcription.")
@@ -32,7 +32,7 @@ namespace CompatibilityAPI.Transcriptions {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{Sid}")
-    read(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): TranscriptionResponse | StatusCode401 | StatusCode404;
+    read(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): TranscriptionResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_transcription")
     @summary("Delete a Recording Transcription.")
@@ -44,6 +44,6 @@ namespace CompatibilityAPI.Transcriptions {
       """)
     @delete
     @route("/{Sid}")
-    delete(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

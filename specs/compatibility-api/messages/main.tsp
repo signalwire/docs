@@ -29,7 +29,7 @@ namespace CompatibilityAPI.Messages {
       @query @doc("The phone number in E.164 format that received the message. For inbound messages, this is one of your SignalWire phone numbers; for outbound messages, this is the remote phone number that received the message.") To?: string,
       @query @doc("Current status of the message.") Status?: "queued" | "sending" | "sent" | "delivered" | "undelivered" | "failed" | "receiving" | "received",
       @query @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.") PageSize?: int32,
-    ): MessageListResponse | StatusCode401;
+    ): MessageListResponse | CompatibilityStatusCode401;
 
     @operationId("create_message")
     @summary("Create a Message")
@@ -44,7 +44,7 @@ namespace CompatibilityAPI.Messages {
       ...MessagesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateMessageRequest,
-    ): MessageResponse | StatusCode401 | StatusCode400;
+    ): MessageResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("retrieve_message")
     @summary("Retrieve a Message")
@@ -55,7 +55,7 @@ namespace CompatibilityAPI.Messages {
       The API token must include the following scopes: _Messaging_.
       """)
     @route("/{Sid}")
-    read(...MessagesAccountSidPath, ...MessageSidPath): MessageResponse | StatusCode401 | StatusCode404;
+    read(...MessagesAccountSidPath, ...MessageSidPath): MessageResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_message")
     @summary("Update a Message")
@@ -72,7 +72,7 @@ namespace CompatibilityAPI.Messages {
       ...MessageSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateMessageRequest,
-    ): MessageResponse | StatusCode401 | StatusCode404;
+    ): MessageResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_message")
     @summary("Delete a Message")
@@ -84,7 +84,7 @@ namespace CompatibilityAPI.Messages {
       """)
     @delete
     @route("/{Sid}")
-    delete(...MessagesAccountSidPath, ...MessageSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...MessagesAccountSidPath, ...MessageSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 
   @tag(MESSAGE_MEDIA_TAG)
@@ -104,7 +104,7 @@ namespace CompatibilityAPI.Messages {
       ...MessageSidPathForMedia,
       @query @doc("The date and time the message was sent in RFC 2822 format.") DateCreated?: string,
       @query @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.") PageSize?: int32,
-    ): MessageMediaListResponse | StatusCode401;
+    ): MessageMediaListResponse | CompatibilityStatusCode401;
 
     @operationId("retrieve_media")
     @summary("Retrieve Message Media")
@@ -115,7 +115,7 @@ namespace CompatibilityAPI.Messages {
       The API token must include the following scopes: _Messaging_.
       """)
     @route("/{Sid}")
-    read(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): MessageMediaResponse | StatusCode401 | StatusCode404;
+    read(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): MessageMediaResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_message_media")
     @summary("Delete Message Media")
@@ -127,6 +127,6 @@ namespace CompatibilityAPI.Messages {
       """)
     @delete
     @route("/{Sid}")
-    delete(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

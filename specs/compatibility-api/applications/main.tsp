@@ -28,7 +28,7 @@ namespace CompatibilityAPI.Applications {
       @doc("A named unique identifier for the resource. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.")
       @example("My Friendly Name")
       FriendlyName?: string,
-    ): ApplicationListResponse | StatusCode401;
+    ): ApplicationListResponse | CompatibilityStatusCode401;
 
     @operationId("create_application")
     @summary("Create an Application")
@@ -43,7 +43,7 @@ namespace CompatibilityAPI.Applications {
       ...AccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateApplicationRequest,
-    ): ApplicationResponse | StatusCode401 | StatusCode400;
+    ): ApplicationResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("get_application")
     @summary("Find an Application by ID")
@@ -54,7 +54,7 @@ namespace CompatibilityAPI.Applications {
       The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
       """)
     @route("/{Sid}")
-    read(...AccountSidPath, ...ApplicationPathSid): ApplicationResponse | StatusCode401 | StatusCode404;
+    read(...AccountSidPath, ...ApplicationPathSid): ApplicationResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_application")
     @summary("Update an Application")
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.Applications {
       ...ApplicationPathSid,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateApplicationRequest,
-    ): ApplicationResponse | StatusCode401 | StatusCode404;
+    ): ApplicationResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_application")
     @summary("Delete an Application")
@@ -83,6 +83,6 @@ namespace CompatibilityAPI.Applications {
       """)
     @delete
     @route("/{Sid}")
-    delete(...AccountSidPath, ...ApplicationPathSid): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...AccountSidPath, ...ApplicationPathSid): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

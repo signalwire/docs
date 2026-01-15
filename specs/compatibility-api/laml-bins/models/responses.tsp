@@ -6,7 +6,7 @@ using TypeSpec.Http;
 @doc("Response containing a list of cXML Bins.")
 model LamlBinListResponse {
   @doc("Pagination metadata.")
-  meta?: Pagination;
+  meta?: PaginationWithKey;
 
   @doc("List of cXML bins.")
   laml_bins?: LamlBin[];

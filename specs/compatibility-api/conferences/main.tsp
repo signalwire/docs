@@ -28,7 +28,7 @@ namespace CompatibilityAPI.Conferences {
       @query @doc("Shows conferences that were updated on the date provided.") DateUpdated?: string,
       @query @doc("A description, up to 64 characters, of the conference room.") FriendlyName?: string,
       @query @doc("The status of this conference.") @example("completed") Status?: string,
-    ): ConferenceListResponse | StatusCode401;
+    ): ConferenceListResponse | CompatibilityStatusCode401;
 
     @operationId("retrieve_conference")
     @summary("Retrieve a Conference")
@@ -39,7 +39,7 @@ namespace CompatibilityAPI.Conferences {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{Sid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPath): ConferenceResponse | StatusCode401 | StatusCode404;
+    read(...ConferencesAccountSidPath, ...ConferenceSidPath): ConferenceResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_conference")
     @summary("Update Conference")
@@ -56,7 +56,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body?: UpdateConferenceRequest,
-    ): ConferenceResponse | StatusCode401 | StatusCode404;
+    ): ConferenceResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 
   @tag(CONFERENCE_PARTICIPANTS_TAG)
@@ -76,7 +76,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPathForParticipant,
       @query @doc("Whether or not a participant is muted.") Muted?: boolean,
       @query @doc("Whether or not a participant is on hold.") Hold?: boolean,
-    ): ConferenceParticipantListResponse | StatusCode401;
+    ): ConferenceParticipantListResponse | CompatibilityStatusCode401;
 
     @operationId("retrieve_participant")
     @summary("Retrieve a Participant")
@@ -87,7 +87,7 @@ namespace CompatibilityAPI.Conferences {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{CallSid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): ConferenceParticipantResponse | StatusCode401 | StatusCode404;
+    read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): ConferenceParticipantResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_participant")
     @summary("Update a Participant")
@@ -105,7 +105,7 @@ namespace CompatibilityAPI.Conferences {
       ...ParticipantCallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceParticipantRequest,
-    ): ConferenceParticipantResponse | StatusCode401 | StatusCode404;
+    ): ConferenceParticipantResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_participant")
     @summary("Delete a Participant")
@@ -117,7 +117,7 @@ namespace CompatibilityAPI.Conferences {
       """)
     @delete
     @route("/{CallSid}")
-    delete(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): StatusCode204 | StatusCode401 | StatusCode404;
+    delete(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 
   @tag(CONFERENCE_STREAMS_TAG)
@@ -138,7 +138,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPathForParticipant,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateConferenceStreamRequest,
-    ): ConferenceStreamResponse | StatusCode401 | StatusCode400 | StatusCode422;
+    ): ConferenceStreamResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400 | CompatibilityStatusCode422StringArray;
 
     @operationId("update_conference_stream")
     @summary("Update Conference Stream")
@@ -156,6 +156,6 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceStreamRequest,
-    ): ConferenceStreamResponse | StatusCode401 | StatusCode404 | StatusCode422;
+    ): ConferenceStreamResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;
   }
 }

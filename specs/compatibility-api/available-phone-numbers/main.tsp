@@ -21,7 +21,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | StatusCode401;
+    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode401;
 
     @operationId("list_available_phone_number_resources_by_country")
     @summary("List of AvailablePhoneNumber resources by country")
@@ -32,7 +32,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @route("/{IsoCountry}")
-    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | StatusCode401;
+    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode401;
 
     @operationId("search_local_available_phone_numbers")
     @summary("Search for available phone numbers that match your criteria.")
@@ -57,7 +57,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       @query @doc("Whether or not a number can receive MMS messages.") MmsEnabled?: boolean,
       @query @doc("Whether or not a number can receive SMS messages.") SmsEnabled?: boolean,
       @query @doc("Whether or not a number can receive calls.") VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | StatusCode401;
+    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
 
     @operationId("search_toll_free_available_phone_numbers")
     @summary("Find toll-free numbers.")
@@ -82,6 +82,6 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       @query @doc("Whether or not a number can receive MMS messages.") MmsEnabled?: boolean,
       @query @doc("Whether or not a number can receive SMS messages.") SmsEnabled?: boolean,
       @query @doc("Whether or not a number can receive calls.") VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | StatusCode401;
+    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
   }
 }
