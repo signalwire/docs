@@ -99,6 +99,7 @@ model Recording {
     status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
+  @example("21104")
   error_code?: string;
 
   @doc("The URI of the recording.")

@@ -122,6 +122,7 @@ model ConferenceParticipant {
 
   @doc("The unique identifier of the participant who is being coached.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472co")
   call_sid_to_coach?: string;
 
   @doc("Whether the participant is coaching another call.")

@@ -23,6 +23,7 @@ model CreateMessageRequest {
   SendAsMms?: boolean;
 
   @doc("The SID of a SignalWire cXML bin used to configure the message's `MessageStatusCallback` attribute.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ap")
   ApplicationSid?: string;
 
   @doc("The maximum price in USD acceptable for the message to be sent.")
@@ -38,6 +39,7 @@ model CreateMessageRequest {
   ValidityPeriod?: int32 = 14400;
 
   @doc("If a number group was used when sending an outbound message, the number group's ID will be present.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ms")
   MessagingServiceSid?: string;
 }
 

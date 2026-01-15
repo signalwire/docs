@@ -90,9 +90,11 @@ model Message {
     direction?: MessageDirection;
 
   @doc("If an error has occurred on the message, the error code will give you a specific code.")
+  @example("30001")
   error_code?: string;
 
   @doc("A human readable description of the error that occurred.")
+  @example("Queue overflow")
   error_message?: string;
 
   @doc("The phone number in E.164 format that sent the message.")
@@ -119,6 +121,7 @@ model Message {
   to?: string;
 
   @doc("If a number group was used when sending an outbound message, the number group's ID will be present.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ms")
   messaging_service_sid?: string;
 
   @doc("The URI of this particular message.")

@@ -74,6 +74,7 @@ model Call {
   account_sid?: string;
 
   @doc("The annotation for the call.")
+  @example("Call annotation text")
   annotation?: string;
 
     @doc("Who/what the call was answered by. Possible values are `human` or `machine`.")
@@ -218,9 +219,11 @@ model CallRecording {
     status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
+  @example("21104")
   error_code?: string;
 
   @doc("The URI of the recording.")
+  @example("/api/laml/2010-04-01/Accounts/720796a0-8ee9-4350-83bd-2d07a3121f1e/Recordings/19e436af-5688-4307-b03b-bdb2b42b8142.json")
   uri?: string;
 
   @doc("Subresource URIs")
@@ -252,6 +255,7 @@ model CallStream {
   date_updated?: string;
 
   @doc("The error code for the stream.")
+  @example(0)
   error_code?: int32;
 
   @doc("The name of the stream.")
