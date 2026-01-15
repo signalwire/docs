@@ -31,7 +31,7 @@ namespace VideoAPI.Rooms {
     ): ListRoomsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("get_room_by_name")
-    @summary("Find a Room by Name")
+    @summary("Find a Room by its unique name.")
     @doc("Find a room by name.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
     @route("/{name}")
     getByName(
