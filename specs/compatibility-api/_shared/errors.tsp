@@ -40,31 +40,31 @@ model ErrorArrayResponse {
   errors?: ErrorArrayItem[];
 }
 
-@doc("400 Bad Request response.")
+@doc("The request was invalid or cannot be processed. Check the error details for more information.")
 model StatusCode400 {
   @statusCode statusCode: 400;
   @body error: ErrorResponse;
 }
 
-@doc("400 Bad Request response with errors array format.")
+@doc("The request was invalid. Review the errors array for specific issues with your request.")
 model StatusCode400Array {
   @statusCode statusCode: 400;
   @body body: ErrorArrayResponse;
 }
 
-@doc("401 Unauthorized response.")
+@doc("Authentication failed. Please verify your credentials and try again.")
 model StatusCode401 {
   @statusCode statusCode: 401;
   @body error: ErrorResponse;
 }
 
-@doc("404 Not Found response.")
+@doc("The requested resource was not found. Please verify the resource identifier.")
 model StatusCode404 {
   @statusCode statusCode: 404;
   @body error: ErrorResponse;
 }
 
-@doc("422 Unprocessable Entity response.")
+@doc("The request could not be processed due to validation errors. Check the error details for more information.")
 model StatusCode422 {
   @statusCode statusCode: 422;
   @body error: ErrorResponse;
@@ -77,7 +77,7 @@ model ErrorStringArrayResponse {
   errors: string[];
 }
 
-@doc("422 Unprocessable Entity response with errors array of strings format.")
+@doc("The request could not be processed due to validation errors. Review the errors array for specific issues.")
 model StatusCode422StringArray {
   @statusCode statusCode: 422;
   @body body: ErrorStringArrayResponse;
@@ -107,7 +107,7 @@ model TokenValidationError {
   url?: string;
 }
 
-@doc("422 Unprocessable Entity response for token validation errors.")
+@doc("The token request could not be processed due to validation errors. Check the error details for the specific issue.")
 model StatusCode422Token {
   @statusCode statusCode: 422;
   @body body: TokenValidationError;
@@ -132,7 +132,7 @@ model ImportedPhoneNumberError {
   status?: int32;
 }
 
-@doc("422 Unprocessable Entity response for ImportedPhoneNumbers.")
+@doc("The phone number import request could not be processed due to validation errors. Check the error details for more information.")
 model StatusCode422ImportedPhoneNumber {
   @statusCode statusCode: 422;
   @body body: ImportedPhoneNumberError;
