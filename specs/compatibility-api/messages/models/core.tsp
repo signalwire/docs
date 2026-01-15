@@ -90,12 +90,10 @@ model Message {
     direction?: MessageDirection;
 
   @doc("If an error has occurred on the message, the error code will give you a specific code.")
-  @example(null)
-  error_code?: string | null;
+  error_code?: string;
 
   @doc("A human readable description of the error that occurred.")
-  @example(null)
-  error_message?: string | null;
+  error_message?: string;
 
   @doc("The phone number in E.164 format that sent the message.")
   @example("+15551234567")
@@ -121,8 +119,7 @@ model Message {
   to?: string;
 
   @doc("If a number group was used when sending an outbound message, the number group's ID will be present.")
-  @example(null)
-  messaging_service_sid?: string | null;
+  messaging_service_sid?: string;
 
   @doc("The URI of this particular message.")
   @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527.json")

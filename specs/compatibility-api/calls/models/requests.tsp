@@ -8,8 +8,7 @@ model CreateCallRequest {
 
   @doc("The unique identifier of the application used to handle the call. Required if `Url` is not used.")
   @format("uuid")
-  @example(null)
-  ApplicationSid?: string | null;
+  ApplicationSid?: string;
 
   @doc("The address that initiated the call.")
   @example("+13103384645")
@@ -100,12 +99,10 @@ model CreateCallRequest {
   RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
   @doc("The username to authenticate the caller when making an outbound SIP call.")
-  @example(null)
-  SipAuthUsername?: string | null;
+  SipAuthUsername?: string;
 
   @doc("The password to authenticate the caller when making an outbound SIP call.")
-  @example(null)
-  SipAuthPassword?: string | null;
+  SipAuthPassword?: string;
 
   @doc("The digits to press after a call is connected.")
   @example("w")

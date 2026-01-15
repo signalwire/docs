@@ -99,8 +99,7 @@ model Recording {
     status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
-  @example(null)
-  error_code?: string | null;
+  error_code?: string;
 
   @doc("The URI of the recording.")
   @example("/api/laml/2010-04-01/Accounts/720796a0-8ee9-4350-83bd-2d07a3121f1e/Recordings/19e436af-5688-4307-b03b-bdb2b42b8142.json")

@@ -13,8 +13,7 @@ model Pagination {
   next_page_uri?: string;
 
   @doc("The URI of the previous page.")
-  @example(null)
-  previous_page_uri?: string | null;
+  previous_page_uri?: string;
 
   @doc("The current page number.")
   @example(0)

@@ -35,8 +35,7 @@ model UpdateConferenceParticipantRequest {
 
   @doc("The unique identifier of the participant who is being coached.")
   @format("uuid")
-  @example(null)
-  CallSidToCoach?: string | null;
+  CallSidToCoach?: string;
 
   @doc("Whether or not a participant is on hold.")
   @example(false)
