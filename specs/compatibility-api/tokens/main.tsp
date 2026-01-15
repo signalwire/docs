@@ -24,7 +24,7 @@ namespace CompatibilityAPI.Tokens {
       ...TokensAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateTokenRequest,
-    ): TokenResponse | StatusCode401 | StatusCode422;
+    ): TokenResponse | StatusCode401 | StatusCode422Token;
 
     @operationId("update_token")
     @summary("Update an API Token")
@@ -33,7 +33,7 @@ namespace CompatibilityAPI.Tokens {
       """)
     @patch(#{implicitOptionality: true})
     @route("/{token_id}")
-    update(...TokensAccountSidPath, ...TokenIdPath, @body body: UpdateTokenRequest): TokenResponse | StatusCode401 | StatusCode422;
+    update(...TokensAccountSidPath, ...TokenIdPath, @body body: UpdateTokenRequest): TokenResponse | StatusCode401 | StatusCode422Token;
 
     @operationId("delete_token")
     @summary("Delete an API Token")

@@ -40,7 +40,7 @@ namespace CompatibilityAPI.Queues {
     create(
       ...QueuesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: CreateQueueRequest,
+      @body body?: CreateQueueRequest,
     ): QueueResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_queue")

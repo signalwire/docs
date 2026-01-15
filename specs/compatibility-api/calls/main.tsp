@@ -49,7 +49,7 @@ namespace CompatibilityAPI.Calls {
       ...CallsAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRequest,
-    ): CallResponse | StatusCode401 | StatusCode400;
+    ): CallResponse | StatusCode401 | StatusCode400Array;
 
     @operationId("retrieve_a_call")
     @summary("Retrieve a Call")
@@ -127,7 +127,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: UpdateCallRecordingRequest,
+      @body body?: UpdateCallRecordingRequest,
     ): CallRecordingResponse | StatusCode401 | StatusCode404;
   }
 
@@ -166,7 +166,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: UpdateCallStreamRequest,
+      @body body?: UpdateCallStreamRequest,
     ): CallStreamResponse | StatusCode401 | StatusCode404;
   }
 }

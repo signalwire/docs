@@ -42,7 +42,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     create(
       ...IncomingPhoneNumbersAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: CreateIncomingPhoneNumberRequest,
+      @body body?: CreateIncomingPhoneNumberRequest,
     ): IncomingPhoneNumberResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_incoming_phone_number")

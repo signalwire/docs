@@ -42,7 +42,7 @@ namespace CompatibilityAPI.Faxes {
     create(
       ...FaxesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: SendFaxRequest,
+      @body body?: SendFaxRequest,
     ): FaxResponse | StatusCode401 | StatusCode400;
 
     @operationId("retrieve_fax")
