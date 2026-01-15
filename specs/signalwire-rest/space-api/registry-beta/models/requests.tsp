@@ -192,10 +192,13 @@ model UpdateCampaignRequest {
 
 @doc("Request body for creating an order.")
 model CreateOrderRequest {
-  @doc("The phone number ID to assign to the campaign.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
-  phone_number_id: uuid;
+  @doc("A list of phone numbers in E164 format.")
+  @example(#["+15558675309"])
+  phone_numbers?: string[];
+
+  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.")
+  @example("https://example.com/handle_callback")
+  status_callback_url?: string;
 }
 
 @doc("Request body for assigning a number to a campaign.")

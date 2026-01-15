@@ -17,11 +17,7 @@ model CreateNumberGroupRequest {
 model UpdateNumberGroupRequest {
   @doc("The name given to the number group. Helps to distinguish different groups within your project.")
   @example("My Number Group")
-  name?: string;
-
-  @doc("Whether the number group uses the same 'From' number for outbound requests to a number, or chooses a random one. Defaults to false.")
-  @example(false)
-  sticky_sender?: boolean;
+  name: string;
 }
 
 @doc("Request body for adding a phone number to a number group.")

@@ -3,6 +3,32 @@ import "@typespec/http";
 using TypeSpec.Http;
 
 namespace Types.StatusCodes {
+  @doc("Bad request error response.")
+  @error
+  model StatusCode400 {
+    @statusCode statusCode: 400;
+
+    @doc("Error type.")
+    @example("validation_error")
+    type: string;
+
+    @doc("Error code.")
+    @example("invalid_parameter")
+    code: string;
+
+    @doc("Error details.")
+    @example("Name must be present")
+    message: string;
+
+    @doc("Request parameter associated with this error.")
+    @example("name")
+    attribute?: string;
+
+    @doc("Link to developer resource for this error.")
+    @example("https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter")
+    url: string;
+  }
+
   @error
   model StatusCode404 {
     @statusCode statusCode: 404;

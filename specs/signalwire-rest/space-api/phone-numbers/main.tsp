@@ -47,7 +47,7 @@ namespace SpaceAPI.PhoneNumbers {
     @post
     create(@body body: PurchasePhoneNumberRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body phone_number: PhoneNumberResponse;
         }
       | StatusCode401
@@ -112,24 +112,36 @@ namespace SpaceAPI.PhoneNumbers {
     @get
     search(
       @query
-      @doc("Filter by area code.")
-      area_code?: string,
+      @doc("An areacode to search within.")
+      areacode?: string,
 
       @query
-      @doc("Filter by country code.")
-      country_code?: string,
+      @doc("Search for either local or toll-free numbers. Defaults to local.")
+      number_type?: string,
 
       @query
-      @doc("Filter by region.")
+      @doc("A string of 3 to 7 digits that should be used as the start of a number. Cannot be used in combination with contains or ends_with.")
+      starts_with?: string,
+
+      @query
+      @doc("A string of 3 to 7 digits that should appear somewhere in the number. Cannot be used in combination with starts_with or ends_with.")
+      contains?: string,
+
+      @query
+      @doc("A string of 3 to 7 digits that should be used as the end of a number. Cannot be used in combination with starts_with or contains.")
+      ends_with?: string,
+
+      @query
+      @doc("The maximum number of matches to return. Upper limit of 100. Defaults to 50.")
+      max_results?: int32,
+
+      @query
+      @doc("A region or state to search within. Must be an ISO 3166-2 alpha-2 code, i.e. TX for Texas. Cannot be used in combination with areacode.")
       region?: string,
 
       @query
-      @doc("Filter by city.")
-      city?: string,
-
-      @query
-      @doc("Filter by number type (local, toll_free).")
-      number_type?: string
+      @doc("A specific City to search within. Must be used in combination with region. Cannot be used in combination with areacode, starts_with, contains, or ends_with.")
+      city?: string
     ): AvailablePhoneNumbersResponse | StatusCode401 | StatusCode500;
   }
 }

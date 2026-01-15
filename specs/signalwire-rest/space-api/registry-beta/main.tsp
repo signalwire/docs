@@ -186,7 +186,7 @@ namespace SpaceAPI.RegistryBeta {
     @post
     createOrder(...CampaignPathID, @body body: CreateOrderRequest):
       | {
-          @statusCode statusCode: 201;
+          @statusCode statusCode: 200;
           @body order: OrderResponse;
         }
       | StatusCode401

@@ -517,8 +517,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/SipEndpointPathID'
       responses:
-        '200':
-          description: The request has succeeded.
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
           content:
             application/json:
               schema:
@@ -1228,8 +1228,8 @@ paths:
         The API token must include the following scopes: _Numbers_.
       parameters: []
       responses:
-        '201':
-          description: The request has succeeded and a new resource has been created as a result.
+        '200':
+          description: The request has succeeded.
           content:
             application/json:
               schema:
@@ -1270,38 +1270,60 @@ paths:
         #### Permissions
         The API token must include the following scopes: _Numbers_.
       parameters:
-        - name: area_code
+        - name: areacode
           in: query
           required: false
-          description: Filter by area code.
-          schema:
-            type: string
-          explode: false
-        - name: country_code
-          in: query
-          required: false
-          description: Filter by country code.
-          schema:
-            type: string
-          explode: false
-        - name: region
-          in: query
-          required: false
-          description: Filter by region.
-          schema:
-            type: string
-          explode: false
-        - name: city
-          in: query
-          required: false
-          description: Filter by city.
+          description: An areacode to search within.
           schema:
             type: string
           explode: false
         - name: number_type
           in: query
           required: false
-          description: Filter by number type (local, toll_free).
+          description: Search for either local or toll-free numbers. Defaults to local.
+          schema:
+            type: string
+          explode: false
+        - name: starts_with
+          in: query
+          required: false
+          description: A string of 3 to 7 digits that should be used as the start of a number. Cannot be used in combination with contains or ends_with.
+          schema:
+            type: string
+          explode: false
+        - name: contains
+          in: query
+          required: false
+          description: A string of 3 to 7 digits that should appear somewhere in the number. Cannot be used in combination with starts_with or ends_with.
+          schema:
+            type: string
+          explode: false
+        - name: ends_with
+          in: query
+          required: false
+          description: A string of 3 to 7 digits that should be used as the end of a number. Cannot be used in combination with starts_with or contains.
+          schema:
+            type: string
+          explode: false
+        - name: max_results
+          in: query
+          required: false
+          description: The maximum number of matches to return. Upper limit of 100. Defaults to 50.
+          schema:
+            type: integer
+            format: int32
+          explode: false
+        - name: region
+          in: query
+          required: false
+          description: A region or state to search within. Must be an ISO 3166-2 alpha-2 code, i.e. TX for Texas. Cannot be used in combination with areacode.
+          schema:
+            type: string
+          explode: false
+        - name: city
+          in: query
+          required: false
+          description: A specific City to search within. Must be used in combination with region. Cannot be used in combination with areacode, starts_with, contains, or ends_with.
           schema:
             type: string
           explode: false
@@ -1574,18 +1596,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueueResponse'
+        '400':
+          description: Bad request error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
-        '404':
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
         '422':
           description: Flat validation error response (not wrapped in errors array).
           content:
@@ -1619,6 +1641,12 @@ paths:
       responses:
         '204':
           description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: Bad request error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -1899,6 +1927,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
         '500':
           description: Server error
           content:
@@ -2392,8 +2426,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CampaignPathID'
       responses:
-        '201':
-          description: The request has succeeded and a new resource has been created as a result.
+        '200':
+          description: The request has succeeded.
           content:
             application/json:
               schema:
@@ -2543,8 +2577,8 @@ paths:
         The API token must include the following scopes: _Voice_.
       parameters: []
       responses:
-        '200':
-          description: The request has succeeded.
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
           content:
             application/json:
               schema:
@@ -4138,6 +4172,16 @@ components:
             - working_copy
             - current_deployed
           description: A string representing the version of your Call Flow you'd like to use.
+        call_relay_context:
+          type: string
+          description: This handler type is deprecated. Please use call_relay_application or call_relay_topic instead.
+          deprecated: true
+          example: office
+        call_relay_context_status_callback_url:
+          type: string
+          description: This property is deprecated. Please use call_relay_topic_status_callback_url instead.
+          deprecated: true
+          example: https://myapplication/handle_relay_callbacks
       description: Request body for creating a domain application.
     CreateNumberGroupRequest:
       type: object
@@ -4155,15 +4199,18 @@ components:
       description: Request body for creating a number group.
     CreateOrderRequest:
       type: object
-      required:
-        - phone_number_id
       properties:
-        phone_number_id:
-          allOf:
-            - $ref: '#/components/schemas/uuid'
-          format: uuid
-          description: The phone number ID to assign to the campaign.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        phone_numbers:
+          type: array
+          items:
+            type: string
+          description: A list of phone numbers in E164 format.
+          example:
+            - '+15558675309'
+        status_callback_url:
+          type: string
+          description: 'Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.'
+          example: https://example.com/handle_callback
       description: Request body for creating an order.
     CreateQueueRequest:
       type: object
@@ -4965,6 +5012,14 @@ components:
           type: string
           format: date-time
           description: Timestamp when the order was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the order was last updated.
+        status_callback_url:
+          type: string
+          description: 'Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.'
+          example: https://example.com/handle_callback
       description: Order model for campaign registry operations.
     OrderListResponse:
       type: object
@@ -5002,6 +5057,14 @@ components:
           type: string
           format: date-time
           description: Timestamp when the order was created.
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the order was last updated.
+        status_callback_url:
+          type: string
+          description: 'Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.'
+          example: https://example.com/handle_callback
       description: Response containing a single order.
     PaginationLinks:
       type: object
@@ -6184,6 +6247,35 @@ components:
           description: The e164 formatted number you wish to set as the originating number when dialing PSTN phone numbers from a SIP Endpoint that uses this profile. Specify null or an empty string to randomly choose a purchased or verified number from within the project.
           example: '+15551234567'
       description: Response containing the SIP profile.
+    Types.StatusCodes.StatusCode400:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - url
+      properties:
+        type:
+          type: string
+          description: Error type.
+          example: validation_error
+        code:
+          type: string
+          description: Error code.
+          example: invalid_parameter
+        message:
+          type: string
+          description: Error details.
+          example: Name must be present
+        attribute:
+          type: string
+          description: Request parameter associated with this error.
+          example: name
+        url:
+          type: string
+          description: Link to developer resource for this error.
+          example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter
+      description: Bad request error response.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -6255,6 +6347,13 @@ components:
           type: string
           description: A string representing the friendly name for this domain application.
           example: Test App
+        identifier:
+          type: string
+          description: A string representing the identifier portion of the domain application.
+        user:
+          type: string
+          description: A string representing the user portion of the domain application.
+          example: helpdesk
         ip_auth_enabled:
           type: boolean
           description: Whether the domain application will enforce IP authentication for incoming requests.
@@ -6362,18 +6461,26 @@ components:
             - working_copy
             - current_deployed
           description: A string representing the version of your Call Flow you'd like to use.
+        call_relay_context:
+          type: string
+          description: This handler type is deprecated. Please use call_relay_application or call_relay_topic instead.
+          deprecated: true
+          example: office
+        call_relay_context_status_callback_url:
+          type: string
+          description: This property is deprecated. Please use call_relay_topic_status_callback_url instead.
+          deprecated: true
+          example: https://myapplication/handle_relay_callbacks
       description: Request body for updating a domain application.
     UpdateNumberGroupRequest:
       type: object
+      required:
+        - name
       properties:
         name:
           type: string
           description: The name given to the number group. Helps to distinguish different groups within your project.
           example: My Number Group
-        sticky_sender:
-          type: boolean
-          description: Whether the number group uses the same 'From' number for outbound requests to a number, or chooses a random one. Defaults to false.
-          example: false
       description: Request body for updating a number group.
     UpdatePhoneNumberRequest:
       type: object
@@ -6415,12 +6522,55 @@ components:
             - GET
             - POST
           description: The call status callback method for the phone number.
+        call_laml_application_id:
+          type: string
+          description: The ID of the LaML Application to use when using the laml_application call handler.
+        call_dialogflow_agent_id:
+          type: string
+          description: The ID of the Dialogflow Agent to start when using the dialogflow call handler.
+        call_relay_topic:
+          type: string
+          description: A string representing the Relay topic to forward incoming calls to.
+          example: office
+        call_relay_topic_status_callback_url:
+          type: string
+          description: A string representing a URL to send status change messages to when call_handler is set to relay_topic.
+          example: https://myapplication/handle_relay_callbacks
+        call_relay_script_url:
+          type: string
+          description: The URL to make a request to when using the relay_script call handler.
+          example: https://example.signalwire.com/relay-bins/60e2ba7b-366e-44de-84e3-0c76cfccf1cc
+        call_relay_context:
+          type: string
+          description: This handler type is deprecated. Please use call_relay_application or call_relay_topic instead.
+          deprecated: true
+          example: my_relay_app
+        call_relay_context_status_callback_url:
+          type: string
+          description: This property is deprecated. Please use call_relay_topic_status_callback_url instead.
+          deprecated: true
+          example: https://myapplication/handle_relay_callbacks
+        call_relay_application:
+          type: string
+          description: A string representing the Relay Application to forward incoming calls to.
+          example: my-relay-app
+        call_relay_connector_id:
+          type: string
+          description: The ID of the Relay Connector to use when using the relay_connector call handler.
+        call_sip_endpoint_id:
+          type: string
+          description: The ID of the SIP Endpoint to use when using the relay_sip_endpoint call handler.
+        call_verto_resource:
+          type: string
+          description: The Verto resource to use when using the relay_verto_endpoint call handler.
+        call_video_room_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The ID of the Video Room to forward incoming calls to when using the video_room call handler.
         message_handler:
           type: string
           description: The message handler for the phone number.
-        message_receive_mode:
-          type: string
-          description: The message receive mode for the phone number.
         message_request_url:
           type: string
           description: The message request URL for the phone number.
@@ -6439,6 +6589,19 @@ components:
             - GET
             - POST
           description: The message fallback method for the phone number.
+        message_laml_application_id:
+          type: string
+          description: The ID of the LaML Application to use for messages.
+        message_relay_topic:
+          type: string
+          description: A string representing the Relay topic to forward incoming messages to.
+        message_relay_context:
+          type: string
+          description: This handler type is deprecated. Please use message_relay_application or message_relay_topic instead.
+          deprecated: true
+        message_relay_application:
+          type: string
+          description: A string representing the Relay Application to forward incoming messages to.
       description: Request body for updating a phone number.
     UpdateQueueRequest:
       type: object

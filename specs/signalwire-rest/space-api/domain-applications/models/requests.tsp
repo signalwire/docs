@@ -98,6 +98,16 @@ model CreateDomainApplicationRequest {
 
   @doc("A string representing the version of your Call Flow you'd like to use.")
   call_flow_version?: "working_copy" | "current_deployed";
+
+  #deprecated "This handler type is deprecated. Please use call_relay_application or call_relay_topic instead."
+  @doc("This handler type is deprecated. Please use call_relay_application or call_relay_topic instead.")
+  @example("office")
+  call_relay_context?: string;
+
+  #deprecated "This property is deprecated. Please use call_relay_topic_status_callback_url instead."
+  @doc("This property is deprecated. Please use call_relay_topic_status_callback_url instead.")
+  @example("https://myapplication/handle_relay_callbacks")
+  call_relay_context_status_callback_url?: string;
 }
 
 @doc("Request body for updating a domain application.")
@@ -105,6 +115,13 @@ model UpdateDomainApplicationRequest {
   @doc("A string representing the friendly name for this domain application.")
   @example("Test App")
   name?: string;
+
+  @doc("A string representing the identifier portion of the domain application.")
+  identifier?: string;
+
+  @doc("A string representing the user portion of the domain application.")
+  @example("helpdesk")
+  user?: string;
 
   @doc("Whether the domain application will enforce IP authentication for incoming requests.")
   @example(true)
@@ -189,4 +206,14 @@ model UpdateDomainApplicationRequest {
 
   @doc("A string representing the version of your Call Flow you'd like to use.")
   call_flow_version?: "working_copy" | "current_deployed";
+
+  #deprecated "This handler type is deprecated. Please use call_relay_application or call_relay_topic instead."
+  @doc("This handler type is deprecated. Please use call_relay_application or call_relay_topic instead.")
+  @example("office")
+  call_relay_context?: string;
+
+  #deprecated "This property is deprecated. Please use call_relay_topic_status_callback_url instead."
+  @doc("This property is deprecated. Please use call_relay_topic_status_callback_url instead.")
+  @example("https://myapplication/handle_relay_callbacks")
+  call_relay_context_status_callback_url?: string;
 }

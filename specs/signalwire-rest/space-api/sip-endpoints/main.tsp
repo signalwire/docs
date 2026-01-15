@@ -64,7 +64,7 @@ namespace SpaceAPI.SipEndpoints {
     @put
     update(...SipEndpointPathID, @body body: UpdateSipEndpointRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body sip_endpoint: SipEndpointResponse;
         }
       | StatusCode401

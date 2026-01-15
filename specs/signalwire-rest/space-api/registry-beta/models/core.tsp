@@ -315,4 +315,11 @@ model Order {
 
   @doc("Timestamp when the order was created.")
   created_at?: utcDateTime;
+
+  @doc("Timestamp when the order was last updated.")
+  updated_at?: utcDateTime;
+
+  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.")
+  @example("https://example.com/handle_callback")
+  status_callback_url?: string;
 }

@@ -37,7 +37,7 @@ namespace SpaceAPI.SipProfile {
     @put
     update(@body body: UpdateSipProfileRequest):
       | {
-          @statusCode statusCode: 200;
+          @statusCode statusCode: 201;
           @body sip_profile: SipProfileResponse;
         }
       | StatusCode401

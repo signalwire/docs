@@ -34,7 +34,7 @@ namespace SpaceAPI.Recordings {
       @query
       @doc("Filter by status.")
       status?: string
-    ): RecordingListResponse | StatusCode401 | StatusCode500;
+    ): RecordingListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("Recordings_get")
     @summary("Get Relay Recording")

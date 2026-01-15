@@ -67,8 +67,8 @@ namespace SpaceAPI.Queues {
           @statusCode statusCode: 200;
           @body queue: QueueResponse;
         }
+      | StatusCode400
       | StatusCode401
-      | StatusCode404
       | ValidationError
       | StatusCode500;
 
@@ -85,6 +85,7 @@ namespace SpaceAPI.Queues {
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;
