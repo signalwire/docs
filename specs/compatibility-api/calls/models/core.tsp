@@ -58,9 +58,11 @@ enum StreamStatus {
 @doc("Call subresource URIs.")
 model CallSubresourceUris {
   @doc("The URI for notifications.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Calls/b3877c40-da60-4998-90ad-b792e98472ca/Notifications.json")
   notifications?: string;
 
   @doc("The URI for recordings.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Calls/b3877c40-da60-4998-90ad-b792e98472ca/Recordings.json")
   recordings?: string;
 }
 
@@ -68,6 +70,7 @@ model CallSubresourceUris {
 model Call {
   @doc("The unique identifier for the account that created this call.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472af")
   account_sid?: string;
 
   @doc("The annotation for the call.")
@@ -113,10 +116,12 @@ model Call {
 
   @doc("The unique identifier for the call that created this call.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472af")
   parent_call_sid?: string;
 
   @doc("The unique identifier for the phone number.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472pn")
   phone_number_sid?: string;
 
   @doc("The charge for the call.")
@@ -129,6 +134,7 @@ model Call {
 
   @doc("The unique identifier for the call.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472ca")
   sid?: string;
 
   @doc("The time, in RFC 2822 GMT format, on which the call began.")
@@ -150,6 +156,7 @@ model Call {
   formatted_to?: string;
 
   @doc("The URI for the call.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Calls/b3877c40-da60-4998-90ad-b792e98472ca.json")
   uri?: string;
 }
 
@@ -224,6 +231,7 @@ model CallRecording {
 model CallStream {
   @doc("The unique identifier for the account.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472af")
   account_sid?: string;
 
   @doc("The version of the SignalWire API.")
@@ -232,27 +240,33 @@ model CallStream {
 
   @doc("The unique identifier for the call.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472ca")
   call_sid?: string;
 
   @doc("The date, in RFC 2822 GMT format, this stream was created.")
+  @example("Wed, 19 Sept 2018 20:00:00 +0000")
   date_created?: string;
 
   @doc("The date, in RFC 2822 GMT format, this stream was updated.")
+  @example("Wed, 19 Sept 2018 21:00:00 +0000")
   date_updated?: string;
 
   @doc("The error code for the stream.")
   error_code?: int32;
 
   @doc("The name of the stream.")
+  @example("my_first_stream")
   name?: string;
 
   @doc("The unique identifier for the stream.")
   @format("uuid")
+  @example("b3877c40-da60-4998-90ad-b792e98472st")
   sid?: string;
 
   @doc("The status of the stream.")
   status?: StreamStatus;
 
   @doc("The URI for the stream.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Calls/b3877c40-da60-4998-90ad-b792e98472ca/Streams/b3877c40-da60-4998-90ad-b792e98472st.json")
   uri?: string;
 }

@@ -48,6 +48,7 @@ model LamlBin {
   contents?: string;
 
   @doc("The unique URL to the raw contents of the cXML Application.")
+  @example("https://example.signalwire.com/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/LamlBins/5184b831-184f-4209-872d-ccdccc80f2f1")
   request_url?: string;
 
   @doc("The version of the SignalWire API.")
@@ -55,5 +56,6 @@ model LamlBin {
   api_version?: string;
 
   @doc("The URL of this resource.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/LamlBins/5184b831-184f-4209-872d-ccdccc80f2f1.json")
   uri?: string;
 }

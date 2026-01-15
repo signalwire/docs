@@ -31,9 +31,11 @@ model CreateCallRequest {
   FallbackUrl?: string;
 
   @doc("Whether a human or machine picked up the call.")
+  @example("Enable")
   MachineDetection?: "Enable" | "DetectMessageEnd" | "none";
 
   @doc("Whether or not to execute machine detection asynchronously.")
+  @example(false)
   AsyncAmd?: boolean = false;
 
   @doc("The URL to request when the machine detection is completed.")
@@ -45,21 +47,27 @@ model CreateCallRequest {
   AsyncAmdStatusCallbackMethod?: "GET" | "POST";
 
   @doc("Whether or not to report partial (interim) results to the callback url.")
+  @example(false)
   AsyncAmdPartialResults?: boolean;
 
   @doc("Number of milliseconds to wait for initial voice before giving up. Default is `5000` milliseconds.")
+  @example(5000)
   MachineDetectionSilenceTimeout?: int32 = 5000;
 
   @doc("How many milliseconds of voice to decide it is a machine. Must be at least `1000` to a maximum of `6000`. Default is `2400` milliseconds.")
+  @example(2400)
   MachineDetectionSpeechThreshold?: int32 = 2400;
 
   @doc("Number of milliseconds to wait for voice to finish. Must be at least `500` to a maximum of `5000`. Default is `1200` milliseconds.")
+  @example(1200)
   MachineDetectionSpeechEndThreshold?: int32 = 1200;
 
   @doc("The time SignalWire will wait for machine detection before timing out. Default is `30` seconds.")
+  @example(30)
   MachineDetectionTimeout?: int32 = 30;
 
   @doc("How many words to count to decide it is a machine. Must be at least one to a maximum of `100`. Default is `6`.")
+  @example(6)
   MachineWordsThreshold?: int32 = 6;
 
     @doc("The maximum price in USD acceptable for the call to be created.")
@@ -67,12 +75,15 @@ model CreateCallRequest {
     MaxPricePerMinute?: float32;
 
   @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.")
+  @example("POST")
   Method?: "GET" | "POST" = "POST";
 
   @doc("Whether or not to record a call.")
+  @example(false)
   Record?: boolean;
 
   @doc("The number of channels in the recording.")
+  @example("mono")
   RecordingChannels?: "mono" | "dual";
 
   @doc("The URL to request when recording is available.")
@@ -102,6 +113,7 @@ model CreateCallRequest {
   StatusCallback?: string;
 
   @doc("The status events that trigger a SignalWire webhook. Defaults to `completed`.")
+  @example(#["completed"])
   StatusCallbackEvent?: string[];
 
   @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
@@ -124,21 +136,27 @@ model UpdateCallRequest {
   Url?: string;
 
   @doc("Whether the request to `Url` is a `GET` or a `POST`.")
+  @example("POST")
   Method?: "GET" | "POST";
 
   @doc("The status to update the call to.")
+  @example("completed")
   Status?: "canceled" | "completed";
 
   @doc("The URL SignalWire will request if errors occur.")
+  @example("https://your-api-endpoint.com/fallback")
   FallbackUrl?: string;
 
   @doc("Whether the request to `FallbackUrl` is a `GET` or a `POST`.")
+  @example("POST")
   FallbackMethod?: "GET" | "POST";
 
   @doc("The URL SignalWire will send webhooks to.")
+  @example("https://your-api-endpoint.com/status")
   StatusCallback?: string;
 
   @doc("Whether the request to `StatusCallback` is a `GET` or a `POST`.")
+  @example("POST")
   StatusCallbackMethod?: "GET" | "POST";
 }
 
@@ -157,6 +175,7 @@ model CreateCallStreamRequest {
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request to when stream is available.")
+  @example("https://your-api-endpoint.com/stream-status")
   StatusCallback?: string;
 
   @doc("Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is wss. For security reasons ws is NOT supported.")
@@ -183,15 +202,18 @@ model CreateCallStreamRequest {
 @doc("Request body for updating a call stream.")
 model UpdateCallStreamRequest {
   @doc("The status of the stream.")
+  @example("stopped")
   Status: "in-progress" | "stopped";
 }
 
 @doc("Request body for creating a call recording.")
 model CreateCallRecordingRequest {
   @doc("The number of channels in the recording. Can be `mono` (both legs of call recorded under one channel into one recording file) or `dual` (each leg of call recorded in separate channels into one recording file).")
+  @example("mono")
   RecordingChannels?: "mono" | "dual";
 
   @doc("The URL to request to when recording is available.")
+  @example("https://your-api-endpoint.com/recording-status")
   RecordingStatusCallback?: string;
 
   @doc("The different recording statuses. Possible values are `completed`, `in-progress`, and `absent`. To specify multiple events, separate with a space. Defaults to `completed`.")
@@ -214,6 +236,7 @@ model CreateCallRecordingRequest {
 @doc("Request body for updating a call recording.")
 model UpdateCallRecordingRequest {
   @doc("The status of the recording.")
+  @example("paused")
   Status: "paused" | "in-progress" | "stopped";
 
   @doc("What to do while recording is paused.")

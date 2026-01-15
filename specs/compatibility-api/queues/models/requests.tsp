@@ -30,5 +30,5 @@ model UpdateQueueMemberRequest {
 
   @doc("Whether the request to Url is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  Method?: "GET" | "POST";
+  Method?: "GET" | "POST" = "POST";
 }

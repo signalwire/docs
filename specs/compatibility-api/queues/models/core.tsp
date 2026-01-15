@@ -67,6 +67,7 @@ model Queue {
   sid?: string;
 
   @doc("The URL of this resource.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Queues/b3877c40-da60-4998-90ad-b792e98472qu.json")
   uri?: string;
 }
 
@@ -89,5 +90,6 @@ model QueueMember {
   wait_time?: string;
 
   @doc("The URI of this resource.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/Queues/b3877c40-da60-4998-90ad-b792e98472qu/Members/b3877c40-da60-4998-90ad-b792e98472ca.json")
   uri?: string;
 }

@@ -3,15 +3,19 @@ using TypeSpec.Http;
 @doc("Error response model.")
 model ErrorResponse {
   @doc("Error code.")
+  @example(20003)
   code: int32;
 
   @doc("Error message.")
+  @example("Authentication failed")
   message: string;
 
   @doc("URL for more information about the error.")
+  @example("https://developer.signalwire.com/compatibility-api/reference/errors")
   more_info: string;
 
   @doc("HTTP status code.")
+  @example(401)
   status: int32;
 }
 

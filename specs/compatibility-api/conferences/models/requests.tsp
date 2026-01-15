@@ -7,6 +7,7 @@ model UpdateConferenceRequest {
   AnnounceMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to send conference announcements to.")
+  @example("https://your-api-endpoint.com/announce")
   AnnounceUrl?: string;
 
   @doc("The status of this conference.")
@@ -17,6 +18,7 @@ model UpdateConferenceRequest {
 @doc("Request body for updating a conference participant.")
 model UpdateConferenceParticipantRequest {
   @doc("The URL to send conference announcements to.")
+  @example("https://your-api-endpoint.com/announce")
   AnnounceUrl?: string;
 
   @doc("Whether the request to `AnnounceUrl` is a `GET` or a `POST`. Default is `POST`.")
@@ -24,6 +26,7 @@ model UpdateConferenceParticipantRequest {
   AnnounceMethod?: "GET" | "POST" = "POST";
 
   @doc("Whether or not to play the beep sound when updating the Participant.")
+  @example(false)
   Beep?: boolean;
 
   @doc("Whether the participant is coaching another call.")
@@ -35,6 +38,7 @@ model UpdateConferenceParticipantRequest {
   CallSidToCoach?: string;
 
   @doc("Whether or not a participant is on hold.")
+  @example(false)
   Hold?: boolean;
 
   @doc("Whether the request to `HoldUrl` is a `GET` or a `POST`. Default is `POST`.")
@@ -42,9 +46,11 @@ model UpdateConferenceParticipantRequest {
   HoldMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to send hold music to that will be played when participant is on hold.")
+  @example("https://your-api-endpoint.com/hold-music")
   HoldUrl?: string;
 
   @doc("Whether or not a participant is muted.")
+  @example(false)
   Muted?: boolean;
 }
 
@@ -63,6 +69,7 @@ model CreateConferenceStreamRequest {
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request to when stream is available.")
+  @example("https://your-api-endpoint.com/stream-status")
   StatusCallback?: string;
 
   @doc("Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is wss. For security reasons ws is NOT supported.")

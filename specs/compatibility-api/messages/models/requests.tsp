@@ -15,6 +15,7 @@ model CreateMessageRequest {
   Body: string;
 
   @doc("URL of media you wish to attach and send with the message.")
+  @example("https://example.com/image.jpg")
   MediaUrl?: string;
 
   @doc("When set to true, forces the message to be sent as an MMS.")
@@ -29,6 +30,7 @@ model CreateMessageRequest {
   MaxPrice?: string;
 
   @doc("A URL endpoint to receive callbacks each time the status of the message changes.")
+  @example("https://example.com/status-callback")
   StatusCallback?: string;
 
   @doc("The number of seconds a message will allow being queued before canceling. Default value is `14400`.")

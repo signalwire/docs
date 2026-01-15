@@ -47,6 +47,7 @@ enum MessageDirection {
 @doc("Message subresource URIs.")
 model MessageSubresourceUris {
   @doc("The URI for media.")
+  @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527/Media.json")
   media?: string;
 }
 
@@ -78,6 +79,7 @@ model Message {
   date_created?: string;
 
   @doc("The date and time the message was sent in RFC 2822 format.")
+  @example("Mon, 13 Aug 2018 21:38:46 +0000")
   date_sent?: string;
 
   @doc("The date and time the message was last updated in RFC 2822 format.")
@@ -120,6 +122,7 @@ model Message {
   messaging_service_sid?: string;
 
   @doc("The URI of this particular message.")
+  @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527.json")
   uri?: string;
 
   @doc("The URIs for any subresources associated with this message.")
@@ -129,23 +132,30 @@ model Message {
 @doc("Message media model.")
 model MessageMedia {
   @doc("The unique identifier for the account.")
+  @example("ea108133-d6b3-407c-9536-9fad8a929a6a")
   account_sid?: string;
 
   @doc("The content type of the media.")
+  @example("image/jpeg")
   content_type?: string;
 
   @doc("The date, in RFC 2822 GMT format, this media was created.")
+  @example("Mon, 13 Aug 2018 21:38:46 +0000")
   date_created?: string;
 
   @doc("The date, in RFC 2822 GMT format, this media was updated.")
+  @example("Mon, 13 Aug 2018 21:38:46 +0000")
   date_updated?: string;
 
   @doc("The unique identifier for the message.")
+  @example("0a059168-ead0-41af-9d1f-343dae832527")
   parent_sid?: string;
 
   @doc("The unique identifier for the media.")
+  @example("b3877c40-da60-4998-90ad-b792e98472me")
   sid?: string;
 
   @doc("The URI for the media.")
+  @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527/Media/b3877c40-da60-4998-90ad-b792e98472me.json")
   uri?: string;
 }

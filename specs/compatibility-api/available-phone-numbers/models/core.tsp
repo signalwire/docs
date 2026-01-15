@@ -18,21 +18,26 @@ model IsoCountryPath {
 @doc("Phone number capabilities.")
 model PhoneNumberCapabilities {
   @doc("Whether or not voice is enabled on the number.")
+  @example(true)
   voice?: boolean;
 
   @doc("Whether or not SMS is enabled on the number.")
+  @example(true)
   SMS?: boolean;
 
   @doc("Whether or not MMS is enabled on the number.")
+  @example(true)
   MMS?: boolean;
 
   @doc("Whether or not fax is enabled on the number.")
+  @example(true)
   fax?: boolean;
 }
 
 @doc("Available phone number model.")
 model AvailablePhoneNumber {
   @doc("New numbers on SignalWire are marked as `beta`. Possible values are `true` or `false`.")
+  @example(false)
   beta?: boolean;
 
   @doc("Whether or not a number can receive calls and messages.")
@@ -47,12 +52,15 @@ model AvailablePhoneNumber {
   iso_country?: string;
 
   @doc("The LATA of the number. Only available for numbers in US and Canada.")
+  @example("888")
   lata?: string;
 
   @doc("The latitude of the number. Only available for numbers in US and Canada.")
+  @example("47.3")
   latitude?: string;
 
   @doc("The longitude of the number. Only available for numbers in US and Canada.")
+  @example("-122.2")
   longitude?: string;
 
   @doc("The number in E.164 format.")
@@ -60,6 +68,7 @@ model AvailablePhoneNumber {
   phone_number?: string;
 
   @doc("The postal/zip code of the number. Only available for numbers in US and Canada.")
+  @example("98002")
   postal_code?: string;
 
   @doc("The rate center of the number. Only available for numbers in US and Canada.")
@@ -74,15 +83,18 @@ model AvailablePhoneNumber {
 @doc("Country subresource URIs.")
 model CountrySubresourceUris {
   @doc("The URI for local numbers.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US/Local.json")
   local?: string;
 
   @doc("The URI for toll-free numbers.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US/TollFree.json")
   toll_free?: string;
 }
 
 @doc("Country resource for available phone numbers.")
 model CountryResource {
   @doc("New numbers on SignalWire are marked as `beta`.")
+  @example(false)
   beta?: boolean;
 
   @doc("The country the number is from.")
@@ -97,5 +109,6 @@ model CountryResource {
   subresource_uris?: CountrySubresourceUris;
 
   @doc("The URI for the API call.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US.json")
   uri?: string;
 }

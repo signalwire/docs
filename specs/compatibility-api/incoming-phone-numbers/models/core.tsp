@@ -39,15 +39,19 @@ enum PhoneNumberOrigin {
 @doc("Phone number capabilities.")
 model IncomingPhoneNumberCapabilities {
   @doc("Whether or not voice is enabled.")
+  @example(true)
   Voice?: boolean;
 
   @doc("Whether or not SMS is enabled.")
+  @example(true)
   SMS?: boolean;
 
   @doc("Whether or not MMS is enabled.")
+  @example(true)
   MMS?: boolean;
 
   @doc("Whether or not fax is enabled.")
+  @example(true)
   Fax?: boolean;
 }
 
@@ -70,6 +74,7 @@ model IncomingPhoneNumber {
   api_version?: string;
 
   @doc("New numbers on SignalWire are marked as beta.")
+  @example(false)
   beta?: boolean;
 
   @doc("Whether or not a number can receive calls and messages.")
@@ -138,12 +143,14 @@ model IncomingPhoneNumber {
   trunk_sid?: string;
 
   @doc("The URI for this number.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472ac/IncomingPhoneNumbers/b3877c40-da60-4998-90ad-b792e98472pn.json")
   uri?: string;
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
   voice_application_sid?: string;
 
   @doc("Whether or not to look up a caller's name in the database.")
+  @example(false)
   voice_caller_id_lookup?: boolean;
 
   @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`. Default is `POST`.")

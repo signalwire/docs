@@ -54,6 +54,7 @@ enum FaxStatus {
 @doc("Fax links.")
 model FaxLinks {
   @doc("Media associated with this fax.")
+  @example("/fax/v1/Faxes/b3877c40-da60-4998-90ad-b792e98472fx/Media")
   media?: string;
 }
 
@@ -91,12 +92,15 @@ model Fax {
   media_sid?: string;
 
   @doc("The number of pages in the fax document.")
+  @example("3")
   num_pages?: string;
 
   @doc("The cost of the fax.")
+  @example("-0.005")
   price?: string;
 
   @doc("The currency, in ISO 4217 format, of the price.")
+  @example("USD")
   price_unit?: string;
 
     @doc("The quality of the fax.")
@@ -121,6 +125,7 @@ model Fax {
   links?: FaxLinks;
 
   @doc("The URL of this resource.")
+  @example("/fax/v1/Faxes/b3877c40-da60-4998-90ad-b792e98472fx")
   url?: string;
 
   @doc("Error code for this resource (if available).")
@@ -135,23 +140,30 @@ model Fax {
 @doc("Fax media model.")
 model FaxMedia {
   @doc("The unique identifier for the account.")
+  @example("b3877c40-da60-4998-90ad-b792e98472ac")
   account_sid?: string;
 
   @doc("The content type of the media.")
+  @example("application/pdf")
   content_type?: string;
 
   @doc("The date, in RFC 2822 GMT format, this media was created.")
+  @example("2018-11-26T20:00:00Z")
   date_created?: string;
 
   @doc("The date, in RFC 2822 GMT format, this media was updated.")
+  @example("2018-11-27T20:00:00Z")
   date_updated?: string;
 
   @doc("The unique identifier for the fax.")
+  @example("b3877c40-da60-4998-90ad-b792e98472fx")
   fax_sid?: string;
 
   @doc("The unique identifier for the media.")
+  @example("b3877c40-da60-4998-90ad-b792e98472me")
   sid?: string;
 
   @doc("The URL for the media.")
+  @example("/fax/v1/Faxes/b3877c40-da60-4998-90ad-b792e98472fx/Media/b3877c40-da60-4998-90ad-b792e98472me")
   url?: string;
 }

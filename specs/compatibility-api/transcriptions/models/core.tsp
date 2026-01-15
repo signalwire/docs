@@ -66,6 +66,7 @@ model Transcription {
     status?: TranscriptionStatus;
 
   @doc("The text content of a transcription.")
+  @example("Hello, this is a test transcription.")
   transcription_text?: string;
 
   @doc("Type of the transcription.")
@@ -73,5 +74,6 @@ model Transcription {
   type?: string;
 
   @doc("The URI of the transcription.")
+  @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472ac/Transcriptions/b3877c40-da60-4998-90ad-b792e98472tr.json")
   uri?: string;
 }
