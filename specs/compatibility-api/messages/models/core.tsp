@@ -84,9 +84,8 @@ model Message {
   @example("Mon, 13 Aug 2018 21:38:46 +0000")
   date_updated?: string;
 
-  @doc("The direction of the message.")
-  @example("outbound-api")
-  direction?: MessageDirection;
+    @doc("The direction of the message.")
+    direction?: MessageDirection;
 
   @doc("If an error has occurred on the message, the error code will give you a specific code.")
   error_code?: string;
@@ -110,9 +109,8 @@ model Message {
   @example("0a059168-ead0-41af-9d1f-343dae832527")
   sid?: string;
 
-  @doc("Current status of the message.")
-  @example("sent")
-  status?: MessageStatus;
+    @doc("Current status of the message.")
+    status?: MessageStatus;
 
   @doc("The phone number in E.164 format that received the message.")
   @example("+15557654321")

@@ -85,16 +85,14 @@ model Conference {
   @doc("A description, up to 64 characters, of the conference room.")
   friendly_name?: string;
 
-  @doc("The region where this conference audio was mixed.")
-  @example("us1")
-  region?: ConferenceRegion;
+    @doc("The region where this conference audio was mixed.")
+    region?: ConferenceRegion;
 
-  @doc("The unique identifier for this conference.")
-  sid?: string;
+    @doc("The unique identifier for this conference.")
+    sid?: string;
 
-  @doc("The status of this conference.")
-  @example("completed")
-  status?: ConferenceStatus;
+    @doc("The status of this conference.")
+    status?: ConferenceStatus;
 
   @doc("The URI for this conference.")
   uri?: string;

@@ -1,3 +1,5 @@
+import "../../recordings/models/core.tsp";
+
 using TypeSpec.Http;
 
 model CallsAccountSidPath {
@@ -53,30 +55,6 @@ enum StreamStatus {
   Stopped: "stopped",
 }
 
-@doc("Recording status.")
-enum RecordingStatus {
-  Paused: "paused",
-  InProgress: "in-progress",
-  Stopped: "stopped",
-}
-
-@doc("Recording source.")
-enum RecordingSource {
-  DialVerb: "DialVerb",
-  Conference: "Conference",
-  OutBoundApi: "OutBoundApi",
-  Trunking: "Trunking",
-  RecordVerb: "RecordVerb",
-  StartCallRecordingApi: "StartCallRecordingApi",
-  StartConferenceRecording: "StartConferenceRecording",
-}
-
-@doc("Recording subresource URIs.")
-model RecordingSubresourceUris {
-  @doc("The URI for transcriptions.")
-  transcriptions?: string;
-}
-
 @doc("Call subresource URIs.")
 model CallSubresourceUris {
   @doc("The URI for notifications.")
@@ -95,9 +73,8 @@ model Call {
   @doc("The annotation for the call.")
   annotation?: string;
 
-  @doc("Who/what the call was answered by. Possible values are `human` or `machine`.")
-  @example("machine")
-  answered_by?: AnsweredBy;
+    @doc("Who/what the call was answered by. Possible values are `human` or `machine`.")
+    answered_by?: AnsweredBy;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
@@ -111,9 +88,8 @@ model Call {
   @example("Wed, 19 Sept 2018 21:00:00 +0000")
   date_updated?: string;
 
-  @doc("The direction of the call. Possible values are `inbound` or `outbound`.")
-  @example("inbound")
-  direction?: CallDirection;
+    @doc("The direction of the call. Possible values are `inbound` or `outbound`.")
+    direction?: CallDirection;
 
   @doc("The duration, in seconds, of the call.")
   @example(20)
@@ -159,9 +135,8 @@ model Call {
   @example("Wed, 19 Sept 2018 20:00:01 +0000")
   start_time?: string;
 
-  @doc("The status of the call.")
-  @example("queued")
-  status?: CallStatus;
+    @doc("The status of the call.")
+    status?: CallStatus;
 
   @doc("A Map of available sub-resources.")
   subresource_uris?: CallSubresourceUris;
@@ -229,13 +204,11 @@ model CallRecording {
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
   sid?: string;
 
-  @doc("How the recording was made.")
-  @example("DialVerb")
-  source?: RecordingSource;
+    @doc("How the recording was made.")
+    source?: RecordingSource;
 
-  @doc("The status of the recording.")
-  @example("stopped")
-  status?: RecordingStatus;
+    @doc("The status of the recording.")
+    status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
   error_code?: string;

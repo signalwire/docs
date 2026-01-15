@@ -62,9 +62,9 @@ model CreateCallRequest {
   @doc("How many words to count to decide it is a machine. Must be at least one to a maximum of `100`. Default is `6`.")
   MachineWordsThreshold?: int32 = 6;
 
-  @doc("The maximum price in USD acceptable for the call to be created.")
-  @example("0.0075")
-  MaxPricePerMinute?: float32;
+    @doc("The maximum price in USD acceptable for the call to be created.")
+    @example(0.0075)
+    MaxPricePerMinute?: float32;
 
   @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.")
   Method?: "GET" | "POST" = "POST";

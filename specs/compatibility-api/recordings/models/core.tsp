@@ -91,13 +91,11 @@ model Recording {
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
   sid?: string;
 
-  @doc("How the recording was made.")
-  @example("DialVerb")
-  source?: RecordingSource;
+    @doc("How the recording was made.")
+    source?: RecordingSource;
 
-  @doc("The status of the recording.")
-  @example("stopped")
-  status?: RecordingStatus;
+    @doc("The status of the recording.")
+    status?: RecordingStatus;
 
   @doc("Further details about a failed recording.")
   error_code?: string;

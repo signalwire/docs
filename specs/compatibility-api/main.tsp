@@ -21,12 +21,9 @@ import "./tokens/main.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-@service({
-  title: "Compatibility API",
-})
-@info({
+@service(#{ title: "Compatibility API" })
+@info(#{
   version: "1.0.0",
-  description: "SignalWire Compatibility API",
 })
 @server("https://{space_url}/api/laml/2010-04-01", "SignalWire Compatibility API", {
   space_url: string,

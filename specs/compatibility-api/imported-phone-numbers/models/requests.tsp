@@ -30,11 +30,9 @@ model ImportPhoneNumberRequest {
   @maxLength(30)
   number: string;
 
-  @doc("The type of phone number being imported.")
-  @example("longcode")
-  number_type: NumberType;
+    @doc("The type of phone number being imported.")
+    number_type: NumberType;
 
-  @doc("The capabilities to enable for this phone number. Can include any combination of SMS, Voice, Fax, and MMS. If not provided, defaults to all capabilities (SMS, Voice, Fax, and MMS). Cannot be an empty array.")
-  @example(#["sms", "fax"])
-  capabilities?: PhoneNumberCapability[];
+    @doc("The capabilities to enable for this phone number. Can include any combination of SMS, Voice, Fax, and MMS. If not provided, defaults to all capabilities (SMS, Voice, Fax, and MMS). Cannot be an empty array.")
+    capabilities?: PhoneNumberCapability[];
 }

@@ -75,9 +75,8 @@ model Fax {
   @example("2018-11-27T20:00:00Z")
   date_updated?: string;
 
-  @doc("The direction of the fax. Possible values are `inbound` or `outbound`.")
-  @example("outbound")
-  direction?: FaxDirection;
+    @doc("The direction of the fax. Possible values are `inbound` or `outbound`.")
+    direction?: FaxDirection;
 
   @doc("The phone number, in E.164 format, the fax was sent from.")
   @example("+13103383454")
@@ -100,17 +99,15 @@ model Fax {
   @doc("The currency, in ISO 4217 format, of the price.")
   price_unit?: string;
 
-  @doc("The quality of the fax.")
-  @example("standard")
-  quality?: FaxQuality;
+    @doc("The quality of the fax.")
+    quality?: FaxQuality;
 
-  @doc("The unique identifier of the fax.")
-  @example("b3877c40-da60-4998-90ad-b792e98472fx")
-  sid?: string;
+    @doc("The unique identifier of the fax.")
+    @example("b3877c40-da60-4998-90ad-b792e98472fx")
+    sid?: string;
 
-  @doc("The status of the fax.")
-  @example("queued")
-  status?: FaxStatus;
+    @doc("The status of the fax.")
+    status?: FaxStatus;
 
   @doc("The phone number, in E.164 format, the fax was sent to.")
   @example("+13104456789")

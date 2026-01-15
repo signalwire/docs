@@ -58,9 +58,8 @@ model IncomingPhoneNumber {
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
   account_sid?: string;
 
-  @doc("Whether or not a registered address with SignalWire is required.")
-  @example("none")
-  address_requirements?: AddressRequirements;
+    @doc("Whether or not a registered address with SignalWire is required.")
+    address_requirements?: AddressRequirements;
 
   @doc("The unique identifier for the address associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")
@@ -87,9 +86,8 @@ model IncomingPhoneNumber {
   @doc("The unique identifier of the address associated with E911 for this phone number.")
   emergency_address_sid?: string;
 
-  @doc("Whether the phone route has an active E911 address associated.")
-  @example("active")
-  emergency_status?: EmergencyStatus;
+    @doc("Whether the phone route has an active E911 address associated.")
+    emergency_status?: EmergencyStatus;
 
   @doc("A formatted version of the number.")
   @example("310-338-6745")
@@ -99,9 +97,8 @@ model IncomingPhoneNumber {
   @example("b3877c40-da60-4998-90ad-b792e98472ri")
   identity_sid?: string;
 
-  @doc("The origin of the phone number.")
-  @example("signalwire")
-  origin?: PhoneNumberOrigin;
+    @doc("The origin of the phone number.")
+    origin?: PhoneNumberOrigin;
 
   @doc("The incoming number in E.164 format.")
   @example("+13103386745")

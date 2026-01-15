@@ -62,9 +62,8 @@ model Transcription {
   @example("b3877c40-da60-4998-90ad-b792e98472tr")
   sid?: string;
 
-  @doc("The status of the transcription.")
-  @example("failed")
-  status?: TranscriptionStatus;
+    @doc("The status of the transcription.")
+    status?: TranscriptionStatus;
 
   @doc("The text content of a transcription.")
   transcription_text?: string;
