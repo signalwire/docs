@@ -246,10 +246,6 @@ model CallStream {
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
   call_sid?: string;
 
-  @doc("The date, in RFC 2822 GMT format, this stream was created.")
-  @example("Wed, 19 Sept 2018 20:00:00 +0000")
-  date_created?: string;
-
   @doc("The date, in RFC 2822 GMT format, this stream was updated.")
   @example("Wed, 19 Sept 2018 21:00:00 +0000")
   date_updated?: string;

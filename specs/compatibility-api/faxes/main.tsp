@@ -70,7 +70,7 @@ namespace CompatibilityAPI.Faxes {
       ...FaxesAccountSidPath,
       ...FaxSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: UpdateFaxRequest,
+      @body body?: UpdateFaxRequest,
     ): FaxResponse | StatusCode401 | StatusCode404;
 
     @operationId("delete_fax")

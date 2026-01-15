@@ -92,7 +92,7 @@ namespace CompatibilityAPI.Calls {
     delete(...CallsAccountSidPath, ...CallSidPath): StatusCode204 | StatusCode401 | StatusCode404;
   }
 
-  @tag(CALL_RECORDINGS_TAG)
+  @tag(RECORDINGS_TAG)
   @friendlyName("Call Recordings")
   @route("/{CallSid}/Recordings")
   interface CallRecordings {

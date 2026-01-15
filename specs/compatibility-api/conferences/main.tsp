@@ -55,7 +55,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferencesAccountSidPath,
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body: UpdateConferenceRequest,
+      @body body?: UpdateConferenceRequest,
     ): ConferenceResponse | StatusCode401 | StatusCode404;
   }
 

@@ -178,10 +178,6 @@ model ConferenceStream {
   @example("b3877c40-da60-4998-90ad-b792e98472cf")
   conference_sid?: string;
 
-  @doc("The date, in RFC 2822 GMT format, this stream was created.")
-  @example("Mon, 24 Sept 2018 21:00:00 +0000")
-  date_created?: string;
-
   @doc("The date, in RFC 2822 GMT format, this stream was updated.")
   @example("Tue, 25 Sept 2018 20:00:00 +0000")
   date_updated?: string;

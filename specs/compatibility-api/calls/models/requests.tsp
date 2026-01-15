@@ -13,11 +13,11 @@ model CreateCallRequest {
 
   @doc("The address that initiated the call.")
   @example("+13103384645")
-  From: string;
+  From?: string;
 
   @doc("The address that received the call.")
   @example("+13105678901")
-  To: string;
+  To?: string;
 
   @doc("The number, in E.164 format, or identifier of the caller.")
   @example("+13102259067")

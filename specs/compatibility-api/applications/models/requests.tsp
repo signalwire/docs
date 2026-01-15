@@ -97,10 +97,6 @@ model UpdateApplicationRequest {
   @example("POST")
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("Whether or not to look up a caller's ID from the database. Possible values are `true` or `false`. Default is `false`.")
-  @example(false)
-  VoiceCallerIdLookup?: boolean = false;
-
   @doc("Whether the request to `VoiceFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("GET")
   VoiceFallbackMethod?: "GET" | "POST" = "POST";

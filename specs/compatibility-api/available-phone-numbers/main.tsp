@@ -32,7 +32,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @route("/{IsoCountry}")
-    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberResourcesResponse | StatusCode401;
+    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | StatusCode401;
 
     @operationId("search_local_available_phone_numbers")
     @summary("Search for available phone numbers that match your criteria.")
