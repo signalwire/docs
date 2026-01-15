@@ -19,7 +19,7 @@ model DocumentSearchRequest {
   @example(2)
   @minValue(0.0)
   @maxValue(78.3836717690617)
-  distance?: integer;
+  distance?: float;
 
   @doc("Specifies number of returned Chunks.")
   @example(5)
