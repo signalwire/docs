@@ -17,7 +17,7 @@ import "./user_input.tsp";
 
 @summary("Action union")
 union Action {
-  //SWMLAction,
+  SWMLAction,
   ChangeContextAction,
   ChangeStepAction,
   ContextSwitchAction,
