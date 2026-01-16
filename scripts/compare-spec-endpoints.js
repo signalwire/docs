@@ -131,13 +131,19 @@ function resolveSchema(schema, schemas, fullSpec, visited = new Set()) {
     return mergeSchemas(merged, rest);
   }
 
-  // Handle anyOf/oneOf - collect all possible properties
+  // Handle anyOf/oneOf - collect all possible properties but NOT required fields
+  // For oneOf (discriminated unions), each variant has its own required fields,
+  // but only ONE variant's required fields apply at a time based on the discriminator.
+  // We merge properties (so all possible fields are known) but exclude variant-specific
+  // required fields to avoid false positives in comparison.
   if (schema.anyOf || schema.oneOf) {
     const variants = schema.anyOf || schema.oneOf;
     let merged = {};
     for (const subSchema of variants) {
       const resolved = resolveSchema(subSchema, schemas, fullSpec, new Set(visited));
-      merged = mergeSchemas(merged, resolved);
+      // Merge properties but exclude required fields from variants
+      const { required, ...resolvedWithoutRequired } = resolved;
+      merged = mergeSchemas(merged, resolvedWithoutRequired);
     }
     const { anyOf, oneOf, ...rest } = schema;
     return mergeSchemas(merged, rest);
