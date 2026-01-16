@@ -90,7 +90,7 @@ namespace SpaceAPI.Queues {
       | StatusCode404
       | StatusCode500;
 
-    @operationId("listQueueMembers")
+    @operationId("list_queue_members")
     @summary("List all members of a queue")
     @doc("""
       Returns a list of members in a queue.
@@ -102,7 +102,7 @@ namespace SpaceAPI.Queues {
     @get
     listMembers(...QueueIdPath): QueueMemberListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("dequeueNextQueueMember")
+    @operationId("dequeue_next_queue_member")
     @summary("Dequeue next member on the queue")
     @doc("""
       Dequeues the next member from the queue.
@@ -122,7 +122,7 @@ namespace SpaceAPI.Queues {
       | ValidationError
       | StatusCode500;
 
-    @operationId("retrieveNextQueueMember")
+    @operationId("retrieve_next_queue_member")
     @summary("Retrieve next member on the queue")
     @doc("""
       Retrieves the next member in the queue without dequeuing.
@@ -134,7 +134,7 @@ namespace SpaceAPI.Queues {
     @get
     getNextMember(...QueueIdPath): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("retrieveQueueMember")
+    @operationId("retrieve_queue_member")
     @summary("Retrieve a queue member")
     @doc("""
       Retrieves the details of a queue member.
@@ -146,7 +146,7 @@ namespace SpaceAPI.Queues {
     @get
     getMember(...QueueIdPath, ...QueueMemberPathID): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("dequeueQueueMember")
+    @operationId("dequeue_queue_member")
     @summary("Dequeue member on the queue")
     @doc("""
       Removes a specific member from the queue and optionally redirects the call.
