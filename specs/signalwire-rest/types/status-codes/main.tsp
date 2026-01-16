@@ -7,35 +7,35 @@ namespace Types.StatusCodes {
   // Base Error Models (reusable across all APIs)
   // ============================================================================
 
-  @doc("Unauthorized error response.")
+  @doc("Access is unauthorized.")
   @error
   model StatusCode401 {
     @statusCode statusCode: 401;
     error: "Unauthorized";
   }
 
-  @doc("Forbidden error response.")
+  @doc("Access is forbidden.")
   @error
   model StatusCode403 {
     @statusCode statusCode: 403;
     error: "Forbidden";
   }
 
-  @doc("Not found error response.")
+  @doc("The server cannot find the requested resource.")
   @error
   model StatusCode404 {
     @statusCode statusCode: 404;
     error: "Not Found";
   }
 
-  @doc("Internal server error response.")
+  @doc("An internal server error occurred.")
   @error
   model StatusCode500 {
     @statusCode statusCode: 500;
     error: "Internal Server Error";
   }
 
-  @doc("Bad request error response.")
+  @doc("The request is invalid.")
   @error
   model StatusCode400 {
     @statusCode statusCode: 400;
@@ -48,31 +48,31 @@ namespace Types.StatusCodes {
   // Format: { errors: [{ detail, status, title, code }] }
   // ============================================================================
 
-  @doc("Individual error item for Space API format.")
+  @doc("Details about a specific validation error.")
   model SpaceApiErrorItem {
-    @doc("Human-readable error message describing what went wrong.")
+    @doc("A description of what caused the error.")
     @example("Label can't be blank")
     detail: string;
 
-    @doc("HTTP status code as a string.")
+    @doc("The HTTP status code.")
     @example("422")
     status: string;
 
-    @doc("Error category title.")
+    @doc("A short summary of the error type.")
     @example("Invalid Attribute")
     title: string;
 
-    @doc("Error code matching the HTTP status.")
+    @doc("The error code.")
     @example("422")
     code: string;
   }
 
-  @doc("Validation error response using Space API ErrorSerializer format.")
+  @doc("The request failed validation. See errors for details.")
   @error
   model ValidationError {
     @statusCode statusCode: 422;
 
-    @doc("Array of validation errors.")
+    @doc("List of validation errors.")
     errors: SpaceApiErrorItem[];
   }
 
@@ -82,39 +82,39 @@ namespace Types.StatusCodes {
   // Format: { errors: [{ type, code, message, attribute, url }] }
   // ============================================================================
 
-  @doc("Individual error item for REST/Fabric API format.")
+  @doc("Details about a specific error.")
   model RestApiErrorItem {
-    @doc("Error category type.")
+    @doc("The category of error.")
     @example("validation_error")
     type: string;
 
-    @doc("Error code identifier.")
+    @doc("A specific error code.")
     @example("invalid_parameter")
     code: string;
 
-    @doc("Human-readable error message.")
+    @doc("A description of what caused the error.")
     @example("Name must be present")
     message: string;
 
-    @doc("Request parameter associated with this error. Null for base errors.")
+    @doc("The request parameter that caused the error, if applicable.")
     @example("name")
     attribute?: string | null;
 
-    @doc("Link to error documentation.")
+    @doc("A link to documentation about this error.")
     @example("https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter")
     url: string;
   }
 
-  @doc("Validation error response using REST/Fabric API format.")
+  @doc("The request failed validation. See errors for details.")
   @error
   model RestApiValidationError {
     @statusCode statusCode: 422;
 
-    @doc("Array of validation errors.")
+    @doc("List of validation errors.")
     errors: RestApiErrorItem[];
   }
 
-  @doc("Alias for RestApiValidationError for backward compatibility.")
+  @doc("The request contains invalid parameters. See errors for details.")
   model StatusCode422 is RestApiValidationError;
 
   // ============================================================================
@@ -123,24 +123,24 @@ namespace Types.StatusCodes {
   // Format: { code, message, more_info, status } (flat, no array)
   // ============================================================================
 
-  @doc("Error response for Compatibility API (Twilio-compatible format).")
+  @doc("The request failed. See the message for details.")
   @error
   model CompatibilityApiError {
     @statusCode statusCode: 400;
 
-    @doc("Numeric error code.")
+    @doc("The error code.")
     @example("10000")
     code: string;
 
-    @doc("Human-readable error message.")
+    @doc("A description of what caused the error.")
     @example("A required parameter is missing.")
     message: string;
 
-    @doc("Link to error documentation.")
+    @doc("A link to documentation about this error.")
     @example("https://developer.signalwire.com/compatibility-api/reference/error-codes")
     more_info: string;
 
-    @doc("HTTP status code.")
+    @doc("The HTTP status code.")
     @example(400)
     status: int32;
   }
