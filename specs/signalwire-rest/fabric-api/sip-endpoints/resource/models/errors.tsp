@@ -3,6 +3,7 @@ import "../../../../types";
 using Types.StatusCodes;
 
 @example(#{
+  statusCode: 422,
   errors: #[
     #{
       type: "validation_error",

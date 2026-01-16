@@ -11,8 +11,8 @@ model RecordingPathID {
   id: uuid;
 }
 
-@doc("Recording model.")
-model Recording {
+@doc("Base recording properties shared by all recording types.")
+model RecordingBase {
   @doc("Unique ID of the recording.")
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
   @format("uuid")
@@ -22,18 +22,6 @@ model Recording {
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
   @format("uuid")
   project_id: uuid;
-
-  @doc("ID of the PSTN leg associated with the recording.")
-  @format("uuid")
-  relay_pstn_leg_id?: uuid;
-
-  @doc("ID of the SIP leg associated with the recording.")
-  @format("uuid")
-  relay_sip_leg_id?: uuid;
-
-  @doc("ID of the WebRTC leg associated with the recording.")
-  @format("uuid")
-  relay_webrtc_leg_id?: uuid;
 
   @doc("Date and time when the recording was created.")
   created_at: utcDateTime;
@@ -75,4 +63,38 @@ model Recording {
   @doc("Audio track of the recording.")
   @example("inbound")
   track: string;
+}
+
+@doc("Recording from a PSTN call leg.")
+model PstnRecording {
+  ...RecordingBase;
+
+  @doc("ID of the PSTN leg associated with the recording.")
+  @format("uuid")
+  relay_pstn_leg_id: uuid;
+}
+
+@doc("Recording from a SIP call leg.")
+model SipRecording {
+  ...RecordingBase;
+
+  @doc("ID of the SIP leg associated with the recording.")
+  @format("uuid")
+  relay_sip_leg_id: uuid;
+}
+
+@doc("Recording from a WebRTC call leg.")
+model WebRtcRecording {
+  ...RecordingBase;
+
+  @doc("ID of the WebRTC leg associated with the recording.")
+  @format("uuid")
+  relay_webrtc_leg_id: uuid;
+}
+
+@doc("Recording model. A recording is associated with exactly one call leg type (PSTN, SIP, or WebRTC).")
+union Recording {
+  pstn: PstnRecording,
+  sip: SipRecording,
+  webrtc: WebRtcRecording,
 }

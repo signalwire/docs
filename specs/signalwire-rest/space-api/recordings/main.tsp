@@ -22,7 +22,7 @@ namespace SpaceAPI.Recordings {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(): RecordingListResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    list(): RecordingListResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("get_recording")
     @summary("Get Relay Recording")
@@ -32,7 +32,7 @@ namespace SpaceAPI.Recordings {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    read(...RecordingPathID): RecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...RecordingPathID): RecordingResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("delete_recording")
     @summary("Delete Relay Recording")
@@ -49,6 +49,7 @@ namespace SpaceAPI.Recordings {
         }
       | StatusCode401
       | StatusCode404
+      | ValidationError
       | StatusCode500;
   }
 }

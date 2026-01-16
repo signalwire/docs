@@ -40,11 +40,11 @@ model NumberGroup {
 
   @doc("Whether the number group uses the same 'From' number for outbound requests to a number, or chooses a random one.")
   @example(false)
-  sticky_sender?: boolean = false;
+  sticky_sender: boolean;
 
   @doc("The number of phone numbers within the group.")
   @example(4)
-  phone_number_count?: int32;
+  phone_number_count: int32;
 }
 
 @doc("Phone number representation within a membership.")
@@ -79,5 +79,13 @@ model NumberGroupMembership {
   number_group_id: uuid;
 
   @doc("A representation of the phone number this membership is associated with.")
-  phone_number?: MembershipPhoneNumber;
+  phone_number: MembershipPhoneNumber;
+
+  @doc("The date and time when the membership was created.")
+  @example("2023-01-15T10:30:00Z")
+  created_at: string;
+
+  @doc("The date and time when the membership was last updated.")
+  @example("2023-01-15T10:30:00Z")
+  updated_at: string;
 }

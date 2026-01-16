@@ -12,6 +12,7 @@ import "./verified-caller-ids";
 import "./registry-beta";
 import "./queues";
 import "./recordings";
+import "./short-codes";
 import "../_globally_shared/const.tsp";
 import "./tags.tsp";
 
@@ -32,6 +33,8 @@ using TypeSpec.OpenAPI;
 @tagMetadata(MFA_TAG, MFA_TAG_METADATA)
 @tagMetadata(VERIFIED_CALLER_IDS_TAG, VERIFIED_CALLER_IDS_TAG_METADATA)
 @tagMetadata(QUEUES_TAG, QUEUES_TAG_METADATA)
+@tagMetadata(QUEUE_MEMBERS_TAG, QUEUE_MEMBERS_TAG_METADATA)
+@tagMetadata(SHORT_CODES_TAG, SHORT_CODES_TAG_METADATA)
 @service(#{ title: "RELAY REST API" })
 @externalDocs(
   "https://developer.signalwire.com",

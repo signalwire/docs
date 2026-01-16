@@ -24,7 +24,7 @@ model CreateDomainApplicationRequest {
 
   @doc("Whether connections to this domain application require encryption or if encryption is optional.")
   @example("required")
-  encryption?: "optional" | "required";
+  encryption?: "optional" | "required" | "forbidden";
 
   @doc("A list of codecs this domain application will support.")
   codecs?: string[];
@@ -132,7 +132,7 @@ model UpdateDomainApplicationRequest {
 
   @doc("Whether connections to this domain application require encryption or if encryption is optional.")
   @example("required")
-  encryption?: "optional" | "required";
+  encryption?: "optional" | "required" | "forbidden";
 
   @doc("A list of codecs this domain application will support.")
   codecs?: string[];

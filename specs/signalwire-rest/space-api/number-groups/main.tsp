@@ -25,11 +25,7 @@ namespace SpaceAPI.NumberGroups {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(
-      @query
-      @doc("The name given to the number group to distinguish different groups within your project. Will return all Number Groups containing this value as a substring.")
-      filter_name?: string
-    ): NumberGroupListResponse | StatusCode401 | StatusCode500;
+    list(...ListNumberGroupsQuery): NumberGroupListResponse | StatusCode401 | ValidationError | StatusCode500;
 
     @operationId("create_number_group")
     @summary("Create a Number Group")
@@ -41,10 +37,7 @@ namespace SpaceAPI.NumberGroups {
       """)
     @post
     create(@body body: CreateNumberGroupRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body number_group: NumberGroupResponse;
-        }
+      | NumberGroupResponse
       | StatusCode401
       | ValidationError
       | StatusCode500;
@@ -57,7 +50,7 @@ namespace SpaceAPI.NumberGroups {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    read(...NumberGroupPathID): NumberGroupResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...NumberGroupPathID): NumberGroupResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("update_number_group")
     @summary("Update a Number Group")
@@ -69,10 +62,7 @@ namespace SpaceAPI.NumberGroups {
       """)
     @put
     update(...NumberGroupPathID, @body body: UpdateNumberGroupRequest):
-      | {
-          @statusCode statusCode: 200;
-          @body number_group: NumberGroupResponse;
-        }
+      | NumberGroupResponse
       | StatusCode401
       | StatusCode404
       | ValidationError
@@ -91,6 +81,7 @@ namespace SpaceAPI.NumberGroups {
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;
@@ -110,7 +101,7 @@ namespace SpaceAPI.NumberGroups {
       The API token must include the following scopes: _Numbers_.
       """)
     @get
-    listMemberships(...NumberGroupIdPath): NumberGroupMembershipListResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    listMemberships(...NumberGroupIdPath, ...ListNumberGroupMembershipsQuery): NumberGroupMembershipListResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("create_number_group_membership")
     @summary("Create a Number Group Membership")
@@ -122,10 +113,7 @@ namespace SpaceAPI.NumberGroups {
       """)
     @post
     addMembership(...NumberGroupIdPath, @body body: AddNumberGroupMembershipRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body membership: NumberGroupMembershipResponse;
-        }
+      | NumberGroupMembershipResponse
       | StatusCode401
       | StatusCode404
       | ValidationError
@@ -146,7 +134,7 @@ namespace SpaceAPI.NumberGroupMemberships {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    read(...NumberGroupMembershipPathID): NumberGroupMembershipResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...NumberGroupMembershipPathID): NumberGroupMembershipResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("delete_number_group_membership")
     @summary("Remove Phone Number from Number Group")
@@ -161,6 +149,7 @@ namespace SpaceAPI.NumberGroupMemberships {
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;

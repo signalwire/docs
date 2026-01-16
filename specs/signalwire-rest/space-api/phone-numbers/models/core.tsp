@@ -42,6 +42,11 @@ enum PhoneNumberCallHandler {
   laml_application: "laml_application",
   dialogflow: "dialogflow",
   video_room: "video_room",
+  call_flow: "call_flow",
+  ai_agent: "ai_agent",
+  fabric_subscriber: "fabric_subscriber",
+  sip_gateway: "sip_gateway",
+  call_queue: "call_queue",
 }
 
 @doc("Message handler type for phone numbers.")
@@ -81,131 +86,143 @@ model PhoneNumber {
 
   @doc("The name given to the phone number. Helps to distinguish different phone numbers within your project.")
   @example("Jenny")
-  name?: string;
+  name: string | null;
 
   @doc("A list of communication methods this phone number supports.")
-  capabilities?: PhoneNumberCapability[];
+  capabilities: PhoneNumberCapability[];
 
   @doc("The type of number this is defined as.")
   @example(PhoneNumberType.tollfree)
-  number_type?: PhoneNumberType;
+  number_type: PhoneNumberType;
 
   @doc("The E911 address ID associated with this phone number.")
-  e911_address_id?: string;
+  @format("uuid")
+  e911_address_id: uuid | null;
+
+  @doc("The date the number was added to your project.")
+  created_at: utcDateTime;
+
+  @doc("The date the number was last updated.")
+  updated_at: utcDateTime;
+
+  @doc("The next date the number will be billed for.")
+  next_billed_at: utcDateTime | null;
 
   @doc("What type of handler you want to run on inbound calls.")
   @example(PhoneNumberCallHandler.relay_context)
-  call_handler?: PhoneNumberCallHandler;
+  call_handler: PhoneNumberCallHandler | null;
+
+  @doc("The unique identifier of the calling handler resource.")
+  @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
+  @format("uuid")
+  calling_handler_resource_id: uuid | null;
 
   @doc("How do you want to receive the incoming call.")
   @example(CallReceiveMode.voice)
-  call_receive_mode?: CallReceiveMode = CallReceiveMode.voice;
+  call_receive_mode: CallReceiveMode;
 
   @doc("The URL to make a request to when using the laml_webhooks call handler.")
-  call_request_url?: string;
+  call_request_url: string | null;
 
   @doc("The HTTP method to use when making a request to the call_request_url.")
   @example(HttpMethod.POST)
-  call_request_method?: HttpMethod = HttpMethod.POST;
+  call_request_method: HttpMethod | null;
 
   @doc("The fallback URL to make a request to when using the laml_webhooks call handler and the call_request_url fails.")
-  call_fallback_url?: string;
+  call_fallback_url: string | null;
 
   @doc("The HTTP method to use when making a request to the call_fallback_url.")
   @example(HttpMethod.POST)
-  call_fallback_method?: HttpMethod = HttpMethod.POST;
+  call_fallback_method: HttpMethod | null;
 
   @doc("The URL to make status callbacks to when using the laml_webhooks call handler.")
-  call_status_callback_url?: string;
+  call_status_callback_url: string | null;
 
   @doc("The HTTP method to use when making a request to the call_status_callback_url.")
   @example(HttpMethod.POST)
-  call_status_callback_method?: HttpMethod = HttpMethod.POST;
+  call_status_callback_method: HttpMethod | null;
 
   @doc("The ID of the LaML Application to use when using the laml_application call handler.")
-  call_laml_application_id?: string;
+  call_laml_application_id: string | null;
 
   @doc("The ID of the Dialogflow Agent to start when using the dialogflow call handler.")
-  call_dialogflow_agent_id?: string;
+  call_dialogflow_agent_id: string | null;
 
   @doc("A string representing the Relay topic to forward incoming calls to. This is only used (and required) when call_handler is set to relay_topic.")
   @example("office")
-  call_relay_topic?: string;
+  call_relay_topic: string | null;
 
   @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to relay_topic.")
   @example("https://myapplication/handle_relay_callbacks")
-  call_relay_topic_status_callback_url?: string;
+  call_relay_topic_status_callback_url: string | null;
 
   @doc("The URL to make a request to when using the relay_script call handler. The URL must respond with a valid SWML script.")
   @example("https://example.signalwire.com/relay-bins/60e2ba7b-366e-44de-84e3-0c76cfccf1cc")
-  call_relay_script_url?: string;
+  call_relay_script_url: string | null;
 
   @doc("The name of the Relay Context to send this call to when using the relay_context call handler.")
   @example("my_relay_app")
-  call_relay_context?: string;
+  call_relay_context: string | null;
 
   @doc("A string representing a URL to send status change messages to. This is only used (and required) when call_handler is set to relay_context.")
   @example("https://myapplication/handle_relay_callbacks")
-  call_relay_context_status_callback_url?: string;
+  call_relay_context_status_callback_url: string | null;
 
   @doc("The name of the Relay Application to send this call to when using the relay_application call handler.")
   @example("my_relay_app")
-  call_relay_application?: string;
+  call_relay_application: string | null;
 
   @doc("The ID of the Relay Connector to send this call to when using the relay_connector call handler.")
-  call_relay_connector_id?: string;
+  call_relay_connector_id: string | null;
 
   @doc("The ID of the Relay SIP Endpoint to send this call to when using the relay_sip_endpoint call handler.")
-  call_sip_endpoint_id?: string;
+  @format("uuid")
+  call_sip_endpoint_id: uuid | null;
 
   @doc("The name of the Verto Relay Endpoint to send this call to when using the relay_verto_endpoint call handler.")
-  call_verto_resource?: string;
+  call_verto_resource: string | null;
 
   @doc("The ID of the Video Room to send this call to when using the video_room call handler.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
   @format("uuid")
-  call_video_room_id?: string;
+  call_video_room_id: uuid | null;
 
   @doc("What type of handler you want to run on inbound messages.")
   @example(PhoneNumberMessageHandler.relay_application)
-  message_handler?: PhoneNumberMessageHandler;
+  message_handler: PhoneNumberMessageHandler | null;
+
+  @doc("The unique identifier of the messaging handler resource.")
+  @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
+  @format("uuid")
+  messaging_handler_resource_id: uuid | null;
 
   @doc("The URL to make a request to when using the laml_webhooks message handler.")
-  message_request_url?: string;
+  message_request_url: string | null;
 
   @doc("The HTTP method to use when making a request to the message_request_url.")
   @example(HttpMethod.POST)
-  message_request_method?: HttpMethod = HttpMethod.POST;
+  message_request_method: HttpMethod | null;
 
   @doc("The fallback URL to make a request to when using the laml_webhooks message handler and the message_request_url fails.")
-  message_fallback_url?: string;
+  message_fallback_url: string | null;
 
   @doc("The HTTP method to use when making a request to the message_fallback_url.")
   @example(HttpMethod.POST)
-  message_fallback_method?: HttpMethod = HttpMethod.POST;
+  message_fallback_method: HttpMethod | null;
 
   @doc("The ID of the LaML Application to use when using the laml_application message handler.")
-  message_laml_application_id?: string;
+  message_laml_application_id: string | null;
 
   @doc("The name of the Relay Topic to send this message to when using the relay_topic message handler.")
-  message_relay_topic?: string;
+  message_relay_topic: string | null;
 
   @doc("The name of the Relay Context to send this message to when using the relay_context message handler.")
   @example("my_relay_app")
-  message_relay_context?: string;
+  message_relay_context: string | null;
 
-  @doc("The name of the Relay Application to send this message to when using the relay_application message handler.")
-  @example("my_relay_app")
-  message_relay_application?: string;
-
-  @doc("The date the number was added to your project.")
-  created_at?: utcDateTime;
-
-  @doc("The date the number was last updated.")
-  updated_at?: utcDateTime;
-
-  @doc("The next date the number will be billed for.")
-  next_billed_at?: utcDateTime;
+  @doc("The ISO 3166-1 alpha-2 country code of the phone number.")
+  @example("US")
+  country_code: string | null;
 }
 
 @doc("Phone number capabilities.")

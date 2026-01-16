@@ -32,7 +32,7 @@ model CreateSipEndpointRequest {
 
   @doc("What type of handler you want to run on inbound calls.")
   @example("ai_agent")
-  call_handler?: "relay_context" | "relay_topic" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
+  call_handler?: "relay_context" | "relay_topic" | "relay_application" | "relay_connector" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
 
   @doc("The LaML URL to access when a call is received. Required when call_handler is laml_webhooks.")
   call_request_url?: string;
@@ -58,6 +58,9 @@ model CreateSipEndpointRequest {
   @doc("The ID of the LaML application to forward incoming calls to. Required when call_handler is laml_application.")
   call_laml_application_id?: string;
 
+  @doc("The ID of the Dialogflow agent to forward incoming calls to. Required when call_handler is dialogflow.")
+  call_dialogflow_agent_id?: string;
+
   @doc("The Relay topic to forward incoming calls to. Required when call_handler is relay_topic.")
   @example("office")
   call_relay_topic?: string;
@@ -74,6 +77,10 @@ model CreateSipEndpointRequest {
   @example("https://myapplication/handle_relay_callbacks")
   call_relay_context_status_callback_url?: string;
 
+  @doc("The Relay application to forward incoming calls to. Required when call_handler is relay_application.")
+  @example("my-relay-app")
+  call_relay_application?: string;
+
   @doc("The ID of the Video Room to forward incoming calls to. Required when call_handler is video_room.")
   @format("uuid")
   call_video_room_id?: string;
@@ -81,6 +88,9 @@ model CreateSipEndpointRequest {
   @doc("The ID of the Call Flow to forward incoming calls to. Required when call_handler is call_flow.")
   @format("uuid")
   call_flow_id?: string;
+
+  @doc("The version of the Call Flow to use. Valid values are 'working_copy' or 'current_deployed'.")
+  call_flow_version?: string;
 
   @doc("The ID of the AI Agent to forward incoming calls to. Required when call_handler is ai_agent.")
   @format("uuid")
@@ -121,7 +131,7 @@ model UpdateSipEndpointRequest {
 
   @doc("What type of handler you want to run on inbound calls.")
   @example("ai_agent")
-  call_handler?: "relay_context" | "relay_topic" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
+  call_handler?: "relay_context" | "relay_topic" | "relay_application" | "relay_connector" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
 
   @doc("The LaML URL to access when a call is received. Required when call_handler is laml_webhooks.")
   call_request_url?: string;
@@ -147,6 +157,9 @@ model UpdateSipEndpointRequest {
   @doc("The ID of the LaML application to forward incoming calls to. Required when call_handler is laml_application.")
   call_laml_application_id?: string;
 
+  @doc("The ID of the Dialogflow agent to forward incoming calls to. Required when call_handler is dialogflow.")
+  call_dialogflow_agent_id?: string;
+
   @doc("The Relay topic to forward incoming calls to. Required when call_handler is relay_topic.")
   @example("office")
   call_relay_topic?: string;
@@ -163,6 +176,10 @@ model UpdateSipEndpointRequest {
   @example("https://myapplication/handle_relay_callbacks")
   call_relay_context_status_callback_url?: string;
 
+  @doc("The Relay application to forward incoming calls to. Required when call_handler is relay_application.")
+  @example("my-relay-app")
+  call_relay_application?: string;
+
   @doc("The ID of the Video Room to forward incoming calls to. Required when call_handler is video_room.")
   @format("uuid")
   call_video_room_id?: string;
@@ -170,6 +187,9 @@ model UpdateSipEndpointRequest {
   @doc("The ID of the Call Flow to forward incoming calls to. Required when call_handler is call_flow.")
   @format("uuid")
   call_flow_id?: string;
+
+  @doc("The version of the Call Flow to use. Valid values are 'working_copy' or 'current_deployed'.")
+  call_flow_version?: string;
 
   @doc("The ID of the AI Agent to forward incoming calls to. Required when call_handler is ai_agent.")
   @format("uuid")

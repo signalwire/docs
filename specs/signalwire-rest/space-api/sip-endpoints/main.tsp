@@ -23,7 +23,7 @@ namespace SpaceAPI.SipEndpoints {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(): SipEndpointListResponse | StatusCode401 | StatusCode500;
+    list(...ListSipEndpointsQuery): SipEndpointListResponse | StatusCode401 | ValidationError | StatusCode500;
 
     @operationId("create_sip_endpoint")
     @summary("Create a SIP Endpoint")
@@ -35,10 +35,7 @@ namespace SpaceAPI.SipEndpoints {
       """)
     @post
     create(@body body: CreateSipEndpointRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body sip_endpoint: SipEndpointResponse;
-        }
+      | SipEndpointResponse
       | StatusCode401
       | ValidationError
       | StatusCode500;
@@ -51,7 +48,7 @@ namespace SpaceAPI.SipEndpoints {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    read(...SipEndpointPathID): SipEndpointResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...SipEndpointPathID): SipEndpointResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("update_sip_endpoint")
     @summary("Update a SIP Endpoint")
@@ -63,10 +60,7 @@ namespace SpaceAPI.SipEndpoints {
       """)
     @put
     update(...SipEndpointPathID, @body body: UpdateSipEndpointRequest):
-      | {
-          @statusCode statusCode: 201;
-          @body sip_endpoint: SipEndpointResponse;
-        }
+      | SipEndpointResponse
       | StatusCode401
       | StatusCode404
       | ValidationError
@@ -85,6 +79,7 @@ namespace SpaceAPI.SipEndpoints {
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;

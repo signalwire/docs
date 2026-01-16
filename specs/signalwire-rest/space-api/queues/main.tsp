@@ -23,7 +23,7 @@ namespace SpaceAPI.Queues {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(): QueueListResponse | StatusCode401 | StatusCode500;
+    list(): QueueListResponse | StatusCode401 | ValidationError | StatusCode500;
 
     @operationId("create_queue")
     @summary("Create a Queue")
@@ -51,7 +51,7 @@ namespace SpaceAPI.Queues {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    read(...QueuePathID): QueueResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...QueuePathID): QueueResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("update_queue")
     @summary("Update a Queue")

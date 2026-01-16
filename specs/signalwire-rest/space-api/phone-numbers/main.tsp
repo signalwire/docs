@@ -26,15 +26,7 @@ namespace SpaceAPI.PhoneNumbers {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(
-      @query
-      @doc("The name given to the phone number. Will return all Phone Numbers containing this value as a substring.")
-      filter_name?: string,
-
-      @query
-      @doc("The phone number in E164 format. Will return all Phone Numbers containing this value as a substring.")
-      filter_number?: string
-    ): PhoneNumberListResponse | StatusCode401 | StatusCode500;
+    list(...ListPhoneNumbersQuery): PhoneNumberListResponse | StatusCode400 | StatusCode401 | StatusCode500;
 
     @operationId("purchase_phone_number")
     @summary("Purchase a Phone Number")
@@ -50,6 +42,7 @@ namespace SpaceAPI.PhoneNumbers {
           @statusCode statusCode: 200;
           @body phone_number: PhoneNumberResponse;
         }
+      | StatusCode400
       | StatusCode401
       | ValidationError
       | StatusCode500;
@@ -62,7 +55,7 @@ namespace SpaceAPI.PhoneNumbers {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    read(...PhoneNumberPathID): PhoneNumberResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...PhoneNumberPathID): PhoneNumberResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("update_phone_number")
     @summary("Update a Phone Number")
@@ -98,6 +91,7 @@ namespace SpaceAPI.PhoneNumbers {
         }
       | StatusCode401
       | StatusCode404
+      | ValidationError
       | StatusCode500;
 
     @operationId("search_available_phone_numbers")
