@@ -26,11 +26,7 @@ model VerifyCallerIdRequest {
 
 @doc("Request body for updating a verified caller ID.")
 model UpdateVerifiedCallerIdRequest {
-  @doc("String representing the name portion of the caller ID.")
+  @doc("String representing the name portion of the caller ID. If not provided, the default will be the formatted number that has been provided.")
   @example("C-3P0")
   name?: string;
-
-  @doc("String representing the extension of the phone number for the caller ID.")
-  @example("1234")
-  extension?: string;
 }

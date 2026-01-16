@@ -131,7 +131,7 @@ function resolveSchema(schema, schemas, fullSpec, visited = new Set()) {
     return mergeSchemas(merged, rest);
   }
 
-  // Handle anyOf/oneOf - collect all possible properties but NOT required fields
+  // Handle anyOf/oneOf - collect all possible properties but NOT required fields from variants
   // For oneOf (discriminated unions), each variant has its own required fields,
   // but only ONE variant's required fields apply at a time based on the discriminator.
   // We merge properties (so all possible fields are known) but exclude variant-specific

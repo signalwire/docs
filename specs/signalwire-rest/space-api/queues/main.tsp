@@ -90,6 +90,12 @@ namespace SpaceAPI.Queues {
       | StatusCode404
       | StatusCode500;
 
+  }
+
+  @tag(QUEUE_MEMBERS_TAG)
+  @friendlyName("Queue Members")
+  @route("/{queue_id}/members")
+  interface QueueMembers {
     @operationId("list_queue_members")
     @summary("List all members of a queue")
     @doc("""
@@ -98,29 +104,20 @@ namespace SpaceAPI.Queues {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @route("/{queue_id}/members")
     @get
     listMembers(...QueueIdPath): QueueMemberListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("dequeue_next_queue_member")
     @summary("Dequeue next member on the queue")
     @doc("""
-      Dequeues the next member from the queue.
+      Dequeues next member on the queue.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @route("/{queue_id}/members/dequeue")
+    @route("/dequeue")
     @post
-    dequeueNextMember(...QueueIdPath, @body body: DequeueMemberRequest):
-      | {
-          @statusCode statusCode: 200;
-          @body member: QueueMemberResponse;
-        }
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
+    dequeueNextMember(...QueueIdPath): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("retrieve_next_queue_member")
     @summary("Retrieve next member on the queue")
@@ -130,7 +127,7 @@ namespace SpaceAPI.Queues {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @route("/{queue_id}/members/next")
+    @route("/next")
     @get
     getNextMember(...QueueIdPath): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
@@ -142,28 +139,20 @@ namespace SpaceAPI.Queues {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @route("/{queue_id}/members/{id}")
+    @route("/{id}")
     @get
     getMember(...QueueIdPath, ...QueueMemberPathID): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("dequeue_queue_member")
     @summary("Dequeue member on the queue")
     @doc("""
-      Removes a specific member from the queue and optionally redirects the call.
+      Dequeues member on the queue.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @route("/{queue_id}/members/{id}/dequeue")
+    @route("/{id}/dequeue")
     @post
-    dequeueMember(...QueueIdPath, ...QueueMemberPathID, @body body: DequeueMemberRequest):
-      | {
-          @statusCode statusCode: 200;
-          @body member: QueueMemberResponse;
-        }
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
+    dequeueMember(...QueueIdPath, ...QueueMemberPathID): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
   }
 }

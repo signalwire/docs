@@ -95,6 +95,12 @@ namespace SpaceAPI.NumberGroups {
       | StatusCode404
       | StatusCode500;
 
+  }
+
+  @tag(NUMBER_GROUP_MEMBERSHIP_TAG)
+  @friendlyName("Number Group Membership")
+  @route("/{NumberGroupId}/number_group_memberships")
+  interface NumberGroupMembershipsNested {
     @operationId("list_number_group_memberships")
     @summary("List all Number Group Memberships")
     @doc("""
@@ -103,7 +109,6 @@ namespace SpaceAPI.NumberGroups {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    @route("/{NumberGroupId}/number_group_memberships")
     @get
     listMemberships(...NumberGroupIdPath): NumberGroupMembershipListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
@@ -115,7 +120,6 @@ namespace SpaceAPI.NumberGroups {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    @route("/{NumberGroupId}/number_group_memberships")
     @post
     addMembership(...NumberGroupIdPath, @body body: AddNumberGroupMembershipRequest):
       | {

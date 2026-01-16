@@ -4,17 +4,9 @@ using TypeSpec.Http;
 
 @doc("Request body for purchasing a phone number.")
 model PurchasePhoneNumberRequest {
-  @doc("The phone number to purchase in E.164 format.")
-  @example("+15551234567")
+  @doc("The phone number in E164 format.")
+  @example("+15558675309")
   number: string;
-
-  @doc("The friendly name for the phone number.")
-  @example("Main Office Line")
-  name?: string;
-
-  @doc("The address ID to associate with the phone number.")
-  @format("uuid")
-  address_id?: uuid;
 }
 
 @doc("Request body for updating a phone number.")

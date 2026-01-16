@@ -71,10 +71,7 @@ namespace SpaceAPI.DomainApplications {
       """)
     @put
     update(...DomainApplicationPathID, @body body: UpdateDomainApplicationRequest):
-      | {
-          @statusCode statusCode: 200;
-          @body domain_application: DomainApplicationResponse;
-        }
+      | DomainApplicationListResponse
       | StatusCode401
       | StatusCode404
       | ValidationError

@@ -10,31 +10,31 @@ model CreateBrandRequest {
 
   @doc("The legal name of the business.")
   @example("BrandCo")
-  company_name: string;
+  company_name?: string;
 
   @doc("A company contact email for this brand.")
   @example("brand_info@example.com")
-  contact_email: string;
+  contact_email?: string;
 
   @doc("A contact phone number for this brand.")
   @example("+18995551212")
-  contact_phone: string;
+  contact_phone?: string;
 
   @doc("Country of registration.")
   @example("United States")
-  ein_issuing_country: string;
+  ein_issuing_country?: string;
 
-  @doc("What type of legal entity is the organization? (PRIVATE_PROFIT, PUBLIC_PROFIT, NON_PROFIT)")
+  @doc("What type of legal entity is the organization? (`PRIVATE_PROFIT`, `PUBLIC_PROFIT`, `NON_PROFIT`)")
   @example("Private Company")
-  legal_entity_type: string;
+  legal_entity_type?: string;
 
-  @doc("Company EIN Number/Tax ID.")
+  @doc("Company EIN Number/Tax ID")
   @example("12-3456789")
   ein?: string;
 
   @doc("Full company address.")
   @example("123 Brand St, Hill Valley CA, 91905")
-  company_address: string;
+  company_address?: string;
 
   @doc("An optional Vertical for the brand (REAL_ESTATE, HEALTHCARE, ENERGY, ENTERTAINMENT, RETAIL, AGRICULTURE, INSURANCE, EDUCATION, HOSPITALITY, FINANCIAL, GAMBLING, CONSTRUCTION, NGO, MANUFACTURING, GOVERNMENT, TECHNOLOGY, COMMUNICATION).")
   @example("Healthcare")
@@ -130,17 +130,17 @@ model CreateCampaignRequest {
   @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
   help_message?: string;
 
-  @doc("Opt in keywords that subscribers can use.")
+  @doc("You can share any opt in keywords that subscribers can use here. Default = START")
   @example("Start,Subscribe,Opt In")
-  opt_in_keywords?: string = "START";
+  opt_in_keywords?: string;
 
-  @doc("Opt out keywords that subscribers can use.")
+  @doc("You can share any opt out keywords that subscribers can use here. Default = STOP")
   @example("Stop,Opt Out,Unsubscribe")
-  opt_out_keywords?: string = "STOP";
+  opt_out_keywords?: string;
 
-  @doc("Help keywords that subscribers can use.")
+  @doc("You can share any help keywords that subscribers can use here. Default = HELP")
   @example("Help,Support,Request Call")
-  help_keywords?: string = "HELP";
+  help_keywords?: string;
 
   @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
   @example(true)

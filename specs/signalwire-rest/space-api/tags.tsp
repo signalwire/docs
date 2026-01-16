@@ -67,3 +67,8 @@ const QUEUES_TAG = "Queues";
 const QUEUES_TAG_METADATA = #{
   description: "Manage call queues for handling incoming calls.",
 };
+
+const QUEUE_MEMBERS_TAG = "Queue Members";
+const QUEUE_MEMBERS_TAG_METADATA = #{
+  description: "Manage members within call queues.",
+};

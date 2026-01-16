@@ -25,24 +25,19 @@ model MfaRequest {
   @example("Here is your code")
   message?: string;
 
-  @doc("The number of characters in the token.")
-  @minValue(4)
-  @maxValue(20)
+  @doc("The number of characters in the token, from 4 to 20. Defaults to 6.")
   @example(6)
   token_length?: int32 = 6;
 
-  @doc("The number of seconds the token is considered valid for.")
-  @maxValue(604800)
+  @doc("The number of seconds the token is considered valid for. Defaults to 3600, with a maximum of 604800.")
   @example(3600)
   valid_for?: int32 = 3600;
 
-  @doc("The number of allowed verification attempts, including the first one.")
-  @minValue(1)
-  @maxValue(20)
+  @doc("The number of allowed verification attempts, including the first one, from 1 to 20. Defaults to 3.")
   @example(3)
   max_attempts?: int32 = 3;
 
-  @doc("Whether to include letters in the token. When false, only numbers are included.")
+  @doc("Set to true or false, whether to include letters or just numbers in the token. Defaults to false (numbers only).")
   @example(false)
   allow_alphas?: boolean = false;
 }
@@ -76,11 +71,7 @@ model MfaVerifyRequest {
 
 @doc("MFA verification response model.")
 model MfaVerifyResponse {
-  @doc("The unique identifier of the MFA request.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
-  id: uuid;
-
-  @doc("Whether the verification was successful.")
+  @doc("Whether the token was successfully verified by the API. When `max_attempts` are reached or the request is no longer valid, the endpoint will return a `404 Not Found`.")
+  @example(true)
   success: boolean;
 }

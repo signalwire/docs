@@ -22,19 +22,7 @@ namespace SpaceAPI.Recordings {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(
-      @query
-      @doc("Filter by call SID.")
-      call_sid?: string,
-
-      @query
-      @doc("Filter by conference SID.")
-      conference_sid?: string,
-
-      @query
-      @doc("Filter by status.")
-      status?: string
-    ): RecordingListResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    list(): RecordingListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("get_recording")
     @summary("Get Relay Recording")
