@@ -25,19 +25,24 @@ model MfaRequest {
   @example("Here is your code")
   message?: string;
 
-  @doc("The number of characters in the token, from 4 to 20. Defaults to 6.")
+  @doc("The number of characters in the token.")
+  @minValue(4)
+  @maxValue(20)
   @example(6)
   token_length?: int32 = 6;
 
-  @doc("The number of seconds the token is considered valid for. Defaults to 3600, with a maximum of 604800.")
+  @doc("The number of seconds the token is considered valid for.")
+  @maxValue(604800)
   @example(3600)
   valid_for?: int32 = 3600;
 
-  @doc("The number of allowed verification attempts, including the first one, from 1 to 20. Defaults to 3.")
+  @doc("The number of allowed verification attempts, including the first one.")
+  @minValue(1)
+  @maxValue(20)
   @example(3)
   max_attempts?: int32 = 3;
 
-  @doc("Set to true or false, whether to include letters or just numbers in the token. Defaults to false (numbers only).")
+  @doc("Whether to include letters in the token. When false, only numbers are included.")
   @example(false)
   allow_alphas?: boolean = false;
 }

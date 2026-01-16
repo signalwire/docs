@@ -199,17 +199,17 @@ model Campaign {
   @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
   help_message?: string;
 
-  @doc("You can share any opt in keywords that subscribers can use here. Default = START")
+  @doc("Opt in keywords that subscribers can use.")
   @example("Start,Subscribe,Opt In")
-  opt_in_keywords?: string;
+  opt_in_keywords?: string = "START";
 
-  @doc("You can share any opt out keywords that subscribers can use here. Default = STOP")
+  @doc("Opt out keywords that subscribers can use.")
   @example("Stop,Opt Out,Unsubscribe")
-  opt_out_keywords?: string;
+  opt_out_keywords?: string = "STOP";
 
-  @doc("You can share any help keywords that subscribers can use here. Default = HELP")
+  @doc("Help keywords that subscribers can use.")
   @example("Help,Support,Request Call")
-  help_keywords?: string;
+  help_keywords?: string = "HELP";
 
   @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
   @example(true)

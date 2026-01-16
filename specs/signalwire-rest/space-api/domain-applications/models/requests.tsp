@@ -11,9 +11,9 @@ model CreateDomainApplicationRequest {
   @doc("A string representing the identifier portion of the domain application.")
   identifier: string;
 
-  @doc("A string representing the user portion of the domain application. Default is '*'.")
+  @doc("The user portion of the domain application.")
   @example("helpdesk")
-  user?: string;
+  user?: string = "*";
 
   @doc("Whether the domain application will enforce IP authentication for incoming requests.")
   @example(true)
@@ -22,14 +22,14 @@ model CreateDomainApplicationRequest {
   @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
   ip_auth?: string[];
 
-  @doc("A string representing whether connections to this domain application require encryption or if encryption is optional. Valid values are optional and required.")
+  @doc("Whether connections to this domain application require encryption or if encryption is optional.")
   @example("required")
-  encryption?: string;
+  encryption?: "optional" | "required";
 
-  @doc("A list of codecs this domain application will support. Currently supported values are: OPUS, G722, PCMU, PCMA, VP8, and H264.")
+  @doc("A list of codecs this domain application will support.")
   codecs?: string[];
 
-  @doc("A list of encryption ciphers this domain application will support. Currently supported values are: AEAD_AES_256_GCM_8, AES_256_CM_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32, and AES_CM_128_HMAC_SHA1_32.")
+  @doc("A list of encryption ciphers this domain application will support.")
   ciphers?: string[];
 
   @doc("Specify how the domain application will handle calls.")
@@ -130,14 +130,14 @@ model UpdateDomainApplicationRequest {
   @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
   ip_auth?: string[];
 
-  @doc("A string representing whether connections to this domain application require encryption or if encryption is optional. Valid values are optional and required.")
+  @doc("Whether connections to this domain application require encryption or if encryption is optional.")
   @example("required")
-  encryption?: string;
+  encryption?: "optional" | "required";
 
-  @doc("A list of codecs this domain application will support. Currently supported values are: OPUS, G722, PCMU, PCMA, VP8, and H264.")
+  @doc("A list of codecs this domain application will support.")
   codecs?: string[];
 
-  @doc("A list of encryption ciphers this domain application will support. Currently supported values are: AEAD_AES_256_GCM_8, AES_256_CM_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32, and AES_CM_128_HMAC_SHA1_32.")
+  @doc("A list of encryption ciphers this domain application will support.")
   ciphers?: string[];
 
   @doc("Specify how the domain application will handle calls.")

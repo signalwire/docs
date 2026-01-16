@@ -36,7 +36,7 @@ model SipEndpoint {
   @doc("A list of codecs this endpoint will support.")
   codecs?: string[];
 
-  @doc("A string representing whether connections to this endpoint require encryption or if encryption is optional. Possible values are default, required, optional.")
+  @doc("Whether connections to this endpoint require encryption or if encryption is optional.")
   @example("required")
   encryption?: "default" | "required" | "optional";
 

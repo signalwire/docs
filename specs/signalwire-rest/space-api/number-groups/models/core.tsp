@@ -38,7 +38,7 @@ model NumberGroup {
   @example("My Number Group")
   name: string;
 
-  @doc("Whether the number group uses the same 'From' number for outbound requests to a number, or chooses a random one. Defaults to false.")
+  @doc("Whether the number group uses the same 'From' number for outbound requests to a number, or chooses a random one.")
   @example(false)
   sticky_sender?: boolean = false;
 
