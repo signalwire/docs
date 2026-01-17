@@ -11,7 +11,21 @@ model DomainApplicationPathID {
   id: uuid;
 }
 
-@doc("Call handler type for domain applications.")
+@doc("Call handler types that can be assigned via the API.")
+enum DomainAppCallHandlerRequest {
+  relay_topic: "relay_topic",
+  relay_application: "relay_application",
+  laml_webhooks: "laml_webhooks",
+  laml_application: "laml_application",
+  video_room: "video_room",
+  relay_script: "relay_script",
+  dialogflow: "dialogflow",
+  ai_agent: "ai_agent",
+  call_flow: "call_flow",
+  relay_context: "relay_context",
+}
+
+@doc("All possible call handler types for domain applications. Includes types that can only be assigned via the Fabric API or UI.")
 enum DomainAppCallHandler {
   relay_topic: "relay_topic",
   relay_application: "relay_application",
@@ -40,7 +54,7 @@ model DomainApplication {
   @example("domain_application")
   type: string;
 
-  @doc("A string representation of the subdomain for this application.")
+  @doc("The unique domain for this application, combining your space subdomain and identifier.")
   @example("your-space-test_id")
   domain: string;
 

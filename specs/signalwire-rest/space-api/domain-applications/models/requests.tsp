@@ -20,20 +20,20 @@ model CreateDomainApplicationRequest {
   ip_auth_enabled?: boolean;
 
   @doc("A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.")
-  ip_auth?: string[];
+  ip_auth?: string[] = #[];
 
   @doc("Whether connections to this domain application require encryption or if encryption is optional.")
   @example("required")
-  encryption?: "optional" | "required" | "forbidden";
+  encryption?: "optional" | "required" | "forbidden" = "optional";
 
   @doc("A list of codecs this domain application will support.")
-  codecs?: string[];
+  codecs?: string[] = #["PCMU", "PCMA"];
 
   @doc("A list of encryption ciphers this domain application will support.")
-  ciphers?: string[];
+  ciphers?: string[] = #["AEAD_AES_256_GCM_8", "AES_256_CM_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_80", "AES_256_CM_HMAC_SHA1_32", "AES_CM_128_HMAC_SHA1_32"];
 
   @doc("Specify how the domain application will handle calls.")
-  call_handler: DomainAppCallHandler;
+  call_handler?: DomainAppCallHandlerRequest;
 
   @doc("A string representing the Relay topic to forward incoming calls to. Required when call_handler is relay_topic.")
   @example("office")
@@ -52,21 +52,21 @@ model CreateDomainApplicationRequest {
   call_request_url?: string;
 
   @doc("A string representing the HTTP method to use with call_request_url.")
-  call_request_method?: "GET" | "POST";
+  call_request_method?: "GET" | "POST" = "POST";
 
   @doc("A string representing the LaML URL to access when the call to call_request_url fails.")
   @example("https://example.com/fallback")
   call_fallback_url?: string;
 
   @doc("A string representing the HTTP method to use with call_fallback_url.")
-  call_fallback_method?: "GET" | "POST";
+  call_fallback_method?: "GET" | "POST" = "POST";
 
   @doc("A string representing a URL to send status change messages to.")
   @example("https://example.com/status")
   call_status_callback_url?: string;
 
   @doc("A string representing the HTTP method to use with call_status_callback_url.")
-  call_status_callback_method?: "GET" | "POST";
+  call_status_callback_method?: "GET" | "POST" = "POST";
 
   @doc("A string representing the ID of the LaML application to forward incoming calls to. Required when call_handler is laml_application.")
   @example("app-123456")
@@ -141,7 +141,7 @@ model UpdateDomainApplicationRequest {
   ciphers?: string[];
 
   @doc("Specify how the domain application will handle calls.")
-  call_handler?: DomainAppCallHandler;
+  call_handler?: DomainAppCallHandlerRequest;
 
   @doc("A string representing the Relay topic to forward incoming calls to.")
   @example("office")

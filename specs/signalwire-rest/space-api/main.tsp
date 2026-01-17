@@ -9,7 +9,7 @@ import "./phone-numbers";
 import "./number-groups";
 import "./mfa";
 import "./verified-caller-ids";
-import "./registry-beta";
+import "./campaign-registry";
 import "./queues";
 import "./recordings";
 import "./short-codes";

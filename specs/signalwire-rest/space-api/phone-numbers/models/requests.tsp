@@ -16,7 +16,7 @@ model UpdatePhoneNumberRequest {
   name?: string;
 
   @doc("The call handler for the phone number.")
-  call_handler?: string;
+  call_handler?: PhoneNumberCallHandlerRequest;
 
   @doc("The call receive mode for the phone number.")
   call_receive_mode?: string;
@@ -85,7 +85,7 @@ model UpdatePhoneNumberRequest {
   call_video_room_id?: uuid;
 
   @doc("The message handler for the phone number.")
-  message_handler?: string;
+  message_handler?: PhoneNumberMessageHandler;
 
   @doc("The message request URL for the phone number.")
   message_request_url?: string;

@@ -23,7 +23,7 @@ model MfaRequest {
 
   @doc("Specify a custom message to send before the token. The message must fit within one segment; either 160 characters or 70 characters when using non-GSM symbols.")
   @example("Here is your code")
-  message?: string;
+  message?: string = "Your Personal Authorization Code is:";
 
   @doc("The number of characters in the token, from 4 to 20. Defaults to 6.")
   @example(6)

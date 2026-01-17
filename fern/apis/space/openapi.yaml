@@ -3308,6 +3308,7 @@ components:
       description: Filter by name. Returns all number groups containing this value as a substring.
       schema:
         type: string
+        maxLength: 255
       explode: false
     ListNumberGroupsQuery.page_number:
       name: page_number
@@ -4388,6 +4389,7 @@ components:
       properties:
         label:
           type: string
+          maxLength: 250
           description: A friendly name given to the address to help distinguish and search for different addresses within your project.
           example: My Address
         country:
@@ -4396,18 +4398,22 @@ components:
           example: US
         first_name:
           type: string
+          maxLength: 250
           description: First name of the occupant associated with this address.
           example: Emmett
         last_name:
           type: string
+          maxLength: 250
           description: Last name of the occupant associated with this address.
           example: Brown
         street_number:
           type: string
+          maxLength: 250
           description: The number portion of the street address.
           example: '1640'
         street_name:
           type: string
+          maxLength: 250
           description: The name portion of the street address.
           example: Riverside Drive
         address_type:
@@ -4421,6 +4427,7 @@ components:
           example: '42'
         city:
           type: string
+          maxLength: 250
           description: The city portion of the street address.
           example: Alexandria
         state:
@@ -4429,6 +4436,7 @@ components:
           example: CA
         postal_code:
           type: string
+          maxLength: 250
           description: The postal code of the street address.
           example: '91905'
       description: Request body for creating an address.
@@ -4603,7 +4611,6 @@ components:
       required:
         - name
         - identifier
-        - call_handler
       properties:
         name:
           type: string
@@ -4626,6 +4633,7 @@ components:
           items:
             type: string
           description: A list containing whitelisted IP addresses and IP blocks used if ip_auth_enabled is true.
+          default: []
         encryption:
           type: string
           enum:
@@ -4634,19 +4642,29 @@ components:
             - forbidden
           description: Whether connections to this domain application require encryption or if encryption is optional.
           example: required
+          default: optional
         codecs:
           type: array
           items:
             type: string
           description: A list of codecs this domain application will support.
+          default:
+            - PCMU
+            - PCMA
         ciphers:
           type: array
           items:
             type: string
           description: A list of encryption ciphers this domain application will support.
+          default:
+            - AEAD_AES_256_GCM_8
+            - AES_256_CM_HMAC_SHA1_80
+            - AES_CM_128_HMAC_SHA1_80
+            - AES_256_CM_HMAC_SHA1_32
+            - AES_CM_128_HMAC_SHA1_32
         call_handler:
           allOf:
-            - $ref: '#/components/schemas/DomainAppCallHandler'
+            - $ref: '#/components/schemas/DomainAppCallHandlerRequest'
           description: Specify how the domain application will handle calls.
         call_relay_topic:
           type: string
@@ -4670,6 +4688,7 @@ components:
             - GET
             - POST
           description: A string representing the HTTP method to use with call_request_url.
+          default: POST
         call_fallback_url:
           type: string
           description: A string representing the LaML URL to access when the call to call_request_url fails.
@@ -4680,6 +4699,7 @@ components:
             - GET
             - POST
           description: A string representing the HTTP method to use with call_fallback_url.
+          default: POST
         call_status_callback_url:
           type: string
           description: A string representing a URL to send status change messages to.
@@ -4690,6 +4710,7 @@ components:
             - GET
             - POST
           description: A string representing the HTTP method to use with call_status_callback_url.
+          default: POST
         call_laml_application_id:
           type: string
           description: A string representing the ID of the LaML application to forward incoming calls to. Required when call_handler is laml_application.
@@ -4949,7 +4970,21 @@ components:
         - fabric_subscriber
         - sip_gateway
         - call_queue
-      description: Call handler type for domain applications.
+      description: All possible call handler types for domain applications. Includes types that can only be assigned via the Fabric API or UI.
+    DomainAppCallHandlerRequest:
+      type: string
+      enum:
+        - relay_topic
+        - relay_application
+        - laml_webhooks
+        - laml_application
+        - video_room
+        - relay_script
+        - dialogflow
+        - ai_agent
+        - call_flow
+        - relay_context
+      description: Call handler types that can be assigned via the API.
     DomainApplication:
       type: object
       required:
@@ -4992,7 +5027,7 @@ components:
           example: domain_application
         domain:
           type: string
-          description: A string representation of the subdomain for this application.
+          description: The unique domain for this application, combining your space subdomain and identifier.
           example: your-space-test_id
         name:
           type: string
@@ -5180,7 +5215,7 @@ components:
           example: domain_application
         domain:
           type: string
-          description: A string representation of the subdomain for this application.
+          description: The unique domain for this application, combining your space subdomain and identifier.
           example: your-space-test_id
         name:
           type: string
@@ -5393,6 +5428,7 @@ components:
           type: string
           description: Specify a custom message to send before the token. The message must fit within one segment; either 160 characters or 70 characters when using non-GSM symbols.
           example: Here is your code
+          default: 'Your Personal Authorization Code is:'
         token_length:
           type: integer
           format: int32
@@ -5988,6 +6024,21 @@ components:
         - sip_gateway
         - call_queue
       description: Call handler type for phone numbers.
+    PhoneNumberCallHandlerRequest:
+      type: string
+      enum:
+        - relay_context
+        - relay_topic
+        - relay_script
+        - relay_application
+        - relay_connector
+        - relay_sip_endpoint
+        - relay_verto_endpoint
+        - laml_webhooks
+        - laml_application
+        - dialogflow
+        - video_room
+      description: Call handler type for phone number update requests. Excludes handlers that can only be set via Fabric API.
     PhoneNumberCapabilities:
       type: object
       properties:
@@ -7537,7 +7588,7 @@ components:
           description: A list of encryption ciphers this domain application will support.
         call_handler:
           allOf:
-            - $ref: '#/components/schemas/DomainAppCallHandler'
+            - $ref: '#/components/schemas/DomainAppCallHandlerRequest'
           description: Specify how the domain application will handle calls.
         call_relay_topic:
           type: string
@@ -7652,7 +7703,8 @@ components:
           description: The friendly name for the phone number.
           example: Main Office Line
         call_handler:
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/PhoneNumberCallHandlerRequest'
           description: The call handler for the phone number.
         call_receive_mode:
           type: string
@@ -7731,7 +7783,8 @@ components:
           format: uuid
           description: The ID of the Video Room to forward incoming calls to when using the video_room call handler.
         message_handler:
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/PhoneNumberMessageHandler'
           description: The message handler for the phone number.
         message_request_url:
           type: string

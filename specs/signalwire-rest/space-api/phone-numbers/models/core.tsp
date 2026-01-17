@@ -58,6 +58,21 @@ enum PhoneNumberMessageHandler {
   laml_application: "laml_application",
 }
 
+@doc("Call handler type for phone number update requests. Excludes handlers that can only be set via Fabric API.")
+enum PhoneNumberCallHandlerRequest {
+  relay_context: "relay_context",
+  relay_topic: "relay_topic",
+  relay_script: "relay_script",
+  relay_application: "relay_application",
+  relay_connector: "relay_connector",
+  relay_sip_endpoint: "relay_sip_endpoint",
+  relay_verto_endpoint: "relay_verto_endpoint",
+  laml_webhooks: "laml_webhooks",
+  laml_application: "laml_application",
+  dialogflow: "dialogflow",
+  video_room: "video_room",
+}
+
 model PhoneNumberPathID {
   @doc("Unique ID of the phone number.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")

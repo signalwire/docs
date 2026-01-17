@@ -7,6 +7,7 @@ using TypeSpec.Http;
 model ListNumberGroupsQuery {
   @query
   @doc("Filter by name. Returns all number groups containing this value as a substring.")
+  @maxLength(255)
   filter_name?: string;
 
   @query
