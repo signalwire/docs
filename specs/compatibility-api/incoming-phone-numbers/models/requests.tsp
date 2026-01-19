@@ -2,27 +2,19 @@ using TypeSpec.Http;
 
 @doc("Request body for creating an incoming phone number.")
 model CreateIncomingPhoneNumberRequest {
-  @doc("The area code of your new number.")
-  @example("310")
-  AreaCode: string;
-
-  @doc("The incoming number in E.164 format.")
+  @doc("The phone number to purchase in E.164 format. Must start with `+` followed by 5-17 digits.")
+  @pattern("^\\+\\d{5,17}$")
+  @minLength(6)
+  @maxLength(18)
   @example("+13103386745")
   PhoneNumber: string;
 
-  @doc("The unique identifier for the address associated with this phone number.")
-  @example("b3877c40-da60-4998-90ad-b792e98472ad")
-  AddressSid?: string;
-
-  @doc("A formatted version of the number.")
-  @example("310-338-6745")
+  @doc("A friendly name for the phone number. If not provided, the formatted phone number will be used.")
+  @example("My Business Line")
   FriendlyName?: string;
 
-  @doc("The unique identifier for the identity associated with this phone number.")
-  @example("b3877c40-da60-4998-90ad-b792e98472ri")
-  IdentitySid?: string;
-
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472sa")
   SmsApplicationSid?: string;
 
@@ -31,7 +23,8 @@ model CreateIncomingPhoneNumberRequest {
   SmsFallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request if errors occur when fetching SmsUrl.")
-  @example("http://example.com/sms-fallback")
+  @format("uri")
+  @example("https://example.com/sms-fallback")
   SmsFallbackUrl?: string;
 
   @doc("Whether the request to SmsUrl is a `GET` or a `POST`. Default is `POST`.")
@@ -39,129 +32,121 @@ model CreateIncomingPhoneNumberRequest {
   SmsMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request when an incoming SMS is received.")
-  @example("http://example.com/sms")
+  @format("uri")
+  @example("https://example.com/sms")
   SmsUrl?: string;
 
   @doc("The URL to request to pass status updates to.")
-  @example("example.com")
+  @format("uri")
+  @example("https://example.com/status")
   StatusCallback?: string;
 
   @doc("Whether the request to StatusCallback is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("The unique identifier for the Trunk associated with this phone number.")
-  @example("b3877c40-da60-4998-90ad-b792e98472tr")
-  TrunkSid?: string;
-
   @doc("The unique identifier for the application associated with call handling on this phone number.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472va")
   VoiceApplicationSid?: string;
-
-  @doc("Whether or not to look up a caller's name in the database.")
-  @example(false)
-  VoiceCallerIdLookup?: boolean;
 
   @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   VoiceFallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("The URL to request if errors occur when fetching `Url`.")
-  @example("example.com")
+  @doc("The URL to request if errors occur when fetching VoiceUrl.")
+  @format("uri")
+  @example("https://example.com/voice-fallback")
   VoiceFallbackUrl?: string;
 
-  @doc("Whether the request to Url is a `GET` or a `POST`. Default is `POST`.")
-  @example("GET")
+  @doc("Whether the request to VoiceUrl is a `GET` or a `POST`. Default is `POST`.")
+  @example("POST")
   VoiceMethod?: "GET" | "POST" = "POST";
 
-  @doc("Whether this number can receive calls or fax. Default is voice.")
+  @doc("Whether this number can receive voice calls, faxes, or neither. Default is `voice`.")
   @example("voice")
-  VoiceReceiveMode?: "voice" | "fax" = "voice";
+  VoiceReceiveMode?: "voice" | "fax" | "none" = "voice";
 
   @doc("The URL to request when an incoming call is received.")
-  @example("http://your-application.com/docs/voice.xml")
+  @format("uri")
+  @example("https://example.com/voice")
   VoiceUrl?: string;
 }
 
 @doc("Request body for updating an incoming phone number.")
 model UpdateIncomingPhoneNumberRequest {
-  @doc("The unique identifier for an account to which the number should be transferred to.")
+  @doc("The unique identifier for an account to which the number should be transferred. Must be within the same Space.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
   AccountSid?: string;
 
-  @doc("The unique identifier for the address associated with this phone number.")
+  @doc("The unique identifier of the address associated with E911 for this phone number. Not supported for toll-free numbers or certain providers.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")
-  AddressSid?: string;
-
-  @doc("The unique identifier of the address associated with E911 for this phone number.")
-  @example("null")
   EmergencyAddressSid?: string;
 
-  @doc("A formatted version of the number.")
-  @example("310-338-6745")
+  @doc("A friendly name for the phone number.")
+  @minLength(1)
+  @maxLength(255)
+  @example("My Business Line")
   FriendlyName?: string;
 
-  @doc("The unique identifier for the identity associated with this phone number.")
-  @example("b3877c40-da60-4998-90ad-b792e98472ri")
-  IdentitySid?: string;
-
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472sa")
   SmsApplicationSid?: string;
 
-  @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`.")
+  @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  SmsFallbackMethod?: "GET" | "POST";
+  SmsFallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request if errors occur when fetching SmsUrl.")
-  @example("http://example.com/sms-fallback")
+  @format("uri")
+  @example("https://example.com/sms-fallback")
   SmsFallbackUrl?: string;
 
-  @doc("Whether the request to SmsUrl is a `GET` or a `POST`.")
+  @doc("Whether the request to SmsUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  SmsMethod?: "GET" | "POST";
+  SmsMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request when an incoming SMS is received.")
-  @example("http://example.com/sms")
+  @format("uri")
+  @example("https://example.com/sms")
   SmsUrl?: string;
 
   @doc("The URL to request to pass status updates to.")
-  @example("example.com")
+  @format("uri")
+  @example("https://example.com/status")
   StatusCallback?: string;
 
-  @doc("Whether the request to StatusCallback is a `GET` or a `POST`.")
+  @doc("Whether the request to StatusCallback is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  StatusCallbackMethod?: "GET" | "POST";
-
-  @doc("The unique identifier for the Trunk associated with this phone number.")
-  @example("b3877c40-da60-4998-90ad-b792e98472tr")
-  TrunkSid?: string;
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472va")
   VoiceApplicationSid?: string;
 
-  @doc("Whether or not to look up a caller's name in the database.")
-  @example(false)
-  VoiceCallerIdLookup?: boolean;
-
-  @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`.")
+  @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  VoiceFallbackMethod?: "GET" | "POST";
+  VoiceFallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("The URL to request if errors occur when fetching `Url`.")
-  @example("example.com")
+  @doc("The URL to request if errors occur when fetching VoiceUrl.")
+  @format("uri")
+  @example("https://example.com/voice-fallback")
   VoiceFallbackUrl?: string;
 
-  @doc("Whether the request to Url is a `GET` or a `POST`.")
+  @doc("Whether the request to VoiceUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
-  VoiceMethod?: "GET" | "POST";
+  VoiceMethod?: "GET" | "POST" = "POST";
 
-  @doc("Whether this number can receive calls or fax.")
+  @doc("Whether this number can receive voice calls, faxes, or neither.")
   @example("voice")
-  VoiceReceiveMode?: "voice" | "fax";
+  VoiceReceiveMode?: "voice" | "fax" | "none";
 
   @doc("The URL to request when an incoming call is received.")
-  @example("http://your-application.com/docs/voice.xml")
+  @format("uri")
+  @example("https://example.com/voice")
   VoiceUrl?: string;
 }

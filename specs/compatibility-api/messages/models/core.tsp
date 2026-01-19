@@ -27,12 +27,11 @@ model MessageSidPathForMedia {
 @doc("Message status.")
 enum MessageStatus {
   Queued: "queued",
-  Sending: "sending",
+  Initiated: "initiated",
   Sent: "sent",
+  Failed: "failed",
   Delivered: "delivered",
   Undelivered: "undelivered",
-  Failed: "failed",
-  Receiving: "receiving",
   Received: "received",
 }
 
@@ -48,7 +47,7 @@ enum MessageDirection {
 model MessageSubresourceUris {
   @doc("The URI for media.")
   @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527/Media.json")
-  media?: string;
+  media: string;
 }
 
 @doc("Message model.")
@@ -56,109 +55,114 @@ model Message {
   @doc("The unique identifier of the project that sent or received this message.")
   @format("uuid")
   @example("ea108133-d6b3-407c-9536-9fad8a929a6a")
-  account_sid?: string;
+  account_sid: string;
 
   @doc("The version number of the SignalWire cXML REST API used to handle this message.")
   @example("2010-04-01")
-  api_version?: string;
+  api_version: string;
 
-  @doc("The text of the message. Up to 1600 characters long.")
+  @doc("The text of the message. Up to 1600 characters long. May be null if filtered for spam.")
   @example("Hello World!")
-  body?: string;
+  body: string | null;
 
   @doc("The number of segments that make up the entire message.")
   @example(1)
-  num_segments?: int32;
+  num_segments: int32;
 
   @doc("The number of media files that were included with the message.")
-  @example("1")
-  num_media?: string;
+  @example(1)
+  num_media: int32;
 
   @doc("The date and time the message was created in RFC 2822 format.")
   @example("Mon, 13 Aug 2018 21:38:46 +0000")
-  date_created?: string;
+  date_created: string;
 
-  @doc("The date and time the message was sent in RFC 2822 format.")
+  @doc("The date and time the message was sent in RFC 2822 format, or null if not yet sent.")
   @example("Mon, 13 Aug 2018 21:38:46 +0000")
-  date_sent?: string;
+  date_sent: string | null;
 
   @doc("The date and time the message was last updated in RFC 2822 format.")
   @example("Mon, 13 Aug 2018 21:38:46 +0000")
-  date_updated?: string;
+  date_updated: string;
 
-    @doc("The direction of the message.")
-    direction?: MessageDirection;
+  @doc("The direction of the message.")
+  direction: MessageDirection;
 
-  @doc("If an error has occurred on the message, the error code will give you a specific code.")
+  @doc("If an error has occurred on the message, the error code will give you a specific code, or null if no error.")
   @example("30001")
-  error_code?: string;
+  error_code: string | null;
 
-  @doc("A human readable description of the error that occurred.")
+  @doc("A human readable description of the error that occurred, or null if no error.")
   @example("Queue overflow")
-  error_message?: string;
+  error_message: string | null;
 
   @doc("The phone number in E.164 format that sent the message.")
   @example("+15551234567")
-  from?: string;
+  from: string;
 
-  @doc("The cost of the individual message billed to your project.")
+  @doc("The cost of the individual message billed to your project, or null if not yet calculated.")
   @example(0.005)
-  price?: float32;
+  price: float32 | null;
 
   @doc("The currency in which `price` is charged as.")
   @example("USD")
-  price_unit?: string;
+  price_unit: string;
 
   @doc("A unique ID that identifies this specific message.")
+  @format("uuid")
   @example("0a059168-ead0-41af-9d1f-343dae832527")
-  sid?: string;
+  sid: string;
 
-    @doc("Current status of the message.")
-    status?: MessageStatus;
+  @doc("Current status of the message.")
+  status: MessageStatus;
 
   @doc("The phone number in E.164 format that received the message.")
   @example("+15557654321")
-  to?: string;
+  to: string;
 
-  @doc("If a number group was used when sending an outbound message, the number group's ID will be present.")
+  @doc("If a number group was used when sending an outbound message, the number group's ID will be present, or null otherwise.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ms")
-  messaging_service_sid?: string;
+  messaging_service_sid: string | null;
 
   @doc("The URI of this particular message.")
   @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527.json")
-  uri?: string;
+  uri: string;
 
   @doc("The URIs for any subresources associated with this message.")
-  subresource_uris?: MessageSubresourceUris;
+  subresource_uris: MessageSubresourceUris;
 }
 
 @doc("Message media model.")
 model MessageMedia {
   @doc("The unique identifier for the account.")
+  @format("uuid")
   @example("ea108133-d6b3-407c-9536-9fad8a929a6a")
-  account_sid?: string;
+  account_sid: string;
 
   @doc("The content type of the media.")
   @example("image/jpeg")
-  content_type?: string;
+  content_type: string;
 
   @doc("The date, in RFC 2822 GMT format, this media was created.")
   @example("Mon, 13 Aug 2018 21:38:46 +0000")
-  date_created?: string;
+  date_created: string;
 
   @doc("The date, in RFC 2822 GMT format, this media was updated.")
   @example("Mon, 13 Aug 2018 21:38:46 +0000")
-  date_updated?: string;
+  date_updated: string;
 
   @doc("The unique identifier for the message.")
+  @format("uuid")
   @example("0a059168-ead0-41af-9d1f-343dae832527")
-  parent_sid?: string;
+  parent_sid: string;
 
   @doc("The unique identifier for the media.")
+  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472me")
-  sid?: string;
+  sid: string;
 
   @doc("The URI for the media.")
   @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527/Media/b3877c40-da60-4998-90ad-b792e98472me.json")
-  uri?: string;
+  uri: string;
 }

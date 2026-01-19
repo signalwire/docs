@@ -16,17 +16,59 @@ namespace CompatibilityAPI.Recordings {
     @operationId("list_recordings")
     @summary("List all Recordings")
     @doc("""
-      List all recordings.
+      List all recordings. Results are returned as a paginated list ordered by creation date (newest first).
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
     list(
       ...RecordingsAccountSidPath,
-      @query @doc("The date, in RFC 2822 format, on which the recording was created.") DateCreated?: string,
-      @query @doc("The unique identifier for the call that is associated with this recording.") CallSid?: string,
-      @query @doc("The unique identifier for the conference that is associated with this recording.") ConferenceSid?: string,
-    ): RecordingListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("Filter by recordings created on this exact date (RFC 2822 format).")
+      @example("Wed, 26 Sep 2018 00:00:00 +0000")
+      DateCreated?: string,
+
+      @query("DateCreated<")
+      @doc("Filter by recordings created before this date (RFC 2822 format).")
+      @example("Thu, 27 Sep 2018 00:00:00 +0000")
+      DateCreatedBefore?: string,
+
+      @query("DateCreated>")
+      @doc("Filter by recordings created after this date (RFC 2822 format).")
+      @example("Tue, 25 Sep 2018 00:00:00 +0000")
+      DateCreatedAfter?: string,
+
+      @query
+      @doc("Filter by recordings associated with a specific call.")
+      @format("uuid")
+      @example("43bb71ee-553f-4074-bb20-8e2747647cce")
+      CallSid?: string,
+
+      @query
+      @doc("Filter by recordings associated with a specific conference.")
+      @format("uuid")
+      @example("b3877c40-da60-4998-90ad-b792e98472cf")
+      ConferenceSid?: string,
+
+      @query
+      @doc("The page number to retrieve (zero-indexed).")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results per page. Default is 50, maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("Token for cursor-based pagination. Required when navigating to pages beyond the first.")
+      @example("PA19e436af-5688-4307-b03b-bdb2b42b8142")
+      PageToken?: string,
+    ): RecordingListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("retrieve_recording")
     @summary("Retrieve a Recording.")
@@ -71,7 +113,7 @@ namespace CompatibilityAPI.Recordings {
       The API token must include the following scopes: _Voice_. This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
       """)
     @route("/{Sid}")
-    read(...RecordingsAccountSidPath, ...RecordingSidPath): RecordingResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...RecordingsAccountSidPath, ...RecordingSidPath): RecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_recording")
     @summary("Delete a Recording.")
@@ -83,6 +125,6 @@ namespace CompatibilityAPI.Recordings {
       """)
     @delete
     @route("/{Sid}")
-    delete(...RecordingsAccountSidPath, ...RecordingSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...RecordingsAccountSidPath, ...RecordingSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
   }
 }

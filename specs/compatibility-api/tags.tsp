@@ -38,6 +38,11 @@ const CONFERENCE_PARTICIPANTS_TAG_METADATA = #{
   description: "Manage participants in conference calls.",
 };
 
+const CONFERENCE_RECORDINGS_TAG = "Conference Recordings";
+const CONFERENCE_RECORDINGS_TAG_METADATA = #{
+  description: "Manage recordings for conference calls.",
+};
+
 const CONFERENCE_STREAMS_TAG = "Conference Streams";
 const CONFERENCE_STREAMS_TAG_METADATA = #{
   description: "Manage media streams for conferences.",
@@ -63,9 +68,10 @@ const IMPORTED_PHONE_NUMBERS_TAG_METADATA = #{
   description: "Import phone numbers hosted elsewhere into your SignalWire Space.",
 };
 
-const LAML_BINS_TAG = "cXML Bins";
-const LAML_BINS_TAG_METADATA = #{
-  description: "Manage cXML bins for storing XML instructions.",
+const CXML_SCRIPTS_TAG = "cXML Scripts";
+const CXML_SCRIPTS_TAG_METADATA = #{
+  description: "Manage cXML scripts for storing XML instructions.",
+  `x-displayName`: "cXML Scripts",
 };
 
 const MESSAGES_TAG = "Messages";

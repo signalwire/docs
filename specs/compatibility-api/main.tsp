@@ -11,7 +11,7 @@ import "./conferences/main.tsp";
 import "./faxes/main.tsp";
 import "./incoming-phone-numbers/main.tsp";
 import "./imported-phone-numbers/main.tsp";
-import "./laml-bins/main.tsp";
+import "./cxml-scripts/main.tsp";
 import "./messages/main.tsp";
 import "./recordings/main.tsp";
 import "./transcriptions/main.tsp";
@@ -28,4 +28,5 @@ using TypeSpec.OpenAPI;
 @server("https://{space_url}/api/laml/2010-04-01", "SignalWire Compatibility API", {
   space_url: string,
 })
+@tagMetadata(CXML_SCRIPTS_TAG, CXML_SCRIPTS_TAG_METADATA)
 namespace CompatibilityAPI;

@@ -46,17 +46,66 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     searchLocal(
       ...AvailablePhoneNumbersAccountSidPath,
       ...IsoCountryPath,
-      @query @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.") @example("213") AreaCode?: string,
-      @query @doc("New numbers on SignalWire are marked as `beta`.") Beta?: boolean,
-      @query @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.") @example("555") Contains?: string,
-      @query @doc("Whether or not to exclude numbers that require an address anywhere in the world.") ExcludeAllAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a foreign address.") ExcludeForeignAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a local address.") ExcludeLocalAddressRequired?: boolean,
-      @query @doc("Whether or not a number can receive faxes.") FaxEnabled?: boolean,
-      @query @doc("Limits search to same region as number.") @example("WA") InRegion?: string,
-      @query @doc("Whether or not a number can receive MMS messages.") MmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive SMS messages.") SmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive calls.") VoiceEnabled?: boolean,
+
+      @query
+      @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.")
+      @example("213")
+      AreaCode?: string,
+
+      @query
+      @doc("New numbers on SignalWire are marked as `beta`.")
+      @example(false)
+      Beta?: boolean,
+
+      @query
+      @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.")
+      @example("555")
+      Contains?: string,
+
+      @query
+      @doc("Whether or not to exclude numbers that require an address anywhere in the world.")
+      @example(false)
+      ExcludeAllAddressRequired?: boolean,
+
+      @query
+      @doc("Whether or not to exclude numbers that require a foreign address.")
+      @example(false)
+      ExcludeForeignAddressRequired?: boolean,
+
+      @query
+      @doc("Whether or not to exclude numbers that require a local address.")
+      @example(false)
+      ExcludeLocalAddressRequired?: boolean,
+
+      @query
+      @doc("Whether or not a number can receive faxes.")
+      @example(true)
+      FaxEnabled?: boolean,
+
+      @query
+      @doc("Limits search to a city/locality. Requires InRegion to also be set.")
+      @example("Seattle")
+      InLocality?: string,
+
+      @query
+      @doc("Limits search to same region as number. Must be a two-letter state/province code.")
+      @example("WA")
+      InRegion?: string,
+
+      @query
+      @doc("Whether or not a number can receive MMS messages.")
+      @example(true)
+      MmsEnabled?: boolean,
+
+      @query
+      @doc("Whether or not a number can receive SMS messages.")
+      @example(true)
+      SmsEnabled?: boolean,
+
+      @query
+      @doc("Whether or not a number can receive calls.")
+      @example(true)
+      VoiceEnabled?: boolean,
     ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
 
     @operationId("search_toll_free_available_phone_numbers")
@@ -71,17 +120,66 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     searchTollFree(
       ...AvailablePhoneNumbersAccountSidPath,
       ...IsoCountryPath,
-      @query @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.") @example("213") AreaCode?: string,
-      @query @doc("New numbers on SignalWire are marked as `beta`.") Beta?: boolean,
-      @query @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.") @example("555") Contains?: string,
-      @query @doc("Whether or not to exclude numbers that require an address anywhere in the world.") ExcludeAllAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a foreign address.") ExcludeForeignAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a local address.") ExcludeLocalAddressRequired?: boolean,
-      @query @doc("Whether or not a number can receive faxes.") FaxEnabled?: boolean,
-      @query @doc("Limits search to same region as number.") @example("WA") InRegion?: string,
-      @query @doc("Whether or not a number can receive MMS messages.") MmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive SMS messages.") SmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive calls.") VoiceEnabled?: boolean,
+
+      @query
+      @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.")
+      @example("213")
+      AreaCode?: string,
+
+      @query
+      @doc("New numbers on SignalWire are marked as `beta`.")
+      @example(false)
+      Beta?: boolean,
+
+      @query
+      @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.")
+      @example("555")
+      Contains?: string,
+
+      @query
+      @doc("Whether or not to exclude numbers that require an address anywhere in the world.")
+      @example(false)
+      ExcludeAllAddressRequired?: boolean,
+
+      @query
+      @doc("Whether or not to exclude numbers that require a foreign address.")
+      @example(false)
+      ExcludeForeignAddressRequired?: boolean,
+
+      @query
+      @doc("Whether or not to exclude numbers that require a local address.")
+      @example(false)
+      ExcludeLocalAddressRequired?: boolean,
+
+      @query
+      @doc("Whether or not a number can receive faxes.")
+      @example(true)
+      FaxEnabled?: boolean,
+
+      @query
+      @doc("Limits search to a city/locality. Requires InRegion to also be set.")
+      @example("Seattle")
+      InLocality?: string,
+
+      @query
+      @doc("Limits search to same region as number. Must be a two-letter state/province code.")
+      @example("WA")
+      InRegion?: string,
+
+      @query
+      @doc("Whether or not a number can receive MMS messages.")
+      @example(true)
+      MmsEnabled?: boolean,
+
+      @query
+      @doc("Whether or not a number can receive SMS messages.")
+      @example(true)
+      SmsEnabled?: boolean,
+
+      @query
+      @doc("Whether or not a number can receive calls.")
+      @example(true)
+      VoiceEnabled?: boolean,
     ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
   }
 }

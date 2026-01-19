@@ -2,92 +2,143 @@ using TypeSpec.Http;
 
 @doc("Request body for creating a call.")
 model CreateCallRequest {
-  @doc("The URL to handle the call. Required if `ApplicationSid` is not used.")
+  @doc("The address that received the call. Can be a phone number in E.164 format, a SIP URI, or a client identifier.")
+  @example("+13105678901")
+  To: string;
+
+  @doc("The address that initiated the call. Must be a phone number in E.164 format for PSTN calls.")
+  @example("+13103384645")
+  From: string;
+
+  @doc("The URL to handle the call. Required if `ApplicationSid` and `Laml`/`Twiml` are not used.")
+  @format("uri")
   @example("http://your-application.com/docs/voice.xml")
   Url?: string;
 
-  @doc("The unique identifier of the application used to handle the call. Required if `Url` is not used.")
+  @doc("The unique identifier of the application used to handle the call. Required if `Url` and `Laml`/`Twiml` are not used.")
   @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ap")
   ApplicationSid?: string;
 
-  @doc("The address that initiated the call.")
-  @example("+13103384645")
-  From?: string;
+  @doc("Inline cXML/LAML document to execute. Required if `Url` and `ApplicationSid` are not used.")
+  @minLength(11)
+  @maxLength(4000)
+  @example("<Response><Say>Hello World</Say></Response>")
+  Laml?: string;
 
-  @doc("The address that received the call.")
-  @example("+13105678901")
-  To?: string;
-
-  @doc("The number, in E.164 format, or identifier of the caller.")
-  @example("+13102259067")
-  CallerId?: string;
-
-  @doc("Whether the request to `FallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
-  @example("GET")
-  FallbackMethod?: "GET" | "POST" = "POST";
-
-  @doc("The URL SignalWire will request if errors occur when fetching the `Url`.")
-  @example("https://your-api-endpoint.com/path")
-  FallbackUrl?: string;
-
-  @doc("Whether a human or machine picked up the call.")
-  @example("Enable")
-  MachineDetection?: "Enable" | "DetectMessageEnd" | "none";
-
-  @doc("Whether or not to execute machine detection asynchronously.")
-  @example(false)
-  AsyncAmd?: boolean = false;
-
-  @doc("The URL to request when the machine detection is completed.")
-  @example("https://your-api-endpoint.com/path")
-  AsyncAmdStatusCallback?: string;
-
-  @doc("Whether the request to `AsyncAmdStatusCallback` is a `GET` or a `POST`.")
-  @example("GET")
-  AsyncAmdStatusCallbackMethod?: "GET" | "POST";
-
-  @doc("Whether or not to report partial (interim) results to the callback url.")
-  @example(false)
-  AsyncAmdPartialResults?: boolean;
-
-  @doc("Number of milliseconds to wait for initial voice before giving up. Default is `5000` milliseconds.")
-  @example(5000)
-  MachineDetectionSilenceTimeout?: int32 = 5000;
-
-  @doc("How many milliseconds of voice to decide it is a machine. Must be at least `1000` to a maximum of `6000`. Default is `2400` milliseconds.")
-  @example(2400)
-  MachineDetectionSpeechThreshold?: int32 = 2400;
-
-  @doc("Number of milliseconds to wait for voice to finish. Must be at least `500` to a maximum of `5000`. Default is `1200` milliseconds.")
-  @example(1200)
-  MachineDetectionSpeechEndThreshold?: int32 = 1200;
-
-  @doc("The time SignalWire will wait for machine detection before timing out. Default is `30` seconds.")
-  @example(30)
-  MachineDetectionTimeout?: int32 = 30;
-
-  @doc("How many words to count to decide it is a machine. Must be at least one to a maximum of `100`. Default is `6`.")
-  @example(6)
-  MachineWordsThreshold?: int32 = 6;
-
-    @doc("The maximum price in USD acceptable for the call to be created.")
-    @example(0.0075)
-    MaxPricePerMinute?: float32;
+  @doc("Inline TwiML document to execute. Alias for `Laml`. Required if `Url` and `ApplicationSid` are not used.")
+  @minLength(11)
+  @maxLength(4000)
+  @example("<Response><Say>Hello World</Say></Response>")
+  Twiml?: string;
 
   @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
   Method?: "GET" | "POST" = "POST";
 
-  @doc("Whether or not to record a call.")
-  @example(false)
-  Record?: boolean;
+  @doc("The URL SignalWire will request if errors occur when fetching the `Url`.")
+  @format("uri")
+  @example("https://your-api-endpoint.com/path")
+  FallbackUrl?: string;
 
-  @doc("The number of channels in the recording.")
+  @doc("Whether the request to `FallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
+  @example("POST")
+  FallbackMethod?: "GET" | "POST" = "POST";
+
+  @doc("The URL SignalWire will send webhooks to on every requested `StatusCallbackEvent` event.")
+  @format("uri")
+  @example("https://your-api-endpoint.com/path")
+  StatusCallback?: string;
+
+  @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
+  @example("POST")
+  StatusCallbackMethod?: "GET" | "POST" = "POST";
+
+  @doc("The status events that trigger a SignalWire webhook. Valid values: initiated, ringing, answered, completed, ringing_forwarded, ringing_queued. Defaults to `completed`.")
+  @example(#["initiated", "ringing", "answered", "completed"])
+  StatusCallbackEvent?: string[] = #["completed"];
+
+  @doc("The number, in E.164 format, or identifier of the caller. Used to override the From for caller ID purposes.")
+  @example("+13102259067")
+  CallerId?: string;
+
+  @doc("The digits to press after a call is connected. Valid characters are 0-9, #, *, w (wait 0.5s), and W (wait 1s).")
+  @pattern("^[\\d#*wW]{1,32}$")
+  @maxLength(32)
+  @example("1ww2")
+  SendDigits?: string;
+
+  @doc("The time in seconds SignalWire will wait before assuming the call has no answer. Default is `60` seconds.")
+  @minValue(1)
+  @maxValue(600)
+  @example(60)
+  Timeout?: int32 = 60;
+
+  @doc("Whether a human or machine picked up the call. Default is `none`.")
+  @example("Enable")
+  MachineDetection?: "Enable" | "DetectMessageEnd" | "none" = "none";
+
+  @doc("The time in seconds SignalWire will wait for machine detection before timing out. Default is `30` seconds.")
+  @minValue(1)
+  @maxValue(120)
+  @example(30)
+  MachineDetectionTimeout?: int32 = 30;
+
+  @doc("How many milliseconds of voice to decide it is a machine. Default is `2400` milliseconds.")
+  @minValue(1000)
+  @maxValue(6000)
+  @example(2400)
+  MachineDetectionSpeechThreshold?: int32 = 2400;
+
+  @doc("Number of milliseconds to wait for voice to finish. Default is `1200` milliseconds.")
+  @minValue(500)
+  @maxValue(5000)
+  @example(1200)
+  MachineDetectionSpeechEndThreshold?: int32 = 1200;
+
+  @doc("Number of milliseconds to wait for initial voice before giving up. Default is `5000` milliseconds.")
+  @minValue(2000)
+  @maxValue(10000)
+  @example(5000)
+  MachineDetectionSilenceTimeout?: int32 = 5000;
+
+  @doc("How many words to count to decide it is a machine. Default is `6`.")
+  @minValue(1)
+  @maxValue(100)
+  @example(6)
+  MachineWordsThreshold?: int32 = 6;
+
+  @doc("Whether or not to execute machine detection asynchronously. Default is `false`.")
+  @example(false)
+  AsyncAmd?: boolean = false;
+
+  @doc("Whether the request to `AsyncAmdStatusCallback` is a `GET` or a `POST`. Default is `POST`.")
+  @example("POST")
+  AsyncAmdStatusCallbackMethod?: "GET" | "POST" = "POST";
+
+  @doc("The URL to request when the machine detection is completed.")
+  @format("uri")
+  @example("https://your-api-endpoint.com/path")
+  AsyncAmdStatusCallback?: string;
+
+  @doc("Whether or not to report partial (interim) results to the callback url. Default is `false`.")
+  @example(false)
+  AsyncAmdPartialResults?: boolean = false;
+
+  @doc("Whether or not to record a call. Default is `false`.")
+  @example(false)
+  Record?: boolean = false;
+
+  @doc("The number of channels in the recording. Default is `mono`.")
   @example("mono")
-  RecordingChannels?: "mono" | "dual";
+  RecordingChannels?: "mono" | "dual" = "mono";
+
+  @doc("Specifies whether to record the `inbound`, `outbound`, or `both` audio. Default is `both`.")
+  @example("both")
+  RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
   @doc("The URL to request when recording is available.")
+  @format("uri")
   @example("https://your-api-endpoint.com/path")
   RecordingStatusCallback?: string;
 
@@ -95,9 +146,13 @@ model CreateCallRequest {
   @example("POST")
   RecordingStatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("Specifies whether to record the `inbound`, `outbound`, or `both` audio. Defaults to `both`.")
-  @example("both")
-  RecordingTrack?: "inbound" | "outbound" | "both" = "both";
+  @doc("The recording status events that trigger a webhook. Space-separated list. Valid values: completed, in-progress, absent. Default is `completed`.")
+  @example("completed")
+  RecordingStatusCallbackEvent?: string = "completed";
+
+  @doc("Whether leading and trailing silence is trimmed from a recording. Default is `trim-silence`.")
+  @example("trim-silence")
+  Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
 
   @doc("The username to authenticate the caller when making an outbound SIP call.")
   @example("sipuser")
@@ -107,34 +162,16 @@ model CreateCallRequest {
   @example("sippassword")
   SipAuthPassword?: string;
 
-  @doc("The digits to press after a call is connected.")
-  @example("w")
-  SendDigits?: string;
-
-  @doc("The URL SignalWire will send webhooks to on every requested `StatusCallbackEvent` event.")
-  @example("https://your-api-endpoint.com/path")
-  StatusCallback?: string;
-
-  @doc("The status events that trigger a SignalWire webhook. Defaults to `completed`.")
-  @example(#["completed"])
-  StatusCallbackEvent?: string[];
-
-  @doc("Whether the request to `StatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
-  @example("GET")
-  StatusCallbackMethod?: "GET" | "POST" = "POST";
-
-  @doc("The time SignalWire will wait before assuming the call has no answer. Max wait time is `600 seconds`. Default is `60` seconds.")
-  @example("60")
-  Timeout?: string = "60";
-
-  @doc("Whether leading and trailing silence is trimmed from a recording.")
-  @example("trim-silence")
-  Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
+  @doc("The maximum price in USD acceptable for the call to be created. Format: up to 4 decimal places.")
+  @pattern("^\\d+\\.?\\d{0,4}$")
+  @example("0.0075")
+  MaxPricePerMinute?: string;
 }
 
 @doc("Request body for updating a call.")
 model UpdateCallRequest {
   @doc("The URL to handle the call.")
+  @format("uri")
   @example("http://your-application.com/docs/voice.xml")
   Url?: string;
 
@@ -147,6 +184,7 @@ model UpdateCallRequest {
   Status?: "canceled" | "completed";
 
   @doc("The URL SignalWire will request if errors occur.")
+  @format("uri")
   @example("https://your-api-endpoint.com/fallback")
   FallbackUrl?: string;
 
@@ -155,12 +193,25 @@ model UpdateCallRequest {
   FallbackMethod?: "GET" | "POST";
 
   @doc("The URL SignalWire will send webhooks to.")
+  @format("uri")
   @example("https://your-api-endpoint.com/status")
   StatusCallback?: string;
 
   @doc("Whether the request to `StatusCallback` is a `GET` or a `POST`.")
   @example("POST")
   StatusCallbackMethod?: "GET" | "POST";
+
+  @doc("Inline cXML/LAML document to execute for redirecting the call.")
+  @minLength(11)
+  @maxLength(4000)
+  @example("<Response><Say>Hello World</Say></Response>")
+  Laml?: string;
+
+  @doc("Inline TwiML document to execute for redirecting the call. Alias for `Laml`.")
+  @minLength(11)
+  @maxLength(4000)
+  @example("<Response><Say>Hello World</Say></Response>")
+  Twiml?: string;
 }
 
 @doc("Request body for creating a call stream.")
@@ -178,62 +229,69 @@ model CreateCallStreamRequest {
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The URL to request to when stream is available.")
+  @format("uri")
   @example("https://your-api-endpoint.com/stream-status")
   StatusCallback?: string;
 
   @doc("Absolute or relative URL. A WebSocket connection to the url will be established and audio will start flowing towards the Websocket server. The only supported protocol is wss. For security reasons ws is NOT supported.")
+  @format("uri")
   @example("wss://your-application.com/audiostream")
-  Url?: string;
+  Url: string;
 
-  @doc("Custom parameter name to pass towards the wss server")
+  @doc("Custom parameter name to pass towards the WebSocket server. You can pass up to 99 custom parameters using `Parameter1.Name` through `Parameter99.Name`.")
   @example("FirstName")
   `Parameter1.Name`?: string;
 
-  @doc("Custom parameter value to pass towards the wss server")
+  @doc("Custom parameter value to pass towards the WebSocket server. You can pass up to 99 custom parameters using `Parameter1.Value` through `Parameter99.Value`.")
   @example("Jane")
   `Parameter1.Value`?: string;
 
-  @doc("Custom parameter name to pass towards the wss server")
-  @example("FirstName")
+  @doc("Custom parameter name to pass towards the WebSocket server.")
+  @example("LastName")
   `Parameter2.Name`?: string;
 
-  @doc("Custom parameter value to pass towards the wss server")
-  @example("Jane")
+  @doc("Custom parameter value to pass towards the WebSocket server.")
+  @example("Doe")
   `Parameter2.Value`?: string;
+
+  @doc("Bearer token for authorization with the WebSocket server.")
+  @example("your-bearer-token")
+  AuthorizationBearerToken?: string;
 }
 
 @doc("Request body for updating a call stream.")
 model UpdateCallStreamRequest {
-  @doc("The status of the stream.")
+  @doc("The status of the stream. Only 'stopped' is allowed.")
   @example("stopped")
-  Status: "in-progress" | "stopped";
+  Status: "stopped";
 }
 
 @doc("Request body for creating a call recording.")
 model CreateCallRecordingRequest {
-  @doc("The number of channels in the recording. Can be `mono` (both legs of call recorded under one channel into one recording file) or `dual` (each leg of call recorded in separate channels into one recording file).")
+  @doc("The number of channels in the recording. Can be `mono` (both legs of call recorded under one channel into one recording file) or `dual` (each leg of call recorded in separate channels into one recording file). Default is `mono`.")
   @example("mono")
-  RecordingChannels?: "mono" | "dual";
+  RecordingChannels?: "mono" | "dual" = "mono";
 
   @doc("The URL to request to when recording is available.")
+  @format("uri")
   @example("https://your-api-endpoint.com/recording-status")
   RecordingStatusCallback?: string;
 
-  @doc("The different recording statuses. To specify multiple events, separate with a space.")
+  @doc("The different recording statuses. To specify multiple events, separate with a space. Valid values: completed, in-progress, absent. Default is `completed`.")
   @example("completed")
-  RecordingStatusCallbackEvent?: "completed" | "in-progress" | "absent";
+  RecordingStatusCallbackEvent?: string = "completed";
 
   @doc("Whether the request to `RecordingStatusCallback` URL is a `GET` or a `POST`. Default is `POST`.")
-  @example("GET")
+  @example("POST")
   RecordingStatusCallbackMethod?: "GET" | "POST" = "POST";
 
-  @doc("Specifies whether to record the `inbound` audio to SignalWire from the called party or the `outbound` audio from SignalWire to the called party or `both` the inbound and outbound audio. Defaults to `both`.")
-  @example("inbound")
+  @doc("Specifies whether to record the `inbound` audio to SignalWire from the called party or the `outbound` audio from SignalWire to the called party or `both` the inbound and outbound audio. Default is `both`.")
+  @example("both")
   RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
-  @doc("Whether leading and trailing silence is trimmed from a recording.")
-  @example("trim-silence")
-  Trim?: "trim-silence" | "do-not-trim" = "trim-silence";
+  @doc("Whether leading and trailing silence is trimmed from a recording. Default is `do-not-trim`.")
+  @example("do-not-trim")
+  Trim?: "trim-silence" | "do-not-trim" = "do-not-trim";
 }
 
 @doc("Request body for updating a call recording.")
@@ -242,7 +300,7 @@ model UpdateCallRecordingRequest {
   @example("paused")
   Status: "paused" | "in-progress" | "stopped";
 
-  @doc("What to do while recording is paused.")
+  @doc("What to do while recording is paused. Default is `silence`.")
   @example("silence")
-  PauseBehavior?: "skip" | "silence";
+  PauseBehavior?: "skip" | "silence" = "silence";
 }

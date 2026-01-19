@@ -25,9 +25,27 @@ namespace CompatibilityAPI.Applications {
     list(
       ...AccountSidPath,
       @query
-      @doc("A named unique identifier for the resource. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.")
+      @doc("Filter by a named unique identifier for the resource.")
       @example("My Friendly Name")
       FriendlyName?: string,
+
+      @query
+      @doc("The page number to retrieve. Page numbers are zero-indexed, so the first page is 0.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results to return per page. The default is 50, and the maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("A token used to retrieve a specific page of results.")
+      @example("PA01234567890abcdef01234567890abcdef")
+      PageToken?: string,
     ): ApplicationListResponse | CompatibilityStatusCode401;
 
     @operationId("create_application")
@@ -43,7 +61,7 @@ namespace CompatibilityAPI.Applications {
       ...AccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateApplicationRequest,
-    ): ApplicationResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
+    ): ApplicationCreatedResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
 
     @operationId("get_application")
     @summary("Find an Application by ID")

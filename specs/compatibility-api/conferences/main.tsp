@@ -24,11 +24,65 @@ namespace CompatibilityAPI.Conferences {
       """)
     list(
       ...ConferencesAccountSidPath,
-      @query @doc("Shows conferences that were created on the date provided.") DateCreated?: string,
-      @query @doc("Shows conferences that were updated on the date provided.") DateUpdated?: string,
-      @query @doc("A description, up to 64 characters, of the conference room.") FriendlyName?: string,
-      @query @doc("The status of this conference.") @example("completed") Status?: string,
-    ): ConferenceListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("Shows conferences that were created on the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-15")
+      DateCreated?: string,
+
+      @query("DateCreated<")
+      @doc("Shows conferences that were created before the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-15")
+      DateCreatedBefore?: string,
+
+      @query("DateCreated>")
+      @doc("Shows conferences that were created after the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-01")
+      DateCreatedAfter?: string,
+
+      @query
+      @doc("Shows conferences that were updated on the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-15")
+      DateUpdated?: string,
+
+      @query("DateUpdated<")
+      @doc("Shows conferences that were updated before the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-15")
+      DateUpdatedBefore?: string,
+
+      @query("DateUpdated>")
+      @doc("Shows conferences that were updated after the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-01")
+      DateUpdatedAfter?: string,
+
+      @query
+      @doc("A description, up to 64 characters, of the conference room.")
+      @maxLength(64)
+      @example("My Conference Room")
+      FriendlyName?: string,
+
+      @query
+      @doc("The status of this conference.")
+      Status?: ConferenceStatus,
+
+      @query
+      @doc("The page number to retrieve. Page numbers are zero-indexed, so the first page is 0.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results to return per page. The default is 50, and the maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
+      @example("PAb3877c40da6049989ad0b792e98472cf")
+      PageToken?: string,
+    ): ConferenceListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("retrieve_conference")
     @summary("Retrieve a Conference")
@@ -39,7 +93,7 @@ namespace CompatibilityAPI.Conferences {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{Sid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPath): ConferenceResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...ConferencesAccountSidPath, ...ConferenceSidPath): ConferenceResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_conference")
     @summary("Update Conference")
@@ -56,7 +110,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body?: UpdateConferenceRequest,
-    ): ConferenceResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): ConferenceResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
   }
 
   @tag(CONFERENCE_PARTICIPANTS_TAG)
@@ -74,9 +128,35 @@ namespace CompatibilityAPI.Conferences {
     list(
       ...ConferencesAccountSidPath,
       ...ConferenceSidPathForParticipant,
-      @query @doc("Whether or not a participant is muted.") Muted?: boolean,
-      @query @doc("Whether or not a participant is on hold.") Hold?: boolean,
-    ): ConferenceParticipantListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("Whether or not a participant is muted.")
+      @example(false)
+      Muted?: boolean,
+
+      @query
+      @doc("Whether or not a participant is on hold.")
+      @example(false)
+      Hold?: boolean,
+
+      @query
+      @doc("The page number to retrieve. Page numbers are zero-indexed, so the first page is 0.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results to return per page. The default is 50, and the maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
+      @example("PAb3877c40da6049989ad0b792e98472ca")
+      PageToken?: string,
+    ): ConferenceParticipantListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
 
     @operationId("retrieve_participant")
     @summary("Retrieve a Participant")
@@ -87,7 +167,7 @@ namespace CompatibilityAPI.Conferences {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{CallSid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): ConferenceParticipantResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): ConferenceParticipantResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_participant")
     @summary("Update a Participant")
@@ -105,7 +185,7 @@ namespace CompatibilityAPI.Conferences {
       ...ParticipantCallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceParticipantRequest,
-    ): ConferenceParticipantResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): ConferenceParticipantResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
 
     @operationId("delete_participant")
     @summary("Delete a Participant")
@@ -117,7 +197,107 @@ namespace CompatibilityAPI.Conferences {
       """)
     @delete
     @route("/{CallSid}")
-    delete(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+  }
+
+  @tag(CONFERENCE_RECORDINGS_TAG)
+  @friendlyName("Conference Recordings")
+  @route("/{ConferenceSid}/Recordings")
+  interface ConferenceRecordings {
+    @operationId("list_conference_recordings")
+    @summary("List Conference Recordings")
+    @doc("""
+      List all recordings for a conference.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    list(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+
+      @query
+      @doc("Shows recordings that were created on the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-15")
+      DateCreated?: string,
+
+      @query("DateCreated<")
+      @doc("Shows recordings that were created before the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-15")
+      DateCreatedBefore?: string,
+
+      @query("DateCreated>")
+      @doc("Shows recordings that were created after the date provided. Format: YYYY-MM-DD.")
+      @example("2024-01-01")
+      DateCreatedAfter?: string,
+
+      @query
+      @doc("The page number to retrieve. Page numbers are zero-indexed, so the first page is 0.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results to return per page. The default is 50, and the maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
+      @example("PA19e436af56884307b03bbdb2b42b8142")
+      PageToken?: string,
+    ): ConferenceRecordingListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+
+    @operationId("get_conference_recording")
+    @summary("Get a Conference Recording")
+    @doc("""
+      Get details for a specific conference recording.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @route("/{Sid}")
+    read(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ConferenceRecordingSidPath,
+    ): ConferenceRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+
+    @operationId("update_conference_recording")
+    @summary("Update a Conference Recording")
+    @doc("""
+      Pause, resume or stop a conference recording. You can control what happens while recording is paused (replace pause with silence or skip it).
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @post
+    @route("/{Sid}")
+    update(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ConferenceRecordingSidPath,
+      @header contentType: "application/x-www-form-urlencoded",
+      @body body: UpdateConferenceRecordingRequest,
+    ): ConferenceRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray | CompatibilityStatusCode503;
+
+    @operationId("delete_conference_recording")
+    @summary("Delete a Conference Recording")
+    @doc("""
+      Delete a conference recording. If successful, a 204 response with no body will be returned.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @delete
+    @route("/{Sid}")
+    delete(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ConferenceRecordingSidPath,
+    ): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 
   @tag(CONFERENCE_STREAMS_TAG)
@@ -138,7 +318,7 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPathForParticipant,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateConferenceStreamRequest,
-    ): ConferenceStreamResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400 | CompatibilityStatusCode422StringArray;
+    ): ConferenceStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;
 
     @operationId("update_conference_stream")
     @summary("Update Conference Stream")
@@ -156,6 +336,6 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceStreamRequest,
-    ): ConferenceStreamResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;
+    ): ConferenceStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;
   }
 }
