@@ -2195,7 +2195,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateBrandRequest'
+              anyOf:
+                - $ref: '#/components/schemas/CreateManagedBrandRequest'
+                - $ref: '#/components/schemas/CreateCspBrandRequest'
   /registry/beta/brands/{id}:
     get:
       operationId: retrieve_brand
@@ -4374,6 +4376,33 @@ components:
           description: The caller ID associated with the number.
           example: John Smith
       description: Caller ID (CNAM) information.
+    CompanyVertical:
+      type: string
+      enum:
+        - AGRICULTURE
+        - COMMUNICATION
+        - CONSTRUCTION
+        - EDUCATION
+        - ENERGY
+        - ENTERTAINMENT
+        - FINANCIAL
+        - GAMBLING
+        - GOVERNMENT
+        - HEALTHCARE
+        - HOSPITALITY
+        - HUMAN_RESOURCES
+        - INSURANCE
+        - LEGAL
+        - MANUFACTURING
+        - NGO
+        - POLITICAL
+        - POSTAL
+        - PROFESSIONAL
+        - REAL_ESTATE
+        - RETAIL
+        - TECHNOLOGY
+        - TRANSPORTATION
+      description: Company vertical/industry classification.
     CreateAddressRequest:
       type: object
       required:
@@ -4440,61 +4469,6 @@ components:
           description: The postal code of the street address.
           example: '91905'
       description: Request body for creating an address.
-    CreateBrandRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Brand/Marketing/DBA name of the business if applicable.
-          example: My Brand
-        company_name:
-          type: string
-          description: The legal name of the business.
-          example: BrandCo
-        contact_email:
-          type: string
-          description: A company contact email for this brand.
-          example: brand_info@example.com
-        contact_phone:
-          type: string
-          description: A contact phone number for this brand.
-          example: '+18995551212'
-        ein_issuing_country:
-          type: string
-          description: Country of registration.
-          example: United States
-        legal_entity_type:
-          type: string
-          description: What type of legal entity is the organization? (`PRIVATE_PROFIT`, `PUBLIC_PROFIT`, `NON_PROFIT`)
-          example: Private Company
-        ein:
-          type: string
-          description: Company EIN Number/Tax ID
-          example: 12-3456789
-        company_address:
-          type: string
-          description: Full company address.
-          example: 123 Brand St, Hill Valley CA, 91905
-        company_vertical:
-          type: string
-          description: An optional Vertical for the brand (REAL_ESTATE, HEALTHCARE, ENERGY, ENTERTAINMENT, RETAIL, AGRICULTURE, INSURANCE, EDUCATION, HOSPITALITY, FINANCIAL, GAMBLING, CONSTRUCTION, NGO, MANUFACTURING, GOVERNMENT, TECHNOLOGY, COMMUNICATION).
-          example: Healthcare
-        company_website:
-          type: string
-          description: Link to the company website.
-          example: www.example.com
-        csp_brand_reference:
-          type: string
-          description: If you are your own Campaign Service Provider, this is the approved Brand ID (Mandatory for CSPs, otherwise please omit).
-        csp_self_registered:
-          type: boolean
-          description: This value must be true for all self-registered brands.
-          example: false
-        status_callback_url:
-          type: string
-          description: "Optional: Specify a URL to receive webhook notifications when your brand's state changes."
-          example: https://example.com/handle_callback
-      description: Request body for creating a brand.
     CreateCampaignRequest:
       type: object
       properties:
@@ -4555,16 +4529,19 @@ components:
           example: You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.
         opt_in_keywords:
           type: string
-          description: You can share any opt in keywords that subscribers can use here. Default = START
+          description: Opt in keywords that subscribers can use.
           example: Start,Subscribe,Opt In
+          default: START
         opt_out_keywords:
           type: string
-          description: You can share any opt out keywords that subscribers can use here. Default = STOP
+          description: Opt out keywords that subscribers can use.
           example: Stop,Opt Out,Unsubscribe
+          default: STOP
         help_keywords:
           type: string
-          description: You can share any help keywords that subscribers can use here. Default = HELP
+          description: Help keywords that subscribers can use.
           example: Help,Support,Request Call
+          default: HELP
         number_pooling_required:
           type: boolean
           description: Will 50 or more numbers be used with this single campaign? If so, please enter true.
@@ -4606,6 +4583,28 @@ components:
           description: I agree to the terms and conditions which do not allow me to use this campaign for affiliate marketing.
           example: true
       description: Request body for creating a campaign.
+    CreateCspBrandRequest:
+      type: object
+      required:
+        - name
+        - csp_brand_reference
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 64
+          description: Brand/Marketing/DBA name of the business.
+          example: My Brand
+        csp_brand_reference:
+          type: string
+          description: The approved Brand ID from TCR. Required for CSP/self-registered brands.
+          example: B123456
+        status_callback_url:
+          type: string
+          format: uri
+          description: Specify a URL to receive webhook notifications when your brand's state changes.
+          example: https://example.com/handle_callback
+      description: Request body for importing a self-registered CSP brand. Use this when you have already registered your brand directly with TCR.
     CreateDomainApplicationRequest:
       type: object
       required:
@@ -4760,6 +4759,75 @@ components:
           deprecated: true
           example: https://myapplication/handle_relay_callbacks
       description: Request body for creating a domain application.
+    CreateManagedBrandRequest:
+      type: object
+      required:
+        - name
+        - company_name
+        - contact_email
+        - contact_phone
+        - ein_issuing_country
+        - legal_entity_type
+        - ein
+        - company_address
+        - company_website
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 64
+          description: Brand/Marketing/DBA name of the business.
+          example: My Brand
+        company_name:
+          type: string
+          minLength: 3
+          maxLength: 64
+          description: The legal name of the business.
+          example: BrandCo
+        contact_email:
+          type: string
+          minLength: 3
+          maxLength: 64
+          description: A company contact email for this brand.
+          example: brand_info@example.com
+        contact_phone:
+          type: string
+          minLength: 3
+          maxLength: 64
+          description: A contact phone number for this brand.
+          example: '+18995551212'
+        ein_issuing_country:
+          type: string
+          description: Country of registration.
+          example: United States
+        legal_entity_type:
+          allOf:
+            - $ref: '#/components/schemas/LegalEntityType'
+          description: What type of legal entity is the organization?
+          example: PRIVATE_PROFIT
+        ein:
+          type: string
+          description: Company EIN Number/Tax ID.
+          example: 12-3456789
+        company_address:
+          type: string
+          description: Full company address.
+          example: 123 Brand St, Hill Valley CA, 91905
+        company_vertical:
+          allOf:
+            - $ref: '#/components/schemas/CompanyVertical'
+          description: An optional Vertical for the brand.
+          example: HEALTHCARE
+        company_website:
+          type: string
+          description: Link to the company website.
+          example: www.example.com
+        status_callback_url:
+          type: string
+          format: uri
+          description: Specify a URL to receive webhook notifications when your brand's state changes.
+          example: https://example.com/handle_callback
+      description: Request body for registering a new managed brand for 10DLC registration.
     CreateNumberGroupRequest:
       type: object
       required:
@@ -4841,7 +4909,7 @@ components:
             - default
             - required
             - optional
-          description: Whether connections to this endpoint require encryption or if encryption is optional.
+          description: Specifies the encryption requirements for connections to this endpoint.
           example: required
         call_handler:
           type: string
@@ -4946,11 +5014,12 @@ components:
           example: '+15551234567'
         name:
           type: string
-          description: String representing the name portion of the caller ID. If not provided, the default will be the formatted number that has been provided.
+          maxLength: 200
+          description: The name portion of the caller ID. If not provided, the default will be the formatted number.
           example: C-3P0
         extension:
           type: string
-          description: String representing the extension of the phone number for the caller ID. This is only used when placing the verification call.
+          description: The extension of the phone number for the caller ID. This is only used when placing the verification call.
           example: '1234'
       description: Request body for creating a verified caller ID.
     DomainAppCallHandler:
@@ -5384,6 +5453,14 @@ components:
             - sms
             - fax
       description: Request body for importing a phone number.
+    LegalEntityType:
+      type: string
+      enum:
+        - PRIVATE_PROFIT
+        - PUBLIC_PROFIT
+        - NON_PROFIT
+        - GOVERNMENT
+      description: Legal entity type for brand registration.
     MembershipPhoneNumber:
       type: object
       properties:
@@ -7910,7 +7987,7 @@ components:
             - default
             - required
             - optional
-          description: Whether connections to this endpoint require encryption or if encryption is optional.
+          description: Specifies the encryption requirements for connections to this endpoint.
           example: required
         call_handler:
           type: string
@@ -8035,10 +8112,13 @@ components:
       description: Request body for updating the SIP profile.
     UpdateVerifiedCallerIdRequest:
       type: object
+      required:
+        - name
       properties:
         name:
           type: string
-          description: String representing the name portion of the caller ID. If not provided, the default will be the formatted number that has been provided.
+          maxLength: 200
+          description: The name portion of the caller ID.
           example: C-3P0
       description: Request body for updating a verified caller ID.
     VerifiedCallerId:

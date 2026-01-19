@@ -8,11 +8,12 @@ model CreateVerifiedCallerIdRequest {
   @example("+15551234567")
   number: string;
 
-  @doc("String representing the name portion of the caller ID. If not provided, the default will be the formatted number that has been provided.")
+  @doc("The name portion of the caller ID. If not provided, the default will be the formatted number.")
   @example("C-3P0")
+  @maxLength(200)
   name?: string;
 
-  @doc("String representing the extension of the phone number for the caller ID. This is only used when placing the verification call.")
+  @doc("The extension of the phone number for the caller ID. This is only used when placing the verification call.")
   @example("1234")
   extension?: string;
 }
@@ -26,7 +27,8 @@ model VerifyCallerIdRequest {
 
 @doc("Request body for updating a verified caller ID.")
 model UpdateVerifiedCallerIdRequest {
-  @doc("String representing the name portion of the caller ID. If not provided, the default will be the formatted number that has been provided.")
+  @doc("The name portion of the caller ID.")
   @example("C-3P0")
-  name?: string;
+  @maxLength(200)
+  name: string;
 }

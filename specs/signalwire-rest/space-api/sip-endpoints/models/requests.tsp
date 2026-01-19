@@ -26,7 +26,7 @@ model CreateSipEndpointRequest {
   @doc("A list of codecs this endpoint will support.")
   codecs?: string[];
 
-  @doc("Whether connections to this endpoint require encryption or if encryption is optional.")
+  @doc("Specifies the encryption requirements for connections to this endpoint.")
   @example("required")
   encryption?: "default" | "required" | "optional";
 
@@ -125,7 +125,7 @@ model UpdateSipEndpointRequest {
   @doc("A list of codecs this endpoint will support.")
   codecs?: string[];
 
-  @doc("Whether connections to this endpoint require encryption or if encryption is optional.")
+  @doc("Specifies the encryption requirements for connections to this endpoint.")
   @example("required")
   encryption?: "default" | "required" | "optional";
 

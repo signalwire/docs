@@ -2,59 +2,116 @@ import "./core.tsp";
 
 using TypeSpec.Http;
 
-@doc("Request body for creating a brand.")
-model CreateBrandRequest {
-  @doc("Brand/Marketing/DBA name of the business if applicable.")
+@doc("Legal entity type for brand registration.")
+enum LegalEntityType {
+  PRIVATE_PROFIT: "PRIVATE_PROFIT",
+  PUBLIC_PROFIT: "PUBLIC_PROFIT",
+  NON_PROFIT: "NON_PROFIT",
+  GOVERNMENT: "GOVERNMENT",
+}
+
+@doc("Company vertical/industry classification.")
+enum CompanyVertical {
+  AGRICULTURE: "AGRICULTURE",
+  COMMUNICATION: "COMMUNICATION",
+  CONSTRUCTION: "CONSTRUCTION",
+  EDUCATION: "EDUCATION",
+  ENERGY: "ENERGY",
+  ENTERTAINMENT: "ENTERTAINMENT",
+  FINANCIAL: "FINANCIAL",
+  GAMBLING: "GAMBLING",
+  GOVERNMENT: "GOVERNMENT",
+  HEALTHCARE: "HEALTHCARE",
+  HOSPITALITY: "HOSPITALITY",
+  HUMAN_RESOURCES: "HUMAN_RESOURCES",
+  INSURANCE: "INSURANCE",
+  LEGAL: "LEGAL",
+  MANUFACTURING: "MANUFACTURING",
+  NGO: "NGO",
+  POLITICAL: "POLITICAL",
+  POSTAL: "POSTAL",
+  PROFESSIONAL: "PROFESSIONAL",
+  REAL_ESTATE: "REAL_ESTATE",
+  RETAIL: "RETAIL",
+  TECHNOLOGY: "TECHNOLOGY",
+  TRANSPORTATION: "TRANSPORTATION",
+}
+
+@doc("Request body for registering a new managed brand for 10DLC registration.")
+model CreateManagedBrandRequest {
+  @doc("Brand/Marketing/DBA name of the business.")
   @example("My Brand")
-  name?: string;
+  @minLength(3)
+  @maxLength(64)
+  name: string;
 
   @doc("The legal name of the business.")
   @example("BrandCo")
-  company_name?: string;
+  @minLength(3)
+  @maxLength(64)
+  company_name: string;
 
   @doc("A company contact email for this brand.")
   @example("brand_info@example.com")
-  contact_email?: string;
+  @minLength(3)
+  @maxLength(64)
+  contact_email: string;
 
   @doc("A contact phone number for this brand.")
   @example("+18995551212")
-  contact_phone?: string;
+  @minLength(3)
+  @maxLength(64)
+  contact_phone: string;
 
   @doc("Country of registration.")
   @example("United States")
-  ein_issuing_country?: string;
+  ein_issuing_country: string;
 
-  @doc("What type of legal entity is the organization? (`PRIVATE_PROFIT`, `PUBLIC_PROFIT`, `NON_PROFIT`)")
-  @example("Private Company")
-  legal_entity_type?: string;
+  @doc("What type of legal entity is the organization?")
+  @example(LegalEntityType.PRIVATE_PROFIT)
+  legal_entity_type: LegalEntityType;
 
-  @doc("Company EIN Number/Tax ID")
+  @doc("Company EIN Number/Tax ID.")
   @example("12-3456789")
-  ein?: string;
+  ein: string;
 
   @doc("Full company address.")
   @example("123 Brand St, Hill Valley CA, 91905")
-  company_address?: string;
+  company_address: string;
 
-  @doc("An optional Vertical for the brand (REAL_ESTATE, HEALTHCARE, ENERGY, ENTERTAINMENT, RETAIL, AGRICULTURE, INSURANCE, EDUCATION, HOSPITALITY, FINANCIAL, GAMBLING, CONSTRUCTION, NGO, MANUFACTURING, GOVERNMENT, TECHNOLOGY, COMMUNICATION).")
-  @example("Healthcare")
-  company_vertical?: string;
+  @doc("An optional Vertical for the brand.")
+  @example(CompanyVertical.HEALTHCARE)
+  company_vertical?: CompanyVertical;
 
   @doc("Link to the company website.")
   @example("www.example.com")
-  company_website?: string;
+  company_website: string;
 
-  @doc("If you are your own Campaign Service Provider, this is the approved Brand ID (Mandatory for CSPs, otherwise please omit).")
-  csp_brand_reference?: string;
-
-  @doc("This value must be true for all self-registered brands.")
-  @example(false)
-  csp_self_registered?: boolean;
-
-  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes.")
+  @doc("Specify a URL to receive webhook notifications when your brand's state changes.")
   @example("https://example.com/handle_callback")
+  @format("uri")
   status_callback_url?: string;
 }
+
+@doc("Request body for importing a self-registered CSP brand. Use this when you have already registered your brand directly with TCR.")
+model CreateCspBrandRequest {
+  @doc("Brand/Marketing/DBA name of the business.")
+  @example("My Brand")
+  @minLength(3)
+  @maxLength(64)
+  name: string;
+
+  @doc("The approved Brand ID from TCR. Required for CSP/self-registered brands.")
+  @example("B123456")
+  csp_brand_reference: string;
+
+  @doc("Specify a URL to receive webhook notifications when your brand's state changes.")
+  @example("https://example.com/handle_callback")
+  @format("uri")
+  status_callback_url?: string;
+}
+
+alias CreateBrandRequest = CreateManagedBrandRequest | CreateCspBrandRequest;
 
 @doc("Request body for updating a brand.")
 model UpdateBrandRequest {
@@ -130,17 +187,17 @@ model CreateCampaignRequest {
   @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
   help_message?: string;
 
-  @doc("You can share any opt in keywords that subscribers can use here. Default = START")
+  @doc("Opt in keywords that subscribers can use.")
   @example("Start,Subscribe,Opt In")
-  opt_in_keywords?: string;
+  opt_in_keywords?: string = "START";
 
-  @doc("You can share any opt out keywords that subscribers can use here. Default = STOP")
+  @doc("Opt out keywords that subscribers can use.")
   @example("Stop,Opt Out,Unsubscribe")
-  opt_out_keywords?: string;
+  opt_out_keywords?: string = "STOP";
 
-  @doc("You can share any help keywords that subscribers can use here. Default = HELP")
+  @doc("Help keywords that subscribers can use.")
   @example("Help,Support,Request Call")
-  help_keywords?: string;
+  help_keywords?: string = "HELP";
 
   @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
   @example(true)
@@ -215,9 +272,9 @@ model ListBrandsQuery {
   @query
   filter_name?: string;
 
-  @doc("The state of the brand in the registration process, such as pending or complete. Will return all Brands with this value.")
+  @doc("The state of the brand in the registration process, such as pending or completed. Will return all Brands with this value.")
   @query
-  filter_state?: string;
+  filter_state?: BrandState;
 }
 
 @doc("Query parameters for filtering campaigns.")
@@ -226,21 +283,21 @@ model ListCampaignsQuery {
   @query
   filter_name?: string;
 
-  @doc("The state of the campaign in the registration process, such as pending or complete. Will return all campaigns with this value.")
+  @doc("The state of the campaign in the registration process, such as pending or active. Will return all campaigns with this value.")
   @query
-  filter_state?: string;
+  filter_state?: CampaignState;
 }
 
 @doc("Query parameters for filtering number assignments.")
 model ListAssignmentsQuery {
-  @doc("The state of the assignments in the registration process, such as pending or complete. Will return all assignments with this value.")
+  @doc("The state of the assignments in the registration process, such as pending or completed. Will return all assignments with this value.")
   @query
-  filter_state?: string;
+  filter_state?: AssignmentState;
 }
 
 @doc("Query parameters for filtering orders.")
 model ListOrdersQuery {
   @doc("The state of the orders in the registration process, such as pending or processed. Will return all orders with this value.")
   @query
-  filter_state?: string;
+  filter_state?: OrderState;
 }

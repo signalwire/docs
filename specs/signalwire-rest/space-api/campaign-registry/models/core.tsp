@@ -38,17 +38,15 @@ model OrderPathID {
 @doc("Brand state.")
 enum BrandState {
   pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-  suspended: "suspended",
+  unverified: "unverified",
+  completed: "completed",
 }
 
 @doc("Campaign state.")
 enum CampaignState {
   pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-  suspended: "suspended",
+  active: "active",
+  inactive: "inactive",
 }
 
 @doc("Order state.")
@@ -62,7 +60,7 @@ enum OrderState {
 @doc("Assignment state.")
 enum AssignmentState {
   pending: "pending",
-  complete: "complete",
+  completed: "completed",
   failed: "failed",
 }
 
