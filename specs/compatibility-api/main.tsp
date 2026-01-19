@@ -28,5 +28,6 @@ using TypeSpec.OpenAPI;
 @server("https://{space_url}/api/laml/2010-04-01", "SignalWire Compatibility API", {
   space_url: string,
 })
+@useAuth(BasicAuth)
 @tagMetadata(CXML_SCRIPTS_TAG, CXML_SCRIPTS_TAG_METADATA)
 namespace CompatibilityAPI;
