@@ -95,6 +95,10 @@ model CreateManagedBrandRequest {
 
 @doc("Request body for importing a self-registered CSP brand. Use this when you have already registered your brand directly with TCR.")
 model CreateCspBrandRequest {
+  @doc("Set to true to indicate this is a self-registered CSP brand.")
+  @example(true)
+  csp_self_registered: true;
+
   @doc("Brand/Marketing/DBA name of the business.")
   @example("My Brand")
   @minLength(3)
