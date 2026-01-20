@@ -29,7 +29,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     ): VerifiedCallerIdListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_verified_caller_id")
-    @summary("Create a Verified Caller ID")
+    @summary("Create a new Verified Caller ID")
     @doc("""
       Creates a new verified caller ID. A verification code will be sent to the phone number.
 
@@ -46,7 +46,7 @@ namespace SpaceAPI.VerifiedCallerIds {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_verified_caller_id")
+    @operationId("retrieve_verified_caller_id")
     @summary("Retrieve a Verified Caller ID")
     @doc("""
       Retrieves the details of a verified caller ID.
@@ -56,25 +56,40 @@ namespace SpaceAPI.VerifiedCallerIds {
       """)
     read(...VerifiedCallerIdPathID): VerifiedCallerIdResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("verify_caller_id")
-    @summary("Verify a Caller ID")
+    @operationId("update_verified_caller_id")
+    @summary("Update a Verified Caller ID")
     @doc("""
-      Verifies a caller ID using the verification code.
+      Updates a verified caller ID.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    @route("/{id}/verify")
+    @put
+    update(...VerifiedCallerIdPathID, @body body: UpdateVerifiedCallerIdRequest): VerifiedCallerIdResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+
+    @operationId("redial_verification_call")
+    @summary("Redial Verification Call")
+    @doc("""
+      Redials the verification call for a verified caller ID.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @route("/{id}/verification")
     @post
-    verify(...VerifiedCallerIdPathID, @body body: VerifyCallerIdRequest):
-      | {
-          @statusCode statusCode: 200;
-          @body verified_caller_id: VerifiedCallerIdResponse;
-        }
-      | StatusCode401
-      | StatusCode404
-      | ValidationError
-      | StatusCode500;
+    redialVerification(...VerifiedCallerIdPathID): VerifiedCallerIdResponse | StatusCode401 | StatusCode404 | StatusCode500;
+
+    @operationId("validate_verification_code")
+    @summary("Validate the Verification Code")
+    @doc("""
+      Validates the verification code for a verified caller ID.
+
+      #### Permissions
+      The API token must include the following scopes: _Voice_.
+      """)
+    @route("/{id}/verification")
+    @put
+    validateVerification(...VerifiedCallerIdPathID, @body body: VerifyCallerIdRequest): VerifiedCallerIdResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("delete_verified_caller_id")
     @summary("Delete a Verified Caller ID")

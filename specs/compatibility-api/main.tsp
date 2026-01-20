@@ -21,6 +21,7 @@ import "./tokens/main.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
+@tagMetadata(LAML_BINS_TAG, LAML_BINS_TAG_METADATA)
 @service(#{ title: "Compatibility API" })
 @info(#{
   version: "1.0.0",

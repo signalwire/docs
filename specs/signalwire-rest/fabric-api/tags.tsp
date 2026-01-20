@@ -42,12 +42,13 @@ const EMBEDS_TOKENS_TAG_METADATA = #{
 
 const SWML_WEBHOOK_TAG = "SWML Webhook";
 
-const SMWL_WEBHOOK_TAG_METADATA = #{
+const SWML_WEBHOOK_TAG_METADATA = #{
   description: "Endpoints related to creating & managing SWML Webhooks",
   externalDocs: #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/swml-webhook",
     description: "Developer documentation on SWML Webhooks, Fabric API endpoints",
   },
+  `x-displayName`: "SWML Webhook",
 };
 
 const FABRIC_ADDRESS_TAG = "Fabric Address";
@@ -68,6 +69,7 @@ const FREESWITCH_CONNECTOR_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/free-switch-connectors",
     description: "Developer documentation on FreeSWITCH Connector, Fabric API endpoints",
   },
+  `x-displayName`: "FreeSWITCH Connector",
 };
 
 const CXML_APPLICATIONS_TAG = "CXML Applications";
@@ -78,6 +80,7 @@ const CXML_APPLICATIONS_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/cxml-applications",
     description: "Developer documentation on cXML Application, Fabric API endpoints",
   },
+  `x-displayName`: "cXML Applications",
 };
 
 const CXML_SCRIPTS_TAG = "CXML Scripts";
@@ -88,6 +91,7 @@ const CXML_SCRIPTS_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/cxml-scripts",
     description: "Developer documentation on cXML Scripts, Fabric API endpoints",
   },
+  `x-displayName`: "cXML Scripts",
 };
 
 const CXML_WEBHOOK_TAG = "CXML Webhook";
@@ -98,6 +102,7 @@ const CXML_WEBHOOK_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/cxml-webhook",
     description: "Developer documentation on cXML Webhook, Fabric API endpoints",
   },
+  `x-displayName`: "cXML Webhook",
 };
 
 const RELAY_APPLICATION_TAG = "Relay Application";
@@ -178,6 +183,7 @@ const SWML_SCRIPTS_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/swml-scripts",
     description: "Developer documentation on SWML Script, Fabric API endpoints",
   },
+  `x-displayName`: "SWML Scripts",
 };
 
 const CONFERENCE_ROOM_TAG = "Conference Rooms";

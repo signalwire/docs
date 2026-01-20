@@ -23,15 +23,7 @@ namespace SpaceAPI.DomainApplications {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(
-      @query
-      @doc("String representing the domain portion of the domain application. Will return all domain applications containing this value as a substring.")
-      filter_domain?: string,
-
-      @query
-      @doc("String representing the name portion of the domain application. Will return all domain applications containing this value as a substring.")
-      filter_name?: string
-    ): DomainApplicationListResponse | StatusCode401 | StatusCode500;
+    list(...ListDomainApplicationsQuery): DomainApplicationListResponse | StatusCode401 | ValidationError | StatusCode500;
 
     @operationId("create_domain_application")
     @summary("Create a Domain Application")
@@ -51,7 +43,7 @@ namespace SpaceAPI.DomainApplications {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_domain_application")
+    @operationId("retrieve_domain_application")
     @summary("Retrieve a Domain Application")
     @doc("""
       Retrieves the details of a Domain Application that has been previously created.
@@ -59,7 +51,7 @@ namespace SpaceAPI.DomainApplications {
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    read(...DomainApplicationPathID): DomainApplicationResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...DomainApplicationPathID): DomainApplicationResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("update_domain_application")
     @summary("Update a Domain Application")
@@ -71,10 +63,7 @@ namespace SpaceAPI.DomainApplications {
       """)
     @put
     update(...DomainApplicationPathID, @body body: UpdateDomainApplicationRequest):
-      | {
-          @statusCode statusCode: 200;
-          @body domain_application: DomainApplicationResponse;
-        }
+      | DomainApplicationResponse
       | StatusCode401
       | StatusCode404
       | ValidationError
@@ -93,6 +82,7 @@ namespace SpaceAPI.DomainApplications {
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;

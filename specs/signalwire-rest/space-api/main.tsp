@@ -9,9 +9,10 @@ import "./phone-numbers";
 import "./number-groups";
 import "./mfa";
 import "./verified-caller-ids";
-import "./registry-beta";
+import "./campaign-registry";
 import "./queues";
 import "./recordings";
+import "./short-codes";
 import "../_globally_shared/const.tsp";
 import "./tags.tsp";
 
@@ -32,6 +33,8 @@ using TypeSpec.OpenAPI;
 @tagMetadata(MFA_TAG, MFA_TAG_METADATA)
 @tagMetadata(VERIFIED_CALLER_IDS_TAG, VERIFIED_CALLER_IDS_TAG_METADATA)
 @tagMetadata(QUEUES_TAG, QUEUES_TAG_METADATA)
+@tagMetadata(QUEUE_MEMBERS_TAG, QUEUE_MEMBERS_TAG_METADATA)
+@tagMetadata(SHORT_CODES_TAG, SHORT_CODES_TAG_METADATA)
 @service(#{ title: "RELAY REST API" })
 @externalDocs(
   "https://developer.signalwire.com",
@@ -40,7 +43,6 @@ using TypeSpec.OpenAPI;
 @info(#{
   title: "RELAY REST API",
   version: "1.0.0",
-  description: "Welcome to SignalWire's Relay REST API. Relay is the next generation of interactive communication APIs available at SignalWire, and the REST API is a set of endpoints that make interacting with Relay, simple and familiar.",
   contact: CONTACT_INFO,
   license: LICENSE_INFO,
   termsOfService: TERMS_OF_SERVICE,

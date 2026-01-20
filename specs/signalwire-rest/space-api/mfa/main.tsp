@@ -13,8 +13,8 @@ namespace SpaceAPI.Mfa {
   @tag(MFA_TAG)
   @friendlyName("Multi-Factor Authentication")
   interface Mfa {
-    @operationId("send_mfa_sms")
-    @summary("Send MFA Code via SMS")
+    @operationId("request_mfa_sms")
+    @summary("Request a MFA token via text message")
     @doc("""
       Sends a multi-factor authentication code via SMS.
 
@@ -25,8 +25,8 @@ namespace SpaceAPI.Mfa {
     @post
     sendSms(@body body: MfaRequest): MfaResponse | StatusCode401 | ValidationError | StatusCode500;
 
-    @operationId("send_mfa_call")
-    @summary("Send MFA Code via Voice Call")
+    @operationId("request_mfa_call")
+    @summary("Request a MFA token via phone call")
     @doc("""
       Sends a multi-factor authentication code via voice call.
 
@@ -37,16 +37,16 @@ namespace SpaceAPI.Mfa {
     @post
     sendCall(@body body: MfaRequest): MfaResponse | StatusCode401 | ValidationError | StatusCode500;
 
-    @operationId("verify_mfa")
-    @summary("Verify MFA Code")
+    @operationId("verify_mfa_token")
+    @summary("Verify a token")
     @doc("""
       Verifies a multi-factor authentication code.
 
       #### Permissions
       The API token must include the following scopes: _Messaging_ or _Voice_.
       """)
-    @route("/verify")
+    @route("/{mfa_request_id}/verify")
     @post
-    verify(@body body: MfaVerifyRequest): MfaVerifyResponse | StatusCode401 | ValidationError | StatusCode500;
+    verify(...MfaRequestIdPath, @body body: MfaVerifyRequest): MfaVerifyResponse | StatusCode401 | ValidationError | StatusCode500;
   }
 }

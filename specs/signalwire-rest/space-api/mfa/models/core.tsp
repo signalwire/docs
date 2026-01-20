@@ -3,6 +3,14 @@ import "../../../types";
 using TypeSpec.Http;
 using Types;
 
+model MfaRequestIdPath {
+  @doc("The MFA request ID.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
+  @path
+  mfa_request_id: uuid;
+}
+
 @doc("MFA request model.")
 model MfaRequest {
   @doc("The E164 number to use as the destination.")
@@ -15,7 +23,7 @@ model MfaRequest {
 
   @doc("Specify a custom message to send before the token. The message must fit within one segment; either 160 characters or 70 characters when using non-GSM symbols.")
   @example("Here is your code")
-  message?: string;
+  message?: string = "Your Personal Authorization Code is:";
 
   @doc("The number of characters in the token, from 4 to 20. Defaults to 6.")
   @example(6)
@@ -63,11 +71,7 @@ model MfaVerifyRequest {
 
 @doc("MFA verification response model.")
 model MfaVerifyResponse {
-  @doc("The unique identifier of the MFA request.")
-  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
-  id: uuid;
-
-  @doc("Whether the verification was successful.")
+  @doc("Whether the token was successfully verified by the API. When `max_attempts` are reached or the request is no longer valid, the endpoint will return a `404 Not Found`.")
+  @example(true)
   success: boolean;
 }

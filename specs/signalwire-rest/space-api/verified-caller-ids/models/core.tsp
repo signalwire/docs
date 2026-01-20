@@ -41,7 +41,7 @@ model VerifiedCallerId {
   @doc("Nullable DateTime field representing the date and time that the number was verified. If the number has not been verified, it will be null.")
   verified_at?: utcDateTime;
 
-  @doc("String representing the verification status for the caller ID. Current values are Verified and Awaiting Verification.")
+  @doc("The verification status for the caller ID.")
   @example("Awaiting Verification")
   status?: "Verified" | "Awaiting Verification";
 }

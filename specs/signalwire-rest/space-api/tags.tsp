@@ -67,3 +67,13 @@ const QUEUES_TAG = "Queues";
 const QUEUES_TAG_METADATA = #{
   description: "Manage call queues for handling incoming calls.",
 };
+
+const QUEUE_MEMBERS_TAG = "Queue Members";
+const QUEUE_MEMBERS_TAG_METADATA = #{
+  description: "Manage members within call queues.",
+};
+
+const SHORT_CODES_TAG = "Short Codes";
+const SHORT_CODES_TAG_METADATA = #{
+  description: "Manage short codes for SMS and MMS messaging.",
+};
