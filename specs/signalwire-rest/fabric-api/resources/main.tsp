@@ -17,7 +17,15 @@ namespace FabricAPI.Resources {
   @friendlyName("Resources")
   interface Resources {
     @summary("List Resources")
-    @doc("A list of Fabric Resources")
+    @doc("""
+      A list of Fabric Resources
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | ResourceListResponse
       | StatusCode401
@@ -25,7 +33,15 @@ namespace FabricAPI.Resources {
       | StatusCode500;
 
     @summary("Get Resource")
-    @doc("Returns a Resource by ID")
+    @doc("""
+      Returns a Resource by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...ResourcePathID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +52,15 @@ namespace FabricAPI.Resources {
       | StatusCode500;
 
     @summary("Delete Resource")
-    @doc("Deletes a Resource by ID")
+    @doc("""
+      Deletes a Resource by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...ResourcePathID):
       | {

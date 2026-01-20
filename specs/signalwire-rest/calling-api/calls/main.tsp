@@ -19,6 +19,12 @@ namespace CallingAPI.Calls {
     Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
     Send a request with the appropriate `command` field to invoke the desired call operation.
     This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
+
+    #### Permissions
+
+    The API token used to authenticate must have the following scopes enabled to make a successful request: _Voice_.
+
+    [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
     """)
     @opExample(
       #{ parameters: dialCallExample },

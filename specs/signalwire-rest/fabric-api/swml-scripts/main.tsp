@@ -17,7 +17,15 @@ namespace FabricAPI.SwmlScripts {
   @friendlyName("SWML Scripts")
   interface SwmlScripts {
     @summary("List SWML Scripts")
-    @doc("A list of SWML Scripts")
+    @doc("""
+      A list of SWML Scripts
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     list():
       | SwmlScriptListResponse[]
       | StatusCode401
@@ -25,7 +33,15 @@ namespace FabricAPI.SwmlScripts {
       | StatusCode500;
 
     @summary("Get SWML Script")
-    @doc("Returns a SWML Script by ID")
+    @doc("""
+      Returns a SWML Script by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     read(...SwmlScriptPathID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +52,15 @@ namespace FabricAPI.SwmlScripts {
       | StatusCode500;
 
     @summary("Create SWML Script")
-    @doc("Creates a SWML Script")
+    @doc("""
+      Creates a SWML Script
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @post
     create(@body request: SwmlScriptCreateRequest):
       | {
@@ -49,7 +73,15 @@ namespace FabricAPI.SwmlScripts {
       | StatusCode500;
 
     @summary("Update SWML Script")
-    @doc("Updates a SWML Script by ID")
+    @doc("""
+      Updates a SWML Script by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @put
     update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
       | {
@@ -62,7 +94,15 @@ namespace FabricAPI.SwmlScripts {
       | StatusCode500;
 
     @summary("Delete SWML Script")
-    @doc("Deletes a SWML Script by ID")
+    @doc("""
+      Deletes a SWML Script by ID
+
+      #### Permissions
+
+      The API token used to authenticate must have one of the following scopes enabled to make a successful request: _Voice_, _Messaging_, _Fax_, or _Video_.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      """)
     @delete
     delete(...SwmlScriptPathID):
       | {
