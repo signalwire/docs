@@ -15,39 +15,27 @@ namespace SpaceAPI.Recordings {
   @friendlyName("Recordings")
   interface Recordings {
     @operationId("list_recordings")
-    @summary("List all Recordings")
+    @summary("List Relay Recordings")
     @doc("""
       Returns a list of your recordings.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    list(
-      @query
-      @doc("Filter by call SID.")
-      call_sid?: string,
-
-      @query
-      @doc("Filter by conference SID.")
-      conference_sid?: string,
-
-      @query
-      @doc("Filter by status.")
-      status?: string
-    ): RecordingListResponse | StatusCode401 | StatusCode500;
+    list(): RecordingListResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("get_recording")
-    @summary("Retrieve a Recording")
+    @summary("Get Relay Recording")
     @doc("""
       Retrieves the details of a recording.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
       """)
-    read(...RecordingPathID): RecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...RecordingPathID): RecordingResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("delete_recording")
-    @summary("Delete a Recording")
+    @summary("Delete Relay Recording")
     @doc("""
       Deletes a recording.
 
@@ -61,6 +49,7 @@ namespace SpaceAPI.Recordings {
         }
       | StatusCode401
       | StatusCode404
+      | ValidationError
       | StatusCode500;
   }
 }

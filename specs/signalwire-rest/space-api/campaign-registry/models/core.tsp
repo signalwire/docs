@@ -38,17 +38,15 @@ model OrderPathID {
 @doc("Brand state.")
 enum BrandState {
   pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-  suspended: "suspended",
+  unverified: "unverified",
+  completed: "completed",
 }
 
 @doc("Campaign state.")
 enum CampaignState {
   pending: "pending",
-  approved: "approved",
-  rejected: "rejected",
-  suspended: "suspended",
+  active: "active",
+  inactive: "inactive",
 }
 
 @doc("Order state.")
@@ -62,7 +60,7 @@ enum OrderState {
 @doc("Assignment state.")
 enum AssignmentState {
   pending: "pending",
-  complete: "complete",
+  completed: "completed",
   failed: "failed",
 }
 
@@ -199,17 +197,17 @@ model Campaign {
   @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
   help_message?: string;
 
-  @doc("You can share any opt in keywords that subscribers can use here. Default = START")
+  @doc("Opt in keywords that subscribers can use.")
   @example("Start,Subscribe,Opt In")
-  opt_in_keywords?: string;
+  opt_in_keywords?: string = "START";
 
-  @doc("You can share any opt out keywords that subscribers can use here. Default = STOP")
+  @doc("Opt out keywords that subscribers can use.")
   @example("Stop,Opt Out,Unsubscribe")
-  opt_out_keywords?: string;
+  opt_out_keywords?: string = "STOP";
 
-  @doc("You can share any help keywords that subscribers can use here. Default = HELP")
+  @doc("Help keywords that subscribers can use.")
   @example("Help,Support,Request Call")
-  help_keywords?: string;
+  help_keywords?: string = "HELP";
 
   @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
   @example(true)
@@ -315,4 +313,11 @@ model Order {
 
   @doc("Timestamp when the order was created.")
   created_at?: utcDateTime;
+
+  @doc("Timestamp when the order was last updated.")
+  updated_at?: utcDateTime;
+
+  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.")
+  @example("https://example.com/handle_callback")
+  status_callback_url?: string;
 }

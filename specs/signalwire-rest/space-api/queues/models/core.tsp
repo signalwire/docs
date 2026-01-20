@@ -16,7 +16,7 @@ model QueueIdPath {
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
   @path
-  QueueId: uuid;
+  queue_id: uuid;
 }
 
 model QueueMemberPathID {
@@ -94,6 +94,5 @@ model QueueMember {
   wait_time?: int32;
 
   @doc("When the queue member was last enqueued.")
-  @example("2025-06-22T17:44:08.126Z")
   date_enqueued?: utcDateTime;
 }

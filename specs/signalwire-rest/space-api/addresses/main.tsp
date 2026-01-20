@@ -23,7 +23,7 @@ namespace SpaceAPI.Addresses {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(): AddressListResponse | StatusCode401 | StatusCode500;
+    list(...ListAddressesQuery): AddressListResponse | StatusCode401 | ValidationError | StatusCode500;
 
     @operationId("create_address")
     @summary("Create an address")
@@ -52,7 +52,7 @@ namespace SpaceAPI.Addresses {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    read(...AddressPathID): AddressResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...AddressPathID): AddressResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
     @operationId("delete_address")
     @summary("Delete an Address")
@@ -67,6 +67,7 @@ namespace SpaceAPI.Addresses {
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;

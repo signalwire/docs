@@ -119,7 +119,49 @@ function resolveSchema(schema, schemas, fullSpec, visited = new Set()) {
     return schema;
   }
 
-  // Handle allOf - merge all schemas
+  // Handle schemas with anyOf/oneOf (may also have sibling allOf for base properties)
+  // For required fields: only keep fields that are required in ALL variants (intersection)
+  // This handles discriminated unions where the discriminator field is always required,
+  // while variant-specific required fields (like call_relay_topic for relay_topic handler)
+  // are correctly excluded since they're not universally required.
+  if (schema.anyOf || schema.oneOf) {
+    const variants = schema.anyOf || schema.oneOf;
+    let merged = {};
+    let universallyRequired = null; // Track fields required in ALL variants
+
+    for (const subSchema of variants) {
+      const resolved = resolveSchema(subSchema, schemas, fullSpec, new Set(visited));
+      const variantRequired = resolved.required || [];
+
+      // Compute intersection of required fields across all variants
+      if (universallyRequired === null) {
+        universallyRequired = [...variantRequired];
+      } else {
+        universallyRequired = universallyRequired.filter((r) => variantRequired.includes(r));
+      }
+
+      // Merge properties but exclude required (we'll add back the intersection)
+      const { required, ...resolvedWithoutRequired } = resolved;
+      merged = mergeSchemas(merged, resolvedWithoutRequired);
+    }
+
+    // Add back the universally required fields (required in ALL variants)
+    if (universallyRequired && universallyRequired.length > 0) {
+      merged.required = [...new Set([...(merged.required || []), ...universallyRequired])];
+    }
+
+    // Handle sibling allOf (e.g., oneOf for variants + allOf for base properties)
+    const { anyOf, oneOf, allOf, ...rest } = schema;
+    if (allOf) {
+      for (const subSchema of allOf) {
+        const resolved = resolveSchema(subSchema, schemas, fullSpec, new Set(visited));
+        merged = mergeSchemas(merged, resolved);
+      }
+    }
+    return mergeSchemas(merged, rest);
+  }
+
+  // Handle allOf - merge all schemas (only if no anyOf/oneOf, which is handled above)
   if (schema.allOf) {
     let merged = {};
     for (const subSchema of schema.allOf) {
@@ -128,18 +170,6 @@ function resolveSchema(schema, schemas, fullSpec, visited = new Set()) {
     }
     // Merge any sibling properties (like description) from the original schema
     const { allOf, ...rest } = schema;
-    return mergeSchemas(merged, rest);
-  }
-
-  // Handle anyOf/oneOf - collect all possible properties
-  if (schema.anyOf || schema.oneOf) {
-    const variants = schema.anyOf || schema.oneOf;
-    let merged = {};
-    for (const subSchema of variants) {
-      const resolved = resolveSchema(subSchema, schemas, fullSpec, new Set(visited));
-      merged = mergeSchemas(merged, resolved);
-    }
-    const { anyOf, oneOf, ...rest } = schema;
     return mergeSchemas(merged, rest);
   }
 

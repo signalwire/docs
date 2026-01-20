@@ -9,6 +9,7 @@ model CallResponse {
 }
 
 @example(#{
+  statusCode: 422,
   errors: #[
     #{
       type: "validation_error",

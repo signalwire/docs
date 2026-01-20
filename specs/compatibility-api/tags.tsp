@@ -66,6 +66,7 @@ const IMPORTED_PHONE_NUMBERS_TAG_METADATA = #{
 const LAML_BINS_TAG = "cXML Bins";
 const LAML_BINS_TAG_METADATA = #{
   description: "Manage cXML bins for storing XML instructions.",
+  `x-displayName`: "cXML Bins",
 };
 
 const MESSAGES_TAG = "Messages";

@@ -57,12 +57,12 @@ model Address {
   street_name: string;
 
   @doc("If the address is divided into multiple sub-addresses, this identifies how the address is divided.")
-  @example("Apartment")
-  address_type?: AddressType;
+  @example(AddressType.Apartment)
+  address_type: AddressType | null;
 
   @doc("If the address is divided into multiple sub-addresses, this identifies the particular sub-address.")
   @example("42")
-  address_number?: string;
+  address_number: string | null;
 
   @doc("The city portion of the street address.")
   @example("Alexandria")
@@ -75,4 +75,8 @@ model Address {
   @doc("The postal code of the street address.")
   @example("91905")
   postal_code: string;
+
+  @doc("The postal code of the street address. Alias for postal_code for backwards compatibility.")
+  @example("91905")
+  zip_code: string;
 }
