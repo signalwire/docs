@@ -24,6 +24,7 @@ enum AccountType {
 @doc("A Map of sub-resources that are linked to the given Project.")
 model SubresourceUris {
   @doc("URI for addresses. Currently not supported and always null.")
+  @example(null)
   addresses: string | null;
 
   @doc("URI for available phone numbers.")
@@ -35,6 +36,7 @@ model SubresourceUris {
   applications: string;
 
   @doc("URI for authorized connect apps. Currently not supported and always null.")
+  @example(null)
   authorized_connect_apps: string | null;
 
   @doc("URI for calls.")
@@ -46,6 +48,7 @@ model SubresourceUris {
   conferences: string;
 
   @doc("URI for connect apps. Currently not supported and always null.")
+  @example(null)
   connect_apps: string | null;
 
   @doc("URI for incoming phone numbers.")
@@ -53,12 +56,15 @@ model SubresourceUris {
   incoming_phone_numbers: string;
 
   @doc("URI for keys. Currently not supported and always null.")
+  @example(null)
   keys: string | null;
 
   @doc("URI for notifications. Currently not supported and always null.")
+  @example(null)
   notifications: string | null;
 
   @doc("URI for outgoing caller IDs. Currently not supported and always null.")
+  @example(null)
   outgoing_caller_ids: string | null;
 
   @doc("URI for queues.")
@@ -70,12 +76,15 @@ model SubresourceUris {
   recordings: string;
 
   @doc("URI for sandbox. Currently not supported and always null.")
+  @example(null)
   sandbox: string | null;
 
   @doc("URI for SIP. Currently not supported and always null.")
+  @example(null)
   sip: string | null;
 
   @doc("URI for short codes. Currently not supported and always null.")
+  @example(null)
   short_codes: string | null;
 
   @doc("URI for messages.")
@@ -87,6 +96,7 @@ model SubresourceUris {
   transcriptions: string;
 
   @doc("URI for usage. Currently not supported and always null.")
+  @example(null)
   usage: string | null;
 }
 
@@ -137,6 +147,7 @@ model Account {
   subproject: boolean;
 
   @doc("The signing key for the Project. Currently not supported and always null.")
+  @example(null)
   signing_key: string | null;
 
   @doc("A map of URIs for sub-resources linked to this Project.")

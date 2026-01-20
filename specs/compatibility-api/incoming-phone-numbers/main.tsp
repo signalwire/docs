@@ -52,16 +52,6 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       @doc("Only show numbers with this friendly name.")
       @example("My Phone")
       FriendlyName?: string,
-
-      @query
-      @doc("Only show numbers that are marked as beta.")
-      @example(false)
-      Beta?: boolean,
-
-      @query
-      @doc("Only show numbers that match this origin.")
-      @example("signalwire")
-      Origin?: string,
     ): IncomingPhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("create_incoming_phone_number")

@@ -46,7 +46,7 @@ namespace CompatibilityAPI.Applications {
       @doc("A token used to retrieve a specific page of results.")
       @example("PA01234567890abcdef01234567890abcdef")
       PageToken?: string,
-    ): ApplicationListResponse | CompatibilityStatusCode401;
+    ): ApplicationListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("create_application")
     @summary("Create an Application")
@@ -61,7 +61,7 @@ namespace CompatibilityAPI.Applications {
       ...AccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateApplicationRequest,
-    ): ApplicationCreatedResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
+    ): ApplicationCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("get_application")
     @summary("Find an Application by ID")
@@ -72,7 +72,7 @@ namespace CompatibilityAPI.Applications {
       The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
       """)
     @route("/{Sid}")
-    read(...AccountSidPath, ...ApplicationPathSid): ApplicationResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...AccountSidPath, ...ApplicationPathSid): ApplicationResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_application")
     @summary("Update an Application")
@@ -89,7 +89,7 @@ namespace CompatibilityAPI.Applications {
       ...ApplicationPathSid,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateApplicationRequest,
-    ): ApplicationResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): ApplicationResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
 
     @operationId("delete_application")
     @summary("Delete an Application")
@@ -101,6 +101,6 @@ namespace CompatibilityAPI.Applications {
       """)
     @delete
     @route("/{Sid}")
-    delete(...AccountSidPath, ...ApplicationPathSid): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...AccountSidPath, ...ApplicationPathSid): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
   }
 }

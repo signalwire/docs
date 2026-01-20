@@ -21,7 +21,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode401;
+    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
     @operationId("list_available_phone_number_resources_by_country")
     @summary("List of AvailablePhoneNumber resources by country")
@@ -32,7 +32,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @route("/{IsoCountry}")
-    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode401;
+    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
     @operationId("search_local_available_phone_numbers")
     @summary("Search for available phone numbers that match your criteria.")
@@ -106,7 +106,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       @doc("Whether or not a number can receive calls.")
       @example(true)
       VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
+    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("search_toll_free_available_phone_numbers")
     @summary("Find toll-free numbers.")
@@ -180,6 +180,6 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       @doc("Whether or not a number can receive calls.")
       @example(true)
       VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
+    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
   }
 }

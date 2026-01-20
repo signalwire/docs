@@ -25,8 +25,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(APPLICATIONS_TAG, APPLICATIONS_TAG_METADATA)
 @tagMetadata(AVAILABLE_PHONE_NUMBERS_TAG, AVAILABLE_PHONE_NUMBERS_TAG_METADATA)
 @tagMetadata(CALLS_TAG, CALLS_TAG_METADATA)
-@tagMetadata(CALL_RECORDINGS_TAG, CALL_RECORDINGS_TAG_METADATA)
-@tagMetadata(CALL_STREAMS_TAG, CALL_STREAMS_TAG_METADATA)
+@tagMetadata(STREAMS_TAG, STREAMS_TAG_METADATA)
 @tagMetadata(CONFERENCES_TAG, CONFERENCES_TAG_METADATA)
 @tagMetadata(CONFERENCE_PARTICIPANTS_TAG, CONFERENCE_PARTICIPANTS_TAG_METADATA)
 @tagMetadata(CONFERENCE_RECORDINGS_TAG, CONFERENCE_RECORDINGS_TAG_METADATA)
@@ -47,7 +46,9 @@ using TypeSpec.OpenAPI;
 @info(#{
   version: "1.0.0",
 })
-@server("https://{space_url}/api/laml/2010-04-01", "SignalWire Compatibility API", {
-  space_url: string,
+@server("https://{space_name}.signalwire.com/api/laml/2010-04-01", "SignalWire Compatibility API", {
+  @doc("Your SignalWire Space name")
+  @example("YOUR_SPACE")
+  space_name: string = "YOUR_SPACE",
 })
 namespace CompatibilityAPI;

@@ -28,7 +28,7 @@ namespace CompatibilityAPI.CxmlScripts {
       @query @doc("The page number to retrieve. Default is 0.") @example(0) Page?: int32 = 0,
       @query @doc("The number of items per page. Default is 50, maximum is 1000.") @minValue(1) @maxValue(1000) @example(50) PageSize?: int32 = 50,
       @query @doc("The token for cursor-based pagination. Must start with 'PA' or 'PB'.") @example("PAb3877c40da604998") PageToken?: string,
-    ): CxmlScriptListResponse | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ): CxmlScriptListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("create_cxml_application")
     @summary("Create a cXML Script")
@@ -43,7 +43,7 @@ namespace CompatibilityAPI.CxmlScripts {
       ...CxmlScriptsAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCxmlScriptRequest,
-    ): CxmlScriptCreatedResponse | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ): CxmlScriptCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("retrieve_cxml_application")
     @summary("Retrieve a cXML Script")
@@ -54,7 +54,7 @@ namespace CompatibilityAPI.CxmlScripts {
       The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
       """)
     @route("/{Sid}")
-    read(...CxmlScriptsAccountSidPath, ...CxmlScriptSidPath): CxmlScriptResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...CxmlScriptsAccountSidPath, ...CxmlScriptSidPath): CxmlScriptResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_cxml_application")
     @summary("Update a cXML Script")
@@ -71,7 +71,7 @@ namespace CompatibilityAPI.CxmlScripts {
       ...CxmlScriptSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCxmlScriptRequest,
-    ): CxmlScriptResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ): CxmlScriptResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
 
     @operationId("delete_cxml_application")
     @summary("Delete a cXML Script")
@@ -83,6 +83,6 @@ namespace CompatibilityAPI.CxmlScripts {
       """)
     @delete
     @route("/{Sid}")
-    delete(...CxmlScriptsAccountSidPath, ...CxmlScriptSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...CxmlScriptsAccountSidPath, ...CxmlScriptSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
   }
 }

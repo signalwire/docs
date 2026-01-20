@@ -63,6 +63,7 @@ namespace CompatibilityAPI.Conferences {
 
       @query
       @doc("The status of this conference.")
+      @example(ConferenceStatus.InProgress)
       Status?: ConferenceStatus,
 
       @query
@@ -333,7 +334,7 @@ namespace CompatibilityAPI.Conferences {
     update(
       ...ConferencesAccountSidPath,
       ...ConferenceSidPathForParticipant,
-      ...ConferenceSidPath,
+      ...ConferenceStreamSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceStreamRequest,
     ): ConferenceStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;

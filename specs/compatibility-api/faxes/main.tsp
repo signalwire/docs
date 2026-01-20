@@ -117,7 +117,7 @@ namespace CompatibilityAPI.Faxes {
       """)
     @delete
     @route("/{Sid}")
-    delete(...FaxesAccountSidPath, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...FaxesAccountSidPath, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode409;
   }
 
   @tag(FAX_MEDIA_TAG)
@@ -176,6 +176,6 @@ namespace CompatibilityAPI.Faxes {
       """)
     @delete
     @route("/{Sid}")
-    delete(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode409;
   }
 }

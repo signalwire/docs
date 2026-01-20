@@ -18,6 +18,7 @@ model AccountListResponse {
   next_page_uri: string | null;
 
   @doc("The URI of the previous page. Null if this is the first page.")
+  @example(null)
   previous_page_uri: string | null;
 
   @doc("The current page number (zero-indexed).")

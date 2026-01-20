@@ -43,8 +43,9 @@ namespace CompatibilityAPI.Accounts {
 
       @query
       @doc("A token used to retrieve a specific page of results. The token is returned in the response of a previous request.")
+      @example("PAb3877c40da604998")
       PageToken?: string,
-    ): AccountListResponse | CompatibilityStatusCode401;
+    ): AccountListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("create_subprojects")
     @summary("Create Subprojects")
@@ -58,7 +59,7 @@ namespace CompatibilityAPI.Accounts {
     create(
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateSubprojectRequest,
-    ): AccountCreatedResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
+    ): AccountCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("get_account")
     @summary("Find an Account by ID")
@@ -68,7 +69,7 @@ namespace CompatibilityAPI.Accounts {
       #### Permissions
       The API token must include the following scopes: _Management_.
       """)
-    read(...AccountPathSid): AccountResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...AccountPathSid): AccountResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_account")
     @summary("Update an Account")
@@ -84,6 +85,6 @@ namespace CompatibilityAPI.Accounts {
       ...AccountPathSid,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateAccountRequest,
-    ): AccountResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): AccountResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
   }
 }

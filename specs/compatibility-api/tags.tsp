@@ -18,13 +18,8 @@ const CALLS_TAG_METADATA = #{
   description: "Manage voice calls and call recordings.",
 };
 
-const CALL_RECORDINGS_TAG = "Call Recordings";
-const CALL_RECORDINGS_TAG_METADATA = #{
-  description: "Manage recordings for specific calls.",
-};
-
-const CALL_STREAMS_TAG = "Streams";
-const CALL_STREAMS_TAG_METADATA = #{
+const STREAMS_TAG = "Streams";
+const STREAMS_TAG_METADATA = #{
   description: "Manage media streams for calls.",
 };
 

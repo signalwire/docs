@@ -214,6 +214,14 @@ model ConferenceStream {
   uri: string;
 }
 
+model ConferenceStreamSidPath {
+  @doc("The unique identifier for the stream.")
+  @example("b3877c40-da60-4998-90ad-b792e98472st")
+  @format("uuid")
+  @path
+  Sid: string;
+}
+
 model ConferenceRecordingSidPath {
   @doc("The unique identifier for the recording.")
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
