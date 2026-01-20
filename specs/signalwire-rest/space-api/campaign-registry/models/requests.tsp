@@ -136,113 +136,153 @@ model UpdateBrandRequest {
   status_callback_url?: string;
 }
 
-@doc("Request body for creating a campaign.")
-model CreateCampaignRequest {
+@doc("Request body for creating a managed campaign. Used when the brand is a managed (non-CSP) brand.")
+model CreateManagedCampaignRequest {
   @doc("A name for the campaign.")
   @example("My Campaign")
-  name?: string;
+  @minLength(3)
+  @maxLength(64)
+  name: string;
 
-  @doc("An SMS Use Case category for the campaign (2FA, ACCOUNT_NOTIFICATION, AGENTS_FRANCHISES, CARRIER_EXEMPT, CHARITY, CUSTOMER_CARE, DELIVERY_NOTIFICATION, EMERGENCY, FRAUD_ALERT, HIGHER_EDUCATION, K12_EDUCATION, LOW_VOLUME_MIXED, MARKETING, MIXED, POLITICAL, POLITICAL_SECTION_527, POLLING_VOTING, PROXY, PUBLIC_SERVICE_ANNOUNCEMENT, SECURITY_ALERT, SOCIAL, SWEEPSTAKE, TRIAL, UCAAS_HIGH_VOLUME, UCAAS_LOW_VOLUME).")
+  @doc("The ID of the brand to associate with this campaign.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
+  brand_id: uuid;
+
+  @doc("An SMS Use Case category for the campaign.")
   @example("MARKETING")
-  sms_use_case?: string;
+  sms_use_case: string;
 
-  @doc("A sub use case category for MIXED or LOW_VOLUME_MIXED campaigns (CUSTOMER_CARE, HIGHER_EDUCATION, POLLING_VOTING, PUBLIC_SERVICE_ANNOUNCEMENT, MARKETING, SECURITY_ALERT, 2FA, ACCOUNT_NOTIFICATION, DELIVERY_NOTIFICATION, FRAUD_ALERT).")
+  @doc("A sub use case category. Required for MIXED (2-5 sub use cases) or LOW_VOLUME_MIXED (1-5 sub use cases) campaigns. Must not be provided for other use cases.")
   sub_use_cases?: string[];
 
-  @doc("Campaign Verify token. Required if sms use case is POLITICAL_SECTION_527.")
+  @doc("Campaign Verify token. Required if sms_use_case is POLITICAL_SECTION_527.")
   campaign_verify_token?: string;
 
-  @doc("A description for the campaign. Please use at least 40 characters.")
-  description?: string;
+  @doc("A description for the campaign.")
+  @example("This campaign sends appointment reminders to patients who have opted in to receive notifications from their healthcare provider.")
+  @minLength(40)
+  description: string;
 
-  @doc("Sample message template/content. At least two samples are required and up to five can be provided. Please use at least 20 characters.")
-  @example("this is a sample message your customer might receive")
-  sample1?: string;
+  @doc("Sample message template/content.")
+  @example("Hi John, this is a reminder that your appointment is tomorrow at 2pm. Reply STOP to unsubscribe.")
+  @minLength(20)
+  sample1: string;
 
-  @doc("Sample 2.")
-  @example("this is a sample message your customer might receive")
-  sample2?: string;
+  @doc("Second sample message template/content.")
+  @example("Your prescription is ready for pickup at Main St Pharmacy. Reply STOP to unsubscribe.")
+  @minLength(20)
+  sample2: string;
 
-  @doc("Sample 3.")
+  @doc("Third sample message template/content.")
+  @minLength(20)
   sample3?: string;
 
-  @doc("Sample 4.")
+  @doc("Fourth sample message template/content.")
+  @minLength(20)
   sample4?: string;
 
-  @doc("Sample 5.")
+  @doc("Fifth sample message template/content.")
+  @minLength(20)
   sample5?: string;
 
   @doc("If your messaging content will be modified in any way beyond what you shared in your templates, please describe the nature of how the content will change.")
-  dynamic_templates?: string;
+  dynamic_messages?: string;
 
   @doc("Please describe the call to action/message flow your intended recipients will experience.")
   @example("Users will opt in to receive messages from their doctor through a written form and we will send them an opt in message. Appointment reminders will then be sent ahead of their appointments.")
-  message_flow?: string;
+  @minLength(40)
+  message_flow: string;
 
   @doc("Please share the message subscribers receive when they opt in.")
-  @example("Thanks for subscribing. Reply STOP to cancel at any time.")
+  @example("Thanks for subscribing to appointment reminders. Reply STOP to cancel at any time.")
+  @minLength(20)
   opt_in_message?: string;
 
   @doc("Please share the message subscribers receive when they opt out.")
   @example("You have successfully been opted out. Reply START to opt back in at any time.")
-  opt_out_message?: string;
+  @minLength(20)
+  opt_out_message: string;
 
   @doc("Please share the message subscribers receive when they request help.")
-  @example("You have successfully been opted out. Reply SUBSCRIBE to opt back in at any time.")
-  help_message?: string;
+  @example("For help, contact support@example.com or call 1-800-555-0123. Reply STOP to unsubscribe.")
+  @minLength(20)
+  help_message: string;
 
-  @doc("Opt in keywords that subscribers can use.")
-  @example("Start,Subscribe,Opt In")
-  opt_in_keywords?: string = "START";
+  @doc("Opt in keywords that subscribers can use. Must be comma-separated values with no spaces between keywords.")
+  @example("START,SUBSCRIBE,OPTIN")
+  opt_in_keywords?: string;
 
-  @doc("Opt out keywords that subscribers can use.")
-  @example("Stop,Opt Out,Unsubscribe")
-  opt_out_keywords?: string = "STOP";
+  @doc("Opt out keywords that subscribers can use. Must be comma-separated values with no spaces between keywords.")
+  @example("STOP,UNSUBSCRIBE,OPTOUT")
+  opt_out_keywords?: string;
 
-  @doc("Help keywords that subscribers can use.")
-  @example("Help,Support,Request Call")
-  help_keywords?: string = "HELP";
+  @doc("Help keywords that subscribers can use. Must be comma-separated values with no spaces between keywords.")
+  @example("HELP,INFO,SUPPORT")
+  help_keywords?: string;
 
-  @doc("Will 50 or more numbers be used with this single campaign? If so, please enter true.")
-  @example(true)
-  number_pooling_required?: boolean;
+  @doc("Will 50 or more numbers be used with this single campaign?")
+  @example(false)
+  number_pooling_required: boolean;
 
-  @doc("If you will be using number pooling, please provide an explanation as to why it is needed.")
+  @doc("If you will be using number pooling, please provide an explanation as to why it is needed. Required if number_pooling_required is true.")
   @example("We have customer reps in every state and they each need their own number with local area code.")
   number_pooling_per_campaign?: string;
 
   @doc("Will this campaign include content related to direct lending or other loan agreements?")
-  @example(true)
-  direct_lending?: boolean;
+  @example(false)
+  direct_lending: boolean;
 
   @doc("Will you be using an embedded link of any kind? Note that public URL shorteners (bitly, tinyurl) will not be accepted.")
   @example(false)
-  embedded_link?: boolean;
+  embedded_link: boolean;
 
   @doc("Are you using an embedded phone number (except the required HELP information contact phone number)?")
   @example(false)
-  embedded_phone?: boolean;
+  embedded_phone: boolean;
 
   @doc("Will this campaign include any age gated content as defined by carrier and CTA guidelines?")
-  @example(true)
-  age_gated_content?: boolean;
+  @example(false)
+  age_gated_content: boolean;
 
   @doc("Is there any intent of this campaign to generate leads?")
-  @example(true)
-  lead_generation?: boolean;
-
-  @doc("If you are your own Campaign Service Provider, what is the approved Campaign ID? (Mandatory for CSPs, otherwise please omit)")
-  @example("1231231")
-  csp_campaign_reference?: string;
-
-  @doc("Optional: Specify a URL to receive webhook notifications when your campaign's state changes.")
-  @example("https://example.com/handle_callback")
-  status_callback_url?: string;
+  @example(false)
+  lead_generation: boolean;
 
   @doc("I agree to the terms and conditions which do not allow me to use this campaign for affiliate marketing.")
   @example(true)
-  terms_and_conditions?: boolean;
+  terms_and_conditions: boolean;
+
+  @doc("Specify a URL to receive webhook notifications when your campaign's state changes.")
+  @example("https://example.com/handle_callback")
+  @format("uri")
+  status_callback_url?: string;
 }
+
+@doc("Request body for creating a partner/CSP campaign. Used when the brand is a CSP (self-registered) brand.")
+model CreatePartnerCampaignRequest {
+  @doc("A name for the campaign.")
+  @example("My Campaign")
+  @minLength(3)
+  @maxLength(64)
+  name: string;
+
+  @doc("The ID of the brand to associate with this campaign. Must be a CSP/partner brand.")
+  @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+  @format("uuid")
+  brand_id: uuid;
+
+  @doc("The approved Campaign ID from TCR. Required for CSP/self-registered campaigns.")
+  @example("C123456")
+  csp_campaign_reference: string;
+
+  @doc("Specify a URL to receive webhook notifications when your campaign's state changes.")
+  @example("https://example.com/handle_callback")
+  @format("uri")
+  status_callback_url?: string;
+}
+
+alias CreateCampaignRequest = CreateManagedCampaignRequest | CreatePartnerCampaignRequest;
 
 @doc("Request body for updating a campaign.")
 model UpdateCampaignRequest {
