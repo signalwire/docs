@@ -21,7 +21,7 @@ Authorization: Basic base64(project_id:token)
   "x-fern-basic",
   #{
     username: #{ name: "project_id", env: "SIGNALWIRE_PROJECT_ID" },
-    password: #{ name: "token", env: "SIGNALWIRE_API_TOKEN" },
+    password: #{ name: "api_token", env: "SIGNALWIRE_API_TOKEN" },
   }
 )
 model SignalWireBasicAuth is BasicAuth {}
