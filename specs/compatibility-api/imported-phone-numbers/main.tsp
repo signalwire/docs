@@ -16,9 +16,9 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
     @operationId("create_imported_phone_number")
     @summary("Import a Phone Number")
     @doc("""
-      Import a phone number hosted elsewhere into your SignalWire Space.
+      Import a phone number you already own to your SignalWire Space to use with SignalWire APIs.
 
-      **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact 
+      **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact
       [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
 
       #### Permissions

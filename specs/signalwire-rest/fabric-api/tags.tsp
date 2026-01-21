@@ -8,6 +8,7 @@ const AI_CUSTOM_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/ai-agents-custom",
     description: "Developer documentation on SignalWire AI Agent, Fabric API endpoints",
   },
+  `x-displayName`: "AI Agents: Custom",
 };
 
 const AI_DIALOGFLOW_TAG = "AI Agents: Dialogflow";
@@ -18,6 +19,7 @@ const AI_DIALOGFLOW_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/ai-agents-dialogflow",
     description: "Developer documentation on Dialogflow Agent, Fabric API endpoints",
   },
+  `x-displayName`: "AI Agents: Dialogflow",
 };
 
 const CALL_FLOWS_TAG = "Call Flows";
@@ -133,6 +135,7 @@ const SIP_ENDPOINTS_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/sip-endpoints",
     description: "Developer documentation on SIP Endpoint, Fabric API endpoints",
   },
+  `x-displayName`: "SIP Endpoints",
 };
 
 const SIP_GATEWAY_TAG = "SIP Gateway";
@@ -143,6 +146,7 @@ const SIP_GATEWAY_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/rest/signalwire-rest/endpoints/fabric/sip-gateway",
     description: "Developer documentation on SIP Gateway, Fabric API endpoints",
   },
+  `x-displayName`: "SIP Gateway",
 };
 
 const SUBSCRIBERS_TAG = "Subscribers";
@@ -173,6 +177,7 @@ const SUBSCRIBER_SIP_ENDPOINT_TAG_METADATA = #{
     url: "https://developer.signalwire.com/rest/signalwire-rest/endpoints/fabric/subscribers-sip-endpoints",
     description: "Developer documentation on Subscriber SIP Endpoint, Fabric API endpoints",
   },
+  `x-displayName`: "Subscribers: SIP Endpoints",
 };
 
 const SWML_SCRIPTS_TAG = "SWML Scripts";

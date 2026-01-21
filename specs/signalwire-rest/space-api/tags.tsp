@@ -46,11 +46,13 @@ const RECORDINGS_TAG_METADATA = #{
 const SIP_ENDPOINTS_TAG = "SIP Endpoints";
 const SIP_ENDPOINTS_TAG_METADATA = #{
   description: "Manage SIP endpoints for voice communication.",
+  `x-displayName`: "SIP Endpoints",
 };
 
 const SIP_PROFILE_TAG = "SIP Profile";
 const SIP_PROFILE_TAG_METADATA = #{
   description: "Manage SIP profile settings.",
+  `x-displayName`: "SIP Profile",
 };
 
 const MFA_TAG = "Multi-Factor Authentication";

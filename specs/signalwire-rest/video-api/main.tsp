@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/openapi";
 import "../types";
 import "../_globally_shared/const.tsp";
+import "../../_shared/auth.tsp";
 import "./rooms";
 import "./streams";
 import "./room-sessions";
@@ -37,6 +38,6 @@ using Types.StatusCodes;
     space_name: string = "{your_space_name}",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @doc("An API to programmatically create and control your own Video Applications.")
 namespace VideoAPI;

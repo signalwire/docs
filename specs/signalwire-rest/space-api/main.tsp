@@ -14,6 +14,7 @@ import "./queues";
 import "./recordings";
 import "./short-codes";
 import "../_globally_shared/const.tsp";
+import "../../_shared/auth.tsp";
 import "./tags.tsp";
 
 using TypeSpec.Http;
@@ -56,5 +57,5 @@ using TypeSpec.OpenAPI;
     space_name: string = "YOUR_SPACE",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 namespace SpaceAPI;

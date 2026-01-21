@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "../types";
+import "../../_shared/auth.tsp";
 import "./tokens";
 
 using TypeSpec.Http;
@@ -13,7 +14,7 @@ using Types.StatusCodes;
     space_name: string = "{Your_Space_Name}",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @doc("""
   An API to programmatically create your own Chat Applications.
   """)

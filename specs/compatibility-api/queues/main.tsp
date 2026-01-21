@@ -47,7 +47,7 @@ namespace CompatibilityAPI.Queues {
     @operationId("create_queue")
     @summary("Create a Queue")
     @doc("""
-      Create a call queue. Queue names must be unique within an account and can only contain alphanumeric characters and underscores.
+      Create a call queue. Queue names must be unique among active queues within an account and can only contain alphanumeric characters and underscores. Deleted queue names can be reused.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.
@@ -76,7 +76,7 @@ namespace CompatibilityAPI.Queues {
     @operationId("update_queue")
     @summary("Update a Queue")
     @doc("""
-      Modify the properties of a call queue. Queue names must be unique within an account.
+      Modify the properties of a call queue. Queue names must be unique among active queues within an account. Deleted queue names can be reused.
 
       #### Permissions
       The API token must include the following scopes: _Voice_.

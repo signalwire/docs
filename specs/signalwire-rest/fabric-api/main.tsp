@@ -21,6 +21,7 @@ import "./swml-webhook";
 import "./domain-applications";
 import "./phone-routes";
 import "../_globally_shared/const.tsp";
+import "../../_shared/auth.tsp";
 import "./tags.tsp";
 
 using TypeSpec.Http;
@@ -68,6 +69,6 @@ using TypeSpec.OpenAPI;
     space_name: string = "{Your_Space_Name}",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @doc("API to access/manage SignalWire's Call Fabric objects.")
 namespace FabricAPI;

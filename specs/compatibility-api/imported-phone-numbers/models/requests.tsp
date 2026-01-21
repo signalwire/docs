@@ -24,7 +24,7 @@ enum PhoneNumberCapability {
 
 @doc("Request body for importing a phone number.")
 model ImportPhoneNumberRequest {
-  @doc("The phone number to import. Must start with `+` followed by 5-30 digits.")
+  @doc("The phone number to import in E.164 format. Must start with `+` followed by 5-30 digits.")
   @pattern("^\\+\\d{5,30}$")
   @minLength(6)
   @maxLength(31)
@@ -35,8 +35,8 @@ model ImportPhoneNumberRequest {
   @example(NumberType.Longcode)
   number_type: NumberType;
 
-  @doc("The capabilities to enable for this phone number. Must include at least one capability. Can include any combination of: `sms`, `voice`, `fax`, `mms`.")
+  @doc("The capabilities to enable for this phone number. If not provided, defaults to all capabilities (`sms`, `voice`, `fax`, `mms`). If provided, must include at least one capability.")
   @minItems(1)
   @example(#[PhoneNumberCapability.SMS, PhoneNumberCapability.Voice])
-  capabilities: PhoneNumberCapability[];
+  capabilities?: PhoneNumberCapability[];
 }

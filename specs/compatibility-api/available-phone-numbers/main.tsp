@@ -63,22 +63,22 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       Contains?: string,
 
       @query
-      @doc("Whether or not to exclude numbers that require an address anywhere in the world.")
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
       @example(false)
       ExcludeAllAddressRequired?: boolean,
 
       @query
-      @doc("Whether or not to exclude numbers that require a foreign address.")
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
       @example(false)
       ExcludeForeignAddressRequired?: boolean,
 
       @query
-      @doc("Whether or not to exclude numbers that require a local address.")
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
       @example(false)
       ExcludeLocalAddressRequired?: boolean,
 
       @query
-      @doc("Whether or not a number can receive faxes.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       FaxEnabled?: boolean,
 
@@ -93,17 +93,17 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       InRegion?: string,
 
       @query
-      @doc("Whether or not a number can receive MMS messages.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       MmsEnabled?: boolean,
 
       @query
-      @doc("Whether or not a number can receive SMS messages.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       SmsEnabled?: boolean,
 
       @query
-      @doc("Whether or not a number can receive calls.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       VoiceEnabled?: boolean,
     ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
@@ -137,22 +137,22 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       Contains?: string,
 
       @query
-      @doc("Whether or not to exclude numbers that require an address anywhere in the world.")
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
       @example(false)
       ExcludeAllAddressRequired?: boolean,
 
       @query
-      @doc("Whether or not to exclude numbers that require a foreign address.")
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
       @example(false)
       ExcludeForeignAddressRequired?: boolean,
 
       @query
-      @doc("Whether or not to exclude numbers that require a local address.")
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
       @example(false)
       ExcludeLocalAddressRequired?: boolean,
 
       @query
-      @doc("Whether or not a number can receive faxes.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       FaxEnabled?: boolean,
 
@@ -167,17 +167,17 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       InRegion?: string,
 
       @query
-      @doc("Whether or not a number can receive MMS messages.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       MmsEnabled?: boolean,
 
       @query
-      @doc("Whether or not a number can receive SMS messages.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       SmsEnabled?: boolean,
 
       @query
-      @doc("Whether or not a number can receive calls.")
+      @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       VoiceEnabled?: boolean,
     ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;

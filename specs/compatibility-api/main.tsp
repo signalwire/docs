@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/openapi";
 import "@typespec/openapi3";
 
+import "../_shared/auth.tsp";
 import "./tags.tsp";
 import "./accounts/main.tsp";
 import "./applications/main.tsp";
@@ -51,4 +52,5 @@ using TypeSpec.OpenAPI;
   @example("YOUR_SPACE")
   space_name: string = "YOUR_SPACE",
 })
+@useAuth(SignalWireBasicAuth)
 namespace CompatibilityAPI;

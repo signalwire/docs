@@ -75,7 +75,7 @@ model AvailablePhoneNumber {
   @doc("Whether or not a number can receive calls and messages.")
   capabilities: PhoneNumberCapabilities;
 
-  @doc("New numbers on SignalWire are marked as `beta`.")
+  @doc("Always `false`. Included for Twilio API compatibility.")
   @example(false)
   beta: boolean;
 }
@@ -105,7 +105,7 @@ model CountryResource {
   @example("/api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472af/AvailablePhoneNumbers/US")
   uri: string;
 
-  @doc("New numbers on SignalWire are marked as `beta`.")
+  @doc("Always `false`. Included for Twilio API compatibility.")
   @example(false)
   beta: boolean;
 

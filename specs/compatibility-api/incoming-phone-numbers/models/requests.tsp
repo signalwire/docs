@@ -63,9 +63,9 @@ model CreateIncomingPhoneNumberRequest {
   @example("POST")
   VoiceMethod?: "GET" | "POST" = "POST";
 
-  @doc("Whether this number can receive voice calls, faxes, or neither. Default is `voice`.")
+  @doc("Whether this number can receive voice calls or faxes. Default is `voice`.")
   @example("voice")
-  VoiceReceiveMode?: "voice" | "fax" | "none" = "voice";
+  VoiceReceiveMode?: "voice" | "fax" = "voice";
 
   @doc("The URL to request when an incoming call is received.")
   @format("uri")
@@ -141,9 +141,9 @@ model UpdateIncomingPhoneNumberRequest {
   @example("POST")
   VoiceMethod?: "GET" | "POST" = "POST";
 
-  @doc("Whether this number can receive voice calls, faxes, or neither.")
+  @doc("Whether this number can receive voice calls or faxes.")
   @example("voice")
-  VoiceReceiveMode?: "voice" | "fax" | "none";
+  VoiceReceiveMode?: "voice" | "fax";
 
   @doc("The URL to request when an incoming call is received.")
   @format("uri")

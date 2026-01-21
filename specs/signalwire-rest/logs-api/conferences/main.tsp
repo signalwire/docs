@@ -3,12 +3,13 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../types";
+import "../../../_shared/auth.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @route("/conferences")
 namespace LogsAPI.Conferences {
   @tag("Conferences")

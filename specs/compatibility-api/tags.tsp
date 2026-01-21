@@ -74,7 +74,7 @@ const MESSAGES_TAG_METADATA = #{
   description: "Send and manage SMS/MMS messages.",
 };
 
-const MESSAGE_MEDIA_TAG = "Media";
+const MESSAGE_MEDIA_TAG = "Message Media";
 const MESSAGE_MEDIA_TAG_METADATA = #{
   description: "Manage media files attached to messages.",
 };

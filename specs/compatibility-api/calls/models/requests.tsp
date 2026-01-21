@@ -20,17 +20,12 @@ model CreateCallRequest {
   @example("b3877c40-da60-4998-90ad-b792e98472ap")
   ApplicationSid?: string;
 
-  @doc("Inline cXML/LAML document to execute. Required if `Url` and `ApplicationSid` are not used.")
-  @minLength(11)
-  @maxLength(4000)
-  @example("<Response><Say>Hello World</Say></Response>")
-  Laml?: string;
-
-  @doc("Inline TwiML document to execute. Alias for `Laml`. Required if `Url` and `ApplicationSid` are not used.")
-  @minLength(11)
-  @maxLength(4000)
-  @example("<Response><Say>Hello World</Say></Response>")
-  Twiml?: string;
+  // Commented out pending verification - may be internal only
+  // @doc("Inline cXML/LAML document to execute. Required if `Url` and `ApplicationSid` are not used.")
+  // @minLength(11)
+  // @maxLength(4000)
+  // @example("<Response><Say>Hello World</Say></Response>")
+  // Laml?: string;
 
   @doc("Whether the request to `Url` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
@@ -201,17 +196,12 @@ model UpdateCallRequest {
   @example("POST")
   StatusCallbackMethod?: "GET" | "POST";
 
-  @doc("Inline cXML/LAML document to execute for redirecting the call.")
-  @minLength(11)
-  @maxLength(4000)
-  @example("<Response><Say>Hello World</Say></Response>")
-  Laml?: string;
-
-  @doc("Inline TwiML document to execute for redirecting the call. Alias for `Laml`.")
-  @minLength(11)
-  @maxLength(4000)
-  @example("<Response><Say>Hello World</Say></Response>")
-  Twiml?: string;
+  // Commented out pending verification - may be internal only
+  // @doc("Inline cXML/LAML document to execute for redirecting the call.")
+  // @minLength(11)
+  // @maxLength(4000)
+  // @example("<Response><Say>Hello World</Say></Response>")
+  // Laml?: string;
 }
 
 @doc("Request body for creating a call stream.")
