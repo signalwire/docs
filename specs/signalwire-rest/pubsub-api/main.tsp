@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "../types";
 import "./tokens";
 import "../_globally_shared/const.tsp";
+import "../../_shared/auth.tsp";
 import "./tags.tsp";
 
 using TypeSpec.Http;
@@ -31,7 +32,7 @@ using Types.StatusCodes;
     space_name: string = "{Your_Space_Name}",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @doc("""
   An API to use PubSub channels in your own application.
   """)

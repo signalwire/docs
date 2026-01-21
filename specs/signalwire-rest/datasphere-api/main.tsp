@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "../types";
+import "../../_shared/auth.tsp";
 import "./document";
 
 using TypeSpec.Http;
@@ -13,6 +14,6 @@ using Types.StatusCodes;
     space_name: string = "{Your_Space_Name}",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @doc("An AI-powered API for document search.")
 namespace DatasphereAPI;

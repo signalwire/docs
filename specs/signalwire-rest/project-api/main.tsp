@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "../types";
 import "./tokens";
 import "../_globally_shared/const.tsp";
+import "../../_shared/auth.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -29,6 +30,6 @@ using Types.StatusCodes;
     space_name: string = "{your_space_name}",
   }
 )
-@useAuth(BasicAuth)
+@useAuth(SignalWireBasicAuth)
 @doc("An API to programmatically manage your SignalWire projects.")
 namespace ProjectAPI;

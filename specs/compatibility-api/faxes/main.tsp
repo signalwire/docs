@@ -24,11 +24,45 @@ namespace CompatibilityAPI.Faxes {
       """)
     list(
       ...FaxesAccountSidPath,
-      @query @doc("The date, in ISO 8601 format, after which the fax was sent.") DateCreatedAfter?: string,
-      @query @doc("The date, in ISO 8601 format, on or before which the fax was sent.") DateCreatedOnOrBefore?: string,
-      @query @doc("The phone number, in E.164 format, the fax was sent from.") From?: string,
-      @query @doc("The phone number, in E.164 format, the fax was sent to.") To?: string,
-    ): FaxListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("The page index to retrieve. Zero-indexed.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results per page. Default is 50, maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("Token for cursor-based pagination. Required when Page > 0.")
+      @example("PAb3877c40da604998")
+      PageToken?: string,
+
+      @query
+      @doc("The date, in ISO 8601 format, after which the fax was sent.")
+      @example("2024-01-01T00:00:00Z")
+      DateCreatedAfter?: string,
+
+      @query
+      @doc("The date, in ISO 8601 format, on or before which the fax was sent.")
+      @example("2024-12-31T23:59:59Z")
+      DateCreatedOnOrBefore?: string,
+
+      @query
+      @doc("The phone number, in E.164 format, the fax was sent from.")
+      @example("+15551234567")
+      From?: string,
+
+      @query
+      @doc("The phone number, in E.164 format, the fax was sent to.")
+      @example("+15559876543")
+      To?: string,
+    ): FaxListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("send_fax")
     @summary("Send a Fax")
@@ -43,7 +77,7 @@ namespace CompatibilityAPI.Faxes {
       ...FaxesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: SendFaxRequest,
-    ): FaxResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
+    ): FaxResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("retrieve_fax")
     @summary("Retrieve a fax.")
@@ -54,12 +88,12 @@ namespace CompatibilityAPI.Faxes {
       The API token must include the following scopes: _Fax_.
       """)
     @route("/{Sid}")
-    read(...FaxesAccountSidPath, ...FaxSidPath): FaxResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...FaxesAccountSidPath, ...FaxSidPath): FaxResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_fax")
     @summary("Update a fax")
     @doc("""
-      Allows you to modify the properties of Fax.
+      Allows you to cancel a queued fax. Only faxes in 'queued' status can be canceled.
 
       #### Permissions
       The API token must include the following scopes: _Fax_.
@@ -70,20 +104,20 @@ namespace CompatibilityAPI.Faxes {
       ...FaxesAccountSidPath,
       ...FaxSidPath,
       @header contentType: "application/x-www-form-urlencoded",
-      @body body?: UpdateFaxRequest,
-    ): FaxResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+      @body body: UpdateFaxRequest,
+    ): FaxResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
 
     @operationId("delete_fax")
     @summary("Delete a Fax")
     @doc("""
-      Delete a fax.
+      Delete a fax. Cannot delete a fax that is currently in progress (processing, sending, or receiving).
 
       #### Permissions
       The API token must include the following scopes: _Fax_.
       """)
     @delete
     @route("/{Sid}")
-    delete(...FaxesAccountSidPath, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...FaxesAccountSidPath, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode409;
   }
 
   @tag(FAX_MEDIA_TAG)
@@ -98,7 +132,28 @@ namespace CompatibilityAPI.Faxes {
       #### Permissions
       The API token must include the following scopes: _Fax_.
       """)
-    list(...FaxesAccountSidPath, ...FaxSidPathForMedia): FaxMediaListResponse | CompatibilityStatusCode401;
+    list(
+      ...FaxesAccountSidPath,
+      ...FaxSidPathForMedia,
+
+      @query
+      @doc("The page index to retrieve. Zero-indexed.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results per page. Default is 50, maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("Token for cursor-based pagination. Required when Page > 0.")
+      @example("PAb3877c40da604998")
+      PageToken?: string,
+    ): FaxMediaListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
 
     @operationId("retrieve_medias")
     @summary("Retrieve Fax Media")
@@ -109,18 +164,18 @@ namespace CompatibilityAPI.Faxes {
       The API token must include the following scopes: _Fax_.
       """)
     @route("/{Sid}")
-    read(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): FaxMediaResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): FaxMediaResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("delete_fax_media")
     @summary("Delete Fax Media")
     @doc("""
-      Delete media for a fax.
+      Delete media for a fax. Cannot delete media for a fax that is in progress (queued, processing, sending, or receiving).
 
       #### Permissions
       The API token must include the following scopes: _Fax_.
       """)
     @delete
     @route("/{Sid}")
-    delete(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode409;
   }
 }

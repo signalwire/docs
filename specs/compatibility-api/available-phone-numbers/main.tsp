@@ -21,7 +21,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       #### Permissions
       The API token must include the following scopes: _Numbers_.
       """)
-    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode401;
+    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
     @operationId("list_available_phone_number_resources_by_country")
     @summary("List of AvailablePhoneNumber resources by country")
@@ -32,7 +32,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       The API token must include the following scopes: _Numbers_.
       """)
     @route("/{IsoCountry}")
-    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode401;
+    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
     @operationId("search_local_available_phone_numbers")
     @summary("Search for available phone numbers that match your criteria.")
@@ -46,18 +46,67 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     searchLocal(
       ...AvailablePhoneNumbersAccountSidPath,
       ...IsoCountryPath,
-      @query @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.") @example("213") AreaCode?: string,
-      @query @doc("New numbers on SignalWire are marked as `beta`.") Beta?: boolean,
-      @query @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.") @example("555") Contains?: string,
-      @query @doc("Whether or not to exclude numbers that require an address anywhere in the world.") ExcludeAllAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a foreign address.") ExcludeForeignAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a local address.") ExcludeLocalAddressRequired?: boolean,
-      @query @doc("Whether or not a number can receive faxes.") FaxEnabled?: boolean,
-      @query @doc("Limits search to same region as number.") @example("WA") InRegion?: string,
-      @query @doc("Whether or not a number can receive MMS messages.") MmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive SMS messages.") SmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive calls.") VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.")
+      @example("213")
+      AreaCode?: string,
+
+      @query
+      @doc("New numbers on SignalWire are marked as `beta`.")
+      @example(false)
+      Beta?: boolean,
+
+      @query
+      @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.")
+      @example("555")
+      Contains?: string,
+
+      @query
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @example(false)
+      ExcludeAllAddressRequired?: boolean,
+
+      @query
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @example(false)
+      ExcludeForeignAddressRequired?: boolean,
+
+      @query
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @example(false)
+      ExcludeLocalAddressRequired?: boolean,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      FaxEnabled?: boolean,
+
+      @query
+      @doc("Limits search to a city/locality. Requires InRegion to also be set.")
+      @example("Seattle")
+      InLocality?: string,
+
+      @query
+      @doc("Limits search to same region as number. Must be a two-letter state/province code.")
+      @example("WA")
+      InRegion?: string,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      MmsEnabled?: boolean,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      SmsEnabled?: boolean,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      VoiceEnabled?: boolean,
+    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("search_toll_free_available_phone_numbers")
     @summary("Find toll-free numbers.")
@@ -71,17 +120,66 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     searchTollFree(
       ...AvailablePhoneNumbersAccountSidPath,
       ...IsoCountryPath,
-      @query @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.") @example("213") AreaCode?: string,
-      @query @doc("New numbers on SignalWire are marked as `beta`.") Beta?: boolean,
-      @query @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.") @example("555") Contains?: string,
-      @query @doc("Whether or not to exclude numbers that require an address anywhere in the world.") ExcludeAllAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a foreign address.") ExcludeForeignAddressRequired?: boolean,
-      @query @doc("Whether or not to exclude numbers that require a local address.") ExcludeLocalAddressRequired?: boolean,
-      @query @doc("Whether or not a number can receive faxes.") FaxEnabled?: boolean,
-      @query @doc("Limits search to same region as number.") @example("WA") InRegion?: string,
-      @query @doc("Whether or not a number can receive MMS messages.") MmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive SMS messages.") SmsEnabled?: boolean,
-      @query @doc("Whether or not a number can receive calls.") VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("Find numbers in the provided area code. Only available for numbers in US and Canada.")
+      @example("213")
+      AreaCode?: string,
+
+      @query
+      @doc("New numbers on SignalWire are marked as `beta`.")
+      @example(false)
+      Beta?: boolean,
+
+      @query
+      @doc("Find numbers based off of a pattern. Valid characters are `[0-9a-zA-Z]`.")
+      @example("555")
+      Contains?: string,
+
+      @query
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @example(false)
+      ExcludeAllAddressRequired?: boolean,
+
+      @query
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @example(false)
+      ExcludeForeignAddressRequired?: boolean,
+
+      @query
+      @doc("Accepted for Twilio compatibility but has no effect on the response.")
+      @example(false)
+      ExcludeLocalAddressRequired?: boolean,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      FaxEnabled?: boolean,
+
+      @query
+      @doc("Limits search to a city/locality. Requires InRegion to also be set.")
+      @example("Seattle")
+      InLocality?: string,
+
+      @query
+      @doc("Limits search to same region as number. Must be a two-letter state/province code.")
+      @example("WA")
+      InRegion?: string,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      MmsEnabled?: boolean,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      SmsEnabled?: boolean,
+
+      @query
+      @doc("Not supported. Accepted for Twilio API compatibility.")
+      @example(true)
+      VoiceEnabled?: boolean,
+    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
   }
 }

@@ -24,17 +24,76 @@ namespace CompatibilityAPI.Calls {
       """)
     list(
       ...CallsAccountSidPath,
-      @query @doc("The time, in RFC 2822 GMT format, on which the call was terminated.") EndTime?: string,
-      @query("EndTime<") @doc("The time before which the call was terminated.") EndTimeBefore?: string,
-      @query("EndTime>") @doc("The time after which the call was terminated.") EndTimeAfter?: string,
-      @query @doc("The address that initiated the call.") @example("+13103384645") From?: string,
-      @query @doc("The unique identifier for the call that created this call.") @format("uuid") ParentCallSid?: string,
-      @query @doc("The time, in RFC 2822 GMT format, on which the call began.") StartTime?: string,
-      @query("StartTime<") @doc("The time before which the call began.") StartTimeBefore?: string,
-      @query("StartTime>") @doc("The time after which the call began.") StartTimeAfter?: string,
-      @query @doc("The status of the call.") Status?: "queued" | "ringing" | "in-progress" | "canceled" | "completed" | "busy" | "failed",
-      @query @doc("The address that received the call.") @example("+13105678901") To?: string,
-    ): CallListResponse | CompatibilityStatusCode401;
+
+      @query
+      @doc("The time, in RFC 2822 GMT format, on which the call was terminated.")
+      @example("Fri, 21 Sep 2018 10:00:00 +0000")
+      EndTime?: string,
+
+      @query("EndTime<")
+      @doc("The time before which the call was terminated.")
+      @example("Fri, 21 Sep 2018 10:00:00 +0000")
+      EndTimeBefore?: string,
+
+      @query("EndTime>")
+      @doc("The time after which the call was terminated.")
+      @example("Fri, 21 Sep 2018 10:00:00 +0000")
+      EndTimeAfter?: string,
+
+      @query
+      @doc("The address that initiated the call.")
+      @example("+13103384645")
+      From?: string,
+
+      @query
+      @doc("The unique identifier for the call that created this call.")
+      @format("uuid")
+      @example("b3877c40-da60-4998-90ad-b792e98472af")
+      ParentCallSid?: string,
+
+      @query
+      @doc("The time, in RFC 2822 GMT format, on which the call began.")
+      @example("Wed, 19 Sep 2018 20:00:00 +0000")
+      StartTime?: string,
+
+      @query("StartTime<")
+      @doc("The time before which the call began.")
+      @example("Wed, 19 Sep 2018 20:00:00 +0000")
+      StartTimeBefore?: string,
+
+      @query("StartTime>")
+      @doc("The time after which the call began.")
+      @example("Wed, 19 Sep 2018 20:00:00 +0000")
+      StartTimeAfter?: string,
+
+      @query
+      @doc("The status of the call.")
+      @example("completed")
+      Status?: "queued" | "ringing" | "in-progress" | "canceled" | "completed" | "busy" | "failed" | "no-answer",
+
+      @query
+      @doc("The address that received the call.")
+      @example("+13105678901")
+      To?: string,
+
+      @query
+      @doc("The page number to retrieve. Page numbers are zero-indexed, so the first page is 0.")
+      @minValue(0)
+      @example(0)
+      Page?: int32 = 0,
+
+      @query
+      @doc("The number of results to return per page. The default is 50, and the maximum is 1000.")
+      @minValue(1)
+      @maxValue(1000)
+      @example(50)
+      PageSize?: int32 = 50,
+
+      @query
+      @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
+      @example("PAb3877c40da604998")
+      PageToken?: string,
+    ): CallListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("create_a_call")
     @summary("Create a Call")
@@ -49,7 +108,7 @@ namespace CompatibilityAPI.Calls {
       ...CallsAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRequest,
-    ): CallResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400Array;
+    ): CallResponse | CompatibilityStatusCode400Array | CompatibilityStatusCode401 | CompatibilityStatusCode422;
 
     @operationId("retrieve_a_call")
     @summary("Retrieve a Call")
@@ -60,7 +119,7 @@ namespace CompatibilityAPI.Calls {
       The API token must include the following scopes: _Voice_.
       """)
     @route("/{Sid}")
-    read(...CallsAccountSidPath, ...CallSidPath): CallResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...CallsAccountSidPath, ...CallSidPath): CallResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
     @operationId("update_a_call")
     @summary("Update a Call")
@@ -77,7 +136,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCallRequest,
-    ): CallResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): CallResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
 
     @operationId("delete_a_call")
     @summary("Delete a Call")
@@ -89,7 +148,7 @@ namespace CompatibilityAPI.Calls {
       """)
     @delete
     @route("/{Sid}")
-    delete(...CallsAccountSidPath, ...CallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...CallsAccountSidPath, ...CallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
   }
 
   @tag(RECORDINGS_TAG)
@@ -110,7 +169,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRecordingRequest,
-    ): CallRecordingResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
+    ): CallRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
 
     @operationId("update_recording")
     @summary("Update a Recording")
@@ -128,10 +187,10 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCallRecordingRequest,
-    ): CallRecordingResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): CallRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
   }
 
-  @tag(CALL_STREAMS_TAG)
+  @tag(STREAMS_TAG)
   @friendlyName("Call Streams")
   @route("/{CallSid}/Streams")
   interface CallStreams {
@@ -149,7 +208,7 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallStreamRequest,
-    ): CallStreamResponse | CompatibilityStatusCode401 | CompatibilityStatusCode400;
+    ): CallStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
 
     @operationId("update_stream")
     @summary("Stop a Stream")
@@ -167,6 +226,6 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCallStreamRequest,
-    ): CallStreamResponse | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ): CallStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
   }
 }

@@ -137,3 +137,15 @@ model CompatibilityStatusCode422ImportedPhoneNumber {
   @statusCode statusCode: 422;
   @body body: CompatibilityImportedPhoneNumberError;
 }
+
+@doc("The request conflicts with the current state of the resource. The operation cannot be completed.")
+model CompatibilityStatusCode409 {
+  @statusCode statusCode: 409;
+  @body error: CompatibilityErrorResponse;
+}
+
+@doc("The service is temporarily unavailable. Please try again later.")
+model CompatibilityStatusCode503 {
+  @statusCode statusCode: 503;
+  @body error: CompatibilityErrorResponse;
+}

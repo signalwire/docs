@@ -18,13 +18,8 @@ const CALLS_TAG_METADATA = #{
   description: "Manage voice calls and call recordings.",
 };
 
-const CALL_RECORDINGS_TAG = "Call Recordings";
-const CALL_RECORDINGS_TAG_METADATA = #{
-  description: "Manage recordings for specific calls.",
-};
-
-const CALL_STREAMS_TAG = "Streams";
-const CALL_STREAMS_TAG_METADATA = #{
+const STREAMS_TAG = "Streams";
+const STREAMS_TAG_METADATA = #{
   description: "Manage media streams for calls.",
 };
 
@@ -36,6 +31,11 @@ const CONFERENCES_TAG_METADATA = #{
 const CONFERENCE_PARTICIPANTS_TAG = "Conference Participants";
 const CONFERENCE_PARTICIPANTS_TAG_METADATA = #{
   description: "Manage participants in conference calls.",
+};
+
+const CONFERENCE_RECORDINGS_TAG = "Conference Recordings";
+const CONFERENCE_RECORDINGS_TAG_METADATA = #{
+  description: "Manage recordings for conference calls.",
 };
 
 const CONFERENCE_STREAMS_TAG = "Conference Streams";
@@ -63,10 +63,10 @@ const IMPORTED_PHONE_NUMBERS_TAG_METADATA = #{
   description: "Import phone numbers hosted elsewhere into your SignalWire Space.",
 };
 
-const LAML_BINS_TAG = "cXML Bins";
-const LAML_BINS_TAG_METADATA = #{
-  description: "Manage cXML bins for storing XML instructions.",
-  `x-displayName`: "cXML Bins",
+const CXML_SCRIPTS_TAG = "cXML Scripts";
+const CXML_SCRIPTS_TAG_METADATA = #{
+  description: "Manage cXML scripts for storing XML instructions.",
+  `x-displayName`: "cXML Scripts",
 };
 
 const MESSAGES_TAG = "Messages";
@@ -74,7 +74,7 @@ const MESSAGES_TAG_METADATA = #{
   description: "Send and manage SMS/MMS messages.",
 };
 
-const MESSAGE_MEDIA_TAG = "Media";
+const MESSAGE_MEDIA_TAG = "Message Media";
 const MESSAGE_MEDIA_TAG_METADATA = #{
   description: "Manage media files attached to messages.",
 };
