@@ -25,22 +25,16 @@ jobs:
         env:
           FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
         run: |
-          OUTPUT=$(yarn build 2>&1)
-          BUILD_EXIT_CODE=$?
-          echo "$OUTPUT"
-
-          if [ $BUILD_EXIT_CODE -ne 0 ]; then
-            echo "::error::Build failed with exit code $BUILD_EXIT_CODE"
+          yarn build 2>&1 | tee /tmp/build.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
             exit 1
           fi
 
-          URL=$(echo "$OUTPUT" | grep -oP 'Published docs to \K.*(?= \()')
+          URL=$(grep -oP 'Published docs to \Khttps://[^\s]+' /tmp/build.log | head -1)
           if [ -z "$URL" ]; then
-            echo "::error::Could not extract preview URL from Fern output"
+            echo "::error::Could not extract preview URL from build output"
             exit 1
           fi
-
-          echo "Preview URL: $URL"
           echo "preview_url=$URL" >> $GITHUB_OUTPUT
 
       - name: Post initial PR comment
