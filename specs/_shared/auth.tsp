@@ -17,6 +17,13 @@ Example:
 Authorization: Basic base64(project_id:token)
 ```
 """)
+@extension(
+  "x-fern-basic",
+  #{
+    username: #{ name: "project_id", env: "SIGNALWIRE_PROJECT_ID" },
+    password: #{ name: "token", env: "SIGNALWIRE_API_TOKEN" },
+  }
+)
 model SignalWireBasicAuth is BasicAuth {}
 
 
