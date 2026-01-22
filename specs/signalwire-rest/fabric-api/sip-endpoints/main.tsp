@@ -8,6 +8,7 @@ import "./addresses";
 import "./resource";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -21,7 +22,11 @@ namespace FabricAPI.SipEndpoints {
   interface SipEndpoints {
     @operationId("list_sip_endpoints")
     @summary("List SIP Endpoints")
-    @doc("A list of SIP Endpoints")
+    @doc("""
+      A list of SIP Endpoints
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | SipEndpointListResponse[]
       | StatusCode401
@@ -30,7 +35,11 @@ namespace FabricAPI.SipEndpoints {
 
         @operationId("get_sip_endpoint")
         @summary("Get SIP Endpoint")
-        @doc("Returns a SIP Endpoint by ID")
+        @doc("""
+      Returns a SIP Endpoint by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...SipEndpointPathID):
       | {
           @statusCode statusCode: 200;
@@ -42,7 +51,11 @@ namespace FabricAPI.SipEndpoints {
 
         @operationId("create_sip_endpoint")
         @summary("Create SIP Endpoint")
-        @doc("Creates a SIP Endpoint")
+        @doc("""
+      Creates a SIP Endpoint
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: SipEndpointCreateRequest):
       | {
@@ -56,7 +69,11 @@ namespace FabricAPI.SipEndpoints {
 
         @operationId("update_sip_endpoint")
         @summary("Update SIP Endpoint")
-        @doc("Updates a SIP Endpoint by ID")
+        @doc("""
+      Updates a SIP Endpoint by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(...SipEndpointPathID, @body request: SipEndpointUpdateRequest):
       | {
@@ -70,7 +87,11 @@ namespace FabricAPI.SipEndpoints {
 
         @operationId("delete_sip_endpoint")
         @summary("Delete SIP Endpoint")
-        @doc("Deletes a SIP Endpoint by ID")
+        @doc("""
+      Deletes a SIP Endpoint by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...SipEndpointPathID):
       | {

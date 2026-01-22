@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.SWMLWebhooks {
   interface SWMLWebhooks {
     @operationId("list_swml_webhooks")
     @summary("List SWML Webhooks")
-    @doc("A list of SWML Webhooks")
+    @doc("""
+      A list of SWML Webhooks
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | SWMLWebhookListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.SWMLWebhooks {
 
         @operationId("get_swml_webhook")
         @summary("Get SWML Webhook")
-        @doc("Returns an SWML Webhook by ID")
+        @doc("""
+      Returns an SWML Webhook by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...SWMLWebhookID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.SWMLWebhooks {
 
         @operationId("create_swml_webhook")
         @summary("Create SWML Webhook")
-        @doc("Creates an SWML Webhook")
+        @doc("""
+      Creates an SWML Webhook
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(...SWMLWebhookCreateRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.SWMLWebhooks {
 
         @operationId("update_swml_webhook")
         @summary("Update SWML Webhook")
-        @doc("Updates an SWML Webhook by ID")
+        @doc("""
+      Updates an SWML Webhook by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @patch(#{ implicitOptionality: true })
         update(...SWMLWebhookID, ...SWMLWebhookUpdateRequest):
       | {
@@ -68,7 +85,11 @@ namespace FabricAPI.SWMLWebhooks {
 
         @operationId("delete_swml_webhook")
         @summary("Delete SWML Webhook")
-        @doc("Deletes an SWML Webhook by ID")
+        @doc("""
+      Deletes an SWML Webhook by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...SWMLWebhookID):
       | {

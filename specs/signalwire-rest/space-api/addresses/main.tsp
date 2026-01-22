@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,8 +21,7 @@ namespace SpaceAPI.Addresses {
     @doc("""
       Returns a list of your Addresses. The addresses are returned sorted by creation date, with the most recent appearing first.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(...ListAddressesQuery): AddressListResponse | StatusCode401 | ValidationError | StatusCode500;
 
@@ -30,8 +30,7 @@ namespace SpaceAPI.Addresses {
     @doc("""
       To create a new Address, make a POST request to the Address resource.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(@body body: CreateAddressRequest):
@@ -49,8 +48,7 @@ namespace SpaceAPI.Addresses {
       Retrieves the details of an Address that has been previously created.
       Use the unique ID that was returned from your previous request to identify the specific instance.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...AddressPathID): AddressResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -59,8 +57,7 @@ namespace SpaceAPI.Addresses {
     @doc("""
       Permanently deletes an Address. It cannot be undone.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     delete(...AddressPathID):

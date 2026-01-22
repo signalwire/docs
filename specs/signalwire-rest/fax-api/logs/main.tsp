@@ -6,6 +6,7 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,10 +21,8 @@ namespace FaxAPI.Logs {
     @summary("List Logs")
     @doc("""
       List the available logs.
-      
-      #### Permissions 
-      
-      The API token must include the following scopes: _Fax_.
+
+      ${tokenPermissions<"_Fax_">}
       """)
     list(...LogListRequest):
       | LogListResponse
@@ -35,10 +34,8 @@ namespace FaxAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-      
-      #### Permissions
-      
-      The API token must include the following scopes: _Fax_.
+
+      ${tokenPermissions<"_Fax_">}
       """)
     read(...LogPathID):
       | LogResponse

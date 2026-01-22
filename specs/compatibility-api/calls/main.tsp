@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       List all calls.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...CallsAccountSidPath,
@@ -100,8 +100,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Create a call.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(
@@ -115,8 +114,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Retrieve a call.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
     read(...CallsAccountSidPath, ...CallSidPath): CallResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -126,8 +124,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Update a call.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")
@@ -143,8 +140,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Delete a call record from your account. If the delete is successful, a 204 response, with no body, will be returned.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")
@@ -160,8 +156,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Create a recording.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(
@@ -176,8 +171,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Pause, resume or stop a Recording. You can control what happens while recording is paused (replace pause with silence or skip it).
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")
@@ -199,8 +193,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Create a stream.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(
@@ -215,8 +208,7 @@ namespace CompatibilityAPI.Calls {
     @doc("""
       Stop a Stream.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")

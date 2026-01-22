@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.ConferenceRooms {
   interface ConferenceRooms {
     @operationId("list_conference_rooms")
     @summary("List Conference Rooms")
-    @doc("Returns a list of conference rooms.")
+    @doc("""
+      Returns a list of conference rooms.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | ConferenceRoomListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.ConferenceRooms {
 
         @operationId("get_conference_room")
         @summary("Get Conference Room")
-        @doc("Returns a Conference Room by ID")
+        @doc("""
+      Returns a Conference Room by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...ConferenceRoomPathID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.ConferenceRooms {
 
         @operationId("create_conference_room")
         @summary("Create Conference Room")
-        @doc("Creates a Conference Room")
+        @doc("""
+      Creates a Conference Room
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: ConferenceRoomCreateRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.ConferenceRooms {
 
         @operationId("update_conference_room")
         @summary("Update Conference Room")
-        @doc("Updates a Conference Room by ID")
+        @doc("""
+      Updates a Conference Room by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(
       ...ConferenceRoomPathID,
@@ -71,7 +88,11 @@ namespace FabricAPI.ConferenceRooms {
 
         @operationId("delete_conference_room")
         @summary("Delete Conference Room")
-        @doc("Deletes a Conference Room by ID")
+        @doc("""
+      Deletes a Conference Room by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...ConferenceRoomPathID):
       | {

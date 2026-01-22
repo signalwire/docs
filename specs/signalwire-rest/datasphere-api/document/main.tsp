@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -15,12 +16,20 @@ namespace DatasphereAPI.Documents {
   @tag("Documents")
   interface Documents {
     @operationId("list_documents")
-    @doc("A list of Datasphere Documents")
+    @doc("""
+      A list of Datasphere Documents.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
     @summary("List Documents")
-    list(): DocumentListResponse    | StatusCode401 | StatusCode404;
+    list(): DocumentListResponse | StatusCode401 | StatusCode404;
 
         @operationId("create_document")
-        @doc("Creates a Datasphere Document")
+        @doc("""
+      Creates a Datasphere Document.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
         @summary("Create a Document")
         @post
         create(@body body: DocumentCreateRequest):
@@ -33,7 +42,11 @@ namespace DatasphereAPI.Documents {
           | CreateStatusCode422;
 
         @operationId("update_document")
-        @doc("Updates a Datasphere Document by ID")
+        @doc("""
+      Updates a Datasphere Document by ID.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
         @summary("Update a Document")
         @patch(#{ implicitOptionality: true })
         update(...PathID, ...DocumentUpdateRequest):
@@ -46,7 +59,11 @@ namespace DatasphereAPI.Documents {
           | SearchStatusCode422;
 
         @operationId("delete_document")
-        @doc("Deletes a Datasphere Document by ID")
+        @doc("""
+      Deletes a Datasphere Document by ID.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
         @summary("Delete a Document")
         @delete
         delete(...PathID):{
@@ -54,7 +71,11 @@ namespace DatasphereAPI.Documents {
         } | StatusCode401 | StatusCode404;
 
         @operationId("search_documents")
-        @doc("Search Datasphere Documents")
+        @doc("""
+      Search Datasphere Documents.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
         @route("/search")
         @summary("Search Documents")
         @post
@@ -72,18 +93,30 @@ namespace DatasphereAPI.Chunks {
   @friendlyName("Chunks")
   interface Chunks {
     @operationId("list_document_chunks")
-    @doc("A list of chunks for a Datasphere Document.")
+    @doc("""
+      A list of chunks for a Datasphere Document.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
     @summary("List Chunks")
         list(...DocumentPathID): ChunkListResponse | StatusCode401 | StatusCode404;
 
         @operationId("get_document_chunk")
-        @doc("Retrieves a specific chunk for a Datasphere Document by ID.")
+        @doc("""
+      Retrieves a specific chunk for a Datasphere Document by ID.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
         @summary("Retrieve Chunk")
         @route("/{chunkId}")
         get(...ChunkPathID): ChunkResponse | StatusCode401 | StatusCode404;
 
         @operationId("delete_document_chunk")
-        @doc("Deletes a specific chunk for a Datasphere Document by ID.")
+        @doc("""
+      Deletes a specific chunk for a Datasphere Document by ID.
+
+      ${tokenPermissions<"_DataSphere_">}
+      """)
         @summary("Delete Chunk")
         @route("/{chunkId}")
         @delete

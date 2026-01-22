@@ -6,6 +6,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -21,9 +22,7 @@ namespace MessageAPI.Logs {
     @doc("""
       List the available logs.
       
-      #### Permissions
-      
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     list(...LogListRequest):
       | LogListResponse
@@ -36,9 +35,7 @@ namespace MessageAPI.Logs {
     @doc("""
       Find a log by ID.
       
-      #### Permissions
-      
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse

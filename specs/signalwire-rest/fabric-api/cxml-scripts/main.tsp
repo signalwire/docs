@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,7 +21,11 @@ namespace FabricAPI.CXMLScripts {
   interface CXMLScripts {
     @operationId("list_cxml_scripts")
     @summary("List cXML Scripts")
-    @doc("A list of cXML Scripts")
+    @doc("""
+      A list of cXML Scripts
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | CXMLScriptListResponse
       | StatusCode401
@@ -29,7 +34,11 @@ namespace FabricAPI.CXMLScripts {
 
         @operationId("get_cxml_script")
         @summary("Get cXML Script")
-        @doc("Returns a cXML Script by ID")
+        @doc("""
+      Returns a cXML Script by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...CXMLScriptPathID):
       | {
           @statusCode statusCode: 200;
@@ -41,7 +50,11 @@ namespace FabricAPI.CXMLScripts {
 
         @operationId("create_cxml_script")
         @summary("Create cXML Script")
-        @doc("Creates a cXML Script")
+        @doc("""
+      Creates a cXML Script
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: CXMLScriptCreateRequest):
       | {
@@ -55,7 +68,11 @@ namespace FabricAPI.CXMLScripts {
 
         @operationId("update_cxml_script")
         @summary("Update cXML Script")
-        @doc("Updates a cXML Script by ID")
+        @doc("""
+      Updates a cXML Script by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(...CXMLScriptPathID, @body request: CXMLScriptUpdateRequest):
       | {
@@ -69,7 +86,11 @@ namespace FabricAPI.CXMLScripts {
 
         @operationId("delete_cxml_script")
         @summary("Delete cXML Script")
-        @doc("Deletes a cXML Script by ID")
+        @doc("""
+      Deletes a cXML Script by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...CXMLScriptPathID):
       | {

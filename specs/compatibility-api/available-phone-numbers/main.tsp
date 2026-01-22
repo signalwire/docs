@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,8 +19,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @doc("""
       Returns a list of URIs to phone number resources available to the account, categorized by type (Local, Toll-Free, Mobile, etc) and ISO country.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
@@ -28,8 +28,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @doc("""
       Returns a list of URIs to phone number resources available to the account in the specified ISO country, categorized by type (Local, Toll-Free, Mobile, etc).
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}")
     listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
@@ -39,8 +38,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @doc("""
       Search for Local AvailablePhoneNumbers.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}/Local")
     searchLocal(
@@ -113,8 +111,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @doc("""
       Search for toll-free AvailablePhoneNumbers.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}/TollFree")
     searchTollFree(

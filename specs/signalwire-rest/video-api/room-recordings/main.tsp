@@ -6,6 +6,7 @@ import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "../room-sessions/models.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,7 +19,7 @@ namespace VideoAPI.RoomRecordings {
   interface RoomRecordings {
     @operationId("list_room_recordings")
     @summary("List Room Recordings")
-    @doc("A list of all Room Recordings.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("A list of all Room Recordings.\n\n${tokenPermissions<"_Video_">}")
     list(
       @query
       @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
@@ -28,7 +29,7 @@ namespace VideoAPI.RoomRecordings {
 
     @operationId("get_room_recording")
     @summary("Find a Room Recording by ID")
-    @doc("A detailed summary of a particular Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("A detailed summary of a particular Room Recording.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
       @path
@@ -43,7 +44,7 @@ namespace VideoAPI.RoomRecordings {
 
     @operationId("delete_room_recording")
     @summary("Delete a Room Recording.")
-    @doc("Delete a Room Recording.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Delete a Room Recording.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
     delete(

@@ -4,6 +4,7 @@ import "../_shared/fabric-address";
 import "../../types";
 import "../../../_shared/auth.tsp";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,6 +21,8 @@ namespace FabricAPI.FabricAddresses {
     @doc("""
       A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/create-subscriber-token).
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | FabricAddressesResponse
@@ -32,6 +35,8 @@ namespace FabricAPI.FabricAddresses {
     @doc("""
       Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/create-subscriber-token).
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...FabricAddressID):
       | {

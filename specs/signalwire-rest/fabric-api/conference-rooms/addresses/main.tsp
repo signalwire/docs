@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -15,7 +16,11 @@ namespace FabricAPI.ConferenceRoom.Addresses {
   interface ConferenceRoomAddresses {
     @operationId("list_conference_room_addresses")
     @summary("List Conference Room Addresses")
-    @doc("This endpoint returns a list of addresses associated with a specific Conference Room.")
+    @doc("""
+      This endpoint returns a list of addresses associated with a specific Conference Room.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...ConferenceRoomAddressPathID):
       | ConferenceRoomAddressListResponse
       | StatusCode401

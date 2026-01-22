@@ -6,6 +6,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,7 +18,11 @@ namespace FabricAPI.SubscriberTokens {
   interface SubscriberTokens {
     @operationId("create_subscriber_token")
     @summary("Create Subscriber Token")
-    @doc("Create a Subscriber Token")
+    @doc("""
+      Create a Subscriber Token
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     create(...SubscriberTokenRequest):
       | SubscriberTokenResponse
       | StatusCode401

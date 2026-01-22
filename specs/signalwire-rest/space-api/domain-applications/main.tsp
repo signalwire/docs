@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,8 +21,7 @@ namespace SpaceAPI.DomainApplications {
     @doc("""
       Returns a list of your domain applications. The domain applications are returned sorted by creation date, with the most recent domain applications appearing first.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     list(...ListDomainApplicationsQuery): DomainApplicationListResponse | StatusCode401 | ValidationError | StatusCode500;
 
@@ -30,8 +30,7 @@ namespace SpaceAPI.DomainApplications {
     @doc("""
       Creates a new domain application.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @post
     create(@body body: CreateDomainApplicationRequest):
@@ -48,8 +47,7 @@ namespace SpaceAPI.DomainApplications {
     @doc("""
       Retrieves the details of a Domain Application that has been previously created.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     read(...DomainApplicationPathID): DomainApplicationResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -58,8 +56,7 @@ namespace SpaceAPI.DomainApplications {
     @doc("""
       Updates a Domain Application.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @put
     update(...DomainApplicationPathID, @body body: UpdateDomainApplicationRequest):
@@ -74,8 +71,7 @@ namespace SpaceAPI.DomainApplications {
     @doc("""
       Permanently deletes a Domain Application. It cannot be undone.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @delete
     delete(...DomainApplicationPathID):

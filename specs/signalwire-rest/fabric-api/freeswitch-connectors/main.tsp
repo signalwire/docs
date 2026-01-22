@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.FreeswitchConnectors {
   interface FreeswitchConnectors {
     @operationId("list_freeswitch_connectors")
     @summary("List FreeSWITCH Connectors")
-    @doc("A list of FreeSWITCH Connectors")
+    @doc("""
+      A list of FreeSWITCH Connectors
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | FreeswitchConnectorListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.FreeswitchConnectors {
 
         @operationId("get_freeswitch_connector")
         @summary("Get FreeSWITCH Connector")
-        @doc("Returns a FreeSWITCH Connector by ID")
+        @doc("""
+      Returns a FreeSWITCH Connector by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...FreeswitchConnectorPathID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.FreeswitchConnectors {
 
         @operationId("create_freeswitch_connector")
         @summary("Create FreeSWITCH Connector")
-        @doc("Creates a FreeSWITCH Connector")
+        @doc("""
+      Creates a FreeSWITCH Connector
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: FreeswitchConnectorCreateRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.FreeswitchConnectors {
 
         @operationId("update_freeswitch_connector")
         @summary("Update FreeSWITCH Connector")
-        @doc("Updates a FreeSWITCH Connector by ID")
+        @doc("""
+      Updates a FreeSWITCH Connector by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(
       ...FreeswitchConnectorPathID,
@@ -71,7 +88,11 @@ namespace FabricAPI.FreeswitchConnectors {
 
         @operationId("delete_freeswitch_connector")
         @summary("Delete FreeSWITCH Connector")
-        @doc("Deletes a FreeSWITCH Connector by ID")
+        @doc("""
+      Deletes a FreeSWITCH Connector by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...FreeswitchConnectorPathID):
       | {

@@ -5,6 +5,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,11 +19,8 @@ namespace PubSubAPI.Tokens {
     @summary("Generate a new PubSub Token")
     @doc("""
       Generate a PubSub Token to be used to authenticate clients to the PubSub Service.
-      
-      
-      #### Permissions
-      
-      The API token must include the following scopes: _PubSub_.
+
+      ${tokenPermissions<"_PubSub_">}
       """)
     @post
     @operationId("create_token")

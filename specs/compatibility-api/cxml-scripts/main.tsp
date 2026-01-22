@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Returns a list of your cXML scripts. The scripts are returned sorted by creation date, with the most recent appearing first.
 
-      #### Permissions
-      The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
+      ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     list(
       ...CxmlScriptsAccountSidPath,
@@ -35,8 +35,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Create a cXML script.
 
-      #### Permissions
-      The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
+      ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @post
     create(
@@ -50,8 +49,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Retrieve a cXML script.
 
-      #### Permissions
-      The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
+      ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @route("/{Sid}")
     read(...CxmlScriptsAccountSidPath, ...CxmlScriptSidPath): CxmlScriptResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -61,8 +59,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Update a cXML script.
 
-      #### Permissions
-      The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
+      ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @post
     @route("/{Sid}")
@@ -78,8 +75,7 @@ namespace CompatibilityAPI.CxmlScripts {
     @doc("""
       Delete a cXML script.
 
-      #### Permissions
-      The API token must include one of the following scopes: _Voice_ or _Messaging_ or _Fax_.
+      ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @delete
     @route("/{Sid}")

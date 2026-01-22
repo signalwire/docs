@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.RelayApplications {
   interface RelayApplications {
     @operationId("list_relay_applications")
     @summary("List Relay Applications")
-    @doc("A list of Relay Applications")
+    @doc("""
+      A list of Relay Applications
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | RelayApplicationListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.RelayApplications {
 
         @operationId("get_relay_application")
         @summary("Get Relay Application")
-        @doc("Returns a Relay Application by ID")
+        @doc("""
+      Returns a Relay Application by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...RelayApplicationPathID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.RelayApplications {
 
         @operationId("create_relay_application")
         @summary("Create Relay Application")
-        @doc("Creates a Relay Application")
+        @doc("""
+      Creates a Relay Application
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: RelayApplicationCreateRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.RelayApplications {
 
         @operationId("update_relay_application")
         @summary("Update Relay Application")
-        @doc("Updates a Relay Application by ID")
+        @doc("""
+      Updates a Relay Application by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(
       ...RelayApplicationPathID,
@@ -71,7 +88,11 @@ namespace FabricAPI.RelayApplications {
 
         @operationId("delete_relay_application")
         @summary("Delete Relay Application")
-        @doc("Deletes a Relay Application by ID")
+        @doc("""
+      Deletes a Relay Application by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...RelayApplicationPathID):
       | {

@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.CXMLWebhooks {
   interface CXMLWebhooks {
     @operationId("list_cxml_webhooks")
     @summary("List cXML Webhooks")
-    @doc("A list of cXML Webhooks")
+    @doc("""
+      A list of cXML Webhooks
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | CXMLWebhookListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.CXMLWebhooks {
 
         @operationId("get_cxml_webhook")
         @summary("Get cXML Webhook")
-        @doc("Returns an cXML Webhook by ID")
+        @doc("""
+      Returns an cXML Webhook by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...CXMLWebhookID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.CXMLWebhooks {
 
         @operationId("create_cxml_webhook")
         @summary("Create cXML Webhook")
-        @doc("Creates an cXML Webhook")
+        @doc("""
+      Creates an cXML Webhook
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(...CXMLWebhookCreateRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.CXMLWebhooks {
 
         @operationId("update_cxml_webhook")
         @summary("Update cXML Webhook")
-        @doc("Updates an cXML Webhook by ID")
+        @doc("""
+      Updates an cXML Webhook by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @patch(#{ implicitOptionality: true })
         update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest):
       | {
@@ -68,7 +85,11 @@ namespace FabricAPI.CXMLWebhooks {
 
         @operationId("delete_cxml_webhook")
         @summary("Delete cXML Webhook")
-        @doc("Deletes an cXML Webhook by ID")
+        @doc("""
+      Deletes an cXML Webhook by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...CXMLWebhookID):
       | {

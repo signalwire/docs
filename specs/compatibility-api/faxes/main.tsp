@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       List all faxes.
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     list(
       ...FaxesAccountSidPath,
@@ -69,8 +69,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       Send a fax.
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     @post
     create(
@@ -84,8 +83,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       Retrieve a fax.
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     @route("/{Sid}")
     read(...FaxesAccountSidPath, ...FaxSidPath): FaxResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -95,8 +93,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       Allows you to cancel a queued fax. Only faxes in 'queued' status can be canceled.
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     @post
     @route("/{Sid}")
@@ -112,8 +109,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       Delete a fax. Cannot delete a fax that is currently in progress (processing, sending, or receiving).
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     @delete
     @route("/{Sid}")
@@ -129,8 +125,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       List all media for a fax.
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     list(
       ...FaxesAccountSidPath,
@@ -160,8 +155,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       Retrieve media for a fax.
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     @route("/{Sid}")
     read(...FaxesAccountSidPath, ...FaxSidPathForMedia, ...FaxSidPath): FaxMediaResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -171,8 +165,7 @@ namespace CompatibilityAPI.Faxes {
     @doc("""
       Delete media for a fax. Cannot delete media for a fax that is in progress (queued, processing, sending, or receiving).
 
-      #### Permissions
-      The API token must include the following scopes: _Fax_.
+      ${tokenPermissions<"_Fax_">}
       """)
     @delete
     @route("/{Sid}")

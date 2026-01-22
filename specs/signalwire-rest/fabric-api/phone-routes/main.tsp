@@ -6,6 +6,7 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,6 +21,8 @@ namespace FabricAPI.PhoneRoutes {
     @summary("Assign a Resource to a Phone Route")
     @doc("""
       This endpoint assigns a specific resource to a phone route, allowing inbound calls & messages to be handled by the resource.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
     assign(...PhoneRoutePathID, @body request: PhoneRouteAssignRequest):

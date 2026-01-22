@@ -5,6 +5,7 @@ import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,7 +18,7 @@ namespace VideoAPI.RoomTokens {
   interface RoomTokens {
     @operationId("create_room_token")
     @summary("Generate a new Video Room Token")
-    @doc("Generate a Room Token allowing a client to join a Room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Generate a Room Token allowing a client to join a Room.\n\n${tokenPermissions<"_Video_">}")
     @post
     create(@body body: CreateRoomTokenRequest): RoomTokenResponse | StatusCode401 | RoomTokenValidationError | StatusCode500;
   }

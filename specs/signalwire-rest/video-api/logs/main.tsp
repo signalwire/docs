@@ -5,6 +5,7 @@ import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,7 +18,7 @@ namespace VideoAPI.Logs {
   interface Logs {
     @operationId("list_logs")
     @summary("List Logs")
-    @doc("List the available logs.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("List the available logs.\n\n${tokenPermissions<"_Video_">}")
     list(
       @query
       @doc("Include logs for deleted activity.")
@@ -47,7 +48,7 @@ namespace VideoAPI.Logs {
 
     @operationId("get_log")
     @summary("Find a Log by ID")
-    @doc("Find a log by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Find a log by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
       @path

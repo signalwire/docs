@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -22,7 +23,11 @@ namespace FabricAPI.EmbedsTokens {
   interface EmbedsTokens {
     @operationId("create_embeds_token")
     @summary("Create Embeds Tokens")
-    @doc("Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.")
+    @doc("""
+      Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     @post
     create(@body body: EmbedsTokensRequest):
       | {

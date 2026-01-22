@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -15,7 +16,11 @@ namespace FabricAPI.AIAgent.Addresses {
   interface AIAgentAddresses {
     @operationId("list_ai_agent_addresses")
     @summary("List AI Agent Addresses")
-    @doc("This endpoint returns a list of addresses associated with a specific AI Agent.")
+    @doc("""
+      This endpoint returns a list of addresses associated with a specific AI Agent.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...AIAgentIDPath):
       | AIAgentAddressListResponse
       | StatusCode401

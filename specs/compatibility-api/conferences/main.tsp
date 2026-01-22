@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       The ability to read all of the conferences that are associated with your Account. This will be returned as a list of conferences.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...ConferencesAccountSidPath,
@@ -90,8 +90,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Retrieve a single conference.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
     read(...ConferencesAccountSidPath, ...ConferenceSidPath): ConferenceResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -101,8 +100,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Allows you to modify the properties of a conference.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")
@@ -123,8 +121,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       The ability to read all of the active participants that are associated with this conference call. This will be returned as a list of participants.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...ConferencesAccountSidPath,
@@ -164,8 +161,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Retrieve a single participant.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{CallSid}")
     read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): ConferenceParticipantResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -175,8 +171,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Update a participant.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{CallSid}")
@@ -193,8 +188,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Deleting a participant will take them out of a conference call.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{CallSid}")
@@ -210,8 +204,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       List all recordings for a conference.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...ConferencesAccountSidPath,
@@ -256,8 +249,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Get details for a specific conference recording.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
     read(
@@ -271,8 +263,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Pause, resume or stop a conference recording. You can control what happens while recording is paused (replace pause with silence or skip it).
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")
@@ -289,8 +280,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Delete a conference recording. If successful, a 204 response with no body will be returned.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")
@@ -310,8 +300,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Create a stream for an existing conference.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(
@@ -326,8 +315,7 @@ namespace CompatibilityAPI.Conferences {
     @doc("""
       Update an existing conference stream. Commonly used to stop/start streams or modify stream properties.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")

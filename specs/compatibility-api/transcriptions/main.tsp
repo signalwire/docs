@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,8 +19,7 @@ namespace CompatibilityAPI.Transcriptions {
     @doc("""
       List all transcriptions. Results are returned as a paginated list ordered by creation date (newest first).
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...TranscriptionsAccountSidPath,
@@ -63,8 +63,7 @@ namespace CompatibilityAPI.Transcriptions {
     @doc("""
       Retrieve a single recording transcription.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
     read(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): TranscriptionResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -74,8 +73,7 @@ namespace CompatibilityAPI.Transcriptions {
     @doc("""
       Delete a recording transcription from your account. If the delete is successful, a 204 response, with no body, will be returned.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")

@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,7 +19,11 @@ namespace FabricAPI.DialogflowAgents {
   interface DialogflowAgents {
     @operationId("list_dialogflow_agents")
     @summary("List Dialogflow Agents")
-    @doc("A list of Dialogflow Agents")
+    @doc("""
+      A list of Dialogflow Agents
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | DialogflowAgentListResponse
       | StatusCode401
@@ -27,7 +32,11 @@ namespace FabricAPI.DialogflowAgents {
 
         @operationId("get_dialogflow_agent")
         @summary("Get Dialogflow Agent")
-        @doc("Returns a Dialogflow Agent by ID")
+        @doc("""
+      Returns a Dialogflow Agent by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...DialogflowAgentPathID):
       | {
           @statusCode statusCode: 200;
@@ -39,7 +48,11 @@ namespace FabricAPI.DialogflowAgents {
 
         @operationId("update_dialogflow_agent")
         @summary("Update Dialogflow Agent")
-        @doc("Updates a Dialogflow Agent by ID")
+        @doc("""
+      Updates a Dialogflow Agent by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(
       ...DialogflowAgentPathID,
@@ -56,7 +69,11 @@ namespace FabricAPI.DialogflowAgents {
 
         @operationId("delete_dialogflow_agent")
         @summary("Delete Dialogflow Agent")
-        @doc("Deletes a Dialogflow Agent by ID")
+        @doc("""
+      Deletes a Dialogflow Agent by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...DialogflowAgentPathID):
       | {

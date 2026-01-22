@@ -5,6 +5,7 @@ import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,13 +18,13 @@ namespace VideoAPI.Rooms {
   interface Rooms {
     @operationId("create_room")
     @summary("Create a Room")
-    @doc("Create a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Create a room.\n\n${tokenPermissions<"_Video_">}")
     @post
     create(@body body: CreateRoomRequest): RoomResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("list_rooms")
     @summary("List Rooms")
-    @doc("List rooms.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("List rooms.\n\n${tokenPermissions<"_Video_">}")
     list(
       @query
       @doc("Specifies whether or not to include information about the room's active session (if any)")
@@ -32,7 +33,7 @@ namespace VideoAPI.Rooms {
 
     @operationId("get_room_by_name")
     @summary("Find a Room by Name")
-    @doc("Find a room by name.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Find a room by name.\n\n${tokenPermissions<"_Video_">}")
     @route("/{name}")
     getByName(
       @path
@@ -46,7 +47,7 @@ namespace VideoAPI.Rooms {
 
     @operationId("get_room")
     @summary("Find a Room by ID")
-    @doc("Find a room by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Find a room by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
       @path
@@ -56,7 +57,7 @@ namespace VideoAPI.Rooms {
 
     @operationId("update_room")
     @summary("Update a Room")
-    @doc("Update a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Update a room.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @put
     update(
@@ -69,7 +70,7 @@ namespace VideoAPI.Rooms {
 
     @operationId("delete_room")
     @summary("Delete a Room")
-    @doc("Delete a room.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Delete a room.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
     delete(

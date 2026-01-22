@@ -6,6 +6,7 @@ import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "../streams/models.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,13 +19,13 @@ namespace VideoAPI.Conferences {
   interface Conferences {
     @operationId("create_video_conference")
     @summary("Create a Video Conference")
-    @doc("Create a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Create a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @post
     create(@body body: CreateConferenceRequest): ConferenceResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("list_video_conferences")
     @summary("List Video Conferences")
-    @doc("List Video Conferences.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("List Video Conferences.\n\n${tokenPermissions<"_Video_">}")
     list(
       @query
       @doc("Specifies whether or not to include information about the conference's active session (if any)")
@@ -33,7 +34,7 @@ namespace VideoAPI.Conferences {
 
     @operationId("get_video_conference")
     @summary("Find a Video Conference by ID")
-    @doc("Find a Video Conference by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Find a Video Conference by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
       @path
@@ -47,7 +48,7 @@ namespace VideoAPI.Conferences {
 
     @operationId("update_video_conference")
     @summary("Update a Video Conference")
-    @doc("Update a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Update a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @put
     update(
@@ -60,7 +61,7 @@ namespace VideoAPI.Conferences {
 
     @operationId("delete_video_conference")
     @summary("Delete a Video Conference")
-    @doc("Delete a Video Conference.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Delete a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
     delete(
@@ -80,7 +81,7 @@ namespace VideoAPI.ConferenceStreams {
   interface ConferenceStreams {
     @operationId("list_conference_streams")
     @summary("List Streams by Conference")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     list(
       @path
       @doc("Unique id of a video conference")
@@ -90,7 +91,7 @@ namespace VideoAPI.ConferenceStreams {
 
     @operationId("create_conference_stream")
     @summary("Create a Stream for a Conference")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     @post
     create(
       @path

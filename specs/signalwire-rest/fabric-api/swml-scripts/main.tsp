@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.SwmlScripts {
   interface SwmlScripts {
     @operationId("list_swml_scripts")
     @summary("List SWML Scripts")
-    @doc("A list of SWML Scripts")
+    @doc("""
+      A list of SWML Scripts
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | SwmlScriptListResponse[]
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.SwmlScripts {
 
         @operationId("get_swml_script")
         @summary("Get SWML Script")
-        @doc("Returns a SWML Script by ID")
+        @doc("""
+      Returns a SWML Script by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...SwmlScriptPathID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.SwmlScripts {
 
         @operationId("create_swml_script")
         @summary("Create SWML Script")
-        @doc("Creates a SWML Script")
+        @doc("""
+      Creates a SWML Script
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: SwmlScriptCreateRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.SwmlScripts {
 
         @operationId("update_swml_script")
         @summary("Update SWML Script")
-        @doc("Updates a SWML Script by ID")
+        @doc("""
+      Updates a SWML Script by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(...SwmlScriptPathID, @body request: SwmlScriptUpdateRequest):
       | {
@@ -68,7 +85,11 @@ namespace FabricAPI.SwmlScripts {
 
         @operationId("delete_swml_script")
         @summary("Delete SWML Script")
-        @doc("Deletes a SWML Script by ID")
+        @doc("""
+      Deletes a SWML Script by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...SwmlScriptPathID):
       | {

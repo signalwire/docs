@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,8 +21,7 @@ namespace SpaceAPI.SipEndpoints {
     @doc("""
       Returns a list of your SIP endpoints.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(...ListSipEndpointsQuery): SipEndpointListResponse | StatusCode401 | ValidationError | StatusCode500;
 
@@ -30,8 +30,7 @@ namespace SpaceAPI.SipEndpoints {
     @doc("""
       Creates a new SIP endpoint.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(@body body: CreateSipEndpointRequest):
@@ -45,8 +44,7 @@ namespace SpaceAPI.SipEndpoints {
     @doc("""
       Retrieves the details of a SIP endpoint.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     read(...SipEndpointPathID): SipEndpointResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -55,8 +53,7 @@ namespace SpaceAPI.SipEndpoints {
     @doc("""
       Updates a SIP endpoint.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @put
     update(...SipEndpointPathID, @body body: UpdateSipEndpointRequest):
@@ -71,8 +68,7 @@ namespace SpaceAPI.SipEndpoints {
     @doc("""
       Permanently deletes a SIP endpoint.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     delete(...SipEndpointPathID):

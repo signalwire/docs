@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @doc("""
       List all incoming phone numbers.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(
       ...IncomingPhoneNumbersAccountSidPath,
@@ -59,8 +59,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @doc("""
       Purchase and provision a new incoming phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(
@@ -74,8 +73,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @doc("""
       Retrieve an incoming phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{Sid}")
     read(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): IncomingPhoneNumberResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -85,8 +83,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @doc("""
       Update an incoming phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     @route("/{Sid}")
@@ -104,8 +101,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
 
       Note: Numbers cannot be released within a cooldown period after purchase.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     @route("/{Sid}")

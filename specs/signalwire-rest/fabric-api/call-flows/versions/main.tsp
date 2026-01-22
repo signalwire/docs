@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -16,7 +17,11 @@ namespace FabricAPI.CallFlow.Versions {
   interface CallFlowVersions {
     @operationId("list_call_flow_versions")
     @summary("List Call Flow Versions")
-    @doc("Returns a list of versions of a Call Flow.")
+    @doc("""
+      Returns a list of versions of a Call Flow.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...CallFlowVersionPathID):
       | CallFlowVersionListResponse
       | StatusCode401
@@ -25,7 +30,11 @@ namespace FabricAPI.CallFlow.Versions {
 
         @operationId("deploy_call_flow_version")
         @summary("Deploy a Call Flow Version")
-        @doc("Deploys a specific version of a Call Flow.")
+        @doc("""
+      Deploys a specific version of a Call Flow.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         deploy(
       ...CallFlowVersionPathID,

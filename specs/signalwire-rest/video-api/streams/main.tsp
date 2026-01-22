@@ -5,6 +5,7 @@ import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,7 +18,7 @@ namespace VideoAPI.RoomStreams {
   interface RoomStreams {
     @operationId("list_room_streams")
     @summary("List Streams by Room")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     list(
       @path
       @doc("Unique id of a video room")
@@ -27,7 +28,7 @@ namespace VideoAPI.RoomStreams {
 
     @operationId("create_room_stream")
     @summary("Create a Stream for a Room")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     @post
     create(
       @path
@@ -47,7 +48,7 @@ namespace VideoAPI.Streams {
   interface Streams {
     @operationId("get_stream")
     @summary("Find a Stream by ID")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
       @path
@@ -57,7 +58,7 @@ namespace VideoAPI.Streams {
 
     @operationId("update_stream")
     @summary("Update a Stream")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @put
     update(
@@ -70,7 +71,7 @@ namespace VideoAPI.Streams {
 
     @operationId("delete_stream")
     @summary("Delete a Stream")
-    @doc("#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
     delete(

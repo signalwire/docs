@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,8 +21,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Returns a list of your Verified Caller IDs. The caller IDs are returned sorted by creation date, with the most recent caller IDs appearing first. The list is filterable by sending in any of the following parameters.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       @query @doc("String representing the name assigned to the caller ID. Will return all Verified Caller IDs containing this value as a substring.") filter_name?: string,
@@ -33,8 +33,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Creates a new verified caller ID. A verification code will be sent to the phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(@body body: CreateVerifiedCallerIdRequest):
@@ -51,8 +50,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Retrieves the details of a verified caller ID.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     read(...VerifiedCallerIdPathID): VerifiedCallerIdResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
@@ -61,8 +59,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Updates a verified caller ID.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @put
     update(...VerifiedCallerIdPathID, @body body: UpdateVerifiedCallerIdRequest): VerifiedCallerIdResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
@@ -72,8 +69,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Redials the verification call for a verified caller ID.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/verification")
     @post
@@ -84,8 +80,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Validates the verification code for a verified caller ID.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/verification")
     @put
@@ -96,8 +91,7 @@ namespace SpaceAPI.VerifiedCallerIds {
     @doc("""
       Deletes a verified caller ID.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     delete(...VerifiedCallerIdPathID):

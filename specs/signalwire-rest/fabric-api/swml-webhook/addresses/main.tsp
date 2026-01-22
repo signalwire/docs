@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -16,7 +17,11 @@ namespace FabricAPI.SWMLWebhookAddresses {
   interface SWMLWebhookAddresses {
     @operationId("list_swml_webhook_addresses")
     @summary("List SWML Webhook Addresses")
-    @doc("This endpoint returns a list of addresses associated with a specific SWML webhook.")
+    @doc("""
+      This endpoint returns a list of addresses associated with a specific SWML webhook.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...SWMLWebhookIDPath):
       | SWMLWebhookAddressListResponse
       | StatusCode401

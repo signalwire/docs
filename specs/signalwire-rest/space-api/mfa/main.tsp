@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,8 +19,7 @@ namespace SpaceAPI.Mfa {
     @doc("""
       Sends a multi-factor authentication code via SMS.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Management_">}
       """)
     @route("/sms")
     @post
@@ -30,8 +30,7 @@ namespace SpaceAPI.Mfa {
     @doc("""
       Sends a multi-factor authentication code via voice call.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Management_">}
       """)
     @route("/call")
     @post
@@ -42,8 +41,7 @@ namespace SpaceAPI.Mfa {
     @doc("""
       Verifies a multi-factor authentication code.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_ or _Voice_.
+      ${tokenPermissions<"_Management_">}
       """)
     @route("/{mfa_request_id}/verify")
     @post

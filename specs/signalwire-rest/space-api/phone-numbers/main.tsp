@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -23,8 +24,7 @@ namespace SpaceAPI.PhoneNumbers {
       first. The list is filterable by sending in any of the following
       parameters.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(...ListPhoneNumbersQuery): PhoneNumberListResponse | StatusCode400 | StatusCode401 | StatusCode500;
 
@@ -33,8 +33,7 @@ namespace SpaceAPI.PhoneNumbers {
     @doc("""
       Purchases a phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(@body body: PurchasePhoneNumberRequest):
@@ -52,8 +51,7 @@ namespace SpaceAPI.PhoneNumbers {
     @doc("""
       Retrieves the details of a phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...PhoneNumberPathID): PhoneNumberResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -62,8 +60,7 @@ namespace SpaceAPI.PhoneNumbers {
     @doc("""
       Updates a phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @put
     update(...PhoneNumberPathID, @body body: UpdatePhoneNumberRequest):
@@ -81,8 +78,7 @@ namespace SpaceAPI.PhoneNumbers {
     @doc("""
       Releases a phone number.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     delete(...PhoneNumberPathID):
@@ -99,8 +95,7 @@ namespace SpaceAPI.PhoneNumbers {
     @doc("""
       Searches for available phone numbers to purchase.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/search")
     @get
@@ -152,8 +147,7 @@ namespace SpaceAPI.ImportedPhoneNumbers {
 
       **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(@body body: ImportPhoneNumberRequest):
@@ -180,7 +174,10 @@ namespace SpaceAPI.PhoneNumberLookup {
       information about the number such as carrier and caller ID data.
 
       #### Permissions
-      The API token must include the following scopes: _Numbers_.
+
+      No API token scope is required to make a successful request to this endpoint.
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     @route("/{e164_number}")
     @get

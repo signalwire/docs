@@ -12,6 +12,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -25,7 +26,11 @@ namespace FabricAPI.Subscribers {
   interface Subscribers {
     @operationId("list_subscribers")
     @summary("List Subscribers")
-    @doc("Retrieve a list of all subscribers")
+    @doc("""
+      Retrieve a list of all subscribers
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | SubscriberListResponse
       | StatusCode401
@@ -34,7 +39,11 @@ namespace FabricAPI.Subscribers {
 
         @operationId("create_subscriber")
         @summary("Create Subscriber")
-        @doc("Create a new Subscriber")
+        @doc("""
+      Create a new Subscriber
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body body: SubscriberRequest):
       | {
@@ -48,7 +57,11 @@ namespace FabricAPI.Subscribers {
 
         @operationId("get_subscriber")
         @summary("Get Subscriber")
-        @doc("Fetch an existing Subscriber")
+        @doc("""
+      Fetch an existing Subscriber
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         get(...SubscriberPathID):
       | {
           @statusCode statusCode: 200;
@@ -60,7 +73,11 @@ namespace FabricAPI.Subscribers {
 
         @operationId("update_subscriber")
         @summary("Update Subscriber")
-        @doc("Update an existing Subsriber")
+        @doc("""
+      Update an existing Subsriber
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(...SubscriberPathID, ...SubscriberRequest):
       | {
@@ -74,7 +91,11 @@ namespace FabricAPI.Subscribers {
 
         @operationId("delete_subscriber")
         @summary("Delete Subscriber")
-        @doc("Delete an existing Subscriber")
+        @doc("""
+      Delete an existing Subscriber
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...SubscriberPathID):
       | {

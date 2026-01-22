@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "../../types";
 import "./addresses";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.SipGateways {
   interface SipGateways {
     @operationId("list_sip_gateways")
     @summary("List SIP Gateways")
-    @doc("Returns a paginated list of SIP Gateways for the authenticated project.")
+    @doc("""
+      Returns a paginated list of SIP Gateways for the authenticated project.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | SipGatewayListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.SipGateways {
 
         @operationId("get_sip_gateway")
         @summary("Get SIP Gateway")
-        @doc("Returns an SIP Gateway by ID")
+        @doc("""
+      Returns an SIP Gateway by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...SipGatewayID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.SipGateways {
 
         @operationId("create_sip_gateway")
         @summary("Create SIP Gateway")
-        @doc("Creates a SIP Gateway that can be used to dial external SIP entities.")
+        @doc("""
+      Creates a SIP Gateway that can be used to dial external SIP entities.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(...SipGatewayRequest):
       | {
@@ -54,7 +67,11 @@ namespace FabricAPI.SipGateways {
 
         @operationId("update_sip_gateway")
         @summary("Update SIP Gateway")
-        @doc("Updates a SIP Gateway by ID")
+        @doc("""
+      Updates a SIP Gateway by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @patch(#{ implicitOptionality: true })
         update(...SipGatewayID, ...SipGatewayRequest):
       | {
@@ -68,7 +85,11 @@ namespace FabricAPI.SipGateways {
 
         @operationId("delete_sip_gateway")
         @summary("Delete SIP Gateway")
-        @doc("Deletes a SIP Gateway} by ID")
+        @doc("""
+      Deletes a SIP Gateway by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...SipGatewayID):
       | {

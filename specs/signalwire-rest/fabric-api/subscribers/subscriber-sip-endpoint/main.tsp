@@ -6,6 +6,7 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,7 +19,11 @@ namespace FabricAPI.Subscribers.SipEndpoints {
   interface SubscriberSipEndpoint {
     @operationId("list_subscriber_sip_endpoints")
     @summary("List Subscriber SIP Endpoints")
-    @doc("A list of Sip Endpoints of the Subscriber")
+    @doc("""
+      A list of Sip Endpoints of the Subscriber
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...FabricSubscriberID):
       | SubscriberSipEndpointListResponse
       | StatusCode401
@@ -27,7 +32,11 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
         @operationId("get_subscriber_sip_endpoint")
         @summary("Get Subscriber SIP Endpoint")
-        @doc("Returns a Subscriber Sip Endpoint by ID")
+        @doc("""
+      Returns a Subscriber Sip Endpoint by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...SIPEndpointID, ...FabricSubscriberID):
       | {
           @statusCode statusCode: 200;
@@ -39,7 +48,11 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
         @operationId("create_subscriber_sip_endpoint")
         @summary("Create Subscriber SIP Endpoint")
-        @doc("Creates a Subscriber Sip Endpoint")
+        @doc("""
+      Creates a Subscriber Sip Endpoint
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(...FabricSubscriberID, @body body: SubscriberSipEndpointRequest):
       | {
@@ -53,7 +66,11 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
         @operationId("update_subscriber_sip_endpoint")
         @summary("Update Subscriber SIP Endpoint")
-        @doc("Updates a Subscriber Sip Endpoint by ID")
+        @doc("""
+      Updates a Subscriber Sip Endpoint by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @patch(#{ implicitOptionality: true })
         update(
       ...SIPEndpointID,
@@ -71,7 +88,11 @@ namespace FabricAPI.Subscribers.SipEndpoints {
 
         @operationId("delete_subscriber_sip_endpoint")
         @summary("Delete Subscriber SIP Endpoint")
-        @doc("Deletes a Subscriber Sip Endpoint by ID")
+        @doc("""
+      Deletes a Subscriber Sip Endpoint by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...SIPEndpointID, ...FabricSubscriberID):
       | {

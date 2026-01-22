@@ -23,6 +23,7 @@ import "./phone-routes";
 import "../_globally_shared/const.tsp";
 import "../../_shared/auth.tsp";
 import "./tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -70,5 +71,9 @@ using TypeSpec.OpenAPI;
   }
 )
 @useAuth(SignalWireBasicAuth)
-@doc("API to access/manage SignalWire's Call Fabric objects.")
+@doc("""
+  API to access/manage SignalWire's Call Fabric objects.
+
+  ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+  """)
 namespace FabricAPI;

@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -21,8 +22,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Returns a list of your registered brands for 10DLC.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(
       @query
@@ -39,8 +39,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Creates a new brand for 10DLC registration.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(@body body: CreateBrandRequest):
@@ -57,8 +56,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Retrieves the details of a brand.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...BrandPathID): BrandResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
@@ -67,8 +65,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Returns a list of campaigns for a brand.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/campaigns")
     @get
@@ -89,8 +86,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Creates a new campaign for 10DLC registration.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/campaigns")
     @post
@@ -114,8 +110,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Retrieves the details of a campaign.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...CampaignPathID): CampaignResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
@@ -124,8 +119,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Updates a campaign.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @put
     update(...CampaignPathID, @body body: UpdateCampaignRequest):
@@ -143,8 +137,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Returns a list of phone numbers assigned to a campaign.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/numbers")
     @get
@@ -161,8 +154,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Returns a list of orders for a campaign.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/orders")
     @get
@@ -179,8 +171,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Creates a new order for a campaign.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/orders")
     @post
@@ -204,8 +195,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Removes a phone number from a campaign.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     delete(...AssignedNumberPathID):
@@ -226,8 +216,7 @@ namespace SpaceAPI.RegistryBeta {
     @doc("""
       Retrieves the details of an order.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...OrderPathID): OrderResponse | StatusCode401 | StatusCode404 | StatusCode500;
   }

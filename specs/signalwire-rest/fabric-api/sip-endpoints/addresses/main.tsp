@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -15,7 +16,11 @@ namespace FabricAPI.SipEndpoint.Addresses {
   interface SipEndpointAddresses {
     @operationId("list_sip_endpoint_addresses")
     @summary("List SIP Endpoint Addresses")
-    @doc("A list of SIP Endpoint Addresses.")
+    @doc("""
+      A list of SIP Endpoint Addresses.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...SipEndpointAddressPathID):
       | SipEndpointAddressListResponse
       | StatusCode401

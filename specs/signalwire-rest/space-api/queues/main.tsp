@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,8 +21,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Returns a list of your queues.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(): QueueListResponse | StatusCode401 | ValidationError | StatusCode500;
 
@@ -30,8 +30,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Creates a new queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(@body body: CreateQueueRequest):
@@ -48,8 +47,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Retrieves the details of a queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     read(...QueuePathID): QueueResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -58,8 +56,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Updates a queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @put
     update(...QueuePathID, @body body: UpdateQueueRequest):
@@ -77,8 +74,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Deletes a queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     delete(...QueuePathID):
@@ -101,8 +97,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Returns a list of members in a queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @get
     listMembers(...QueueIdPath): QueueMemberListResponse | StatusCode401 | StatusCode404 | StatusCode500;
@@ -112,8 +107,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Dequeues next member on the queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/dequeue")
     @post
@@ -124,8 +118,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Retrieves the next member in the queue without dequeuing.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/next")
     @get
@@ -136,8 +129,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Retrieves the details of a queue member.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}")
     @get
@@ -148,8 +140,7 @@ namespace SpaceAPI.Queues {
     @doc("""
       Dequeues member on the queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/dequeue")
     @post

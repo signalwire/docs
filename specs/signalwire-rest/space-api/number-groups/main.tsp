@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -22,8 +23,7 @@ namespace SpaceAPI.NumberGroups {
       by creation date, with the most recent appearing first. The list is
       filterable by sending in any of the following parameters.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(...ListNumberGroupsQuery): NumberGroupListResponse | StatusCode401 | ValidationError | StatusCode500;
 
@@ -32,8 +32,7 @@ namespace SpaceAPI.NumberGroups {
     @doc("""
       Creates a new number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(@body body: CreateNumberGroupRequest):
@@ -47,8 +46,7 @@ namespace SpaceAPI.NumberGroups {
     @doc("""
       Retrieves the details of a number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...NumberGroupPathID): NumberGroupResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -57,8 +55,7 @@ namespace SpaceAPI.NumberGroups {
     @doc("""
       Updates a number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @put
     update(...NumberGroupPathID, @body body: UpdateNumberGroupRequest):
@@ -73,8 +70,7 @@ namespace SpaceAPI.NumberGroups {
     @doc("""
       Deletes a number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     delete(...NumberGroupPathID):
@@ -97,8 +93,7 @@ namespace SpaceAPI.NumberGroups {
     @doc("""
       Returns a list of phone numbers in a number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @get
     listMemberships(...NumberGroupIdPath, ...ListNumberGroupMembershipsQuery): NumberGroupMembershipListResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
@@ -108,8 +103,7 @@ namespace SpaceAPI.NumberGroups {
     @doc("""
       Adds a phone number to a number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     addMembership(...NumberGroupIdPath, @body body: AddNumberGroupMembershipRequest):
@@ -131,8 +125,7 @@ namespace SpaceAPI.NumberGroupMemberships {
     @doc("""
       Retrieves the details of a number group membership.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...NumberGroupMembershipPathID): NumberGroupMembershipResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -141,8 +134,7 @@ namespace SpaceAPI.NumberGroupMemberships {
     @doc("""
       Removes a phone number from a number group.
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     delete(...NumberGroupMembershipPathID):

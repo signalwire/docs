@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       List all messages.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     list(
       ...MessagesAccountSidPath,
@@ -79,8 +79,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       Create and send a message.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     @post
     create(
@@ -94,8 +93,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       Retrieve a single message.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     @route("/{Sid}")
     read(...MessagesAccountSidPath, ...MessageSidPath): MessageResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -105,8 +103,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       Update a message body after it has been sent. Currently, the only supported update is redacting the message by setting the body to an empty string. Messages that are still in progress (queued or initiated status) cannot be updated.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     @post
     @route("/{Sid}")
@@ -122,8 +119,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       Delete a message. Messages that are still in progress (queued status) cannot be deleted.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     @delete
     @route("/{Sid}")
@@ -139,8 +135,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       List all media for a message.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     list(
       ...MessagesAccountSidPath,
@@ -184,8 +179,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       Retrieve media for a message.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     @route("/{Sid}")
     read(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): MessageMediaResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -195,8 +189,7 @@ namespace CompatibilityAPI.Messages {
     @doc("""
       Delete media for a message. Media cannot be deleted if the parent message is still in progress (initiated or queued status).
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Messaging_">}
       """)
     @delete
     @route("/{Sid}")

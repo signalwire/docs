@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../../../_shared/auth.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,7 +18,11 @@ namespace LogsAPI.Conferences {
   interface Conferences {
     @operationId("list_conferences")
     @summary("List Conferences")
-    @doc("A list of Conferences.")
+    @doc("""
+      A list of Conferences.
+
+      ${tokenPermissions<"_Voice_ or _Video_">}
+      """)
     list(): ConferencesResponse | StatusCode401 | StatusCode404;
   }
 }

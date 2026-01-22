@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,8 +19,7 @@ namespace CompatibilityAPI.Recordings {
     @doc("""
       List all recordings. Results are returned as a paginated list ordered by creation date (newest first).
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...RecordingsAccountSidPath,
@@ -110,7 +110,12 @@ namespace CompatibilityAPI.Recordings {
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.json`
 
       #### Permissions
-      The API token must include the following scopes: _Voice_. This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
+
+      The API token used to authenticate must have the following scopes enabled to make a successful request: _Voice_.
+
+      This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
+
+      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     @route("/{Sid}")
     read(...RecordingsAccountSidPath, ...RecordingSidPath): RecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
@@ -120,8 +125,7 @@ namespace CompatibilityAPI.Recordings {
     @doc("""
       Delete recording. If the delete is successful, a 204 response, with no body, will be returned.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")

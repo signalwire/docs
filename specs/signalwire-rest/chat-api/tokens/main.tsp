@@ -4,6 +4,7 @@ import "../../types";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -18,11 +19,8 @@ namespace ChatAPI.Tokens {
     @summary("Generate a new Chat Token")
     @doc("""
       Generate a Chat Token to be used to authenticate clients to the Chat Service.
-      
-      
-      #### Permissions
-      
-      The API token must include the following scopes: `Chat`.
+
+      ${tokenPermissions<"_Chat_">}
       """)
     create(...NewChatToken):
       | {

@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,12 +20,20 @@ namespace FabricAPI.AIAgents {
   interface AIAgents {
     @operationId("list_ai_agents")
     @summary("List AI Agents")
-    @doc("A list of AI Agents")
+    @doc("""
+      A list of AI Agents
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         list(): AIAgentListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
         @operationId("get_ai_agent")
         @summary("Get AI Agent")
-        @doc("Returns an AI Agent by ID")
+        @doc("""
+      Returns an AI Agent by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...AIAgentPathID):
       | {
           @statusCode statusCode: 200;
@@ -36,7 +45,11 @@ namespace FabricAPI.AIAgents {
 
         @operationId("create_ai_agent")
         @summary("Create AI Agent")
-        @doc("Creates an AI Agent")
+        @doc("""
+      Creates an AI Agent
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(...AIAgentCreateRequest):
       | {
@@ -50,7 +63,11 @@ namespace FabricAPI.AIAgents {
 
         @operationId("update_ai_agent")
         @summary("Update AI Agent")
-        @doc("Updates an AI Agent by ID")
+        @doc("""
+      Updates an AI Agent by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @patch(#{ implicitOptionality: true })
         update(...AIAgentPathID, ...AIAgentUpdateRequest):
       | {
@@ -64,7 +81,11 @@ namespace FabricAPI.AIAgents {
 
         @operationId("delete_ai_agent")
         @summary("Delete AI Agent")
-        @doc("Deletes an AI Agent by ID")
+        @doc("""
+      Deletes an AI Agent by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...AIAgentPathID):
       | {

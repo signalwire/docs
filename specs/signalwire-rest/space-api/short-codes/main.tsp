@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -21,8 +22,7 @@ namespace SpaceAPI.ShortCodes {
       Returns a list of your short codes. The short codes are returned sorted
       by creation date, with the most recent appearing first.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     list(...ListShortCodesQuery): ShortCodeListResponse | StatusCode400 | StatusCode401 | StatusCode500;
 
@@ -31,8 +31,7 @@ namespace SpaceAPI.ShortCodes {
     @doc("""
       Retrieves the details of a short code.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     read(...ShortCodePathID): ShortCodeResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
 
@@ -41,8 +40,7 @@ namespace SpaceAPI.ShortCodes {
     @doc("""
       Updates a short code's configuration.
 
-      #### Permissions
-      The API token must include the following scopes: _Messaging_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @put
     update(...ShortCodePathID, @body body: UpdateShortCodeRequest):

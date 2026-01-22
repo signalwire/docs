@@ -7,6 +7,7 @@ import "./models/errors.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,7 +20,11 @@ namespace FabricAPI.CxmlApplications {
   interface CxmlApplications {
     @operationId("list_cxml_applications")
     @summary("List cXML Applications")
-    @doc("A list of cXML Applications")
+    @doc("""
+      A list of cXML Applications
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | CxmlApplicationListResponse
       | StatusCode401
@@ -28,7 +33,11 @@ namespace FabricAPI.CxmlApplications {
 
         @operationId("get_cxml_application")
         @summary("Get cXML Application")
-        @doc("Returns a cXML Application by ID")
+        @doc("""
+      Returns a cXML Application by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...CxmlApplicationPathID):
       | {
           @statusCode statusCode: 200;
@@ -40,7 +49,11 @@ namespace FabricAPI.CxmlApplications {
 
         @operationId("update_cxml_application")
         @summary("Update cXML Application")
-        @doc("Updates a cXML Application by ID")
+        @doc("""
+      Updates a cXML Application by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(
       ...CxmlApplicationPathID,
@@ -57,7 +70,11 @@ namespace FabricAPI.CxmlApplications {
 
         @operationId("delete_cxml_application")
         @summary("Delete LAML Application")
-        @doc("Deletes a LAML Application by ID")
+        @doc("""
+      Deletes a LAML Application by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...CxmlApplicationPathID):
       | {

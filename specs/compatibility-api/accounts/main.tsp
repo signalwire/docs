@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Accounts {
     @doc("""
       This endpoint will return a list that contains Project you are connecting as and any subprojects.
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     list(
       @query
@@ -52,8 +52,7 @@ namespace CompatibilityAPI.Accounts {
     @doc("""
       This endpoint creates a subproject on the Project you are connecting as.
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     @post
     create(
@@ -66,8 +65,7 @@ namespace CompatibilityAPI.Accounts {
     @doc("""
       Find a Project (also referred to as _Account_) by ID.
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     read(...AccountPathSid): AccountResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
 
@@ -76,8 +74,7 @@ namespace CompatibilityAPI.Accounts {
     @doc("""
       Update a Project (also referred to as _Account_).
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     @post
     @route("/{Sid}")

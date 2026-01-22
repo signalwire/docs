@@ -5,6 +5,7 @@ import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "./models.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -17,7 +18,7 @@ namespace VideoAPI.ConferenceTokensByConference {
   interface ConferenceTokensByConference {
     @operationId("list_conference_tokens")
     @summary("List Conference Tokens")
-    @doc("List conference tokens.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("List conference tokens.\n\n${tokenPermissions<"_Video_">}")
     list(
       @path
       @doc("Unique id of a video conference")
@@ -33,7 +34,7 @@ namespace VideoAPI.ConferenceTokens {
   interface ConferenceTokens {
     @operationId("get_conference_token")
     @summary("Find a Conference Token by ID")
-    @doc("Find a conference token by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Find a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
       @path
@@ -43,7 +44,7 @@ namespace VideoAPI.ConferenceTokens {
 
     @operationId("reset_conference_token")
     @summary("Reset a Conference Token by ID")
-    @doc("Reset a conference token by ID.\n\n#### Permissions\nThe API token must include the following scopes: _Video_.")
+    @doc("Reset a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/reset")
     @post
     reset(

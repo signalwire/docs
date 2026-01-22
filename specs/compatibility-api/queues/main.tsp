@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Retrieve all queues associated with your account. Results are returned as a paginated list.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...QueuesAccountSidPath,
@@ -49,8 +49,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Create a call queue. Queue names must be unique among active queues within an account and can only contain alphanumeric characters and underscores. Deleted queue names can be reused.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     create(
@@ -64,8 +63,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Retrieve a single queue by its unique identifier.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
     read(
@@ -78,8 +76,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Modify the properties of a call queue. Queue names must be unique among active queues within an account. Deleted queue names can be reused.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{Sid}")
@@ -95,8 +92,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Delete a call queue. Only empty queues can be deleted - attempting to delete a queue with members will return a 422 error.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")
@@ -115,8 +111,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Retrieve all members currently waiting in a queue. Results are returned as a paginated list ordered by enqueue time.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(
       ...QueuesAccountSidPath,
@@ -146,8 +141,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Retrieve a single queue member by call SID. Use the special value `Front` to retrieve the member at the front of the queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{CallSid}")
     read(
@@ -161,8 +155,7 @@ namespace CompatibilityAPI.Queues {
     @doc("""
       Dequeue a member from a queue and redirect them to a new URL. Use the special value `Front` for the CallSid to dequeue the member at the front of the queue.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @post
     @route("/{CallSid}")

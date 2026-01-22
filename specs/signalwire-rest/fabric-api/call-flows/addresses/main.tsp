@@ -4,6 +4,7 @@ import "./models/core.tsp";
 import "./models/responses.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -15,7 +16,11 @@ namespace FabricAPI.CallFlow.Addresses {
   interface CallFlowAddresses {
     @operationId("list_call_flow_addresses")
     @summary("List Call Flow Addresses")
-    @doc("This endpoint returns a list of addresses associated with a specific Call Flow.")
+    @doc("""
+      This endpoint returns a list of addresses associated with a specific Call Flow.
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list(...CallFlowAddressPathID):
       | CallFlowAddressListResponse
       | StatusCode401

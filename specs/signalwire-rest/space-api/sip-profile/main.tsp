@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,8 +21,7 @@ namespace SpaceAPI.SipProfile {
     @doc("""
       Retrieves the SIP profile settings for your project.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @get
     read(): SipProfileResponse | StatusCode401 | StatusCode500;
@@ -31,8 +31,7 @@ namespace SpaceAPI.SipProfile {
     @doc("""
       Updates the SIP profile settings for your project.
 
-      #### Permissions
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @put
     update(@body body: UpdateSipProfileRequest):

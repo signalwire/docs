@@ -8,6 +8,7 @@ import "./addresses";
 import "./versions";
 import "../../types";
 import "../tags.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -20,7 +21,11 @@ namespace FabricAPI.CallFlows {
   interface CallFlows {
     @operationId("list_call_flows")
     @summary("List Call Flows")
-    @doc("A list of Call Flows")
+    @doc("""
+      A list of Call Flows
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
     list():
       | CallFlowListResponse
       | StatusCode401
@@ -29,7 +34,11 @@ namespace FabricAPI.CallFlows {
 
         @operationId("get_call_flow")
         @summary("Get Call Flow")
-        @doc("Returns a Call Flow by ID")
+        @doc("""
+      Returns a Call Flow by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         read(...CallFlowPathID):
       | {
           @statusCode statusCode: 200;
@@ -41,7 +50,11 @@ namespace FabricAPI.CallFlows {
 
         @operationId("create_call_flow")
         @summary("Create Call Flow")
-        @doc("Creates a Call Flow")
+        @doc("""
+      Creates a Call Flow
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @post
         create(@body request: CallFlowCreateRequest):
       | {
@@ -55,7 +68,11 @@ namespace FabricAPI.CallFlows {
 
         @operationId("update_call_flow")
         @summary("Update Call Flow")
-        @doc("Updates a Call Flow by ID")
+        @doc("""
+      Updates a Call Flow by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @put
         update(...CallFlowPathID, @body request: CallFlowUpdateRequest):
       | {
@@ -69,7 +86,11 @@ namespace FabricAPI.CallFlows {
 
         @operationId("delete_call_flow")
         @summary("Delete Call Flow")
-        @doc("Deletes a Call Flow by ID")
+        @doc("""
+      Deletes a Call Flow by ID
+
+      ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
+      """)
         @delete
         delete(...CallFlowPathID):
       | {

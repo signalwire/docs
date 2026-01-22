@@ -4,6 +4,7 @@ import "./models/requests.tsp";
 import "../incoming-phone-numbers/models/core.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -21,8 +22,7 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
       **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact
       [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
 
-      #### Permissions
-      The API token must include the following scopes: _Numbers_.
+      ${tokenPermissions<"_Numbers_">}
       """)
     @post
     create(

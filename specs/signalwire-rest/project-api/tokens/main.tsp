@@ -5,6 +5,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,12 +20,13 @@ namespace ProjectAPI.Tokens {
     @summary("Generate a new API Token")
     @doc("""
       Generate an API Token for a project to be used to authenticate requests within the project.
-      
-      
-      #### Permissions
-      
+
+      ${tokenPermissions<"_Management_">}
+
+      #### Token Permissions
+
       You must set the functions allowed by this API Token by selecting which types of requests this API Token is allowed to make.
-      
+
       Valid options are: calling, chat, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
     @post
@@ -41,12 +43,13 @@ namespace ProjectAPI.Tokens {
     @summary("Update an API Token")
     @doc("""
       Update an API Token's name or permissions.
-      
-      
-      #### Permissions
-      
+
+      ${tokenPermissions<"_Management_">}
+
+      #### Token Permissions
+
       You can modify the functions allowed by this API Token by selecting which types of requests this API Token is allowed to make.
-      
+
       Valid options are: calling, chat, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
     @patch(#{implicitOptionality: true})
@@ -62,7 +65,11 @@ namespace ProjectAPI.Tokens {
 
     @operationId("delete_token")
     @summary("Delete an API Token")
-    @doc("Delete an API Token. This action cannot be undone.")
+    @doc("""
+      Delete an API Token. This action cannot be undone.
+
+      ${tokenPermissions<"_Management_">}
+      """)
     @delete
     delete(@path @doc("The unique identifier of the token that you want to update.") token_id: string):
       | {

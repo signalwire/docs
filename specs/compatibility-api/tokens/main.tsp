@@ -5,6 +5,7 @@ import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
+import "../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -19,8 +20,7 @@ namespace CompatibilityAPI.Tokens {
     @doc("""
       Generate an API Token for a project to be used to authenticate requests within the project.
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     @post
     create(
@@ -34,8 +34,7 @@ namespace CompatibilityAPI.Tokens {
     @doc("""
       Update an API Token's name or permissions.
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     @patch(#{implicitOptionality: true})
     @route("/{token_id}")
@@ -51,8 +50,7 @@ namespace CompatibilityAPI.Tokens {
     @doc("""
       Delete an API Token. This action cannot be undone.
 
-      #### Permissions
-      The API token must include the following scopes: _Management_.
+      ${tokenPermissions<"_Management_">}
       """)
     @delete
     @route("/{token_id}")

@@ -6,6 +6,7 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -21,9 +22,7 @@ namespace VoiceAPI.Logs {
     @doc("""
       List the available logs.
       
-      #### Permissions
-      
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     list(...LogListRequest):
       | LogListResponse
@@ -36,9 +35,7 @@ namespace VoiceAPI.Logs {
     @doc("""
       Find a log by ID.
 
-      #### Permissions
-
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
@@ -51,9 +48,7 @@ namespace VoiceAPI.Logs {
     @doc("""
       List all events for a specific log.
 
-      #### Permissions
-
-      The API token must include the following scopes: _Voice_.
+      ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/events")
     listEvents(...LogPathID):
