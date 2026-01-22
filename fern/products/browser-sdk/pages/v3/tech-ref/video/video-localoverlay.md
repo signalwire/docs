@@ -1,6 +1,5 @@
 ---
 title: "LocalOverlay"
-sidebar_position: 100
 slug: /video/local-overlay
 ---
 

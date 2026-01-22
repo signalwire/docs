@@ -1,9 +1,7 @@
 ---
 title: "RoomScreenShare"
 description: Deprecated. Use RoomSessionDevice instead.
-sidebar_class_name: deprecated
 slug: /video/room-screenshare
-sidebar_position: 999
 ---
 
 <Warning title="Deprecated">

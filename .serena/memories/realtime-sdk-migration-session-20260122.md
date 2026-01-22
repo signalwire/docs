@@ -187,7 +187,190 @@ Example:
 ### Modified files:
 - `fern/docs.yml` (added realtime-sdk product with versioning)
 
+## Post-Migration Fixes (Session 2)
+
+After initial migration, a spot check revealed several issues that were fixed:
+
+### 1. Missing v3 Partials → Fern Snippets
+
+The v3 tech-ref files used shared method partials (`_common/_method_*.mdx`) that weren't copied.
+
+**Solution:** Created Fern snippets using the `<Markdown src="..." />` pattern:
+
+```bash
+# Created snippet files
+fern/snippets/realtime-sdk/
+├── method_on.mdx
+├── method_off.mdx
+├── method_once.mdx
+└── method_removealllisteners.mdx
+```
+
+**Files updated (9 total):**
+- `v3/tech-ref/pubsub/pubsub-client.mdx`
+- `v3/tech-ref/messaging/messaging-client.mdx`
+- `v3/tech-ref/realtime-client/index.mdx`
+- `v3/tech-ref/video/video-roomsession.mdx`
+- `v3/tech-ref/video/video-client.mdx`
+- `v3/tech-ref/voice/voice-client.mdx`
+- `v3/tech-ref/voice/voice-call.mdx`
+- `v3/tech-ref/chat/chat-client.mdx`
+- `v3/tech-ref/task/task-client.mdx`
+
+**Conversion pattern:**
+```mdx
+// BEFORE (Docusaurus)
+import MethodOn from "../../_common/_method_on.mdx";
+<MethodOn />
+
+// AFTER (Fern)
+<Markdown src="/snippets/realtime-sdk/method_on.mdx" />
+```
+
+### 2. Missing Dashboard UI Accordion Partial
+
+Files in v3 and v4 guides imported `/docs/main/_common/dashboard/_ui-accordion.mdx`.
+
+**Solution:** Created Fern snippet with syntax conversions:
+
+```bash
+fern/snippets/dashboard/ui-accordion.mdx
+```
+
+**Conversions applied:**
+- `TabItem` → `Tab title="..."`
+- `className` → `class`
+- `@image/` → `/images/`
+- Removed unsupported Accordion props (`onChange`, `description`)
+
+**Files updated:**
+- `v3/guides/messaging/forwarding-texts-to-email-nodejs.mdx`
+- `v4/guides/messaging/forwarding-texts-to-email-nodejs.mdx`
+
+### 3. Missing Pages in v4 Navigation
+
+Added 11 pages to `versions/v4.yml`:
+
+**Voice section:**
+- Device Builder (`voice-devicebuilder.md`)
+- Playlist (`voice-playlist.md`)
+
+**Video section:**
+- Room Session Full State (`video-roomsessionfullstate.md`)
+- Room Session Member (`video-roomsessionmember.md`)
+- Room Session Playback (`video-roomsessionplayback.md`)
+- Room Session Recording (`video-roomsessionrecording.md`)
+
+**Messaging section:**
+- Message Contract (`messaging-messagecontract.md`)
+- Messaging Send Result (`messaging-messagingsendresult.md`)
+
+**PubSub section:**
+- PubSub Message (`pubsub-pubsubmessage.md`)
+
+### 4. Orphan Index Pages (No Fix Needed)
+
+The following files use Docusaurus auto-index components and were intentionally left out of navigation:
+- `v4/guides/index.mdx` - uses `<GuidesList />`
+- `v3/guides/index.mdx` - uses `<GuidesList />`
+- `v3/guides/voice/index.mdx` - uses `<DocCardList />`
+- `v3/guides/messaging/index.mdx` - uses `<DocCardList />`
+- `v2/guides/index.mdx` - uses `<GuidesList />`
+
+These are auto-generated category pages that Fern doesn't need since navigation is handled via YAML.
+
+## Fern Snippets Pattern
+
+Fern uses `<Markdown src="..." />` for reusable content (equivalent to MDX imports):
+
+```mdx
+<Markdown src="/snippets/realtime-sdk/method_on.mdx" />
+```
+
+Key points:
+- Snippets live in `/fern/snippets/` directory
+- Path is absolute from `fern/` root
+- Can include parameters: `<Markdown src="..." param="value" />`
+- Parameters use `{{paramName}}` syntax in snippet files
+
+## Final Validation
+
+```bash
+fern check
+# Found 0 errors and 1 warning
+
+fern docs dev
+# Uploaded 327 files
+# No MDX parse errors
+# Server running on http://localhost:3002
+```
+
+## Content Verification (Session 3)
+
+A comprehensive content comparison was performed between Docusaurus source and Fern migrated docs.
+
+### Verification Scope
+
+- **Docusaurus source:** `temp-docs/docs/website/docs/realtime-sdk/`
+- **Fern v4:** `fern/products/realtime-sdk/pages/v4/`
+- **Fern v3:** `fern/products/realtime-sdk/pages/v3/`
+
+### Findings
+
+#### All Expected Conversions Verified ✅
+- `@image/` → `/images/` (all converted)
+- `:::info`/`:::tip` → `<Info>`/`<Tip>` (all converted)
+- `<APIField>` → `<ParamField>` (all converted)
+- `required={true}` → `required` (all converted)
+- `{#anchor}` → `[#anchor]` (all converted)
+- `className=` → `class=` (none found needing conversion)
+- Docusaurus imports removed (none remaining)
+- `sidebar_position:` frontmatter removed (all removed)
+
+#### Issue Found and Fixed
+**Unconverted `<details>` tags** in voicemail guides:
+- `pages/v4/guides/voice/setting-up-voicemail.mdx`
+- `pages/v3/guides/voice/setting-up-voicemail.mdx`
+
+```jsx
+// BEFORE (incorrect)
+<details>
+<summary>index.js</summary>
+
+// AFTER (fixed)
+<Accordion title="index.js">
+```
+
+#### Version Differences (Intentional - Not Bugs)
+The v3 and v4 documentation differ because they document different API versions:
+
+| Aspect | v3 (Older API) | v4 (New API) |
+|--------|---------------|--------------|
+| Client init | `new Chat.Client({...})` | `SignalWire({...})` then `client.chat` |
+| Events | `.on()`, `.off()`, `.once()` | `.listen({ onEventName: callback })` |
+| Event names | `member.joined`, `message` | `onMemberJoined`, `onMessageReceived` |
+| Channels | `.subscribe()` / `.unsubscribe()` | Passed in `.listen()` options |
+
+### File Count Verification
+
+Both Docusaurus and Fern v4 have 47 matching files:
+- 11 guides (including index pages)
+- 36 tech-ref pages
+
+### Content Integrity
+
+Spot-checked multiple files for content parity:
+- `guides/messaging/first-steps-with-messaging.mdx` ✅
+- `guides/voice/first-steps-with-voice.mdx` ✅
+- `guides/voice/setting-up-voicemail.mdx` ✅ (after fix)
+- `tech-ref/voice/voice-client.mdx` ✅
+- `tech-ref/chat/chat-client.mdx` ✅
+- `tech-ref/video/video-roomsession.mdx` ✅
+
+All content matches with only expected syntax conversions applied.
+
 ## Sources Used
 
 - [Fern Versioning Documentation](https://buildwithfern.com/learn/docs/configuration/versions)
 - [Fern Products Documentation](https://buildwithfern.com/learn/docs/configuration/products)
+- [Fern Snippets Documentation](https://buildwithfern.com/learn/docs/writing-content/reusable-snippets)

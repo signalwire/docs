@@ -1,6 +1,5 @@
 ---
 title: "RoomSessionDevice"
-sidebar_position: 100
 slug: /video/room-session-device
 ---
 

@@ -1,6 +1,5 @@
 ---
 title: "RoomSessionPlayback"
-sidebar_position: 100
 slug: /video/room-session-playback
 ---
 

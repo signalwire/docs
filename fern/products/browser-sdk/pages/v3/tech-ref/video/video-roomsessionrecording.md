@@ -1,6 +1,5 @@
 ---
 title: "RoomSessionRecording"
-sidebar_position: 100
 slug: /video/room-session-recording
 ---
 

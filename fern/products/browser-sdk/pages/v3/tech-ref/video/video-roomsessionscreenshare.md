@@ -1,6 +1,5 @@
 ---
 title: "RoomSessionScreenShare"
-sidebar_position: 100
 slug: /video/room-session-screenshare
 ---
 

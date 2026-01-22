@@ -1,8 +1,6 @@
 ---
 title: "RoomDevice"
 description: Deprecated. Use RoomSessionDevice instead.
-sidebar_class_name: deprecated
-sidebar_position: 999
 slug: /video/room-device
 ---
 
