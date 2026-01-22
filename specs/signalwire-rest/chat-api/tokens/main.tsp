@@ -1,0 +1,34 @@
+import "@typespec/http";
+import "@typespec/openapi";
+import "../../types";
+import "./models/core.tsp";
+import "./models/requests.tsp";
+import "./models/responses.tsp";
+import "../../../_shared/alias/token-permissions.tsp";
+
+using TypeSpec.Http;
+using TypeSpec.OpenAPI;
+using Types.StatusCodes;
+
+@route("/tokens")
+namespace ChatAPI.Tokens {
+  @tag("Tokens")
+  @friendlyName("Tokens")
+  interface ChatTokens {
+    @operationId("create_chat_token")
+    @summary("Generate a new Chat Token")
+    @doc("""
+      Generate a Chat Token to be used to authenticate clients to the Chat Service.
+
+      ${tokenPermissions<"_Chat_">}
+      """)
+    create(...NewChatToken):
+      | {
+          @statusCode statusCode: 201;
+          @body call: ChatToken;
+        }
+      | StatusCode401
+      | StatusCode404
+      | ChatToken422Error;
+  }
+}
