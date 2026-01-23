@@ -63,6 +63,10 @@ Delete all import lines for:
 | `<Tabs>` with `<TabItem>` | `<Tabs>` with `<Tab title="...">` |
 | `<details>` | `<Accordion title="...">` |
 | `<Subtitle>` | Frontmatter `subtitle:` field |
+| `<Steps>` | `<Steps>` with `<Step>` |
+| `<Card>` / `<CardGroup>` | `<Card>` / `<CardGroup>` (also `<Cards>` wrapper) |
+| `<Accordion>` | `<Accordion>` / `<AccordionGroup>` |
+| `<Frame>` | `<Frame>` |
 
 **TabItem → Tab conversion:**
 ```jsx
@@ -82,11 +86,7 @@ Delete all import lines for:
 ```
 
 **Fern-specific components:**
-- `<Steps>` with `<Step>` — numbered sequential steps
-- `<Cards>` — Wrapper for multiple `<Card>` components (note plural)
-- `<Accordion>` / `<AccordionGroup>` — Collapsible sections
-- `<Frame>` — Image wrapper with captions
-- `<Indent>` — Visual indentation for nested parameters
+- `<Indent>` — Visual indentation with guide lines for nested parameters
 
 **No Fern equivalent (rewrite or remove):**
 - `<InstallHero>` — rewrite as static content
