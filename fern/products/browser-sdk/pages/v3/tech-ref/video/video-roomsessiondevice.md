@@ -3,7 +3,7 @@ title: "RoomSessionDevice"
 slug: /video/room-session-device
 ---
 
-A RoomSessionDevice represents a device (such as a microphone or a camera) that is at some point in its lifetime part of a [RoomSession](/sdks/browser-sdk/video/room-session). You can obtain a RoomSessionDevice from the [RoomSession](/sdks/browser-sdk/video/room-session) methods [RoomSession.addCamera](/sdks/browser-sdk/video/room-session#addcamera), [RoomSession.addMicrophone](/sdks/browser-sdk/video/room-session#addmicrophone), and [RoomSession.addDevice](/sdks/browser-sdk/video/room-session#adddevice).
+A RoomSessionDevice represents a device (such as a microphone or a camera) that is at some point in its lifetime part of a [RoomSession](/browser-sdk/reference/video/roomsession). You can obtain a RoomSessionDevice from the [RoomSession](/browser-sdk/reference/video/roomsession) methods [RoomSession.addCamera](/browser-sdk/reference/video/roomsession#addcamera), [RoomSession.addMicrophone](/browser-sdk/reference/video/roomsession#addmicrophone), and [RoomSession.addDevice](/browser-sdk/reference/video/roomsession#adddevice).
 
 ## Properties
 

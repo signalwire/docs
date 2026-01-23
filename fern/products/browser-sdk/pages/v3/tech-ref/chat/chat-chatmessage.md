@@ -55,7 +55,7 @@ Accesses the member which sent this message.
 
 **Syntax:** `ChatMessage.member()`
 
-**Returns:** [`ChatMember`](/sdks/browser-sdk/chat/member)
+**Returns:** [`ChatMember`](/browser-sdk/reference/chat/chat-member)
 
 ---
 

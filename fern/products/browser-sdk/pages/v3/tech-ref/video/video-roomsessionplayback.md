@@ -3,7 +3,7 @@ title: "RoomSessionPlayback"
 slug: /video/room-session-playback
 ---
 
-Instances of this class allow you to control (e.g., pause, resume, stop) the playback inside a room session. You can obtain instances of this class by starting a playback from the desired [RoomSession](/sdks/browser-sdk/video/room-session) (see [RoomSession.play](/sdks/browser-sdk/video/room-session#play)).
+Instances of this class allow you to control (e.g., pause, resume, stop) the playback inside a room session. You can obtain instances of this class by starting a playback from the desired [RoomSession](/browser-sdk/reference/video/roomsession) (see [RoomSession.play](/browser-sdk/reference/video/roomsession#play)).
 
 ## Properties
 

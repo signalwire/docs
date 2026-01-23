@@ -6,7 +6,7 @@ slug: /video/room-screenshare
 
 <Warning title="Deprecated">
 
-Use [RoomSessionDevice](/sdks/browser-sdk/video/room-session-device) instead.
+Use [RoomSessionDevice](/browser-sdk/reference/video/roomsessiondevice) instead.
 
 </Warning>
 
