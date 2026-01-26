@@ -87,9 +87,9 @@ Seeks the current playback forward by the specified offset.
 
 #### Parameters
 
-| Name      | Type     | Description                                                                                              |
-| :-------- | :------- | :------------------------------------------------------------------------------------------------------- |
-| `offset?` | `number` | Relative number of milliseconds to seek forward from the current position. Defaults to 5000 (5 seconds). |
+<ParamField path="offset" type="number" default="5000">
+  Relative number of milliseconds to seek forward from the current position.
+</ParamField>
 
 #### Returns
 
@@ -142,9 +142,9 @@ Seeks the current playback backwards by the specified offset.
 
 #### Parameters
 
-| Name      | Type     | Description                                                                                                |
-| :-------- | :------- | :--------------------------------------------------------------------------------------------------------- |
-| `offset?` | `number` | Relative number of milliseconds to seek backwards from the current position. Defaults to 5000 (5 seconds). |
+<ParamField path="offset" type="number" default="5000">
+  Relative number of milliseconds to seek backwards from the current position.
+</ParamField>
 
 #### Returns
 
@@ -173,9 +173,9 @@ Seeks the current playback to the specified absolute position.
 
 #### Parameters
 
-| Name       | Type     | Description                                                       |
-| :--------- | :------- | :---------------------------------------------------------------- |
-| `timecode` | `number` | The absolute position in milliseconds to seek to in the playback. |
+<ParamField path="timecode" type="number" required={true}>
+  The absolute position in milliseconds to seek to in the playback.
+</ParamField>
 
 #### Returns
 
@@ -204,9 +204,9 @@ Sets the audio volume for the playback.
 
 #### Parameters
 
-| Name     | Type     | Description                                                           |
-| :------- | :------- | :-------------------------------------------------------------------- |
-| `volume` | `number` | The desired volume. Values range from -50 to 50, with a default of 0. |
+<ParamField path="volume" type="number" required={true}>
+  The desired volume. Values range from -50 to 50, with a default of 0.
+</ParamField>
 
 #### Returns
 

@@ -187,10 +187,14 @@ Sets the input level at which the participant is identified as currently speakin
 
 #### Parameters
 
-| Name           | Type     | Description                                                                                                                                  |
-| :------------- | :------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `params`       | `Object` | -                                                                                                                                            |
-| `params.value` | `number` | Desired sensitivity. The default value is 30 and the scale goes from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity). |
+<ParamField path="params" type="Object" required={true}>
+</ParamField>
+
+<Indent>
+<ParamField path="params.value" type="number" required={true}>
+  Desired sensitivity. The default value is 30 and the scale goes from 0 (lowest sensitivity, essentially muted) to 100 (highest sensitivity).
+</ParamField>
+</Indent>
 
 #### Returns
 
@@ -218,10 +222,14 @@ Sets the input volume level (e.g. for the microphone).
 
 #### Parameters
 
-| Name            | Type     | Description                                                       |
-| :-------------- | :------- | :---------------------------------------------------------------- |
-| `params`        | `Object` | -                                                                 |
-| `params.volume` | `number` | Desired volume. Values range from -50 to 50, with a default of 0. |
+<ParamField path="params" type="Object" required={true}>
+</ParamField>
+
+<Indent>
+<ParamField path="params.volume" type="number" required={true}>
+  Desired volume. Values range from -50 to 50, with a default of 0.
+</ParamField>
+</Indent>
 
 #### Returns
 
@@ -250,10 +258,13 @@ await roomdevice.setMicrophoneVolume({ volume: -10 });
 
 #### Parameters
 
-| Name            | Type     |
-| :-------------- | :------- |
-| `params`        | `Object` |
-| `params.volume` | `number` |
+<ParamField path="params" type="Object" required={true}>
+</ParamField>
+
+<Indent>
+<ParamField path="params.volume" type="number" required={true}>
+</ParamField>
+</Indent>
 
 #### Returns
 
@@ -269,9 +280,9 @@ Replaces the current camera stream with the one coming from a different device.
 
 #### Parameters
 
-| Name          | Type                    | Description                                                                                                                                                  |
-| :------------ | :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `constraints` | `MediaTrackConstraints` | Specify the constraints that the device should satisfy. See [MediaTrackConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints). |
+<ParamField path="constraints" type="MediaTrackConstraints" required={true}>
+  Specify the constraints that the device should satisfy. See [MediaTrackConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints).
+</ParamField>
 
 #### Returns
 
@@ -297,9 +308,9 @@ Replaces the current microphone stream with the one coming from a different devi
 
 #### Parameters
 
-| Name          | Type                    | Description                                                                                                                                                  |
-| :------------ | :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `constraints` | `MediaTrackConstraints` | Specify the constraints that the device should satisfy. See [MediaTrackConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints). |
+<ParamField path="constraints" type="MediaTrackConstraints" required={true}>
+  Specify the constraints that the device should satisfy. See [MediaTrackConstraints](https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints).
+</ParamField>
 
 #### Returns
 

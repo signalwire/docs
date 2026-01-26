@@ -23,9 +23,9 @@ Mirror the local video overlay when `true`. The mirrored stream is sent to the S
 
 #### Parameters
 
-| Name     | Type      | Description                                |
-| :------- | :-------- | :----------------------------------------- |
-| `mirror` | `boolean` | Whether to mirror the local video overlay. |
+<ParamField path="mirror" type="boolean" required={true}>
+  Whether to mirror the local video overlay.
+</ParamField>
 
 #### Returns
 
