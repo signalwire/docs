@@ -20,8 +20,12 @@ Once installed, you can use Serena tools like `list_memories` and `read_memory` 
 ```
 fern/
 ├── docs.yml           # Main docs configuration
+├── styles.css         # Custom CSS styles
+├── assets/            # Static assets (logos, favicon, images)
+│   ├── images/        # All documentation images (use /assets/images/ paths)
+│   └── *.svg, *.png   # Logo and favicon files
 ├── docs/              # Shared documentation components
-├── images/            # All images (use /images/ paths)
+│   └── fonts/         # Custom fonts
 ├── openapi-specs/     # OpenAPI specifications
 └── products/          # Product-specific documentation
     ├── home/
@@ -42,7 +46,7 @@ apply these conversions:
 
 | Docusaurus | Fern |
 |------------|------|
-| `className=` | `class=` |
+| `className=` | `class=` (but `className` also works and is preferred for Frame) |
 | `<Tooltips>` | `<Tooltip>` |
 
 ### Remove Docusaurus Imports
@@ -100,13 +104,13 @@ Delete all import lines for:
 
 ### Image Paths
 
-Images from the old Docusaurus site were bulk migrated to `/fern/images/`.
+Images from the old Docusaurus site were bulk migrated to `/fern/assets/images/`.
 
 In Docusaurus, images could be referenced via:
 - `@image/` shorthand (pointed to the images directory)
 - `/img/` paths (pointed to Docusaurus' `/static/img/` directory, rarely used)
 
-In Fern, all images live in `/fern/images/` and are referenced via `/images/...`:
+In Fern, all images live in `/fern/assets/images/` and are referenced via `/assets/images/...`:
 
 ```md
 // BEFORE (Docusaurus)
@@ -114,12 +118,12 @@ In Fern, all images live in `/fern/images/` and are referenced via `/images/...`
 ![Alt text](/img/screenshot.webp)
 
 // AFTER (Fern)
-![Alt text](/images/diagram.png)
-![Alt text](/images/img/screenshot.webp)
+![Alt text](/assets/images/diagram.png)
+![Alt text](/assets/images/img/screenshot.webp)
 ```
 
 When migrating new content,
-ensure the referenced images exist in `/fern/images/`.
+ensure the referenced images exist in `/fern/assets/images/`.
 If not, copy them from the source and update paths accordingly.
 
 ### Admonition / Callout Syntax
@@ -366,7 +370,15 @@ Container for images with optional captions and backgrounds.
 </Frame>
 ```
 
-Props: `caption` (string), `background` (`"subtle"` | `"default"`)
+Props: `caption` (string), `background` (`"subtle"` | `"default"`), `className` (string)
+
+**Custom styling with className:**
+Use `className` to apply custom CSS classes (e.g., for diagram images that need special styling):
+```jsx
+<Frame caption="Architecture diagram" className="diagram">
+  ![Diagram](/assets/images/diagram.webp)
+</Frame>
+```
 
 ### Code Blocks
 
