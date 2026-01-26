@@ -372,11 +372,11 @@ Container for images with optional captions and backgrounds.
 
 Props: `caption` (string), `background` (`"subtle"` | `"default"`), `className` (string)
 
-**Custom styling with className:**
-Use `className` to apply custom CSS classes (e.g., for diagram images that need special styling):
+**Diagram images (dark mode support):**
+For diagrams that need color inversion in dark mode, add `class="diagram"` to the `<img>` element and ensure "diagram" is in the filename (required for zoom inversion since rmiz strips classes):
 ```jsx
-<Frame caption="Architecture diagram" className="diagram">
-  ![Diagram](/assets/images/diagram.webp)
+<Frame caption="Architecture diagram">
+  <img class="diagram" src="/assets/images/my_diagram.webp" alt="Diagram" />
 </Frame>
 ```
 

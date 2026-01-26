@@ -1,47 +1,18 @@
 # Diagram Image Styling in Fern
 
-## Problem
-Diagram images needed solid backgrounds for light/dark modes, including when zoomed. The default zoom had a semitransparent background.
-
-## Solution
-
-### Frame Component
-Use `className` (not `class`) on Frame components:
+## Usage
 ```jsx
-<Frame caption="Title" className="diagram">
-  ![Alt](/assets/images/path/to/image.webp)
+<Frame caption="Title">
+  <img class="diagram" src="/assets/images/path/diagram.webp" alt="Alt" />
 </Frame>
 ```
 
-### CSS (in `fern/styles.css`)
+## How It Works
+- **Unzoomed**: `img.diagram` selector applies white background (light) or inversion (dark)
+- **Zoomed**: rmiz strips classes, so uses `img[src*="diagram"]` path-based selector for inversion
+- **Modal background**: Applies to all zoomed images (solid white/dark)
 
-**Non-zoomed state:**
-```css
-.diagram {
-  background-color: #ffffff;
-}
-.dark .diagram {
-  background-color: #0a1628;
-}
-```
-
-**Zoomed state** - Fern uses react-medium-image-zoom (rmiz):
-```css
-[data-rmiz-modal-content] {
-  background-color: #ffffff !important;
-}
-.dark [data-rmiz-modal-content] {
-  background-color: #0a1628 !important;
-}
-
-/* Invert specific images in dark mode when zoomed */
-.dark [data-rmiz-modal] img[src*="agents-sdk-manual"] {
-  filter: invert(1) hue-rotate(180deg);
-}
-```
-
-## What Didn't Work
-- `var(--background)` CSS variable (not exposed by Fern)
-- `class` attribute on Frame (use `className`)
-- medium-zoom selectors (Fern uses rmiz, not medium-zoom)
-- Background on `.diagram img` (doesn't persist to zoom clone)
+## Key Gotchas
+- rmiz strips classes when cloning images to modal
+- CSS variables like `var(--background)` don't work in modal (portal context)
+- Diagram images must have "diagram" in filename for zoom inversion to work
