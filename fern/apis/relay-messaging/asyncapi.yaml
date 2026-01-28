@@ -1,0 +1,613 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay - Messaging API
+  version: 3.0.0
+  description: |
+    The SignalWire Relay Messaging API enables sending and receiving SMS/MMS messages
+    through JSON-RPC 2.0 over WebSocket. This API provides real-time message delivery
+    status updates and inbound message notifications.
+
+    ## Overview
+
+    The Messaging API uses bidirectional JSON-RPC communication:
+    - **Client → Server**: Send outbound messages via `messaging.send`
+    - **Server → Client**: Receive inbound messages and delivery status events
+
+    ## Prerequisites
+
+    Before using the Messaging API, you must:
+    1. Establish a connection using `signalwire.connect`
+    2. Subscribe to contexts using `signalwire.receive`
+
+    ## Message States
+
+    Outbound messages progress through these states:
+    - `queued` - Message accepted and queued for delivery
+    - `initiated` - Message delivery initiated
+    - `sent` - Message sent to carrier
+    - `delivered` - Message delivered to recipient
+    - `undelivered` - Delivery failed (with reason)
+    - `failed` - Message failed (with reason)
+
+    Inbound messages have the state:
+    - `received` - Message received from sender
+
+  contact:
+    name: SignalWire Support
+    url: https://signalwire.com/support
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    description: SignalWire Relay WebSocket endpoint
+
+# Each method gets its own channel for separate documentation pages
+channels:
+  messagingSend:
+    address: /
+    title: messaging.send
+    description: Send outbound SMS/MMS messages
+    messages:
+      request:
+        $ref: '#/components/messages/MessagingSendRequest'
+      response:
+        $ref: '#/components/messages/MessagingSendResponse'
+
+  messagingReceive:
+    address: /
+    title: messaging.receive
+    description: Inbound message notification events
+    messages:
+      event:
+        $ref: '#/components/messages/MessagingReceiveEvent'
+
+  messagingState:
+    address: /
+    title: messaging.state
+    description: Message delivery status events
+    messages:
+      event:
+        $ref: '#/components/messages/MessagingStateEvent'
+
+operations:
+  # ===== Methods =====
+  sendMessage:
+    action: send
+    channel:
+      $ref: '#/channels/messagingSend'
+    title: messaging.send
+    summary: Send outbound message
+    description: |
+      Sends an SMS or MMS message to a PSTN phone number.
+
+      You must provide either `body` (for SMS) or `media` (for MMS), or both.
+      Messages are sent asynchronously - the response indicates acceptance,
+      and delivery status is provided via `messaging.state` events.
+    messages:
+      - $ref: '#/channels/messagingSend/messages/request'
+    reply:
+      channel:
+        $ref: '#/channels/messagingSend'
+      messages:
+        - $ref: '#/channels/messagingSend/messages/response'
+
+  # ===== Events =====
+  receiveInboundMessage:
+    action: receive
+    channel:
+      $ref: '#/channels/messagingReceive'
+    title: messaging.receive
+    summary: Inbound message received
+    description: |
+      Notifies when an inbound SMS/MMS message is received on a subscribed context.
+      Contains the full message content including body and any media URLs.
+    messages:
+      - $ref: '#/channels/messagingReceive/messages/event'
+
+  receiveMessageState:
+    action: receive
+    channel:
+      $ref: '#/channels/messagingState'
+    title: messaging.state
+    summary: Message delivery status
+    description: |
+      Notifies of changes in outbound message delivery status.
+      Track your messages from queued → sent → delivered (or failed).
+
+      Failed or undelivered messages include a `reason` field explaining the failure.
+    messages:
+      - $ref: '#/channels/messagingState/messages/event'
+
+components:
+  messages:
+    MessagingSendRequest:
+      name: messaging.send
+      title: Send Message Request
+      summary: Send an outbound SMS/MMS message
+      description: |
+        Sends a message to a PSTN phone number. The message can contain:
+        - Text body only (SMS)
+        - Media URLs only (MMS)
+        - Both text and media (MMS)
+
+        The response includes a `message_id` for tracking delivery status
+        via `messaging.state` events.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessagingSendRequest'
+      examples:
+        - name: Send SMS
+          summary: Simple text message
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-001"
+            method: "messaging.send"
+            params:
+              context: "support"
+              from_number: "+15551234567"
+              to_number: "+15559876543"
+              body: "Hello! Your order has shipped."
+        - name: Send MMS
+          summary: Message with media attachment
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-002"
+            method: "messaging.send"
+            params:
+              context: "marketing"
+              from_number: "+15551234567"
+              to_number: "+15559876543"
+              body: "Check out our new product!"
+              media:
+                - "https://example.com/product-image.jpg"
+              tags:
+                - "campaign-123"
+                - "promo"
+
+    MessagingSendResponse:
+      name: messaging.send.response
+      title: Send Message Response
+      summary: Message accepted confirmation
+      description: |
+        Response indicating the message was accepted for delivery.
+        The `message_id` can be used to track delivery status via
+        `messaging.state` events.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessagingSendResponse'
+      examples:
+        - name: Message accepted
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-001"
+            result:
+              code: "200"
+              message: "Message accepted"
+              message_id: "550e8400-e29b-41d4-a716-446655440000"
+        - name: Invalid number
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-001"
+            result:
+              code: "400"
+              message: "Invalid to_number format"
+
+    MessagingReceiveEvent:
+      name: messaging.receive
+      title: Inbound Message Event
+      summary: Inbound message received notification
+      description: |
+        Notification that an inbound SMS/MMS message has been received.
+        This event is delivered to clients subscribed to the message's context.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessagingReceiveEvent'
+      examples:
+        - name: Inbound SMS
+          summary: Received text message
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "messaging.receive"
+              context: "support"
+              timestamp: 1704067200.123456
+              space_id: "my-space"
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                message_id: "660e8400-e29b-41d4-a716-446655440001"
+                context: "support"
+                direction: "inbound"
+                from_number: "+15559876543"
+                to_number: "+15551234567"
+                body: "Hi, I need help with my order"
+                segments: 1
+                message_state: "received"
+        - name: Inbound MMS
+          summary: Received message with media
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "messaging.receive"
+              context: "support"
+              timestamp: 1704067200.123456
+              space_id: "my-space"
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                message_id: "660e8400-e29b-41d4-a716-446655440002"
+                context: "support"
+                direction: "inbound"
+                from_number: "+15559876543"
+                to_number: "+15551234567"
+                body: "Here's the photo of the damaged item"
+                media:
+                  - "https://storage.signalwire.com/messages/660e8400.../attachment-1.jpg"
+                segments: 1
+                message_state: "received"
+
+    MessagingStateEvent:
+      name: messaging.state
+      title: Message State Event
+      summary: Message delivery status notification
+      description: |
+        Notification of a change in outbound message delivery status.
+
+        Messages progress through states:
+        `queued` → `initiated` → `sent` → `delivered`
+
+        If delivery fails, the state will be `undelivered` or `failed`
+        with a `reason` field explaining the failure.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessagingStateEvent'
+      examples:
+        - name: Message queued
+          summary: Message accepted and queued
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "messaging.state"
+              context: "support"
+              timestamp: 1704067200.123456
+              space_id: "my-space"
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                message_id: "550e8400-e29b-41d4-a716-446655440000"
+                context: "support"
+                direction: "outbound"
+                from_number: "+15551234567"
+                to_number: "+15559876543"
+                body: "Hello! Your order has shipped."
+                segments: 1
+                message_state: "queued"
+        - name: Message delivered
+          summary: Message successfully delivered
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "messaging.state"
+              context: "support"
+              timestamp: 1704067205.654321
+              space_id: "my-space"
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                message_id: "550e8400-e29b-41d4-a716-446655440000"
+                context: "support"
+                direction: "outbound"
+                from_number: "+15551234567"
+                to_number: "+15559876543"
+                body: "Hello! Your order has shipped."
+                segments: 1
+                message_state: "delivered"
+        - name: Message failed
+          summary: Message delivery failed
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "messaging.state"
+              context: "support"
+              timestamp: 1704067210.987654
+              space_id: "my-space"
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                message_id: "550e8400-e29b-41d4-a716-446655440001"
+                context: "support"
+                direction: "outbound"
+                from_number: "+15551234567"
+                to_number: "+15559999999"
+                body: "Test message"
+                segments: 1
+                message_state: "failed"
+                reason: "Invalid destination number"
+
+  schemas:
+    # ===== Request Schemas =====
+    MessagingSendRequest:
+      type: object
+      description: Request to send an outbound SMS/MMS message
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          description: Unique request identifier
+        method:
+          type: string
+          const: "messaging.send"
+        params:
+          $ref: '#/components/schemas/MessagingSendParams'
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+
+    MessagingSendParams:
+      type: object
+      description: Parameters for sending a message
+      properties:
+        context:
+          type: string
+          description: |
+            Context to receive inbound events and delivery status updates.
+            Must be a context you're subscribed to via `signalwire.receive`.
+          example: "support"
+        from_number:
+          type: string
+          description: |
+            Sender phone number in E.164 format.
+            Must be a number from your SignalWire project.
+          pattern: "^\\+[1-9]\\d{1,14}$"
+          example: "+15551234567"
+        to_number:
+          type: string
+          description: Destination phone number in E.164 format
+          pattern: "^\\+[1-9]\\d{1,14}$"
+          example: "+15559876543"
+        body:
+          type: string
+          description: |
+            Text content of the message (required if media is not present).
+            Maximum 1600 characters for SMS. Messages longer than 160 characters
+            will be split into multiple segments.
+          maxLength: 1600
+          example: "Hello! Your order has shipped."
+        media:
+          type: array
+          description: |
+            Array of media URLs to include (required if body is not present).
+            Converts the message to MMS. Maximum 10 media items.
+            Supported formats: jpg, gif, png, pdf, and more.
+          items:
+            type: string
+            format: uri
+          maxItems: 10
+          example:
+            - "https://example.com/image.jpg"
+        tags:
+          type: array
+          description: |
+            Optional tags to associate with the message.
+            Useful for searching and filtering in the SignalWire dashboard.
+          items:
+            type: string
+          example:
+            - "campaign-123"
+            - "promo"
+        region:
+          type: string
+          description: |
+            Region to originate the message from.
+            Default is based on account preferences or device location.
+          enum: ["us", "eu"]
+          example: "us"
+      required:
+        - context
+        - from_number
+        - to_number
+
+    # ===== Response Schemas =====
+    MessagingSendResponse:
+      type: object
+      description: Response from messaging.send
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          description: Request identifier this response correlates to
+        result:
+          type: object
+          properties:
+            code:
+              type: string
+              description: |
+                HTTP-style status code:
+                - `200`: Message accepted
+                - `400`: Bad request (invalid parameters)
+                - `402`: Payment required
+                - `403`: Forbidden
+              enum: ["200", "400", "402", "403", "500"]
+            message:
+              type: string
+              description: Human-readable status message
+              example: "Message accepted"
+            message_id:
+              type: string
+              format: uuid
+              description: |
+                Unique identifier for the message.
+                Use this to track delivery status via `messaging.state` events.
+              example: "550e8400-e29b-41d4-a716-446655440000"
+          required:
+            - code
+            - message
+      required:
+        - jsonrpc
+        - id
+        - result
+
+    # ===== Event Schemas =====
+    BaseMessagingEvent:
+      type: object
+      description: Base structure for messaging events
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: "signalwire.event"
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              description: Type of messaging event
+            context:
+              type: string
+              description: Context receiving the event
+            timestamp:
+              type: number
+              description: Unix timestamp with microsecond precision
+            space_id:
+              type: string
+              description: SignalWire space identifier
+            project_id:
+              type: string
+              format: uuid
+              description: SignalWire project identifier
+            params:
+              type: object
+              description: Event-specific parameters
+
+    MessageParams:
+      type: object
+      description: Common message parameters in events
+      properties:
+        message_id:
+          type: string
+          format: uuid
+          description: Unique message identifier
+        context:
+          type: string
+          description: Context associated with the message
+        direction:
+          type: string
+          enum: ["inbound", "outbound"]
+          description: Message direction
+        from_number:
+          type: string
+          description: Sender phone number in E.164 format
+          example: "+15551234567"
+        to_number:
+          type: string
+          description: Recipient phone number in E.164 format
+          example: "+15559876543"
+        body:
+          type: string
+          description: Text content of the message
+        media:
+          type: array
+          description: Array of media URLs
+          items:
+            type: string
+            format: uri
+        tags:
+          type: array
+          description: Tags associated with the message
+          items:
+            type: string
+        segments:
+          type: integer
+          minimum: 1
+          description: |
+            Number of message segments. SMS messages over 160 characters
+            are split into multiple segments.
+
+    MessagingReceiveEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessagingEvent'
+        - type: object
+          properties:
+            params:
+              type: object
+              properties:
+                event_type:
+                  const: "messaging.receive"
+                params:
+                  allOf:
+                    - $ref: '#/components/schemas/MessageParams'
+                    - type: object
+                      properties:
+                        message_state:
+                          type: string
+                          const: "received"
+                          description: Always "received" for inbound messages
+                      required:
+                        - message_id
+                        - context
+                        - direction
+                        - from_number
+                        - to_number
+                        - message_state
+
+    MessagingStateEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseMessagingEvent'
+        - type: object
+          properties:
+            params:
+              type: object
+              properties:
+                event_type:
+                  const: "messaging.state"
+                params:
+                  allOf:
+                    - $ref: '#/components/schemas/MessageParams'
+                    - type: object
+                      properties:
+                        message_state:
+                          type: string
+                          enum:
+                            - "queued"
+                            - "initiated"
+                            - "sent"
+                            - "delivered"
+                            - "undelivered"
+                            - "failed"
+                          description: |
+                            Current delivery state of the message:
+                            - `queued`: Message accepted and queued
+                            - `initiated`: Delivery initiated
+                            - `sent`: Message sent to carrier
+                            - `delivered`: Message delivered to recipient
+                            - `undelivered`: Delivery failed
+                            - `failed`: Message failed
+                        reason:
+                          type: string
+                          description: |
+                            Explanation for `undelivered` or `failed` states.
+                            Common reasons:
+                            - "Invalid destination number"
+                            - "Carrier rejected"
+                            - "spam"
+                            - "Rate limit exceeded"
+                      required:
+                        - message_id
+                        - context
+                        - direction
+                        - from_number
+                        - to_number
+                        - message_state

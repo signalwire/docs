@@ -1,0 +1,464 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay - WebRTC API
+  version: 3.0.0
+  description: |
+    The SignalWire Relay WebRTC API enables WebRTC signaling through JSON-RPC 2.0
+    over WebSocket. This API is used by browser-based clients to establish
+    real-time audio/video communication via the Verto protocol.
+
+    ## Overview
+
+    The WebRTC API provides:
+    - **Verto Message Transport**: Send and receive Verto signaling messages
+    - **Conference Management**: List and join active conferences
+
+    ## Prerequisites
+
+    Before using the WebRTC API, you must:
+    1. Establish a connection using `signalwire.connect`
+    2. Use the protocol returned from connect for subsequent requests
+
+    ## Verto Protocol
+
+    The `message` method transports Verto JSON-RPC messages for WebRTC signaling.
+    Common Verto methods include:
+    - `verto.invite` - Initiate a call
+    - `verto.answer` - Answer an incoming call
+    - `verto.bye` - End a call
+    - `verto.modify` - Modify an active call
+
+  contact:
+    name: SignalWire Support
+    url: https://signalwire.com/support
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    description: SignalWire Relay WebSocket endpoint
+
+channels:
+  relay:
+    address: /
+    description: Main WebSocket channel for Relay WebRTC JSON-RPC communication
+    messages:
+      webrtcMessage:
+        $ref: '#/components/messages/WebRTCMessage'
+      webrtcMessageResult:
+        $ref: '#/components/messages/WebRTCMessageResult'
+      conferenceList:
+        $ref: '#/components/messages/ConferenceList'
+      conferenceListResult:
+        $ref: '#/components/messages/ConferenceListResult'
+      webrtcMessageEvent:
+        $ref: '#/components/messages/WebRTCMessageEvent'
+
+operations:
+  # ===== Client Request-Reply Methods =====
+  sendMessage:
+    action: send
+    channel:
+      $ref: '#/channels/relay'
+    summary: Send Verto message
+    description: |
+      Transports a Verto JSON-RPC message for WebRTC signaling. The message
+      is forwarded to the appropriate FreeSWITCH node for processing.
+
+      You can optionally subscribe to event channels (e.g., for conference events)
+      along with the message.
+    messages:
+      - $ref: '#/channels/relay/messages/webrtcMessage'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/webrtcMessageResult'
+
+  listConferences:
+    action: send
+    channel:
+      $ref: '#/channels/relay'
+    summary: List conferences
+    description: |
+      Requests a list of active conferences the current client can join.
+    messages:
+      - $ref: '#/channels/relay/messages/conferenceList'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/conferenceListResult'
+
+  # ===== Server-Initiated Events =====
+  receiveWebRTCMessage:
+    action: receive
+    channel:
+      $ref: '#/channels/relay'
+    summary: Receive Verto message
+    description: |
+      Receives Verto signaling messages from the server, such as incoming
+      call notifications, call state updates, and conference events.
+    messages:
+      - $ref: '#/channels/relay/messages/webrtcMessageEvent'
+
+components:
+  messages:
+    WebRTCMessage:
+      name: message
+      title: Verto Message
+      summary: Send a Verto signaling message
+      description: |
+        Transports a Verto JSON-RPC message to the signaling server.
+        The `message` field contains the complete Verto request.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/WebRTCMessageRequest'
+      examples:
+        - name: Verto invite
+          summary: Initiate a WebRTC call
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-001"
+            method: "message"
+            params:
+              node_id: "550e8400-e29b-41d4-a716-446655440000"
+              message:
+                jsonrpc: "2.0"
+                id: "verto-001"
+                method: "verto.invite"
+                params:
+                  dialogParams:
+                    callID: "call-uuid-here"
+                    destination_number: "+15551234567"
+                  sdp: "v=0\r\no=..."
+        - name: Join conference with subscriptions
+          summary: Join conference and subscribe to events
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-002"
+            method: "message"
+            params:
+              node_id: "550e8400-e29b-41d4-a716-446655440000"
+              message:
+                jsonrpc: "2.0"
+                id: "verto-002"
+                method: "verto.invite"
+                params:
+                  dialogParams:
+                    callID: "call-uuid-here"
+                    destination_number: "conf-room-123"
+                  sdp: "v=0\r\no=..."
+                  layout: "screenshare"
+              subscribe:
+                - "member.joined"
+                - "member.left"
+                - "room.ended"
+                - "layout.changed"
+
+    WebRTCMessageResult:
+      name: message.result
+      title: Message Result
+      summary: Verto message acknowledgment
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/WebRTCMessageResult'
+      examples:
+        - name: Message received
+          payload:
+            jsonrpc: "2.0"
+            id: "msg-001"
+            result:
+              code: "200"
+              message: "Received"
+
+    ConferenceList:
+      name: conference.list
+      title: List Conferences
+      summary: Request list of active conferences
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConferenceListRequest'
+      examples:
+        - name: List conferences
+          payload:
+            jsonrpc: "2.0"
+            id: "conf-list-001"
+            method: "conference.list"
+            params: {}
+
+    ConferenceListResult:
+      name: conference.list.result
+      title: Conference List Result
+      summary: List of active conferences
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ConferenceListResult'
+      examples:
+        - name: Active conferences
+          payload:
+            jsonrpc: "2.0"
+            id: "conf-list-001"
+            result:
+              code: "200"
+              message: "Success"
+              data:
+                - node_id: "550e8400-e29b-41d4-a716-446655440000"
+                  conference_id: "660e8400-e29b-41d4-a716-446655440001"
+                  name: "Team Meeting"
+                  extension: "1234"
+                  timestamp: 1704067200.123456
+                - node_id: "550e8400-e29b-41d4-a716-446655440000"
+                  conference_id: "770e8400-e29b-41d4-a716-446655440002"
+                  name: "Support Room"
+                  extension: "5678"
+                  timestamp: 1704067100.654321
+
+    WebRTCMessageEvent:
+      name: webrtc.message
+      title: WebRTC Message Event
+      summary: Incoming Verto signaling message
+      description: |
+        Receives Verto signaling messages from the server. This includes
+        incoming call notifications, call state updates, DTMF events,
+        and conference notifications.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/WebRTCMessageEvent'
+      examples:
+        - name: Incoming call
+          summary: Verto invite from remote party
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "webrtc.message"
+              event_channel: "signalwire_webrtc_..."
+              timestamp: 1704067200.123456
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                node_id: "550e8400-e29b-41d4-a716-446655440000"
+                jsonrpc: "2.0"
+                id: "verto-incoming-001"
+                method: "verto.invite"
+                params:
+                  callID: "incoming-call-uuid"
+                  sdp: "v=0\r\no=..."
+                  caller_id_name: "John Doe"
+                  caller_id_number: "+15559876543"
+
+  schemas:
+    WebRTCMessageRequest:
+      type: object
+      description: Request to send a Verto message
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          description: Unique request identifier
+        method:
+          type: string
+          const: "message"
+        params:
+          $ref: '#/components/schemas/WebRTCMessageParams'
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+
+    WebRTCMessageParams:
+      type: object
+      description: Parameters for the message method
+      properties:
+        node_id:
+          type: string
+          format: uuid
+          description: |
+            Node ID of the FreeSWITCH server. This comes from call state
+            events or responses after a call is started.
+        message:
+          type: object
+          description: |
+            The Verto JSON-RPC message to send. This is a complete
+            JSON-RPC 2.0 request with method and params.
+          properties:
+            jsonrpc:
+              type: string
+              const: "2.0"
+            id:
+              type: string
+            method:
+              type: string
+              description: |
+                Verto method name:
+                - `verto.invite` - Initiate call
+                - `verto.answer` - Answer call
+                - `verto.bye` - End call
+                - `verto.modify` - Modify call
+                - `verto.info` - Send info
+            params:
+              type: object
+          required:
+            - jsonrpc
+            - id
+            - method
+        subscribe:
+          type: array
+          description: |
+            Event channels to subscribe to along with this request.
+            Useful for subscribing to conference events when joining.
+          items:
+            type: string
+          example:
+            - "member.joined"
+            - "member.left"
+            - "room.ended"
+            - "layout.changed"
+            - "member.updated"
+      required:
+        - message
+
+    WebRTCMessageResult:
+      type: object
+      description: Response from message method
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+        result:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: ["200", "400", "500"]
+            message:
+              type: string
+              example: "Received"
+          required:
+            - code
+            - message
+      required:
+        - jsonrpc
+        - id
+        - result
+
+    ConferenceListRequest:
+      type: object
+      description: Request to list active conferences
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+        method:
+          type: string
+          const: "conference.list"
+        params:
+          type: object
+      required:
+        - jsonrpc
+        - id
+        - method
+
+    ConferenceListResult:
+      type: object
+      description: Response with list of conferences
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+        result:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ConferenceInfo'
+          required:
+            - code
+            - message
+      required:
+        - jsonrpc
+        - id
+        - result
+
+    ConferenceInfo:
+      type: object
+      description: Information about an active conference
+      properties:
+        node_id:
+          type: string
+          format: uuid
+          description: Node ID hosting the conference
+        conference_id:
+          type: string
+          format: uuid
+          description: Unique conference identifier
+        name:
+          type: string
+          description: Human-readable conference name
+          example: "Team Meeting"
+        extension:
+          type: string
+          description: Dial extension to join the conference
+          example: "1234"
+        timestamp:
+          type: number
+          description: Unix timestamp when conference started
+      required:
+        - node_id
+        - conference_id
+        - name
+
+    WebRTCMessageEvent:
+      type: object
+      description: Incoming WebRTC/Verto message event
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: "signalwire.event"
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              const: "webrtc.message"
+            event_channel:
+              type: string
+              description: Event channel identifier
+            timestamp:
+              type: number
+              description: Unix timestamp with microsecond precision
+            project_id:
+              type: string
+              format: uuid
+            params:
+              type: object
+              description: |
+                The Verto JSON-RPC message. Structure depends on the
+                specific Verto method being delivered.
+              properties:
+                node_id:
+                  type: string
+                  format: uuid
+                  description: Node ID that sent the event
+              additionalProperties: true

@@ -1,0 +1,291 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay - Tasking API
+  version: 3.0.0
+  description: |
+    The SignalWire Relay Tasking API enables real-time task delivery and notification
+    through JSON-RPC 2.0 over WebSocket. This lightweight API allows you to send
+    arbitrary JSON messages to your Relay applications.
+
+    ## Overview
+
+    The Tasking API provides a simple pub/sub mechanism:
+    - **Client → Server**: Send tasks via `tasking.deliver`
+    - **Server → Client**: Receive tasks via `queuing.relay.tasks` events
+
+    ## Prerequisites
+
+    Before using the Tasking API, you must:
+    1. Establish a connection using `signalwire.connect`
+    2. Subscribe to contexts using `signalwire.receive`
+
+    ## Use Cases
+
+    - Triggering actions in Relay applications from external systems
+    - Coordinating between multiple Relay clients
+    - Sending custom notifications to connected applications
+    - Integrating with webhooks and REST APIs
+
+  contact:
+    name: SignalWire Support
+    url: https://signalwire.com/support
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    description: SignalWire Relay WebSocket endpoint
+
+channels:
+  relay:
+    address: /
+    description: Main WebSocket channel for Relay Tasking JSON-RPC communication
+    messages:
+      taskingDeliver:
+        $ref: '#/components/messages/TaskingDeliver'
+      taskingDeliverResult:
+        $ref: '#/components/messages/TaskingDeliverResult'
+      queuingRelayTasksEvent:
+        $ref: '#/components/messages/QueuingRelayTasksEvent'
+
+operations:
+  # ===== Client Request-Reply Methods =====
+  deliver:
+    action: send
+    channel:
+      $ref: '#/channels/relay'
+    summary: Deliver a task
+    description: |
+      Sends a task message to all Relay clients subscribed to the specified context.
+      The message can contain any arbitrary JSON payload.
+    messages:
+      - $ref: '#/channels/relay/messages/taskingDeliver'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/taskingDeliverResult'
+
+  # ===== Server-Initiated Events =====
+  receiveTask:
+    action: receive
+    channel:
+      $ref: '#/channels/relay'
+    summary: Receive task
+    description: |
+      Receives a task that was sent to a context you're subscribed to.
+      The message payload contains the arbitrary JSON data from the sender.
+    messages:
+      - $ref: '#/channels/relay/messages/queuingRelayTasksEvent'
+
+components:
+  messages:
+    TaskingDeliver:
+      name: tasking.deliver
+      title: Deliver Task
+      summary: Send a task to a context
+      description: |
+        Delivers a task message to all Relay clients subscribed to the specified context.
+        The `message` field can contain any JSON object with your custom data.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskingDeliverRequest'
+      examples:
+        - name: Simple task
+          summary: Send a basic task notification
+          payload:
+            jsonrpc: "2.0"
+            id: "task-001"
+            method: "tasking.deliver"
+            params:
+              context: "notifications"
+              message:
+                type: "alert"
+                priority: "high"
+                data:
+                  user_id: "12345"
+                  action: "password_reset"
+        - name: Webhook relay
+          summary: Forward webhook data to Relay app
+          payload:
+            jsonrpc: "2.0"
+            id: "task-002"
+            method: "tasking.deliver"
+            params:
+              context: "webhooks"
+              message:
+                source: "stripe"
+                event: "payment.succeeded"
+                payload:
+                  amount: 5000
+                  currency: "usd"
+                  customer_id: "cus_abc123"
+
+    TaskingDeliverResult:
+      name: tasking.deliver.result
+      title: Delivery Result
+      summary: Task delivery confirmation
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskingDeliverResult'
+      examples:
+        - name: Delivery accepted
+          payload:
+            jsonrpc: "2.0"
+            id: "task-001"
+            result:
+              code: "200"
+              message: "Task delivered"
+
+    QueuingRelayTasksEvent:
+      name: queuing.relay.tasks
+      title: Task Received Event
+      summary: Incoming task notification
+      description: |
+        Notification that a task has been received on a context you're subscribed to.
+        The `message` field contains the arbitrary JSON payload from the sender.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/QueuingRelayTasksEvent'
+      examples:
+        - name: Received task
+          summary: Task delivered to subscribed context
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "queuing.relay.tasks"
+              context: "notifications"
+              timestamp: 1704067200.123456
+              space_id: "my-space"
+              project_id: "78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              params:
+                context: "notifications"
+                message:
+                  type: "alert"
+                  priority: "high"
+                  data:
+                    user_id: "12345"
+                    action: "password_reset"
+
+  schemas:
+    TaskingDeliverRequest:
+      type: object
+      description: Request to deliver a task
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          description: Unique request identifier
+        method:
+          type: string
+          const: "tasking.deliver"
+        params:
+          $ref: '#/components/schemas/TaskingDeliverParams'
+      required:
+        - jsonrpc
+        - id
+        - method
+        - params
+
+    TaskingDeliverParams:
+      type: object
+      description: Parameters for tasking.deliver
+      properties:
+        context:
+          type: string
+          description: |
+            Context to deliver the task to. All Relay clients subscribed
+            to this context will receive the task.
+          example: "notifications"
+        message:
+          type: object
+          description: |
+            Arbitrary JSON payload to deliver. Can contain any data
+            structure your application needs.
+          additionalProperties: true
+          example:
+            type: "alert"
+            data:
+              user_id: "12345"
+      required:
+        - context
+        - message
+
+    TaskingDeliverResult:
+      type: object
+      description: Response from tasking.deliver
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          description: Request identifier this response correlates to
+        result:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Status code
+              enum: ["200", "400", "403", "500"]
+            message:
+              type: string
+              description: Status message
+              example: "Task delivered"
+          required:
+            - code
+            - message
+      required:
+        - jsonrpc
+        - id
+        - result
+
+    QueuingRelayTasksEvent:
+      type: object
+      description: Task received event
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: "signalwire.event"
+        params:
+          type: object
+          properties:
+            event_type:
+              type: string
+              const: "queuing.relay.tasks"
+            context:
+              type: string
+              description: Context the task was delivered to
+            timestamp:
+              type: number
+              description: Unix timestamp with microsecond precision
+            space_id:
+              type: string
+              description: SignalWire space identifier
+            project_id:
+              type: string
+              format: uuid
+              description: SignalWire project identifier
+            params:
+              type: object
+              properties:
+                context:
+                  type: string
+                  description: Context the task was delivered to
+                message:
+                  type: object
+                  description: The task payload from the sender
+                  additionalProperties: true
+              required:
+                - context
+                - message

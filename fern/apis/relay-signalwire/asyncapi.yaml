@@ -1,0 +1,768 @@
+asyncapi: 3.0.0
+info:
+  title: SignalWire Relay - Connection Protocol
+  version: 3.0.0
+  description: |
+    The SignalWire Relay Connection Protocol establishes and manages WebSocket connections
+    to the SignalWire Relay network. This protocol handles authentication, session management,
+    and context subscriptions that enable access to other Relay APIs (Calling, Messaging, etc.).
+
+    ## Overview
+
+    The connection protocol uses JSON-RPC 2.0 over WebSocket for bidirectional communication:
+    - **Client → Server**: Methods like `signalwire.connect`, `signalwire.receive`
+    - **Server → Client**: Events like `signalwire.authorization.state`, `signalwire.disconnect`
+
+    ## Connection Flow
+
+    1. Client establishes WebSocket connection to `wss://relay.signalwire.com`
+    2. Client sends `signalwire.connect` with authentication credentials
+    3. Server responds with session identity, protocol, and ICE servers
+    4. Server may send `signalwire.authorization.state` events for session recovery
+    5. Client subscribes to contexts using `signalwire.receive`
+    6. Server sends `signalwire.disconnect` when connection will be terminated
+
+  contact:
+    name: SignalWire Support
+    url: https://signalwire.com/support
+    email: support@signalwire.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  production:
+    host: relay.signalwire.com
+    protocol: wss
+    description: SignalWire Relay WebSocket endpoint
+
+channels:
+  relay:
+    address: /
+    description: |
+      Main WebSocket channel for all Relay JSON-RPC communication.
+      All messages follow the JSON-RPC 2.0 specification with SignalWire extensions.
+    messages:
+      # Client → Server Methods
+      signalwireConnect:
+        $ref: '#/components/messages/SignalwireConnect'
+      signalwireReceive:
+        $ref: '#/components/messages/SignalwireReceive'
+      signalwireUnreceive:
+        $ref: '#/components/messages/SignalwireUnreceive'
+      signalwireDisconnectResponse:
+        $ref: '#/components/messages/SignalwireDisconnectResponse'
+      # Server → Client Responses and Events
+      signalwireConnectResult:
+        $ref: '#/components/messages/SignalwireConnectResult'
+      signalwireReceiveResult:
+        $ref: '#/components/messages/SignalwireReceiveResult'
+      signalwireUnreceiveResult:
+        $ref: '#/components/messages/SignalwireUnreceiveResult'
+      signalwireAuthorizationStateEvent:
+        $ref: '#/components/messages/SignalwireAuthorizationStateEvent'
+      signalwireDisconnectRequest:
+        $ref: '#/components/messages/SignalwireDisconnectRequest'
+
+operations:
+  # ===== Client Request-Reply Methods =====
+  connect:
+    action: send
+    channel:
+      $ref: '#/channels/relay'
+    summary: Establish Relay connection
+    description: |
+      Initiates a connection to the SignalWire Relay network. This must be the first
+      message sent after establishing the WebSocket connection.
+
+      The client provides authentication credentials and optionally an `authorization_state`
+      from a previous session to restore state on reconnection.
+    messages:
+      - $ref: '#/channels/relay/messages/signalwireConnect'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/signalwireConnectResult'
+
+  receive:
+    action: send
+    channel:
+      $ref: '#/channels/relay'
+    summary: Subscribe to contexts
+    description: |
+      Subscribes to one or more SignalWire contexts to receive inbound events
+      (incoming calls, messages, etc.). Must be called after successful connection.
+
+      **Note:** This method uses the protocol returned from `signalwire.connect`,
+      not the base `signalwire` protocol.
+    messages:
+      - $ref: '#/channels/relay/messages/signalwireReceive'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/signalwireReceiveResult'
+
+  unreceive:
+    action: send
+    channel:
+      $ref: '#/channels/relay'
+    summary: Unsubscribe from contexts
+    description: |
+      Unsubscribes from one or more SignalWire contexts to stop receiving inbound events.
+    messages:
+      - $ref: '#/channels/relay/messages/signalwireUnreceive'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/signalwireUnreceiveResult'
+
+  # ===== Server-Initiated Events =====
+  receiveAuthorizationState:
+    action: receive
+    channel:
+      $ref: '#/channels/relay'
+    summary: Receive authorization state
+    description: |
+      Receives updated authorization state from the server. Clients should store this
+      value and provide it in `signalwire.connect` when reconnecting to restore session state.
+    messages:
+      - $ref: '#/channels/relay/messages/signalwireAuthorizationStateEvent'
+
+  # ===== Server Request-Reply (Disconnect) =====
+  receiveDisconnect:
+    action: receive
+    channel:
+      $ref: '#/channels/relay'
+    summary: Receive disconnect request
+    description: |
+      Server notifies client that the connection will be terminated soon (e.g., during
+      deployment). Client should flush buffers and respond before disconnecting.
+    messages:
+      - $ref: '#/channels/relay/messages/signalwireDisconnectRequest'
+    reply:
+      channel:
+        $ref: '#/channels/relay'
+      messages:
+        - $ref: '#/channels/relay/messages/signalwireDisconnectResponse'
+
+components:
+  messages:
+    SignalwireConnect:
+      name: signalwire.connect
+      title: Connect Request
+      summary: Establish connection to Relay network
+      description: |
+        Authenticates and establishes a session with the SignalWire Relay network.
+        Returns session identity, protocol, and ICE server configuration.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireConnectRequest'
+      examples:
+        - name: Basic connection
+          summary: Connect with JWT authentication
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440000"
+            method: "signalwire.connect"
+            params:
+              version:
+                major: 3
+                minor: 0
+                revision: 0
+              authentication:
+                jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              agent: "my-app/1.0.0"
+              contexts:
+                - "office"
+                - "sales"
+        - name: Reconnection with state
+          summary: Reconnect using saved authorization state
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440001"
+            method: "signalwire.connect"
+            params:
+              version:
+                major: 3
+                minor: 0
+                revision: 0
+              authentication:
+                jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              authorization_state: "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo=:dGFnMTIz"
+              protocol: "signalwire_abc123_proj-uuid"
+
+    SignalwireConnectResult:
+      name: signalwire.connect.result
+      title: Connect Result
+      summary: Connection established successfully
+      description: |
+        Server response confirming successful connection. Contains the client's
+        identity on the network, the protocol to use for subsequent requests,
+        and ICE server configuration for WebRTC.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireConnectResult'
+      examples:
+        - name: Successful connection
+          summary: Connection established with ICE servers
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440000"
+            result:
+              identity: "node-123@hagrid-456.relay.signalwire.com"
+              authorization: {}
+              protocol: "signalwire_e2e6acb37a98e6f8363b2a7c5bc5aa90e846752d_ca00e9e7-1234-5678-9000-894991ce3f46_78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+              ice_servers:
+                - urls:
+                    - "turn:turn1.signalwire.com:443"
+                    - "turn:turn2.signalwire.com:443"
+                  credential: "HMACSHA1Base64Credential=="
+                  credentialType: "password"
+                  username: "1735689600:78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+
+    SignalwireReceive:
+      name: signalwire.receive
+      title: Subscribe to Contexts
+      summary: Subscribe to receive inbound events
+      description: |
+        Subscribes to one or more SignalWire contexts to receive inbound events
+        such as incoming calls and messages.
+
+        **Important:** Use the `protocol` value returned from `signalwire.connect`
+        as the protocol for this request.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireReceiveRequest'
+      examples:
+        - name: Subscribe to contexts
+          summary: Subscribe to multiple contexts
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440002"
+            method: "signalwire.receive"
+            params:
+              contexts:
+                - "pbx"
+                - "support"
+                - "sales"
+
+    SignalwireReceiveResult:
+      name: signalwire.receive.result
+      title: Subscribe Result
+      summary: Context subscription result
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RelayResult'
+      examples:
+        - name: Subscription successful
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440002"
+            result:
+              code: "200"
+              message: "Receiving events"
+        - name: Payment required
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440002"
+            result:
+              code: "402"
+              message: "Payment required"
+
+    SignalwireUnreceive:
+      name: signalwire.unreceive
+      title: Unsubscribe from Contexts
+      summary: Stop receiving events from contexts
+      description: |
+        Unsubscribes from one or more SignalWire contexts to stop receiving
+        inbound events.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireUnreceiveRequest'
+      examples:
+        - name: Unsubscribe from contexts
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440003"
+            method: "signalwire.unreceive"
+            params:
+              contexts:
+                - "pbx"
+                - "support"
+
+    SignalwireUnreceiveResult:
+      name: signalwire.unreceive.result
+      title: Unsubscribe Result
+      summary: Context unsubscription result
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RelayResult'
+      examples:
+        - name: Unsubscribe successful
+          payload:
+            jsonrpc: "2.0"
+            id: "550e8400-e29b-41d4-a716-446655440003"
+            result:
+              code: "200"
+              message: "Stopped receiving events"
+
+    SignalwireAuthorizationStateEvent:
+      name: signalwire.authorization.state
+      title: Authorization State Event
+      summary: Updated authorization state for reconnection
+      description: |
+        Server pushes updated authorization state to the client. Store this value
+        and provide it in `signalwire.connect` when reconnecting to restore session state.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireAuthorizationStateEvent'
+      examples:
+        - name: Authorization state update
+          payload:
+            jsonrpc: "2.0"
+            method: "signalwire.event"
+            params:
+              event_type: "signalwire.authorization.state"
+              params:
+                authorization_state: "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo=:dGFnMTIz"
+
+    SignalwireDisconnectRequest:
+      name: signalwire.disconnect
+      title: Disconnect Request
+      summary: Server requests client disconnect
+      description: |
+        Server notifies the client that the connection will be terminated soon.
+        This typically occurs during deployments or maintenance.
+
+        The client should:
+        1. Flush any pending buffers
+        2. Send a response acknowledging the disconnect
+        3. Close the connection or prepare to reconnect
+
+        If `restart: true`, the client should establish a fresh connection
+        without attempting to restore the previous protocol.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireDisconnectRequest'
+      examples:
+        - name: Disconnect with restart
+          summary: Server requires fresh connection
+          payload:
+            jsonrpc: "2.0"
+            id: "server-disconnect-001"
+            method: "signalwire.disconnect"
+            params:
+              restart: true
+        - name: Graceful disconnect
+          summary: Normal shutdown, reconnection allowed
+          payload:
+            jsonrpc: "2.0"
+            id: "server-disconnect-002"
+            method: "signalwire.disconnect"
+            params:
+              restart: false
+
+    SignalwireDisconnectResponse:
+      name: signalwire.disconnect.response
+      title: Disconnect Response
+      summary: Client acknowledges disconnect
+      description: |
+        Client's acknowledgment of the disconnect request. This should be the
+        last message sent before the WebSocket connection closes.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SignalwireDisconnectResponse'
+      examples:
+        - name: Acknowledge disconnect
+          payload:
+            jsonrpc: "2.0"
+            id: "server-disconnect-001"
+            result: {}
+
+  schemas:
+    # Base JSON-RPC structures
+    JsonRpcRequest:
+      type: object
+      description: Base JSON-RPC 2.0 request structure
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+          description: JSON-RPC version (always "2.0")
+        id:
+          type: string
+          description: Unique request identifier for correlating responses
+        method:
+          type: string
+          description: The RPC method name
+        params:
+          type: object
+          description: Method parameters
+      required:
+        - jsonrpc
+        - id
+        - method
+
+    JsonRpcResponse:
+      type: object
+      description: Base JSON-RPC 2.0 response structure
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          type: string
+          description: Request identifier this response correlates to
+        result:
+          type: object
+          description: Result payload (present on success)
+        error:
+          $ref: '#/components/schemas/JsonRpcError'
+      required:
+        - jsonrpc
+        - id
+
+    JsonRpcError:
+      type: object
+      description: JSON-RPC error object
+      properties:
+        code:
+          type: integer
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        data:
+          type: object
+          description: Additional error data
+
+    # SignalWire Connect
+    SignalwireConnectRequest:
+      type: object
+      description: Request to establish Relay connection
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcRequest'
+        - type: object
+          properties:
+            method:
+              const: "signalwire.connect"
+            params:
+              $ref: '#/components/schemas/SignalwireConnectParams'
+
+    SignalwireConnectParams:
+      type: object
+      description: Parameters for signalwire.connect
+      properties:
+        version:
+          $ref: '#/components/schemas/ProtocolVersion'
+        authentication:
+          $ref: '#/components/schemas/Authentication'
+        agent:
+          type: string
+          description: |
+            Descriptive information about the SDK and application.
+            Format: `sdk-name/version` (e.g., "signalwire-js/3.0.0")
+          example: "my-app/1.0.0 signalwire-python/3.5.0"
+        protocol:
+          type: string
+          description: |
+            Protocol identifier from a previous session to attempt recovery.
+            Format: `signalwire_<signature>_<uuid>_<project-id>`
+          example: "signalwire_e2e6acb37a98e6f8363b2a7c5bc5aa90e846752d_ca00e9e7-1234-5678-9000-894991ce3f46_78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+        authorization_state:
+          type: string
+          description: |
+            Encrypted authorization state from a previous `signalwire.authorization.state` event.
+            Format: `<encryptedStateBase64>:<tagBase64>`
+          example: "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo=:dGFnMTIz"
+        contexts:
+          type: array
+          description: Initial contexts to subscribe to upon connection
+          items:
+            type: string
+          example: ["office", "sales"]
+      required:
+        - version
+        - authentication
+
+    ProtocolVersion:
+      type: object
+      description: Relay protocol version
+      properties:
+        major:
+          type: integer
+          description: Major version (currently 3)
+          example: 3
+        minor:
+          type: integer
+          description: Minor version (currently 0)
+          example: 0
+        revision:
+          type: integer
+          description: Revision number (currently 0)
+          example: 0
+      required:
+        - major
+        - minor
+        - revision
+
+    Authentication:
+      type: object
+      description: Authentication credentials
+      properties:
+        jwt_token:
+          type: string
+          description: |
+            JWT token for authentication. Obtain from SignalWire dashboard
+            or via the REST API.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      required:
+        - jwt_token
+
+    SignalwireConnectResult:
+      type: object
+      description: Successful connection response
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcResponse'
+        - type: object
+          properties:
+            result:
+              $ref: '#/components/schemas/SignalwireConnectResultPayload'
+
+    SignalwireConnectResultPayload:
+      type: object
+      description: Connection result data
+      properties:
+        identity:
+          type: string
+          description: |
+            Client's identity on the Relay network.
+            Format: `<nodeid>@<hagridnodeid>.<fabrichost>`
+          example: "node-123@hagrid-456.relay.signalwire.com"
+        authorization:
+          type: object
+          description: Current authorization block for the client
+        protocol:
+          type: string
+          description: |
+            Protocol identifier to use for subsequent requests.
+            Store this value for session recovery on reconnection.
+          example: "signalwire_e2e6acb37a98e6f8363b2a7c5bc5aa90e846752d_ca00e9e7-1234-5678-9000-894991ce3f46_78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+        ice_servers:
+          type: array
+          description: ICE server configuration for WebRTC
+          items:
+            $ref: '#/components/schemas/IceServer'
+      required:
+        - identity
+        - authorization
+        - protocol
+        - ice_servers
+
+    IceServer:
+      type: object
+      description: ICE server configuration for WebRTC
+      properties:
+        urls:
+          type: array
+          description: TURN/STUN server URLs
+          items:
+            type: string
+          example:
+            - "turn:turn1.signalwire.com:443"
+            - "turn:turn2.signalwire.com:443"
+        credential:
+          type: string
+          description: HMAC-SHA1 credential for authentication
+          example: "HMACSHA1Base64Credential=="
+        credentialType:
+          type: string
+          description: Credential type (currently only "password")
+          enum:
+            - password
+          example: "password"
+        username:
+          type: string
+          description: |
+            Username with expiration prefix.
+            Format: `<expiration-timestamp>:<project-id>`
+          example: "1735689600:78429ef1-abcd-efgh-ijkl-16b59f95bb1f"
+      required:
+        - urls
+        - credential
+        - credentialType
+        - username
+
+    # SignalWire Receive/Unreceive
+    SignalwireReceiveRequest:
+      type: object
+      description: Subscribe to contexts for inbound events
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcRequest'
+        - type: object
+          properties:
+            method:
+              const: "signalwire.receive"
+            params:
+              $ref: '#/components/schemas/SignalwireReceiveParams'
+
+    SignalwireReceiveParams:
+      type: object
+      description: Parameters for signalwire.receive
+      properties:
+        context:
+          type: string
+          description: |
+            **Deprecated:** Single context to subscribe to.
+            Use `contexts` instead.
+          deprecated: true
+        contexts:
+          type: array
+          description: |
+            **Preferred:** Multiple contexts to subscribe to simultaneously.
+            Only use one of `context` or `contexts`.
+          items:
+            type: string
+          example: ["pbx", "support", "sales"]
+
+    SignalwireUnreceiveRequest:
+      type: object
+      description: Unsubscribe from contexts
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcRequest'
+        - type: object
+          properties:
+            method:
+              const: "signalwire.unreceive"
+            params:
+              $ref: '#/components/schemas/SignalwireUnreceiveParams'
+
+    SignalwireUnreceiveParams:
+      type: object
+      description: Parameters for signalwire.unreceive
+      properties:
+        contexts:
+          type: array
+          description: Contexts to unsubscribe from
+          items:
+            type: string
+          example: ["pbx", "support"]
+      required:
+        - contexts
+
+    # Relay Result (common response format)
+    RelayResult:
+      type: object
+      description: |
+        Standard Relay API response format. All Relay methods return this structure.
+        Check `code` for success (200) or specific error codes.
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcResponse'
+        - type: object
+          properties:
+            result:
+              $ref: '#/components/schemas/RelayResultPayload'
+
+    RelayResultPayload:
+      type: object
+      description: Relay result payload
+      properties:
+        code:
+          type: string
+          description: |
+            HTTP-style status code:
+            - `200`: Success
+            - `400`: Bad request
+            - `402`: Payment required
+            - `403`: Forbidden
+            - `404`: Not found
+            - `409`: Conflict
+            - `410`: Gone
+            - `500`: Server error
+          enum:
+            - "200"
+            - "400"
+            - "402"
+            - "403"
+            - "404"
+            - "409"
+            - "410"
+            - "500"
+          example: "200"
+        message:
+          type: string
+          description: Human-readable status message
+          example: "Receiving events"
+      required:
+        - code
+        - message
+
+    # Authorization State Event
+    SignalwireAuthorizationStateEvent:
+      type: object
+      description: Server-pushed authorization state update
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          const: "signalwire.event"
+        params:
+          $ref: '#/components/schemas/SignalwireAuthorizationStateEventParams'
+
+    SignalwireAuthorizationStateEventParams:
+      type: object
+      properties:
+        event_type:
+          type: string
+          const: "signalwire.authorization.state"
+        params:
+          type: object
+          properties:
+            authorization_state:
+              type: string
+              description: |
+                Encrypted authorization state for session recovery.
+                Store this value and provide it in `signalwire.connect` when reconnecting.
+              example: "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo=:dGFnMTIz"
+          required:
+            - authorization_state
+
+    # Disconnect
+    SignalwireDisconnectRequest:
+      type: object
+      description: Server disconnect notification
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcRequest'
+        - type: object
+          properties:
+            method:
+              const: "signalwire.disconnect"
+            params:
+              $ref: '#/components/schemas/SignalwireDisconnectParams'
+
+    SignalwireDisconnectParams:
+      type: object
+      description: Parameters for signalwire.disconnect
+      properties:
+        restart:
+          type: boolean
+          description: |
+            If `true`, client should establish a fresh connection without
+            attempting to restore the previous protocol.
+          example: true
+
+    SignalwireDisconnectResponse:
+      type: object
+      description: Client acknowledgment of disconnect
+      allOf:
+        - $ref: '#/components/schemas/JsonRpcResponse'
+        - type: object
+          properties:
+            result:
+              type: object
+              description: Empty result object
