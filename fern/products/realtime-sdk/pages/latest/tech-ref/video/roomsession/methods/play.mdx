@@ -1,7 +1,131 @@
 ---
 title: "play"
 slug: reference/video/roomsession/methods/play
-description: play method for the Video Roomsession class.
+description: play method for the RoomSession class.
 ---
 
-See the main [Roomsession](../index.mdx) page for full documentation of this method.
+[link-1]: #field-meta
+[link-2]: #events
+[link-3]: #demote
+[link-4]: #videopositions
+[link-5]: #setmembermeta
+[link-6]: #setmeta
+[link]: #promote
+[permissions]: /rest/signalwire-rest/overview/permissions/
+[record-type]: https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type
+[roomsession-41]: ./video-roomsession.mdx
+[roomsessionmember-27]: ./video-roomsessionmember.mdx
+[roomsessionmember-28]: ./video-roomsessionmember.mdx
+[roomsessionmember-29]: ./video-roomsessionmember.mdx
+[roomsessionmembers]: ./video-roomsessionmember.mdx
+[roomsessionplayback-12]: ./video-roomsessionplayback.mdx
+[roomsessionplayback-4]: ./video-roomsessionplayback.mdx
+[roomsessionrecording-12]: ./video-roomsessionrecording.mdx
+[roomsessionrecording-4]: ./video-roomsessionrecording.mdx
+[roomsessionstream-8]: ./video-roomsessionstream.mdx
+[roomsessionstream]: ./video-roomsessionstream.mdx
+[video-client]: ./video-client.mdx
+[video-roomsession-1]: ./video-roomsession.mdx#audiounmute
+[video-roomsession-2]: ./video-roomsession.mdx#setlayout
+[video-roomsession-3]: ./video-roomsession.mdx#videomute
+[video-roomsession-4]: ./video-roomsession.mdx#getlayouts
+[video-roomsession-5]: ./video-roomsession.mdx#audiomute
+[video-roomsession]: ./video-roomsession.mdx#sethidevideomuted
+[video-roomsessionmember]: ./video-roomsessionmember.mdx#field-meta
+[video-roomsessionplayback]: ./video-roomsessionplayback.mdx#events
+[video-roomsessionrecording]: ./video-roomsessionrecording.mdx#events
+[video-roomsessionstream]: ./video-roomsessionstream.mdx#events
+[videoposition]: /video/guides/layout-positions
+
+### play
+
+- **play**(`params`): `Promise`\<[`RoomSessionPlayback`][roomsessionplayback-12]>
+
+Start a playback in the room. You can use the returned [RoomSessionPlayback][roomsessionplayback-4]
+object to control the playback (e.g., pause, resume, setVolume and stop).
+
+#### Parameters
+
+<ParamField path="params" type="object" required>
+  Object containing the parameters of the method.
+</ParamField>
+
+<Indent>
+<ParamField path="params.url" type="string" required>
+  The url (http, https, rtmp, rtmps) of the stream to reproduce.
+</ParamField>
+
+<ParamField path="params.seekPosition" type="number" default="0">
+  The starting timecode in milliseconds for playback.
+</ParamField>
+
+<ParamField path="params.volume" type="number" default="0">
+  The playback volume from -50 to 50.
+</ParamField>
+
+<ParamField path="params.positions" type="VideoPositions">
+  Positions to assign as soon as the playback starts. You can use the special keyword `self` to refer to the id of the playback.
+</ParamField>
+
+<ParamField path="params.layout" type="string">
+  Layout to change to when the playback starts.
+</ParamField>
+
+<ParamField path="params.listen" type="object">
+  Object of event listeners. See [RoomSessionPlayback Events][video-roomsessionplayback] for a list of valid events. Example event: `onStarted`.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise`\<[`RoomSessionPlayback`][roomsessionplayback-12]>
+
+A promise that resolves to a [`RoomSessionPlayback`][roomsessionplayback-12] object.
+
+#### Example
+
+In this example, we wait for a room to start and then play a video in that room.
+When a second member joins the roomSession, we stop the playback.
+This example assumes that there is a [`RoomSession`][roomsession-41]
+already active and that members are joining the room.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+// Initialize the SignalWire client
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+// Access the video client from the main client
+const videoClient = client.video;
+
+// Setup listener for when a room starts
+await videoClient.listen({
+  onRoomStarted: async (roomSession) => {
+    console.log("Room started", roomSession.displayName);
+
+    // play wait music
+    let roomPlayback = roomSession.play({
+      url: "https://cdn.signalwire.com/default-music/welcome.mp3",
+      listen: {
+        onStarted: () => console.log("Playback started"),
+        onUpdated: (playback) => console.log("Playback updated", playback.state),
+        onEnded: () => console.log("Playback ended")
+      }
+    });
+    await roomSession.listen({
+      onMemberJoined: (member) => {
+        console.log("Member joined", member.name);
+        roomPlayback.stop();
+      },
+      onMemberLeft: (member) => {
+        console.log("Member left", member.name);
+      },
+    });
+  },
+  onRoomEnded: async (roomSession) => {
+    console.log("Room ended", roomSession.displayName);
+  }
+});
+```
+
+---

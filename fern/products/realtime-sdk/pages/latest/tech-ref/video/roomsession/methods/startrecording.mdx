@@ -1,7 +1,120 @@
 ---
 title: "startRecording"
 slug: reference/video/roomsession/methods/startrecording
-description: startRecording method for the Video Roomsession class.
+description: startRecording method for the RoomSession class.
 ---
 
-See the main [Roomsession](../index.mdx) page for full documentation of this method.
+[link-1]: #field-meta
+[link-2]: #events
+[link-3]: #demote
+[link-4]: #videopositions
+[link-5]: #setmembermeta
+[link-6]: #setmeta
+[link]: #promote
+[permissions]: /rest/signalwire-rest/overview/permissions/
+[record-type]: https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type
+[roomsession-41]: ./video-roomsession.mdx
+[roomsessionmember-27]: ./video-roomsessionmember.mdx
+[roomsessionmember-28]: ./video-roomsessionmember.mdx
+[roomsessionmember-29]: ./video-roomsessionmember.mdx
+[roomsessionmembers]: ./video-roomsessionmember.mdx
+[roomsessionplayback-12]: ./video-roomsessionplayback.mdx
+[roomsessionplayback-4]: ./video-roomsessionplayback.mdx
+[roomsessionrecording-12]: ./video-roomsessionrecording.mdx
+[roomsessionrecording-4]: ./video-roomsessionrecording.mdx
+[roomsessionstream-8]: ./video-roomsessionstream.mdx
+[roomsessionstream]: ./video-roomsessionstream.mdx
+[video-client]: ./video-client.mdx
+[video-roomsession-1]: ./video-roomsession.mdx#audiounmute
+[video-roomsession-2]: ./video-roomsession.mdx#setlayout
+[video-roomsession-3]: ./video-roomsession.mdx#videomute
+[video-roomsession-4]: ./video-roomsession.mdx#getlayouts
+[video-roomsession-5]: ./video-roomsession.mdx#audiomute
+[video-roomsession]: ./video-roomsession.mdx#sethidevideomuted
+[video-roomsessionmember]: ./video-roomsessionmember.mdx#field-meta
+[video-roomsessionplayback]: ./video-roomsessionplayback.mdx#events
+[video-roomsessionrecording]: ./video-roomsessionrecording.mdx#events
+[video-roomsessionstream]: ./video-roomsessionstream.mdx#events
+[videoposition]: /video/guides/layout-positions
+
+### startRecording
+
+- **startRecording**(): `Promise`\<[`RoomSessionRecording`][roomsessionrecording-12]>
+
+Starts the recording of the room. You can use the returned [RoomSessionRecording][roomsessionrecording-4] object to control the recording (e.g., pause, resume, stop).
+
+#### Parameters
+
+<ParamField path="params" type="object">
+  Object containing the parameters of the method.
+</ParamField>
+
+<Indent>
+<ParamField path="params.listen" type="object">
+  Object of event listeners. See [`RoomSessionRecording Events`][video-roomsessionrecording] for a list of valid events.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise`\<[`RoomSessionRecording`][roomsessionrecording-12]>
+
+A promise that resolves to a [`RoomSessionRecording`][roomsessionrecording-12] object.
+
+#### Example
+
+In this example, we wait for a room to start and then start a recording in that room.
+We then stop the recording after 5 seconds. This example assumes that there is a [`RoomSession`][roomsession-41]
+already active and that members are joining the room.
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+// Initialize the SignalWire client
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" });
+
+// Access video client from the main client
+const videoClient = client.video;
+
+// Setup listener for when a room starts
+await videoClient.listen({
+  onRoomStarted: async (roomSession) => {
+    console.log("Room started", roomSession.displayName);
+
+    let roomRecording = roomSession.startRecording({
+      listen: {
+        onStarted: () => {
+          console.log("Recording started");
+        },
+        onUpdated: (recording) => {
+          console.log("Recording updated", recording.state);
+        },
+        onEnded: (recording) => {
+          console.log(`Recording ended.
+          Recording State: ${recording.state}.
+          Recording Id: ${recording.id}`);
+        },
+      }
+    })
+    setTimeout( () => {
+      roomRecording.stop();
+    }, 5000);
+
+    // Setup listener for when a member joins
+    await roomSession.listen({
+      onMemberJoined: async (member) => {
+        console.log("Member joined", member.name);
+
+    },
+      onMemberLeft: (member) => {
+        console.log("Member left", member.name);
+      },
+    });
+  },
+  onRoomEnded: async (roomSession) => {
+    console.log("Room ended", roomSession.displayName);
+  }
+});
+```
+
+---
