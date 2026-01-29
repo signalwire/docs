@@ -23,12 +23,3 @@ model UpdateQueueRequest {
   @example(600)
   max_size?: int32;
 }
-
-@doc("Request body for dequeuing a member.")
-model DequeueMemberRequest {
-  @doc("The URL to redirect the call to after dequeuing.")
-  url?: string;
-
-  @doc("The HTTP method to use for the redirect URL.")
-  method?: "GET" | "POST";
-}
