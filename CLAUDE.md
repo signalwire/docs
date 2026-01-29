@@ -503,6 +503,15 @@ Props: `tip` (string | ReactNode), `side` (`"top"` | `"right"` | `"bottom"` | `"
 - Windows line endings (`\r`)
 - HTML comments that should be removed
 - Blank lines inside JSX components that cause parse errors
+- `cols="2"` string syntax instead of `cols={2}` JSX expression in CardGroup
+- React icon imports like `icon={<MdCode />}` instead of Font Awesome strings like `icon="solid code"`
+- `<UseCaseView>` components - must be rewritten using `<AccordionGroup>`, `<Accordion>`, and `<Tabs>`
+- `<details>` / `<summary>` tags - convert to `<Accordion title="...">`
+- Unconverted `:::note`, `:::tip`, `:::warning` admonitions - convert to `<Note>`, `<Tip>`, `<Warning>`
+- `<Language>` / `<LangItem>` components - convert to `<Tabs>` / `<Tab>` or merge content
+- `` ```yaml andJSON `` or `` ```yaml andJson `` - remove `andJSON`/`andJson` (Fern has no auto-JSON generation)
+- `src={require("...").default}` - convert to plain `src="..."` string paths
+- `onChange` prop on Accordion - remove (not supported in Fern)
 
 ## Commands
 
