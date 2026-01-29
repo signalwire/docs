@@ -1,0 +1,154 @@
+---
+title: "Client"
+keywords: SignalWire, Realtime SDK, Node.js, task client, send task, receive task
+slug: reference/task/client
+description: Task Client reference for inter-application messaging. Send tasks to topics and receive task data from other applications in your project.
+max-toc-depth: 3
+---
+
+[events]: #events
+[send]: #send
+[signalwire-realtime-client]: ../realtime-client/index.mdx
+[task-client]: ./task-client.mdx
+[task]: ./index.mdx
+
+A [Task][task] client. On your server, use instances of this client to receive data emitted with [Task.send][send].
+
+## **Task Client**
+
+### Setting up a Task Client
+
+To create a `Task` client, you will first need to create a [`SignalWire Realtime-Client`][signalwire-realtime-client].
+After the `SignalWire Client` is created, you can access the `Task` client using the `task` namespace.
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+const taskClient = client.task
+```
+
+---
+
+## **Methods**
+
+### listen
+
+- **listen**(`{ event: Callback }`): `Promise<TaskEvents>`
+
+Listens for incoming tasks.
+
+#### Parameters
+
+<ParamField path="params" type="object" required>
+  Object containing the parameters of the method.
+</ParamField>
+
+<Indent>
+<ParamField path="params.topics" type="string[]" required>
+  Topics to listen to for events. Previously known as `"contexts"`.
+</ParamField>
+
+<ParamField path="params.EVENT" type="Callback">
+  The event to listen to. List of events can be found [here][events]. Example event: `onTaskReceived`.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise<TaskEvents>`
+
+A promise that resolves to a `TaskEvents` object that you can use to view the current state or results of the event.
+
+#### Example
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+const taskClient = client.task
+
+await taskClient.listen({
+  topics: ['office'],
+  onTaskReceived: (payload) => {
+    console.log('Received task', payload)
+  }
+});
+```
+
+---
+
+### send
+
+- `Const` **send**(`params`): `Promise<void>`
+
+Send a job to your Task Client in a specific topic.
+
+#### Parameters
+
+<ParamField path="params" type="object" required>
+  Object containing the parameters of the method.
+</ParamField>
+
+<Indent>
+<ParamField path="params.topic" type="string | string[]" required>
+  Topic to send the task to. Previously known as `"context"` or `"contexts"`. Can also use `params.topics`.
+</ParamField>
+
+<ParamField path="params.message" type="Record<string, unknown>" required>
+  Message to send.
+</ParamField>
+
+<ParamField path="params.project" type="string">
+  SignalWire project id, e.g. `a10d8a9f-2166-4e82-56ff-118bc3a4840f`.
+</ParamField>
+
+<ParamField path="params.token" type="string">
+  SignalWire project token, e.g. `PT9e5660c101...a360079c9`.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise<void>`
+
+#### Example
+
+Sending a task with a message to then make an outbound Call. Please note that the call is _not_ performed automatically: your [Task.Client][task-client] gives you back your payload, which you should interpret by your own custom logic.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+const clientTask = client.task
+
+const message = {
+  'action': 'call',
+  'from': '+1XXXXXXXXXX',
+  'to': '+1YYYYYYYYYY'
+}
+
+const taskSend = await clientTask.send({
+  topic: 'office',
+  message: message
+})
+```
+
+---
+
+## **Events**
+
+### onTaskReceived
+
+- **client.task.listen**(`{ onTaskReceived: Callback }`)
+
+Emitted whenever a task is received. Your event handler receives the payload.
+
+#### Parameters
+
+<ParamField path="payload" type="Record<string, unknown>" required>
+  The message payload.
+</ParamField>

@@ -1,0 +1,348 @@
+---
+title: "Realtime Client"
+keywords: SignalWire, Realtime SDK, Node.js, realtime client, WebSocket, connection
+slug: reference/realtime-client
+description: Technical reference for initializing the realtime client.
+max-toc-depth: 3
+---
+
+[chat]: ../chat/chat-client.mdx
+[link]: #disconnect
+[messaging]: ../messaging/messaging-client.mdx
+[pubsub]: ../pubsub/pubsub-client.mdx
+[task]: ../task/task-client.mdx
+[video]: ../video/video-client.mdx
+[voice]: ../voice/voice-client.mdx
+
+The Realtime Client is the main entry point for the Realtime SDK.
+It provides methods to connect to the Realtime service, authenticate, and subscribe to events on a specified namespace.
+
+<Info>
+**How It Works**
+
+The SDK operates through a bidirectional WebSocket connection. When you call methods like `dialPhone()` or `send()`, the SDK sends requests to SignalWire and returns promises with the results. Simultaneously, you can listen for real-time events like incoming calls or messages using the `listen()` method.
+</Info>
+
+## Usage Examples
+
+<Tabs>
+<Tab title="Voice Calls">
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token"
+});
+
+const voiceClient = client.voice;
+
+// Listen for incoming calls
+await voiceClient.listen({
+  topics: ["office"],
+  onCallReceived: async (call) => {
+    console.log("Incoming call from:", call.from);
+    await call.answer();
+    
+    // Play a greeting
+    await call.playTTS({ text: "Welcome to our office" });
+  }
+});
+
+// Make an outbound call
+const call = await voiceClient.dialPhone({
+  to: "+1234567890",
+  from: "+0987654321"
+});
+```
+
+</Tab>
+<Tab title="SMS/MMS">
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token"
+});
+
+const messagingClient = client.messaging;
+
+// Handle incoming messages
+await messagingClient.listen({
+  topics: ["notifications"],
+  onMessageReceived: (message) => {
+    console.log("Message from:", message.from);
+    console.log("Content:", message.body);
+  }
+});
+
+// Send a message
+await messagingClient.send({
+  to: "+1234567890",
+  from: "+0987654321",
+  body: "Your appointment is confirmed for tomorrow at 3pm"
+});
+```
+
+</Tab>
+<Tab title="Video Rooms">
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token"
+});
+
+const videoClient = client.video;
+
+// Monitor room events
+await videoClient.listen({
+  onRoomStarted: async (roomSession) => {
+    console.log("Room started:", roomSession.name);
+    
+    await roomSession.listen({
+      onMemberJoined: (member) => {
+        console.log("Member joined:", member.name);
+      }
+    });
+  }
+});
+
+// Get active room sessions
+const { roomSessions } = await videoClient.getRoomSessions();
+```
+
+</Tab>
+<Tab title="Chat Applications">
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token"
+});
+
+const chatClient = client.chat;
+
+// Listen for messages in conversations
+await chatClient.listen({
+  channels: ["general"],
+  onMessageReceived: (message) => {
+    console.log(`${message.member.name}: ${message.content}`);
+  }
+});
+
+// Send a chat message
+await chatClient.publish({
+  channel: "general",
+  content: "Hello team!"
+});
+```
+
+</Tab>
+<Tab title="PubSub Messaging">
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token"
+});
+
+const pubSubClient = client.pubSub;
+
+// Listen for messages
+await pubSubClient.listen({
+  channels: ["notifications", "updates"],
+  onMessageReceived: (message) => {
+    console.log(`Channel: ${message.channel}`);
+    console.log(`Content: ${message.content}`);
+  }
+});
+
+// Publish a message
+await pubSubClient.publish({
+  channel: "notifications",
+  content: { alert: "System maintenance in 30 minutes" }
+});
+```
+
+</Tab>
+<Tab title="Task Management">
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({
+  project: "your-project-id",
+  token: "your-api-token"
+});
+
+const taskClient = client.task;
+
+// Listen for incoming tasks
+await taskClient.listen({
+  topics: ["workers"],
+  onTaskReceived: (payload) => {
+    console.log("Received task:", payload);
+    
+    // Process the task based on payload
+    if (payload.action === "send_email") {
+      console.log(`Sending email to ${payload.recipient}: ${payload.subject}`);
+      // Add your custom email sending logic here
+    }
+  }
+});
+
+// Send a task to workers
+await taskClient.send({
+  topic: "workers",
+  message: {
+    action: "send_email",
+    recipient: "user@example.com",
+    subject: "Welcome aboard!"
+  }
+});
+```
+
+</Tab>
+</Tabs>
+
+## **Constructor**
+
+- **SignalWire(`options`)**: `Promise<SWClient>`
+
+Create a new Client instance.
+
+### Parameters
+
+<ParamField path="options" type="object" required>
+  Configuration options for the client.
+</ParamField>
+
+<Indent>
+<ParamField path="options.project" type="string" required>
+  SignalWire project id, e.g. `a10d8a9f-2166-4e82-56ff-118bc3a4840f`
+</ParamField>
+
+<ParamField path="options.token" type="string" required>
+  SignalWire project token, e.g. `PT9e5660c101cd140a1c93a0197640a369cf5f16975a0079c9`
+</ParamField>
+
+<ParamField path="options.host" type="string">
+  SignalWire host URL. Default is the standard SignalWire host.
+</ParamField>
+
+<ParamField path="options.logLevel" type="string">
+  Log level: `'trace'`, `'debug'`, `'info'`, `'warn'`, `'error'`, or `'silent'`.
+</ParamField>
+
+<ParamField path="options.debug" type="object">
+  Debug configuration object.
+</ParamField>
+
+<Indent>
+<ParamField path="debug.logWsTraffic" type="boolean" default="false">
+  If `true`, logs all WebSocket traffic.
+</ParamField>
+</Indent>
+</Indent>
+
+#### Example
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+```
+
+---
+
+## **Methods**
+
+### connect
+
+- **connect()**: `Promise<void>`
+
+<Note>
+The client will automatically connect when it is created. You only need to call this method if you have previously [`disconnected`][link].
+</Note>
+
+Connects this client to the SignalWire RealTime API. The client will start receiving events.
+
+#### Example
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+await client.connect().then(() => {
+  console.log("connected");
+});
+```
+
+---
+
+### disconnect
+
+- **disconnect()**: `Promise<void>`
+
+Disconnects this client. The client will stop receiving events and you will need to create a new instance if you want to use it again.
+
+#### Example
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+await client.disconnect().then(() => {
+  console.log("disconnected");
+});
+```
+
+---
+
+## **Namespace Clients**
+
+The Realtime Client offers functionalities to establish and control namespace clients.
+A namespace client is a type of client that is linked to a particular namespace,
+capable of subscribing to events within that namespace and utilizing the methods that the namespace offers.
+
+Below is an example on how you can create a client for the `Voice`, `Video`, `Messaging`, `Chat`, `Task`, and `PubSub` namespaces.
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice;
+
+const videoClient = client.video;
+
+const messagingClient = client.messaging;
+
+const chatClient = client.chat;
+
+const taskClient = client.task;
+
+const pubsubClient = client.pubSub;
+```
+
+**List of available namespace clients:**
+
+- [Voice][voice]
+- [Video][video]
+- [Messaging][messaging]
+- [Chat][chat]
+- [Task][task]
+- [PubSub][pubsub]
+

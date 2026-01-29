@@ -1,0 +1,183 @@
+---
+title: "Client"
+keywords: SignalWire, Realtime SDK, Node.js, messaging client, send SMS, send MMS
+slug: reference/messaging/client
+description: Messaging Client reference for sending and receiving SMS/MMS messages. Listen for inbound messages and send outbound messages with media attachments.
+max-toc-depth: 3
+---
+
+[events]: #events
+[messagecontract]: /realtime-sdk/messaging/message-contract
+[messaging]: /realtime-sdk/messaging
+[messagingsendresult]: /realtime-sdk/messaging/messaging-sendresult
+[signalwire-realtime-client]: /realtime-sdk/realtime-client
+
+A [Messaging][messaging] client is used to listen to inbound SMS and MMS messages, and to send outbound SMS and MMS messages.
+
+## **Messaging Client**
+### Setting up a Messaging Client
+
+To create a `Messaging` client, you will first need to create a [`SignalWire Realtime-Client`][signalwire-realtime-client].
+After the `SignalWire Client` is created, you can access the `Messaging` client using the `messaging` namespace.
+
+#### Example
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+const messageClient = client.messaging;
+```
+
+This example demonstrates how to set up a messaging client using the SignalWire API.
+
+---
+
+## **Methods**
+
+### listen
+
+- **listen**(`{ event: Callback }`): `Promise<MessageEvents>`
+
+Listens for message events.
+
+#### Parameters
+
+<ParamField path="params" type="object" required>
+  Object containing the parameters of the method.
+</ParamField>
+
+<Indent>
+<ParamField path="params.topics" type="string[]" required>
+  List of topics to listen to. Previously known as `contexts`.
+</ParamField>
+
+<ParamField path="params.EVENT" type="Callback">
+  The event to listen to. List of events can be found [here][events]. Example event: `onMessageReceived`.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise<MessageEvents>`
+
+A promise that resolves to a `MessageEvents` object that you can use to view the current state or results of the event.
+
+#### Example
+
+In this example, we listen for inbound messages on the topic `"office"` and log any received messages.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+await client.messaging.listen({
+  topics: ["office"],
+  async onMessageReceived(message) {
+    console.log("message.received", message);
+  }
+})
+```
+
+---
+
+### send
+
+- **send**(`params`): `Promise<MessagingSendResult>`
+
+Send an outbound SMS or MMS message.
+
+#### Parameters
+
+<ParamField path="params" type="object" required>
+  Object containing the parameters of the method.
+</ParamField>
+
+<Indent>
+<ParamField path="params.from" type="string" required>
+  The phone number to place the message from. Must be a SignalWire phone number or short code that you own.
+</ParamField>
+
+<ParamField path="params.to" type="string" required>
+  The phone number to send to.
+</ParamField>
+
+<ParamField path="params.body" type="string">
+  The content of the message. Required if `media` is not present.
+</ParamField>
+
+<ParamField path="params.media" type="string[]">
+  Array of URLs to send in the message. Required if `body` is not present.
+</ParamField>
+
+<ParamField path="params.topic" type="string">
+  Inbound events for the message will be received on this topic. Previously known as `"context"`.
+</ParamField>
+
+<ParamField path="params.region" type="string">
+  Region of the world to originate the message from. A default value is picked based on account preferences or device location.
+</ParamField>
+
+<ParamField path="params.tags" type="string[]">
+  Array of strings to tag the message with for searching in the UI.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise<MessagingSendResult>`
+
+A promise that resolves to a [`MessagingSendResult`][messagingsendresult] object that you can use to view the result of the sent message.
+
+#### Example
+
+In this example, we send an outbound message to a phone number with the content "Hello World!".
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here"})
+
+let messageClient = client.messaging;
+
+try {
+  const sendResult = await messageClient.send({
+    from: "+1xxx",
+    to: "+1yyy",
+    body: "Hello World!"
+  });
+  console.log("Message ID: ", sendResult.messageId);
+} catch (e) {
+  console.error(e.message);
+}
+```
+
+---
+
+## **Events**
+
+### onMessageReceived
+
+- **client.messaging.listen**(`{onMessageReceived: Callback}`)
+
+Emitted whenever a message is received. Your event handler will be called with an instance of [`MessageContract`][messagecontract].
+
+#### Parameters
+
+<ParamField path="message" type="MessageContract" required>
+  The message that has been received. See [`MessageContract`][messagecontract].
+</ParamField>
+
+### onMessageUpdated
+
+- **client.messaging.listen**(`{onMessageUpdated: Callback}`)
+
+Emitted when the status of a message is updated. You can use this event to track the different stages that an outbound message goes through for delivery.
+Your event handler will be called with an instance of [`MessageContract`][messagecontract].
+
+#### Parameters
+
+<ParamField path="message" type="MessageContract" required>
+  The message that has been updated. See [`MessageContract`][messagecontract].
+</ParamField>
