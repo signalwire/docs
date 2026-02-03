@@ -1,0 +1,107 @@
+---
+title: "getStreams"
+slug: reference/video/roomsession/methods/getstreams
+description: getStreams method for the RoomSession class.
+max-toc-depth: 3
+---
+
+[link-1]: #field-meta
+[link-2]: #events
+[link-3]: #demote
+[link-4]: #videopositions
+[link-5]: #setmembermeta
+[link-6]: #setmeta
+[link]: #promote
+[permissions]: /rest/signalwire-rest/overview/permissions/
+[record-type]: https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type
+[roomsession-41]: ./video-roomsession.mdx
+[roomsessionmember-27]: ./video-roomsessionmember.mdx
+[roomsessionmember-28]: ./video-roomsessionmember.mdx
+[roomsessionmember-29]: ./video-roomsessionmember.mdx
+[roomsessionmembers]: ./video-roomsessionmember.mdx
+[roomsessionplayback-12]: ./video-roomsessionplayback.mdx
+[roomsessionplayback-4]: ./video-roomsessionplayback.mdx
+[roomsessionrecording-12]: ./video-roomsessionrecording.mdx
+[roomsessionrecording-4]: ./video-roomsessionrecording.mdx
+[roomsessionstream-8]: ./video-roomsessionstream.mdx
+[roomsessionstream]: ./video-roomsessionstream.mdx
+[video-client]: ../../client/index.mdx
+[video-roomsession-1]: ./video-roomsession.mdx#audiounmute
+[video-roomsession-2]: ./video-roomsession.mdx#setlayout
+[video-roomsession-3]: ./video-roomsession.mdx#videomute
+[video-roomsession-4]: ./video-roomsession.mdx#getlayouts
+[video-roomsession-5]: ./video-roomsession.mdx#audiomute
+[video-roomsession]: ./video-roomsession.mdx#sethidevideomuted
+[video-roomsessionmember]: ./video-roomsessionmember.mdx#field-meta
+[video-roomsessionplayback]: ./video-roomsessionplayback.mdx#events
+[video-roomsessionrecording]: ./video-roomsessionrecording.mdx#events
+[video-roomsessionstream]: ./video-roomsessionstream.mdx#events
+[videoposition]: /video/guides/layout-positions
+
+### getStreams
+
+- **getStreams**(): `Promise<\{ streams: RoomSessionStream \}>`
+
+Obtains a list of active streams for this RoomSession. These are RTMP streams of
+the audio/video content of this room, which will be sent to an external party
+(e.g., to YouTube).
+
+#### Returns
+
+`Promise<\{ streams: RoomSessionStream \}>` - See [RoomSessionStream][roomsessionstream] for more information.
+
+#### Example
+
+In this example, we wait for a room to start and then start a stream in that room.
+We then use `getStreams` to get the list of stream objects. We then loop through
+the list of streams and print out the `state` and `id` of each stream.
+Afterwards, we stop the stream after 10 seconds. This example assumes that there is a [`RoomSession`][roomsession-41]
+already active and that members are joining the room.
+
+```javascript
+import { SignalWire } from "@signalwire/realtime-api";
+
+// Initialize the SignalWire client
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+// Access video client from the main client
+const videoClient = client.video;
+
+// Setup listener for when a room starts
+await videoClient.listen({
+  onRoomStarted: async (roomSession) => {
+    console.log("Room started", roomSession.displayName);
+
+    roomSession.startStream({
+      url: "rtmp://example.com/stream"
+    })
+    
+    await roomSession.listen({
+      onStreamStarted: async (stream) => {
+        console.log("Stream started", stream.state);
+
+        // get active streams
+        const activeStreams = roomSession.getStreams();
+
+        (await activeStreams).streams.forEach((stream) => {
+          console.log(`Active Steam: ${stream.id}, ${stream.state}`);
+        });
+
+        // Wait 10 seconds and stop the stream
+
+        setTimeout(() => {
+          console.log("Stopping stream");
+          stream.stop();
+        }, 10000);
+      },
+      onStreamEnded: (stream) => {
+        console.log("Stream ended", stream.id, stream.state);
+      },
+    });
+  },
+  onRoomEnded: async (roomSession) => {
+    console.log("Room ended", roomSession.displayName);
+  }
+});
+```
+

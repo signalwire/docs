@@ -102,17 +102,6 @@ namespace SpaceAPI.Queues {
     @get
     listMembers(...QueueIdPath): QueueMemberListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("dequeue_next_queue_member")
-    @summary("Dequeue next member on the queue")
-    @doc("""
-      Dequeues next member on the queue.
-
-      ${tokenPermissions<"_Voice_">}
-      """)
-    @route("/dequeue")
-    @post
-    dequeueNextMember(...QueueIdPath): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
-
     @operationId("retrieve_next_queue_member")
     @summary("Retrieve next member on the queue")
     @doc("""
@@ -135,15 +124,5 @@ namespace SpaceAPI.Queues {
     @get
     getMember(...QueueIdPath, ...QueueMemberPathID): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
-    @operationId("dequeue_queue_member")
-    @summary("Dequeue member on the queue")
-    @doc("""
-      Dequeues member on the queue.
-
-      ${tokenPermissions<"_Voice_">}
-      """)
-    @route("/{id}/dequeue")
-    @post
-    dequeueMember(...QueueIdPath, ...QueueMemberPathID): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
   }
 }

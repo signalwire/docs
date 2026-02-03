@@ -1,0 +1,135 @@
+---
+title: "detectDigit"
+slug: reference/voice/call/methods/detectdigit
+description: detectDigit method for the Call class.
+max-toc-depth: 3
+---
+
+[amd]: #amd
+[call-events]: #events
+[call]: #
+[callcollect-events]: ./callcollect.mdx#events
+[callcollect-onstarted]: ./callcollect.mdx#onstarted
+[callcollect-startinputtimers]: ./callcollect.mdx#startinputtimers
+[callcollect]: ./callcollect.mdx
+[calldetect-events]: ./calldetect.mdx#events
+[calldetect-onstarted]: ./calldetect.mdx#onstarted
+[calldetect]: ./calldetect.mdx
+[callplayback-events]: ./callplayback.mdx#events
+[callplayback-onstarted]: ./callplayback.mdx#onstarted
+[callplayback]: ./callplayback.mdx
+[callprompt-events]: ./callprompt.mdx#events
+[callprompt-onstarted]: ./callprompt.mdx#onstarted
+[callprompt]: ./callprompt.mdx
+[callrecording-events]: ./callrecording.mdx#events
+[callrecording-onstarted]: ./callrecording.mdx#onstarted
+[callrecording]: ./callrecording.mdx
+[callstate]: ./callstate.mdx
+[calltap-events]: ./calltap.mdx#events
+[calltap-onstarted]: ./calltap.mdx#onstarted
+[calltap]: ./calltap.mdx
+[collectdigitsconfig]: ./types.mdx#collectdigitsconfig
+[collectspeechconfig]: ./types.mdx#collectspeechconfig
+[connect]: #connect
+[connectphone]: #connectphone
+[connectsip]: #connectsip
+[detectansweringmachine]: #voice_call_detect_answering
+[detectdigit]: #detectdigit
+[detectfax]: #voice_call_detect_fax
+[devicebuilder]: ./voice-devicebuilder.mdx
+[disconnected]: #disconnected
+[onstatechanged]: #onstatechanged
+[playaudio]: #playaudio
+[playringtone]: #playringtone
+[playsilence]: #playsilence
+[playtts]: #playtts
+[prompt]: #prompt
+[promptaudio]: #promptaudio
+[promptringtone]: #promptringtone
+[prompttts]: #prompttts
+[recordaudio]: #voice_call_record_audio
+[ringtonename]: ./types.mdx#ringtonename
+[sipcodec]: ./types.mdx#sipcodec
+[sipheader]: ./types.mdx#sipheader
+[ssml]: https://cloud.google.com/text-to-speech/docs/ssml
+[startinput]: #voice_call_oncollectinputstarted
+[supported-voices-languages]: /voice/getting-started/voice-and-languages
+[tapaudio]: #tapaudio
+[tapdevice]: ./types.mdx#tapdevice
+[voice-client-oncallreceived]: ./voice-client.mdx#oncallreceived
+[voice-client]: ./voice-client.mdx
+[voicedevicebuilder]: ./voice-devicebuilder.mdx
+[voiceplaylist]: ./voice-playlist.mdx
+
+### detectDigit
+
+- **detectDigit**(`params?`): `Promise`\<[`CallDetect`][calldetect]>
+
+Detects when a digit is pressed in an audio stream. To gather digit input from a caller, please see [prompt][prompt].
+
+#### Parameters
+
+<ParamField path="params" type="object">
+  Object containing the parameters for digit detection.
+</ParamField>
+
+<Indent>
+<ParamField path="digits" type="string" default="0123456789#*">
+  The digits to detect.
+</ParamField>
+
+<ParamField path="timeout" type="number" default="30.0">
+  Number of seconds to run the detector for.
+</ParamField>
+
+<ParamField path="waitForBeep" type="boolean" default="false">
+  Whether to wait until the device is ready for voicemail delivery.
+</ParamField>
+
+<ParamField path="listen" type="object">
+  Callback to listen for events. List of detect events can be found [here][calldetect-events]. Example event: [`onStarted`][calldetect-onstarted].
+</ParamField>
+</Indent>
+
+#### Returns
+
+`Promise`\<[`CallDetect`][calldetect]>
+
+A promise that resolves to a [`CallDetect`][calldetect] object that you can use to
+view the current state and results of the `detect` session.
+
+#### Example
+
+In this example, we dial a phone number and wait for the digit detection to finish.
+Once the detection is finished, we log the result and then play a TTS message of the digit pressed and then hangup the call.
+
+```js
+import { SignalWire } from "@signalwire/realtime-api";
+
+const client = await SignalWire({ project: "ProjectID Here", token: "Token Here" })
+
+const voiceClient = client.voice;
+
+await voiceClient.listen({
+  topics: ["office"],
+  onCallReceived: async (call) => {
+
+    // Answer the call
+    call.answer();
+    await call.detectDigit({
+      listen: {
+        onStarted: () => console.log("Detection started!"),
+        onEnded: (detect) => console.log("Finished detecting digit", detect.result),
+        onUpdated: async (detect) => {
+          console.log("Updated detecting digit", detect.result)
+          // Stop the detection and play the digit pressed
+          detect.stop();
+          await call.playTTS({ text: `You pressed ${detect.result})` });
+          call.hangup();
+        }
+      }
+    }).onStarted();
+  }
+});
+```
+
