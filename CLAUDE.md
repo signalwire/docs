@@ -33,6 +33,7 @@ fern/
     ├── swml/
     └── ...
 
+scripts/               # Validation and analysis scripts
 tools/scripts/         # Migration scripts
 .serena/memories/      # Session notes and migration logs
 ```
@@ -55,6 +56,28 @@ Delete all import lines for:
 - `import ... from '@site/...'`
 - `import ... from 'react-icons/...'`
 - `import ... from '@theme/...'`
+- `import ... from '/docs/main/_common/...'` (see Shared Snippets below)
+
+### Shared Snippets (Markdown Component)
+
+Docusaurus used `import` + JSX component syntax to include shared content.
+In Fern, use the `<Markdown>` component with a `src` attribute pointing to `/snippets/`:
+
+```jsx
+// BEFORE (Docusaurus)
+import UiAccordion from '/docs/main/_common/dashboard/_ui-accordion.mdx'
+<UiAccordion/>
+
+// AFTER (Fern)
+<Markdown src="/snippets/common/dashboard/_ui-accordion.mdx" />
+```
+
+Shared snippets live in `fern/snippets/common/` and are organized by topic:
+- `fern/snippets/common/dashboard/` - Dashboard UI components
+- `fern/snippets/common/call-fabric/` - Call Fabric shared content
+- `fern/snippets/common/sip/` - SIP-related shared content
+
+The old Docusaurus path `/docs/main/_common/` maps to `/snippets/common/` in Fern.
 
 ### Component Migration
 
@@ -344,6 +367,50 @@ flowchart LR
 ```
 ````
 
+### Folder-Based (Inferred) Navigation
+
+Fern supports automatic navigation generation from folder structures using the `folder` key
+instead of manually listing every page. This is useful for sections with many pages
+that map cleanly to a directory.
+
+```yaml
+# EXPLICIT (manual page listing)
+- section: Guides
+  contents:
+    - page: Overview
+      path: ./pages/guides/index.mdx
+    - page: First Guide
+      path: ./pages/guides/first-guide.mdx
+    - page: Second Guide
+      path: ./pages/guides/second-guide.mdx
+
+# INFERRED (folder-based, auto-discovers pages)
+- section: Guides
+  contents:
+    - folder: ./pages/guides
+```
+
+**Automatic behaviors:**
+- Converts filenames to titles and URL slugs (e.g., `first-guide.mdx` → "First Guide")
+- Creates nested sections from subdirectories
+- Sorts pages alphabetically by default
+- Uses `index.mdx` or `index.md` files as section overview pages
+
+**Customization via frontmatter:**
+- `sidebar-title:` — Override the auto-generated sidebar title
+- `slug:` — Custom URL slug
+- `skip-slug: true` — Omit the folder name from URL paths
+
+**When to use folder-based nav:**
+- Sections where pages map 1:1 to files in a directory
+- Sections where alphabetical ordering is acceptable (or ordering is controlled via frontmatter)
+- Directories with many pages where manual listing is tedious
+
+**When to use explicit nav:**
+- When you need custom ordering that differs from alphabetical/frontmatter-based
+- When page titles in the sidebar should differ from file-derived names (and you don't want to add `sidebar-title` frontmatter)
+- When you want to cherry-pick specific files from a directory
+
 ### Frontmatter
 
 **Remove:** `sidebar_position:` (Fern uses YAML navigation files instead)
@@ -496,6 +563,16 @@ The <Tooltip tip="Explanation text">term</Tooltip> is important.
 
 Props: `tip` (string | ReactNode), `side` (`"top"` | `"right"` | `"bottom"` | `"left"`)
 
+## Important Warnings
+
+### Never use YAML parsers to rewrite navigation files
+
+Do NOT use `yaml.safe_load()` + `yaml.dump()` (or equivalent) to modify
+`platform.yml` or other navigation YAML files. YAML serializers reformat
+indentation, quoting, and spacing, which triggers pre-commit hook failures
+and reverts all changes. Always use line-by-line text manipulation
+(e.g., the `Edit` tool, `sed`, or custom scripts that read/write lines directly).
+
 ## Common Issues to Fix
 
 - Mismatched tags (e.g., `<Info>` opened but `</Tip>` closed)
@@ -522,6 +599,12 @@ fern docs dev
 # Check links
 fern check
 fern check --strict-broken-links
+
+# Scan for non-Fern components (finds Docusaurus components that need migration)
+node scripts/find-non-fern-components.js                    # Scan entire fern/ directory
+node scripts/find-non-fern-components.js path/to/file.mdx   # Scan a single file
+node scripts/find-non-fern-components.js path/to/folder     # Scan a folder
+node scripts/find-non-fern-components.js --summary           # Summary only
 
 # Run migration script on a single file
 ./tools/scripts/convert-docusaurus-to-fern.sh <input.mdx> <output.mdx>
