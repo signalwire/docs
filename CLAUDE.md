@@ -388,6 +388,47 @@ that map cleanly to a directory.
 - section: Guides
   contents:
     - folder: ./pages/guides
+
+# INFERRED with options
+- folder: ./pages/guides
+  title: Guides                  # Display name in sidebar
+  slug: user-guides              # Custom URL path
+  title-source: frontmatter      # Use frontmatter titles instead of filenames
+```
+
+**How `folder`, `section`, and `page` interact:**
+
+A `folder` is a self-contained navigation unit. It automatically generates:
+- A **section header** in the sidebar (from the directory name or `title:`)
+- **Pages** from files in the directory
+- **Nested sections** from subdirectories
+
+A `section` is a manual grouping wrapper with a `contents:` list. It creates a
+section header and contains explicitly listed items (pages, folders, other sections).
+
+Because a `folder` already creates its own section header, **do not wrap a `folder`
+inside a `section` with the same name** — this produces a duplicate header:
+
+```yaml
+# BAD — duplicate "Guides" header in sidebar
+- section: Guides
+  contents:
+    - folder: ./pages/guides
+
+# GOOD — folder creates its own "Guides" section
+- folder: ./pages/guides
+
+# GOOD — section with explicit pages (no folder)
+- section: Guides
+  contents:
+    - page: Overview
+      path: ./pages/guides/index.mdx
+
+# GOOD — section wrapping multiple folders (section name differs from folder names)
+- section: Reference
+  contents:
+    - folder: ./pages/rest-api
+    - folder: ./pages/webhooks
 ```
 
 **Automatic behaviors:**
