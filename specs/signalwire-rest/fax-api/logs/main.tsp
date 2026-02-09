@@ -26,6 +26,7 @@ namespace FaxAPI.Logs {
       """)
     list(...LogListRequest):
       | LogListResponse
+      | StatusCode400
       | StatusCode401
       | FaxLogsListStatusCode422
       | StatusCode500;
@@ -39,8 +40,10 @@ namespace FaxAPI.Logs {
       """)
     read(...LogPathID):
       | LogResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | FaxLogShowStatusCode422
       | StatusCode500;
   }
 }

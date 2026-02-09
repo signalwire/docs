@@ -39,6 +39,8 @@ paths:
         - $ref: '#/components/parameters/LogListRequest.created_on'
         - $ref: '#/components/parameters/LogListRequest.created_after'
         - $ref: '#/components/parameters/LogListRequest.page_size'
+        - $ref: '#/components/parameters/LogListRequest.page_number'
+        - $ref: '#/components/parameters/LogListRequest.page_token'
       responses:
         '200':
           description: The request has succeeded.
@@ -46,6 +48,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogListResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -87,6 +95,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -99,6 +113,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaxLogShowStatusCode422'
         '500':
           description: An internal server error occurred.
           content:
@@ -142,6 +162,18 @@ components:
       description: Include logs for deleted activity.
       schema:
         type: boolean
+        default: false
+      explode: false
+    LogListRequest.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: Page number to retrieve. Requires `page_token` when greater than `0`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
       explode: false
     LogListRequest.page_size:
       name: page_size
@@ -151,6 +183,17 @@ components:
       schema:
         type: integer
         format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    LogListRequest.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Token for cursor-based pagination. Required when `page_number` is greater than `0`. The token is returned in pagination links.
+      schema:
+        type: string
       explode: false
     LogPathID:
       name: id
@@ -163,6 +206,9 @@ components:
   schemas:
     ChargeDetail:
       type: object
+      required:
+        - description
+        - charge
       properties:
         description:
           type: string
@@ -172,6 +218,7 @@ components:
           type: number
           format: double
           description: Charged amount.
+          example: 0.01
     FaxLog:
       type: object
       required:
@@ -182,19 +229,30 @@ components:
         - direction
         - source
         - type
+        - url
+        - remote_station
+        - charge
+        - number_of_pages
+        - quality
+        - charge_details
         - created_at
+        - error_code
+        - error_message
       properties:
         id:
           allOf:
             - $ref: '#/components/schemas/uuid'
           format: uuid
           description: A unique identifier for the log
+          example: b7182dc2-00f3-40e4-a5ce-20f164b329df
         from:
           type: string
+          nullable: true
           description: The origin phone number in E.164 format.
           example: '+12065551212'
         to:
           type: string
+          nullable: true
           description: The destination phone number in E.164 format.
           example: '+12065553434'
         status:
@@ -215,9 +273,11 @@ components:
           type: string
           enum:
             - inbound
-            - outbound
+            - outbound-api
+            - outbound-dial
+          nullable: true
           description: The direction of this fax call.
-          example: outbound
+          example: inbound
         source:
           type: string
           enum:
@@ -233,22 +293,22 @@ components:
         url:
           type: string
           format: uri
-          nullable: true
-          description: URL for the associated fax resource with this log entry (if available)
-          example: https://example.com/fax
+          description: URL for the associated fax resource with this log entry.
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/b7182dc2-00f3-40e4-a5ce-20f164b329df/Faxes/c9a1d3e4-56f7-89ab-cdef-0123456789ab
         remote_station:
           type: string
           nullable: true
-          description: Represents a customer hosted Fax server
+          description: Represents a customer hosted Fax server.
           example: null
         charge:
           type: number
           format: double
-          description: The amount charge for this fax request.
+          description: The amount charged for this fax request.
           example: 0.01
         number_of_pages:
           type: integer
           format: int32
+          nullable: true
           description: The number of pages the fax document contained.
           example: 2
         quality:
@@ -257,6 +317,7 @@ components:
             - fine
             - standard
             - superfine
+          nullable: true
           description: The quality that was set when the fax document was sent.
           example: fine
         charge_details:
@@ -264,6 +325,7 @@ components:
           items:
             $ref: '#/components/schemas/ChargeDetail'
           description: Details on charges associated with this log.
+          example: []
         created_at:
           type: string
           format: date-time
@@ -271,12 +333,33 @@ components:
           example: '2024-05-06T12:20:00Z'
         error_code:
           type: string
+          nullable: true
           description: Error code for this resource (if available).
           example: '34004'
         error_message:
           type: string
+          nullable: true
           description: The description of this error (if available).
           example: The call dropped prematurely
+    FaxLogShowStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      description: The request contains invalid parameters. See errors for details.
+      example:
+        statusCode: 422
+        errors:
+          - type: account_error
+            code: exceeds_history_logs_limit
+            message: The value exceeds the 2025-02-09 date limit.
+            attribute: created_at
+            url: https://developer.signalwire.com/rest/overview/error-codes/#exceeds_history_logs_limit
     FaxLogsListStatusCode422:
       type: object
       required:
@@ -291,11 +374,11 @@ components:
       example:
         statusCode: 422
         errors:
-          - type: validation_error
-            code: invalid_parameter
-            message: Name must be present
-            attribute: name
-            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter
+          - type: account_error
+            code: exceeds_history_logs_limit
+            message: The value exceeds the 2025-02-09 date limit.
+            attribute: created_before
+            url: https://developer.signalwire.com/rest/overview/error-codes/#exceeds_history_logs_limit
     LogListResponse:
       type: object
       required:
@@ -319,16 +402,20 @@ components:
       properties:
         self:
           type: string
+          description: URL for the current page of results.
           example: https://example.signalwire.com/api/fax/logs?page_number=0&page_size=50
         first:
           type: string
+          description: URL for the first page of results.
           example: https://example.signalwire.com/api/fax/logs?page_size=50
         next:
           type: string
+          description: URL for the next page of results. Only present when more results are available.
           example: https://example.signalwire.com/api/fax/logs?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
         prev:
           type: string
-          example: https://example.signalwire.com/api/fax/logs?page_number=0&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca
+          description: URL for the previous page of results. Only present when on page 1 or later.
+          example: https://example.signalwire.com/api/fax/logs?page_number=0&page_size=50&page_token=PBbff61159-faab-48b3-959a-3021a8f5beca
     LogResponse:
       type: object
       required:
@@ -339,19 +426,30 @@ components:
         - direction
         - source
         - type
+        - url
+        - remote_station
+        - charge
+        - number_of_pages
+        - quality
+        - charge_details
         - created_at
+        - error_code
+        - error_message
       properties:
         id:
           allOf:
             - $ref: '#/components/schemas/uuid'
           format: uuid
           description: A unique identifier for the log
+          example: b7182dc2-00f3-40e4-a5ce-20f164b329df
         from:
           type: string
+          nullable: true
           description: The origin phone number in E.164 format.
           example: '+12065551212'
         to:
           type: string
+          nullable: true
           description: The destination phone number in E.164 format.
           example: '+12065553434'
         status:
@@ -372,9 +470,11 @@ components:
           type: string
           enum:
             - inbound
-            - outbound
+            - outbound-api
+            - outbound-dial
+          nullable: true
           description: The direction of this fax call.
-          example: outbound
+          example: inbound
         source:
           type: string
           enum:
@@ -390,22 +490,22 @@ components:
         url:
           type: string
           format: uri
-          nullable: true
-          description: URL for the associated fax resource with this log entry (if available)
-          example: https://example.com/fax
+          description: URL for the associated fax resource with this log entry.
+          example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/b7182dc2-00f3-40e4-a5ce-20f164b329df/Faxes/c9a1d3e4-56f7-89ab-cdef-0123456789ab
         remote_station:
           type: string
           nullable: true
-          description: Represents a customer hosted Fax server
+          description: Represents a customer hosted Fax server.
           example: null
         charge:
           type: number
           format: double
-          description: The amount charge for this fax request.
+          description: The amount charged for this fax request.
           example: 0.01
         number_of_pages:
           type: integer
           format: int32
+          nullable: true
           description: The number of pages the fax document contained.
           example: 2
         quality:
@@ -414,6 +514,7 @@ components:
             - fine
             - standard
             - superfine
+          nullable: true
           description: The quality that was set when the fax document was sent.
           example: fine
         charge_details:
@@ -421,6 +522,7 @@ components:
           items:
             $ref: '#/components/schemas/ChargeDetail'
           description: Details on charges associated with this log.
+          example: []
         created_at:
           type: string
           format: date-time
@@ -428,10 +530,12 @@ components:
           example: '2024-05-06T12:20:00Z'
         error_code:
           type: string
+          nullable: true
           description: Error code for this resource (if available).
           example: '34004'
         error_message:
           type: string
+          nullable: true
           description: The description of this error (if available).
           example: The call dropped prematurely
     Types.StatusCodes.RestApiErrorItem:
@@ -464,6 +568,16 @@ components:
           description: A link to documentation about this error.
           example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
       description: Details about a specific error.
+    Types.StatusCodes.StatusCode400:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Bad Request
+      description: The request is invalid.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
