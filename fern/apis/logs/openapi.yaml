@@ -18,7 +18,14 @@ paths:
         The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Voice_ or _Video_.
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
-      parameters: []
+      parameters:
+        - $ref: '#/components/parameters/ConferenceLogListRequest.include_deleted'
+        - $ref: '#/components/parameters/ConferenceLogListRequest.created_on'
+        - $ref: '#/components/parameters/ConferenceLogListRequest.created_before'
+        - $ref: '#/components/parameters/ConferenceLogListRequest.created_after'
+        - $ref: '#/components/parameters/ConferenceLogListRequest.page_number'
+        - $ref: '#/components/parameters/ConferenceLogListRequest.page_size'
+        - $ref: '#/components/parameters/ConferenceLogListRequest.page_token'
       responses:
         '200':
           description: The request has succeeded.
@@ -32,37 +39,154 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
-        '404':
-          description: The server cannot find the requested resource.
+        '422':
+          description: The request contains invalid parameters. See errors for details.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+                $ref: '#/components/schemas/ConferenceLogsStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Conferences
 security:
   - SignalWireBasicAuth: []
 components:
+  parameters:
+    ConferenceLogListRequest.created_after:
+      name: created_after
+      in: query
+      required: false
+      description: Return logs for activity after this date. Accepts a date (YYYY-MM-DD) or ISO 8601 timestamp.
+      schema:
+        type: string
+      explode: false
+    ConferenceLogListRequest.created_before:
+      name: created_before
+      in: query
+      required: false
+      description: Return logs for activity prior to this date. Accepts a date (YYYY-MM-DD) or ISO 8601 timestamp.
+      schema:
+        type: string
+      explode: false
+    ConferenceLogListRequest.created_on:
+      name: created_on
+      in: query
+      required: false
+      description: Return logs for activity on this date. Accepts a date (YYYY-MM-DD) or ISO 8601 timestamp.
+      schema:
+        type: string
+      explode: false
+    ConferenceLogListRequest.include_deleted:
+      name: include_deleted
+      in: query
+      required: false
+      description: Include logs for deleted activity.
+      schema:
+        type: boolean
+      explode: false
+    ConferenceLogListRequest.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: The page number to retrieve (0-indexed).
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    ConferenceLogListRequest.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    ConferenceLogListRequest.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Token for cursor-based pagination. Required when `page_number` > 0.
+      schema:
+        type: string
+      explode: false
   schemas:
     ChargeDetails:
       type: object
       required:
         - description
-        - amount
+        - charge
       properties:
         description:
           type: string
           description: Description for this charge.
           example: Tax
-        amount:
-          type: integer
-          description: Charged amount.
-          example: 60000
+        charge:
+          type: string
+          description: Charge amount in dollars.
+          example: '0.50'
+    ConferenceLogPaginationLinks:
+      type: object
+      required:
+        - self
+        - first
+      properties:
+        self:
+          type: string
+          description: Link to the current page.
+          example: https://example.signalwire.com/api/logs/conferences?page_number=0&page_size=50
+        first:
+          type: string
+          description: Link to the first page.
+          example: https://example.signalwire.com/api/logs/conferences?page_size=50
+        next:
+          type: string
+          description: Link to the next page. Only present when there are more results.
+          example: https://example.signalwire.com/api/logs/conferences?page_number=1&page_size=50&page_token=PAb9028451-b1d3-4690-b5d3-37b19d25f573
+        prev:
+          type: string
+          description: Link to the previous page. Only present when not on the first page.
+          example: https://example.signalwire.com/api/logs/conferences?page_number=0&page_size=50&page_token=PBb9028451-b1d3-4690-b5d3-37b19d25f573
+      description: Pagination links for conference log list responses.
+    ConferenceLogsStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      description: The request contains invalid parameters. See errors for details.
+      example:
+        statusCode: 422
+        errors:
+          - type: validation_error
+            code: invalid_parameter
+            message: created_on is not a valid date or timestamp
+            attribute: created_on
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter
     ConferencesResponse:
       type: object
       required:
+        - links
         - data
       properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/ConferenceLogPaginationLinks'
+          description: Pagination links.
         data:
           type: array
           items:
@@ -88,6 +212,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
           description: Unique identifier for the conference.
           example: b9028451-b1d3-4690-b5d3-37b19d25f573
         created_at:
@@ -106,14 +231,17 @@ components:
           example: us1
         name:
           type: string
+          nullable: true
           description: Name of the conference.
           example: conference
         status:
           type: string
+          nullable: true
           description: Status of the conference.
           example: in-progress
         max_size:
           type: integer
+          nullable: true
           description: Maximum size of the conference.
           example: 2
         current_participants:
@@ -152,6 +280,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
           description: Unique identifier for the conference.
           example: b9028451-b1d3-4690-b5d3-37b19d25f573
         created_at:
@@ -170,14 +299,17 @@ components:
           example: us1
         name:
           type: string
+          nullable: true
           description: Name of the conference.
           example: conference
         status:
           type: string
+          nullable: true
           description: Status of the conference.
           example: in-progress
         max_size:
           type: integer
+          nullable: true
           description: Maximum size of the conference.
           example: 2
         current_participants:
@@ -197,18 +329,51 @@ components:
           example: relay_conference
         recording_url:
           type: string
+          nullable: true
           description: Recording URL of the conference.
           example: http://record.com
         recording_duration:
           type: integer
+          nullable: true
           description: Recording duration of the conference.
           example: 123
         recording_file_size:
           type: integer
+          nullable: true
           description: Recording file size of the conference.
           example: 12345
       description: Core conference object.
       title: Relay Conference
+    Types.StatusCodes.RestApiErrorItem:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - url
+      properties:
+        type:
+          type: string
+          description: The category of error.
+          example: validation_error
+        code:
+          type: string
+          description: A specific error code.
+          example: invalid_parameter
+        message:
+          type: string
+          description: A description of what caused the error.
+          example: Name must be present
+        attribute:
+          type: string
+          nullable: true
+          description: The request parameter that caused the error, if applicable.
+          example: name
+        url:
+          type: string
+          description: A link to documentation about this error.
+          example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
+      description: Details about a specific error.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -219,7 +384,7 @@ components:
           enum:
             - Unauthorized
       description: Access is unauthorized.
-    Types.StatusCodes.StatusCode404:
+    Types.StatusCodes.StatusCode500:
       type: object
       required:
         - error
@@ -227,8 +392,8 @@ components:
         error:
           type: string
           enum:
-            - Not Found
-      description: The server cannot find the requested resource.
+            - Internal Server Error
+      description: An internal server error occurred.
     VideoRoomSessionConference:
       type: object
       required:
@@ -247,6 +412,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
           description: Unique identifier for the conference.
           example: b9028451-b1d3-4690-b5d3-37b19d25f573
         created_at:
@@ -262,37 +428,42 @@ components:
           type: string
           enum:
             - video_conference_session
+            - video_room_session
           description: Type of the conference.
           example: video_conference_session
         url:
           type: string
-          description: Url of the conference.
+          description: URL of the conference room session.
           example: https://test.signalwire.com/api/video/room_sessions/b9028451-b1d3-4690-b5d3-37b19d25f573
         room_name:
           type: string
-          description: Name of the conference.
+          nullable: true
+          description: Name of the conference room.
           example: dmjjSRZphrx8Y1do2MwE
         status:
           type: string
+          nullable: true
           description: Status of the conference.
           example: completed
         locked:
           type: boolean
-          description: Locks the conference.
+          description: Whether the conference is locked.
           example: false
         started_at:
           type: string
           format: date-time
-          description: Started at date of the conference.
+          nullable: true
+          description: Timestamp when the conference started.
           example: '2025-03-11T01:49:51.069Z'
         ended_at:
           type: string
           format: date-time
-          description: Ended at date of the conference.
+          nullable: true
+          description: Timestamp when the conference ended.
           example: '2025-03-11T01:50:55.752Z'
         charge:
           type: string
-          description: Total charge amount of the conference.
+          description: Total charge amount of the conference in dollars.
           example: '0.0'
         charge_details:
           type: array
