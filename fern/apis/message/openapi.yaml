@@ -39,6 +39,8 @@ paths:
         - $ref: '#/components/parameters/LogListRequest.created_on'
         - $ref: '#/components/parameters/LogListRequest.created_after'
         - $ref: '#/components/parameters/LogListRequest.page_size'
+        - $ref: '#/components/parameters/LogListRequest.page_number'
+        - $ref: '#/components/parameters/LogListRequest.page_token'
       responses:
         '200':
           description: The request has succeeded.
@@ -46,6 +48,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogListResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -87,6 +95,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LogRetrieveResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -99,6 +113,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageLogShowStatusCode422'
         '500':
           description: An internal server error occurred.
           content:
@@ -142,6 +162,18 @@ components:
       description: Include logs for deleted activity.
       schema:
         type: boolean
+        default: false
+      explode: false
+    LogListRequest.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: Page number to retrieve. Requires `page_token` when greater than `0`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
       explode: false
     LogListRequest.page_size:
       name: page_size
@@ -151,6 +183,17 @@ components:
       schema:
         type: integer
         format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    LogListRequest.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Token for cursor-based pagination. Required when `page_number` is greater than `0`. The token is returned in pagination links.
+      schema:
+        type: string
       explode: false
     LogPathID:
       name: id
@@ -251,9 +294,10 @@ components:
             - initiated
             - delivered
             - sent
-            - recieved
+            - received
             - undelivered
             - failed
+            - read
           description: The status of the message.
           example: failed
         direction:
@@ -290,7 +334,8 @@ components:
         url:
           type: string
           format: uri
-          description: URL for the resource associated with this log entry (if available).
+          nullable: true
+          description: URL for the resource associated with this log entry. Null for Relay messages.
           example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
         number_of_segments:
           type: integer
@@ -350,9 +395,10 @@ components:
             - initiated
             - delivered
             - sent
-            - recieved
+            - received
             - undelivered
             - failed
+            - read
           description: The status of the message.
           example: failed
         direction:
@@ -389,7 +435,8 @@ components:
         url:
           type: string
           format: uri
-          description: URL for the resource associated with this log entry (if available).
+          nullable: true
+          description: URL for the resource associated with this log entry. Null for Relay messages.
           example: https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c
         number_of_segments:
           type: integer
@@ -412,6 +459,25 @@ components:
           description: Date and time when the message entry was created.
           example: '2024-05-06T12:20:00Z'
       description: Message log entry with all activity details
+    MessageLogShowStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      description: The request contains invalid parameters. See errors for details.
+      example:
+        statusCode: 422
+        errors:
+          - type: account_error
+            code: exceeds_history_logs_limit
+            message: The value exceeds the 2025-02-09 date limit.
+            attribute: created_at
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#exceeds_history_logs_limit
     MessageLogsListStatusCode422:
       type: object
       required:
@@ -461,6 +527,16 @@ components:
           description: A link to documentation about this error.
           example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
       description: Details about a specific error.
+    Types.StatusCodes.StatusCode400:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Bad Request
+      description: The request is invalid.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
