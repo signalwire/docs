@@ -27,7 +27,7 @@ namespace ProjectAPI.Tokens {
 
       You must set the functions allowed by this API Token by selecting which types of requests this API Token is allowed to make.
 
-      Valid options are: calling, chat, fax, management, messaging, numbers, pubsub, storage, tasking, and video
+      Valid options are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
     @post
     create(...CreateTokenRequest):
@@ -50,10 +50,17 @@ namespace ProjectAPI.Tokens {
 
       You can modify the functions allowed by this API Token by selecting which types of requests this API Token is allowed to make.
 
-      Valid options are: calling, chat, fax, management, messaging, numbers, pubsub, storage, tasking, and video
+      Valid options are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
     @patch(#{implicitOptionality: true})
-    update(@path token_id: string, ...UpdateTokenRequest):
+    update(
+      @path
+      @format("uuid")
+      @doc("The unique identifier of the token to update.")
+      @example("ea14556a-984f-11ee-b9d1-0242ac120002")
+      token_id: string,
+      ...UpdateTokenRequest
+    ):
       | {
           @statusCode statusCode: 200;
           @body body: TokenResponse;
@@ -71,7 +78,13 @@ namespace ProjectAPI.Tokens {
       ${tokenPermissions<"_Management_">}
       """)
     @delete
-    delete(@path @doc("The unique identifier of the token that you want to update.") token_id: string):
+    delete(
+      @path
+      @format("uuid")
+      @doc("The unique identifier of the token that you want to delete.")
+      @example("ea14556a-984f-11ee-b9d1-0242ac120002")
+      token_id: string,
+    ):
       | {
           @statusCode statusCode: 204;
         }
