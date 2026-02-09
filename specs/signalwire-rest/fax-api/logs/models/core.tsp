@@ -89,10 +89,10 @@ model FaxLog {
   created_at: utcDateTime;
 
   @doc("Error code for this resource (if available).")
-  @example(null)
+  @example("34004")
   error_code: string | null;
 
   @doc("The description of this error (if available).")
-  @example(null)
+  @example("The call dropped prematurely")
   error_message: string | null;
 }

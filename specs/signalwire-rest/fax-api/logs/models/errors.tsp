@@ -6,11 +6,11 @@ using Types.StatusCodes;
   statusCode: 422,
   errors: #[
     #{
-      type: "validation_error",
-      code: "invalid_parameter",
-      message: "Name must be present",
-      attribute: "name",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
+      type: "account_error",
+      code: "exceeds_history_logs_limit",
+      message: "The value exceeds the 2025-02-09 date limit.",
+      attribute: "created_before",
+      url: "https://developer.signalwire.com/rest/overview/error-codes/#exceeds_history_logs_limit",
     }
   ],
 })
@@ -20,11 +20,11 @@ model FaxLogsListStatusCode422 is StatusCode422;
   statusCode: 422,
   errors: #[
     #{
-      type: "validation_error",
-      code: "invalid_parameter",
-      message: "Record is outside the accessible history range",
+      type: "account_error",
+      code: "exceeds_history_logs_limit",
+      message: "The value exceeds the 2025-02-09 date limit.",
       attribute: "created_at",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
+      url: "https://developer.signalwire.com/rest/overview/error-codes/#exceeds_history_logs_limit",
     }
   ],
 })
