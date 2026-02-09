@@ -41,6 +41,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PubSubToken'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -48,7 +54,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
         '422':
-          description: Client error
+          description: The request contains invalid parameters. See errors for details.
           content:
             application/json:
               schema:
@@ -84,7 +90,20 @@ components:
           description: The maximum time, in minutes, for which the access token will be valid. Between 1 and 43,200 (30 days).
           example: 15
         channels:
-          $ref: '#/components/schemas/PubSubChannels'
+          allOf:
+            - $ref: '#/components/schemas/PubSubChannels'
+          minProperties: 1
+          maxProperties: 500
+          description: |-
+            Each channel with `write` and `read` objects with boolean as values. Max of 500 channels inside main `channels`.
+            Either `read`, `write`, or both are required inside each channel and default to false.
+            Each channel name can be up to 250 characters. Must be valid JSON.
+          example:
+            channela:
+              read: true
+              write: false
+            channelb:
+              read: true
         member_id:
           type: string
           maxLength: 250
@@ -94,22 +113,22 @@ components:
           allOf:
             - $ref: '#/components/schemas/PubSubState'
           description: An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.
+          example:
+            display_name: Joe
+            an_array:
+              - foo
+              - bar
+              - baz
+          default: {}
     PubSubChannels:
       type: object
       additionalProperties:
-        type: object
-        properties:
-          read:
-            type: boolean
-            description: Gives the token read access to the channel.
-            example: true
-          write:
-            type: boolean
-            description: Gives the token write access to the channel.
-            example: false
+        anyOf:
+          - $ref: '#/components/schemas/PubSubPermissionWithRead'
+          - $ref: '#/components/schemas/PubSubPermissionWithWrite'
       description: |-
-        Each channel with `write` and `read` objects with boolean as values. Max of 500 channels inside main `channels`. 
-        Either `read`, `write`, or both are required inside each channel and default to false. 
+        User-defined channel names. Each channel is an object with `read` and/or `write` properties.
+        Max of 500 channels. Either `read`, `write`, or both are required inside each channel and default to `false`.
         Each channel name can be up to 250 characters. Must be valid JSON.
       example:
         channela:
@@ -117,6 +136,34 @@ components:
           write: false
         channelb:
           read: true
+    PubSubPermissionWithRead:
+      type: object
+      required:
+        - read
+      properties:
+        read:
+          type: boolean
+          description: Gives the token read access to the channel.
+          example: true
+        write:
+          type: boolean
+          description: Gives the token write access to the channel.
+          example: false
+      title: Read Permission
+    PubSubPermissionWithWrite:
+      type: object
+      required:
+        - write
+      properties:
+        read:
+          type: boolean
+          description: Gives the token read access to the channel.
+          example: true
+        write:
+          type: boolean
+          description: Gives the token write access to the channel.
+          example: false
+      title: Write Permission
     PubSubState:
       type: object
       additionalProperties: {}
@@ -139,33 +186,62 @@ components:
     PubSubToken422Error:
       type: object
       required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      description: The request contains invalid parameters. See errors for details.
+      example:
+        statusCode: 422
+        errors:
+          - type: validation_error
+            code: not_a_valid_json
+            message: Permissions must be valid JSON
+            attribute: permissions
+            url: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#not_a_valid_json
+    Types.StatusCodes.RestApiErrorItem:
+      type: object
+      required:
         - type
         - code
         - message
-        - attribute
         - url
       properties:
         type:
           type: string
-          description: Error type.
+          description: The category of error.
           example: validation_error
         code:
           type: string
-          description: Error code.
-          example: not_a_valid_json
+          description: A specific error code.
+          example: invalid_parameter
         message:
           type: string
-          description: Error details.
-          example: Permissions must be valid JSON
+          description: A description of what caused the error.
+          example: Name must be present
         attribute:
           type: string
-          description: Request parameter associated with this error.
-          example: permissions
+          nullable: true
+          description: The request parameter that caused the error, if applicable.
+          example: name
         url:
           type: string
-          format: uri
-          description: Link to developer resource for this error.
-          example: https://developer.signalwire.com/rest/overview/error-codes/#not_a_valid_json
+          description: A link to documentation about this error.
+          example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
+      description: Details about a specific error.
+    Types.StatusCodes.StatusCode400:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Bad Request
+      description: The request is invalid.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
