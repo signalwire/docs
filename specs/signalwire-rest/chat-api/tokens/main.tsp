@@ -24,11 +24,11 @@ namespace ChatAPI.Tokens {
       """)
     create(...NewChatToken):
       | {
-          @statusCode statusCode: 201;
-          @body call: ChatToken;
+          @statusCode statusCode: 200;
+          @body body: ChatToken;
         }
+      | StatusCode400
       | StatusCode401
-      | StatusCode404
       | ChatToken422Error;
   }
 }
