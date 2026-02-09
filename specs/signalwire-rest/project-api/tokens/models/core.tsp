@@ -2,6 +2,7 @@
 enum TokenPermission {
   calling,
   chat,
+  datasphere,
   fax,
   management,
   messaging,
@@ -16,6 +17,7 @@ enum TokenPermission {
 model TokenResponse {
   @doc("The ID of the created API Token.")
   @example("ea14556a-984f-11ee-b9d1-0242ac120002")
+  @format("uuid")
   id: string;
 
   @doc("The name of the created API Token.")
