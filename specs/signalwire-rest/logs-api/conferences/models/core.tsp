@@ -2,6 +2,7 @@
 model Conference {
   @doc("Unique identifier for the conference.")
   @example("b9028451-b1d3-4690-b5d3-37b19d25f573")
+  @format("uuid")
   id: string;
 
   @doc("Creation timestamp.")
@@ -20,15 +21,15 @@ model BaseConference is Conference {
 
   @doc("Name of the conference.")
   @example("conference")
-  name: string;
+  name: string | null;
 
   @doc("Status of the conference.")
   @example("in-progress")
-  status: string;
+  status: string | null;
 
   @doc("Maximum size of the conference.")
   @example(2)
-  max_size: integer;
+  max_size: integer | null;
 
   @doc("Current participants in the conference.")
   @example(1)
@@ -54,15 +55,15 @@ model RelayConference is BaseConference {
 
   @doc("Recording URL of the conference.")
   @example("http://record.com")
-  recording_url: string;
+  recording_url: string | null;
 
   @doc("Recording duration of the conference.")
   @example(123)
-  recording_duration: integer;
+  recording_duration: integer | null;
 
   @doc("Recording file size of the conference.")
   @example(12345)
-  recording_file_size: integer;
+  recording_file_size: integer | null;
 }
 
 @summary("Video Room Session")
@@ -73,33 +74,33 @@ model VideoRoomSessionConference is Conference {
 
   @doc("Type of the conference.")
   @example("video_conference_session")
-  type: "video_conference_session";
+  type: "video_conference_session" | "video_room_session";
 
-  @doc("Url of the conference.")
+  @doc("URL of the conference room session.")
   @example("https://test.signalwire.com/api/video/room_sessions/b9028451-b1d3-4690-b5d3-37b19d25f573")
   url: string;
 
-  @doc("Name of the conference.")
+  @doc("Name of the conference room.")
   @example("dmjjSRZphrx8Y1do2MwE")
-  room_name: string;
+  room_name: string | null;
 
   @doc("Status of the conference.")
   @example("completed")
-  status: string;
+  status: string | null;
 
-  @doc("Locks the conference.")
+  @doc("Whether the conference is locked.")
   @example(false)
   locked: boolean;
 
-  @doc("Started at date of the conference.")
+  @doc("Timestamp when the conference started.")
   @example(utcDateTime.fromISO("2025-03-11T01:49:51.069Z"))
-  started_at: utcDateTime;
+  started_at: utcDateTime | null;
 
-  @doc("Ended at date of the conference.")
+  @doc("Timestamp when the conference ended.")
   @example(utcDateTime.fromISO("2025-03-11T01:50:55.752Z"))
-  ended_at: utcDateTime;
+  ended_at: utcDateTime | null;
 
-  @doc("Total charge amount of the conference.")
+  @doc("Total charge amount of the conference in dollars.")
   @example("0.0")
   charge: string;
 
@@ -112,7 +113,7 @@ model ChargeDetails {
   @example("Tax")
   description: string;
 
-  @doc("Charged amount.")
-  @example(60000)
-  amount: integer;
+  @doc("Charge amount in dollars.")
+  @example("0.50")
+  charge: string;
 }
