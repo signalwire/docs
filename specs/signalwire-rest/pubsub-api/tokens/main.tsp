@@ -24,18 +24,14 @@ namespace PubSubAPI.Tokens {
       """)
     @post
     @operationId("create_token")
-    create(@body request: NewPubSubToken):
+    create(...NewPubSubToken):
       | {
-          @statusCode _: 200;
-          @doc("OK")
-          @body token: PubSubToken;
+          @statusCode statusCode: 200;
+          @body body: PubSubToken;
         }
+      | StatusCode400
       | StatusCode401
-      | {
-          @statusCode _: 422;
-          @doc("Unprocessable Entity. You may have specified invalid parameters.")
-          @body error: PubSubToken422Error;
-        }
+      | PubSubToken422Error
       | StatusCode500;
   }
 }
