@@ -44,7 +44,7 @@ model MessageLog {
     | "initiated"
     | "delivered"
     | "sent"
-    | "recieved"
+    | "received"
     | "undelivered"
     | "failed";
 
@@ -69,9 +69,9 @@ model MessageLog {
   @example("relay_message")
   type: "relay_message" | "laml_message";
 
-  @doc("URL for the resource associated with this log entry (if available).")
+  @doc("URL for the resource associated with this log entry. Null for Relay messages.")
   @example("https://example.signalwire.com/api/laml/2010-04-01/Accounts/c38dacad-2f6c-4de1-93d6-cc732e0c70c5/Messages/9ee38635-899a-490a-bfd1-9e72f5eea53c")
-  url: url;
+  url: url | null;
 
   @doc("The number of segments.")
   @example(1)
