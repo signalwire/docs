@@ -1,7 +1,9 @@
 import "@typespec/http";
 import "@typespec/openapi";
 import "./models/core.tsp";
+import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/errors.tsp";
 import "../../types";
 import "../../../_shared/auth.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
@@ -23,6 +25,10 @@ namespace LogsAPI.Conferences {
 
       ${tokenPermissions<"_Voice_ or _Video_">}
       """)
-    list(): ConferencesResponse | StatusCode401 | StatusCode404;
+    list(...ConferenceLogListRequest):
+      | ConferencesResponse
+      | StatusCode401
+      | ConferenceLogsStatusCode422
+      | StatusCode500;
   }
 }
