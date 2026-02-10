@@ -33,7 +33,6 @@ enum VoiceSources {
 enum VoiceType {
   dialogflow_call,
   laml_call,
-  agora_call,
   relay_pstn_call,
   relay_sip_call,
   relay_webrtc_call,
@@ -47,7 +46,6 @@ enum RelayVoiceType {
   relay_pstn_call: "relay_pstn_call",
   relay_sip_call: "relay_sip_call",
   relay_webrtc_call: "relay_webrtc_call",
-  agora_call: "agora_call",
 }
 
 enum VideoRoomVoiceType {

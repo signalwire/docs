@@ -57,7 +57,7 @@ model VoiceLogCommon {
 }
 
 @summary("Call Log")
-@doc("Voice log for LAML and Relay call types. Returned when `type` is `laml_call`, `relay_pstn_call`, `relay_sip_call`, `relay_webrtc_call`, or `agora_call`.")
+@doc("Voice log for Compatibility and Relay call types. Returned when `type` is `laml_call`, `relay_pstn_call`, `relay_sip_call`, or `relay_webrtc_call`.")
 model RelayVoiceLog {
   ...VoiceLogCommon;
 
@@ -94,8 +94,8 @@ model RelayVoiceLog {
   parent_id: string | null;
 }
 
-@summary("Video Room Log")
-@doc("Voice log for Video Room call types. Returned when `type` is `video_room_pstn_leg` or `video_room_sip_leg`.")
+@summary("Video Room Audio Leg Log")
+@doc("Voice log for audio legs in a Video Room. Returned when `type` is `video_room_pstn_leg` or `video_room_sip_leg`.")
 model VideoRoomVoiceLog {
   ...VoiceLogCommon;
 
