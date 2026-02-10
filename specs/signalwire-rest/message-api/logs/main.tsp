@@ -21,11 +21,12 @@ namespace MessageAPI.Logs {
     @summary("List Logs")
     @doc("""
       List the available logs.
-      
+
       ${tokenPermissions<"_Messaging_">}
       """)
     list(...LogListRequest):
       | LogListResponse
+      | StatusCode400
       | StatusCode401
       | MessageLogsListStatusCode422
       | StatusCode500;
@@ -34,13 +35,15 @@ namespace MessageAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-      
+
       ${tokenPermissions<"_Messaging_">}
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | MessageLogShowStatusCode422
       | StatusCode500;
   }
 }
