@@ -26,6 +26,7 @@ namespace VoiceAPI.Logs {
       """)
     list(...LogListRequest):
       | LogListResponse
+      | StatusCode400
       | StatusCode401
       | VoiceLogsListStatusCode422
       | StatusCode500;
@@ -39,8 +40,10 @@ namespace VoiceAPI.Logs {
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | StatusCode422
       | StatusCode500;
 
     @operationId("list_voice_log_events")
@@ -53,8 +56,10 @@ namespace VoiceAPI.Logs {
     @route("/{id}/events")
     listEvents(...LogPathID):
       | LogEventsListResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | StatusCode422
       | StatusCode500;
   }
 }
