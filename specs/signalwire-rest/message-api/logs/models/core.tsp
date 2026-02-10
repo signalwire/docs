@@ -46,8 +46,7 @@ model MessageLog {
     | "sent"
     | "received"
     | "undelivered"
-    | "failed"
-    | "read";
+    | "failed";
 
   @doc("The direction of the message.")
   @example("inbound")
