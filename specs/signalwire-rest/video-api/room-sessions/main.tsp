@@ -33,8 +33,12 @@ namespace VideoAPI.RoomSessions {
       @query
       @doc("Return Sessions currently in this state. Possible values are: completed and in-progress.")
       @example("completed")
-      status?: string
-    ): ListRoomSessionsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+      status?: string,
+    ):
+      | ListRoomSessionsResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("get_room_session")
     @summary("Find a Room Session by ID")
@@ -43,7 +47,7 @@ namespace VideoAPI.RoomSessions {
     read(
       @path
       @doc("Unique ID of the Room Session")
-      id: string
+      id: string,
     ): RoomSessionResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("list_room_session_recordings")
@@ -58,8 +62,12 @@ namespace VideoAPI.RoomSessions {
       @query
       @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
       @example(900)
-      media_ttl?: int32
-    ): ListRoomSessionRecordingsResponse | StatusCode401 | StatusCode404 | StatusCode500;
+      media_ttl?: int32,
+    ):
+      | ListRoomSessionRecordingsResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("list_room_session_members")
     @summary("List a Room Session's Members")
@@ -68,7 +76,11 @@ namespace VideoAPI.RoomSessions {
     listMembers(
       @path
       @doc("Unique ID of the Room Session")
-      id: string
-    ): ListRoomSessionMembersResponse | StatusCode401 | StatusCode404 | StatusCode500;
+      id: string,
+    ):
+      | ListRoomSessionMembersResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

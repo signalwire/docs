@@ -35,7 +35,17 @@ model CreateRoomTokenRequest {
   user_name?: string;
 
   @doc("A list of permissions, which define what user can do once they join the room.")
-  @example(#["room.self.audio_mute", "room.self.audio_unmute", "room.self.video_mute", "room.self.video_unmute", "room.self.deaf", "room.self.undeaf", "room.self.set_input_volume", "room.self.set_output_volume", "room.self.set_input_sensitivity"])
+  @example(#[
+    "room.self.audio_mute",
+    "room.self.audio_unmute",
+    "room.self.video_mute",
+    "room.self.video_unmute",
+    "room.self.deaf",
+    "room.self.undeaf",
+    "room.self.set_input_volume",
+    "room.self.set_output_volume",
+    "room.self.set_input_sensitivity"
+  ])
   permissions?: string[];
 
   @doc("The user can't join the room before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`")

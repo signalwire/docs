@@ -20,7 +20,7 @@ namespace FabricAPI.Subscribers.Addresses {
     @summary("List Subscriber Addresses")
     @doc("""
       List Subscriber Addresses
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SubscriberAddressID):

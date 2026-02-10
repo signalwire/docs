@@ -18,7 +18,7 @@ namespace FabricAPI.CxmlApplication.Addresses {
     @summary("List cXML Application Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific LaML Application.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...CxmlApplicationAddressPathID):

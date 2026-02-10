@@ -44,13 +44,15 @@ using TypeSpec.OpenAPI;
 @tagMetadata(TRANSCRIPTIONS_TAG, TRANSCRIPTIONS_TAG_METADATA)
 @tagMetadata(TOKENS_TAG, TOKENS_TAG_METADATA)
 @service(#{ title: "Compatibility API" })
-@info(#{
-  version: "1.0.0",
-})
-@server("https://{space_name}.signalwire.com/api/laml/2010-04-01", "SignalWire Compatibility API", {
-  @doc("Your SignalWire Space name")
-  @example("YOUR_SPACE")
-  space_name: string = "YOUR_SPACE",
-})
+@info(#{ version: "1.0.0" })
+@server(
+  "https://{space_name}.signalwire.com/api/laml/2010-04-01",
+  "SignalWire Compatibility API",
+  {
+    @doc("Your SignalWire Space name")
+    @example("YOUR_SPACE")
+    space_name: string = "YOUR_SPACE",
+  }
+)
 @useAuth(SignalWireBasicAuth)
 namespace CompatibilityAPI;

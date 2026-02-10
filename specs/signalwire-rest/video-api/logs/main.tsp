@@ -43,7 +43,7 @@ namespace VideoAPI.Logs {
       @query
       @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.")
       @example(20)
-      page_size?: int32
+      page_size?: int32,
     ): ListLogsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("get_log")
@@ -53,7 +53,7 @@ namespace VideoAPI.Logs {
     read(
       @path
       @doc("Unique ID of the log")
-      id: string
+      id: string,
     ): LogResponse | StatusCode401 | StatusCode404 | StatusCode500;
   }
 }

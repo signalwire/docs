@@ -143,7 +143,7 @@ model ConnectDeviceBase {
     Can be either:
     - A URL (http or https) that returns a SWML document
     - An inline SWML document (as a JSON string)
-
+    
     **Note:** This parameter is REQUIRED when connecting to a queue (when `to` starts with "queue:")
     """)
   @example("https://example.com/after-bridge.swml")

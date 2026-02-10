@@ -19,7 +19,7 @@ namespace PubSubAPI.Tokens {
     @summary("Generate a new PubSub Token")
     @doc("""
       Generate a PubSub Token to be used to authenticate clients to the PubSub Service.
-
+      
       ${tokenPermissions<"_PubSub_">}
       """)
     @post

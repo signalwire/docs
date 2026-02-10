@@ -7,7 +7,11 @@ model CreateTokenRequest {
   name: string;
 
   @doc("The permissions you would like to enable for this token. Valid permissions are calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video")
-  @example(#[TokenPermission.calling, TokenPermission.fax, TokenPermission.messaging])
+  @example(#[
+    TokenPermission.calling,
+    TokenPermission.fax,
+    TokenPermission.messaging
+  ])
   @minItems(1)
   permissions: TokenPermission[];
 
@@ -24,6 +28,10 @@ model UpdateTokenRequest {
   name?: string;
 
   @doc("The permissions you would like to enable for this token. Valid permissions are calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video")
-  @example(#[TokenPermission.calling, TokenPermission.fax, TokenPermission.messaging])
+  @example(#[
+    TokenPermission.calling,
+    TokenPermission.fax,
+    TokenPermission.messaging
+  ])
   permissions?: TokenPermission[];
 }

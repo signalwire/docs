@@ -19,9 +19,9 @@
  * ```
  */
 alias tokenPermissions<Scopes extends string> = """
-#### Permissions
-
-The API token used to authenticate must have the following scope(s) enabled to make a successful request: ${Scopes}.
-
-[Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
-""";
+  #### Permissions
+  
+  The API token used to authenticate must have the following scope(s) enabled to make a successful request: ${Scopes}.
+  
+  [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+  """;

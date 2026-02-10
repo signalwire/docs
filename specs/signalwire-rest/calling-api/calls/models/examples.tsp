@@ -40,19 +40,11 @@ const hangupCallExample = #{
 };
 
 const holdCallExample = #{
-  request: #{
-    command: "calling.ai_hold",
-    id: callId,
-    params: #{},
-  },
+  request: #{ command: "calling.ai_hold", id: callId, params: #{} },
 };
 
 const unholdCallExample = #{
-  request: #{
-    command: "calling.ai_unhold",
-    id: callId,
-    params: #{},
-  },
+  request: #{ command: "calling.ai_unhold", id: callId, params: #{} },
 };
 
 const aiMessageExample = #{
@@ -75,7 +67,10 @@ const liveTranscribeStartExample = #{
       action: #{
         start: #{
           lang: "en-US",
-          direction: #[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`],
+          direction: #[
+            TranscribeDirection.`local-caller`,
+            TranscribeDirection.`remote-caller`
+          ],
           webhook: "https://example.com/transcription-events",
           live_events: true,
           ai_summary: true,
@@ -91,9 +86,7 @@ const liveTranscribeStopExample = #{
   request: #{
     command: "calling.live_transcribe",
     id: callId,
-    params: #{
-      action: LiveTranscribeStopAction.stop,
-    },
+    params: #{ action: LiveTranscribeStopAction.stop },
   },
 };
 
@@ -122,7 +115,10 @@ const liveTranslateStartExample = #{
         start: #{
           from_lang: "en-US",
           to_lang: "es-ES",
-          direction: #[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`],
+          direction: #[
+            TranscribeDirection.`local-caller`,
+            TranscribeDirection.`remote-caller`
+          ],
           from_voice: "elevenlabs.josh",
           to_voice: "elevenlabs.josh",
           filter_from: "professional",
@@ -140,9 +136,7 @@ const liveTranslateStopExample = #{
   request: #{
     command: "calling.live_translate",
     id: callId,
-    params: #{
-      action: "stop",
-    },
+    params: #{ action: "stop" },
   },
 };
 

@@ -20,13 +20,13 @@ namespace ProjectAPI.Tokens {
     @summary("Generate a new API Token")
     @doc("""
       Generate an API Token for a project to be used to authenticate requests within the project.
-
+      
       ${tokenPermissions<"_Management_">}
-
+      
       #### Token Permissions
-
+      
       You must set the functions allowed by this API Token by selecting which types of requests this API Token is allowed to make.
-
+      
       Valid options are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
     @post
@@ -43,23 +43,24 @@ namespace ProjectAPI.Tokens {
     @summary("Update an API Token")
     @doc("""
       Update an API Token's name or permissions.
-
+      
       ${tokenPermissions<"_Management_">}
-
+      
       #### Token Permissions
-
+      
       You can modify the functions allowed by this API Token by selecting which types of requests this API Token is allowed to make.
-
+      
       Valid options are: calling, chat, datasphere, fax, management, messaging, numbers, pubsub, storage, tasking, and video
       """)
-    @patch(#{implicitOptionality: true})
+    @patch(#{ implicitOptionality: true })
     update(
       @path
       @format("uuid")
       @doc("The unique identifier of the token to update.")
       @example("ea14556a-984f-11ee-b9d1-0242ac120002")
       token_id: string,
-      ...UpdateTokenRequest
+
+      ...UpdateTokenRequest,
     ):
       | {
           @statusCode statusCode: 200;
@@ -74,7 +75,7 @@ namespace ProjectAPI.Tokens {
     @summary("Delete an API Token")
     @doc("""
       Delete an API Token. This action cannot be undone.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
     @delete

@@ -19,7 +19,7 @@ namespace CompatibilityAPI.Messages {
     @summary("List all Messages")
     @doc("""
       List all messages.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     list(
@@ -72,13 +72,17 @@ namespace CompatibilityAPI.Messages {
       @doc("The token for cursor-based pagination. Must start with 'PA' or 'PB'.")
       @example("PAb3877c40da604998")
       PageToken?: string,
-    ): MessageListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | MessageListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("create_message")
     @summary("Create a Message")
     @doc("""
       Create and send a message.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     @post
@@ -86,23 +90,31 @@ namespace CompatibilityAPI.Messages {
       ...MessagesAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateMessageRequest,
-    ): MessageCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | MessageCreatedResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_message")
     @summary("Retrieve a Message")
     @doc("""
       Retrieve a single message.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     @route("/{Sid}")
-    read(...MessagesAccountSidPath, ...MessageSidPath): MessageResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...MessagesAccountSidPath, ...MessageSidPath):
+      | MessageResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_message")
     @summary("Update a Message")
     @doc("""
       Update a message body after it has been sent. Currently, the only supported update is redacting the message by setting the body to an empty string. Messages that are still in progress (queued or initiated status) cannot be updated.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     @post
@@ -112,18 +124,28 @@ namespace CompatibilityAPI.Messages {
       ...MessageSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateMessageRequest,
-    ): MessageResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | MessageResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
 
     @operationId("delete_message")
     @summary("Delete a Message")
     @doc("""
       Delete a message. Messages that are still in progress (queued status) cannot be deleted.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...MessagesAccountSidPath, ...MessageSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...MessagesAccountSidPath, ...MessageSidPath):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 
   @tag(MESSAGE_MEDIA_TAG)
@@ -134,12 +156,13 @@ namespace CompatibilityAPI.Messages {
     @summary("List Message Media")
     @doc("""
       List all media for a message.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     list(
       ...MessagesAccountSidPath,
       ...MessageSidPathForMedia,
+
       @query
       @doc("Only return media created on this particular date, formatted as YYYY-MM-DD in UTC.")
       @example("2024-01-15")
@@ -172,27 +195,48 @@ namespace CompatibilityAPI.Messages {
       @doc("The token for cursor-based pagination. Must start with 'PA' or 'PB'.")
       @example("PAb3877c40da604998")
       PageToken?: string,
-    ): MessageMediaListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | MessageMediaListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_media")
     @summary("Retrieve Message Media")
     @doc("""
       Retrieve media for a message.
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     @route("/{Sid}")
-    read(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): MessageMediaResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(
+      ...MessagesAccountSidPath,
+      ...MessageSidPathForMedia,
+      ...MessageSidPath,
+    ):
+      | MessageMediaResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("delete_message_media")
     @summary("Delete Message Media")
     @doc("""
       Delete media for a message. Media cannot be deleted if the parent message is still in progress (initiated or queued status).
-
+      
       ${tokenPermissions<"_Messaging_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...MessagesAccountSidPath, ...MessageSidPathForMedia, ...MessageSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(
+      ...MessagesAccountSidPath,
+      ...MessageSidPathForMedia,
+      ...MessageSidPath,
+    ):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 }

@@ -19,24 +19,24 @@ namespace FabricAPI.CallFlow.Versions {
     @summary("List Call Flow Versions")
     @doc("""
       Returns a list of versions of a Call Flow.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...CallFlowVersionPathID):
       | CallFlowVersionListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("deploy_call_flow_version")
-        @summary("Deploy a Call Flow Version")
-        @doc("""
+    @operationId("deploy_call_flow_version")
+    @summary("Deploy a Call Flow Version")
+    @doc("""
       Deploys a specific version of a Call Flow.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        deploy(
+    @post
+    deploy(
       ...CallFlowVersionPathID,
       @body request: CallFlowVersionDeployRequest,
     ):

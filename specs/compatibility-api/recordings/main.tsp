@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Recordings {
     @summary("List all Recordings")
     @doc("""
       List all recordings. Results are returned as a paginated list ordered by creation date (newest first).
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -68,67 +68,80 @@ namespace CompatibilityAPI.Recordings {
       @doc("Token for cursor-based pagination. Required when navigating to pages beyond the first.")
       @example("PA19e436af-5688-4307-b03b-bdb2b42b8142")
       PageToken?: string,
-    ): RecordingListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | RecordingListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_recording")
     @summary("Retrieve a Recording.")
     @doc("""
       Retrieve a single recording media or its metadata.
-
+      
       This endpoint supports two different access methods with different authentication requirements:
-
+      
       ## Public Access (No Authentication Required)
-
+      
       Recording audio files can be accessed directly without authentication. This is useful for external applications
       to embed recording URLs without exposing SignalWire API credentials. SignalWire recording URLs are long
       and random, making them difficult to guess or exploit unless you reveal the URL.
-
+      
       **Retrieve WAV file**
-
+      
       When a recording URI has no extension or a `.wav` extension, the request
       will return a binary WAV version of the recording file.
-
+      
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}`
-
+      
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.wav`
-
+      
       **Retrieve MP3 file**
-
+      
       Setting an extension of ".mp3" on the URI returns a binary MP3 version
       of the recording. For example:
-
+      
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.mp3`
-
+      
       ## Authenticated Access (Voice Scope Required)
-
+      
       **Retrieve Metadata**
-
+      
       A recording's metadata, such as duration, cost, time, can be returned by
       setting the Recording URI's extension to `.json`. This requires authentication
       with a Voice-scoped API token.
-
+      
       `GET https://example.signalwire.com/api/laml/2010-04-01/Accounts/{AccountSid}/Recordings/{Sid}.json`
-
+      
       #### Permissions
-
+      
       The API token used to authenticate must have the following scopes enabled to make a successful request: _Voice_.
-
+      
       This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
-
+      
       [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     @route("/{Sid}")
-    read(...RecordingsAccountSidPath, ...RecordingSidPath): RecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...RecordingsAccountSidPath, ...RecordingSidPath):
+      | RecordingResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("delete_recording")
     @summary("Delete a Recording.")
     @doc("""
       Delete recording. If the delete is successful, a 204 response, with no body, will be returned.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...RecordingsAccountSidPath, ...RecordingSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...RecordingsAccountSidPath, ...RecordingSidPath):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 }

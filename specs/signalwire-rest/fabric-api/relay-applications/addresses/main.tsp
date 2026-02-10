@@ -18,7 +18,7 @@ namespace FabricAPI.RelayApplication.Addresses {
     @summary("List Relay Application Addresses")
     @doc("""
       This endpoint returns a paginated list of addresses associated with a Relay Application.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...RelayApplicationAddressPathID):

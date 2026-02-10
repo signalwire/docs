@@ -22,40 +22,40 @@ namespace FabricAPI.CxmlApplications {
     @summary("List cXML Applications")
     @doc("""
       A list of cXML Applications
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | CxmlApplicationListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_cxml_application")
-        @summary("Get cXML Application")
-        @doc("""
+    @operationId("get_cxml_application")
+    @summary("Get cXML Application")
+    @doc("""
       Returns a cXML Application by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...CxmlApplicationPathID):
+    read(...CxmlApplicationPathID):
       | {
           @statusCode statusCode: 200;
           @body laml_application: CxmlApplicationResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_cxml_application")
-        @summary("Update cXML Application")
-        @doc("""
+    @operationId("update_cxml_application")
+    @summary("Update cXML Application")
+    @doc("""
       Updates a cXML Application by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @put
-        update(
+    @put
+    update(
       ...CxmlApplicationPathID,
       @body request: CxmlApplicationUpdateRequest,
     ):
@@ -66,17 +66,17 @@ namespace FabricAPI.CxmlApplications {
       | StatusCode401
       | StatusCode404
       | CxmlApplicationUpdateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_cxml_application")
-        @summary("Delete LAML Application")
-        @doc("""
+    @operationId("delete_cxml_application")
+    @summary("Delete LAML Application")
+    @doc("""
       Deletes a LAML Application by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...CxmlApplicationPathID):
+    @delete
+    delete(...CxmlApplicationPathID):
       | {
           @statusCode statusCode: 204;
         }

@@ -19,7 +19,7 @@ namespace ChatAPI.Tokens {
     @summary("Generate a new Chat Token")
     @doc("""
       Generate a Chat Token to be used to authenticate clients to the Chat Service.
-
+      
       ${tokenPermissions<"_Chat_">}
       """)
     create(...NewChatToken):

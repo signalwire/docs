@@ -19,7 +19,7 @@ namespace FabricAPI.CXMLWebhook.Addresses {
     @summary("List cXML Webhook Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific cXML Webhook.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...CXMLWebhookIDPath):

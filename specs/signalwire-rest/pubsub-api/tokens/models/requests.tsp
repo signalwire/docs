@@ -5,10 +5,7 @@ using TypeSpec.JsonSchema;
 /* Model is used to work-around a bug in the rest api plugin, not a TypeSpec issue. Duplicate description must be present and usage of a model is required.
 Otherwise the property will render a additionalProperty with the exact same description as the top level property holding additionalProperties. */
 @doc("An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.")
-@example(#{
-  display_name: "Joe",
-  an_array: #["foo", "bar", "baz"],
-})
+@example(#{ display_name: "Joe", an_array: #["foo", "bar", "baz"] })
 model PubSubState is Record<unknown>;
 
 model NewPubSubToken {
@@ -39,10 +36,7 @@ model NewPubSubToken {
   /* Model is used to work-around a bug in the rest api plugin, not a TypeSpec issue. Duplicate description must be present and usage of a model is required.
     Otherwise the property will render a additionalProperty with the exact same description as the top level property holding additionalProperties. */
   @doc("An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.")
-  @example(#{
-    display_name: "Joe",
-    an_array: #["foo", "bar", "baz"],
-  })
+  @example(#{ display_name: "Joe", an_array: #["foo", "bar", "baz"] })
   state?: PubSubState = #{};
 }
 

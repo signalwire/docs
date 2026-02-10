@@ -18,7 +18,7 @@ namespace FabricAPI.Resource.Addresses {
     @summary("List Resource Addresses")
     @doc("""
       This endpoint is used to retrieve addresses associated with a specific Resource.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...ResourceAddressPathID):

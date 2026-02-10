@@ -22,40 +22,40 @@ namespace FabricAPI.ConferenceRooms {
     @summary("List Conference Rooms")
     @doc("""
       Returns a list of conference rooms.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | ConferenceRoomListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_conference_room")
-        @summary("Get Conference Room")
-        @doc("""
+    @operationId("get_conference_room")
+    @summary("Get Conference Room")
+    @doc("""
       Returns a Conference Room by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...ConferenceRoomPathID):
+    read(...ConferenceRoomPathID):
       | {
           @statusCode statusCode: 200;
           @body conference_room: ConferenceRoomResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("create_conference_room")
-        @summary("Create Conference Room")
-        @doc("""
+    @operationId("create_conference_room")
+    @summary("Create Conference Room")
+    @doc("""
       Creates a Conference Room
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        create(@body request: ConferenceRoomCreateRequest):
+    @post
+    create(@body request: ConferenceRoomCreateRequest):
       | {
           @statusCode statusCode: 200;
           @body conference_room: ConferenceRoomResponse;
@@ -63,17 +63,17 @@ namespace FabricAPI.ConferenceRooms {
       | StatusCode401
       | StatusCode404
       | ConferenceRoomCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_conference_room")
-        @summary("Update Conference Room")
-        @doc("""
+    @operationId("update_conference_room")
+    @summary("Update Conference Room")
+    @doc("""
       Updates a Conference Room by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @put
-        update(
+    @put
+    update(
       ...ConferenceRoomPathID,
       @body request: ConferenceRoomUpdateRequest,
     ):
@@ -84,17 +84,17 @@ namespace FabricAPI.ConferenceRooms {
       | StatusCode401
       | StatusCode404
       | ConferenceRoomUpdateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_conference_room")
-        @summary("Delete Conference Room")
-        @doc("""
+    @operationId("delete_conference_room")
+    @summary("Delete Conference Room")
+    @doc("""
       Deletes a Conference Room by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...ConferenceRoomPathID):
+    @delete
+    delete(...ConferenceRoomPathID):
       | {
           @statusCode statusCode: 204;
         }

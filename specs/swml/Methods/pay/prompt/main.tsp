@@ -31,7 +31,7 @@ model PayPrompts {
 
   @doc("""
     Space-seperated list of card types that are allowed to be used for this prompt.
-
+    
     Supported card types:
         - `visa`
         - `mastercard`
@@ -47,7 +47,7 @@ model PayPrompts {
 
   @doc("""
     Space-separated list of error types this prompt applies to.
-
+    
     Available error types:
         - `timeout` - User input timeout
         - `invalid-card-number` - Failed card validation

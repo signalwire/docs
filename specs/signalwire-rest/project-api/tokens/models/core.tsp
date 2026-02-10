@@ -25,7 +25,11 @@ model TokenResponse {
   name: string;
 
   @doc("The permissions enabled for this token.")
-  @example(#[TokenPermission.calling, TokenPermission.fax, TokenPermission.messaging])
+  @example(#[
+    TokenPermission.calling,
+    TokenPermission.fax,
+    TokenPermission.messaging
+  ])
   permissions: TokenPermission[];
 
   @doc("The API token that can be used along with the project ID for basic authentication")

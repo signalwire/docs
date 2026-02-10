@@ -18,26 +18,31 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
     @summary("List of AvailablePhoneNumber resources")
     @doc("""
       Returns a list of URIs to phone number resources available to the account, categorized by type (Local, Toll-Free, Mobile, etc) and ISO country.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    list(...AvailablePhoneNumbersAccountSidPath): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
+    list(
+      ...AvailablePhoneNumbersAccountSidPath,
+    ): AvailablePhoneNumberResourcesResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
     @operationId("list_available_phone_number_resources_by_country")
     @summary("List of AvailablePhoneNumber resources by country")
     @doc("""
       Returns a list of URIs to phone number resources available to the account in the specified ISO country, categorized by type (Local, Toll-Free, Mobile, etc).
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}")
-    listByCountry(...AvailablePhoneNumbersAccountSidPath, ...IsoCountryPath): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
+    listByCountry(
+      ...AvailablePhoneNumbersAccountSidPath,
+      ...IsoCountryPath,
+    ): AvailablePhoneNumberByCountryResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401;
 
     @operationId("search_local_available_phone_numbers")
     @summary("Search for available phone numbers that match your criteria.")
     @doc("""
       Search for Local AvailablePhoneNumbers.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}/Local")
@@ -104,13 +109,17 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | AvailablePhoneNumberListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("search_toll_free_available_phone_numbers")
     @summary("Find toll-free numbers.")
     @doc("""
       Search for toll-free AvailablePhoneNumbers.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{IsoCountry}/TollFree")
@@ -177,6 +186,10 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       @doc("Not supported. Accepted for Twilio API compatibility.")
       @example(true)
       VoiceEnabled?: boolean,
-    ): AvailablePhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | AvailablePhoneNumberListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
   }
 }

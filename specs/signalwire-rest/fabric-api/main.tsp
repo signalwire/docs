@@ -73,7 +73,7 @@ using TypeSpec.OpenAPI;
 @useAuth(SignalWireBasicAuth)
 @doc("""
   API to access/manage SignalWire's Call Fabric objects.
-
+  
   ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
   """)
 namespace FabricAPI;

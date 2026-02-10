@@ -10,7 +10,6 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-
 @route("/calls")
 namespace CallingAPI.Calls {
   @tag("Calls")
@@ -18,12 +17,12 @@ namespace CallingAPI.Calls {
   interface Calls {
     @summary("Send Call Commands")
     @doc("""
-    Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
-    Send a request with the appropriate `command` field to invoke the desired call operation.
-    This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
-
-    ${tokenPermissions<"_Voice_">}
-    """)
+      Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
+      Send a request with the appropriate `command` field to invoke the desired call operation.
+      This endpoint provides a single interface for all call-related methods including creation, updates, termination, and AI conversation control.
+      
+      ${tokenPermissions<"_Voice_">}
+      """)
     @opExample(
       #{ parameters: liveTranslateStartExample },
       #{
