@@ -4,7 +4,7 @@ import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
-import "../room-sessions/models.tsp";
+import "../room-sessions/models/core.tsp";
 import "./models.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
@@ -44,7 +44,7 @@ namespace VideoAPI.RoomRecordings {
       @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
       @example(900)
       media_ttl?: int32,
-    ): RoomRecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    ): RoomRecording | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("delete_room_recording")
     @summary("Delete a Room Recording.")

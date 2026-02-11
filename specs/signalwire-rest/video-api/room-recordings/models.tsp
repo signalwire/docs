@@ -1,6 +1,6 @@
 import "@typespec/http";
 import "../_shared/models.tsp";
-import "../room-sessions/models.tsp";
+import "../room-sessions/models/core.tsp";
 
 using TypeSpec.Http;
 
@@ -10,5 +10,5 @@ model ListRoomRecordingsResponse {
   links?: PaginationLinks;
 
   @doc("List of room recordings.")
-  data?: RoomRecordingResponse[];
+  data?: RoomRecording[];
 }
