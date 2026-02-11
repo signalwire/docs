@@ -630,6 +630,7 @@ and reverts all changes. Always use line-by-line text manipulation
 - `` ```yaml andJSON `` or `` ```yaml andJson `` - remove `andJSON`/`andJson` (Fern has no auto-JSON generation)
 - `src={require("...").default}` - convert to plain `src="..."` string paths
 - `onChange` prop on Accordion - remove (not supported in Fern)
+- Callout titles left as inline text instead of `title=` prop — Docusaurus rendered the first line of a callout as an ALL CAPS title automatically. In Fern, the title must be an explicit prop. Convert `<Tip>\nMY TITLE\nBody text</Tip>` to `<Tip title="My title">\nBody text</Tip>`. Sentence-case the title.
 
 ## Commands
 
