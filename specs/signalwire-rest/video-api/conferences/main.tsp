@@ -4,7 +4,9 @@ import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
-import "../streams/models.tsp";
+import "../streams/models/core.tsp";
+import "../streams/models/requests.tsp";
+import "../streams/models/responses.tsp";
 import "./models.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 

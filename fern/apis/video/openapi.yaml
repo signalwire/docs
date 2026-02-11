@@ -467,11 +467,11 @@ paths:
             type: string
       responses:
         '200':
-          description: The request has succeeded.
+          description: Stream response object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamResponse'
+                $ref: '#/components/schemas/Stream'
         '401':
           description: Access is unauthorized.
           content:
@@ -1351,12 +1351,7 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique id of a video room
-          schema:
-            type: string
+        - $ref: '#/components/parameters/RoomPathID'
       responses:
         '200':
           description: The request has succeeded.
@@ -1394,25 +1389,26 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique id of a video room
-          schema:
-            type: string
+        - $ref: '#/components/parameters/RoomPathID'
       responses:
-        '200':
-          description: The request has succeeded.
+        '201':
+          description: Stream created response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamResponse'
+                $ref: '#/components/schemas/Stream'
         '401':
           description: Access is unauthorized.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
         '422':
           description: The request contains invalid parameters. See errors for details.
           content:
@@ -1509,19 +1505,14 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the stream
-          schema:
-            type: string
+        - $ref: '#/components/parameters/StreamPathID'
       responses:
         '200':
-          description: The request has succeeded.
+          description: Stream response object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamResponse'
+                $ref: '#/components/schemas/Stream'
         '401':
           description: Access is unauthorized.
           content:
@@ -1552,19 +1543,14 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the stream
-          schema:
-            type: string
+        - $ref: '#/components/parameters/StreamPathID'
       responses:
         '200':
-          description: The request has succeeded.
+          description: Stream response object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StreamResponse'
+                $ref: '#/components/schemas/Stream'
         '401':
           description: Access is unauthorized.
           content:
@@ -1607,12 +1593,7 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the stream
-          schema:
-            type: string
+        - $ref: '#/components/parameters/StreamPathID'
       responses:
         '204':
           description: 'There is no content to send for this request, but the headers may be useful. '
@@ -1639,6 +1620,23 @@ paths:
 security:
   - SignalWireBasicAuth: []
 components:
+  parameters:
+    RoomPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the video room.
+      schema:
+        type: string
+        format: uuid
+    StreamPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the stream.
+      schema:
+        type: string
+        format: uuid
   schemas:
     ActiveSession:
       type: object
@@ -2175,10 +2173,12 @@ components:
       description: Request body for creating a room token.
     CreateStreamRequest:
       type: object
+      required:
+        - url
       properties:
         url:
           type: string
-          description: RTMP or RTMPS url. This must be the address of a server accepting incoming RTMP/RTMPS streams.
+          description: RTMP or RTMPS URL. This must be the address of a server accepting incoming RTMP/RTMPS streams.
           example: rtmp://broadcaster
       description: Request body for creating a stream.
     JoinAsType:
@@ -2296,11 +2296,18 @@ components:
       description: List rooms response.
     ListStreamsResponse:
       type: object
+      required:
+        - links
+        - data
       properties:
+        links:
+          allOf:
+            - $ref: '#/components/schemas/PaginationLinks'
+          description: Pagination links.
         data:
           type: array
           items:
-            $ref: '#/components/schemas/StreamResponse'
+            $ref: '#/components/schemas/Stream'
           description: List of streams.
       description: List streams response.
     LogResponse:
@@ -2764,35 +2771,50 @@ components:
           description: URL for more information.
           example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter
       description: Room token validation error item.
-    StreamResponse:
+    Stream:
       type: object
+      required:
+        - id
+        - url
+        - stream_type
+        - width
+        - height
+        - fps
+        - created_at
+        - updated_at
       properties:
         id:
           type: string
-          description: A unique identifier for the stream
+          format: uuid
+          description: Unique identifier for the stream.
           example: c22d24f6-5a47-4597-9a23-c7d01e696b92
         url:
           type: string
-          description: RTMP or RTMPS url. This must be the address of a server accepting incoming RTMP/RTMPS streams.
+          nullable: true
+          description: RTMP or RTMPS URL. This must be the address of a server accepting incoming RTMP/RTMPS streams.
           example: rtmp://broadcaster
         stream_type:
           type: string
+          nullable: true
           description: The type of stream.
           example: rtmp
         width:
           type: integer
           format: int32
-          description: The stream's width.
+          nullable: true
+          description: The stream's width in pixels.
           example: 1920
         height:
           type: integer
           format: int32
-          description: The stream's height.
+          nullable: true
+          description: The stream's height in pixels.
           example: 1080
         fps:
           type: integer
           format: int32
-          description: The stream's fps
+          nullable: true
+          description: The stream's frames per second.
           example: 20
         created_at:
           type: string
@@ -2804,7 +2826,7 @@ components:
           format: date-time
           description: Timestamp when the stream was last updated.
           example: '2022-01-01T11:00:00Z'
-      description: Stream response object.
+      description: A video stream object.
     Types.StatusCodes.RestApiErrorItem:
       type: object
       required:
@@ -3056,10 +3078,12 @@ components:
       description: Request body for updating a room.
     UpdateStreamRequest:
       type: object
+      required:
+        - url
       properties:
         url:
           type: string
-          description: RTMP or RTMPS url. This must be the address of a server accepting incoming RTMP/RTMPS streams.
+          description: RTMP or RTMPS URL. This must be the address of a server accepting incoming RTMP/RTMPS streams.
           example: rtmp://broadcaster
       description: Request body for updating a stream.
     VideoQuality:
