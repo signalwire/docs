@@ -24,8 +24,12 @@ namespace VideoAPI.RoomRecordings {
       @query
       @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
       @example(900)
-      media_ttl?: int32
-    ): ListRoomRecordingsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+      media_ttl?: int32,
+    ):
+      | ListRoomRecordingsResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("get_room_recording")
     @summary("Find a Room Recording by ID")
@@ -39,7 +43,7 @@ namespace VideoAPI.RoomRecordings {
       @query
       @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
       @example(900)
-      media_ttl?: int32
+      media_ttl?: int32,
     ): RoomRecordingResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("delete_room_recording")
@@ -50,9 +54,13 @@ namespace VideoAPI.RoomRecordings {
     delete(
       @path
       @doc("ID of room recording to return")
-      id: string
-    ): {
-      @statusCode statusCode: 204;
-    } | StatusCode401 | StatusCode404 | StatusCode500;
+      id: string,
+    ):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

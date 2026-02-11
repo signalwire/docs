@@ -18,10 +18,10 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
     @summary("Import a Phone Number")
     @doc("""
       Import a phone number you already own to your SignalWire Space to use with SignalWire APIs.
-
+      
       **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact
       [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -29,9 +29,13 @@ namespace CompatibilityAPI.ImportedPhoneNumbers {
       ...ImportedPhoneNumbersAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: ImportPhoneNumberRequest,
-    ): {
-      @statusCode statusCode: 201;
-      @body body: IncomingPhoneNumber;
-    } | CompatibilityStatusCode401 | CompatibilityStatusCode400 | CompatibilityStatusCode422ImportedPhoneNumber;
+    ):
+      | {
+          @statusCode statusCode: 201;
+          @body body: IncomingPhoneNumber;
+        }
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode422ImportedPhoneNumber;
   }
 }

@@ -19,7 +19,7 @@ namespace CompatibilityAPI.Tokens {
     @summary("Generate a new API Token")
     @doc("""
       Generate an API Token for a project to be used to authenticate requests within the project.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
     @post
@@ -27,33 +27,46 @@ namespace CompatibilityAPI.Tokens {
       ...TokensAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateTokenRequest,
-    ): TokenResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422Token;
+    ):
+      | TokenResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422Token;
 
     @operationId("update_token")
     @summary("Update an API Token")
     @doc("""
       Update an API Token's name or permissions.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
-    @patch(#{implicitOptionality: true})
+    @patch(#{ implicitOptionality: true })
     @route("/{token_id}")
     update(
       ...TokensAccountSidPath,
       ...TokenIdPath,
       @header contentType: "application/json",
       @body body: UpdateTokenRequest,
-    ): TokenResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422Token;
+    ):
+      | TokenResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422Token;
 
     @operationId("delete_token")
     @summary("Delete an API Token")
     @doc("""
       Delete an API Token. This action cannot be undone.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
     @delete
     @route("/{token_id}")
-    delete(...TokensAccountSidPath, ...TokenIdPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...TokensAccountSidPath, ...TokenIdPath):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
   }
 }

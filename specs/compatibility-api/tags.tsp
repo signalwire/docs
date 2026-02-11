@@ -24,9 +24,7 @@ const STREAMS_TAG_METADATA = #{
 };
 
 const CONFERENCES_TAG = "Conferences";
-const CONFERENCES_TAG_METADATA = #{
-  description: "Manage conference calls.",
-};
+const CONFERENCES_TAG_METADATA = #{ description: "Manage conference calls." };
 
 const CONFERENCE_PARTICIPANTS_TAG = "Conference Participants";
 const CONFERENCE_PARTICIPANTS_TAG_METADATA = #{
@@ -44,14 +42,10 @@ const CONFERENCE_STREAMS_TAG_METADATA = #{
 };
 
 const FAXES_TAG = "Faxes";
-const FAXES_TAG_METADATA = #{
-  description: "Send and manage faxes.",
-};
+const FAXES_TAG_METADATA = #{ description: "Send and manage faxes." };
 
 const FAX_MEDIA_TAG = "Fax Media";
-const FAX_MEDIA_TAG_METADATA = #{
-  description: "Manage fax media files.",
-};
+const FAX_MEDIA_TAG_METADATA = #{ description: "Manage fax media files." };
 
 const INCOMING_PHONE_NUMBERS_TAG = "Incoming Phone Numbers";
 const INCOMING_PHONE_NUMBERS_TAG_METADATA = #{
@@ -80,9 +74,7 @@ const MESSAGE_MEDIA_TAG_METADATA = #{
 };
 
 const RECORDINGS_TAG = "Recordings";
-const RECORDINGS_TAG_METADATA = #{
-  description: "Manage call recordings.",
-};
+const RECORDINGS_TAG_METADATA = #{ description: "Manage call recordings." };
 
 const TRANSCRIPTIONS_TAG = "Recording Transcriptions";
 const TRANSCRIPTIONS_TAG_METADATA = #{
@@ -90,9 +82,7 @@ const TRANSCRIPTIONS_TAG_METADATA = #{
 };
 
 const QUEUES_TAG = "Queues";
-const QUEUES_TAG_METADATA = #{
-  description: "Manage call queues.",
-};
+const QUEUES_TAG_METADATA = #{ description: "Manage call queues." };
 
 const QUEUE_MEMBERS_TAG = "Queue Members";
 const QUEUE_MEMBERS_TAG_METADATA = #{

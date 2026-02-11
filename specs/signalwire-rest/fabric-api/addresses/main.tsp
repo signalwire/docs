@@ -21,21 +21,21 @@ namespace FabricAPI.FabricAddresses {
     @doc("""
       A list of Fabric Addresses. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/create-subscriber-token).
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | FabricAddressesResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_fabric_address")
-        @summary("Get Fabric Address")
+    @operationId("get_fabric_address")
+    @summary("Get Fabric Address")
     @doc("""
       Returns a Fabric Address by ID. This endpoint uses the bearer token authentication method with the SAT (Subscriber Access Token) which can be
       generated using the [Create Subscriber Token endpoint](/apis/rest/fabric/subscribers/create-subscriber-token).
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...FabricAddressID):

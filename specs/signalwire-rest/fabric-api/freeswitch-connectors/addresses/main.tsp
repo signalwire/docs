@@ -18,7 +18,7 @@ namespace FabricAPI.FreeswitchConnectorAddresses {
     @summary("List FreeSWITCH Connector Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...FreeswitchConnectorAddressPathID):

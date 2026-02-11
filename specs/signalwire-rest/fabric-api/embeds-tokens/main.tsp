@@ -25,7 +25,7 @@ namespace FabricAPI.EmbedsTokens {
     @summary("Create Embeds Tokens")
     @doc("""
       Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

@@ -19,7 +19,7 @@ namespace CompatibilityAPI.Conferences {
     @summary("List All Conferences")
     @doc("""
       The ability to read all of the conferences that are associated with your Account. This will be returned as a list of conferences.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -83,23 +83,31 @@ namespace CompatibilityAPI.Conferences {
       @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
       @example("PAb3877c40da6049989ad0b792e98472cf")
       PageToken?: string,
-    ): ConferenceListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | ConferenceListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_conference")
     @summary("Retrieve a Conference")
     @doc("""
       Retrieve a single conference.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPath): ConferenceResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...ConferencesAccountSidPath, ...ConferenceSidPath):
+      | ConferenceResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_conference")
     @summary("Update Conference")
     @doc("""
       Allows you to modify the properties of a conference.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -109,7 +117,13 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body?: UpdateConferenceRequest,
-    ): ConferenceResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
+    ):
+      | ConferenceResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422
+      | CompatibilityStatusCode503;
   }
 
   @tag(CONFERENCE_PARTICIPANTS_TAG)
@@ -120,7 +134,7 @@ namespace CompatibilityAPI.Conferences {
     @summary("List all active Participants")
     @doc("""
       The ability to read all of the active participants that are associated with this conference call. This will be returned as a list of participants.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -154,23 +168,36 @@ namespace CompatibilityAPI.Conferences {
       @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
       @example("PAb3877c40da6049989ad0b792e98472ca")
       PageToken?: string,
-    ): ConferenceParticipantListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | ConferenceParticipantListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_participant")
     @summary("Retrieve a Participant")
     @doc("""
       Retrieve a single participant.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{CallSid}")
-    read(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): ConferenceParticipantResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ParticipantCallSidPath,
+    ):
+      | ConferenceParticipantResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_participant")
     @summary("Update a Participant")
     @doc("""
       Update a participant.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -181,18 +208,32 @@ namespace CompatibilityAPI.Conferences {
       ...ParticipantCallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceParticipantRequest,
-    ): ConferenceParticipantResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | ConferenceParticipantResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
 
     @operationId("delete_participant")
     @summary("Delete a Participant")
     @doc("""
       Deleting a participant will take them out of a conference call.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{CallSid}")
-    delete(...ConferencesAccountSidPath, ...ConferenceSidPathForParticipant, ...ParticipantCallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(
+      ...ConferencesAccountSidPath,
+      ...ConferenceSidPathForParticipant,
+      ...ParticipantCallSidPath,
+    ):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 
   @tag(CONFERENCE_RECORDINGS_TAG)
@@ -203,7 +244,7 @@ namespace CompatibilityAPI.Conferences {
     @summary("List Conference Recordings")
     @doc("""
       List all recordings for a conference.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -242,13 +283,18 @@ namespace CompatibilityAPI.Conferences {
       @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
       @example("PA19e436af56884307b03bbdb2b42b8142")
       PageToken?: string,
-    ): ConferenceRecordingListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | ConferenceRecordingListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
 
     @operationId("get_conference_recording")
     @summary("Get a Conference Recording")
     @doc("""
       Get details for a specific conference recording.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
@@ -256,13 +302,17 @@ namespace CompatibilityAPI.Conferences {
       ...ConferencesAccountSidPath,
       ...ConferenceSidPathForParticipant,
       ...ConferenceRecordingSidPath,
-    ): ConferenceRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ):
+      | ConferenceRecordingResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_conference_recording")
     @summary("Update a Conference Recording")
     @doc("""
       Pause, resume or stop a conference recording. You can control what happens while recording is paused (replace pause with silence or skip it).
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -273,13 +323,19 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceRecordingSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceRecordingRequest,
-    ): ConferenceRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray | CompatibilityStatusCode503;
+    ):
+      | ConferenceRecordingResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422StringArray
+      | CompatibilityStatusCode503;
 
     @operationId("delete_conference_recording")
     @summary("Delete a Conference Recording")
     @doc("""
       Delete a conference recording. If successful, a 204 response with no body will be returned.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
@@ -288,7 +344,11 @@ namespace CompatibilityAPI.Conferences {
       ...ConferencesAccountSidPath,
       ...ConferenceSidPathForParticipant,
       ...ConferenceRecordingSidPath,
-    ): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    ):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
   }
 
   @tag(CONFERENCE_STREAMS_TAG)
@@ -299,7 +359,7 @@ namespace CompatibilityAPI.Conferences {
     @summary("Create a Conference Stream.")
     @doc("""
       Create a stream for an existing conference.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -308,13 +368,18 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceSidPathForParticipant,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateConferenceStreamRequest,
-    ): ConferenceStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;
+    ):
+      | ConferenceStreamResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422StringArray;
 
     @operationId("update_conference_stream")
     @summary("Update Conference Stream")
     @doc("""
       Update an existing conference stream. Commonly used to stop/start streams or modify stream properties.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -325,6 +390,11 @@ namespace CompatibilityAPI.Conferences {
       ...ConferenceStreamSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateConferenceStreamRequest,
-    ): ConferenceStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422StringArray;
+    ):
+      | ConferenceStreamResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422StringArray;
   }
 }

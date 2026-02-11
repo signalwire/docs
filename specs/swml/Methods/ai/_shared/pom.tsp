@@ -31,7 +31,11 @@ model PomSectionBodyContent is PomSectionBase {
 
   @doc("Optional array of bullet points")
   @minItems(1)
-  @example(#["Be polite and professional", "Listen actively to customer concerns", "Provide accurate information"])
+  @example(#[
+    "Be polite and professional",
+    "Listen actively to customer concerns",
+    "Provide accurate information"
+  ])
   bullets?: string[];
 }
 
@@ -44,7 +48,11 @@ model PomSectionBulletsContent is PomSectionBase {
 
   @doc("Array of bullet points")
   @minItems(1)
-  @example(#["Acknowledge the issue", "Apologize for any inconvenience", "Offer a resolution"])
+  @example(#[
+    "Acknowledge the issue",
+    "Apologize for any inconvenience",
+    "Offer a resolution"
+  ])
   bullets: string[];
 }
 

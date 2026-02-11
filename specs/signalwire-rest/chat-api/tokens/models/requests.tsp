@@ -18,7 +18,10 @@ model NewChatToken {
   @minProperties(1)
   @maxProperties(500)
   @doc("User-defined channel names with read/write permissions. Max of 500 channels. Channel names cannot start with the reserved prefix `sw_` and can be up to 250 characters.")
-  @example(#{ channel1: #{ read: true, write: true }, channel2: #{ read: true, write: false } })
+  @example(#{
+    channel1: #{ read: true, write: true },
+    channel2: #{ read: true, write: false },
+  })
   channels: ChatChannel;
 
   @maxLength(250)

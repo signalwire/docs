@@ -131,7 +131,10 @@ model LiveTranscribeStartAction {
     lang: string;
 
     @doc("The direction(s) of the call to transcribe.")
-    @example(#[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`])
+    @example(#[
+      TranscribeDirection.`local-caller`,
+      TranscribeDirection.`remote-caller`
+    ])
     direction: TranscribeDirection[];
 
     @doc("The webhook URL to receive transcription events.")
@@ -230,7 +233,10 @@ model LiveTranslateStartAction {
     to_lang: string;
 
     @doc("The direction(s) of the call to translate.")
-    @example(#[TranscribeDirection.`local-caller`, TranscribeDirection.`remote-caller`])
+    @example(#[
+      TranscribeDirection.`local-caller`,
+      TranscribeDirection.`remote-caller`
+    ])
     direction: TranscribeDirection[];
 
     @doc("The TTS voice for the source language.")
@@ -321,7 +327,11 @@ enum LiveTranslateStopAction {
   stop,
 }
 
-alias LiveTranslateAction = LiveTranslateStartAction | LiveTranslateSummarizeAction | LiveTranslateInjectAction | LiveTranslateStopAction;
+alias LiveTranslateAction =
+  | LiveTranslateStartAction
+  | LiveTranslateSummarizeAction
+  | LiveTranslateInjectAction
+  | LiveTranslateStopAction;
 
 @summary("calling.live_translate")
 model CallLiveTranslateRequest {
@@ -442,26 +452,26 @@ model CallUpdateCurrentCallRequest {
   params: CallUpdateParamsAlias;
 }
 
-@discriminated(#{discriminatorPropertyName: "command", envelope: "none"})
+@discriminated(#{ discriminatorPropertyName: "command", envelope: "none" })
 @doc("""
-Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke:
-
-- **`dial`** - Create and initiate a new outbound call to a destination. Returns immediately with call details while the call is being established in the background.
-
-- **`update`** - Modify an active call's properties in real-time. Update call parameters such as routing, recording settings, or other call-specific configurations.
-
-- **`calling.end`** - Terminate an active call immediately. Disconnects all parties and ends the call session. Cannot be reversed once executed.
-
-- **`calling.ai_hold`** - Place an AI-powered call on hold. Pauses the AI conversation and typically plays hold music or a message to the caller. The AI agent becomes inactive until unhold.
-
-- **`calling.ai_unhold`** - Resume an AI call from hold state. Reactivates the AI agent and continues the conversation from where it was paused.
-
-- **`calling.ai_message`** - Inject a message into an active AI conversation. Allows you to dynamically add context, instructions, or system messages to guide the AI agent's behavior during the call.
-
-- **`calling.live_transcribe`** - Control live transcription on an active call. Start real-time speech-to-text transcription, stop transcription, or request an on-demand AI summary of the conversation.
-
-- **`calling.live_translate`** - Control live translation on an active call. Start real-time language translation between call participants, stop translation, request summaries, or inject messages to be translated and spoken.
-""")
+  Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke:
+  
+  - **`dial`** - Create and initiate a new outbound call to a destination. Returns immediately with call details while the call is being established in the background.
+  
+  - **`update`** - Modify an active call's properties in real-time. Update call parameters such as routing, recording settings, or other call-specific configurations.
+  
+  - **`calling.end`** - Terminate an active call immediately. Disconnects all parties and ends the call session. Cannot be reversed once executed.
+  
+  - **`calling.ai_hold`** - Place an AI-powered call on hold. Pauses the AI conversation and typically plays hold music or a message to the caller. The AI agent becomes inactive until unhold.
+  
+  - **`calling.ai_unhold`** - Resume an AI call from hold state. Reactivates the AI agent and continues the conversation from where it was paused.
+  
+  - **`calling.ai_message`** - Inject a message into an active AI conversation. Allows you to dynamically add context, instructions, or system messages to guide the AI agent's behavior during the call.
+  
+  - **`calling.live_transcribe`** - Control live transcription on an active call. Start real-time speech-to-text transcription, stop transcription, or request an on-demand AI summary of the conversation.
+  
+  - **`calling.live_translate`** - Control live translation on an active call. Start real-time language translation between call participants, stop translation, request summaries, or inject messages to be translated and spoken.
+  """)
 union CallRequest {
   dial: CallCreateRequest,
   update: CallUpdateCurrentCallRequest,

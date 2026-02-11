@@ -22,7 +22,7 @@ namespace LogsAPI.Conferences {
     @summary("List Conferences")
     @doc("""
       A list of Conferences.
-
+      
       ${tokenPermissions<"_Voice_ or _Video_">}
       """)
     list(...ConferenceLogListRequest):

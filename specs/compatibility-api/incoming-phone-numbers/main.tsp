@@ -19,7 +19,7 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
     @summary("List all Incoming Phone Numbers")
     @doc("""
       List all incoming phone numbers.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     list(
@@ -52,13 +52,17 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       @doc("Only show numbers with this friendly name.")
       @example("My Phone")
       FriendlyName?: string,
-    ): IncomingPhoneNumberListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | IncomingPhoneNumberListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("create_incoming_phone_number")
     @summary("Create an Incoming Phone Number")
     @doc("""
       Purchase and provision a new incoming phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -66,23 +70,31 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       ...IncomingPhoneNumbersAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateIncomingPhoneNumberRequest,
-    ): IncomingPhoneNumberCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | IncomingPhoneNumberCreatedResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_incoming_phone_number")
     @summary("Retrieve an incoming phone number")
     @doc("""
       Retrieve an incoming phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{Sid}")
-    read(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): IncomingPhoneNumberResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath):
+      | IncomingPhoneNumberResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_incoming_phone_number")
     @summary("Update an incoming phone number")
     @doc("""
       Update an incoming phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -92,19 +104,33 @@ namespace CompatibilityAPI.IncomingPhoneNumbers {
       ...IncomingPhoneNumberSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateIncomingPhoneNumberRequest,
-    ): IncomingPhoneNumberResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | IncomingPhoneNumberResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
 
     @operationId("delete_incoming_phone_number")
     @summary("Delete an incoming phone number")
     @doc("""
       Release an incoming phone number. The number will be removed from your account.
-
+      
       Note: Numbers cannot be released within a cooldown period after purchase.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...IncomingPhoneNumbersAccountSidPath, ...IncomingPhoneNumberSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode409 | CompatibilityStatusCode422;
+    delete(
+      ...IncomingPhoneNumbersAccountSidPath,
+      ...IncomingPhoneNumberSidPath,
+    ):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode409
+      | CompatibilityStatusCode422;
   }
 }

@@ -20,16 +20,20 @@ namespace SpaceAPI.SipEndpoints {
     @summary("List all SIP Endpoints.")
     @doc("""
       Returns a list of your SIP endpoints.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
-    list(...ListSipEndpointsQuery): SipEndpointListResponse | StatusCode401 | ValidationError | StatusCode500;
+    list(...ListSipEndpointsQuery):
+      | SipEndpointListResponse
+      | StatusCode401
+      | ValidationError
+      | StatusCode500;
 
     @operationId("create_sip_endpoint")
     @summary("Create a SIP Endpoint")
     @doc("""
       Creates a new SIP endpoint.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -43,16 +47,21 @@ namespace SpaceAPI.SipEndpoints {
     @summary("Retrieve a SIP Endpoint")
     @doc("""
       Retrieves the details of a SIP endpoint.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
-    read(...SipEndpointPathID): SipEndpointResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...SipEndpointPathID):
+      | SipEndpointResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("update_sip_endpoint")
     @summary("Update a SIP Endpoint")
     @doc("""
       Updates a SIP endpoint.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @put
@@ -67,7 +76,7 @@ namespace SpaceAPI.SipEndpoints {
     @summary("Delete a SIP Endpoint")
     @doc("""
       Permanently deletes a SIP endpoint.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete

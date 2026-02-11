@@ -19,7 +19,7 @@ namespace CompatibilityAPI.Accounts {
     @summary("List Accounts")
     @doc("""
       This endpoint will return a list that contains Project you are connecting as and any subprojects.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
     list(
@@ -45,35 +45,47 @@ namespace CompatibilityAPI.Accounts {
       @doc("A token used to retrieve a specific page of results. The token is returned in the response of a previous request.")
       @example("PAb3877c40da604998")
       PageToken?: string,
-    ): AccountListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | AccountListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("create_subprojects")
     @summary("Create Subprojects")
     @doc("""
       This endpoint creates a subproject on the Project you are connecting as.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
     @post
     create(
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateSubprojectRequest,
-    ): AccountCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | AccountCreatedResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("get_account")
     @summary("Find an Account by ID")
     @doc("""
       Find a Project (also referred to as _Account_) by ID.
-
+      
       ${tokenPermissions<"_Management_">}
       """)
-    read(...AccountPathSid): AccountResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...AccountPathSid):
+      | AccountResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_account")
     @summary("Update an Account")
     @doc("""
       Update a Project (also referred to as _Account_).
-
+      
       ${tokenPermissions<"_Management_">}
       """)
     @post
@@ -82,6 +94,11 @@ namespace CompatibilityAPI.Accounts {
       ...AccountPathSid,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateAccountRequest,
-    ): AccountResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | AccountResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 }

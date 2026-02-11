@@ -18,7 +18,7 @@ namespace CompatibilityAPI.Transcriptions {
     @summary("List all Transcriptions")
     @doc("""
       List all transcriptions. Results are returned as a paginated list ordered by creation date (newest first).
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -56,27 +56,40 @@ namespace CompatibilityAPI.Transcriptions {
       @doc("Token for cursor-based pagination. Required when navigating to pages beyond the first.")
       @example("PAb3877c40-da60-4998-90ad-b792e98472tr")
       PageToken?: string,
-    ): TranscriptionListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | TranscriptionListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_transcription")
     @summary("Retrieve a Transcription.")
     @doc("""
       Retrieve a single recording transcription.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
-    read(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): TranscriptionResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...TranscriptionsAccountSidPath, ...TranscriptionSidPath):
+      | TranscriptionResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("delete_transcription")
     @summary("Delete a Recording Transcription.")
     @doc("""
       Delete a recording transcription from your account. If the delete is successful, a 204 response, with no body, will be returned.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...TranscriptionsAccountSidPath, ...TranscriptionSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...TranscriptionsAccountSidPath, ...TranscriptionSidPath):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 }

@@ -30,7 +30,13 @@ model CreateDomainApplicationRequest {
   codecs?: string[] = #["PCMU", "PCMA"];
 
   @doc("A list of encryption ciphers this domain application will support.")
-  ciphers?: string[] = #["AEAD_AES_256_GCM_8", "AES_256_CM_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_80", "AES_256_CM_HMAC_SHA1_32", "AES_CM_128_HMAC_SHA1_32"];
+  ciphers?: string[] = #[
+    "AEAD_AES_256_GCM_8",
+    "AES_256_CM_HMAC_SHA1_80",
+    "AES_CM_128_HMAC_SHA1_80",
+    "AES_256_CM_HMAC_SHA1_32",
+    "AES_CM_128_HMAC_SHA1_32"
+  ];
 
   @doc("Specify how the domain application will handle calls.")
   call_handler?: DomainAppCallHandlerRequest;

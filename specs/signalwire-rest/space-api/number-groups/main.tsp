@@ -22,16 +22,20 @@ namespace SpaceAPI.NumberGroups {
       Returns a list of your Number Groups. The groups are returned sorted
       by creation date, with the most recent appearing first. The list is
       filterable by sending in any of the following parameters.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    list(...ListNumberGroupsQuery): NumberGroupListResponse | StatusCode401 | ValidationError | StatusCode500;
+    list(...ListNumberGroupsQuery):
+      | NumberGroupListResponse
+      | StatusCode401
+      | ValidationError
+      | StatusCode500;
 
     @operationId("create_number_group")
     @summary("Create a Number Group")
     @doc("""
       Creates a new number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -45,16 +49,21 @@ namespace SpaceAPI.NumberGroups {
     @summary("Retrieve a Number Group")
     @doc("""
       Retrieves the details of a number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...NumberGroupPathID): NumberGroupResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...NumberGroupPathID):
+      | NumberGroupResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("update_number_group")
     @summary("Update a Number Group")
     @doc("""
       Updates a number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @put
@@ -69,7 +78,7 @@ namespace SpaceAPI.NumberGroups {
     @summary("Delete a Number Group")
     @doc("""
       Deletes a number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete
@@ -81,7 +90,6 @@ namespace SpaceAPI.NumberGroups {
       | StatusCode401
       | StatusCode404
       | StatusCode500;
-
   }
 
   @tag(NUMBER_GROUP_MEMBERSHIP_TAG)
@@ -92,21 +100,29 @@ namespace SpaceAPI.NumberGroups {
     @summary("List all Number Group Memberships")
     @doc("""
       Returns a list of phone numbers in a number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @get
-    listMemberships(...NumberGroupIdPath, ...ListNumberGroupMembershipsQuery): NumberGroupMembershipListResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    listMemberships(...NumberGroupIdPath, ...ListNumberGroupMembershipsQuery):
+      | NumberGroupMembershipListResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("create_number_group_membership")
     @summary("Create a Number Group Membership")
     @doc("""
       Adds a phone number to a number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
-    addMembership(...NumberGroupIdPath, @body body: AddNumberGroupMembershipRequest):
+    addMembership(
+      ...NumberGroupIdPath,
+      @body body: AddNumberGroupMembershipRequest,
+    ):
       | NumberGroupMembershipResponse
       | StatusCode401
       | StatusCode404
@@ -124,16 +140,21 @@ namespace SpaceAPI.NumberGroupMemberships {
     @summary("Retrieve a Number Group Membership")
     @doc("""
       Retrieves the details of a number group membership.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...NumberGroupMembershipPathID): NumberGroupMembershipResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...NumberGroupMembershipPathID):
+      | NumberGroupMembershipResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("delete_number_group_membership")
     @summary("Remove Phone Number from Number Group")
     @doc("""
       Removes a phone number from a number group.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete

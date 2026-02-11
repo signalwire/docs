@@ -20,6 +20,10 @@ namespace VideoAPI.RoomTokens {
     @summary("Generate a new Video Room Token")
     @doc("Generate a Room Token allowing a client to join a Room.\n\n${tokenPermissions<"_Video_">}")
     @post
-    create(@body body: CreateRoomTokenRequest): RoomTokenResponse | StatusCode401 | RoomTokenValidationError | StatusCode500;
+    create(@body body: CreateRoomTokenRequest):
+      | RoomTokenResponse
+      | StatusCode401
+      | RoomTokenValidationError
+      | StatusCode500;
   }
 }
