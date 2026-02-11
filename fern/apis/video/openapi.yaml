@@ -131,11 +131,17 @@ paths:
       parameters: []
       responses:
         '200':
-          description: The request has succeeded.
+          description: Conference response wrapper.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConferenceResponse'
+                $ref: '#/components/schemas/Conference'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -174,13 +180,12 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: include_active_session
-          in: query
-          required: false
-          description: Specifies whether or not to include information about the conference's active session (if any)
-          schema:
-            type: boolean
-          explode: false
+        - $ref: '#/components/parameters/ListConferencesRequest.starts_after'
+        - $ref: '#/components/parameters/ListConferencesRequest.ends_before'
+        - $ref: '#/components/parameters/ListConferencesRequest.include_active_session'
+        - $ref: '#/components/parameters/ListConferencesRequest.page_number'
+        - $ref: '#/components/parameters/ListConferencesRequest.page_size'
+        - $ref: '#/components/parameters/ListConferencesRequest.page_token'
       responses:
         '200':
           description: The request has succeeded.
@@ -188,6 +193,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListConferencesResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -221,26 +232,27 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the video conference
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ConferencePathID'
         - name: include_active_session
           in: query
           required: false
-          description: Specifies whether or not to include information about the conference's active session (if any)
+          description: Specifies whether to include information about the conference's active session (if any).
           schema:
             type: boolean
           explode: false
       responses:
         '200':
-          description: The request has succeeded.
+          description: Conference response wrapper.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConferenceResponse'
+                $ref: '#/components/schemas/Conference'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -253,6 +265,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoStatusCode422'
         '500':
           description: An internal server error occurred.
           content:
@@ -273,19 +291,20 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the video conference
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ConferencePathID'
       responses:
         '200':
-          description: The request has succeeded.
+          description: Conference response wrapper.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConferenceResponse'
+                $ref: '#/components/schemas/Conference'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -330,15 +349,16 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the video conference
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ConferencePathID'
       responses:
         '204':
           description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -1539,6 +1559,70 @@ paths:
 security:
   - SignalWireBasicAuth: []
 components:
+  parameters:
+    ConferencePathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the video conference.
+      schema:
+        type: string
+        format: uuid
+    ListConferencesRequest.ends_before:
+      name: ends_before
+      in: query
+      required: false
+      description: Return conferences with a `join_until` time on or before this timestamp. Accepts RFC 3339 datetime or Unix timestamp.
+      schema:
+        type: string
+      explode: false
+    ListConferencesRequest.include_active_session:
+      name: include_active_session
+      in: query
+      required: false
+      description: Specifies whether to include information about the conference's active session (if any).
+      schema:
+        type: boolean
+      explode: false
+    ListConferencesRequest.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: Page number to return. Requires `page_token` for values greater than 0.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    ListConferencesRequest.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    ListConferencesRequest.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Token for cursor-based pagination. Required when `page_number` is greater than 0.
+      schema:
+        type: string
+      explode: false
+    ListConferencesRequest.starts_after:
+      name: starts_after
+      in: query
+      required: false
+      description: Return conferences with a `join_from` time on or after this timestamp. Accepts RFC 3339 datetime or Unix timestamp.
+      schema:
+        type: string
+      explode: false
   schemas:
     ActiveSession:
       type: object
@@ -1646,113 +1730,166 @@ components:
           description: Charged amount.
           example: 0.005
       description: Charge detail item for logs.
-    ConferenceResponse:
+    Conference:
       type: object
+      required:
+        - id
+        - name
+        - display_name
+        - description
+        - join_from
+        - join_until
+        - quality
+        - layout
+        - size
+        - record_on_start
+        - tone_on_entry_and_exit
+        - user_join_video_off
+        - room_join_video_off
+        - enable_chat
+        - enable_room_previews
+        - dark_primary
+        - dark_background
+        - dark_foreground
+        - dark_success
+        - dark_negative
+        - light_primary
+        - light_background
+        - light_foreground
+        - light_success
+        - light_negative
+        - meta
+        - created_at
+        - updated_at
       properties:
         id:
           type: string
-          description: A unique identifier for the video conference
+          format: uuid
+          description: Unique ID of the video conference.
           example: c22d24f6-5a47-4597-9a23-c7d01e696b92
         name:
           type: string
-          description: 'A named unique identifier for the room. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.'
-          example: my_room
+          description: 'A named unique identifier for the conference. Allowed characters: `A-Za-z0-9_-`.'
+          example: my_conference
         display_name:
           type: string
-          description: Display name of the video conference. Maximum of 200 characters. Defaults to the value of name.
+          nullable: true
+          description: Display name of the video conference. Maximum of 200 characters.
           example: My Conference's Name
         description:
           type: string
-          description: Description of the room. Maximum of 3000 characters.
-          example: This room will be used for full company all hands meetings
+          nullable: true
+          description: Description of the conference. Maximum of 3000 characters.
+          example: This conference will be used for full company all hands meetings
         join_from:
           type: string
           format: date-time
-          description: 'Conference does not accept new participants before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`'
+          nullable: true
+          description: Conference does not accept new participants before this time.
           example: '2022-01-01T00:00:00Z'
         join_until:
           type: string
           format: date-time
-          description: 'Conference stops accepting new participants at this time, but keeps running until all participants leave. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`'
+          nullable: true
+          description: Conference stops accepting new participants at this time, but keeps running until all participants leave.
           example: '2022-12-31T23:59:59Z'
         quality:
-          type: string
-          description: The conference's resolution. Allowed values are `720p` or `1080p`.
+          allOf:
+            - $ref: '#/components/schemas/VideoQuality'
+          description: The conference's resolution.
           example: 720p
-          default: 720p
         layout:
-          type: string
-          description: The conference's initial layout. See documentation for a full list of supported layouts.
+          allOf:
+            - $ref: '#/components/schemas/VideoLayout'
+          description: The conference's initial layout.
           example: grid-responsive
-          default: grid-responsive
         size:
-          type: string
-          description: The size of the video conference. Allowed values are `small`, `medium` and `large`. See documentation for a list of size limitations.
+          allOf:
+            - $ref: '#/components/schemas/ConferenceSize'
+          nullable: true
+          description: The size of the video conference.
           example: medium
-          default: medium
         record_on_start:
           type: boolean
-          description: Specifies whether to start recording a Conference Session when one is started for this Conference
+          description: Whether to start recording when a conference session begins.
+          example: false
+        tone_on_entry_and_exit:
+          type: boolean
+          description: Whether a tone is played when a member enters or exits the conference.
+          example: true
+        user_join_video_off:
+          type: boolean
+          description: Whether participants join with video off by user setting.
+          example: false
+        room_join_video_off:
+          type: boolean
+          description: Whether participants join with video off by room setting.
+          example: false
+        enable_chat:
+          type: boolean
+          description: Whether group chat is enabled for conference participants.
           example: true
         enable_room_previews:
           type: boolean
-          description: Whether a video with a preview of the content of the conference is to be generated.
-          example: true
-        enable_chat:
-          type: boolean
-          description: Enables group chat for all participants of the room.
-          example: true
-          default: true
+          nullable: true
+          description: Whether a preview video of the conference content is generated.
+          example: false
         dark_primary:
           type: string
-          description: Used for CTA buttons and selected items.
+          nullable: true
+          description: CTA buttons and selected items color (dark theme).
           example: '#044EF4'
-          default: '#044EF4'
         dark_background:
           type: string
-          description: Main background color.
+          nullable: true
+          description: Main background color (dark theme).
           example: '#FFFFFF'
-          default: '#FFFFFF'
         dark_foreground:
           type: string
-          description: Main foreground color.
+          nullable: true
+          description: Main foreground color (dark theme).
           example: '#1D2127'
-          default: '#1D2127'
         dark_success:
           type: string
-          description: Used for success indications.
+          nullable: true
+          description: Success indication color (dark theme).
           example: '#17BB58'
-          default: '#17BB58'
         dark_negative:
           type: string
-          description: Used for error indications.
+          nullable: true
+          description: Error indication color (dark theme).
           example: '#F42C50'
-          default: '#F42C50'
         light_primary:
           type: string
-          description: Used for CTA buttons and selected items.
+          nullable: true
+          description: CTA buttons and selected items color (light theme).
           example: '#044EF4'
-          default: '#044EF4'
         light_background:
           type: string
-          description: Main background color.
+          nullable: true
+          description: Main background color (light theme).
           example: '#FFFFFF'
-          default: '#FFFFFF'
         light_foreground:
           type: string
-          description: Main foreground color.
+          nullable: true
+          description: Main foreground color (light theme).
           example: '#1D2127'
-          default: '#1D2127'
         light_success:
           type: string
-          description: Used for success indications.
+          nullable: true
+          description: Success indication color (light theme).
           example: '#17BB58'
-          default: '#17BB58'
         light_negative:
           type: string
-          description: Used for error indications.
+          nullable: true
+          description: Error indication color (light theme).
           example: '#F42C50'
-          default: '#F42C50'
+        meta:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: User-defined metadata for the conference.
+          example: null
         created_at:
           type: string
           format: date-time
@@ -1766,8 +1903,15 @@ components:
         active_session:
           allOf:
             - $ref: '#/components/schemas/ActiveSession'
-          description: Active session information for the conference.
-      description: Conference response object.
+          description: Active session information. Only present when requested via the `include_active_session` query parameter.
+      description: Video conference response object.
+    ConferenceSize:
+      type: string
+      enum:
+        - small
+        - medium
+        - large
+      description: Conference size options.
     ConferenceTokenResponse:
       type: object
       properties:
@@ -1793,105 +1937,124 @@ components:
       description: Conference token response object.
     CreateConferenceRequest:
       type: object
+      required:
+        - display_name
       properties:
         name:
           type: string
-          description: 'A named unique identifier for the room. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.'
-          example: my_room
+          maxLength: 100
+          pattern: ^[A-Za-z0-9_-]+$
+          description: 'A named unique identifier for the conference. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.'
+          example: my_conference
         display_name:
           type: string
-          description: Display name of the video conference. Maximum of 200 characters. Defaults to the value of name.
+          maxLength: 200
+          description: Display name of the video conference. Maximum of 200 characters.
           example: My Conference's Name
         description:
           type: string
-          description: Description of the room. Maximum of 3000 characters.
-          example: This room will be used for full company all hands meetings
+          maxLength: 3000
+          description: Description of the conference. Maximum of 3000 characters.
+          example: This conference will be used for full company all hands meetings
         join_from:
           type: string
           format: date-time
-          description: 'Conference does not accept new participants before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`'
+          description: 'Conference does not accept new participants before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`.'
           example: '2022-01-01T00:00:00Z'
         join_until:
           type: string
           format: date-time
-          description: 'Conference stops accepting new participants at this time, but keeps running until all participants leave. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`'
+          description: 'Conference stops accepting new participants at this time, but keeps running until all participants leave. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`.'
           example: '2022-12-31T23:59:59Z'
         quality:
-          type: string
-          description: The conference's resolution. Allowed values are `720p` or `1080p`.
+          allOf:
+            - $ref: '#/components/schemas/VideoQuality'
+          description: The conference's resolution.
           example: 720p
           default: 720p
         layout:
-          type: string
-          description: The conference's initial layout. See documentation for a full list of supported layouts.
+          allOf:
+            - $ref: '#/components/schemas/VideoLayout'
+          description: The conference's initial layout.
           example: grid-responsive
           default: grid-responsive
         size:
-          type: string
-          description: The size of the video conference. Allowed values are `small`, `medium` and `large`. See documentation for a list of size limitations.
+          allOf:
+            - $ref: '#/components/schemas/ConferenceSize'
+          description: The size of the video conference.
           example: medium
           default: medium
         record_on_start:
           type: boolean
-          description: Specifies whether to start recording a Conference Session when one is started for this Conference
+          description: Whether to start recording when a conference session begins.
           example: true
         enable_room_previews:
           type: boolean
-          description: Whether a video with a preview of the content of the conference is to be generated.
+          description: Whether a preview video of the conference content is generated.
           example: true
         enable_chat:
           type: boolean
-          description: Enables group chat for all participants of the room.
+          description: Whether group chat is enabled for conference participants.
           example: true
           default: true
         dark_primary:
           type: string
-          description: Used for CTA buttons and selected items.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: CTA buttons and selected items color (dark theme).
           example: '#044EF4'
           default: '#044EF4'
         dark_background:
           type: string
-          description: Main background color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main background color (dark theme).
           example: '#FFFFFF'
           default: '#FFFFFF'
         dark_foreground:
           type: string
-          description: Main foreground color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main foreground color (dark theme).
           example: '#1D2127'
           default: '#1D2127'
         dark_success:
           type: string
-          description: Used for success indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Success indication color (dark theme).
           example: '#17BB58'
           default: '#17BB58'
         dark_negative:
           type: string
-          description: Used for error indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Error indication color (dark theme).
           example: '#F42C50'
           default: '#F42C50'
         light_primary:
           type: string
-          description: Used for CTA buttons and selected items.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: CTA buttons and selected items color (light theme).
           example: '#044EF4'
           default: '#044EF4'
         light_background:
           type: string
-          description: Main background color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main background color (light theme).
           example: '#FFFFFF'
           default: '#FFFFFF'
         light_foreground:
           type: string
-          description: Main foreground color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main foreground color (light theme).
           example: '#1D2127'
           default: '#1D2127'
         light_success:
           type: string
-          description: Used for success indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Success indication color (light theme).
           example: '#17BB58'
           default: '#17BB58'
         light_negative:
           type: string
-          description: Used for error indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Error indication color (light theme).
           example: '#F42C50'
           default: '#F42C50'
       description: Request body for creating a conference.
@@ -2083,6 +2246,9 @@ components:
       description: List conference tokens response.
     ListConferencesResponse:
       type: object
+      required:
+        - links
+        - data
       properties:
         links:
           allOf:
@@ -2091,7 +2257,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/ConferenceResponse'
+            $ref: '#/components/schemas/Conference'
           description: List of conferences.
       description: List conferences response.
     ListLogsResponse:
@@ -2643,6 +2809,16 @@ components:
           description: A link to documentation about this error.
           example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
       description: Details about a specific error.
+    Types.StatusCodes.StatusCode400:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Bad Request
+      description: The request is invalid.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -2675,107 +2851,121 @@ components:
       description: An internal server error occurred.
     UpdateConferenceRequest:
       type: object
+      required:
+        - display_name
       properties:
-        name:
-          type: string
-          description: 'A named unique identifier for the room. Allowed characters: `A-Za-z0-9_-`. Maximum of 100 characters.'
-          example: my_room
         display_name:
           type: string
-          description: Display name of the video conference. Maximum of 200 characters. Defaults to the value of name.
+          maxLength: 200
+          description: Display name of the video conference. Maximum of 200 characters.
           example: My Conference's Name
         description:
           type: string
-          description: Description of the room. Maximum of 3000 characters.
-          example: This room will be used for full company all hands meetings
+          maxLength: 3000
+          description: Description of the conference. Maximum of 3000 characters.
+          example: This conference will be used for full company all hands meetings
         join_from:
           type: string
           format: date-time
-          description: 'Conference does not accept new participants before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`'
+          description: 'Conference does not accept new participants before this time. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`.'
           example: '2022-01-01T00:00:00Z'
         join_until:
           type: string
           format: date-time
-          description: 'Conference stops accepting new participants at this time, but keeps running until all participants leave. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`'
+          description: 'Conference stops accepting new participants at this time, but keeps running until all participants leave. Expects RFC 3339 datetime: `2022-01-01T23:59:60Z`. Date only: `2022-01-01` will be converted to `2022-01-01T00:00:00Z`.'
           example: '2022-12-31T23:59:59Z'
         quality:
-          type: string
-          description: The conference's resolution. Allowed values are `720p` or `1080p`.
+          allOf:
+            - $ref: '#/components/schemas/VideoQuality'
+          description: The conference's resolution.
           example: 720p
           default: 720p
         layout:
-          type: string
-          description: The conference's initial layout. See documentation for a full list of supported layouts.
+          allOf:
+            - $ref: '#/components/schemas/VideoLayout'
+          description: The conference's initial layout.
           example: grid-responsive
           default: grid-responsive
         size:
-          type: string
-          description: The size of the video conference. Allowed values are `small`, `medium` and `large`. See documentation for a list of size limitations.
+          allOf:
+            - $ref: '#/components/schemas/ConferenceSize'
+          description: The size of the video conference.
           example: medium
           default: medium
         record_on_start:
           type: boolean
-          description: Specifies whether to start recording a Conference Session when one is started for this Conference
+          description: Whether to start recording when a conference session begins.
           example: true
+        tone_on_entry_and_exit:
+          type: boolean
+          description: Whether a tone is played when a member enters or exits the conference.
+          example: true
+        room_join_video_off:
+          type: boolean
+          description: Whether participants join with video off by room setting.
+          example: false
+        user_join_video_off:
+          type: boolean
+          description: Whether participants join with video off by user setting.
+          example: false
         enable_room_previews:
           type: boolean
-          description: Whether a video with a preview of the content of the conference is to be generated.
+          description: Whether a preview video of the conference content is generated.
           example: true
         enable_chat:
           type: boolean
-          description: Enables group chat for all participants of the room.
+          description: Whether group chat is enabled for conference participants.
           example: true
-          default: true
         dark_primary:
           type: string
-          description: Used for CTA buttons and selected items.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: CTA buttons and selected items color (dark theme).
           example: '#044EF4'
-          default: '#044EF4'
         dark_background:
           type: string
-          description: Main background color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main background color (dark theme).
           example: '#FFFFFF'
-          default: '#FFFFFF'
         dark_foreground:
           type: string
-          description: Main foreground color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main foreground color (dark theme).
           example: '#1D2127'
-          default: '#1D2127'
         dark_success:
           type: string
-          description: Used for success indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Success indication color (dark theme).
           example: '#17BB58'
-          default: '#17BB58'
         dark_negative:
           type: string
-          description: Used for error indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Error indication color (dark theme).
           example: '#F42C50'
-          default: '#F42C50'
         light_primary:
           type: string
-          description: Used for CTA buttons and selected items.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: CTA buttons and selected items color (light theme).
           example: '#044EF4'
-          default: '#044EF4'
         light_background:
           type: string
-          description: Main background color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main background color (light theme).
           example: '#FFFFFF'
-          default: '#FFFFFF'
         light_foreground:
           type: string
-          description: Main foreground color.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Main foreground color (light theme).
           example: '#1D2127'
-          default: '#1D2127'
         light_success:
           type: string
-          description: Used for success indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Success indication color (light theme).
           example: '#17BB58'
-          default: '#17BB58'
         light_negative:
           type: string
-          description: Used for error indications.
+          pattern: ^#[0-9a-fA-F]{6}$
+          description: Error indication color (light theme).
           example: '#F42C50'
-          default: '#F42C50'
       description: Request body for updating a conference.
     UpdateRoomRequest:
       type: object
@@ -2845,6 +3035,29 @@ components:
           description: RTMP or RTMPS url. This must be the address of a server accepting incoming RTMP/RTMPS streams.
           example: rtmp://broadcaster
       description: Request body for updating a stream.
+    VideoLayout:
+      type: string
+      enum:
+        - grid-responsive
+        - grid-responsive-mobile
+        - highlight-1-responsive
+        - 1x1
+        - 2x1
+        - 2x2
+        - 5up
+        - 3x3
+        - 4x4
+        - 5x5
+        - 6x6
+        - 8x8
+        - 10x10
+      description: Video room layout options.
+    VideoQuality:
+      type: string
+      enum:
+        - 720p
+        - 1080p
+      description: Video quality resolution.
     VideoStatusCode422:
       type: object
       required:

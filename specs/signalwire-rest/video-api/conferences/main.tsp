@@ -5,7 +5,9 @@ import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
 import "../streams/models.tsp";
-import "./models.tsp";
+import "./models/core.tsp";
+import "./models/requests.tsp";
+import "./models/responses.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -23,6 +25,7 @@ namespace VideoAPI.Conferences {
     @post
     create(@body body: CreateConferenceRequest):
       | ConferenceResponse
+      | StatusCode400
       | StatusCode401
       | VideoStatusCode422
       | StatusCode500;
@@ -30,12 +33,9 @@ namespace VideoAPI.Conferences {
     @operationId("list_video_conferences")
     @summary("List Video Conferences")
     @doc("List Video Conferences.\n\n${tokenPermissions<"_Video_">}")
-    list(
-      @query
-      @doc("Specifies whether or not to include information about the conference's active session (if any)")
-      include_active_session?: boolean,
-    ):
+    list(...ListConferencesRequest):
       | ListConferencesResponse
+      | StatusCode400
       | StatusCode401
       | VideoStatusCode422
       | StatusCode500;
@@ -45,14 +45,19 @@ namespace VideoAPI.Conferences {
     @doc("Find a Video Conference by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
-      @path
-      @doc("Unique ID of the video conference")
-      id: string,
+      ...ConferencePathID,
 
       @query
-      @doc("Specifies whether or not to include information about the conference's active session (if any)")
+      @doc("Specifies whether to include information about the conference's active session (if any).")
+      @example(true)
       include_active_session?: boolean,
-    ): ConferenceResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    ):
+      | ConferenceResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode404
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("update_video_conference")
     @summary("Update a Video Conference")
@@ -60,13 +65,12 @@ namespace VideoAPI.Conferences {
     @route("/{id}")
     @put
     update(
-      @path
-      @doc("Unique ID of the video conference")
-      id: string,
+      ...ConferencePathID,
 
       @body body: UpdateConferenceRequest,
     ):
       | ConferenceResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | VideoStatusCode422
@@ -78,13 +82,12 @@ namespace VideoAPI.Conferences {
     @route("/{id}")
     @delete
     delete(
-      @path
-      @doc("Unique ID of the video conference")
-      id: string,
+      ...ConferencePathID,
     ):
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;
