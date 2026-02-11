@@ -26,6 +26,7 @@ namespace VoiceAPI.Logs {
       """)
     list(...LogListRequest):
       | LogListResponse
+      | StatusCode400
       | StatusCode401
       | VoiceLogsListStatusCode422
       | StatusCode500;
@@ -34,27 +35,31 @@ namespace VoiceAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     retrieve(...LogPathID):
       | LogRetrieveResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | StatusCode422
       | StatusCode500;
 
     @operationId("list_voice_log_events")
     @summary("List Log Events")
     @doc("""
       List all events for a specific log.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/events")
     listEvents(...LogPathID):
       | LogEventsListResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | StatusCode422
       | StatusCode500;
   }
 }

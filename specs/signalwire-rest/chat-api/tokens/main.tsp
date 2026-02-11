@@ -19,16 +19,16 @@ namespace ChatAPI.Tokens {
     @summary("Generate a new Chat Token")
     @doc("""
       Generate a Chat Token to be used to authenticate clients to the Chat Service.
-
+      
       ${tokenPermissions<"_Chat_">}
       """)
     create(...NewChatToken):
       | {
-          @statusCode statusCode: 201;
-          @body call: ChatToken;
+          @statusCode statusCode: 200;
+          @body body: ChatToken;
         }
+      | StatusCode400
       | StatusCode401
-      | StatusCode404
       | ChatToken422Error;
   }
 }

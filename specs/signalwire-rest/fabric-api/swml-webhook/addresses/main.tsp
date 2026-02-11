@@ -19,7 +19,7 @@ namespace FabricAPI.SWMLWebhookAddresses {
     @summary("List SWML Webhook Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific SWML webhook.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SWMLWebhookIDPath):

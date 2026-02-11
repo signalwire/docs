@@ -20,24 +20,24 @@ paths:
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters: []
       responses:
-        '201':
-          description: The request has succeeded and a new resource has been created as a result.
+        '200':
+          description: The request has succeeded.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChatToken'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
-        '404':
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
         '422':
           description: The request contains invalid parameters. See errors for details.
           content:
@@ -59,23 +59,14 @@ components:
     ChatChannel:
       type: object
       additionalProperties:
-        type: object
-        properties:
-          read:
-            type: boolean
-            description: Gives the token read access to the channel.
-            example: true
-          write:
-            type: boolean
-            description: Gives the token write access to the channel.
-            example: false
-        required:
-          - read
-          - write
+        anyOf:
+          - $ref: '#/components/schemas/ChatPermissionWithRead'
+          - $ref: '#/components/schemas/ChatPermissionWithWrite'
       description: |-
-        User-defined channel names. Each channel is a object with `read` and `write` properties.
-        Max of 500 channels inside main `channels`. Either `read`, `write`, or both are required inside each channel and default to `false`.
-        Each channel name can be up to 250 characters. Must be valid JSON.
+        User-defined channel names. Each channel is an object with `read` and/or `write` properties.
+        Max of 500 channels. Either `read`, `write`, or both are required inside each channel and default to `false`.
+        Each channel name can be up to 250 characters. Channel names cannot start with the reserved prefix `sw_`.
+        Must be valid JSON.
       example:
         channel1:
           read: true
@@ -83,6 +74,34 @@ components:
         channel2:
           read: true
           write: false
+    ChatPermissionWithRead:
+      type: object
+      required:
+        - read
+      properties:
+        read:
+          type: boolean
+          description: Gives the token read access to the channel.
+          example: true
+        write:
+          type: boolean
+          description: Gives the token write access to the channel.
+          example: false
+      title: Read Permission
+    ChatPermissionWithWrite:
+      type: object
+      required:
+        - write
+      properties:
+        read:
+          type: boolean
+          description: Gives the token read access to the channel.
+          example: true
+        write:
+          type: boolean
+          description: Gives the token write access to the channel.
+          example: false
+      title: Write Permission
     ChatState:
       type: object
       additionalProperties: {}
@@ -131,15 +150,31 @@ components:
           description: The maximum time, in minutes, that the access token will be valid for. Between 1 and 43,200 (30 days).
           example: 60
         channels:
-          $ref: '#/components/schemas/ChatChannel'
+          allOf:
+            - $ref: '#/components/schemas/ChatChannel'
+          minProperties: 1
+          maxProperties: 500
+          description: User-defined channel names with read/write permissions. Max of 500 channels. Channel names cannot start with the reserved prefix `sw_` and can be up to 250 characters.
+          example:
+            channel1:
+              read: true
+              write: true
+            channel2:
+              read: true
+              write: false
         member_id:
           type: string
+          maxLength: 250
           description: The unique identifier of the member. Up to 250 characters. If not specified, a random UUID will be generated.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         state:
           allOf:
             - $ref: '#/components/schemas/ChatState'
           description: An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.
+          example:
+            key: value
+            key2: value2
+          default: {}
     Types.StatusCodes.RestApiErrorItem:
       type: object
       required:
@@ -170,6 +205,16 @@ components:
           description: A link to documentation about this error.
           example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter
       description: Details about a specific error.
+    Types.StatusCodes.StatusCode400:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - Bad Request
+      description: The request is invalid.
     Types.StatusCodes.StatusCode401:
       type: object
       required:
@@ -180,16 +225,6 @@ components:
           enum:
             - Unauthorized
       description: Access is unauthorized.
-    Types.StatusCodes.StatusCode404:
-      type: object
-      required:
-        - error
-      properties:
-        error:
-          type: string
-          enum:
-            - Not Found
-      description: The server cannot find the requested resource.
   securitySchemes:
     SignalWireBasicAuth:
       type: http

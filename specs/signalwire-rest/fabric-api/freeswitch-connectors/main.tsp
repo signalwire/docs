@@ -22,40 +22,40 @@ namespace FabricAPI.FreeswitchConnectors {
     @summary("List FreeSWITCH Connectors")
     @doc("""
       A list of FreeSWITCH Connectors
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | FreeswitchConnectorListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_freeswitch_connector")
-        @summary("Get FreeSWITCH Connector")
-        @doc("""
+    @operationId("get_freeswitch_connector")
+    @summary("Get FreeSWITCH Connector")
+    @doc("""
       Returns a FreeSWITCH Connector by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...FreeswitchConnectorPathID):
+    read(...FreeswitchConnectorPathID):
       | {
           @statusCode statusCode: 200;
           @body freeswitch_connector: FreeswitchConnectorResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("create_freeswitch_connector")
-        @summary("Create FreeSWITCH Connector")
-        @doc("""
+    @operationId("create_freeswitch_connector")
+    @summary("Create FreeSWITCH Connector")
+    @doc("""
       Creates a FreeSWITCH Connector
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        create(@body request: FreeswitchConnectorCreateRequest):
+    @post
+    create(@body request: FreeswitchConnectorCreateRequest):
       | {
           @statusCode statusCode: 200;
           @body freeswitch_connector: FreeswitchConnectorResponse;
@@ -63,17 +63,17 @@ namespace FabricAPI.FreeswitchConnectors {
       | StatusCode401
       | StatusCode404
       | FreeswitchConnectorCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_freeswitch_connector")
-        @summary("Update FreeSWITCH Connector")
-        @doc("""
+    @operationId("update_freeswitch_connector")
+    @summary("Update FreeSWITCH Connector")
+    @doc("""
       Updates a FreeSWITCH Connector by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @put
-        update(
+    @put
+    update(
       ...FreeswitchConnectorPathID,
       @body request: FreeswitchConnectorUpdateRequest,
     ):
@@ -84,17 +84,17 @@ namespace FabricAPI.FreeswitchConnectors {
       | StatusCode401
       | StatusCode404
       | FreeswitchConnectorUpdateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_freeswitch_connector")
-        @summary("Delete FreeSWITCH Connector")
-        @doc("""
+    @operationId("delete_freeswitch_connector")
+    @summary("Delete FreeSWITCH Connector")
+    @doc("""
       Deletes a FreeSWITCH Connector by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...FreeswitchConnectorPathID):
+    @delete
+    delete(...FreeswitchConnectorPathID):
       | {
           @statusCode statusCode: 204;
         }

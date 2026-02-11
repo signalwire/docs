@@ -23,7 +23,7 @@ namespace VideoAPI.RoomStreams {
       @path
       @doc("Unique id of a video room")
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-      id: string
+      id: string,
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("create_room_stream")
@@ -36,7 +36,7 @@ namespace VideoAPI.RoomStreams {
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
       id: string,
 
-      @body body: CreateStreamRequest
+      @body body: CreateStreamRequest,
     ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
   }
 }
@@ -53,7 +53,7 @@ namespace VideoAPI.Streams {
     read(
       @path
       @doc("Unique ID of the stream")
-      id: string
+      id: string,
     ): StreamResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("update_stream")
@@ -66,8 +66,13 @@ namespace VideoAPI.Streams {
       @doc("Unique ID of the stream")
       id: string,
 
-      @body body: UpdateStreamRequest
-    ): StreamResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
+      @body body: UpdateStreamRequest,
+    ):
+      | StreamResponse
+      | StatusCode401
+      | StatusCode404
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("delete_stream")
     @summary("Delete a Stream")
@@ -77,9 +82,13 @@ namespace VideoAPI.Streams {
     delete(
       @path
       @doc("Unique ID of the stream")
-      id: string
-    ): {
-      @statusCode statusCode: 204;
-    } | StatusCode401 | StatusCode404 | StatusCode500;
+      id: string,
+    ):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

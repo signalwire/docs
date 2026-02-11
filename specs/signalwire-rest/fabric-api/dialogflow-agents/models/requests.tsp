@@ -1,6 +1,5 @@
 import "./core.tsp";
 
-
 model DialogflowAgentUpdateRequest {
   @doc("Name of the Dialogflow Agent")
   @example("Booking Assistant")

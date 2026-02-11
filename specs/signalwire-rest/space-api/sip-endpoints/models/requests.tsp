@@ -32,7 +32,18 @@ model CreateSipEndpointRequest {
 
   @doc("What type of handler you want to run on inbound calls.")
   @example("ai_agent")
-  call_handler?: "relay_context" | "relay_topic" | "relay_application" | "relay_connector" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
+  call_handler?:
+    | "relay_context"
+    | "relay_topic"
+    | "relay_application"
+    | "relay_connector"
+    | "relay_script"
+    | "laml_webhooks"
+    | "laml_application"
+    | "dialogflow"
+    | "video_room"
+    | "call_flow"
+    | "ai_agent";
 
   @doc("The LaML URL to access when a call is received. Required when call_handler is laml_webhooks.")
   call_request_url?: string;
@@ -131,7 +142,18 @@ model UpdateSipEndpointRequest {
 
   @doc("What type of handler you want to run on inbound calls.")
   @example("ai_agent")
-  call_handler?: "relay_context" | "relay_topic" | "relay_application" | "relay_connector" | "relay_script" | "laml_webhooks" | "laml_application" | "dialogflow" | "video_room" | "call_flow" | "ai_agent";
+  call_handler?:
+    | "relay_context"
+    | "relay_topic"
+    | "relay_application"
+    | "relay_connector"
+    | "relay_script"
+    | "laml_webhooks"
+    | "laml_application"
+    | "dialogflow"
+    | "video_room"
+    | "call_flow"
+    | "ai_agent";
 
   @doc("The LaML URL to access when a call is received. Required when call_handler is laml_webhooks.")
   call_request_url?: string;

@@ -14,7 +14,10 @@ model Request {
     method: "GET" | "POST" | "PUT" | "DELETE";
 
     @doc("Object containing HTTP headers to set. Valid header values are Accept, Authorization, Content-Type, Range, and custom X- headers.")
-    @example(#{ `Content-Type`: "application/json", Authorization: "Bearer token123" })
+    @example(#{
+      `Content-Type`: "application/json",
+      Authorization: "Bearer token123",
+    })
     headers?: {
       ...TypeSpec.Record<unknown>;
     };

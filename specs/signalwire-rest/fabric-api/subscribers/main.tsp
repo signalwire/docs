@@ -28,24 +28,24 @@ namespace FabricAPI.Subscribers {
     @summary("List Subscribers")
     @doc("""
       Retrieve a list of all subscribers
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | SubscriberListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("create_subscriber")
-        @summary("Create Subscriber")
-        @doc("""
+    @operationId("create_subscriber")
+    @summary("Create Subscriber")
+    @doc("""
       Create a new Subscriber
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        create(@body body: SubscriberRequest):
+    @post
+    create(@body body: SubscriberRequest):
       | {
           @statusCode statusCode: 201;
           @body subscriber: SubscriberResponse;
@@ -53,33 +53,33 @@ namespace FabricAPI.Subscribers {
       | StatusCode401
       | StatusCode404
       | SubscriberCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_subscriber")
-        @summary("Get Subscriber")
-        @doc("""
+    @operationId("get_subscriber")
+    @summary("Get Subscriber")
+    @doc("""
       Fetch an existing Subscriber
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        get(...SubscriberPathID):
+    get(...SubscriberPathID):
       | {
           @statusCode statusCode: 200;
           @body body: SubscriberResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_subscriber")
-        @summary("Update Subscriber")
-        @doc("""
+    @operationId("update_subscriber")
+    @summary("Update Subscriber")
+    @doc("""
       Update an existing Subsriber
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @put
-        update(...SubscriberPathID, ...SubscriberRequest):
+    @put
+    update(...SubscriberPathID, ...SubscriberRequest):
       | {
           @statusCode statusCode: 200;
           @body body: SubscriberResponse;
@@ -87,17 +87,17 @@ namespace FabricAPI.Subscribers {
       | StatusCode401
       | StatusCode404
       | SubscriberUpdateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_subscriber")
-        @summary("Delete Subscriber")
-        @doc("""
+    @operationId("delete_subscriber")
+    @summary("Delete Subscriber")
+    @doc("""
       Delete an existing Subscriber
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...SubscriberPathID):
+    @delete
+    delete(...SubscriberPathID):
       | {
           @statusCode statusCode: 204;
         }

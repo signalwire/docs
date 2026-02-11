@@ -21,7 +21,11 @@ namespace VideoAPI.Conferences {
     @summary("Create a Video Conference")
     @doc("Create a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @post
-    create(@body body: CreateConferenceRequest): ConferenceResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+    create(@body body: CreateConferenceRequest):
+      | ConferenceResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("list_video_conferences")
     @summary("List Video Conferences")
@@ -29,8 +33,12 @@ namespace VideoAPI.Conferences {
     list(
       @query
       @doc("Specifies whether or not to include information about the conference's active session (if any)")
-      include_active_session?: boolean
-    ): ListConferencesResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+      include_active_session?: boolean,
+    ):
+      | ListConferencesResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("get_video_conference")
     @summary("Find a Video Conference by ID")
@@ -43,7 +51,7 @@ namespace VideoAPI.Conferences {
 
       @query
       @doc("Specifies whether or not to include information about the conference's active session (if any)")
-      include_active_session?: boolean
+      include_active_session?: boolean,
     ): ConferenceResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("update_video_conference")
@@ -56,8 +64,13 @@ namespace VideoAPI.Conferences {
       @doc("Unique ID of the video conference")
       id: string,
 
-      @body body: UpdateConferenceRequest
-    ): ConferenceResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
+      @body body: UpdateConferenceRequest,
+    ):
+      | ConferenceResponse
+      | StatusCode401
+      | StatusCode404
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("delete_video_conference")
     @summary("Delete a Video Conference")
@@ -67,10 +80,14 @@ namespace VideoAPI.Conferences {
     delete(
       @path
       @doc("Unique ID of the video conference")
-      id: string
-    ): {
-      @statusCode statusCode: 204;
-    } | StatusCode401 | StatusCode404 | StatusCode500;
+      id: string,
+    ):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
 
@@ -86,7 +103,7 @@ namespace VideoAPI.ConferenceStreams {
       @path
       @doc("Unique id of a video conference")
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-      id: string
+      id: string,
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("create_conference_stream")
@@ -99,7 +116,7 @@ namespace VideoAPI.ConferenceStreams {
       @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
       id: string,
 
-      @body body: CreateStreamRequest
+      @body body: CreateStreamRequest,
     ): StreamResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
   }
 }

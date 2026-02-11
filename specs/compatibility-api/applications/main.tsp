@@ -19,11 +19,12 @@ namespace CompatibilityAPI.Applications {
     @summary("List Applications")
     @doc("""
       The ability to read all of the applications that are associated with your Account. This will be returned as a list of applications.
-
+      
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     list(
       ...AccountSidPath,
+
       @query
       @doc("Filter by a named unique identifier for the resource.")
       @example("My Friendly Name")
@@ -46,13 +47,17 @@ namespace CompatibilityAPI.Applications {
       @doc("A token used to retrieve a specific page of results.")
       @example("PA01234567890abcdef01234567890abcdef")
       PageToken?: string,
-    ): ApplicationListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | ApplicationListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("create_application")
     @summary("Create an Application")
     @doc("""
       Create an Application.
-
+      
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @post
@@ -60,23 +65,31 @@ namespace CompatibilityAPI.Applications {
       ...AccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateApplicationRequest,
-    ): ApplicationCreatedResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | ApplicationCreatedResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("get_application")
     @summary("Find an Application by ID")
     @doc("""
       Find an Application by ID.
-
+      
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @route("/{Sid}")
-    read(...AccountSidPath, ...ApplicationPathSid): ApplicationResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...AccountSidPath, ...ApplicationPathSid):
+      | ApplicationResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_application")
     @summary("Update an Application")
     @doc("""
       Update an Application.
-
+      
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @post
@@ -86,17 +99,26 @@ namespace CompatibilityAPI.Applications {
       ...ApplicationPathSid,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateApplicationRequest,
-    ): ApplicationResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    ):
+      | ApplicationResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
 
     @operationId("delete_application")
     @summary("Delete an Application")
     @doc("""
       Delete an Application.
-
+      
       ${tokenPermissions<"_Voice_ or _Messaging_ or _Fax_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...AccountSidPath, ...ApplicationPathSid): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    delete(...AccountSidPath, ...ApplicationPathSid):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
   }
 }

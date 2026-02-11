@@ -19,23 +19,19 @@ namespace PubSubAPI.Tokens {
     @summary("Generate a new PubSub Token")
     @doc("""
       Generate a PubSub Token to be used to authenticate clients to the PubSub Service.
-
+      
       ${tokenPermissions<"_PubSub_">}
       """)
     @post
     @operationId("create_token")
-    create(@body request: NewPubSubToken):
+    create(...NewPubSubToken):
       | {
-          @statusCode _: 200;
-          @doc("OK")
-          @body token: PubSubToken;
+          @statusCode statusCode: 200;
+          @body body: PubSubToken;
         }
+      | StatusCode400
       | StatusCode401
-      | {
-          @statusCode _: 422;
-          @doc("Unprocessable Entity. You may have specified invalid parameters.")
-          @body error: PubSubToken422Error;
-        }
+      | PubSubToken422Error
       | StatusCode500;
   }
 }

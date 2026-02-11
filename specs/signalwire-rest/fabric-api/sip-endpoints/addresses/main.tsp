@@ -18,7 +18,7 @@ namespace FabricAPI.SipEndpoint.Addresses {
     @summary("List SIP Endpoint Addresses")
     @doc("""
       A list of SIP Endpoint Addresses.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SipEndpointAddressPathID):

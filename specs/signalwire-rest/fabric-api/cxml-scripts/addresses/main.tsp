@@ -18,7 +18,7 @@ namespace FabricAPI.CXMLScript.Addresses {
     @summary("List cXML Script Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific cXML Script.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...CXMLScriptAddressPathID):

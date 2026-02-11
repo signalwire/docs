@@ -22,40 +22,40 @@ namespace FabricAPI.Resources {
     @summary("List Resources")
     @doc("""
       A list of Fabric Resources
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | ResourceListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_resource")
-        @summary("Get Resource")
-        @doc("""
+    @operationId("get_resource")
+    @summary("Get Resource")
+    @doc("""
       Returns a Resource by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...ResourcePathID):
+    read(...ResourcePathID):
       | {
           @statusCode statusCode: 200;
           @body resource: ResourceResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_resource")
-        @summary("Delete Resource")
-        @doc("""
+    @operationId("delete_resource")
+    @summary("Delete Resource")
+    @doc("""
       Deletes a Resource by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...ResourcePathID):
+    @delete
+    delete(...ResourcePathID):
       | {
           @statusCode statusCode: 204;
         }

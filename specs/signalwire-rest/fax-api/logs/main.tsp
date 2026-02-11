@@ -21,11 +21,12 @@ namespace FaxAPI.Logs {
     @summary("List Logs")
     @doc("""
       List the available logs.
-
+      
       ${tokenPermissions<"_Fax_">}
       """)
     list(...LogListRequest):
       | LogListResponse
+      | StatusCode400
       | StatusCode401
       | FaxLogsListStatusCode422
       | StatusCode500;
@@ -34,13 +35,15 @@ namespace FaxAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-
+      
       ${tokenPermissions<"_Fax_">}
       """)
     read(...LogPathID):
       | LogResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
+      | FaxLogShowStatusCode422
       | StatusCode500;
   }
 }

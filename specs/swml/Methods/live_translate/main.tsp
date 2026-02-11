@@ -13,14 +13,14 @@ enum TranslateDirection {
 
 @summary("Filter Presets")
 @doc("""
-Preset translation filter values that adjust the tone or style of translated speech.
-
-- `polite` - Translates to a polite version, removing anything insulting while maintaining sentiment
-- `rude` - Translates to a rude and insulting version while maintaining sentiment
-- `professional` - Translates to sound professional, removing slang or lingo
-- `shakespeare` - Translates to sound like Shakespeare, speaking in iambic pentameter
-- `gen-z` - Translates to use Gen-Z slang and expressions
-""")
+  Preset translation filter values that adjust the tone or style of translated speech.
+  
+  - `polite` - Translates to a polite version, removing anything insulting while maintaining sentiment
+  - `rude` - Translates to a rude and insulting version while maintaining sentiment
+  - `professional` - Translates to sound professional, removing slang or lingo
+  - `shakespeare` - Translates to sound like Shakespeare, speaking in iambic pentameter
+  - `gen-z` - Translates to use Gen-Z slang and expressions
+  """)
 enum TranslationFilterPreset {
   polite,
   rude,
@@ -100,7 +100,6 @@ model StartAction {
     @doc("The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.")
     @example("Summarize the key points of this bilingual conversation.")
     ai_summary_prompt?: string;
-    
   };
 }
 

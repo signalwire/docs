@@ -21,7 +21,7 @@ namespace FabricAPI.PhoneRoutes {
     @summary("Assign a Resource to a Phone Route")
     @doc("""
       This endpoint assigns a specific resource to a phone route, allowing inbound calls & messages to be handled by the resource.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

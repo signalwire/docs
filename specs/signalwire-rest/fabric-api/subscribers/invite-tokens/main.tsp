@@ -20,7 +20,7 @@ namespace FabricAPI.SubscriberInviteTokens {
     @summary("Create a Subscriber Invite Token")
     @doc("""
       Creates a Subscriber Invite Token to be used for client-side API calls. The token is authorized using a subscriber's SAT (Subscriber Access Token)
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

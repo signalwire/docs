@@ -21,25 +21,34 @@ namespace SpaceAPI.ShortCodes {
     @doc("""
       Returns a list of your short codes. The short codes are returned sorted
       by creation date, with the most recent appearing first.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    list(...ListShortCodesQuery): ShortCodeListResponse | StatusCode400 | StatusCode401 | StatusCode500;
+    list(...ListShortCodesQuery):
+      | ShortCodeListResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode500;
 
     @operationId("retrieve_short_code")
     @summary("Retrieve a Short Code")
     @doc("""
       Retrieves the details of a short code.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...ShortCodePathID): ShortCodeResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...ShortCodePathID):
+      | ShortCodeResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("update_short_code")
     @summary("Update a Short Code")
     @doc("""
       Updates a short code's configuration.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @put
