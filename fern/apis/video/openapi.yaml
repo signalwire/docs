@@ -1010,6 +1010,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoomTokenResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -1017,11 +1023,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
         '422':
-          description: Room token validation error response.
+          description: The request contains invalid parameters. See errors for details.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RoomTokenValidationError'
+                $ref: '#/components/schemas/VideoStatusCode422'
         '500':
           description: An internal server error occurred.
           content:
@@ -2245,17 +2251,20 @@ components:
       properties:
         room_name:
           type: string
+          maxLength: 100
+          pattern: ^[A-Za-z0-9_-]+$
           description: "Room's unique named identifier. Allowed characters: A-Za-z0-9_-. Up to 100 characters. The room does not have to exist when the token is created, but must exist prior to joining, or ensure auto_create_room is set to true."
           example: my_room
         user_name:
           type: string
+          maxLength: 100
           description: A display name to use for the user. Up to 100 characters. (If not supplied, a random alphanumeric string will be returned for each authorization with this token.)
           example: John Smith
         permissions:
           type: array
           items:
-            type: string
-          description: A list of permissions, which define what user can do once they join the room.
+            $ref: '#/components/schemas/RoomTokenPermission'
+          description: A list of permissions, which define what user can do once they join the room. If `join_as` is `audience`, permissions are set to an empty array regardless of the value provided.
           example:
             - room.self.audio_mute
             - room.self.audio_unmute
@@ -2266,6 +2275,18 @@ components:
             - room.self.set_input_volume
             - room.self.set_output_volume
             - room.self.set_input_sensitivity
+          default:
+            - room.self.audio_mute
+            - room.self.audio_unmute
+            - room.self.video_mute
+            - room.self.video_unmute
+            - room.self.deaf
+            - room.self.undeaf
+            - room.self.set_input_volume
+            - room.self.set_output_volume
+            - room.self.set_input_sensitivity
+            - room.self.screenshare
+            - room.self.additional_source
         join_from:
           type: string
           format: date-time
@@ -2284,54 +2305,70 @@ components:
         remove_after_seconds_elapsed:
           type: integer
           format: int32
+          maximum: 200000
           description: Remove user after they are in the room for N seconds.
+          minimum: 0
+          exclusiveMinimum: true
           example: 900
         join_audio_muted:
           type: boolean
           description: Whether the user joins the room with their audio muted.
           example: false
+          default: false
         join_video_muted:
           type: boolean
           description: Whether the user joins the room with their video muted.
           example: false
+          default: false
         auto_create_room:
           type: boolean
           description: By default, if the user tries to use this token to join a room that doesn't exist, it will be created with default configuration. Set this to false to require the room to exist beforehand.
-          example: false
+          example: true
+          default: true
         enable_room_previews:
           type: boolean
           description: Whether to generate a video with a preview of the content of the room. This parameter has effect only if this token auto-creates the room, thus it will be ignored if the room already exists.
           example: true
+          default: false
         room_display_name:
           type: string
+          maxLength: 200
           description: Display name used if a room is auto-created when the token joins. Maximum of 200 characters. Defaults to the value of room_name.
           example: My Room
         end_room_session_on_leave:
           type: boolean
           description: Whether to end the room session when the member using this token leaves the room.
           example: false
+          default: false
         join_as:
           allOf:
             - $ref: '#/components/schemas/JoinAsType'
           description: Whether the user should join as a member or as a non-interactive audience participant. Audience participants cannot send audio or video.
           example: member
+          default: member
         media_allowed:
           allOf:
             - $ref: '#/components/schemas/MediaAllowedType'
           description: Indicates what media the user is allowed to receive.
           example: video-only
+          default: all
         room_meta:
           type: object
           additionalProperties: {}
-          description: Set the room meta.
+          description: Set the room meta. Maximum of 2000 characters when serialized to JSON.
+          example:
+            topic: team-meeting
         meta:
           type: object
           additionalProperties: {}
-          description: Set the member meta.
-        audio_video_sync:
+          description: Set the member meta. Maximum of 2000 characters when serialized to JSON.
+          example:
+            name: John Smith
+        sync_audio_video:
           type: boolean
           description: Enable/disable jitter buffer audio-video sync.
           example: true
+          default: false
       description: Request body for creating a room token.
     CreateStreamRequest:
       type: object
@@ -2895,47 +2932,64 @@ components:
           description: Enable/disable jitter buffer audio-video sync.
           example: true
       description: Room session response object.
+    RoomTokenPermission:
+      type: string
+      enum:
+        - room.member.audio_mute
+        - room.member.audio_unmute
+        - room.member.video_mute
+        - room.member.video_unmute
+        - room.member.deaf
+        - room.member.undeaf
+        - room.member.set_input_volume
+        - room.member.set_output_volume
+        - room.member.set_input_sensitivity
+        - room.member.set_position
+        - room.member.set_meta
+        - room.member.raisehand
+        - room.member.lowerhand
+        - room.member.remove
+        - room.member.promote
+        - room.member.demote
+        - room.hide_video_muted
+        - room.list_available_layouts
+        - room.lock
+        - room.playback
+        - room.playback_seek
+        - room.prioritize_handraise
+        - room.recording
+        - room.set_layout
+        - room.set_position
+        - room.set_meta
+        - room.show_video_muted
+        - room.stream
+        - room.unlock
+        - room.self.audio_mute
+        - room.self.audio_unmute
+        - room.self.video_mute
+        - room.self.video_unmute
+        - room.self.deaf
+        - room.self.undeaf
+        - room.self.set_input_volume
+        - room.self.set_output_volume
+        - room.self.set_input_sensitivity
+        - room.self.set_position
+        - room.self.set_meta
+        - room.self.raisehand
+        - room.self.lowerhand
+        - room.self.screenshare
+        - room.self.additional_source
+      description: Valid permission scopes for room tokens.
     RoomTokenResponse:
       type: object
+      required:
+        - token
       properties:
         token:
           type: string
           description: A Room Token to be used by clients to connect to the Room.
           example: eyJ0eXAiOiJWUlQiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE2MjIxMjAxMjMsImp0aSI6ImRmMzFjYTQ4LWRiZGMtNGJjZi1hYWU2LTQ1NWEwOGM5NDg2YSIsInN1YiI6IjBjOTdmNjM1LTFjMTMtNGZjMS04NmY3LWJiMmJlODU5ZDhiOSIsInUiOiJKb2huIERvZSIsInIiOiJteV9zdXBlcl9hd2Vzb21lX3Jvb20iLCJzIjpbInJvb20uc2VsZi5hdWRpb191bm11dGUiXSwiYWNyIjp0cnVlLCJqZiI6MTYyMDg5NjQwMCwianUiOjE2MjA5MDU5NjgsInJhdCI6MTYyMDkwMDAwMCwicnNlIjo5MDB9.5mu_H2PjQLtNBbMsBlS0c91EgsDjJzvZUFgj5-tP4VA0VoHZPIGgV_DLRGKt-BqG-DqC5LhpsdMWEFjhVkTBpQ
       description: Room token response object.
-    RoomTokenValidationError:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoomTokenValidationErrorItem'
-          description: A list of errors
-      description: Room token validation error response.
-    RoomTokenValidationErrorItem:
-      type: object
-      properties:
-        type:
-          type: string
-          description: Error type.
-          example: validation_error
-        code:
-          type: string
-          description: Error code.
-          example: invalid_parameter
-        message:
-          type: string
-          description: Error message.
-          example: room_name must be present
-        attribute:
-          type: string
-          description: Attribute associated with the error.
-          example: room_name
-        url:
-          type: string
-          description: URL for more information.
-          example: https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter
-      description: Room token validation error item.
     Stream:
       type: object
       required:
