@@ -18,7 +18,7 @@ namespace FabricAPI.SWMLScript.Addresses {
     @summary("List SWML Script Addresses")
     @doc("""
       This endpoints returns a list of addresses associated with a specific SWML script.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SWMLScriptAddressPathID):

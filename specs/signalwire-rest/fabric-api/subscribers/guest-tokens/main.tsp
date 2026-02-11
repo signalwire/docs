@@ -20,7 +20,7 @@ namespace FabricAPI.SubscriberGuestTokens {
     @summary("Create Subscriber Guest Token")
     @doc("""
       Creates a Subscriber Guest Token. The token is authorized using an existing API token.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

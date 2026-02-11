@@ -35,7 +35,7 @@ namespace VoiceAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     retrieve(...LogPathID):
@@ -50,7 +50,7 @@ namespace VoiceAPI.Logs {
     @summary("List Log Events")
     @doc("""
       List all events for a specific log.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}/events")

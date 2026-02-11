@@ -22,40 +22,40 @@ namespace FabricAPI.CXMLWebhooks {
     @summary("List cXML Webhooks")
     @doc("""
       A list of cXML Webhooks
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | CXMLWebhookListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_cxml_webhook")
-        @summary("Get cXML Webhook")
-        @doc("""
+    @operationId("get_cxml_webhook")
+    @summary("Get cXML Webhook")
+    @doc("""
       Returns an cXML Webhook by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...CXMLWebhookID):
+    read(...CXMLWebhookID):
       | {
           @statusCode statusCode: 200;
           @body cxml_webhook: CXMLWebhookResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("create_cxml_webhook")
-        @summary("Create cXML Webhook")
-        @doc("""
+    @operationId("create_cxml_webhook")
+    @summary("Create cXML Webhook")
+    @doc("""
       Creates an cXML Webhook
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        create(...CXMLWebhookCreateRequest):
+    @post
+    create(...CXMLWebhookCreateRequest):
       | {
           @statusCode statusCode: 201;
           @body cxml_webhook: CXMLWebhookResponse;
@@ -63,17 +63,17 @@ namespace FabricAPI.CXMLWebhooks {
       | StatusCode401
       | StatusCode404
       | CXMLWebhookCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_cxml_webhook")
-        @summary("Update cXML Webhook")
-        @doc("""
+    @operationId("update_cxml_webhook")
+    @summary("Update cXML Webhook")
+    @doc("""
       Updates an cXML Webhook by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @patch(#{ implicitOptionality: true })
-        update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest):
+    @patch(#{ implicitOptionality: true })
+    update(...CXMLWebhookID, ...CXMLWebhookUpdateRequest):
       | {
           @statusCode statusCode: 200;
           @body cxml_webhook: CXMLWebhookResponse;
@@ -81,17 +81,17 @@ namespace FabricAPI.CXMLWebhooks {
       | StatusCode401
       | StatusCode404
       | CXMLWebhookUpdateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_cxml_webhook")
-        @summary("Delete cXML Webhook")
-        @doc("""
+    @operationId("delete_cxml_webhook")
+    @summary("Delete cXML Webhook")
+    @doc("""
       Deletes an cXML Webhook by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...CXMLWebhookID):
+    @delete
+    delete(...CXMLWebhookID):
       | {
           @statusCode statusCode: 204;
         }

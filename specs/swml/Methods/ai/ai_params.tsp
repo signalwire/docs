@@ -276,7 +276,7 @@ model AIParams {
   @doc("""
     Specifies the maximum duration fopr the AI Agent to remain active before it exists the session.
     After the timeout, the AI will stop responding, and will proceed with the next SWML instruction.
-
+    
     **Time Format:**
       - Seconds Format: `30s`
       - Minutes Format: `2m`
@@ -514,7 +514,7 @@ model AIParams {
     The format for the AI agent to reference phone numbers.
     Allowed values are `international` and `national`.
     **Default:** `international`.
-
+    
     **Example:**
     - `international`: `+12345678901`
     - `national`: `(234) 567-8901`

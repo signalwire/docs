@@ -22,40 +22,40 @@ namespace FabricAPI.SWMLWebhooks {
     @summary("List SWML Webhooks")
     @doc("""
       A list of SWML Webhooks
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | SWMLWebhookListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_swml_webhook")
-        @summary("Get SWML Webhook")
-        @doc("""
+    @operationId("get_swml_webhook")
+    @summary("Get SWML Webhook")
+    @doc("""
       Returns an SWML Webhook by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...SWMLWebhookID):
+    read(...SWMLWebhookID):
       | {
           @statusCode statusCode: 200;
           @body swml_webhook: SWMLWebhookResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("create_swml_webhook")
-        @summary("Create SWML Webhook")
-        @doc("""
+    @operationId("create_swml_webhook")
+    @summary("Create SWML Webhook")
+    @doc("""
       Creates an SWML Webhook
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        create(...SWMLWebhookCreateRequest):
+    @post
+    create(...SWMLWebhookCreateRequest):
       | {
           @statusCode statusCode: 201;
           @body swml_webhook: SWMLWebhookResponse;
@@ -63,17 +63,17 @@ namespace FabricAPI.SWMLWebhooks {
       | StatusCode401
       | StatusCode404
       | SwmlWebhookCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_swml_webhook")
-        @summary("Update SWML Webhook")
-        @doc("""
+    @operationId("update_swml_webhook")
+    @summary("Update SWML Webhook")
+    @doc("""
       Updates an SWML Webhook by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @patch(#{ implicitOptionality: true })
-        update(...SWMLWebhookID, ...SWMLWebhookUpdateRequest):
+    @patch(#{ implicitOptionality: true })
+    update(...SWMLWebhookID, ...SWMLWebhookUpdateRequest):
       | {
           @statusCode statusCode: 200;
           @body swml_webhook: SWMLWebhookResponse;
@@ -81,17 +81,17 @@ namespace FabricAPI.SWMLWebhooks {
       | StatusCode401
       | StatusCode404
       | SwmlWebhookUpdateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_swml_webhook")
-        @summary("Delete SWML Webhook")
-        @doc("""
+    @operationId("delete_swml_webhook")
+    @summary("Delete SWML Webhook")
+    @doc("""
       Deletes an SWML Webhook by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...SWMLWebhookID):
+    @delete
+    delete(...SWMLWebhookID):
       | {
           @statusCode statusCode: 204;
         }

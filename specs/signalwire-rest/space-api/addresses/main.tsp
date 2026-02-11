@@ -20,16 +20,20 @@ namespace SpaceAPI.Addresses {
     @summary("List all Addresses.")
     @doc("""
       Returns a list of your Addresses. The addresses are returned sorted by creation date, with the most recent appearing first.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    list(...ListAddressesQuery): AddressListResponse | StatusCode401 | ValidationError | StatusCode500;
+    list(...ListAddressesQuery):
+      | AddressListResponse
+      | StatusCode401
+      | ValidationError
+      | StatusCode500;
 
     @operationId("create_address")
     @summary("Create an address")
     @doc("""
       To create a new Address, make a POST request to the Address resource.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -47,16 +51,21 @@ namespace SpaceAPI.Addresses {
     @doc("""
       Retrieves the details of an Address that has been previously created.
       Use the unique ID that was returned from your previous request to identify the specific instance.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...AddressPathID): AddressResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...AddressPathID):
+      | AddressResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("delete_address")
     @summary("Delete an Address")
     @doc("""
       Permanently deletes an Address. It cannot be undone.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete

@@ -23,16 +23,20 @@ namespace SpaceAPI.PhoneNumbers {
       sorted by creation date, with the most recent phone numbers appearing
       first. The list is filterable by sending in any of the following
       parameters.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    list(...ListPhoneNumbersQuery): PhoneNumberListResponse | StatusCode400 | StatusCode401 | StatusCode500;
+    list(...ListPhoneNumbersQuery):
+      | PhoneNumberListResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode500;
 
     @operationId("purchase_phone_number")
     @summary("Purchase a Phone Number")
     @doc("""
       Purchases a phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -50,16 +54,21 @@ namespace SpaceAPI.PhoneNumbers {
     @summary("Retrieve a Phone Number")
     @doc("""
       Retrieves the details of a phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...PhoneNumberPathID): PhoneNumberResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...PhoneNumberPathID):
+      | PhoneNumberResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("update_phone_number")
     @summary("Update a Phone Number")
     @doc("""
       Updates a phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @put
@@ -77,7 +86,7 @@ namespace SpaceAPI.PhoneNumbers {
     @summary("Release a Phone Number")
     @doc("""
       Releases a phone number.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete
@@ -94,7 +103,7 @@ namespace SpaceAPI.PhoneNumbers {
     @summary("Search for available Phone Numbers to Purchase")
     @doc("""
       Searches for available phone numbers to purchase.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/search")
@@ -130,7 +139,7 @@ namespace SpaceAPI.PhoneNumbers {
 
       @query
       @doc("A specific City to search within. Must be used in combination with region. Cannot be used in combination with areacode, starts_with, contains, or ends_with.")
-      city?: string
+      city?: string,
     ): AvailablePhoneNumbersResponse | StatusCode401 | StatusCode500;
   }
 }
@@ -144,9 +153,9 @@ namespace SpaceAPI.ImportedPhoneNumbers {
     @summary("Import a Phone Number")
     @doc("""
       Import a phone number hosted elsewhere into your SignalWire Space.
-
+      
       **Note:** This is a **Partner API**. To enable it on your SignalWire Space, contact [Sales](https://signalwire.com/company/contact?utm_campaign=devex_sent_em).
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -172,11 +181,11 @@ namespace SpaceAPI.PhoneNumberLookup {
       This endpoint allows you to look up validity and formatting
       information about a number. You can optionally lookup additional
       information about the number such as carrier and caller ID data.
-
+      
       #### Permissions
-
+      
       No API token scope is required to make a successful request to this endpoint.
-
+      
       [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       """)
     @route("/{e164_number}")
@@ -186,7 +195,11 @@ namespace SpaceAPI.PhoneNumberLookup {
 
       @query
       @doc("Further number information to include in the response, some of which are billable. You can specify: carrier (Lookup full carrier information for the number), cnam (Lookup Caller ID information for the number). Separate multiple values with a comma: include=carrier,cnam.")
-      include?: string
-    ): PhoneNumberLookupResponse | StatusCode401 | StatusCode404 | StatusCode500;
+      include?: string,
+    ):
+      | PhoneNumberLookupResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

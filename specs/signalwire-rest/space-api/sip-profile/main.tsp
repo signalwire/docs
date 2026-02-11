@@ -20,7 +20,7 @@ namespace SpaceAPI.SipProfile {
     @summary("Retrieve a SIP Profile")
     @doc("""
       Retrieves the SIP profile settings for your project.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @get
@@ -30,7 +30,7 @@ namespace SpaceAPI.SipProfile {
     @summary("Update a SIP Profile")
     @doc("""
       Updates the SIP profile settings for your project.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @put

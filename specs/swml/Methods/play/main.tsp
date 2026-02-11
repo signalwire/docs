@@ -66,7 +66,11 @@ model PlayWithURLS is PlayBase {
         - say:<text to speak> - Sentence to say
         - silence: <duration> - seconds of silence to play
     """)
-  @example(#["https://example.com/intro.mp3", "say:Welcome to our service", "silence:2"])
+  @example(#[
+    "https://example.com/intro.mp3",
+    "say:Welcome to our service",
+    "silence:2"
+  ])
   urls: play_url[] | SWMLVar[];
 }
 

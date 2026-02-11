@@ -22,40 +22,40 @@ namespace FabricAPI.SipGateways {
     @summary("List SIP Gateways")
     @doc("""
       Returns a paginated list of SIP Gateways for the authenticated project.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
       | SipGatewayListResponse
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("get_sip_gateway")
-        @summary("Get SIP Gateway")
-        @doc("""
+    @operationId("get_sip_gateway")
+    @summary("Get SIP Gateway")
+    @doc("""
       Returns an SIP Gateway by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        read(...SipGatewayID):
+    read(...SipGatewayID):
       | {
           @statusCode statusCode: 200;
           @body sip_gateway: SipGatewayResponse;
         }
       | StatusCode401
       | StatusCode404
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("create_sip_gateway")
-        @summary("Create SIP Gateway")
-        @doc("""
+    @operationId("create_sip_gateway")
+    @summary("Create SIP Gateway")
+    @doc("""
       Creates a SIP Gateway that can be used to dial external SIP entities.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @post
-        create(...SipGatewayRequest):
+    @post
+    create(...SipGatewayRequest):
       | {
           @statusCode statusCode: 201;
           @body sip_gateway: SipGatewayResponse;
@@ -63,17 +63,17 @@ namespace FabricAPI.SipGateways {
       | StatusCode401
       | StatusCode404
       | SipGatewayCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("update_sip_gateway")
-        @summary("Update SIP Gateway")
-        @doc("""
+    @operationId("update_sip_gateway")
+    @summary("Update SIP Gateway")
+    @doc("""
       Updates a SIP Gateway by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @patch(#{ implicitOptionality: true })
-        update(...SipGatewayID, ...SipGatewayRequest):
+    @patch(#{ implicitOptionality: true })
+    update(...SipGatewayID, ...SipGatewayRequest):
       | {
           @statusCode statusCode: 200;
           @body sip_gateway: SipGatewayResponse;
@@ -81,17 +81,17 @@ namespace FabricAPI.SipGateways {
       | StatusCode401
       | StatusCode404
       | SipGatewayCreateStatusCode422
-          | StatusCode500;
+      | StatusCode500;
 
-        @operationId("delete_sip_gateway")
-        @summary("Delete SIP Gateway")
-        @doc("""
+    @operationId("delete_sip_gateway")
+    @summary("Delete SIP Gateway")
+    @doc("""
       Deletes a SIP Gateway by ID
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
-        @delete
-        delete(...SipGatewayID):
+    @delete
+    delete(...SipGatewayID):
       | {
           @statusCode statusCode: 204;
         }

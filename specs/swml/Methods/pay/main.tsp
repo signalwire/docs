@@ -15,7 +15,7 @@ model Pay {
     @doc("""
       The URL to make POST requests with all the gathered payment details.
       This URL is used to process the final payment transaction and return the results through the response.
-
+      
       Visit https://developer.signalwire.com/swml/methods/pay/payment_connector_url for more important information.
       """)
     @example("https://example.com/payment-connector")
@@ -69,7 +69,7 @@ model Pay {
 
     @doc("""
       The URL to send requests for each status change during the payment process.
-
+      
       See https://developer.signalwire.com/swml/methods/pay#status_url_request_body for more important information.
       """)
     @example("https://example.com/payment-status")
@@ -81,7 +81,7 @@ model Pay {
 
     @doc("""
       Whether the payment is a one off payment or re-occurring.
-
+      
       Allowed values:
       - `one-time`
       - `reusable`
@@ -91,7 +91,7 @@ model Pay {
 
     @doc("""
       List of payment cards allowed to use in the requested payment process separated by space.
-
+      
       Allowed values:
       - `visa`
       - `mastercard`

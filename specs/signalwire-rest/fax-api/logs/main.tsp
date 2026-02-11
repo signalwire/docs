@@ -21,7 +21,7 @@ namespace FaxAPI.Logs {
     @summary("List Logs")
     @doc("""
       List the available logs.
-
+      
       ${tokenPermissions<"_Fax_">}
       """)
     list(...LogListRequest):
@@ -35,7 +35,7 @@ namespace FaxAPI.Logs {
     @summary("Find a Log by ID")
     @doc("""
       Find a log by ID.
-
+      
       ${tokenPermissions<"_Fax_">}
       """)
     read(...LogPathID):

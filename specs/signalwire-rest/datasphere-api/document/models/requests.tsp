@@ -1,5 +1,7 @@
+import "@typespec/http";
 import "@typespec/openapi3";
 
+using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
 model DocumentSearchRequest {
@@ -23,7 +25,8 @@ model DocumentSearchRequest {
 
   @doc("Specifies number of returned Chunks.")
   @example(5)
-  count?: integer;
+  @minValue(1)
+  count?: integer = 5;
 
   @doc("Language of the Document.")
   @example("fr")
@@ -35,7 +38,50 @@ model DocumentSearchRequest {
 
   @doc("Maximum number of synonyms to consider.")
   @example(7)
+  @minValue(1)
   max_synonyms?: integer = 10;
+}
+
+@doc("Query parameters for listing documents.")
+model DocumentListQuery {
+  @doc("The page number to retrieve (0-indexed).")
+  @example(0)
+  @query
+  @minValue(0)
+  page_number?: int32 = 0;
+
+  @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.")
+  @example(50)
+  @query
+  @minValue(1)
+  @maxValue(1000)
+  page_size?: int32 = 50;
+
+  @doc("Token for cursor-based pagination. Required when `page_number` > 0.")
+  @example("PAb3877c40da604998")
+  @query
+  page_token?: string;
+}
+
+@doc("Query parameters for listing chunks.")
+model ChunkListQuery {
+  @doc("The page number to retrieve (0-indexed).")
+  @example(0)
+  @query
+  @minValue(0)
+  page_number?: int32 = 0;
+
+  @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.")
+  @example(50)
+  @query
+  @minValue(1)
+  @maxValue(1000)
+  page_size?: int32 = 50;
+
+  @doc("Token for cursor-based pagination. Required when `page_number` > 0.")
+  @example("PAb3877c40da604998")
+  @query
+  page_token?: string;
 }
 
 model DocumentCreateRequestBase {
@@ -61,7 +107,7 @@ model DocumentCreateSentenceRequest extends DocumentCreateRequestBase {
   // There's a bug in the REST API plugin for our docs that is not showing the default value when set to 'false`. So we manually document it here.
   @doc("""
     Whether to split chunks on new lines.
-    \n\n 
+    \n\n
     **Default value:** `false`
     """)
   @example(false)

@@ -20,7 +20,7 @@ namespace FabricAPI.SubscriberTokens {
     @summary("Create Subscriber Token")
     @doc("""
       Create a Subscriber Token
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     create(...SubscriberTokenRequest):

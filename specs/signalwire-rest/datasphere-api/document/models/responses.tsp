@@ -1,20 +1,34 @@
+import "./enums.tsp";
+
 model DocumentListResponse {
+  @doc("A list of documents.")
   data: Document[];
+
+  @doc("Pagination links.")
   links: PaginationResponse;
 }
 
 model PaginationResponse {
-  @doc("Link of the current page")
-  @example("https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=0&page_size=50")
+  @doc("Link of the current page.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents?page_number=0&page_size=50")
   self: url;
 
-  @doc("Link to the first page")
-  @example("https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=0&page_size=50")
+  @doc("Link to the first page.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents?page_number=0&page_size=50")
   first: url;
 
-  @doc("Link to the next page")
-  @example("https://{space_name}.signalwire.com/api/data_sphere/documents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
-  next: url;
+  @doc("Link to the next page. Only present when there are more results.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  next?: url;
+
+  @doc("Link to the previous page. Only present when not on the first page.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents?page_number=0&page_size=50&page_token=PBbff61159-faab-48b3-959a-3021a8f5beca")
+  prev?: url;
+}
+
+model SearchResponse {
+  @doc("A list of search result chunks.")
+  chunks: Chunk[];
 }
 
 model ChunkResponse {
@@ -31,14 +45,14 @@ model ChunkResponse {
   project_id: uuid;
 
   @doc("Status of the chunk.")
-  @example("completed")
-  status: string;
+  @example(ChunkStatus.Completed)
+  status: ChunkStatus;
 
   @doc("The tags of the document associated with the chunk.")
   @example(#["sports", "football", "game"])
   tags: string[];
 
-  @doc("Content of the chunk")
+  @doc("Content of the chunk.")
   @example("This is the content from the original document that was chunked.")
   content: string;
 
@@ -52,20 +66,27 @@ model ChunkResponse {
 }
 
 model ChunkListResponse {
+  @doc("A list of chunks.")
   data: ChunkResponse[];
+
+  @doc("Pagination links.")
   links: ChunkPaginationResponse;
 }
 
 model ChunkPaginationResponse {
-  @doc("Link of the current page")
-  @example("https://{space_name}.signalwire.com/api/data_sphere/documents/document_id={document_id}/chunks?page_number=0&page_size=50")
+  @doc("Link of the current page.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents/{document_id}/chunks?page_number=0&page_size=50")
   self: url;
 
-  @doc("Link to the first page")
-  @example("https://{space_name}.signalwire.com/api/data_sphere/documents/document_id={document_id}/chunks?page_number=0&page_size=50")
+  @doc("Link to the first page.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents/{document_id}/chunks?page_number=0&page_size=50")
   first: url;
 
-  @doc("Link to the next page")
-  @example("https://{space_name}.signalwire.com/api/data_sphere/documents/document_id={document_id}/chunks?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
-  next: url;
+  @doc("Link to the next page. Only present when there are more results.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents/{document_id}/chunks?page_number=1&page_size=50&page_token=PAbff61159-faab-48b3-959a-3021a8f5beca")
+  next?: url;
+
+  @doc("Link to the previous page. Only present when not on the first page.")
+  @example("https://{space_name}.signalwire.com/api/datasphere/documents/{document_id}/chunks?page_number=0&page_size=50&page_token=PBbff61159-faab-48b3-959a-3021a8f5beca")
+  prev?: url;
 }

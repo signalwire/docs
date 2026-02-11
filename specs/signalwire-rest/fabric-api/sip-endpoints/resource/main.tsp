@@ -23,7 +23,7 @@ namespace FabricAPI.SipEndpoints.Resource {
       :::important
       Currently only supports `calling` as a handler and automatically defaults to it.
       :::
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

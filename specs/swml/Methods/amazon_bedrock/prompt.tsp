@@ -19,7 +19,7 @@ model BedrockPromptPom is BedrockPromptBase {
 
 union BedrockPrompt {
   OmitProperties<BedrockPromptText, OmittedPromptProps>,
-  OmitProperties<BedrockPromptPom, OmittedPromptProps>
+  OmitProperties<BedrockPromptPom, OmittedPromptProps>,
 }
 
 model BedrockPostPomptText is AIPostPromptText;

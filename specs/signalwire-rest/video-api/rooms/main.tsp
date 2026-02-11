@@ -20,7 +20,11 @@ namespace VideoAPI.Rooms {
     @summary("Create a Room")
     @doc("Create a room.\n\n${tokenPermissions<"_Video_">}")
     @post
-    create(@body body: CreateRoomRequest): RoomResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+    create(@body body: CreateRoomRequest):
+      | RoomResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("list_rooms")
     @summary("List Rooms")
@@ -28,7 +32,7 @@ namespace VideoAPI.Rooms {
     list(
       @query
       @doc("Specifies whether or not to include information about the room's active session (if any)")
-      include_active_session?: boolean
+      include_active_session?: boolean,
     ): ListRoomsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("get_room_by_name")
@@ -42,7 +46,7 @@ namespace VideoAPI.Rooms {
 
       @query
       @doc("Specifies whether or not to include information about the room's active session (if any)")
-      include_active_session?: boolean
+      include_active_session?: boolean,
     ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("get_room")
@@ -52,7 +56,7 @@ namespace VideoAPI.Rooms {
     read(
       @path
       @doc("Unique ID of the room")
-      id: string
+      id: string,
     ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("update_room")
@@ -65,8 +69,13 @@ namespace VideoAPI.Rooms {
       @doc("Unique ID of the room")
       id: string,
 
-      @body body: UpdateRoomRequest
-    ): RoomResponse | StatusCode401 | StatusCode404 | VideoStatusCode422 | StatusCode500;
+      @body body: UpdateRoomRequest,
+    ):
+      | RoomResponse
+      | StatusCode401
+      | StatusCode404
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("delete_room")
     @summary("Delete a Room")
@@ -76,9 +85,13 @@ namespace VideoAPI.Rooms {
     delete(
       @path
       @doc("Unique ID of the room")
-      id: string
-    ): {
-      @statusCode statusCode: 204;
-    } | StatusCode401 | StatusCode404 | StatusCode500;
+      id: string,
+    ):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

@@ -20,7 +20,7 @@ namespace SpaceAPI.Queues {
     @summary("List all Queues")
     @doc("""
       Returns a list of your queues.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(): QueueListResponse | StatusCode401 | ValidationError | StatusCode500;
@@ -29,7 +29,7 @@ namespace SpaceAPI.Queues {
     @summary("Create a Queue")
     @doc("""
       Creates a new queue.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -46,16 +46,21 @@ namespace SpaceAPI.Queues {
     @summary("Retrieve a Queue")
     @doc("""
       Retrieves the details of a queue.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
-    read(...QueuePathID): QueueResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...QueuePathID):
+      | QueueResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("update_queue")
     @summary("Update a Queue")
     @doc("""
       Updates a queue.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @put
@@ -73,7 +78,7 @@ namespace SpaceAPI.Queues {
     @summary("Delete a Queue")
     @doc("""
       Deletes a queue.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
@@ -85,7 +90,6 @@ namespace SpaceAPI.Queues {
       | StatusCode401
       | StatusCode404
       | StatusCode500;
-
   }
 
   @tag(QUEUE_MEMBERS_TAG)
@@ -96,33 +100,44 @@ namespace SpaceAPI.Queues {
     @summary("List all members of a queue")
     @doc("""
       Returns a list of members in a queue.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @get
-    listMembers(...QueueIdPath): QueueMemberListResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    listMembers(...QueueIdPath):
+      | QueueMemberListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("retrieve_next_queue_member")
     @summary("Retrieve next member on the queue")
     @doc("""
       Retrieves the next member in the queue without dequeuing.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/next")
     @get
-    getNextMember(...QueueIdPath): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    getNextMember(...QueueIdPath):
+      | QueueMemberResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("retrieve_queue_member")
     @summary("Retrieve a queue member")
     @doc("""
       Retrieves the details of a queue member.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{id}")
     @get
-    getMember(...QueueIdPath, ...QueueMemberPathID): QueueMemberResponse | StatusCode401 | StatusCode404 | StatusCode500;
-
+    getMember(...QueueIdPath, ...QueueMemberPathID):
+      | QueueMemberResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }

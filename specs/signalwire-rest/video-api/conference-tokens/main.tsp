@@ -22,8 +22,12 @@ namespace VideoAPI.ConferenceTokensByConference {
     list(
       @path
       @doc("Unique id of a video conference")
-      id: string
-    ): ListConferenceTokensResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+      id: string,
+    ):
+      | ListConferenceTokensResponse
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
   }
 }
 
@@ -39,7 +43,7 @@ namespace VideoAPI.ConferenceTokens {
     read(
       @path
       @doc("Unique ID of the Conference Token")
-      id: string
+      id: string,
     ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("reset_conference_token")
@@ -50,7 +54,7 @@ namespace VideoAPI.ConferenceTokens {
     reset(
       @path
       @doc("Unique ID of the Conference Token")
-      id: string
+      id: string,
     ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
   }
 }

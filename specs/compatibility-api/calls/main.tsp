@@ -19,7 +19,7 @@ namespace CompatibilityAPI.Calls {
     @summary("List all Calls")
     @doc("""
       List all calls.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     list(
@@ -69,7 +69,15 @@ namespace CompatibilityAPI.Calls {
       @query
       @doc("The status of the call.")
       @example("completed")
-      Status?: "queued" | "ringing" | "in-progress" | "canceled" | "completed" | "busy" | "failed" | "no-answer",
+      Status?:
+        | "queued"
+        | "ringing"
+        | "in-progress"
+        | "canceled"
+        | "completed"
+        | "busy"
+        | "failed"
+        | "no-answer",
 
       @query
       @doc("The address that received the call.")
@@ -93,13 +101,17 @@ namespace CompatibilityAPI.Calls {
       @doc("A token used to retrieve a specific page of results. Must start with PA or PB.")
       @example("PAb3877c40da604998")
       PageToken?: string,
-    ): CallListResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | CallListResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("create_a_call")
     @summary("Create a Call")
     @doc("""
       Create a call.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -107,23 +119,31 @@ namespace CompatibilityAPI.Calls {
       ...CallsAccountSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRequest,
-    ): CallResponse | CompatibilityStatusCode400Array | CompatibilityStatusCode401 | CompatibilityStatusCode422;
+    ):
+      | CallResponse
+      | CompatibilityStatusCode400Array
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode422;
 
     @operationId("retrieve_a_call")
     @summary("Retrieve a Call")
     @doc("""
       Retrieve a call.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @route("/{Sid}")
-    read(...CallsAccountSidPath, ...CallSidPath): CallResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404;
+    read(...CallsAccountSidPath, ...CallSidPath):
+      | CallResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404;
 
     @operationId("update_a_call")
     @summary("Update a Call")
     @doc("""
       Update a call.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -133,18 +153,29 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCallRequest,
-    ): CallResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
+    ):
+      | CallResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422
+      | CompatibilityStatusCode503;
 
     @operationId("delete_a_call")
     @summary("Delete a Call")
     @doc("""
       Delete a call record from your account. If the delete is successful, a 204 response, with no body, will be returned.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
     @route("/{Sid}")
-    delete(...CallsAccountSidPath, ...CallSidPath): CompatibilityStatusCode204 | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422;
+    delete(...CallsAccountSidPath, ...CallSidPath):
+      | CompatibilityStatusCode204
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422;
   }
 
   @tag(RECORDINGS_TAG)
@@ -155,7 +186,7 @@ namespace CompatibilityAPI.Calls {
     @summary("Create a Recording.")
     @doc("""
       Create a recording.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -164,13 +195,19 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallRecordingRequest,
-    ): CallRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
+    ):
+      | CallRecordingResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422
+      | CompatibilityStatusCode503;
 
     @operationId("update_recording")
     @summary("Update a Recording")
     @doc("""
       Pause, resume or stop a Recording. You can control what happens while recording is paused (replace pause with silence or skip it).
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -181,7 +218,13 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCallRecordingRequest,
-    ): CallRecordingResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
+    ):
+      | CallRecordingResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422
+      | CompatibilityStatusCode503;
   }
 
   @tag(STREAMS_TAG)
@@ -192,7 +235,7 @@ namespace CompatibilityAPI.Calls {
     @summary("Create a Stream.")
     @doc("""
       Create a stream.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -201,13 +244,19 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPathForRecording,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: CreateCallStreamRequest,
-    ): CallStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
+    ):
+      | CallStreamResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422
+      | CompatibilityStatusCode503;
 
     @operationId("update_stream")
     @summary("Stop a Stream")
     @doc("""
       Stop a Stream.
-
+      
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -218,6 +267,12 @@ namespace CompatibilityAPI.Calls {
       ...CallSidPath,
       @header contentType: "application/x-www-form-urlencoded",
       @body body: UpdateCallStreamRequest,
-    ): CallStreamResponse | CompatibilityStatusCode400 | CompatibilityStatusCode401 | CompatibilityStatusCode404 | CompatibilityStatusCode422 | CompatibilityStatusCode503;
+    ):
+      | CallStreamResponse
+      | CompatibilityStatusCode400
+      | CompatibilityStatusCode401
+      | CompatibilityStatusCode404
+      | CompatibilityStatusCode422
+      | CompatibilityStatusCode503;
   }
 }

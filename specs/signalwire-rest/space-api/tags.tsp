@@ -39,9 +39,7 @@ const PHONE_NUMBER_LOOKUP_TAG_METADATA = #{
 };
 
 const RECORDINGS_TAG = "Recordings";
-const RECORDINGS_TAG_METADATA = #{
-  description: "Manage call recordings.",
-};
+const RECORDINGS_TAG_METADATA = #{ description: "Manage call recordings." };
 
 const SIP_ENDPOINTS_TAG = "SIP Endpoints";
 const SIP_ENDPOINTS_TAG_METADATA = #{

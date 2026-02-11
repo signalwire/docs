@@ -20,16 +20,20 @@ namespace SpaceAPI.DomainApplications {
     @summary("List all Domain Applications")
     @doc("""
       Returns a list of your domain applications. The domain applications are returned sorted by creation date, with the most recent domain applications appearing first.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
-    list(...ListDomainApplicationsQuery): DomainApplicationListResponse | StatusCode401 | ValidationError | StatusCode500;
+    list(...ListDomainApplicationsQuery):
+      | DomainApplicationListResponse
+      | StatusCode401
+      | ValidationError
+      | StatusCode500;
 
     @operationId("create_domain_application")
     @summary("Create a Domain Application")
     @doc("""
       Creates a new domain application.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @post
@@ -46,20 +50,28 @@ namespace SpaceAPI.DomainApplications {
     @summary("Retrieve a Domain Application")
     @doc("""
       Retrieves the details of a Domain Application that has been previously created.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
-    read(...DomainApplicationPathID): DomainApplicationResponse | StatusCode401 | StatusCode404 | ValidationError | StatusCode500;
+    read(...DomainApplicationPathID):
+      | DomainApplicationResponse
+      | StatusCode401
+      | StatusCode404
+      | ValidationError
+      | StatusCode500;
 
     @operationId("update_domain_application")
     @summary("Update a Domain Application")
     @doc("""
       Updates a Domain Application.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @put
-    update(...DomainApplicationPathID, @body body: UpdateDomainApplicationRequest):
+    update(
+      ...DomainApplicationPathID,
+      @body body: UpdateDomainApplicationRequest,
+    ):
       | DomainApplicationResponse
       | StatusCode401
       | StatusCode404
@@ -70,7 +82,7 @@ namespace SpaceAPI.DomainApplications {
     @summary("Delete a Domain Application")
     @doc("""
       Permanently deletes a Domain Application. It cannot be undone.
-
+      
       ${tokenPermissions<"_Voice_, _Messaging_, or _Fax_">}
       """)
     @delete

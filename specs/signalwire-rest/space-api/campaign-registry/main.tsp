@@ -21,7 +21,7 @@ namespace SpaceAPI.RegistryBeta {
     @summary("List all Brands")
     @doc("""
       Returns a list of your registered brands for 10DLC.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     list(
@@ -31,14 +31,14 @@ namespace SpaceAPI.RegistryBeta {
 
       @query
       @doc("The state of the brand in the registration process, such as pending or complete. Will return all Brands with this value.")
-      filter_state?: string
+      filter_state?: string,
     ): BrandListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_brand")
     @summary("Create a Brand")
     @doc("""
       Creates a new brand for 10DLC registration.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -55,16 +55,20 @@ namespace SpaceAPI.RegistryBeta {
     @summary("Retrieve a Brand")
     @doc("""
       Retrieves the details of a brand.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...BrandPathID): BrandResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...BrandPathID):
+      | BrandResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("list_campaigns")
     @summary("List all Campaigns")
     @doc("""
       Returns a list of campaigns for a brand.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/campaigns")
@@ -78,14 +82,14 @@ namespace SpaceAPI.RegistryBeta {
 
       @query
       @doc("The state of the campaign in the registration process, such as pending or complete. Will return all campaigns with this value.")
-      filter_state?: string
+      filter_state?: string,
     ): CampaignListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("create_campaign")
     @summary("Create a Campaign")
     @doc("""
       Creates a new campaign for 10DLC registration.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/campaigns")
@@ -109,16 +113,20 @@ namespace SpaceAPI.RegistryBeta {
     @summary("Retrieve a Campaign")
     @doc("""
       Retrieves the details of a campaign.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...CampaignPathID): CampaignResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...CampaignPathID):
+      | CampaignResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("update_campaign")
     @summary("Update a Campaign")
     @doc("""
       Updates a campaign.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @put
@@ -136,7 +144,7 @@ namespace SpaceAPI.RegistryBeta {
     @summary("List all Phone Number Assignments")
     @doc("""
       Returns a list of phone numbers assigned to a campaign.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/numbers")
@@ -146,14 +154,18 @@ namespace SpaceAPI.RegistryBeta {
 
       @query
       @doc("The state of the assignments in the registration process, such as pending or complete. Will return all assignments with this value.")
-      filter_state?: string
-    ): AssignedNumberListResponse | StatusCode401 | StatusCode404 | StatusCode500;
+      filter_state?: string,
+    ):
+      | AssignedNumberListResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("list_orders")
     @summary("List all Phone Number Assignment Orders")
     @doc("""
       Returns a list of orders for a campaign.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/orders")
@@ -163,14 +175,14 @@ namespace SpaceAPI.RegistryBeta {
 
       @query
       @doc("The state of the orders in the registration process, such as pending or processed. Will return all orders with this value.")
-      filter_state?: string
+      filter_state?: string,
     ): OrderListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("create_order")
     @summary("Create a Phone Number Assignment Order")
     @doc("""
       Creates a new order for a campaign.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @route("/{id}/orders")
@@ -194,7 +206,7 @@ namespace SpaceAPI.RegistryBeta {
     @summary("Delete a Phone Number Assignment")
     @doc("""
       Removes a phone number from a campaign.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete
@@ -215,9 +227,13 @@ namespace SpaceAPI.RegistryBeta {
     @summary("Retrieve a Phone Number Assignment Order")
     @doc("""
       Retrieves the details of an order.
-
+      
       ${tokenPermissions<"_Numbers_">}
       """)
-    read(...OrderPathID): OrderResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...OrderPathID):
+      | OrderResponse
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
