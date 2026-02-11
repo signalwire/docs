@@ -631,6 +631,21 @@ and reverts all changes. Always use line-by-line text manipulation
 - `src={require("...").default}` - convert to plain `src="..."` string paths
 - `onChange` prop on Accordion - remove (not supported in Fern)
 - Callout titles left as inline text instead of `title=` prop — Docusaurus rendered the first line of a callout as an ALL CAPS title automatically. In Fern, the title must be an explicit prop. Convert `<Tip>\nMY TITLE\nBody text</Tip>` to `<Tip title="My title">\nBody text</Tip>`. Sentence-case the title.
+- Inline bold text used as subtitle — some pages have `---**Subtitle text**` (bold text immediately after frontmatter) instead of using the `subtitle:` frontmatter field. Convert to `subtitle: Subtitle text` in frontmatter.
+
+## Style Guidelines
+
+### Page titles
+
+Guide titles should describe what the page teaches the reader to **do**, not just name the feature:
+- Bad: "Using context_switch", "Use set_meta_data"
+- Good: "Switch AI context mid-call", "Store data outside LLM context", "Enable functions dynamically"
+
+Keep titles short. Be precise about what makes the feature distinctive.
+
+### Casing
+
+All titles (frontmatter `title:`, callout `title=`, sidebar labels) should use **sentence case** — capitalize only the first word and proper nouns.
 
 ## Commands
 
