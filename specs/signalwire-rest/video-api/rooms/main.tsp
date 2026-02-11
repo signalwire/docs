@@ -4,7 +4,9 @@ import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
-import "./models.tsp";
+import "./models/core.tsp";
+import "./models/requests.tsp";
+import "./models/responses.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -22,6 +24,7 @@ namespace VideoAPI.Rooms {
     @post
     create(@body body: CreateRoomRequest):
       | RoomResponse
+      | StatusCode400
       | StatusCode401
       | VideoStatusCode422
       | StatusCode500;
@@ -31,9 +34,43 @@ namespace VideoAPI.Rooms {
     @doc("List rooms.\n\n${tokenPermissions<"_Video_">}")
     list(
       @query
-      @doc("Specifies whether or not to include information about the room's active session (if any)")
+      @doc("Specifies whether or not to include information about the room's active session (if any).")
+      @example(true)
       include_active_session?: boolean,
-    ): ListRoomsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
+
+      @query
+      @doc("Return rooms with a join_from date on or after this date. Expects RFC 3339 datetime or date string.")
+      @example("2022-01-01T00:00:00Z")
+      starts_after?: string,
+
+      @query
+      @doc("Return rooms with a join_until date on or before this date. Expects RFC 3339 datetime or date string.")
+      @example("2022-12-31T23:59:59Z")
+      ends_before?: string,
+
+      @query
+      @doc("Page number to return. Requires `page_token` for values greater than 0.")
+      @example(0)
+      @minValue(0)
+      page_number?: int32 = 0,
+
+      @query
+      @doc("Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.")
+      @example(50)
+      @minValue(1)
+      @maxValue(1000)
+      page_size?: int32 = 50,
+
+      @query
+      @doc("Token for cursor-based pagination. Required when `page_number` is greater than 0.")
+      @example("PAb3877c40da604998")
+      page_token?: string,
+    ):
+      | ListRoomsResponse
+      | StatusCode400
+      | StatusCode401
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("get_room_by_name")
     @summary("Find a Room by Name")
@@ -41,13 +78,21 @@ namespace VideoAPI.Rooms {
     @route("/{name}")
     getByName(
       @path
-      @doc("Unique name of the room")
+      @doc("Unique name of the room.")
+      @example("my_room")
       name: string,
 
       @query
-      @doc("Specifies whether or not to include information about the room's active session (if any)")
+      @doc("Specifies whether or not to include information about the room's active session (if any).")
+      @example(true)
       include_active_session?: boolean,
-    ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    ):
+      | RoomResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode404
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("get_room")
     @summary("Find a Room by ID")
@@ -55,9 +100,22 @@ namespace VideoAPI.Rooms {
     @route("/{id}")
     read(
       @path
-      @doc("Unique ID of the room")
+      @format("uuid")
+      @doc("Unique ID of the room.")
+      @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
       id: string,
-    ): RoomResponse | StatusCode401 | StatusCode404 | StatusCode500;
+
+      @query
+      @doc("Specifies whether or not to include information about the room's active session (if any).")
+      @example(true)
+      include_active_session?: boolean,
+    ):
+      | RoomResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode404
+      | VideoStatusCode422
+      | StatusCode500;
 
     @operationId("update_room")
     @summary("Update a Room")
@@ -66,12 +124,15 @@ namespace VideoAPI.Rooms {
     @put
     update(
       @path
-      @doc("Unique ID of the room")
+      @format("uuid")
+      @doc("Unique ID of the room.")
+      @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
       id: string,
 
       @body body: UpdateRoomRequest,
     ):
       | RoomResponse
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | VideoStatusCode422
@@ -84,12 +145,15 @@ namespace VideoAPI.Rooms {
     @delete
     delete(
       @path
-      @doc("Unique ID of the room")
+      @format("uuid")
+      @doc("Unique ID of the room.")
+      @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
       id: string,
     ):
       | {
           @statusCode statusCode: 204;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | StatusCode500;
