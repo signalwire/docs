@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "./core.tsp";
 
 using TypeSpec.Http;
 
@@ -20,10 +21,10 @@ model ListRoomSessionsRequest {
   @query
   room_name_matches?: string;
 
-  @doc("Return Sessions currently in this state. Possible values are: completed and in-progress.")
-  @example("completed")
+  @doc("Return Sessions currently in this state.")
+  @example(RoomSessionStatus.completed)
   @query
-  status?: string;
+  status?: RoomSessionStatus;
 
   @doc("Page number to return. Requires `page_token` for values greater than 0.")
   @example(0)

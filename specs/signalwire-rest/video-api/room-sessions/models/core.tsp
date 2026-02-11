@@ -1,6 +1,31 @@
 import "@typespec/http";
+import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
+
+@doc("Status of a room session.")
+enum RoomSessionStatus {
+  @doc("The room session is currently active.")
+  `in-progress`,
+
+  @doc("The room session has ended.")
+  completed,
+}
+
+@doc("Status of a room recording.")
+enum RoomRecordingStatus {
+  @doc("The recording is actively capturing.")
+  recording,
+
+  @doc("The recording has been paused.")
+  paused,
+
+  @doc("The recording has ended and is being processed.")
+  processing,
+
+  @doc("The recording is complete and available.")
+  completed,
+}
 
 model RoomSessionPathID {
   @path
@@ -34,13 +59,13 @@ model RoomSession {
   @example(20)
   max_members: int32 | null;
 
-  @doc("The room session's resolution. Possible values are `720p` or `1080p`.")
-  @example("720p")
-  quality: string | null;
+  @doc("The room session's resolution.")
+  @example(VideoQuality.`720p`)
+  quality: VideoQuality | null;
 
-  @doc("The room session's frames per second. Possible values are `20` or `30`.")
-  @example(20)
-  fps: int32 | null;
+  @doc("The room session's frames per second.")
+  @example(VideoFps.`20`)
+  fps: VideoFps | null;
 
   @doc("Room Session does not accept new Members before this time.")
   @example(utcDateTime.fromISO("2022-01-01T00:00:00Z"))
@@ -94,9 +119,9 @@ model RoomSession {
   @example(120)
   duration: int32 | null;
 
-  @doc("Status of the session. Possible values are `in-progress` or `completed`.")
-  @example("completed")
-  status: string | null;
+  @doc("Status of the session.")
+  @example(RoomSessionStatus.completed)
+  status: RoomSessionStatus | null;
 
   @doc("Timestamp when the room session was created.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
@@ -144,8 +169,8 @@ model RoomRecording {
   room_session_id: string;
 
   @doc("Status of the recording.")
-  @example("completed")
-  status: string | null;
+  @example(RoomRecordingStatus.completed)
+  status: RoomRecordingStatus | null;
 
   @doc("Timestamp of when the Room Recording started.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
