@@ -72,12 +72,16 @@ import UiAccordion from '/docs/main/_common/dashboard/_ui-accordion.mdx'
 <Markdown src="/snippets/common/dashboard/_ui-accordion.mdx" />
 ```
 
-Shared snippets live in `fern/snippets/common/` and are organized by topic:
+Shared snippets live in `fern/snippets/` and are organized by topic:
 - `fern/snippets/common/dashboard/` - Dashboard UI components
 - `fern/snippets/common/call-fabric/` - Call Fabric shared content
 - `fern/snippets/common/sip/` - SIP-related shared content
+- `fern/snippets/swml/` - SWML-specific shared content (actions, playable sounds, voice table, language codes, web_hook_url)
 
 The old Docusaurus path `/docs/main/_common/` maps to `/snippets/common/` in Fern.
+The old Docusaurus path `swml/reference/methods/_sharedtables/` maps to `/snippets/swml/` in Fern.
+
+**Nested snippets:** Fern `<Markdown src>` components can be nested — a snippet can include other snippets. For example, `_web-hook-url.mdx` includes `_actions.mdx` via `<Markdown src="/snippets/swml/_actions.mdx" />`.
 
 ### Component Migration
 
