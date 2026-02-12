@@ -4,7 +4,9 @@ import "../../types/status-codes";
 import "../tags.tsp";
 import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
-import "./models.tsp";
+import "./models/core.tsp";
+import "./models/requests.tsp";
+import "./models/responses.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -22,8 +24,9 @@ namespace VideoAPI.RoomTokens {
     @post
     create(@body body: CreateRoomTokenRequest):
       | RoomTokenResponse
+      | StatusCode400
       | StatusCode401
-      | RoomTokenValidationError
+      | VideoStatusCode422
       | StatusCode500;
   }
 }
