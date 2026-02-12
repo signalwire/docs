@@ -75,7 +75,7 @@ model Log {
 
   @doc("Whether the room session is locked.")
   @example(false)
-  locked: boolean | null;
+  locked: boolean;
 
   @doc("Start time of the activity.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
@@ -94,6 +94,7 @@ model Log {
   created_at: utcDateTime;
 
   @doc("Details on charges associated with this log.")
+  @example(#[#{ description: "Video conference session charge", charge: 0.005 }])
   charge_details: ChargeDetail[];
 }
 

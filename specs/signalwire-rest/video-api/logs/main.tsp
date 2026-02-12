@@ -25,6 +25,7 @@ namespace VideoAPI.Logs {
       | ListLogsResponse
       | StatusCode400
       | StatusCode401
+      | StatusCode403
       | VideoStatusCode422
       | StatusCode500;
 
@@ -38,6 +39,7 @@ namespace VideoAPI.Logs {
       | LogResponse
       | StatusCode400
       | StatusCode401
+      | StatusCode403
       | StatusCode404
       | VideoStatusCode422
       | StatusCode500;
