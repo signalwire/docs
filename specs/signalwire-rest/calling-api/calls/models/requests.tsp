@@ -23,6 +23,27 @@ alias CallCreateParamsAlias = CallCreateParamsURL | CallCreateParamsSWML;
 
 alias CallUpdateParamsAlias = CallUpdateParamsURL | CallUpdateParamsSWML;
 
+@doc("The reason for hanging up the call.")
+enum HangupReason {
+  @doc("Normal hangup by the caller or system.")
+  hangup,
+
+  @doc("The call was canceled before being answered.")
+  cancel,
+
+  @doc("The destination was busy.")
+  busy,
+
+  @doc("The destination did not answer.")
+  noAnswer,
+
+  @doc("The call was declined by the destination.")
+  decline,
+
+  @doc("The call ended due to an error.")
+  error,
+}
+
 @summary("calling.end")
 model CallHangupRequest {
   @doc(uuidDescription)
@@ -36,8 +57,8 @@ model CallHangupRequest {
   @doc(paramsDescription)
   params: {
     @doc("Set the reason why the call was hung up.")
-    @example("hangup")
-    reason?: "hangup" | "busy";
+    @example(HangupReason.hangup)
+    reason?: HangupReason;
   };
 }
 @summary("calling.ai_hold")
@@ -54,6 +75,7 @@ model CallHoldRequest {
   params: {
     @doc("The duration to hold the caller in seconds.")
     @example(300)
+    @minValue(1)
     @maxValue(300)
     timeout?: int32 = 300;
 
@@ -87,6 +109,21 @@ model CallUnholdRequest {
   };
 }
 
+@doc("Parameters for resetting the AI conversation state.")
+model CallAIMessageResetParams {
+  @doc("Whether to perform a full reset of the AI conversation, clearing all history.")
+  @example(true)
+  full_reset?: boolean;
+
+  @doc("A new user prompt to set after resetting the conversation.")
+  @example("You are a helpful assistant.")
+  user_prompt?: string;
+
+  @doc("A new system prompt to set after resetting the conversation.")
+  @example("You are a customer support agent for SignalWire.")
+  system_prompt?: string;
+}
+
 @summary("calling.ai_message")
 model CallAIMessageRequest {
   @doc(uuidDescription)
@@ -100,19 +137,30 @@ model CallAIMessageRequest {
   @doc(paramsDescription)
   params: {
     @doc("""
-      The role that the message is from. Each role type has a different purpose and will influence how the AI will interpret the message.
+      The role that the message is from. Required when `reset` is not provided. Each role type has a different purpose and will influence how the AI will interpret the message.
       - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it. This could change the AI's personality, add new constraints, provide context about the conversation, or give the AI information it should know going forward.
       - `user`: Inject a message as if the caller said it. This would appear in the conversation history as coming from the caller, and the AI would respond to it as if the caller just spoke it.
       - `assistant`: Inject a message as if the AI said it. This would appear as an AI response in the conversation history. The AI would treat this as its own previous response when generating future replies.
       """)
     @example("system")
-    role: "system" | "user" | "assistant";
+    role?: "system" | "user" | "assistant";
 
     @doc("""
-      The text content that will be sent to the AI.
+      The text content that will be sent to the AI. Required when `reset` is not provided.
       """)
     @example("You are now in expert mode. Provide detailed technical responses.")
-    message_text: string;
+    message_text?: string;
+
+    @doc("Parameters for resetting the AI conversation state. When provided, `role` and `message_text` are optional.")
+    @example(#{
+      full_reset: true,
+      system_prompt: "You are a helpful assistant.",
+    })
+    reset?: CallAIMessageResetParams;
+
+    @doc("Arbitrary JSON data to merge into the AI session's global data store.")
+    @example(#{ customer_tier: "premium", language: "en" })
+    global_data?: TypeSpec.Record<unknown>;
   };
 }
 
@@ -347,6 +395,10 @@ model CallLiveTranslateRequest {
   params: {
     @doc("The translation action to perform: start, stop, summarize, or inject.")
     action: LiveTranslateAction;
+
+    @doc("A URL to receive status update callbacks for the translation session.")
+    @example("https://example.com/status_callback")
+    status_url?: url;
   };
 }
 
@@ -389,7 +441,11 @@ model CallCreateParamsBase {
     | "initiated"
     | "ringing"
     | "ending"
-    | "ended")[];
+    | "ended")[] = #["ended"];
+
+  @doc("The HTTP method to use when requesting the URL.")
+  @example("POST")
+  url_method?: string = "POST";
 }
 
 @summary("dial (URL)")
@@ -412,10 +468,10 @@ model CallCreateParamsSWML is CallCreateParamsBase {
 model CallUpdateParamsBase {
   @doc(uuidDescription)
   @example(CallIdExample)
-  id: string;
+  id: uuid;
 
   @doc("""
-    The Fallback URL to handle the call. 
+    The Fallback URL to handle the call.
     This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
     """)
   @example(CallFallbackURLExample)
@@ -424,6 +480,10 @@ model CallUpdateParamsBase {
   @doc("Either `canceled` (to cancel a not yet connected call) or `completed` (to end a call that is in progress).")
   @example("canceled")
   status?: "canceled" | "completed";
+
+  @doc("A URL to receive call status update callbacks.")
+  @example("https://example.com/status_callback")
+  status_url?: url;
 }
 
 @summary("update (Inline SWML)")
@@ -452,6 +512,42 @@ model CallUpdateCurrentCallRequest {
   params: CallUpdateParamsAlias;
 }
 
+@summary("calling.transfer")
+model CallTransferRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transfer` command is used to transfer an active call to a new destination.")
+  @example("calling.transfer")
+  command: "calling.transfer";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, or an inline SWML object.")
+    @example("sip:destination@example.com")
+    dest: string | SWMLObject;
+  };
+}
+
+@summary("calling.user_event")
+model CallUserEventRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.user_event` command is used to fire a custom user event on the call.")
+  @example("calling.user_event")
+  command: "calling.user_event";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Arbitrary JSON event data to fire on the call.")
+    @example(#{ action: "custom_action", data: "example" })
+    event: unknown;
+  };
+}
+
 @discriminated(#{ discriminatorPropertyName: "command", envelope: "none" })
 @doc("""
   Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke:
@@ -471,6 +567,10 @@ model CallUpdateCurrentCallRequest {
   - **`calling.live_transcribe`** - Control live transcription on an active call. Start real-time speech-to-text transcription, stop transcription, or request an on-demand AI summary of the conversation.
   
   - **`calling.live_translate`** - Control live translation on an active call. Start real-time language translation between call participants, stop translation, request summaries, or inject messages to be translated and spoken.
+  
+  - **`calling.transfer`** - Transfer an active call to a new destination. The call is redirected to the specified SIP URI, phone number, or inline SWML application.
+  
+  - **`calling.user_event`** - Fire a custom user event on the call. Allows sending arbitrary JSON data as an event that can be handled by a client application using the SignalWire JS SDK.
   """)
 union CallRequest {
   dial: CallCreateRequest,
@@ -481,4 +581,6 @@ union CallRequest {
   `calling.ai_message`: CallAIMessageRequest,
   `calling.live_transcribe`: CallLiveTranscribeRequest,
   `calling.live_translate`: CallLiveTranslateRequest,
+  `calling.transfer`: CallTransferRequest,
+  `calling.user_event`: CallUserEventRequest,
 }
