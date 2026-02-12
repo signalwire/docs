@@ -37,19 +37,20 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the Conference Token
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ConferenceTokenPathID'
       responses:
         '200':
-          description: The request has succeeded.
+          description: Conference token response object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConferenceTokenResponse'
+                $ref: '#/components/schemas/ConferenceToken'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -83,19 +84,20 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique ID of the Conference Token
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ConferenceTokenPathID'
       responses:
         '200':
-          description: The request has succeeded.
+          description: Conference token response object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConferenceTokenResponse'
+                $ref: '#/components/schemas/ConferenceToken'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
@@ -372,12 +374,10 @@ paths:
 
         [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Unique id of a video conference
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ConferencePathID'
+        - $ref: '#/components/parameters/ListConferenceTokensRequest.page_number'
+        - $ref: '#/components/parameters/ListConferenceTokensRequest.page_size'
+        - $ref: '#/components/parameters/ListConferenceTokensRequest.page_token'
       responses:
         '200':
           description: The request has succeeded.
@@ -385,12 +385,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListConferenceTokensResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
         '401':
           description: Access is unauthorized.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
         '422':
           description: The request contains invalid parameters. See errors for details.
           content:
@@ -1627,6 +1639,53 @@ security:
   - SignalWireBasicAuth: []
 components:
   parameters:
+    ConferencePathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the video conference.
+      schema:
+        type: string
+        format: uuid
+    ConferenceTokenPathID:
+      name: id
+      in: path
+      required: true
+      description: Unique ID of the conference token.
+      schema:
+        type: string
+        format: uuid
+    ListConferenceTokensRequest.page_number:
+      name: page_number
+      in: query
+      required: false
+      description: Page number to return. Requires `page_token` for values greater than 0.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      explode: false
+    ListConferenceTokensRequest.page_size:
+      name: page_size
+      in: query
+      required: false
+      description: Specify the number of results to return on a single page. The default page size is `50` and the maximum is `1000`.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      explode: false
+    ListConferenceTokensRequest.page_token:
+      name: page_token
+      in: query
+      required: false
+      description: Token for cursor-based pagination. Required when `page_number` is greater than 0.
+      schema:
+        type: string
+      explode: false
     RoomPathID:
       name: id
       in: path
@@ -1872,29 +1931,36 @@ components:
             - $ref: '#/components/schemas/ActiveSession'
           description: Active session information for the conference.
       description: Conference response object.
-    ConferenceTokenResponse:
+    ConferenceToken:
       type: object
+      required:
+        - id
+        - name
+        - token
+        - scopes
       properties:
         id:
           type: string
-          description: Unique ID of the Conference Token
+          format: uuid
+          description: Unique identifier for the conference token.
           example: c22d24f6-5a47-4597-9a23-c7d01e696b92
         name:
           type: string
-          description: Name of the Conference Token
+          nullable: true
+          description: Name of the conference token.
           example: My First Token
         token:
           type: string
-          description: Conference Token's randomly generated sequence
+          description: Conference token's randomly generated sequence.
           example: vpt_62c65414de4d067d07415a7ced8183be
         scopes:
           type: array
           items:
             type: string
-          description: List of permissions
+          description: List of permissions.
           example:
             - room.member.audio_mute
-      description: Conference token response object.
+      description: A conference token object.
     CreateConferenceRequest:
       type: object
       properties:
@@ -2226,6 +2292,9 @@ components:
       description: Join as type for room tokens.
     ListConferenceTokensResponse:
       type: object
+      required:
+        - links
+        - data
       properties:
         links:
           allOf:
@@ -2234,7 +2303,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/ConferenceTokenResponse'
+            $ref: '#/components/schemas/ConferenceToken'
           description: List of conference tokens.
       description: List conference tokens response.
     ListConferencesResponse:

@@ -2,9 +2,10 @@ import "@typespec/http";
 import "@typespec/openapi";
 import "../../types/status-codes";
 import "../tags.tsp";
-import "../_shared/models.tsp";
 import "../_shared/errors.tsp";
-import "./models.tsp";
+import "./models/core.tsp";
+import "./models/requests.tsp";
+import "./models/responses.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
@@ -19,13 +20,11 @@ namespace VideoAPI.ConferenceTokensByConference {
     @operationId("list_conference_tokens")
     @summary("List Conference Tokens")
     @doc("List conference tokens.\n\n${tokenPermissions<"_Video_">}")
-    list(
-      @path
-      @doc("Unique id of a video conference")
-      id: string,
-    ):
+    list(...ConferencePathID, ...ListConferenceTokensRequest):
       | ListConferenceTokensResponse
+      | StatusCode400
       | StatusCode401
+      | StatusCode404
       | VideoStatusCode422
       | StatusCode500;
   }
@@ -40,21 +39,23 @@ namespace VideoAPI.ConferenceTokens {
     @summary("Find a Conference Token by ID")
     @doc("Find a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
-    read(
-      @path
-      @doc("Unique ID of the Conference Token")
-      id: string,
-    ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    read(...ConferenceTokenPathID):
+      | ConferenceTokenResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
 
     @operationId("reset_conference_token")
     @summary("Reset a Conference Token by ID")
     @doc("Reset a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/reset")
     @post
-    reset(
-      @path
-      @doc("Unique ID of the Conference Token")
-      id: string,
-    ): ConferenceTokenResponse | StatusCode401 | StatusCode404 | StatusCode500;
+    reset(...ConferenceTokenPathID):
+      | ConferenceTokenResponse
+      | StatusCode400
+      | StatusCode401
+      | StatusCode404
+      | StatusCode500;
   }
 }
