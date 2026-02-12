@@ -33,6 +33,48 @@ enum VideoQuality {
   `1080p`,
 }
 
+@doc("Video room layout options.")
+enum VideoLayout {
+  @doc("Responsive grid layout")
+  `grid-responsive`,
+
+  @doc("Responsive grid layout for mobile")
+  `grid-responsive-mobile`,
+
+  @doc("Highlight one participant with responsive layout")
+  `highlight-1-responsive`,
+
+  @doc("1x1 grid layout")
+  `1x1`,
+
+  @doc("2x1 grid layout")
+  `2x1`,
+
+  @doc("2x2 grid layout")
+  `2x2`,
+
+  @doc("5-up layout")
+  `5up`,
+
+  @doc("3x3 grid layout")
+  `3x3`,
+
+  @doc("4x4 grid layout")
+  `4x4`,
+
+  @doc("5x5 grid layout")
+  `5x5`,
+
+  @doc("6x6 grid layout")
+  `6x6`,
+
+  @doc("8x8 grid layout")
+  `8x8`,
+
+  @doc("10x10 grid layout")
+  `10x10`,
+}
+
 @doc("Video frames per second.")
 enum VideoFps {
   @doc("20 frames per second")
