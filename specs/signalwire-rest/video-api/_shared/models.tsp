@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "../../types/status-codes";
+import "../room-sessions/models/core.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -8,11 +9,11 @@ using Types.StatusCodes;
 model PaginationLinks {
   @doc("Link to the current page.")
   @example("https://example.signalwire.com/api/video/rooms?page=2")
-  self?: string;
+  self: string;
 
   @doc("Link to the first page.")
   @example("https://example.signalwire.com/api/video/rooms?page=1")
-  first?: string;
+  first: string;
 
   @doc("Link to the next page.")
   @example("https://example.signalwire.com/api/video/rooms?page=3")
@@ -74,6 +75,15 @@ enum VideoLayout {
   `10x10`,
 }
 
+@doc("Video frames per second.")
+enum VideoFps {
+  @doc("20 frames per second")
+  `20`: 20,
+
+  @doc("30 frames per second")
+  `30`: 30,
+}
+
 @doc("Active session information for a room.")
 model ActiveSession {
   @doc("Unique ID of the session.")
@@ -116,13 +126,13 @@ model ActiveSession {
   @example(20)
   max_members?: int32;
 
-  @doc("The Room Session's frames per second. Possible values are `20` or `30`.")
-  @example(20)
-  fps?: int32;
+  @doc("The Room Session's frames per second.")
+  @example(VideoFps.`20`)
+  fps?: VideoFps;
 
-  @doc("The Room Session's resolution. Possible values are `720p` or `1080p`.")
-  @example("720p")
-  quality?: string;
+  @doc("The Room Session's resolution.")
+  @example(VideoQuality.`720p`)
+  quality?: VideoQuality;
 
   @doc("Start time of the session.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
@@ -137,8 +147,8 @@ model ActiveSession {
   duration?: int32;
 
   @doc("Status of the session.")
-  @example("completed")
-  status?: string;
+  @example(RoomSessionStatus.completed)
+  status?: RoomSessionStatus;
 
   @doc("Whether a recording was automatically started when this Room Session began.")
   @example(true)
@@ -149,7 +159,7 @@ model ActiveSession {
   enable_room_previews?: boolean;
 
   @doc("If room previews are enabled and the room session is in progress, this is the URL of the preview video.")
-  @example("https://...")
+  @example("https://example.signalwire.com/api/video/room_sessions/c22d24f6-5a47-4597-9a23-c7d01e696b92/preview")
   preview_url?: string;
 
   @doc("Enable/disable jitter buffer audio-video sync.")
