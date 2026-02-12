@@ -8,11 +8,11 @@ using Types.StatusCodes;
 model PaginationLinks {
   @doc("Link to the current page.")
   @example("https://example.signalwire.com/api/video/rooms?page=2")
-  self?: string;
+  self: string;
 
   @doc("Link to the first page.")
   @example("https://example.signalwire.com/api/video/rooms?page=1")
-  first?: string;
+  first: string;
 
   @doc("Link to the next page.")
   @example("https://example.signalwire.com/api/video/rooms?page=3")
