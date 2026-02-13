@@ -9,7 +9,7 @@ enum CallResponseStatus {
   @doc("The call has been queued for processing.")
   queued,
 
-  @doc("The call has been initiated and dispatched to FreeSWITCH but not yet created.")
+  @doc("The call has been initiated but not yet created.")
   initiated,
 
   @doc("The call has been created in FreeSWITCH.")
