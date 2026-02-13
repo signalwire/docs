@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "../../types/status-codes";
+import "../room-sessions/models/core.tsp";
 
 using TypeSpec.Http;
 using Types.StatusCodes;
@@ -30,6 +31,57 @@ enum VideoQuality {
 
   @doc("1080p resolution")
   `1080p`,
+}
+
+@doc("Video room layout options.")
+enum VideoLayout {
+  @doc("Responsive grid layout")
+  `grid-responsive`,
+
+  @doc("Responsive grid layout for mobile")
+  `grid-responsive-mobile`,
+
+  @doc("Highlight one participant with responsive layout")
+  `highlight-1-responsive`,
+
+  @doc("1x1 grid layout")
+  `1x1`,
+
+  @doc("2x1 grid layout")
+  `2x1`,
+
+  @doc("2x2 grid layout")
+  `2x2`,
+
+  @doc("5-up layout")
+  `5up`,
+
+  @doc("3x3 grid layout")
+  `3x3`,
+
+  @doc("4x4 grid layout")
+  `4x4`,
+
+  @doc("5x5 grid layout")
+  `5x5`,
+
+  @doc("6x6 grid layout")
+  `6x6`,
+
+  @doc("8x8 grid layout")
+  `8x8`,
+
+  @doc("10x10 grid layout")
+  `10x10`,
+}
+
+@doc("Video frames per second.")
+enum VideoFps {
+  @doc("20 frames per second")
+  `20`: 20,
+
+  @doc("30 frames per second")
+  `30`: 30,
 }
 
 @doc("Active session information for a room.")
@@ -74,13 +126,13 @@ model ActiveSession {
   @example(20)
   max_members?: int32;
 
-  @doc("The Room Session's frames per second. Possible values are `20` or `30`.")
-  @example(20)
-  fps?: int32;
+  @doc("The Room Session's frames per second.")
+  @example(VideoFps.`20`)
+  fps?: VideoFps;
 
-  @doc("The Room Session's resolution. Possible values are `720p` or `1080p`.")
-  @example("720p")
-  quality?: string;
+  @doc("The Room Session's resolution.")
+  @example(VideoQuality.`720p`)
+  quality?: VideoQuality;
 
   @doc("Start time of the session.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))
@@ -95,8 +147,8 @@ model ActiveSession {
   duration?: int32;
 
   @doc("Status of the session.")
-  @example("completed")
-  status?: string;
+  @example(RoomSessionStatus.completed)
+  status?: RoomSessionStatus;
 
   @doc("Whether a recording was automatically started when this Room Session began.")
   @example(true)
@@ -107,7 +159,7 @@ model ActiveSession {
   enable_room_previews?: boolean;
 
   @doc("If room previews are enabled and the room session is in progress, this is the URL of the preview video.")
-  @example("https://...")
+  @example("https://example.signalwire.com/api/video/room_sessions/c22d24f6-5a47-4597-9a23-c7d01e696b92/preview")
   preview_url?: string;
 
   @doc("Enable/disable jitter buffer audio-video sync.")
