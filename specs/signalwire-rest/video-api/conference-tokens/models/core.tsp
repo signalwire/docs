@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "../../conferences/models/core.tsp";
 
 using TypeSpec.Http;
 
@@ -7,14 +8,6 @@ model ConferenceTokenPathID {
   @format("uuid")
   @doc("Unique ID of the conference token.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
-}
-
-model ConferencePathID {
-  @path
-  @format("uuid")
-  @doc("Unique ID of the video conference.")
-  @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
   id: string;
 }
 
