@@ -15,6 +15,72 @@ ask the user to install the [Serena MCP plugin](https://github.com/oraios/serena
 Preferably, install the plugin via Claude's `/plugin` command.
 Once installed, you can use Serena tools like `list_memories` and `read_memory` to retrieve stored context.
 
+## API Audit Tooling
+
+This repo includes Claude Code extensions (subagents, skills, and rules) for
+auditing TypeSpec API specs against the Rails backend (`temp/prime-rails/`).
+The full audit procedure is documented in `temp/audit-guide.md`.
+
+### Subagents (`.claude/agents/`)
+
+Specialized agents available in any session — no extra setup required:
+
+| Agent | Purpose |
+|-------|---------|
+| `rails-investigator` | Reads Rails routes, controllers, contracts, serializers, models, schema |
+| `typespec-reviewer` | Compares TypeSpec definitions against Rails ground truth |
+| `typespec-writer` | Implements TypeSpec fixes based on audit findings |
+| `audit-reporter` | Synthesizes findings into structured reports |
+
+Delegate to them by name (e.g., "Use the rails-investigator to check the
+rooms resource in the video API").
+
+### Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/audit <api> [tag-groups...]` | Spawn a specialist team to audit one or more tag groups against Rails |
+
+### Rules (`.claude/rules/`)
+
+Path-scoped rules load automatically for relevant files:
+- `typespec-conventions.md` — Loaded when editing `specs/**/*.tsp`
+- `rails-patterns.md` — Loaded when reading `temp/prime-rails/**/*.rb`
+- `audit-process.md` — General audit workflow reference
+
+### Audit Reports
+
+Audit reports are ephemeral — used during the audit session to coordinate
+findings between phases and present results. Once fixes are implemented, the
+TypeSpec files are the source of truth and reports are deleted. Re-run
+`/audit` at any time to get a fresh assessment.
+
+### Team Knowledge Management
+
+Teammates load standard project context (CLAUDE.md, `.claude/rules/`, skills)
+automatically — they do NOT inherit the lead's conversation history. Reusable
+patterns discovered during audits belong in `.claude/rules/` (committed,
+shared with team, auto-loaded by path scope). Teammates should report new
+patterns to the team lead rather than creating their own memory files.
+
+### Agent Teams (Required for `/audit`)
+
+The `/audit` skill spawns a specialist team with 4 roles: typespec-reviewer
+(discovery + gap analysis), rails-investigator, audit-reporter, and
+typespec-writer. Multiple tag groups are audited in parallel.
+
+Agent teams require:
+1. `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your environment or settings
+2. A terminal that supports the chosen display mode (in-process works anywhere;
+   split-panes need tmux or iTerm2)
+
+On **Windows** or terminals without tmux/iTerm2, launch Claude Code with:
+```
+claude --teammate-mode in-process
+```
+This runs teammates as background processes instead of split panes, which is
+the only mode that works reliably outside tmux.
+
 ## Directory Structure
 
 ```
@@ -38,7 +104,7 @@ tools/scripts/         # Migration scripts
 .serena/memories/      # Session notes and migration logs
 ```
 
-## Docusaurus to Fern Migration Patterns
+## Content Migration
 
 When migrating MDX content from Docusaurus to Fern,
 apply these conversions:
@@ -607,6 +673,9 @@ The <Tooltip tip="Explanation text">term</Tooltip> is important.
 ```
 
 Props: `tip` (string | ReactNode), `side` (`"top"` | `"right"` | `"bottom"` | `"left"`)
+For Docusaurus-to-Fern migration patterns, component conversions, Fern component
+reference, and common migration issues, Claude will auto-load the
+`migration-reference` skill when working on MDX files.
 
 ## Important Warnings
 
