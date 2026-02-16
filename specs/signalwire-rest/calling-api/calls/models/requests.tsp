@@ -544,7 +544,7 @@ model CallUserEventRequest {
   params: {
     @doc("Arbitrary JSON event data to fire on the call.")
     @example(#{ action: "custom_action", data: "example" })
-    event: unknown;
+    event: TypeSpec.Record<unknown>;
   };
 }
 
