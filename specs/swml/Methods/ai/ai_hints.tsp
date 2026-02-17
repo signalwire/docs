@@ -3,7 +3,7 @@ import "../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
-model Hint {
+model HintObject {
   @doc("The hint to match. This will match the string exactly as provided")
   @example("customer service")
   hint: string;
@@ -19,4 +19,13 @@ model Hint {
   @doc("If true, the hint will be matched in a case-insensitive manner. **Default:** `false`.")
   @example(true)
   ignore_case?: boolean | SWMLVar = false;
+}
+
+@doc("A hint can be a simple string to help the AI understand specific words, or an object with pattern matching and replacement rules.")
+union Hint {
+  @doc("A simple string hint to help the AI understand a specific word or phrase.")
+  string: string,
+
+  @doc("An object hint with pattern matching and replacement rules.")
+  object: HintObject,
 }

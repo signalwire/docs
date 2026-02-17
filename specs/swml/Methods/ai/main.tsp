@@ -22,7 +22,7 @@ model AIObject {
 
   @doc("Hints help the AI agent understand certain words or phrases better. Words that can commonly be misinterpreted can be added to the hints to help the AI speak more accurately.")
   @example(#["pizza", "pepperoni"])
-  hints?: (string | Hint)[];
+  hints?: Hint[];
 
   @doc("An array of JSON objects defining supported languages in the conversation.")
   languages?: Languages[];
