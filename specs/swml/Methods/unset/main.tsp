@@ -1,3 +1,5 @@
+import "../../Shared/Types/main.tsp";
+
 @summary("unset Method")
 model Unset {
   @summary("unset")
@@ -7,5 +9,5 @@ model Unset {
     Accepts a single variable name as a string or an array of variable names.
     """)
   @example("temp_data")
-  unset: string | string[];
+  unset: StringOrArray;
 }

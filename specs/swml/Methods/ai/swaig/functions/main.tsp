@@ -87,7 +87,7 @@ model SWAIGFunctionBase {
 
   @doc("The number of times to loop playing the file. Default is not set.")
   @example(5)
-  wait_file_loops?: integer | string;
+  wait_file_loops?: WaitFileLoopsValue;
 
   @doc("Whether to wait for fillers to finish playing before continuing with the function. **Default:** `false`.")
   @example(true)
@@ -121,6 +121,15 @@ model HangUpHookSWAIGFunction is SWAIGFunctionBase {
 model SummarizeConversationSWAIGFunction is SWAIGFunctionBase {
   @doc("${functionDescription}. For the summarize_conversation function, the function name is 'summarize_conversation'.")
   function: "summarize_conversation";
+}
+
+@doc("The number of times to loop playing the wait file. Can be an integer or a string.")
+union WaitFileLoopsValue {
+  @doc("An integer number of loops.")
+  integer: integer,
+
+  @doc("A string value for the loop count.")
+  string: string,
 }
 
 union SWAIGFunction {

@@ -87,7 +87,7 @@ model ConnectDeviceBase {
     Action to take based on the result of the call. This will run once the peer leg of the call has ended.
     Will use the switch method when the return_value is an object, and will use the cond method when the return_value is an array.
     """)
-  result?: ConnectSwitch | Cond.cond;
+  result?: ConnectResult;
 
   @doc("""
     Time, in seconds, to wait for the call to be answered.
@@ -116,7 +116,7 @@ model ConnectDeviceBase {
     - An array of SWML methods to execute inline
     """)
   @example("https://example.com/confirm.swml")
-  confirm?: string | ValidConfirmMethods[];
+  confirm?: ConnectConfirm;
 
   @doc("The amount of time, in seconds, to wait for the `confirm` URL to return a response")
   @example(30)
@@ -192,6 +192,24 @@ model ConnectDeviceSerialParallel is ConnectDeviceBase {
     Outer array attempts each parallel group in order.
     """)
   serial_parallel: ConnectDeviceSingle[][];
+}
+
+@doc("The result action for a connect method. Can be a switch object or a cond array.")
+union ConnectResult {
+  @doc("A switch object for conditional execution based on the connect result.")
+  switch: ConnectSwitch,
+
+  @doc("A cond array for checking multiple conditions in sequence.")
+  cond: Cond.cond,
+}
+
+@doc("The confirm value for a connect method. Can be a URL string or an array of SWML methods.")
+union ConnectConfirm {
+  @doc("A URL that returns a SWML document.")
+  url: string,
+
+  @doc("An array of SWML methods to execute inline.")
+  methods: ValidConfirmMethods[],
 }
 
 alias ConnectDevice =

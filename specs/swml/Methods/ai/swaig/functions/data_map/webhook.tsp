@@ -1,5 +1,6 @@
 import "@typespec/json-schema";
 import "./expression.tsp";
+import "../../../../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
@@ -16,7 +17,7 @@ model Webhook {
 
   @doc("A string or array of strings that represent the keys to be used for error handling. This will match the key(s) in the response from the API call.")
   @example("failed")
-  error_keys?: string | string[];
+  error_keys?: StringOrArray;
 
   @doc("The endpoint for the external service or API.")
   @example("https://example.com")
@@ -74,7 +75,7 @@ model Webhook {
 
   @doc("A string or array of strings that represent the `arguments` that are required to make the webhook request.")
   @example(#["order_id", "customer_email"])
-  require_args?: string | string[];
+  require_args?: StringOrArray;
 
   @doc("""
     An object that contains a response and a list of actions to be performed upon completion of the webhook request.
