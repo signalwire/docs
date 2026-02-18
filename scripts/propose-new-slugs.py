@@ -74,7 +74,26 @@ def swml(slug, fp):
     if slug.startswith("/guides"):
         return guide_slug(slug)
     if slug.startswith("/methods"):
-        return reference_slug(slug, strip_prefixes=("methods",))
+        parts = segments(slug)
+        # Strip "methods" prefix → [method, subcategory?, name...]
+        parts = parts[1:]
+        if not parts:
+            return "/reference"
+        method = parts[0]
+        rest = parts[1:]
+        if not rest:
+            # /reference/<method>
+            return "/reference/" + method
+        if len(rest) == 1:
+            # /reference/<method>/<name>
+            return "/reference/" + method + "/" + rest[0]
+        if len(rest) == 2:
+            # /reference/<method>/<subcategory>/<name>
+            return "/reference/" + method + "/" + rest[0] + "/" + rest[1]
+        # /reference/<method>/<subcategory>/<name-joined>
+        subcat = rest[0]
+        name = "-".join(rest[1:])
+        return "/reference/" + method + "/" + subcat + "/" + name
     if slug in ("/expressions", "/variables"):
         return "/reference" + slug
     if slug.startswith("/reference"):
@@ -85,8 +104,18 @@ def swml(slug, fp):
 def platform(slug, fp):
     if not slug or slug == "/":
         return slug
-    # Platform has no reference/guide distinction — treat all as guides
-    return "/guides/" + last(slug)
+    # Platform has no reference/guide distinction — everything is a guide.
+    # Keep the top-level category (ai, voice, messaging, etc.) since they're
+    # stable and meaningful; flatten everything below it.
+    parts = segments(slug)
+    # Strip leading "guides"/"guide" — not a real category here
+    if parts and parts[0] in ("guides", "guide"):
+        parts = parts[1:]
+    if not parts:
+        return "/"
+    if len(parts) == 1:
+        return "/" + parts[0]
+    return "/" + parts[0] + "/" + parts[-1]
 
 
 def call_flow_builder(slug, fp):
@@ -218,8 +247,10 @@ def resolve_collisions(rows):
         for r in group:
             old_parts = segments(r["slug"])
             if len(old_parts) >= 2:
-                prefix = "guides" if r["new_slug"].startswith("/guides/") else "reference"
-                # Use parent + last segment to disambiguate
+                new_parts = segments(r["new_slug"])
+                # Keep existing prefix (guides/, reference/, or category like ai/)
+                prefix = new_parts[0] if new_parts else old_parts[0]
+                # Use parent + last segment from OLD slug to disambiguate
                 r["new_slug"] = normalize(
                     "/" + prefix + "/" + old_parts[-2] + "-" + old_parts[-1]
                 )

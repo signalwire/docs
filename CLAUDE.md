@@ -130,6 +130,9 @@ slug: /methods/ai
 
 For a product's landing page, use `slug: /` to indicate the product root.
 
+For the per-product slug proposal rules and standardization conventions, see
+[slug-standardization.md](slug-standardization.md).
+
 ## Important Warnings
 
 ### Never use YAML parsers to rewrite navigation files
