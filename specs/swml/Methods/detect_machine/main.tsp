@@ -44,7 +44,7 @@ model DetectMachine {
 
     @doc("The http(s) URL to deliver detector events to.")
     @example("https://example.com/amd-status")
-    status_url?: string;
+    status_url?: url;
 
     @doc("The max time to run detector. Default `30.0` seconds.")
     @minValue(0.0)
