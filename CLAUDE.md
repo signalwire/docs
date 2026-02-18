@@ -110,6 +110,26 @@ For Docusaurus-to-Fern migration patterns, component conversions, Fern component
 reference, and common migration issues, Claude will auto-load the
 `migration-reference` skill when working on MDX files.
 
+## Slug Behavior
+
+Each product in `docs.yml` declares a base slug (e.g., `slug: swml`). Fern
+automatically prepends this product slug to every page URL within that product.
+
+**Do NOT repeat the product slug in page-level frontmatter.** Fern deduplicates
+redundant prefixes, so `slug: /swml/methods/ai` and `slug: /methods/ai` both
+resolve to the same URL — but only the second form is correct. The first form
+works by accident (Fern silently strips the duplicate prefix).
+
+```yaml
+# BAD — redundant product slug
+slug: /swml/methods/ai
+
+# GOOD — product slug is inherited automatically
+slug: /methods/ai
+```
+
+For a product's landing page, use `slug: /` to indicate the product root.
+
 ## Important Warnings
 
 ### Never use YAML parsers to rewrite navigation files
