@@ -95,16 +95,7 @@ model JoinConferenceObject {
     the `cond` array allows for multiple conditions to be checked in sequence.
     If neither is provided, the default action will be to end the conference.
     """)
-  result?: JoinConferenceResult;
-}
-
-@doc("The result action for a join_conference method. Can be a switch object or a cond array.")
-union JoinConferenceResult {
-  @doc("A switch object for conditional execution based on the conference result.")
-  switch: Switch.switch,
-
-  @doc("A cond array for checking multiple conditions in sequence.")
-  cond: Cond.cond,
+  result?: Switch.switch | Cond.cond;
 }
 
 @summary("join_conference Method")

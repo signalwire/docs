@@ -43,66 +43,6 @@ model ConversationMessage {
   lang?: string;
 }
 
-@doc("The attention timeout value. Can be an AttentionTimeout (10000-600000ms), 0 to disable, or a SWML variable.")
-union AttentionTimeoutValue {
-  @doc("A timeout value in milliseconds (10000-600000).")
-  timeout: AttentionTimeout,
-
-  @doc("Set to 0 to disable attention timeout.")
-  disabled: 0,
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-}
-
-@doc("The enable_barge value. Can be a string of comma-separated barge types, a boolean, or a SWML variable.")
-union EnableBargeValue {
-  @doc("A comma-separated string of barge types (e.g. 'complete,partial').")
-  string: string,
-
-  @doc("A boolean to enable or disable barge.")
-  boolean: boolean,
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-}
-
-@doc("The debug value. Can be a boolean, an integer debug level, or a SWML variable.")
-union DebugValue {
-  @doc("A boolean to enable or disable debug mode.")
-  boolean: boolean,
-
-  @doc("An integer debug level.")
-  integer: integer,
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-}
-
-@doc("The background file loops value. Can be an integer, null for indefinite looping, or a SWML variable.")
-union BackgroundFileLoopsValue {
-  @doc("An integer number of loops.")
-  integer: integer,
-
-  @doc("Null for indefinite looping.")
-  indefinite: null,
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-}
-
-@doc("The swaig_post_swml_vars value. Can be a boolean to post all variables, an array of variable names, or a SWML variable.")
-union SwaigPostSwmlVarsValue {
-  @doc("A boolean to enable posting all SWML variables.")
-  boolean: boolean,
-
-  @doc("An array of specific variable names to post.")
-  array: string[],
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-}
-
 @summary("params object")
 model AIParams {
   @doc("Instructs the agent to acknowledge crosstalk and confirm user input when the user speaks over the agent.")
@@ -137,7 +77,7 @@ model AIParams {
 
   @doc("Amount of time, in ms, to wait before prompting the user to respond. Allowed values from `10,000` - `600,000`. Set to `0` to disable. **Default:** `5000` ms (note: user-configurable values must be `0` or within the `10,000` - `600,000` range).")
   @example(30000)
-  attention_timeout?: AttentionTimeoutValue;
+  attention_timeout?: AttentionTimeout | 0 | SWMLVar;
 
   @doc("A custom prompt that is fed into the AI when the attention_timeout is reached.")
   @example("Ask if the user would like you to repeat yourself, or if they need more time to respond.")
@@ -174,7 +114,7 @@ model AIParams {
 
   @doc("Maximum number of times to loop playing the background file. `undefined` means loop indefinitely.")
   @example(5)
-  background_file_loops?: BackgroundFileLoopsValue;
+  background_file_loops?: integer | null | SWMLVar;
 
   @doc("Defines background_file volume within a range of `-50` to `50`. **Default:** `0`.")
   @minValue(-50)
@@ -187,7 +127,7 @@ model AIParams {
     **Default:** `"complete,partial"`
     """)
   @example("complete,partial")
-  enable_barge?: EnableBargeValue = string("complete,partial");
+  enable_barge?: string | boolean | SWMLVar = string("complete,partial");
 
   @doc("""
     Enables the inner dialog feature, which runs a separate AI process in the background
@@ -262,7 +202,7 @@ model AIParams {
 
   @doc("Enables debug mode for the AI session. When enabled, additional diagnostic information is logged including turn detection events, speech processing details, and internal state changes.")
   @example(true)
-  debug?: DebugValue;
+  debug?: boolean | integer | SWMLVar;
 
   @doc("Forces the direction of the call to the assistant. Valid values are `inbound` and `outbound`.")
   @example("inbound")
@@ -535,7 +475,7 @@ model AIParams {
     only the specified variable names are included.
     """)
   @example(true)
-  swaig_post_swml_vars?: SwaigPostSwmlVarsValue;
+  swaig_post_swml_vars?: boolean | string[] | SWMLVar;
 
   @doc("The model to use for the AI's thinking capabilities. Allowed values are `gpt-4o-mini`, `gpt-4.1-mini`, and `gpt-4.1-nano`.")
   @example("gpt-4.1-mini")

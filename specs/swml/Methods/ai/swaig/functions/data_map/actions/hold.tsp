@@ -1,25 +1,3 @@
-import "../../../../../../Shared/Types/main.tsp";
-
-@summary("Hold object")
-model HoldObject {
-  @doc("The duration to hold the caller in seconds. Can be a number or an object with timeout property.")
-  @maxValue(900)
-  @example(300)
-  timeout?: int32 | SWMLVar = 300;
-}
-
-@doc("The hold value can be a number (timeout in seconds), a SWML variable, or an object with a timeout property.")
-union HoldValue {
-  @doc("Hold timeout in seconds.")
-  number: int32,
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-
-  @doc("An object with hold configuration.")
-  object: HoldObject,
-}
-
 @summary("hold Action")
 model HoldAction {
   @doc("""
@@ -31,5 +9,10 @@ model HoldAction {
   @summary("hold")
   @maxValue(900)
   @example(120)
-  hold: HoldValue;
+  hold: int32 | SWMLVar | {
+    @doc("The duration to hold the caller in seconds. Can be a number or an object with timeout property.")
+    @maxValue(900)
+    @example(300)
+    timeout?: int32 | SWMLVar = 300;
+  };
 }

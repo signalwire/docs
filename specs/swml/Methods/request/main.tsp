@@ -1,16 +1,5 @@
 import "../../Methods";
 
-@doc("The request body. Can be a string or a JSON object.")
-union RequestBody {
-  @doc("A string body.")
-  string: string,
-
-  @doc("A JSON object body.")
-  object: {
-    ...TypeSpec.Record<unknown>;
-  },
-}
-
 @summary("request Method")
 model Request {
   @summary("request")
@@ -38,7 +27,9 @@ model Request {
       will be set based on the first non-whitespace character.
       """)
     @example(#{ action: "notify", message: "Call completed" })
-    body?: RequestBody;
+    body?: string | {
+      ...TypeSpec.Record<unknown>;
+    };
 
     @doc("""
       Maximum time in seconds to wait for a response.

@@ -1,20 +1,4 @@
 import "../../Methods";
-import "../../Shared/Types/main.tsp";
-
-@doc("The play value for a prompt. Can be a single URL, an array of URLs, a SWML variable, or an array of SWML variables.")
-union PromptPlayValue {
-  @doc("A single play URL.")
-  url: play_url,
-
-  @doc("An array of play URLs.")
-  urls: play_url[],
-
-  @doc("A SWML variable reference.")
-  variable: SWMLVar,
-
-  @doc("An array of SWML variable references.")
-  variables: SWMLVar[],
-}
 
 @summary("prompt Method")
 model Prompt {
@@ -35,7 +19,7 @@ model Prompt {
           silence: <duration> - seconds of silence to play
       """)
     @example("say:Please press 1 for sales or 2 for support")
-    play: PromptPlayValue;
+    play: play_url | play_url[] | SWMLVar | SWMLVar[];
 
     @doc("""
       Volume level for the audio file.

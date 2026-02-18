@@ -5,15 +5,6 @@ import "./prompt/main.tsp";
 
 using TypeSpec.JsonSchema;
 
-@doc("The postal code value. Can be a boolean to enable/disable prompting, or a string with the known postal code.")
-union PostalCodeValue {
-  @doc("A boolean to enable or disable postal code prompting.")
-  boolean: boolean,
-
-  @doc("A known postal code string.")
-  string: string,
-}
-
 @summary("pay Method")
 model Pay {
   @doc("""
@@ -67,7 +58,7 @@ model Pay {
 
     @doc("Takes `true`, `false` or real postalcode (if it's known beforehand) to let pay method know whether to prompt for postal code. Default is `true`.")
     @example(true)
-    postal_code?: PostalCodeValue = true;
+    postal_code?: boolean | string = true;
 
     @doc("Array of prompt objects for customizing the audio prompts during different stages of the payment process.")
     prompts?: PayPrompts[];

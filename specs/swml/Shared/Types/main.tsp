@@ -21,24 +21,6 @@ alias SupportedAIModels =
   | "gpt-4.1-nano"
   | string;
 
-@doc("A value that can be either a single string or an array of strings.")
-union StringOrArray {
-  @doc("A single string value.")
-  string: string,
-
-  @doc("An array of string values.")
-  array: string[],
-}
-
-@doc("A value that can be either a string key or an empty object to reset.")
-union StringOrObject {
-  @doc("A string key.")
-  string: string,
-
-  @doc("An empty object to reset the data.")
-  object: {},
-}
-
 @doc("Speech recognition engine options.")
 enum SpeechEngine {
   @doc("Use Deepgram for speech recognition.")

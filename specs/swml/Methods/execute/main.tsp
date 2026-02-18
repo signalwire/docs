@@ -18,15 +18,6 @@ model ExecuteSwitch {
   default?: SWMLMethod[];
 }
 
-@doc("The result action for an execute method. Can be a switch object or a cond array.")
-union ExecuteResult {
-  @doc("A switch object for conditional execution based on the return value.")
-  switch: ExecuteSwitch,
-
-  @doc("A cond array for checking multiple conditions in sequence.")
-  cond: Cond.cond,
-}
-
 @summary("execute Method")
 model Execute {
   @doc("""
@@ -62,6 +53,6 @@ model Execute {
       Action to take based on the result of the call. This will run once the peer leg of the call has ended.
       Will use the switch method when the return_value is an object, and will use the cond method when the return_value is an array.
       """)
-    result?: ExecuteResult;
+    result?: ExecuteSwitch | Cond.cond;
   };
 }

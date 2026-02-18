@@ -1,5 +1,3 @@
-import "../../../../../../Shared/Types/main.tsp";
-
 @summary("toggle_functions Action")
 model ToggleFunctionsAction {
   @summary("toggle_functions")
@@ -11,6 +9,6 @@ model ToggleFunctionsAction {
 
     @doc("The function names to toggle.")
     @example("Discount")
-    function: StringOrArray;
+    function: string | string[];
   }[];
 }
