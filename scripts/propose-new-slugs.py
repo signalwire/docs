@@ -288,34 +288,23 @@ def main():
             slug = normalize(row["slug"])
             fp = row["file_path"]
 
+            # Strip redundant product prefix from raw frontmatter slug
+            if product and product != "/" and slug.startswith("/" + product + "/"):
+                slug = slug[len("/" + product):]
+            elif product and product != "/" and slug == "/" + product:
+                slug = "/"
+
             handler = HANDLERS.get(product)
             new_slug = normalize(handler(slug, fp)) if handler else slug
 
             row["slug"] = slug
             row["new_slug"] = new_slug
-            # Build full URL: product prefix + new_slug
-            if "COLLISION" not in new_slug and new_slug:
-                prefix = "" if product == "/" else "/" + product
-                full = prefix + new_slug if new_slug != "/" else prefix + "/"
-                row["new_slug (prefixed by product)"] = full.rstrip("/") or "/"
-            else:
-                row["new_slug (prefixed by product)"] = new_slug
             rows.append(row)
 
     collisions = resolve_collisions(rows)
-    # Re-derive full slugs after collision resolution
-    for r in rows:
-        ns = r["new_slug"]
-        product = r["product"]
-        if ns and "COLLISION" not in ns:
-            prefix = "" if product == "/" else "/" + product
-            full = prefix + ns if ns != "/" else prefix + "/"
-            r["new_slug (prefixed by product)"] = full.rstrip("/") or "/"
-        else:
-            r["new_slug (prefixed by product)"] = ns
 
     # Write output
-    fields = ["id", "title", "description", "file_path", "product", "slug", "new_slug (prefixed by product)"]
+    fields = ["id", "title", "description", "file_path", "product", "slug", "new_slug"]
     with open(output_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         w.writeheader()
