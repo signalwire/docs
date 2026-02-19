@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Export frontmatter fields (id, title, slug, description) + file path to CSV
-# from all MDX pages in fern/products/.
+# DEPRECATED — use collect-old-slugs.py instead.
+# This bash version has edge-case bugs with multi-line values, quoted strings,
+# and BOM-prefixed files. The Python replacement uses python-frontmatter for
+# robust parsing.
+#
+# Original purpose: export frontmatter fields to CSV from fern/products/.
 
 set -euo pipefail
 

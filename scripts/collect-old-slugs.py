@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Export frontmatter fields (id, title, slug, description) + file path to CSV
-from all MDX pages in fern/products/.
+"""Collect current slugs from MDX frontmatter into a CSV.
 
-Replaces the old bash script with python-frontmatter for robust parsing
-(handles BOM, multi-line values, quoted strings, etc.).
+Scans all .mdx files under fern/products/ and writes one row per page with
+columns: id, title, product, slug, description, file_path.
+
+Output: frontmatter-export.csv (or custom path via argv[1]).
 """
 
 import csv

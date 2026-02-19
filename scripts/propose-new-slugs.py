@@ -190,23 +190,22 @@ def compatibility_api(slug, fp):
     # Guide pages
     if "guides" in parts:
         return guide_slug(slug)
-    # cXML reference
+    # cXML reference — sub-product first, then reference
     if parts[0] == "cxml":
         rest = parts[1:]
         if not rest:
-            return "/reference/cxml"
-        return "/reference/cxml/" + "/".join(rest)
-    # SDK reference — strip 'sdks' prefix, keep 'methods' only as direct child of sdks
+            return "/cxml/reference"
+        return "/cxml/reference/" + "/".join(rest)
+    # SDK reference — sub-product first, then reference; strip 'methods' boilerplate
     if parts[0] == "sdks":
-        # /sdks → /reference/sdks
+        # /sdks → /sdks (sub-product landing page)
         if len(parts) == 1:
-            return "/reference/sdks"
-        # /sdks/methods → /reference/sdks/methods (landing page)
-        if parts[1:] == ["methods"]:
-            return "/reference/sdks/methods"
-        # /sdks/methods/<resource>/... → /reference/<resource>/...
+            return "/sdks"
+        # Strip 'methods' boilerplate from path
         rest = [p for p in parts[1:] if p != "methods"]
-        return "/reference/" + "/".join(rest) if rest else "/reference/sdks"
+        if not rest:
+            return "/sdks/reference"  # /sdks/methods → /sdks/reference
+        return "/sdks/reference/" + "/".join(rest)
     return slug
 
 
