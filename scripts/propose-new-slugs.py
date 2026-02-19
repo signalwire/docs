@@ -133,7 +133,12 @@ def agents_sdk(slug, fp):
     parts = segments(slug)
     # Reference tab pages live under /api/ and /appendix/
     if parts[0] in ("api", "appendix"):
-        return reference_slug(slug, strip_prefixes=("api", "appendix"))
+        ref = reference_slug(slug, strip_prefixes=("api", "appendix"))
+        # Flatten subcategories: /reference/cli/swaig-test → /reference/cli-swaig-test
+        ref_parts = segments(ref)
+        if len(ref_parts) > 2:
+            return "/reference/" + "-".join(ref_parts[1:])
+        return ref
     return "/guides/" + parts[-1]
 
 
@@ -191,10 +196,17 @@ def compatibility_api(slug, fp):
         if not rest:
             return "/reference/cxml"
         return "/reference/cxml/" + "/".join(rest)
-    # SDK reference — strip 'sdks' and 'methods' boilerplate
+    # SDK reference — strip 'sdks' prefix, keep 'methods' only as direct child of sdks
     if parts[0] == "sdks":
+        # /sdks → /reference/sdks
+        if len(parts) == 1:
+            return "/reference/sdks"
+        # /sdks/methods → /reference/sdks/methods (landing page)
+        if parts[1:] == ["methods"]:
+            return "/reference/sdks/methods"
+        # /sdks/methods/<resource>/... → /reference/<resource>/...
         rest = [p for p in parts[1:] if p != "methods"]
-        return "/reference/" + "/".join(rest) if rest else "/reference"
+        return "/reference/" + "/".join(rest) if rest else "/reference/sdks"
     return slug
 
 
