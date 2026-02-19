@@ -1,4 +1,5 @@
 ---
+id: 35610872-2be6-4e59-9819-ff57a18b5181
 title: Introduction to SWML
 subtitle: Build powerful communication applications with the SignalWire Markup Language
 description: Get started with SWML (SignalWire Markup Language), a markup and scripting language for quickly writing powerful communication applications in YAML or JSON documents.
@@ -58,15 +59,15 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-<ParamField toc={true} path="version" type="string" optional>
+<ParamField path="version" type="string" optional>
   Always use `1.0.0` (the only supported version).
 </ParamField>
 
-<ParamField toc={true} path="sections" type="object" required>
+<ParamField path="sections" type="object" required>
   Contains all script sections.
 </ParamField>
 <Indent>
-  <ParamField toc={true} path="main" type="object[]" required>
+  <ParamField path="main" type="object[]" required>
     Required starting section where execution always begins.
     Accepts an array of [SWML methods](/swml/methods).
   </ParamField>
@@ -94,6 +95,65 @@ All SWML scripts start with the `main` section, but you can create additional se
 [Methods](swml/methods) are the commands that tell SWML what to do during a call - 
 like answering, playing audio, collecting input, or instantiating an AI Agent. 
 Think of them as the instructions in your script.
+
+## Document-fetching webhook [#document-fetching-webhook]
+
+When a SWML script is hosted on an external URL (set in phone number settings, or invoked via [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/transfer)),
+SignalWire sends a POST request to that URL to fetch the SWML document. The request body contains the current call state and any variables or parameters set by the calling script.
+
+Several SWML methods also use this same request format when fetching SWML from a URL (e.g., [`join_conference.wait_url`](/swml/methods/join_conference#properties), [`enter_queue.wait_url`](/swml/methods/enter_queue#properties), [`connect.confirm`](/swml/methods/connect#properties)).
+
+### Request body
+
+<ParamField path="call" type="object">
+  Information about the current call, including `call_id`, `from`, `to`, `type`, `headers`, and more. See the [Variables reference](/swml/variables) for all `call` properties.
+</ParamField>
+
+
+<ParamField path="vars" type="object">
+  Script variables set by prior SWML execution (via [`set`](/swml/methods/set) or method outputs). Empty on a fresh incoming call.
+</ParamField>
+
+
+<ParamField path="params" type="object">
+  Parameters explicitly passed by [`execute`](/swml/methods/execute) or [`transfer`](/swml/methods/transfer). Empty on a fresh incoming call.
+</ParamField>
+
+
+<ParamField path="envs" type="object">
+  Environment variables configured at the account or project level.
+</ParamField>
+
+
+### Raw JSON example
+
+```json
+{
+  "call": {
+    "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "node_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "segment_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "call_state": "created",
+    "direction": "inbound",
+    "type": "phone",
+    "from": "+15551231234",
+    "to": "+15553214321",
+    "headers": [],
+    "project_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "space_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  },
+  "vars": {},
+  "params": {},
+  "envs": {}
+}
+```
+
+### Expected response
+
+Your server must respond with a valid SWML document using one of these content types: `application/json`, `application/yaml`, or `text/x-yaml`.
+
+For the full variable reference and a detailed JSON example, see [Variables](/swml/variables#example-variables-in-json-format).
+For server setup instructions, see the [Deployment guide](/swml/guides/deployment).
 
 ## Basic SWML examples
 
