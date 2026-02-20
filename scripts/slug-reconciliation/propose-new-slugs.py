@@ -11,12 +11,19 @@ Conventions:
 """
 
 import csv
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+<<<<<<< Updated upstream:scripts/slug-reconciliation/propose-new-slugs.py
 REPORTS_DIR = SCRIPT_DIR / "reports"
+=======
+PRODUCTS_DIR = SCRIPT_DIR.parent / "fern" / "products"
+
+DELETED = "DELETED"
+>>>>>>> Stashed changes:scripts/propose-new-slugs.py
 
 
 # ---------------------------------------------------------------------------
@@ -223,25 +230,24 @@ HANDLERS = {
     "compatibility-api": compatibility_api,
 }
 
-# Products whose pages live under version subdirectories (latest/, v3/, v2/).
-# Pages in different version dirs may share the same slug — that's expected.
-VERSIONED_PRODUCTS = {"realtime-sdk", "browser-sdk"}
 
-import re
-_VERSION_RE = re.compile(r"^[^/]+/pages/(latest|v\d+)/")
-
-
-def extract_version(file_path):
-    """Return version directory ('latest', 'v3', etc.) or '' for unversioned."""
-    m = _VERSION_RE.match(file_path)
-    return m.group(1) if m else ""
+def compose_url(product, version_slug, tab, page_slug):
+    """Build the full URL that Fern will produce for a page."""
+    parts = []
+    if product and product != "/":
+        parts.append(product)
+    if version_slug:
+        parts.append(version_slug)
+    if tab:
+        parts.append(tab)
+    if page_slug and page_slug != "/":
+        parts.append(page_slug.lstrip("/"))
+    return "/" + "/".join(parts) if parts else "/"
 
 
 def collision_key(row):
     """Key used to detect same-slot collisions.  Version-aware."""
-    product = row["product"]
-    version = extract_version(row["file_path"]) if product in VERSIONED_PRODUCTS else ""
-    return (product, version, row["new_slug"])
+    return (row["product"], row.get("version", ""), row["new_slug"])
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +259,7 @@ def resolve_collisions(rows):
     by_key = defaultdict(list)
     for r in rows:
         ns = r["new_slug"]
-        if ns and ns != "/":
+        if ns and ns != "/" and ns != DELETED:
             by_key[collision_key(r)].append(r)
 
     for key, group in by_key.items():
@@ -297,11 +303,20 @@ def main():
     output_csv = sys.argv[2] if len(sys.argv) > 2 else str(REPORTS_DIR / "slug-proposals.csv")
 
     rows = []
+    deleted_count = 0
     with open(input_csv, newline="") as f:
         for row in csv.DictReader(f):
             product = row["product"]
             slug = normalize(row["slug"])
             fp = row["file_path"]
+
+            # Mark deleted files
+            if not (PRODUCTS_DIR / fp).exists():
+                row["slug"] = slug
+                row["new_slug"] = DELETED
+                rows.append(row)
+                deleted_count += 1
+                continue
 
             # Strip redundant product prefix from raw frontmatter slug
             if product and product != "/" and slug.startswith("/" + product + "/"):
@@ -318,8 +333,17 @@ def main():
 
     collisions = resolve_collisions(rows)
 
+    # Compose full Fern URLs
+    for r in rows:
+        if r["new_slug"] == DELETED:
+            r["composed_slug"] = DELETED
+        else:
+            r["composed_slug"] = compose_url(
+                r["product"], r.get("version_slug", ""), r.get("tab", ""), r["new_slug"],
+            )
+
     # Write output
-    fields = ["id", "title", "description", "file_path", "product", "slug", "new_slug"]
+    fields = ["id", "title", "description", "file_path", "product", "version", "version_slug", "tab", "slug", "new_slug", "composed_slug"]
     with open(output_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         w.writeheader()
@@ -338,6 +362,8 @@ def main():
     print(f"  Changed:   {changed}")
     print(f"  Unchanged: {unchanged}")
     print(f"  Empty:     {empty}")
+    if deleted_count:
+        print(f"  Deleted:   {deleted_count}")
     if collisions:
         print(f"  COLLISIONS: {coll_count} pages in {len(collisions)} groups")
         for (prod, ver, slug_key), rs in sorted(collisions.items()):

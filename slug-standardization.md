@@ -3,8 +3,15 @@
 ## Usage
 
 ```bash
+<<<<<<< Updated upstream
 # 1. Collect current slugs from frontmatter into a CSV
 python3 scripts/slug-reconciliation/collect-old-slugs.py            # → reports/frontmatter-export.csv
+=======
+# 1. Collect current slugs from frontmatter into a CSV (one-time snapshot)
+python3 scripts/collect-old-slugs.py            # → frontmatter-export.csv
+python3 scripts/collect-old-slugs.py out.csv    # → custom output path
+python3 scripts/collect-old-slugs.py --force    # overwrite existing output
+>>>>>>> Stashed changes
 
 # 2. Propose new slugs based on per-product conventions
 python3 scripts/slug-reconciliation/propose-new-slugs.py            # → reports/slug-proposals.csv
@@ -14,6 +21,7 @@ python3 scripts/slug-reconciliation/run-pipeline.py                 # → report
 python3 scripts/slug-reconciliation/run-pipeline.py --skip-fetch    # reuse cached sitemap
 ```
 
+<<<<<<< Updated upstream
 **Data flow:** `collect-old-slugs.py` reads every `.mdx` file's frontmatter and
 writes `frontmatter-export.csv` (columns: id, title, product, slug, description,
 file\_path). `propose-new-slugs.py` reads that CSV, applies per-product rules,
@@ -22,6 +30,48 @@ then fetches the old Docusaurus sitemap, reconciles against proposals, content-m
 unmatched pages, and produces a unified redirect report.
 
 All outputs go to `scripts/slug-reconciliation/reports/`.
+=======
+**Data flow:** `collect-old-slugs.py` parses `docs.yml` and each product's
+navigation YAML to resolve version and tab info, then reads every `.mdx` file's
+frontmatter and writes `frontmatter-export.csv` (columns: id, title, product,
+version, version\_slug, tab, slug, description, file\_path).
+`propose-new-slugs.py` reads that CSV, applies per-product rules, and writes a
+separate `slug-proposals.csv` (adds `new_slug`, `composed_slug` columns).
+Neither script mutates the other's output. Review `slug-proposals.csv` in a
+spreadsheet, edit `new_slug` values as needed, then apply (apply script TBD).
+
+**Overwrite guard:** `collect-old-slugs.py` refuses to overwrite an existing
+output file unless `--force` is passed. This protects the historical snapshot
+from accidental regeneration after files have been deleted.
+
+**Deletion tracking:** `propose-new-slugs.py` checks whether each `file_path`
+from the input CSV still exists on disk. Missing files get `new_slug` and
+`composed_slug` set to `DELETED`. This is safe to rerun after successive
+deletion batches — it reads the stable `frontmatter-export.csv` snapshot and
+re-checks the filesystem each time, so deletions accumulate naturally.
+
+### CSV columns
+
+| Column | Example values | Purpose |
+|--------|---------------|---------|
+| `id` | `abc-123` | Frontmatter `id` field |
+| `title` | `Switch AI context mid-call` | Frontmatter `title` field |
+| `product` | `swml`, `platform` | Product URL slug (from `docs.yml`) |
+| `version` | `latest`, `v3`, `v2`, (empty) | Version directory name — which version dir the file lives in. Empty for unversioned products. |
+| `version_slug` | `v3`, `v2`, (empty) | Version URL segment — empty for latest and unversioned products |
+| `tab` | `reference`, `guides`, `calling` | Tab URL slug — the segment that appears in the URL. Derived from the product nav YAML's `tabs:` section (respects custom `slug:` overrides). |
+| `slug` | `/methods/ai` | Frontmatter `slug` field (raw) |
+| `description` | `...` | Frontmatter `description` field |
+| `file_path` | `swml/pages/reference/...` | Path relative to `fern/products/` |
+| `new_slug` | `/reference/ai` | *(proposal only)* Proposed replacement slug |
+| `composed_slug` | `/swml/reference/ai` | *(proposal only)* Full URL as Fern will produce it: `/<product>/<version?>/<tab>/<new_slug>` |
+
+Fern composes page URLs as: `/<product>/<version?>/<tab>/<page_slug>`.
+The `version_slug` and `tab` columns let you reconstruct the full URL and catch
+problems like redundant tab prefixes in page slugs (e.g., a page under the
+`reference` tab with slug `/reference/foo` produces `.../reference/reference/foo`).
+The `composed_slug` column in the proposal CSV shows this full URL directly.
+>>>>>>> Stashed changes
 
 Requires `python-frontmatter` (`pip install python-frontmatter`).
 
@@ -88,3 +138,13 @@ and `/guides/methods-swaig`). Remaining collisions are flagged with `[COLLISION]
 ## Fern slug deduplication
 
 Fern automatically prepends the product slug (from `docs.yml`) and version slug to every page URL. Page-level frontmatter slugs should NOT repeat these prefixes — Fern deduplicates them silently, but the correct form omits them. See CLAUDE.md "Slug Behavior" section.
+
+**Tab prefixes are NOT deduplicated.** Unlike product/version prefixes, Fern does
+not strip duplicate tab segments. A page under the `reference` tab with slug
+`/reference/foo` produces `/product/reference/reference/foo`. The `composed_slug`
+column in the proposal CSV makes these bugs visible.
+
+## History
+
+- [Version + tab column refactor](slug-version-tab-refactor.md) — why and how
+  the collect/propose scripts were updated to parse Fern nav YAMLs
