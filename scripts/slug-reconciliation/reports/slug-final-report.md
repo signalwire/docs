@@ -14,8 +14,8 @@ Unified report merging reconciliation and content-matching results.
 |--------|-------|-------------|
 | **redirect** | 841 | Old URL -> proposed Fern URL (needs 301 redirect) |
 | **review** | 48 | Possible match, needs manual verification |
-| **gone** | 587 | Content removed or auto-generated (410/404) |
-| **no_action** | 13 | URL unchanged or already covered |
+| **gone** | 586 | Content removed or auto-generated (410/404) |
+| **no_action** | 14 | URL unchanged or already covered |
 | **Total** | **1489** | |
 
 ### By category
@@ -26,9 +26,9 @@ Unified report merging reconciliation and content-matching results.
 | autogen | 401 |
 | slug_changed | 208 |
 | known_deleted | 98 |
-| likely_deleted | 82 |
+| likely_deleted | 81 |
 | uncertain | 48 |
-| matched_same | 12 |
+| matched_same | 13 |
 | no_source | 6 |
 | already_mapped | 1 |
 
@@ -935,7 +935,7 @@ Possible matches with low confidence. Verify manually before redirecting.
 | `/video/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | 0.334 | body=0.167 fname=1.000 |
 | `/voice/guides/general/how-to-set-caller-id-or-cnam` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/platform/basics/how-to-set-caller-id-or-cnam` | 0.437 | body=0.296 fname=1.000 |
 
-## Gone (587)
+## Gone (586)
 
 Content removed, auto-generated, or not migrated. Return 410 or let 404.
 
@@ -1007,7 +1007,7 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/compatibility-api/guides/signalwire-status-callbacks` -- Section not migrated to Fern
 - ... and 68 more
 
-### likely_deleted (82)
+### likely_deleted (81)
 
 - `/ai/guides` -- No Fern page above similarity threshold
 - `/ai/guides/integrations` -- No Fern page above similarity threshold
@@ -1015,7 +1015,6 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/cantina/user-guide` -- No Fern page above similarity threshold
 - `/cantina/user-guide-for-admin-rights` -- No Fern page above similarity threshold
 - `/cluecon-2024` -- No Fern page above similarity threshold
-- `/compatibility-api` -- No Fern page above similarity threshold
 - `/compatibility-api/cxml/stream-openai-realtime` -- No Fern page above similarity threshold
 - `/demos/admin-assistant` -- No Fern page above similarity threshold
 - `/demos/ai-cal` -- No Fern page above similarity threshold
@@ -1039,7 +1038,8 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/platform/basics/general` -- No Fern page above similarity threshold
 - `/platform/basics/guides` -- No Fern page above similarity threshold
 - `/platform/basics/guides/technical-troubleshooting` -- No Fern page above similarity threshold
-- ... and 52 more
+- `/platform/basics/security-and-compliance` -- No Fern page above similarity threshold
+- ... and 51 more
 
 ### no_source (6)
 
@@ -1051,11 +1051,12 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/swml/methods/amazon-bedrock/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
 
 
-## No action needed (13)
+## No action needed (14)
 
 URLs that haven't changed or are already covered.
 
 - `/call-flow-builder` -> `/call-flow-builder`
+- `/compatibility-api` -> `/compatibility-api`
 - `/platform/call-fabric` -> `/platform/call-fabric`
 - `/platform/call-fabric/addresses` -> `/platform/call-fabric/addresses`
 - `/platform/call-fabric/resources` -> `/platform/call-fabric/resources`

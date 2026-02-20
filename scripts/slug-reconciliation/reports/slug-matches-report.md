@@ -7,11 +7,11 @@
 | **slug_changed** | 208 | Page exists in Fern under a different slug |
 | already_mapped | 1 | Source file maps to a known slug via different URL |
 | uncertain | 48 | Possible match, needs manual review |
-| likely_deleted | 82 | No similar page found in Fern |
+| likely_deleted | 81 | No similar page found in Fern |
 | autogen | 401 | OpenAPI-generated endpoint (no MDX source) |
 | known_deleted | 98 | Section known to be not migrated |
 | no_source | 6 | No Docusaurus source file found |
-| **Total** | **844** | |
+| **Total** | **843** | |
 
 ## Slug changed
 
@@ -291,7 +291,6 @@ Pages with no matching content in Fern.
 - `/cantina/user-guide` -- No Fern page above similarity threshold
 - `/cantina/user-guide-for-admin-rights` -- No Fern page above similarity threshold
 - `/cluecon-2024` -- No Fern page above similarity threshold
-- `/compatibility-api` -- No Fern page above similarity threshold
 - `/compatibility-api/cxml/stream-openai-realtime` -- No Fern page above similarity threshold
 - `/demos/admin-assistant` -- No Fern page above similarity threshold
 - `/demos/ai-cal` -- No Fern page above similarity threshold
@@ -431,4 +430,4 @@ These sections were not migrated to Fern.
 
 ## Output files
 
-- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-matches.csv` -- full results (844 rows)
+- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-matches.csv` -- full results (843 rows)

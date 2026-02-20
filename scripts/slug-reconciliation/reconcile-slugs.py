@@ -153,6 +153,10 @@ def build_old_url_candidates(product, csv_slug, raw_slug="", file_path=""):
     if csv_slug == "/":
         if prefix:
             candidates.append(normalize_slug(prefix))
+        # For products in the main plugin (empty prefix), the old root URL
+        # was /<product-name> since Docusaurus used the directory name as path
+        if not prefix and product and product != "/":
+            candidates.append(normalize_slug("/" + product))
         candidates.append("/")
 
     # For pages with no explicit slug or where slug-based candidates might

@@ -9,12 +9,12 @@ Validated `cur_full_url` from `slug-final-report.csv` against the live site.
 | Metric | Count |
 |--------|-------|
 | Sitemap URLs | 1519 |
-| Unique `cur_full_url` in report | 883 |
-| **In sitemap** | **840** (95.1%) |
+| Unique `cur_full_url` in report | 884 |
+| **In sitemap** | **841** (95.1%) |
 | **Accessible (not indexed)** | **43** |
 | **Redirected** | **0** |
 | **Not found (404)** | **0** |
-| **Total verified** | **883** (100.0%) |
+| **Total verified** | **884** (100.0%) |
 
 ## Accessible but not in sitemap
 
@@ -76,7 +76,7 @@ This is expected for section index pages and some navigation-only pages.
 
 ## Verified URLs
 
-883 URLs verified (840 in sitemap + 43 accessible via HTTP).
+884 URLs verified (841 in sitemap + 43 accessible via HTTP).
 
 Sample (first 15):
 
@@ -95,4 +95,4 @@ Sample (first 15):
 - `/agents-sdk/api/configuration`
 - `/agents-sdk/api/contexts`
 - `/agents-sdk/api/data-map`
-- ... and 825 more
+- ... and 826 more

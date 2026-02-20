@@ -6,16 +6,16 @@
 |--------|-------|
 | Old sitemap URLs | 1489 |
 | Current Fern pages (CSV) | 1320 |
-| **Matched** | **645** |
-| **Unmatched** | **844** |
-| Match rate | 43.3% |
+| **Matched** | **646** |
+| **Unmatched** | **843** |
+| Match rate | 43.4% |
 
 ## Unmatched by section
 
 | Prefix | Count |
 |--------|-------|
 | `/rest` | 418 |
-| `/compatibility-api` | 196 |
+| `/compatibility-api` | 195 |
 | `/sdks` | 123 |
 | `/platform` | 19 |
 | `/call-flow-builder` | 16 |
@@ -57,7 +57,7 @@
 - `/call-flow-builder/version` -> [call-flow-builder] `/version` -> `/guides/version`
 - `/chat` -> [platform] `/chat`
 - `/chat/faq` -> [platform] `/chat/faq`
-- ... and 625 more
+- ... and 626 more
 
 ## Unmatched samples
 
@@ -85,15 +85,15 @@
 - `/chat/getting-started`
 - `/chat/guides`
 - `/cluecon-2024`
-- `/compatibility-api`
 - `/compatibility-api/api-reference/rest-client-sdks/methods`
 - `/compatibility-api/client-sdks/api/available-phone-numbers`
 - `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free`
 - `/compatibility-api/client-sdks/api/available-phone-numbers/list-resources`
 - `/compatibility-api/client-sdks/api/available-phone-numbers/search-local`
-- ... and 814 more
+- `/compatibility-api/client-sdks/applications`
+- ... and 813 more
 
 ## Output files
 
 - `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation.csv` -- full reconciliation (1489 rows)
-- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation-unmatched.csv` -- unmatched only (844 rows)
+- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation-unmatched.csv` -- unmatched only (843 rows)
