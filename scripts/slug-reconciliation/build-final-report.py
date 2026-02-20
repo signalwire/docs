@@ -122,6 +122,35 @@ def product_from_fern_path(fern_file):
     return parts[0] if parts else ""
 
 
+def slug_from_fern_path(fern_file):
+    """Derive a slug from a Fern file path when frontmatter has no explicit slug.
+
+    Fern infers the URL from the file path by stripping:
+      <product>/pages/[<version>/] prefix
+    then converting the remaining path to a slug (strip .mdx, use index dir name).
+
+    E.g., 'call-flow-builder/pages/core/version.mdx' -> '/core/version'
+          'browser-sdk/pages/latest/reference/chat/index.mdx' -> '/reference/chat'
+    """
+    if not fern_file:
+        return ""
+    parts = fern_file.replace("\\", "/").split("/")
+    # Strip <product>/pages/
+    if len(parts) >= 2 and parts[1] == "pages":
+        parts = parts[2:]
+    else:
+        return ""
+    # Strip version directory (latest, v2, v3, etc.)
+    if parts and re.match(r"^(latest|v\d+)$", parts[0]):
+        parts = parts[1:]
+    # Strip index.mdx -> use parent dir
+    if parts and parts[-1] in ("index.mdx", "index.md"):
+        parts = parts[:-1]
+    elif parts:
+        parts[-1] = re.sub(r"\.mdx?$", "", parts[-1])
+    return "/" + "/".join(parts) if parts else "/"
+
+
 def classify_action(category):
     """Map match category to recommended action."""
     if category in ("matched_same", "already_mapped"):
@@ -144,11 +173,22 @@ def main():
     matches_csv = sys.argv[2] if len(sys.argv) > 2 else str(REPORTS_DIR / "slug-matches.csv")
     output_csv = sys.argv[3] if len(sys.argv) > 3 else str(REPORTS_DIR / "slug-final-report.csv")
 
+    proposals_csv = str(REPORTS_DIR / "slug-proposals.csv")
+
     # Parse product slug mapping
     product_slugs = parse_product_slugs()
     print(f"Product slug mapping: {len(product_slugs)} products")
     for d, s in sorted(product_slugs.items()):
         print(f"  {d} -> /{s}")
+
+    # Build file_path -> id lookup from proposals (normalize to forward slashes)
+    id_by_file = {}
+    with open(proposals_csv, newline="") as f:
+        for r in csv.DictReader(f):
+            fp = r.get("file_path", "").replace("\\", "/")
+            doc_id = r.get("id", "")
+            if fp and doc_id:
+                id_by_file[fp] = doc_id
 
     rows = []
 
@@ -162,21 +202,28 @@ def main():
             old_url = r["old_url"]
             matched_urls.add(old_url)
             product = r["matched_product"]
-            page_slug = r.get("matched_new_slug") or r["matched_slug"]
+            current_slug = r["matched_slug"] or slug_from_fern_path(r.get("matched_file_path", ""))
+            proposed_slug = r.get("matched_new_slug", "")
             fern_file = r.get("matched_file_path", "")
-            new_url = build_new_url(product, page_slug, fern_file)
 
-            if old_url.rstrip("/").lower() == new_url.rstrip("/").lower():
+            current_url = build_new_url(product, current_slug, fern_file)
+            proposed_url = build_new_url(product, proposed_slug, fern_file) if proposed_slug else current_url
+
+            # Compare old URL against the final destination (proposed if available)
+            final_url = proposed_url
+            if old_url.rstrip("/").lower() == final_url.rstrip("/").lower():
                 category = "matched_same"
             else:
                 category = "matched_changed"
 
             rows.append({
                 "old_url": old_url,
-                "new_url": new_url,
+                "current_url": current_url,
+                "proposed_url": proposed_url,
                 "action": classify_action(category),
                 "category": category,
                 "confidence": "1.000",
+                "doc_id": id_by_file.get(fern_file.replace("\\", "/"), ""),
                 "fern_file": fern_file,
                 "notes": "",
             })
@@ -197,21 +244,32 @@ def main():
             notes = r.get("notes", "")
             match_method = r.get("match_method", "")
 
+            current_url = ""
+            proposed_url = ""
+
             if match_type in ("slug_changed", "uncertain"):
                 product = product_from_fern_path(fern_file)
-                page_slug = r.get("new_slug") or r.get("matched_slug", "")
-                new_url = build_new_url(product, page_slug, fern_file)
+                current_slug = r.get("matched_slug", "") or slug_from_fern_path(fern_file)
+                proposed_slug = r.get("new_slug", "")
+
+                if current_slug:
+                    current_url = build_new_url(product, current_slug, fern_file)
+                if proposed_slug:
+                    proposed_url = build_new_url(product, proposed_slug, fern_file)
+                elif current_url:
+                    proposed_url = current_url  # no proposal, fall back to current
+
                 if match_method:
                     notes = match_method + (f"; {notes}" if notes else "")
-            else:
-                new_url = ""
 
             rows.append({
                 "old_url": old_url,
-                "new_url": new_url,
+                "current_url": current_url,
+                "proposed_url": proposed_url,
                 "action": classify_action(match_type),
                 "category": match_type,
                 "confidence": confidence,
+                "doc_id": id_by_file.get(fern_file.replace("\\", "/"), ""),
                 "fern_file": fern_file,
                 "notes": notes,
             })
@@ -224,7 +282,7 @@ def main():
     rows.sort(key=lambda r: (action_order.get(r["action"], 9), r["old_url"]))
 
     # ── Write CSV ──
-    fields = ["old_url", "new_url", "action", "category", "confidence", "fern_file", "notes"]
+    fields = ["old_url", "current_url", "proposed_url", "action", "category", "confidence", "doc_id", "fern_file", "notes"]
     with open(output_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -256,9 +314,13 @@ def main():
         f.write("Unified report merging reconciliation and content-matching results.\n\n")
 
         f.write("## Summary\n\n")
+        f.write("**Column definitions:**\n")
+        f.write("- **Old URL** -- Docusaurus URL from the old sitemap\n")
+        f.write("- **Current URL** -- live Fern URL based on current frontmatter slug\n")
+        f.write("- **Proposed URL** -- Fern URL after slug standardization is applied\n\n")
         f.write("| Action | Count | Description |\n")
         f.write("|--------|-------|-------------|\n")
-        f.write(f"| **redirect** | {by_action.get('redirect', 0)} | Old URL -> new Fern URL (needs 301 redirect) |\n")
+        f.write(f"| **redirect** | {by_action.get('redirect', 0)} | Old URL -> proposed Fern URL (needs 301 redirect) |\n")
         f.write(f"| **review** | {by_action.get('review', 0)} | Possible match, needs manual verification |\n")
         f.write(f"| **gone** | {by_action.get('gone', 0)} | Content removed or auto-generated (410/404) |\n")
         f.write(f"| **no_action** | {by_action.get('no_action', 0)} | URL unchanged or already covered |\n")
@@ -274,23 +336,27 @@ def main():
         # Redirects section
         if redirects:
             f.write(f"## Redirects ({len(redirects)})\n\n")
-            f.write("These old URLs need 301 redirects to their new locations.\n\n")
-            f.write("| Old URL | New URL | Category | Confidence |\n")
-            f.write("|---------|---------|----------|------------|\n")
+            f.write("These old URLs need 301 redirects to their proposed locations.\n\n")
+            f.write("| Old URL | Current URL | Proposed URL | Category | Confidence |\n")
+            f.write("|---------|-------------|--------------|----------|------------|\n")
             for r in redirects:
                 conf = r["confidence"] if r["confidence"] else "--"
-                f.write(f"| `{r['old_url']}` | `{r['new_url']}` | {r['category']} | {conf} |\n")
+                cur = r["current_url"] if r["current_url"] else "--"
+                prop = r["proposed_url"] if r["proposed_url"] else "--"
+                f.write(f"| `{r['old_url']}` | `{cur}` | `{prop}` | {r['category']} | {conf} |\n")
 
         # Review section
         if reviews:
             f.write(f"\n## Needs review ({len(reviews)})\n\n")
             f.write("Possible matches with low confidence. Verify manually before redirecting.\n\n")
-            f.write("| Old URL | Suggested new URL | Confidence | Notes |\n")
-            f.write("|---------|-------------------|------------|-------|\n")
+            f.write("| Old URL | Current URL | Proposed URL | Confidence | Notes |\n")
+            f.write("|---------|-------------|--------------|------------|-------|\n")
             for r in reviews:
                 conf = r["confidence"] if r["confidence"] else "--"
+                cur = r["current_url"] if r["current_url"] else "--"
+                prop = r["proposed_url"] if r["proposed_url"] else "--"
                 notes = r["notes"][:60] if r["notes"] else "--"
-                f.write(f"| `{r['old_url']}` | `{r['new_url']}` | {conf} | {notes} |\n")
+                f.write(f"| `{r['old_url']}` | `{cur}` | `{prop}` | {conf} | {notes} |\n")
 
         # Gone section
         if gone:
@@ -317,7 +383,7 @@ def main():
             f.write(f"\n## No action needed ({len(no_action)})\n\n")
             f.write("URLs that haven't changed or are already covered.\n\n")
             for r in no_action[:30]:
-                f.write(f"- `{r['old_url']}` → `{r['new_url']}`\n")
+                f.write(f"- `{r['old_url']}` -> `{r['proposed_url']}`\n")
             if len(no_action) > 30:
                 f.write(f"- ... and {len(no_action) - 30} more\n")
 

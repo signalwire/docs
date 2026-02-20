@@ -356,7 +356,7 @@ def load_proposals_slugs(proposals_csv):
     Returns:
         known_slugs: set of reconstructed old URLs
         rows_by_slug: old_url -> CSV row
-        new_slug_by_file: file_path -> new_slug (for reporting)
+        new_slug_by_file: file_path -> (current_slug, new_slug) for reporting
     """
     slugs = set()
     rows_by_slug = {}
@@ -379,9 +379,12 @@ def load_proposals_slugs(proposals_csv):
                 full = full.rstrip("/") or "/"
                 slugs.add(full.lower())
                 rows_by_slug[full.lower()] = row
-                # Map file_path -> new_slug for enriching match results
-                if row.get("file_path") and row.get("new_slug"):
-                    new_slug_by_file[row["file_path"]] = row["new_slug"]
+                # Map file_path -> (current_slug, new_slug) for enriching match results
+                if row.get("file_path"):
+                    new_slug_by_file[row["file_path"]] = (
+                        row.get("slug", ""),
+                        row.get("new_slug", ""),
+                    )
     except FileNotFoundError:
         pass
     return slugs, rows_by_slug, new_slug_by_file
@@ -631,7 +634,7 @@ def _match_worker(args):
 
     args: (old_url, old_body, fern_entries_serialized, new_slug_by_file)
     fern_entries_serialized: list of (path_str, body, tokens, body_len)
-    new_slug_by_file: dict mapping Fern file_path -> proposed new_slug
+    new_slug_by_file: dict mapping Fern file_path -> (current_slug, new_slug)
     Returns result dict.
     """
     old_url, old_body, fern_entries_ser, new_slug_map = args
@@ -654,12 +657,12 @@ def _match_worker(args):
     }
 
     def _fill_match(match_type, best):
-        rel_path = str(best[3].relative_to(FERN_PRODUCTS_DIR))
+        rel_path = str(best[3].relative_to(FERN_PRODUCTS_DIR)).replace("\\", "/")
         fern_slug = read_frontmatter_slug(best[3]) or ""
         result["match_type"] = match_type
         result["matched_fern_file"] = rel_path
-        result["matched_slug"] = fern_slug
-        result["new_slug"] = new_slug_map.get(rel_path, "")
+        result["matched_slug"] = fern_slug or new_slug_map.get(rel_path, ("", ""))[0]
+        result["new_slug"] = new_slug_map.get(rel_path, ("", ""))[1]
         result["confidence"] = f"{best[0]:.3f}"
         result["match_method"] = f"body={best[1]:.3f} fname={best[2]:.3f}"
 
