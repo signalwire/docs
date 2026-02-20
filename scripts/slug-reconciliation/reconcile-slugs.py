@@ -24,47 +24,21 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from utils import (
+    normalize_slug,
+    normalize_path,
+    slug_from_filepath as _slug_from_filepath,
+    PRODUCT_TO_OLD_PREFIX,
+)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = SCRIPT_DIR / "reports"
-
-# Map Fern product -> old URL prefix to prepend to the CSV slug.
-#
-# For SDK products, the old routeBasePath was /sdks/<product>.
-# For main-plugin products where propose-new-slugs.py stripped the product
-# prefix, we need to re-add it.
-# For products where the raw frontmatter slug didn't start with /<product>/,
-# no stripping happened, so the CSV slug IS the old URL slug.
-PRODUCT_TO_OLD_PREFIX = {
-    # SDK plugins (routeBasePath = /sdks/<product>)
-    "agents-sdk": "/sdks/agents-sdk",
-    "browser-sdk": "/sdks/browser-sdk",
-    "realtime-sdk": "/sdks/realtime-sdk",
-    # Main plugin products where propose script stripped /<product>/ prefix
-    "swml": "/swml",
-    "call-flow-builder": "/call-flow-builder",
-    # Products where slugs don't start with /<product>/ -- no stripping happened
-    "platform": "",
-    "compatibility-api": "",
-    "/": "",       # home
-    "home": "",
-    "apis": "",
-}
 
 # Regex to capture version + remainder from Fern SDK file paths
 # e.g. browser-sdk/pages/v2/guides/video/foo.mdx -> version="v2", remainder="guides/video/foo.mdx"
 _VERSION_PATH_RE = re.compile(r"^[^/]+/pages/(latest|v\d+)/(.*)")
 # For non-versioned products
 _PLAIN_PATH_RE = re.compile(r"^[^/]+/pages/(.*)")
-
-
-def normalize_slug(s):
-    """Normalize a slug for comparison: lowercase, strip trailing slash."""
-    s = s.strip().lower()
-    if not s.startswith("/"):
-        s = "/" + s
-    if s != "/" and s.endswith("/"):
-        s = s.rstrip("/")
-    return s
 
 
 def filepath_to_old_url(product, file_path):
@@ -132,7 +106,7 @@ def filepath_to_old_url(product, file_path):
 
 def _extract_version(file_path):
     """Extract version from Fern file path, e.g. 'realtime-sdk/pages/v2/...' -> 'v2'."""
-    m = _VERSION_PATH_RE.match(file_path)
+    m = _VERSION_PATH_RE.match(normalize_path(file_path))
     if m and m.group(1) != "latest":
         return m.group(1)
     return None

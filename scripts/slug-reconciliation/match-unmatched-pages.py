@@ -21,6 +21,8 @@ import sys
 from difflib import SequenceMatcher
 from pathlib import Path
 
+from utils import normalize_path, PRODUCT_TO_OLD_PREFIX
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 REPORTS_DIR = SCRIPT_DIR / "reports"
@@ -368,12 +370,12 @@ def load_proposals_slugs(proposals_csv):
                 slug = row["slug"].strip().lower()
                 if not slug.startswith("/"):
                     slug = "/" + slug
-                # Store the full reconstructed old URLs
-                # (same logic as reconcile-slugs.py)
-                if product in ("agents-sdk", "browser-sdk", "realtime-sdk"):
-                    full = f"/sdks/{product}{slug}"
-                elif product in ("swml", "call-flow-builder"):
-                    full = f"/{product}{slug}"
+                # Store the full reconstructed old URLs using shared prefix map
+                prefix = PRODUCT_TO_OLD_PREFIX.get(product, "")
+                if prefix and slug and slug != "/":
+                    full = prefix + slug
+                elif prefix:
+                    full = prefix
                 else:
                     full = slug
                 full = full.rstrip("/") or "/"
@@ -657,7 +659,7 @@ def _match_worker(args):
     }
 
     def _fill_match(match_type, best):
-        rel_path = str(best[3].relative_to(FERN_PRODUCTS_DIR)).replace("\\", "/")
+        rel_path = normalize_path(best[3].relative_to(FERN_PRODUCTS_DIR))
         fern_slug = read_frontmatter_slug(best[3]) or ""
         result["match_type"] = match_type
         result["matched_fern_file"] = rel_path

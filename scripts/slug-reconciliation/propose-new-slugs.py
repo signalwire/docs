@@ -11,9 +11,18 @@ Conventions:
 """
 
 import csv
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+from utils import (
+    normalize_slug as normalize,
+    segments,
+    extract_version,
+    slug_from_filepath,
+    VERSIONED_PRODUCTS,
+)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPORTS_DIR = SCRIPT_DIR / "reports"
@@ -22,23 +31,6 @@ REPORTS_DIR = SCRIPT_DIR / "reports"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def normalize(slug):
-    """Underscores → dashes, lowercase, ensure leading /, strip trailing /."""
-    if not slug:
-        return ""
-    s = slug.strip().replace("_", "-").lower()
-    if not s.startswith("/"):
-        s = "/" + s
-    if s != "/" and s.endswith("/"):
-        s = s.rstrip("/")
-    return s
-
-
-def segments(slug):
-    """Split slug into non-empty path segments."""
-    return [p for p in slug.split("/") if p]
-
 
 def last(slug, n=1):
     """Return the last n segments joined by /."""
@@ -146,21 +138,6 @@ def agents_sdk(slug, fp):
     return "/guides/" + parts[-1]
 
 
-def slug_from_filepath(fp):
-    """Derive a slug from file path, stripping product/pages/version prefixes."""
-    parts = segments(fp)
-    # Strip: <product>/pages/<version>/
-    if len(parts) >= 3 and parts[1] == "pages":
-        parts = parts[3:]  # skip product, pages, version
-    # Strip index.mdx → use parent dir name
-    if parts and parts[-1] in ("index.mdx", "index.md"):
-        parts = parts[:-1]
-    elif parts:
-        # Strip .mdx extension from last segment
-        parts[-1] = parts[-1].rsplit(".", 1)[0]
-    return "/" + "/".join(parts) if parts else "/"
-
-
 def browser_sdk(slug, fp):
     effective = slug if slug else slug_from_filepath(fp)
     if effective == "/":
@@ -222,19 +199,6 @@ HANDLERS = {
     "realtime-sdk": realtime_sdk,
     "compatibility-api": compatibility_api,
 }
-
-# Products whose pages live under version subdirectories (latest/, v3/, v2/).
-# Pages in different version dirs may share the same slug — that's expected.
-VERSIONED_PRODUCTS = {"realtime-sdk", "browser-sdk"}
-
-import re
-_VERSION_RE = re.compile(r"^[^/]+/pages/(latest|v\d+)/")
-
-
-def extract_version(file_path):
-    """Return version directory ('latest', 'v3', etc.) or '' for unversioned."""
-    m = _VERSION_RE.match(file_path)
-    return m.group(1) if m else ""
 
 
 def collision_key(row):

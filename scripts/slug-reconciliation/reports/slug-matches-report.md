@@ -6,11 +6,11 @@
 |----------|-------|-------------|
 | **slug_changed** | 199 | Page exists in Fern under a different slug |
 | already_mapped | 1 | Source file maps to a known slug via different URL |
-| uncertain | 45 | Possible match, needs manual review |
-| likely_deleted | 85 | No similar page found in Fern |
+| uncertain | 43 | Possible match, needs manual review |
+| likely_deleted | 82 | No similar page found in Fern |
 | autogen | 401 | OpenAPI-generated endpoint (no MDX source) |
 | known_deleted | 98 | Section known to be not migrated |
-| no_source | 0 | No Docusaurus source file found |
+| no_source | 5 | No Docusaurus source file found |
 | **Total** | **829** | |
 
 ## Slug changed
@@ -264,8 +264,6 @@ Pages that exist in Fern but with a different URL.
 | `/sdks/realtime-sdk/video` | `realtime-sdk/pages/latest/tech-ref/video/index.mdx` | `reference/video` | `/reference/video` | 0.696 |
 | `/sdks/realtime-sdk/video/client` | `realtime-sdk/pages/latest/tech-ref/video/client/methods/listen.mdx` | `reference/video/client/methods/listen` | `/reference/video/client/methods/listen` | 0.396 |
 | `/sdks/realtime-sdk/voice` | `realtime-sdk/pages/latest/tech-ref/voice/index.mdx` | `reference/voice` | `/reference/voice` | 0.562 |
-| `/swml/methods/ai/swaig/defaults/web_hook_url` | `swml/pages/reference/methods/ai/ai_swaig/functions/functions.web_hook_url.mdx` | `/swml/methods/ai/swaig/functions/web_hook_url` | `/reference/ai/swaig/functions-web-hook-url` | 0.494 |
-| `/swml/methods/amazon_bedrock/swaig/defaults/web_hook_url` | `swml/pages/reference/methods/ai/ai_swaig/functions/functions.web_hook_url.mdx` | `/swml/methods/ai/swaig/functions/web_hook_url` | `/reference/ai/swaig/functions-web-hook-url` | 0.495 |
 | `/video/guides` | `realtime-sdk/pages/v2/guides/index.mdx` | `guides` | `/guides` | 0.334 |
 | `/voice/guides/general/how-to-set-caller-id-or-cnam` | `platform/pages/platform/basics/general/how-to-set-caller-id-or-cnam.mdx` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/basics/how-to-set-caller-id-or-cnam` | 0.437 |
 
@@ -349,15 +347,12 @@ Pages with no matching content in Fern.
 - `/sdks/realtime-sdk/v3/technical-reference` -- No Fern page above similarity threshold
 - `/swml/guides` -- No Fern page above similarity threshold
 - `/swml/guides/ai` -- No Fern page above similarity threshold
-- `/swml/guides/ai/background_audio` -- No Fern page above similarity threshold
-- `/swml/guides/ai/holiday_special_santa_ai` -- No Fern page above similarity threshold
+- `/swml/guides/ai/holiday-special-santa-ai` -- No Fern page above similarity threshold
 - `/swml/guides/ai/swaig/functions` -- No Fern page above similarity threshold
-- `/swml/guides/ai/voicemail_bot_example` -- No Fern page above similarity threshold
+- `/swml/guides/ai/voicemail-bot-example` -- No Fern page above similarity threshold
 - `/swml/guides/methods` -- No Fern page above similarity threshold
 - `/swml/methods/ai/languages/params` -- No Fern page above similarity threshold
 - `/swml/methods/ai/params/conscience` -- No Fern page above similarity threshold
-- `/swml/methods/ai/params/hold_music` -- No Fern page above similarity threshold
-- `/swml/methods/ai/params/interrupt_prompt` -- No Fern page above similarity threshold
 
 ## Auto-generated API reference (401 pages)
 
@@ -410,6 +405,14 @@ These sections were not migrated to Fern.
 - `/compatibility-api/guides/messaging/general/how-to-redact-messages-for-hippa-compliancy`
 - `/compatibility-api/guides/messaging/general/how-to-send-sms-from-google-sheets`
 - ... and 78 more
+
+## No source file found (5 pages)
+
+- `/swml/guides/ai/background-audio` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/params/hold-music` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/params/interrupt-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
 
 ## Output files
 

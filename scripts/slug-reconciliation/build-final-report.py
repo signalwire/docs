@@ -3,152 +3,36 @@
 
 Merges slug-reconciliation.csv (matched pages) and slug-matches.csv
 (classified unmatched pages) into a single actionable report with full
-old→new URL mapping and recommended action per URL.
+old->new URL mapping and recommended action per URL.
+
+CSV output includes decomposed URL columns:
+  product_slug, version_slug, tab_slug, page_slug, full_url
+for both current and proposed states.
 
 This is the final step in the slug reconciliation pipeline.
 """
 
 import csv
-import re
 import sys
 from pathlib import Path
 
+from utils import (
+    build_product_slug_map,
+    decompose_url,
+    normalize_path,
+    slug_from_filepath,
+)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent.parent
 REPORTS_DIR = SCRIPT_DIR / "reports"
-DOCS_YML = PROJECT_ROOT / "fern" / "docs.yml"
-
-# Fern product directory name → product URL slug (parsed from docs.yml at runtime)
-_product_slug_cache = None
-
-
-def parse_product_slugs():
-    """Parse docs.yml to build product directory → URL base slug mapping.
-
-    Extracts lines like:
-      path: products/<dir>/...
-      slug: <slug>
-    and maps directory name to slug.
-    """
-    global _product_slug_cache
-    if _product_slug_cache is not None:
-        return _product_slug_cache
-
-    mapping = {}
-    current_slug = None
-
-    for line in DOCS_YML.read_text(encoding="utf-8").splitlines():
-        slug_m = re.match(r"^\s+slug:\s+(.+)", line)
-        if slug_m:
-            current_slug = slug_m.group(1).strip()
-
-        path_m = re.match(r"^\s+path:\s+products/([^/.]+)", line)
-        if path_m and current_slug is not None:
-            dirname = path_m.group(1)
-            if dirname not in mapping:
-                mapping[dirname] = current_slug
-
-    # Normalize: strip leading slashes, handle root
-    normalized = {}
-    for dirname, slug in mapping.items():
-        slug = slug.strip("/")
-        normalized[dirname] = slug
-
-    _product_slug_cache = normalized
-    return normalized
-
-
-_VERSION_RE = re.compile(r"/pages/(v\d+|latest)/")
-
-
-def _extract_version(fern_file):
-    """Extract version from a Fern file path like 'realtime-sdk/pages/v2/...'.
-
-    Returns the version string (e.g., "v2") or None for latest/unversioned.
-    """
-    if not fern_file:
-        return None
-    path = fern_file.replace("\\", "/")
-    m = _VERSION_RE.search(path)
-    if m and m.group(1) != "latest":
-        return m.group(1)
-    return None
-
-
-def build_new_url(product, page_slug, fern_file=""):
-    """Reconstruct the full new Fern URL from product + page slug + file path.
-
-    Fern prepends the product slug to every page URL automatically.
-    For versioned products (realtime-sdk, browser-sdk), Fern also inserts
-    the version segment (e.g., /v2/) between product and page slug for
-    non-latest versions.
-
-    E.g., product "compatibility-api" + slug "sdks/methods/calls/delete"
-    -> "/compatibility-api/sdks/methods/calls/delete"
-
-    E.g., product "realtime-sdk" + slug "/guides" + file "realtime-sdk/pages/v2/..."
-    -> "/realtime-sdk/v2/guides"
-    """
-    product_slugs = parse_product_slugs()
-    base = product_slugs.get(product, product)
-    version = _extract_version(fern_file)
-
-    if not page_slug or page_slug == "/":
-        if version:
-            return f"/{base}/{version}" if base else f"/{version}"
-        return f"/{base}" if base else "/"
-
-    page_slug = page_slug.lstrip("/")
-
-    # Avoid double-prefixing if page_slug already starts with the product slug
-    if base and page_slug.lower().startswith(base.lower() + "/"):
-        page_slug = page_slug[len(base) + 1:]
-
-    # Build: /<product>[/<version>]/<page_slug>
-    parts = []
-    if base:
-        parts.append(base)
-    if version:
-        parts.append(version)
-    parts.append(page_slug)
-    return "/" + "/".join(parts)
 
 
 def product_from_fern_path(fern_file):
     """Extract product name from a Fern file path like 'compatibility-api/pages/...'."""
     if not fern_file:
         return ""
-    parts = fern_file.replace("\\", "/").split("/")
+    parts = normalize_path(fern_file).split("/")
     return parts[0] if parts else ""
-
-
-def slug_from_fern_path(fern_file):
-    """Derive a slug from a Fern file path when frontmatter has no explicit slug.
-
-    Fern infers the URL from the file path by stripping:
-      <product>/pages/[<version>/] prefix
-    then converting the remaining path to a slug (strip .mdx, use index dir name).
-
-    E.g., 'call-flow-builder/pages/core/version.mdx' -> '/core/version'
-          'browser-sdk/pages/latest/reference/chat/index.mdx' -> '/reference/chat'
-    """
-    if not fern_file:
-        return ""
-    parts = fern_file.replace("\\", "/").split("/")
-    # Strip <product>/pages/
-    if len(parts) >= 2 and parts[1] == "pages":
-        parts = parts[2:]
-    else:
-        return ""
-    # Strip version directory (latest, v2, v3, etc.)
-    if parts and re.match(r"^(latest|v\d+)$", parts[0]):
-        parts = parts[1:]
-    # Strip index.mdx -> use parent dir
-    if parts and parts[-1] in ("index.mdx", "index.md"):
-        parts = parts[:-1]
-    elif parts:
-        parts[-1] = re.sub(r"\.mdx?$", "", parts[-1])
-    return "/" + "/".join(parts) if parts else "/"
 
 
 def classify_action(category):
@@ -168,6 +52,35 @@ def classify_action(category):
     return "review"
 
 
+def _decompose(product, page_slug, fern_file):
+    """Decompose a URL into its parts. Returns a DecomposedUrl or empty one."""
+    if not product and not page_slug:
+        return decompose_url("", "", "")
+    return decompose_url(product, page_slug, fern_file)
+
+
+def _empty_decomposed_fields(prefix):
+    """Return dict with empty decomposed fields for a given prefix (cur_ or prop_)."""
+    return {
+        f"{prefix}product_slug": "",
+        f"{prefix}version_slug": "",
+        f"{prefix}tab_slug": "",
+        f"{prefix}page_slug": "",
+        f"{prefix}full_url": "",
+    }
+
+
+def _decomposed_fields(prefix, d):
+    """Return dict with decomposed fields from a DecomposedUrl."""
+    return {
+        f"{prefix}product_slug": d.product_slug,
+        f"{prefix}version_slug": d.version_slug,
+        f"{prefix}tab_slug": d.tab_slug,
+        f"{prefix}page_slug": d.page_slug,
+        f"{prefix}full_url": d.full_url,
+    }
+
+
 def main():
     reconciliation_csv = sys.argv[1] if len(sys.argv) > 1 else str(REPORTS_DIR / "slug-reconciliation.csv")
     matches_csv = sys.argv[2] if len(sys.argv) > 2 else str(REPORTS_DIR / "slug-matches.csv")
@@ -176,103 +89,109 @@ def main():
     proposals_csv = str(REPORTS_DIR / "slug-proposals.csv")
 
     # Parse product slug mapping
-    product_slugs = parse_product_slugs()
+    product_slugs = build_product_slug_map()
     print(f"Product slug mapping: {len(product_slugs)} products")
     for d, s in sorted(product_slugs.items()):
         print(f"  {d} -> /{s}")
 
-    # Build file_path -> id lookup from proposals (normalize to forward slashes)
+    # Build file_path -> id lookup from proposals
     id_by_file = {}
     with open(proposals_csv, newline="") as f:
         for r in csv.DictReader(f):
-            fp = r.get("file_path", "").replace("\\", "/")
+            fp = normalize_path(r.get("file_path", ""))
             doc_id = r.get("id", "")
             if fp and doc_id:
                 id_by_file[fp] = doc_id
 
     rows = []
 
-    # ── Process reconciliation CSV (matched + unmatched) ──
+    # -- Process reconciliation CSV (matched pages) --
     matched_urls = set()
     with open(reconciliation_csv, newline="") as f:
         for r in csv.DictReader(f):
             if r["status"] != "matched":
-                continue  # unmatched rows are handled via slug-matches.csv
+                continue
 
             old_url = r["old_url"]
             matched_urls.add(old_url)
             product = r["matched_product"]
-            current_slug = r["matched_slug"] or slug_from_fern_path(r.get("matched_file_path", ""))
+            fern_file = normalize_path(r.get("matched_file_path", ""))
+            current_slug = r["matched_slug"] or slug_from_filepath(fern_file)
             proposed_slug = r.get("matched_new_slug", "")
-            fern_file = r.get("matched_file_path", "")
 
-            current_url = build_new_url(product, current_slug, fern_file)
-            proposed_url = build_new_url(product, proposed_slug, fern_file) if proposed_slug else current_url
+            cur = _decompose(product, current_slug, fern_file)
+            prop = _decompose(product, proposed_slug, fern_file) if proposed_slug else cur
 
-            # Compare old URL against the final destination (proposed if available)
-            final_url = proposed_url
+            # Compare old URL against the final destination
+            final_url = prop.full_url
             if old_url.rstrip("/").lower() == final_url.rstrip("/").lower():
                 category = "matched_same"
             else:
                 category = "matched_changed"
 
-            rows.append({
+            row = {
                 "old_url": old_url,
-                "current_url": current_url,
-                "proposed_url": proposed_url,
                 "action": classify_action(category),
                 "category": category,
                 "confidence": "1.000",
-                "doc_id": id_by_file.get(fern_file.replace("\\", "/"), ""),
+                "doc_id": id_by_file.get(fern_file, ""),
                 "fern_file": fern_file,
+                **_decomposed_fields("cur_", cur),
+                **_decomposed_fields("prop_", prop),
                 "notes": "",
-            })
+            }
+            rows.append(row)
 
     print(f"Loaded {len(rows)} matched pages from reconciliation")
 
-    # ── Process matches CSV (classified unmatched pages) ──
+    # -- Process matches CSV (classified unmatched pages) --
     match_count = 0
     with open(matches_csv, newline="") as f:
         for r in csv.DictReader(f):
             old_url = r["old_url"]
             if old_url in matched_urls:
-                continue  # already handled
+                continue
 
             match_type = r["match_type"]
-            fern_file = r.get("matched_fern_file", "")
+            fern_file = normalize_path(r.get("matched_fern_file", ""))
             confidence = r.get("confidence", "")
             notes = r.get("notes", "")
             match_method = r.get("match_method", "")
 
-            current_url = ""
-            proposed_url = ""
+            cur_fields = _empty_decomposed_fields("cur_")
+            prop_fields = _empty_decomposed_fields("prop_")
 
             if match_type in ("slug_changed", "uncertain"):
                 product = product_from_fern_path(fern_file)
-                current_slug = r.get("matched_slug", "") or slug_from_fern_path(fern_file)
+                current_slug = r.get("matched_slug", "") or slug_from_filepath(fern_file)
                 proposed_slug = r.get("new_slug", "")
 
                 if current_slug:
-                    current_url = build_new_url(product, current_slug, fern_file)
+                    cur = _decompose(product, current_slug, fern_file)
+                    cur_fields = _decomposed_fields("cur_", cur)
                 if proposed_slug:
-                    proposed_url = build_new_url(product, proposed_slug, fern_file)
-                elif current_url:
-                    proposed_url = current_url  # no proposal, fall back to current
+                    prop = _decompose(product, proposed_slug, fern_file)
+                    prop_fields = _decomposed_fields("prop_", prop)
+                elif current_slug:
+                    prop_fields = dict(cur_fields)
+                    # Rename cur_ keys to prop_
+                    prop_fields = {k.replace("cur_", "prop_"): v for k, v in cur_fields.items()}
 
                 if match_method:
                     notes = match_method + (f"; {notes}" if notes else "")
 
-            rows.append({
+            row = {
                 "old_url": old_url,
-                "current_url": current_url,
-                "proposed_url": proposed_url,
                 "action": classify_action(match_type),
                 "category": match_type,
                 "confidence": confidence,
-                "doc_id": id_by_file.get(fern_file.replace("\\", "/"), ""),
+                "doc_id": id_by_file.get(fern_file, ""),
                 "fern_file": fern_file,
+                **cur_fields,
+                **prop_fields,
                 "notes": notes,
-            })
+            }
+            rows.append(row)
             match_count += 1
 
     print(f"Loaded {match_count} classified pages from matches")
@@ -281,14 +200,19 @@ def main():
     action_order = {"redirect": 0, "review": 1, "gone": 2, "no_action": 3}
     rows.sort(key=lambda r: (action_order.get(r["action"], 9), r["old_url"]))
 
-    # ── Write CSV ──
-    fields = ["old_url", "current_url", "proposed_url", "action", "category", "confidence", "doc_id", "fern_file", "notes"]
+    # -- Write CSV --
+    fields = [
+        "old_url", "action", "category", "confidence", "doc_id", "fern_file",
+        "cur_product_slug", "cur_version_slug", "cur_tab_slug", "cur_page_slug", "cur_full_url",
+        "prop_product_slug", "prop_version_slug", "prop_tab_slug", "prop_page_slug", "prop_full_url",
+        "notes",
+    ]
     with open(output_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(rows)
 
-    # ── Stats ──
+    # -- Stats --
     by_action = {}
     by_category = {}
     for r in rows:
@@ -307,7 +231,7 @@ def main():
     print(f"  gone:         {by_action.get('gone', 0)}")
     print(f"  no_action:    {by_action.get('no_action', 0)}")
 
-    # ── Write markdown report ──
+    # -- Write markdown report --
     report_file = output_csv.replace(".csv", ".md")
     with open(report_file, "w", encoding="utf-8") as f:
         f.write("# Slug Redirect Report\n\n")
@@ -316,8 +240,9 @@ def main():
         f.write("## Summary\n\n")
         f.write("**Column definitions:**\n")
         f.write("- **Old URL** -- Docusaurus URL from the old sitemap\n")
-        f.write("- **Current URL** -- live Fern URL based on current frontmatter slug\n")
-        f.write("- **Proposed URL** -- Fern URL after slug standardization is applied\n\n")
+        f.write("- **Current full URL** -- live Fern URL based on current frontmatter slug\n")
+        f.write("- **Proposed full URL** -- Fern URL after slug standardization is applied\n")
+        f.write("- **Decomposed columns** (CSV only): product_slug, version_slug, tab_slug, page_slug, full_url\n\n")
         f.write("| Action | Count | Description |\n")
         f.write("|--------|-------|-------------|\n")
         f.write(f"| **redirect** | {by_action.get('redirect', 0)} | Old URL -> proposed Fern URL (needs 301 redirect) |\n")
@@ -337,24 +262,24 @@ def main():
         if redirects:
             f.write(f"## Redirects ({len(redirects)})\n\n")
             f.write("These old URLs need 301 redirects to their proposed locations.\n\n")
-            f.write("| Old URL | Current URL | Proposed URL | Category | Confidence |\n")
-            f.write("|---------|-------------|--------------|----------|------------|\n")
+            f.write("| Old URL | Current full URL | Proposed full URL | Category | Confidence |\n")
+            f.write("|---------|------------------|-------------------|----------|------------|\n")
             for r in redirects:
                 conf = r["confidence"] if r["confidence"] else "--"
-                cur = r["current_url"] if r["current_url"] else "--"
-                prop = r["proposed_url"] if r["proposed_url"] else "--"
+                cur = r["cur_full_url"] if r["cur_full_url"] else "--"
+                prop = r["prop_full_url"] if r["prop_full_url"] else "--"
                 f.write(f"| `{r['old_url']}` | `{cur}` | `{prop}` | {r['category']} | {conf} |\n")
 
         # Review section
         if reviews:
             f.write(f"\n## Needs review ({len(reviews)})\n\n")
             f.write("Possible matches with low confidence. Verify manually before redirecting.\n\n")
-            f.write("| Old URL | Current URL | Proposed URL | Confidence | Notes |\n")
-            f.write("|---------|-------------|--------------|------------|-------|\n")
+            f.write("| Old URL | Current full URL | Proposed full URL | Confidence | Notes |\n")
+            f.write("|---------|------------------|-------------------|------------|-------|\n")
             for r in reviews:
                 conf = r["confidence"] if r["confidence"] else "--"
-                cur = r["current_url"] if r["current_url"] else "--"
-                prop = r["proposed_url"] if r["proposed_url"] else "--"
+                cur = r["cur_full_url"] if r["cur_full_url"] else "--"
+                prop = r["prop_full_url"] if r["prop_full_url"] else "--"
                 notes = r["notes"][:60] if r["notes"] else "--"
                 f.write(f"| `{r['old_url']}` | `{cur}` | `{prop}` | {conf} | {notes} |\n")
 
@@ -363,7 +288,6 @@ def main():
             f.write(f"\n## Gone ({len(gone)})\n\n")
             f.write("Content removed, auto-generated, or not migrated. Return 410 or let 404.\n\n")
 
-            # Group by category
             gone_by_cat = {}
             for r in gone:
                 gone_by_cat.setdefault(r["category"], []).append(r)
@@ -383,7 +307,7 @@ def main():
             f.write(f"\n## No action needed ({len(no_action)})\n\n")
             f.write("URLs that haven't changed or are already covered.\n\n")
             for r in no_action[:30]:
-                f.write(f"- `{r['old_url']}` -> `{r['proposed_url']}`\n")
+                f.write(f"- `{r['old_url']}` -> `{r['prop_full_url']}`\n")
             if len(no_action) > 30:
                 f.write(f"- ... and {len(no_action) - 30} more\n")
 
