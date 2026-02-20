@@ -52,11 +52,11 @@ def classify_action(category):
     return "review"
 
 
-def _decompose(product, page_slug, fern_file):
+def _decompose(product, page_slug, fern_file, proposed=False):
     """Decompose a URL into its parts. Returns a DecomposedUrl or empty one."""
     if not product and not page_slug:
         return decompose_url("", "", "")
-    return decompose_url(product, page_slug, fern_file)
+    return decompose_url(product, page_slug, fern_file, proposed=proposed)
 
 
 def _empty_decomposed_fields(prefix):
@@ -120,7 +120,7 @@ def main():
             proposed_slug = r.get("matched_new_slug", "")
 
             cur = _decompose(product, current_slug, fern_file)
-            prop = _decompose(product, proposed_slug, fern_file) if proposed_slug else cur
+            prop = _decompose(product, proposed_slug, fern_file, proposed=True) if proposed_slug else cur
 
             # Compare old URL against the final destination
             final_url = prop.full_url
@@ -170,7 +170,7 @@ def main():
                     cur = _decompose(product, current_slug, fern_file)
                     cur_fields = _decomposed_fields("cur_", cur)
                 if proposed_slug:
-                    prop = _decompose(product, proposed_slug, fern_file)
+                    prop = _decompose(product, proposed_slug, fern_file, proposed=True)
                     prop_fields = _decomposed_fields("prop_", prop)
                 elif current_slug:
                     prop_fields = dict(cur_fields)

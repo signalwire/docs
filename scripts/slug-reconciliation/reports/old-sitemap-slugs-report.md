@@ -6,9 +6,6 @@ Source: https://developer.signalwire.com/sitemap.xml
 
 | Metric | Count |
 |--------|-------|
-| Total URLs parsed | 1561 |
-| Off-domain | 0 |
-| Excluded (filters) | 72 |
 | **Unique doc slugs** | **1489** |
 
 ## Slugs by section

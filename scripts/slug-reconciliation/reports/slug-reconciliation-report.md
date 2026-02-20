@@ -6,9 +6,9 @@
 |--------|-------|
 | Old sitemap URLs | 1489 |
 | Current Fern pages (CSV) | 1320 |
-| **Matched** | **660** |
-| **Unmatched** | **829** |
-| Match rate | 44.3% |
+| **Matched** | **645** |
+| **Unmatched** | **844** |
+| Match rate | 43.3% |
 
 ## Unmatched by section
 
@@ -18,6 +18,7 @@
 | `/compatibility-api` | 196 |
 | `/sdks` | 123 |
 | `/platform` | 19 |
+| `/call-flow-builder` | 16 |
 | `/page` | 14 |
 | `/swml` | 13 |
 | `/demos` | 10 |
@@ -30,7 +31,6 @@
 | `/chat` | 2 |
 | `/livewire` | 2 |
 | `/voice` | 2 |
-| `/call-flow-builder` | 1 |
 | `/cluecon-2024` | 1 |
 | `/events` | 1 |
 | `/video` | 1 |
@@ -52,19 +52,34 @@
 - `/ai/pom` -> [platform] `/ai/pom`
 - `/ai/pom/technical-reference` -> [platform] `/ai/pom/technical-reference` -> `/ai/technical-reference`
 - `/call-flow-builder` -> [call-flow-builder] `/`
-- `/call-flow-builder/ai-agent` -> [call-flow-builder] `/ai-agent` -> `/reference/ai-agent`
-- `/call-flow-builder/answer-call` -> [call-flow-builder] `/answer-call` -> `/reference/answer-call`
-- `/call-flow-builder/conditions` -> [call-flow-builder] `/conditions` -> `/reference/conditions`
-- `/call-flow-builder/execute-swml` -> [call-flow-builder] `/execute-swml` -> `/reference/execute-swml`
-- `/call-flow-builder/forward-to-phone` -> [call-flow-builder] `/forward-to-phone` -> `/reference/forward-to-phone`
-- ... and 640 more
+- `/call-flow-builder/nodes` -> [call-flow-builder] `/nodes` -> `/reference/nodes`
+- `/call-flow-builder/variables` -> [call-flow-builder] `/variables` -> `/guides/variables`
+- `/call-flow-builder/version` -> [call-flow-builder] `/version` -> `/guides/version`
+- `/chat` -> [platform] `/chat`
+- `/chat/faq` -> [platform] `/chat/faq`
+- ... and 625 more
 
 ## Unmatched samples
 
 - `/ai/guides`
 - `/ai/guides/integrations`
 - `/ai/guides/integrations/livekit`
-- `/call-flow-builder/version`
+- `/call-flow-builder/ai-agent`
+- `/call-flow-builder/answer-call`
+- `/call-flow-builder/conditions`
+- `/call-flow-builder/execute-swml`
+- `/call-flow-builder/forward-to-phone`
+- `/call-flow-builder/gather-input`
+- `/call-flow-builder/handle-call`
+- `/call-flow-builder/hangup-call`
+- `/call-flow-builder/play-audio-or-tts`
+- `/call-flow-builder/request`
+- `/call-flow-builder/send-sms`
+- `/call-flow-builder/set-variables`
+- `/call-flow-builder/start-call-recording`
+- `/call-flow-builder/stop-call-recording`
+- `/call-flow-builder/unset-variables`
+- `/call-flow-builder/voicemail-recording`
 - `/cantina/user-guide`
 - `/cantina/user-guide-for-admin-rights`
 - `/chat/getting-started`
@@ -76,24 +91,9 @@
 - `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free`
 - `/compatibility-api/client-sdks/api/available-phone-numbers/list-resources`
 - `/compatibility-api/client-sdks/api/available-phone-numbers/search-local`
-- `/compatibility-api/client-sdks/applications`
-- `/compatibility-api/client-sdks/applications/create`
-- `/compatibility-api/client-sdks/applications/delete`
-- `/compatibility-api/client-sdks/applications/retrieve`
-- `/compatibility-api/client-sdks/applications/update`
-- `/compatibility-api/client-sdks/methods/accounts`
-- `/compatibility-api/client-sdks/methods/accounts/list`
-- `/compatibility-api/client-sdks/methods/accounts/retrieve`
-- `/compatibility-api/client-sdks/methods/accounts/update`
-- `/compatibility-api/client-sdks/methods/calls`
-- `/compatibility-api/client-sdks/methods/calls/create`
-- `/compatibility-api/client-sdks/methods/calls/delete`
-- `/compatibility-api/client-sdks/methods/calls/list`
-- `/compatibility-api/client-sdks/methods/calls/retrieve`
-- `/compatibility-api/client-sdks/methods/calls/update`
-- ... and 799 more
+- ... and 814 more
 
 ## Output files
 
 - `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation.csv` -- full reconciliation (1489 rows)
-- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation-unmatched.csv` -- unmatched only (829 rows)
+- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation-unmatched.csv` -- unmatched only (844 rows)

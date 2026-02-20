@@ -1,13 +1,17 @@
 """Shared utilities for the slug reconciliation pipeline.
 
 Consolidates duplicated logic: path/slug normalization, docs.yml parsing,
-version extraction, file-path-to-slug derivation, tab detection, and URL
-decomposition.
+version extraction, file-path-to-slug derivation, tab detection, URL
+decomposition, and sitemap fetching.
 """
 
 import re
+import sys
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import urlopen, Request
 
 import yaml
 
@@ -35,10 +39,29 @@ def normalize_path(p):
 # ---------------------------------------------------------------------------
 
 def normalize_slug(s):
-    """Lowercase, underscores->dashes, ensure leading /, strip trailing /."""
+    """Lowercase, underscores->dashes, ensure leading /, strip trailing /.
+
+    Use this for PROPOSED slugs where we want to standardize to dashes.
+    For current/existing slugs, use clean_slug() instead to preserve underscores.
+    """
     if not s:
         return ""
     s = s.strip().replace("_", "-").lower()
+    if not s.startswith("/"):
+        s = "/" + s
+    if s != "/" and s.endswith("/"):
+        s = s.rstrip("/")
+    return s
+
+
+def clean_slug(s):
+    """Lowercase, ensure leading /, strip trailing /. Preserves underscores.
+
+    Use this for CURRENT slugs to match what Fern actually serves.
+    """
+    if not s:
+        return ""
+    s = s.strip().lower()
     if not s.startswith("/"):
         s = "/" + s
     if s != "/" and s.endswith("/"):
@@ -117,10 +140,14 @@ def build_product_slug_map(docs_yml_path=None):
             continue
         # Extract directory name from path like "products/swml/swml.yml"
         # or "products/realtime-sdk/versions/latest.yml"
-        # Skip paths like "products/apis.yml" (no subdirectory)
+        # or "products/apis.yml" (flat file — use stem as dirname)
         parts = path_str.replace("\\", "/").split("/")
-        if len(parts) >= 3 and parts[0] == "products":
-            dirname = parts[1]
+        if len(parts) >= 2 and parts[0] == "products":
+            if len(parts) >= 3:
+                dirname = parts[1]
+            else:
+                # Flat file like "products/apis.yml" — use filename stem
+                dirname = parts[1].rsplit(".", 1)[0]
             slug = p["slug"].strip("/")
             if dirname not in mapping:
                 mapping[dirname] = slug
@@ -334,18 +361,20 @@ class DecomposedUrl:
     full_url: str        # e.g. '/swml/reference/methods/ai' — for redirects
 
 
-def decompose_url(product, page_slug, file_path, product_yml_dir=None):
+def decompose_url(product, page_slug, file_path, proposed=False):
     """Build a DecomposedUrl from product + page slug + file path.
 
     Determines tab by walking the product YAML navigation.
     Determines version from file path.
-    Builds full_url as: /<product>[/<version>][/<tab>]/<page_slug>
+    Builds full_url as: /<product>[/<version>]/<page_slug>
+    Tab slugs are metadata only — Fern does NOT inject them into URLs.
 
     Args:
         product: fern directory name (e.g. 'swml')
         page_slug: the page-level slug (from frontmatter or file path)
         file_path: fern file path relative to products/ (e.g. 'swml/pages/reference/methods/ai.mdx')
-        product_yml_dir: unused, kept for API compat (we resolve YML from product name)
+        proposed: if True, normalize underscores to dashes (for proposed slugs);
+                  if False, preserve underscores (for current/live slugs)
     """
     product_slugs = build_product_slug_map()
     prod_slug = product_slugs.get(product, product)
@@ -356,17 +385,25 @@ def decompose_url(product, page_slug, file_path, product_yml_dir=None):
     tab_key = detect_tab_for_file(product, file_path) if file_path else ""
     t_slug = tab_url_slug(product, tab_key) if tab_key else ""
 
-    # Normalize page_slug
-    ps = normalize_slug(page_slug) if page_slug else "/"
+    # For proposed slugs: normalize underscores to dashes (standardization goal)
+    # For current slugs: preserve underscores (match what Fern actually serves)
+    slug_fn = normalize_slug if proposed else clean_slug
+    ps = slug_fn(page_slug) if page_slug else "/"
 
-    # Build full URL: /<product>[/<version>][/<tab>]/<page_slug>
+    # Fern deduplicates redundant product prefixes in page slugs.
+    # e.g. product='platform', slug='/platform/basics/...' → '/platform/basics/...' (not doubled)
+    if prod_slug and ps.startswith("/" + prod_slug + "/"):
+        ps = ps[len("/" + prod_slug):]  # strip redundant prefix, keeps leading /
+    elif prod_slug and ps == "/" + prod_slug:
+        ps = "/"
+
+    # Build full URL: /<product>[/<version>]/<page_slug>
+    # Note: Fern does NOT insert tab slugs into URLs — tabs are navigation-only.
     url_parts = []
     if prod_slug:
         url_parts.append(prod_slug)
     if ver_slug:
         url_parts.append(ver_slug)
-    if t_slug:
-        url_parts.append(t_slug)
 
     if ps and ps != "/":
         # Strip leading slash from page_slug before appending
@@ -381,6 +418,74 @@ def decompose_url(product, page_slug, file_path, product_yml_dir=None):
         page_slug=ps,
         full_url=full,
     )
+
+
+# ---------------------------------------------------------------------------
+# Sitemap fetching
+# ---------------------------------------------------------------------------
+
+def fetch_sitemap_paths(sitemap_url, exclude_prefixes=None):
+    """Fetch a sitemap XML and return a set of URL paths.
+
+    Handles both regular sitemaps (<urlset>) and sitemap indexes
+    (<sitemapindex>) that point to child sitemaps.
+
+    Args:
+        sitemap_url: Full URL to the sitemap XML.
+        exclude_prefixes: Optional list of path prefixes to exclude
+            (e.g. ["/blog", "/tags"]).
+
+    Returns:
+        A set of URL path strings (lowercase, no trailing slash).
+    """
+    req = Request(sitemap_url, headers={"User-Agent": "slug-reconciliation/1.0"})
+    with urlopen(req, timeout=30) as resp:
+        raw = resp.read()
+
+    paths = set()
+    _parse_sitemap_xml(raw, paths)
+
+    if exclude_prefixes:
+        paths = {
+            p for p in paths
+            if not any(p == ex or p.startswith(ex + "/") for ex in exclude_prefixes)
+        }
+
+    return paths
+
+
+def _parse_sitemap_xml(xml_bytes, paths):
+    """Recursively parse sitemap XML, collecting URL paths into *paths* set."""
+    root = ET.fromstring(xml_bytes)
+
+    # Detect namespace
+    ns = ""
+    if root.tag.startswith("{"):
+        ns = root.tag.split("}")[0] + "}"
+
+    # Check if this is a sitemap index (has <sitemap><loc> children)
+    index_locs = root.findall(f".//{ns}sitemap/{ns}loc")
+    if index_locs:
+        for loc_elem in index_locs:
+            if loc_elem.text is None:
+                continue
+            child_url = loc_elem.text.strip()
+            try:
+                req = Request(child_url, headers={"User-Agent": "slug-reconciliation/1.0"})
+                with urlopen(req, timeout=30) as resp:
+                    child_xml = resp.read()
+                _parse_sitemap_xml(child_xml, paths)
+            except Exception as e:
+                print(f"  Warning: failed to fetch {child_url}: {e}", file=sys.stderr)
+    else:
+        # Regular sitemap — extract <url><loc> entries
+        for loc_elem in root.findall(f".//{ns}url/{ns}loc"):
+            if loc_elem.text is None:
+                continue
+            url = loc_elem.text.strip()
+            parsed = urlparse(url)
+            path = parsed.path.rstrip("/") or "/"
+            paths.add(path.lower())
 
 
 # ---------------------------------------------------------------------------

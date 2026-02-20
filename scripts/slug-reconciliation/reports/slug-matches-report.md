@@ -4,14 +4,14 @@
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| **slug_changed** | 199 | Page exists in Fern under a different slug |
+| **slug_changed** | 208 | Page exists in Fern under a different slug |
 | already_mapped | 1 | Source file maps to a known slug via different URL |
-| uncertain | 43 | Possible match, needs manual review |
+| uncertain | 48 | Possible match, needs manual review |
 | likely_deleted | 82 | No similar page found in Fern |
 | autogen | 401 | OpenAPI-generated endpoint (no MDX source) |
 | known_deleted | 98 | Section known to be not migrated |
-| no_source | 5 | No Docusaurus source file found |
-| **Total** | **829** | |
+| no_source | 6 | No Docusaurus source file found |
+| **Total** | **844** | |
 
 ## Slug changed
 
@@ -19,7 +19,16 @@ Pages that exist in Fern but with a different URL.
 
 | Old URL | Fern file | Current slug | New slug | Confidence |
 |---------|-----------|--------------|----------|------------|
-| `/call-flow-builder/version` | `call-flow-builder/pages/core/version.mdx` | `` | `/guides/version` | 0.984 |
+| `/call-flow-builder/ai-agent` | `call-flow-builder/pages/nodes/ai_agent.mdx` | `/call-flow-builder/nodes/ai-agent` | `/reference/ai-agent` | 0.788 |
+| `/call-flow-builder/answer-call` | `call-flow-builder/pages/nodes/answer_call.mdx` | `/call-flow-builder/nodes/answer-call` | `/reference/answer-call` | 0.939 |
+| `/call-flow-builder/execute-swml` | `call-flow-builder/pages/nodes/execute_swml.mdx` | `/call-flow-builder/nodes/execute-swml` | `/reference/execute-swml` | 0.846 |
+| `/call-flow-builder/handle-call` | `call-flow-builder/pages/nodes/handle_call.mdx` | `/call-flow-builder/nodes/handle-call` | `/reference/handle-call` | 0.983 |
+| `/call-flow-builder/request` | `call-flow-builder/pages/nodes/request.mdx` | `/call-flow-builder/nodes/request` | `/reference/request` | 0.781 |
+| `/call-flow-builder/set-variables` | `call-flow-builder/pages/nodes/set_variables.mdx` | `/call-flow-builder/nodes/set-variables` | `/reference/set-variables` | 0.822 |
+| `/call-flow-builder/start-call-recording` | `call-flow-builder/pages/nodes/start_call_recording.mdx` | `/call-flow-builder/nodes/start-call-recording` | `/reference/start-call-recording` | 0.761 |
+| `/call-flow-builder/stop-call-recording` | `call-flow-builder/pages/nodes/stop_call_recording.mdx` | `/call-flow-builder/nodes/stop-call-recording` | `/reference/stop-call-recording` | 0.846 |
+| `/call-flow-builder/unset-variables` | `call-flow-builder/pages/nodes/unset_variables.mdx` | `/call-flow-builder/nodes/unset-variables` | `/reference/unset-variables` | 0.819 |
+| `/call-flow-builder/voicemail-recording` | `call-flow-builder/pages/nodes/voicemail_recording.mdx` | `/call-flow-builder/nodes/voicemail-recording` | `/reference/voicemail-recording` | 0.826 |
 | `/compatibility-api/api-reference/rest-client-sdks/methods` | `compatibility-api\pages\sdks\methods\overview.mdx` | `sdks/methods` | -- | 1.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers` | `compatibility-api\pages\sdks\methods\available-phone-numbers\index.mdx` | `sdks/methods/available-phone-numbers` | -- | 1.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/list-resources` | `compatibility-api\pages\sdks\methods\available-phone-numbers\list-resources.mdx` | `sdks/methods/available-phone-numbers/list-resources` | -- | 1.000 |
@@ -137,8 +146,8 @@ Pages that exist in Fern but with a different URL.
 | `/sdks/browser-sdk/signalwire-client/utils` | `browser-sdk/pages/latest/reference/signalwire-client/utils.mdx` | `/reference/signalwire-client/utils` | `/reference/signalwire-client/utils` | 0.996 |
 | `/sdks/browser-sdk/technical-reference` | `browser-sdk/pages/latest/reference/index.mdx` | `/reference` | `/reference` | 0.730 |
 | `/sdks/browser-sdk/v2/call` | `browser-sdk/pages/v2/reference/call/index.mdx` | `` | `/reference/call` | 1.000 |
-| `/sdks/browser-sdk/v2/client` | `browser-sdk/pages/v2/reference/relay-client.mdx` | `` | `/reference/relay-client` | 0.900 |
-| `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `browser-sdk/pages/v2/reference/v2-vs-v3.mdx` | `` | `/reference/v2-vs-v3` | 0.998 |
+| `/sdks/browser-sdk/v2/client` | `browser-sdk/pages/v2/reference/relay-client.mdx` | `/reference/relay-client` | `/reference/relay-client` | 0.900 |
+| `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `browser-sdk/pages/v2/reference/v2-vs-v3.mdx` | `/reference/v2-vs-v3` | `/reference/v2-vs-v3` | 0.998 |
 | `/sdks/browser-sdk/v2/notification` | `browser-sdk/pages/v2/reference/notification/index.mdx` | `` | `/reference/notification` | 1.000 |
 | `/sdks/browser-sdk/video/local-overlay` | `browser-sdk/pages/latest/reference/video/video-localoverlay.mdx` | `/reference/video/local-overlay` | `/reference/video/local-overlay` | 0.758 |
 | `/sdks/browser-sdk/video/room-device` | `browser-sdk/pages/latest/reference/video/video-roomdevice.mdx` | `/reference/video/room-device` | `/reference/video/room-device` | 0.945 |
@@ -223,6 +232,11 @@ Pages that exist in Fern but with a different URL.
 
 | Old URL | Fern file | Current slug | New slug | Confidence |
 |---------|-----------|--------------|----------|------------|
+| `/call-flow-builder/conditions` | `call-flow-builder/pages/nodes/conditions.mdx` | `/call-flow-builder/nodes/conditions` | `/reference/conditions` | 0.544 |
+| `/call-flow-builder/forward-to-phone` | `call-flow-builder/pages/nodes/forward_to_phone.mdx` | `/call-flow-builder/nodes/forward-to-phone` | `/reference/forward-to-phone` | 0.698 |
+| `/call-flow-builder/gather-input` | `call-flow-builder/pages/nodes/gather_input.mdx` | `/call-flow-builder/nodes/gather-input` | `/reference/gather-input` | 0.625 |
+| `/call-flow-builder/hangup-call` | `call-flow-builder/pages/nodes/hangup_call.mdx` | `/call-flow-builder/nodes/hangup-call` | `/reference/hangup-call` | 0.663 |
+| `/call-flow-builder/play-audio-or-tts` | `call-flow-builder/pages/nodes/play_audio_or_tts.mdx` | `/call-flow-builder/nodes/play-audio-or-tts` | `/reference/play-audio-or-tts` | 0.454 |
 | `/chat/getting-started` | `platform/pages/calling/video/get-started/index.mdx` | `/video/getting-started` | `/video/getting-started` | 0.350 |
 | `/chat/guides` | `realtime-sdk/pages/v2/guides/index.mdx` | `guides` | `/guides` | 0.357 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free` | `compatibility-api/pages/sdks/methods/available-phone-numbers/toll-free.mdx` | `sdks/methods/available-phone-numbers/find-toll-free` | `/sdks/reference/available-phone-numbers/find-toll-free` | 0.685 |
@@ -406,8 +420,9 @@ These sections were not migrated to Fern.
 - `/compatibility-api/guides/messaging/general/how-to-send-sms-from-google-sheets`
 - ... and 78 more
 
-## No source file found (5 pages)
+## No source file found (6 pages)
 
+- `/call-flow-builder/send-sms` -- No source file found in main/call-flow-builder docs dir
 - `/swml/guides/ai/background-audio` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/params/hold-music` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/params/interrupt-prompt` -- No source file found in main/swml docs dir
@@ -416,4 +431,4 @@ These sections were not migrated to Fern.
 
 ## Output files
 
-- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-matches.csv` -- full results (829 rows)
+- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-matches.csv` -- full results (844 rows)

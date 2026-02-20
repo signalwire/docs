@@ -17,6 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from utils import (
+    clean_slug,
     normalize_slug as normalize,
     segments,
     extract_version,
@@ -264,7 +265,7 @@ def main():
     with open(input_csv, newline="") as f:
         for row in csv.DictReader(f):
             product = row["product"]
-            slug = normalize(row["slug"])
+            slug = clean_slug(row["slug"])       # preserve underscores for current state
             fp = row["file_path"]
 
             # Strip redundant product prefix from raw frontmatter slug
@@ -274,7 +275,8 @@ def main():
                 slug = "/"
 
             handler = HANDLERS.get(product)
-            new_slug = normalize(handler(slug, fp)) if handler else slug
+            # Handlers receive clean slug; new_slug gets normalized (underscores→dashes)
+            new_slug = normalize(handler(slug, fp)) if handler else normalize(slug)
 
             row["slug"] = slug
             row["new_slug"] = new_slug
