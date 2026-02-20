@@ -13,7 +13,8 @@ from pathlib import Path
 import frontmatter
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PRODUCTS_DIR = SCRIPT_DIR.parent / "fern" / "products"
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
+PRODUCTS_DIR = PROJECT_ROOT / "fern" / "products"
 
 
 def main():

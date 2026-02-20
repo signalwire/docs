@@ -4,10 +4,11 @@
 
 set -euo pipefail
 
-FERN_DIR="$(cd "$(dirname "$0")/../fern" && pwd)"
+FERN_DIR="$(cd "$(dirname "$0")/../../fern" && pwd)"
+REPORTS_DIR="$(cd "$(dirname "$0")" && pwd)/reports"
 PRODUCTS_DIR="$FERN_DIR/products"
 DOCS_YML="$FERN_DIR/docs.yml"
-OUTPUT="${1:-frontmatter-export.csv}"
+OUTPUT="${1:-$REPORTS_DIR/frontmatter-export.csv}"
 
 # Build associative array: directory name → product slug from docs.yml
 declare -A DIR_TO_SLUG

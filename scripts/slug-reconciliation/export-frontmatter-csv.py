@@ -14,7 +14,9 @@ from pathlib import Path
 import frontmatter
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-FERN_DIR = SCRIPT_DIR.parent / "fern"
+PROJECT_ROOT = SCRIPT_DIR.parent.parent
+REPORTS_DIR = SCRIPT_DIR / "reports"
+FERN_DIR = PROJECT_ROOT / "fern"
 PRODUCTS_DIR = FERN_DIR / "products"
 DOCS_YML = FERN_DIR / "docs.yml"
 
@@ -41,7 +43,7 @@ def build_dir_to_slug():
 
 
 def main():
-    output_csv = sys.argv[1] if len(sys.argv) > 1 else "frontmatter-export.csv"
+    output_csv = sys.argv[1] if len(sys.argv) > 1 else str(REPORTS_DIR / "frontmatter-export.csv")
     dir_to_slug = build_dir_to_slug()
 
     rows = []

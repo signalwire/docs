@@ -13,6 +13,10 @@ Conventions:
 import csv
 import sys
 from collections import defaultdict
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPORTS_DIR = SCRIPT_DIR / "reports"
 
 
 # ---------------------------------------------------------------------------
@@ -290,8 +294,8 @@ def resolve_collisions(rows):
 # ---------------------------------------------------------------------------
 
 def main():
-    input_csv = sys.argv[1] if len(sys.argv) > 1 else "frontmatter-export.csv"
-    output_csv = sys.argv[2] if len(sys.argv) > 2 else "slug-proposals.csv"
+    input_csv = sys.argv[1] if len(sys.argv) > 1 else str(REPORTS_DIR / "frontmatter-export.csv")
+    output_csv = sys.argv[2] if len(sys.argv) > 2 else str(REPORTS_DIR / "slug-proposals.csv")
 
     rows = []
     with open(input_csv, newline="") as f:
