@@ -5,10 +5,10 @@
 | Metric | Count |
 |--------|-------|
 | Old sitemap URLs | 1489 |
-| Current Fern pages (CSV) | 1258 |
-| **Matched** | **670** |
-| **Unmatched** | **819** |
-| Match rate | 45.0% |
+| Current Fern pages (CSV) | 1320 |
+| **Matched** | **660** |
+| **Unmatched** | **829** |
+| Match rate | 44.3% |
 
 ## Unmatched by section
 
@@ -16,7 +16,7 @@
 |--------|-------|
 | `/rest` | 418 |
 | `/compatibility-api` | 196 |
-| `/sdks` | 113 |
+| `/sdks` | 123 |
 | `/platform` | 19 |
 | `/page` | 14 |
 | `/swml` | 13 |
@@ -57,7 +57,7 @@
 - `/call-flow-builder/conditions` -> [call-flow-builder] `/conditions` -> `/reference/conditions`
 - `/call-flow-builder/execute-swml` -> [call-flow-builder] `/execute-swml` -> `/reference/execute-swml`
 - `/call-flow-builder/forward-to-phone` -> [call-flow-builder] `/forward-to-phone` -> `/reference/forward-to-phone`
-- ... and 650 more
+- ... and 640 more
 
 ## Unmatched samples
 
@@ -91,9 +91,9 @@
 - `/compatibility-api/client-sdks/methods/calls/list`
 - `/compatibility-api/client-sdks/methods/calls/retrieve`
 - `/compatibility-api/client-sdks/methods/calls/update`
-- ... and 789 more
+- ... and 799 more
 
 ## Output files
 
 - `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation.csv` -- full reconciliation (1489 rows)
-- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation-unmatched.csv` -- unmatched only (819 rows)
+- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-reconciliation-unmatched.csv` -- unmatched only (829 rows)

@@ -62,7 +62,7 @@ def main():
         post = frontmatter.loads(text)
         meta = post.metadata
 
-        rel_path = str(mdx_path.relative_to(PRODUCTS_DIR))
+        rel_path = str(mdx_path.relative_to(PRODUCTS_DIR)).replace("\\", "/")
         product_dir = rel_path.split("/")[0]
         product = dir_to_slug.get(product_dir, product_dir)
 

@@ -11,25 +11,26 @@ Unified report merging reconciliation and content-matching results.
 
 | Action | Count | Description |
 |--------|-------|-------------|
-| **redirect** | 856 | Old URL -> proposed Fern URL (needs 301 redirect) |
-| **review** | 42 | Possible match, needs manual verification |
-| **gone** | 581 | Content removed or auto-generated (410/404) |
-| **no_action** | 10 | URL unchanged or already covered |
+| **redirect** | 849 | Old URL -> proposed Fern URL (needs 301 redirect) |
+| **review** | 45 | Possible match, needs manual verification |
+| **gone** | 584 | Content removed or auto-generated (410/404) |
+| **no_action** | 11 | URL unchanged or already covered |
 | **Total** | **1489** | |
 
 ### By category
 
 | Category | Count |
 |----------|-------|
-| matched_changed | 660 |
+| matched_changed | 650 |
 | autogen | 401 |
-| slug_changed | 196 |
+| slug_changed | 199 |
 | known_deleted | 98 |
-| likely_deleted | 82 |
-| uncertain | 42 |
+| likely_deleted | 85 |
+| uncertain | 45 |
 | matched_same | 10 |
+| already_mapped | 1 |
 
-## Redirects (856)
+## Redirects (849)
 
 These old URLs need 301 redirects to their proposed locations.
 
@@ -154,26 +155,26 @@ These old URLs need 301 redirects to their proposed locations.
 | `/compatibility-api/client-sdks/methods/recordings/list` | `/compatibility-api/sdks/methods/recordings/list` | `/compatibility-api/sdks/methods/recordings/list` | slug_changed | 1.000 |
 | `/compatibility-api/client-sdks/methods/recordings/retrieve` | `/compatibility-api/sdks/methods/recordings/retrieve` | `/compatibility-api/sdks/methods/recordings/retrieve` | slug_changed | 1.000 |
 | `/compatibility-api/client-sdks/methods/recordings/update` | `/compatibility-api/sdks/methods/recordings/update` | `/compatibility-api/sdks/methods/recordings/update` | slug_changed | 1.000 |
-| `/compatibility-api/cxml/fax/reject` | `/compatibility-api/cxml/fax/reject` | `/compatibility-api/reference/cxml/fax/reject` | slug_changed | 0.904 |
-| `/compatibility-api/cxml/messaging/redirect` | `/compatibility-api/cxml/messaging/redirect` | `/compatibility-api/reference/cxml/messaging/redirect` | slug_changed | 0.858 |
-| `/compatibility-api/cxml/voice/connect` | `/compatibility-api/cxml/voice/connect` | `/compatibility-api/reference/cxml/voice/connect` | slug_changed | 0.878 |
-| `/compatibility-api/cxml/voice/denoise` | `/compatibility-api/cxml/voice/denoise` | `/compatibility-api/reference/cxml/voice/denoise` | slug_changed | 0.987 |
-| `/compatibility-api/cxml/voice/gather` | `/compatibility-api/cxml/voice/gather` | `/compatibility-api/reference/cxml/voice/gather` | slug_changed | 0.740 |
-| `/compatibility-api/cxml/voice/hangup` | `/compatibility-api/cxml/voice/hangup` | `/compatibility-api/reference/cxml/voice/hangup` | slug_changed | 0.953 |
-| `/compatibility-api/cxml/voice/leave` | `/compatibility-api/cxml/voice/leave` | `/compatibility-api/reference/cxml/voice/leave` | slug_changed | 0.957 |
-| `/compatibility-api/cxml/voice/pause` | `/compatibility-api/cxml/voice/pause` | `/compatibility-api/reference/cxml/voice/pause` | slug_changed | 0.906 |
-| `/compatibility-api/cxml/voice/pay/parameter` | `/compatibility-api/cxml/voice/pay/parameter` | `/compatibility-api/reference/cxml/voice/pay/parameter` | slug_changed | 0.986 |
-| `/compatibility-api/cxml/voice/pay/prompt` | `/compatibility-api/cxml/voice/pay/prompt` | `/compatibility-api/reference/cxml/voice/pay/prompt` | slug_changed | 0.776 |
-| `/compatibility-api/cxml/voice/play` | `/compatibility-api/cxml/voice/play` | `/compatibility-api/reference/cxml/voice/play` | slug_changed | 0.804 |
-| `/compatibility-api/cxml/voice/queue-noun` | `/compatibility-api/cxml/voice/queue` | `/compatibility-api/reference/cxml/voice/queue` | slug_changed | 0.770 |
-| `/compatibility-api/cxml/voice/redirect` | `/compatibility-api/cxml/voice/redirect` | `/compatibility-api/reference/cxml/voice/redirect` | slug_changed | 0.913 |
-| `/compatibility-api/cxml/voice/refer` | `/compatibility-api/cxml/voice/refer` | `/compatibility-api/reference/cxml/voice/refer` | slug_changed | 0.745 |
-| `/compatibility-api/cxml/voice/reject` | `/compatibility-api/cxml/voice/reject` | `/compatibility-api/reference/cxml/voice/reject` | slug_changed | 0.829 |
-| `/compatibility-api/cxml/voice/room-noun` | `/compatibility-api/cxml/voice/room` | `/compatibility-api/reference/cxml/voice/room` | slug_changed | 0.886 |
-| `/compatibility-api/cxml/voice/say` | `/compatibility-api/cxml/voice/say` | `/compatibility-api/reference/cxml/voice/say` | slug_changed | 0.729 |
-| `/compatibility-api/cxml/voice/stream` | `/compatibility-api/cxml/voice/stream` | `/compatibility-api/reference/cxml/voice/stream` | slug_changed | 0.859 |
-| `/compatibility-api/cxml/voice/verto-noun` | `/compatibility-api/cxml/voice/verto` | `/compatibility-api/reference/cxml/voice/verto` | slug_changed | 0.992 |
-| `/compatibility-api/cxml/voice/virtualagent-noun` | `/compatibility-api/cxml/voice/virtualagent` | `/compatibility-api/reference/cxml/voice/virtualagent` | slug_changed | 0.802 |
+| `/compatibility-api/cxml/fax/reject` | `/compatibility-api/cxml/fax/reject` | `/compatibility-api/cxml/reference/fax/reject` | slug_changed | 0.904 |
+| `/compatibility-api/cxml/messaging/redirect` | `/compatibility-api/cxml/messaging/redirect` | `/compatibility-api/cxml/reference/messaging/redirect` | slug_changed | 0.858 |
+| `/compatibility-api/cxml/voice/connect` | `/compatibility-api/cxml/voice/connect` | `/compatibility-api/cxml/reference/voice/connect` | slug_changed | 0.878 |
+| `/compatibility-api/cxml/voice/denoise` | `/compatibility-api/cxml/voice/denoise` | `/compatibility-api/cxml/reference/voice/denoise` | slug_changed | 0.987 |
+| `/compatibility-api/cxml/voice/gather` | `/compatibility-api/cxml/voice/gather` | `/compatibility-api/cxml/reference/voice/gather` | slug_changed | 0.740 |
+| `/compatibility-api/cxml/voice/hangup` | `/compatibility-api/cxml/voice/hangup` | `/compatibility-api/cxml/reference/voice/hangup` | slug_changed | 0.953 |
+| `/compatibility-api/cxml/voice/leave` | `/compatibility-api/cxml/voice/leave` | `/compatibility-api/cxml/reference/voice/leave` | slug_changed | 0.957 |
+| `/compatibility-api/cxml/voice/pause` | `/compatibility-api/cxml/voice/pause` | `/compatibility-api/cxml/reference/voice/pause` | slug_changed | 0.906 |
+| `/compatibility-api/cxml/voice/pay/parameter` | `/compatibility-api/cxml/voice/pay/parameter` | `/compatibility-api/cxml/reference/voice/pay/parameter` | slug_changed | 0.986 |
+| `/compatibility-api/cxml/voice/pay/prompt` | `/compatibility-api/cxml/voice/pay/prompt` | `/compatibility-api/cxml/reference/voice/pay/prompt` | slug_changed | 0.776 |
+| `/compatibility-api/cxml/voice/play` | `/compatibility-api/cxml/voice/play` | `/compatibility-api/cxml/reference/voice/play` | slug_changed | 0.804 |
+| `/compatibility-api/cxml/voice/queue-noun` | `/compatibility-api/cxml/voice/queue` | `/compatibility-api/cxml/reference/voice/queue` | slug_changed | 0.770 |
+| `/compatibility-api/cxml/voice/redirect` | `/compatibility-api/cxml/voice/redirect` | `/compatibility-api/cxml/reference/voice/redirect` | slug_changed | 0.913 |
+| `/compatibility-api/cxml/voice/refer` | `/compatibility-api/cxml/voice/refer` | `/compatibility-api/cxml/reference/voice/refer` | slug_changed | 0.745 |
+| `/compatibility-api/cxml/voice/reject` | `/compatibility-api/cxml/voice/reject` | `/compatibility-api/cxml/reference/voice/reject` | slug_changed | 0.829 |
+| `/compatibility-api/cxml/voice/room-noun` | `/compatibility-api/cxml/voice/room` | `/compatibility-api/cxml/reference/voice/room` | slug_changed | 0.886 |
+| `/compatibility-api/cxml/voice/say` | `/compatibility-api/cxml/voice/say` | `/compatibility-api/cxml/reference/voice/say` | slug_changed | 0.729 |
+| `/compatibility-api/cxml/voice/stream` | `/compatibility-api/cxml/voice/stream` | `/compatibility-api/cxml/reference/voice/stream` | slug_changed | 0.859 |
+| `/compatibility-api/cxml/voice/verto-noun` | `/compatibility-api/cxml/voice/verto` | `/compatibility-api/cxml/reference/voice/verto` | slug_changed | 0.992 |
+| `/compatibility-api/cxml/voice/virtualagent-noun` | `/compatibility-api/cxml/voice/virtualagent` | `/compatibility-api/cxml/reference/voice/virtualagent` | slug_changed | 0.802 |
 | `/compatibility-api/sdks` | `/compatibility-api/sdks` | `/compatibility-api/sdks` | slug_changed | 1.000 |
 | `/fax` | `/platform/fax` | `/platform/fax` | matched_changed | 1.000 |
 | `/fax/getting-started/common-fax-errors` | `/platform/fax/getting-started/common-fax-errors` | `/platform/fax/common-fax-errors` | matched_changed | 1.000 |
@@ -181,7 +182,7 @@ These old URLs need 301 redirects to their proposed locations.
 | `/fax/getting-started/fax-with-retries` | `/platform/fax/getting-started/fax-with-retries` | `/platform/fax/fax-with-retries` | matched_changed | 1.000 |
 | `/fax/getting-started/filter-faxes-by-number-status-and-date` | `/platform/fax/getting-started/filter-faxes-by-number-status-and-date` | `/platform/fax/filter-faxes-by-number-status-and-date` | matched_changed | 1.000 |
 | `/fax/getting-started/list-faxes-to-csv-in-all-languages` | `/platform/fax/getting-started/list-faxes-to-csv-in-all-languages` | `/platform/fax/list-faxes-to-csv-in-all-languages` | matched_changed | 1.000 |
-| `/guides` | `/realtime-sdk/guides` | `/realtime-sdk/guides` | matched_changed | 1.000 |
+| `/guides` | `/browser-sdk/guides` | `/browser-sdk/guides` | matched_changed | 1.000 |
 | `/messaging` | `/platform/messaging` | `/platform/messaging` | matched_changed | 1.000 |
 | `/messaging/faq` | `/platform/messaging/faq` | `/platform/messaging/messaging-faq` | matched_changed | 1.000 |
 | `/messaging/get-started/campaign-registry` | `/platform/messaging/get-started/campaign-registry` | `/platform/messaging/campaign-registry` | matched_changed | 1.000 |
@@ -274,7 +275,7 @@ These old URLs need 301 redirects to their proposed locations.
 | `/platform/phone-numbers/guides/porting-out-of-signalwire` | `/platform/phone-numbers/guides/porting-out-of-signalwire` | `/platform/phone-numbers/porting-out-of-signalwire` | matched_changed | 1.000 |
 | `/platform/phone-numbers/guides/releasing-dids` | `/platform/phone-numbers/guides/releasing-dids` | `/platform/phone-numbers/releasing-dids` | matched_changed | 1.000 |
 | `/platform/phone-numbers/guides/transferring-dids` | `/platform/phone-numbers/guides/transferring-dids` | `/platform/phone-numbers/transferring-dids` | matched_changed | 1.000 |
-| `/sdks` | `/compatibility-api/sdks` | `/compatibility-api/reference/sdks` | matched_changed | 1.000 |
+| `/sdks` | `/compatibility-api/sdks` | `/compatibility-api/sdks` | matched_changed | 1.000 |
 | `/sdks/agents-sdk` | `/agents-sdk` | `/agents-sdk` | matched_changed | 1.000 |
 | `/sdks/agents-sdk/advanced/call-recording` | `/agents-sdk/advanced/call-recording` | `/agents-sdk/guides/call-recording` | matched_changed | 1.000 |
 | `/sdks/agents-sdk/advanced/call-transfer` | `/agents-sdk/advanced/call-transfer` | `/agents-sdk/guides/call-transfer` | matched_changed | 1.000 |
@@ -346,60 +347,54 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/agents-sdk/swaig-functions/parameters` | `/agents-sdk/swaig-functions/parameters` | `/agents-sdk/guides/parameters` | matched_changed | 1.000 |
 | `/sdks/agents-sdk/swaig-functions/results-actions` | `/agents-sdk/swaig-functions/results-actions` | `/agents-sdk/guides/results-actions` | matched_changed | 1.000 |
 | `/sdks/browser-sdk/chat` | `/browser-sdk/reference/chat` | `/browser-sdk/reference/chat` | slug_changed | 0.951 |
-| `/sdks/browser-sdk/chat/member` | `/browser-sdk/reference/chat/chat-chatmember` | `/browser-sdk/reference/chat/chat-chatmember` | slug_changed | 0.900 |
-| `/sdks/browser-sdk/chat/message` | `/browser-sdk/reference/chat/chat-chatmessage` | `/browser-sdk/reference/chat/chat-chatmessage` | slug_changed | 0.845 |
+| `/sdks/browser-sdk/chat/member` | `/browser-sdk/reference/chat/chat-member` | `/browser-sdk/reference/chat/chat-member` | slug_changed | 0.900 |
+| `/sdks/browser-sdk/chat/message` | `/browser-sdk/reference/chat/chat-message` | `/browser-sdk/reference/chat/chat-message` | slug_changed | 0.836 |
 | `/sdks/browser-sdk/guides` | `/browser-sdk/guides` | `/browser-sdk/guides` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/guides/video/get-thumbnails-for-your-video-calls` | `/browser-sdk/guides/video/get-thumbnails-for-your-video-calls` | `/browser-sdk/guides/get-thumbnails-for-your-video-calls` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/guides/video/highlighting-whos-speaking` | `/browser-sdk/guides/video/highlighting-whos-speaking` | `/browser-sdk/guides/highlighting-whos-speaking` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/guides/video/interactive-live-streaming` | `/browser-sdk/guides/video/interactive-live-streaming` | `/browser-sdk/guides/interactive-live-streaming` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/guides/video/recording-video` | `/browser-sdk/guides/video/recording-video` | `/browser-sdk/guides/recording-video` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/guides/video/sharing-your-screen` | `/browser-sdk/guides/video/sharing-your-screen-with-the-signalwire-video-sdk` | `/browser-sdk/guides/sharing-your-screen-with-the-signalwire-video-sdk` | slug_changed | 0.775 |
-| `/sdks/browser-sdk/guides/video/streaming-to-youtube-and-other-platforms` | `/browser-sdk/guides/video/streaming-to-youtube-and-other-platforms` | `/browser-sdk/guides/streaming-to-youtube-and-other-platforms` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/guides/video/switch-webcam-or-microphone` | `/browser-sdk/guides/video/switch-webcam-or-microphone-with-signalwire-video-api` | `/browser-sdk/guides/switch-webcam-or-microphone-with-signalwire-video-api` | slug_changed | 0.900 |
-| `/sdks/browser-sdk/guides/video/video-overlays` | `/browser-sdk/guides/video/video-overlays` | `/browser-sdk/guides/video-overlays` | matched_changed | 1.000 |
+| `/sdks/browser-sdk/guides/video/get-thumbnails-for-your-video-calls` | `/browser-sdk/guides/display-call-thumbnails` | `/browser-sdk/guides/display-call-thumbnails` | matched_changed | 1.000 |
+| `/sdks/browser-sdk/guides/video/interactive-live-streaming` | `/browser-sdk/guides/interactive-live-streaming` | `/browser-sdk/guides/interactive-live-streaming` | matched_changed | 1.000 |
+| `/sdks/browser-sdk/guides/video/recording-video` | `/browser-sdk/guides/record-calls` | `/browser-sdk/guides/record-calls` | matched_changed | 1.000 |
+| `/sdks/browser-sdk/guides/video/streaming-to-youtube-and-other-platforms` | `/browser-sdk/guides/stream-to-youtube-and-other-platforms` | `/browser-sdk/guides/stream-to-youtube-and-other-platforms` | matched_changed | 1.000 |
+| `/sdks/browser-sdk/guides/video/switch-webcam-or-microphone` | `/browser-sdk/guides/switch-devices-during-calls` | `/browser-sdk/guides/switch-devices-during-calls` | slug_changed | 0.882 |
 | `/sdks/browser-sdk/pubsub` | `/browser-sdk/reference/pubsub` | `/browser-sdk/reference/pubsub` | slug_changed | 0.962 |
-| `/sdks/browser-sdk/pubsub/message` | `/browser-sdk/pubsub/message` | `/browser-sdk/reference/pubsub/message` | matched_changed | 1.000 |
+| `/sdks/browser-sdk/pubsub/message` | `/browser-sdk/reference/pubsub/pubsub-message` | `/browser-sdk/reference/pubsub/pubsub-message` | slug_changed | 0.900 |
 | `/sdks/browser-sdk/signalwire-client` | `/browser-sdk/reference/signalwire-client` | `/browser-sdk/reference/signalwire-client` | slug_changed | 0.951 |
-| `/sdks/browser-sdk/signalwire-client/client` | `/browser-sdk/reference/signalwire-client/client` | `/browser-sdk/reference/signalwire-client/client` | slug_changed | 0.987 |
 | `/sdks/browser-sdk/signalwire-client/client/address` | `/browser-sdk/reference/signalwire-client/client/address` | `/browser-sdk/reference/signalwire-client/client/address` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/client/chat` | `/browser-sdk/reference/signalwire-client/client/chat` | `/browser-sdk/reference/signalwire-client/client/chat` | slug_changed | 0.999 |
 | `/sdks/browser-sdk/signalwire-client/client/conversation` | `/browser-sdk/reference/signalwire-client/client/conversation` | `/browser-sdk/reference/signalwire-client/client/conversation` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/notifications` | `/browser-sdk/reference/signalwire-client/notifications` | `/browser-sdk/reference/signalwire-client/notifications` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/utils` | `/browser-sdk/reference/signalwire-client/utils` | `/browser-sdk/reference/signalwire-client/utils` | slug_changed | 0.996 |
-| `/sdks/browser-sdk/technical-reference` | `/browser-sdk/reference` | `/browser-sdk/reference` | slug_changed | 0.729 |
+| `/sdks/browser-sdk/technical-reference` | `/browser-sdk/reference` | `/browser-sdk/reference` | slug_changed | 0.730 |
 | `/sdks/browser-sdk/v2` | `/browser-sdk/v2` | `/browser-sdk/v2` | matched_changed | 1.000 |
 | `/sdks/browser-sdk/v2/call` | `/browser-sdk/v2/reference/call` | `/browser-sdk/v2/reference/call` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/v2/client` | `/browser-sdk/v2/reference/relay-client` | `/browser-sdk/v2/reference/relay-client` | slug_changed | 0.900 |
-| `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `/browser-sdk/v2/reference/v2-vs-v3` | `/browser-sdk/v2/reference/v2-vs-v3` | slug_changed | 0.999 |
+| `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `/browser-sdk/v2/reference/v2-vs-v3` | `/browser-sdk/v2/reference/v2-vs-v3` | slug_changed | 0.998 |
 | `/sdks/browser-sdk/v2/notification` | `/browser-sdk/v2/reference/notification` | `/browser-sdk/v2/reference/notification` | slug_changed | 1.000 |
-| `/sdks/browser-sdk/video/local-overlay` | `/browser-sdk/video/local-overlay` | `/browser-sdk/reference/video/local-overlay` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/video/room-device` | `/browser-sdk/video/room-device` | `/browser-sdk/reference/video/room-device` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/video/room-screenshare` | `/browser-sdk/video/room-screenshare` | `/browser-sdk/reference/video/room-screenshare` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/video/room-session-device` | `/browser-sdk/video/room-session-device` | `/browser-sdk/reference/video/room-session-device` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/video/room-session-playback` | `/browser-sdk/video/room-session-playback` | `/browser-sdk/reference/video/room-session-playback` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/video/room-session-recording` | `/browser-sdk/video/room-session-recording` | `/browser-sdk/reference/video/room-session-recording` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/video/room-session-screenshare` | `/browser-sdk/video/room-session-screenshare` | `/browser-sdk/reference/video/room-session-screenshare` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/webrtc` | `/browser-sdk/reference/webrtc` | `/browser-sdk/reference/webrtc` | slug_changed | 0.891 |
+| `/sdks/browser-sdk/video/local-overlay` | `/browser-sdk/reference/video/local-overlay` | `/browser-sdk/reference/video/local-overlay` | slug_changed | 0.758 |
+| `/sdks/browser-sdk/video/room-device` | `/browser-sdk/reference/video/room-device` | `/browser-sdk/reference/video/room-device` | slug_changed | 0.945 |
+| `/sdks/browser-sdk/video/room-screenshare` | `/browser-sdk/reference/video/room-screen-share` | `/browser-sdk/reference/video/room-screen-share` | slug_changed | 0.959 |
+| `/sdks/browser-sdk/video/room-session-device` | `/browser-sdk/reference/video/room-device` | `/browser-sdk/reference/video/room-device` | slug_changed | 0.885 |
+| `/sdks/browser-sdk/video/room-session-playback` | `/browser-sdk/reference/video/room-session-playback` | `/browser-sdk/reference/video/room-session-playback` | slug_changed | 0.716 |
+| `/sdks/browser-sdk/video/room-session-screenshare` | `/browser-sdk/reference/video/room-screen-share` | `/browser-sdk/reference/video/room-screen-share` | slug_changed | 0.918 |
 | `/sdks/realtime-sdk` | `/realtime-sdk` | `/realtime-sdk` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/chat` | `/realtime-sdk/reference/chat` | `/realtime-sdk/reference/chat` | slug_changed | 0.805 |
-| `/sdks/realtime-sdk/chat/chat-member` | `/realtime-sdk/reference/chat/chatmember` | `/realtime-sdk/reference/chat/chatmember` | slug_changed | 0.937 |
-| `/sdks/realtime-sdk/chat/chat-message` | `/realtime-sdk/reference/chat/chatmessage` | `/realtime-sdk/reference/chat/chatmessage` | slug_changed | 0.925 |
+| `/sdks/realtime-sdk/chat/chat-member` | `/realtime-sdk/reference/chat/chat-member` | `/realtime-sdk/reference/chat/chat-member` | slug_changed | 0.937 |
+| `/sdks/realtime-sdk/chat/chat-message` | `/realtime-sdk/reference/chat/chat-message` | `/realtime-sdk/reference/chat/chat-message` | slug_changed | 0.925 |
 | `/sdks/realtime-sdk/chat/client` | `/realtime-sdk/reference/chat/client` | `/realtime-sdk/reference/chat-client [COLLISION]` | slug_changed | 0.788 |
 | `/sdks/realtime-sdk/guides` | `/realtime-sdk/guides` | `/realtime-sdk/guides` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/messaging/forwarding-texts-to-email` | `/realtime-sdk/guides/messaging/forwarding-texts-to-email-nodejs` | `/realtime-sdk/guides/forwarding-texts-to-email-nodejs` | slug_changed | 0.881 |
-| `/sdks/realtime-sdk/guides/messaging/send-sms-from-the-browser` | `/realtime-sdk/guides/messaging/send-sms-from-the-browser-using-node-js` | `/realtime-sdk/guides/send-sms-from-the-browser-using-node-js` | slug_changed | 0.887 |
-| `/sdks/realtime-sdk/guides/voice/first-steps-with-voice` | `/realtime-sdk/guides/voice/first-steps-with-voice` | `/realtime-sdk/guides/first-steps-with-voice` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/voice/setting-up-voicemail` | `/realtime-sdk/guides/voice/setting-up-voicemail` | `/realtime-sdk/guides/setting-up-voicemail` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/voice/stop-robocalls` | `/realtime-sdk/guides/voice/stop-robocalls-with-signalwires-communication-api` | `/realtime-sdk/guides/stop-robocalls-with-signalwires-communication-api` | slug_changed | 0.896 |
-| `/sdks/realtime-sdk/guides/voice/weather-phone` | `/realtime-sdk/guides/voice/weather-phone-with-signalwire-realtime-api` | `/realtime-sdk/guides/weather-phone-with-signalwire-realtime-api` | slug_changed | 0.898 |
-| `/sdks/realtime-sdk/messaging` | `/realtime-sdk/reference/messaging` | `/realtime-sdk/reference/messaging` | slug_changed | 0.792 |
-| `/sdks/realtime-sdk/messaging/client` | `/realtime-sdk/reference/messaging/client` | `/realtime-sdk/reference/messaging-client [COLLISION]` | slug_changed | 0.856 |
-| `/sdks/realtime-sdk/messaging/message-contract` | `/realtime-sdk/reference/messaging/messagecontract` | `/realtime-sdk/reference/messaging/messagecontract` | slug_changed | 0.908 |
-| `/sdks/realtime-sdk/messaging/messaging-sendresult` | `/realtime-sdk/reference/messaging/messagingsendresult` | `/realtime-sdk/reference/messaging/messagingsendresult` | slug_changed | 0.901 |
+| `/sdks/realtime-sdk/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | matched_changed | 1.000 |
+| `/sdks/realtime-sdk/guides/messaging/forwarding-texts-to-email` | `/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email-nodejs` | `/realtime-sdk/v3/guides/forwarding-texts-to-email-nodejs` | slug_changed | 0.793 |
+| `/sdks/realtime-sdk/guides/messaging/send-sms-from-the-browser` | `/realtime-sdk/v3/guides/messaging/send-sms-from-the-browser-using-node-js` | `/realtime-sdk/v3/guides/send-sms-from-the-browser-using-node-js` | slug_changed | 0.839 |
+| `/sdks/realtime-sdk/guides/voice/first-steps-with-voice` | `/realtime-sdk/v3/guides/voice/first-steps-with-voice` | `/realtime-sdk/v3/guides/first-steps-with-voice` | matched_changed | 1.000 |
+| `/sdks/realtime-sdk/guides/voice/setting-up-voicemail` | `/realtime-sdk/guides/make-a-voicemail-responder-with-the-realtime-sdk` | `/realtime-sdk/guides/make-a-voicemail-responder-with-the-realtime-sdk` | matched_changed | 1.000 |
+| `/sdks/realtime-sdk/guides/voice/stop-robocalls` | `/realtime-sdk/guides/filter-robocalls-to-lenny-with-the-realtime-sdk` | `/realtime-sdk/guides/filter-robocalls-to-lenny-with-the-realtime-sdk` | slug_changed | 0.896 |
+| `/sdks/realtime-sdk/guides/voice/weather-phone` | `/realtime-sdk/guides/make-a-weather-phone-ivr-with-the-realtime-sdk` | `/realtime-sdk/guides/make-a-weather-phone-ivr-with-the-realtime-sdk` | slug_changed | 0.898 |
+| `/sdks/realtime-sdk/messaging` | `/realtime-sdk/reference/messaging` | `/realtime-sdk/reference/messaging` | slug_changed | 0.769 |
+| `/sdks/realtime-sdk/messaging/client` | `/realtime-sdk/reference/messaging/client` | `/realtime-sdk/reference/messaging-client [COLLISION]` | slug_changed | 0.852 |
+| `/sdks/realtime-sdk/messaging/message-contract` | `/realtime-sdk/reference/messaging/message-contract` | `/realtime-sdk/reference/messaging/message-contract` | slug_changed | 0.908 |
+| `/sdks/realtime-sdk/messaging/messaging-sendresult` | `/realtime-sdk/reference/messaging/messaging-send-result` | `/realtime-sdk/reference/messaging/messaging-send-result` | slug_changed | 0.901 |
 | `/sdks/realtime-sdk/pubsub` | `/realtime-sdk/reference/pubsub` | `/realtime-sdk/reference/pubsub` | slug_changed | 0.786 |
 | `/sdks/realtime-sdk/pubsub/client` | `/realtime-sdk/reference/pubsub/client` | `/realtime-sdk/reference/pubsub-client [COLLISION]` | slug_changed | 0.790 |
-| `/sdks/realtime-sdk/pubsub/pubsubmessage` | `/realtime-sdk/reference/pubsub/pubsubmessage` | `/realtime-sdk/reference/pubsub/pubsubmessage` | slug_changed | 0.828 |
+| `/sdks/realtime-sdk/pubsub/pubsubmessage` | `/realtime-sdk/reference/pubsub/pubsub-message` | `/realtime-sdk/reference/pubsub/pubsub-message` | slug_changed | 0.828 |
 | `/sdks/realtime-sdk/task` | `/realtime-sdk/reference/task` | `/realtime-sdk/reference/task` | slug_changed | 0.862 |
 | `/sdks/realtime-sdk/task/client` | `/realtime-sdk/reference/task/client` | `/realtime-sdk/reference/task-client [COLLISION]` | slug_changed | 0.768 |
 | `/sdks/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | matched_changed | 1.000 |
@@ -683,8 +678,8 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/realtime-sdk/v3` | `/realtime-sdk/v3` | `/realtime-sdk/v3` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v3/chat` | `/realtime-sdk/v3/reference/chat` | `/realtime-sdk/v3/reference/chat` | slug_changed | 0.732 |
 | `/sdks/realtime-sdk/v3/chat/client` | `/realtime-sdk/v3/reference/chat/client` | `/realtime-sdk/v3/reference/chat-client [COLLISION]` | slug_changed | 0.840 |
-| `/sdks/realtime-sdk/v3/chat/member` | `/realtime-sdk/v3/reference/chat/chatmember` | `/realtime-sdk/v3/reference/chat/chatmember` | slug_changed | 0.900 |
-| `/sdks/realtime-sdk/v3/chat/message` | `/realtime-sdk/v3/reference/chat/chatmessage` | `/realtime-sdk/v3/reference/chat/chatmessage` | slug_changed | 0.900 |
+| `/sdks/realtime-sdk/v3/chat/member` | `/realtime-sdk/v3/reference/chat/chat-member` | `/realtime-sdk/v3/reference/chat/chat-member` | slug_changed | 0.900 |
+| `/sdks/realtime-sdk/v3/chat/message` | `/realtime-sdk/v3/reference/chat/chat-message` | `/realtime-sdk/v3/reference/chat/chat-message` | slug_changed | 0.900 |
 | `/sdks/realtime-sdk/v3/guides` | `/realtime-sdk/v3/guides` | `/realtime-sdk/v3/guides` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v3/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/v3/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/v3/guides/first-steps-with-messaging` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email` | `/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email-nodejs` | `/realtime-sdk/v3/guides/forwarding-texts-to-email-nodejs` | slug_changed | 0.842 |
@@ -695,50 +690,49 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/realtime-sdk/v3/guides/voice/weather-phone` | `/realtime-sdk/v3/guides/voice/weather-phone-with-signalwire-realtime-api` | `/realtime-sdk/v3/guides/weather-phone-with-signalwire-realtime-api` | slug_changed | 0.884 |
 | `/sdks/realtime-sdk/v3/messaging` | `/realtime-sdk/v3/reference/messaging` | `/realtime-sdk/v3/reference/messaging` | slug_changed | 0.795 |
 | `/sdks/realtime-sdk/v3/messaging/client` | `/realtime-sdk/v3/reference/messaging/client` | `/realtime-sdk/v3/reference/messaging-client [COLLISION]` | slug_changed | 0.822 |
-| `/sdks/realtime-sdk/v3/messaging/message-contract` | `/realtime-sdk/v3/reference/messaging/messagecontract` | `/realtime-sdk/v3/reference/messaging/messagecontract` | slug_changed | 0.946 |
-| `/sdks/realtime-sdk/v3/messaging/messaging-sendresult` | `/realtime-sdk/v3/reference/messaging/messagingsendresult` | `/realtime-sdk/v3/reference/messaging/messagingsendresult` | slug_changed | 0.963 |
+| `/sdks/realtime-sdk/v3/messaging/message-contract` | `/realtime-sdk/v3/reference/messaging/message-contract` | `/realtime-sdk/v3/reference/messaging/message-contract` | slug_changed | 0.946 |
+| `/sdks/realtime-sdk/v3/messaging/messaging-sendresult` | `/realtime-sdk/v3/reference/messaging/messaging-send-result` | `/realtime-sdk/v3/reference/messaging/messaging-send-result` | slug_changed | 0.963 |
 | `/sdks/realtime-sdk/v3/pubsub` | `/realtime-sdk/v3/reference/pubsub` | `/realtime-sdk/v3/reference/pubsub` | slug_changed | 0.781 |
 | `/sdks/realtime-sdk/v3/pubsub/client` | `/realtime-sdk/v3/reference/pubsub/client` | `/realtime-sdk/v3/reference/pubsub-client [COLLISION]` | slug_changed | 0.811 |
 | `/sdks/realtime-sdk/v3/realtime-client` | `/realtime-sdk/v3/reference/realtime-client` | `/realtime-sdk/v3/reference/realtime-client` | slug_changed | 0.792 |
 | `/sdks/realtime-sdk/v3/task` | `/realtime-sdk/v3/reference/task` | `/realtime-sdk/v3/reference/task` | slug_changed | 0.940 |
 | `/sdks/realtime-sdk/v3/task/client` | `/realtime-sdk/v3/reference/task/client` | `/realtime-sdk/v3/reference/task-client [COLLISION]` | slug_changed | 0.789 |
-| `/sdks/realtime-sdk/v3/tech-ref/pubsub/pubsub-pubsubmessage` | `/realtime-sdk/v3/reference/pubsub/pubsubmessage` | `/realtime-sdk/v3/reference/pubsub/pubsubmessage` | matched_changed | 1.000 |
+| `/sdks/realtime-sdk/v3/tech-ref/pubsub/pubsub-pubsubmessage` | `/realtime-sdk/v3/reference/pubsub/pubsub-message` | `/realtime-sdk/v3/reference/pubsub/pubsub-message` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v3/video` | `/realtime-sdk/v3/reference/video` | `/realtime-sdk/v3/reference/video` | slug_changed | 0.702 |
-| `/sdks/realtime-sdk/v3/video/room-session` | `/realtime-sdk/v3/reference/video/roomsession` | `/realtime-sdk/v3/reference/video-roomsession [COLLISION]` | slug_changed | 0.939 |
-| `/sdks/realtime-sdk/v3/video/roomsession-fullstate` | `/realtime-sdk/v3/reference/video/roomsessionfullstate` | `/realtime-sdk/v3/reference/video/roomsessionfullstate` | slug_changed | 0.932 |
-| `/sdks/realtime-sdk/v3/video/roomsession-member` | `/realtime-sdk/v3/reference/video/roomsessionmember` | `/realtime-sdk/v3/reference/video/roomsessionmember` | slug_changed | 0.958 |
-| `/sdks/realtime-sdk/v3/video/roomsession-playback` | `/realtime-sdk/v3/reference/video/roomsessionplayback` | `/realtime-sdk/v3/reference/video/roomsessionplayback` | slug_changed | 0.965 |
-| `/sdks/realtime-sdk/v3/video/roomsession-recording` | `/realtime-sdk/v3/reference/video/roomsessionrecording` | `/realtime-sdk/v3/reference/video/roomsessionrecording` | slug_changed | 0.970 |
-| `/sdks/realtime-sdk/v3/video/roomsession-stream` | `/realtime-sdk/v3/reference/video/roomsessionstream` | `/realtime-sdk/v3/reference/video/roomsessionstream` | slug_changed | 0.966 |
+| `/sdks/realtime-sdk/v3/video/room-session` | `/realtime-sdk/v3/reference/video/room-session` | `/realtime-sdk/v3/reference/video-room-session [COLLISION]` | slug_changed | 0.939 |
+| `/sdks/realtime-sdk/v3/video/roomsession-fullstate` | `/realtime-sdk/v3/reference/video/room-session-full-state` | `/realtime-sdk/v3/reference/video/room-session-full-state` | slug_changed | 0.932 |
+| `/sdks/realtime-sdk/v3/video/roomsession-member` | `/realtime-sdk/v3/reference/video/room-session-member` | `/realtime-sdk/v3/reference/video/room-session-member` | slug_changed | 0.958 |
+| `/sdks/realtime-sdk/v3/video/roomsession-playback` | `/realtime-sdk/v3/reference/video/room-session-playback` | `/realtime-sdk/v3/reference/video/room-session-playback` | slug_changed | 0.965 |
+| `/sdks/realtime-sdk/v3/video/roomsession-recording` | `/realtime-sdk/v3/reference/video/room-session-recording` | `/realtime-sdk/v3/reference/video/room-session-recording` | slug_changed | 0.970 |
+| `/sdks/realtime-sdk/v3/video/roomsession-stream` | `/realtime-sdk/v3/reference/video/room-session-stream` | `/realtime-sdk/v3/reference/video/room-session-stream` | slug_changed | 0.966 |
 | `/sdks/realtime-sdk/v3/voice/call` | `/realtime-sdk/v3/reference/voice/call` | `/realtime-sdk/v3/reference/voice-call [COLLISION]` | slug_changed | 0.868 |
-| `/sdks/realtime-sdk/v3/voice/call-collect` | `/realtime-sdk/v3/reference/voice/callcollect` | `/realtime-sdk/v3/reference/voice/callcollect` | slug_changed | 0.991 |
-| `/sdks/realtime-sdk/v3/voice/call-detect` | `/realtime-sdk/v3/reference/voice/calldetect` | `/realtime-sdk/v3/reference/voice/calldetect` | slug_changed | 0.981 |
-| `/sdks/realtime-sdk/v3/voice/call-playback` | `/realtime-sdk/v3/reference/voice/callplayback` | `/realtime-sdk/v3/reference/voice/callplayback` | slug_changed | 0.983 |
-| `/sdks/realtime-sdk/v3/voice/call-prompt` | `/realtime-sdk/v3/reference/voice/callprompt` | `/realtime-sdk/v3/reference/voice/callprompt` | slug_changed | 0.981 |
-| `/sdks/realtime-sdk/v3/voice/call-recording` | `/realtime-sdk/v3/reference/voice/callrecording` | `/realtime-sdk/v3/reference/voice/callrecording` | slug_changed | 0.982 |
-| `/sdks/realtime-sdk/v3/voice/call-state` | `/realtime-sdk/v3/reference/voice/callstate` | `/realtime-sdk/v3/reference/voice/callstate` | slug_changed | 0.950 |
-| `/sdks/realtime-sdk/v3/voice/call-tap` | `/realtime-sdk/v3/reference/voice/calltap` | `/realtime-sdk/v3/reference/voice/calltap` | slug_changed | 0.984 |
+| `/sdks/realtime-sdk/v3/voice/call-collect` | `/realtime-sdk/v3/reference/voice/call-collect` | `/realtime-sdk/v3/reference/voice/call-collect` | slug_changed | 0.991 |
+| `/sdks/realtime-sdk/v3/voice/call-detect` | `/realtime-sdk/v3/reference/voice/call-detect` | `/realtime-sdk/v3/reference/voice/call-detect` | slug_changed | 0.981 |
+| `/sdks/realtime-sdk/v3/voice/call-playback` | `/realtime-sdk/v3/reference/voice/call-playback` | `/realtime-sdk/v3/reference/voice/call-playback` | slug_changed | 0.983 |
+| `/sdks/realtime-sdk/v3/voice/call-prompt` | `/realtime-sdk/v3/reference/voice/call-prompt` | `/realtime-sdk/v3/reference/voice/call-prompt` | slug_changed | 0.981 |
+| `/sdks/realtime-sdk/v3/voice/call-recording` | `/realtime-sdk/v3/reference/voice/call-recording` | `/realtime-sdk/v3/reference/voice/call-recording` | slug_changed | 0.982 |
+| `/sdks/realtime-sdk/v3/voice/call-state` | `/realtime-sdk/v3/reference/voice/call-state` | `/realtime-sdk/v3/reference/voice/call-state` | slug_changed | 0.950 |
+| `/sdks/realtime-sdk/v3/voice/call-tap` | `/realtime-sdk/v3/reference/voice/call-tap` | `/realtime-sdk/v3/reference/voice/call-tap` | slug_changed | 0.984 |
 | `/sdks/realtime-sdk/v3/voice/client` | `/realtime-sdk/v3/reference/voice/client` | `/realtime-sdk/v3/reference/voice-client [COLLISION]` | slug_changed | 0.856 |
-| `/sdks/realtime-sdk/v3/voice/device-builder` | `/realtime-sdk/v3/reference/voice/devicebuilder` | `/realtime-sdk/v3/reference/voice/devicebuilder` | slug_changed | 0.948 |
+| `/sdks/realtime-sdk/v3/voice/device-builder` | `/realtime-sdk/v3/reference/voice/device-builder` | `/realtime-sdk/v3/reference/voice/device-builder` | slug_changed | 0.948 |
 | `/sdks/realtime-sdk/v3/voice/playlist` | `/realtime-sdk/v3/reference/voice/playlist` | `/realtime-sdk/v3/reference/voice/playlist` | slug_changed | 0.840 |
 | `/sdks/realtime-sdk/v3/voice/types` | `/realtime-sdk/v3/reference/voice/types` | `/realtime-sdk/v3/reference/voice/types` | slug_changed | 0.981 |
-| `/sdks/realtime-sdk/video` | `/realtime-sdk/reference/video` | `/realtime-sdk/reference/video` | slug_changed | 0.782 |
-| `/sdks/realtime-sdk/video/room-session-member` | `/realtime-sdk/reference/video/roomsessionmember` | `/realtime-sdk/reference/video/roomsessionmember` | slug_changed | 0.936 |
-| `/sdks/realtime-sdk/video/room-session-playback` | `/realtime-sdk/reference/video/roomsessionplayback` | `/realtime-sdk/reference/video/roomsessionplayback` | slug_changed | 0.943 |
-| `/sdks/realtime-sdk/video/roomsession` | `/realtime-sdk/reference/video/roomsession` | `/realtime-sdk/reference/video-roomsession [COLLISION]` | slug_changed | 0.868 |
-| `/sdks/realtime-sdk/video/roomsession-fullstate` | `/realtime-sdk/reference/video/roomsessionfullstate` | `/realtime-sdk/reference/video/roomsessionfullstate` | slug_changed | 0.904 |
-| `/sdks/realtime-sdk/video/roomsession-recording` | `/realtime-sdk/reference/video/roomsessionrecording` | `/realtime-sdk/reference/video/roomsessionrecording` | slug_changed | 0.954 |
-| `/sdks/realtime-sdk/video/roomsession-stream` | `/realtime-sdk/reference/video/roomsessionstream` | `/realtime-sdk/reference/video/roomsessionstream` | slug_changed | 0.935 |
+| `/sdks/realtime-sdk/video/room-session-member` | `/realtime-sdk/reference/video/room-session-member` | `/realtime-sdk/reference/video/room-session-member` | slug_changed | 0.936 |
+| `/sdks/realtime-sdk/video/room-session-playback` | `/realtime-sdk/reference/video/room-session-playback` | `/realtime-sdk/reference/video/room-session-playback` | slug_changed | 0.943 |
+| `/sdks/realtime-sdk/video/roomsession` | `/realtime-sdk/reference/video/room-session` | `/realtime-sdk/reference/video-room-session [COLLISION]` | slug_changed | 0.868 |
+| `/sdks/realtime-sdk/video/roomsession-fullstate` | `/realtime-sdk/reference/video/room-session-full-state` | `/realtime-sdk/reference/video/room-session-full-state` | slug_changed | 0.904 |
+| `/sdks/realtime-sdk/video/roomsession-recording` | `/realtime-sdk/reference/video/room-session-recording` | `/realtime-sdk/reference/video/room-session-recording` | slug_changed | 0.954 |
+| `/sdks/realtime-sdk/video/roomsession-stream` | `/realtime-sdk/reference/video/room-session-stream` | `/realtime-sdk/reference/video/room-session-stream` | slug_changed | 0.935 |
 | `/sdks/realtime-sdk/voice/call` | `/realtime-sdk/reference/voice/call` | `/realtime-sdk/reference/voice-call [COLLISION]` | slug_changed | 0.830 |
-| `/sdks/realtime-sdk/voice/call-collect` | `/realtime-sdk/reference/voice/callcollect` | `/realtime-sdk/reference/voice/callcollect` | slug_changed | 0.955 |
-| `/sdks/realtime-sdk/voice/call-detect` | `/realtime-sdk/reference/voice/calldetect` | `/realtime-sdk/reference/voice/calldetect` | slug_changed | 0.968 |
-| `/sdks/realtime-sdk/voice/call-playback` | `/realtime-sdk/reference/voice/callplayback` | `/realtime-sdk/reference/voice/callplayback` | slug_changed | 0.974 |
-| `/sdks/realtime-sdk/voice/call-prompt` | `/realtime-sdk/reference/voice/callprompt` | `/realtime-sdk/reference/voice/callprompt` | slug_changed | 0.961 |
-| `/sdks/realtime-sdk/voice/call-recording` | `/realtime-sdk/reference/voice/callrecording` | `/realtime-sdk/reference/voice/callrecording` | slug_changed | 0.976 |
-| `/sdks/realtime-sdk/voice/call-state` | `/realtime-sdk/reference/voice/callstate` | `/realtime-sdk/reference/voice/callstate` | slug_changed | 0.945 |
-| `/sdks/realtime-sdk/voice/call-tap` | `/realtime-sdk/reference/voice/calltap` | `/realtime-sdk/reference/voice/calltap` | slug_changed | 0.974 |
+| `/sdks/realtime-sdk/voice/call-collect` | `/realtime-sdk/reference/voice/call-collect` | `/realtime-sdk/reference/voice/call-collect` | slug_changed | 0.955 |
+| `/sdks/realtime-sdk/voice/call-detect` | `/realtime-sdk/reference/voice/call-detect` | `/realtime-sdk/reference/voice/call-detect` | slug_changed | 0.968 |
+| `/sdks/realtime-sdk/voice/call-playback` | `/realtime-sdk/reference/voice/call-playback` | `/realtime-sdk/reference/voice/call-playback` | slug_changed | 0.974 |
+| `/sdks/realtime-sdk/voice/call-prompt` | `/realtime-sdk/reference/voice/call-prompt` | `/realtime-sdk/reference/voice/call-prompt` | slug_changed | 0.961 |
+| `/sdks/realtime-sdk/voice/call-recording` | `/realtime-sdk/reference/voice/call-recording` | `/realtime-sdk/reference/voice/call-recording` | slug_changed | 0.976 |
+| `/sdks/realtime-sdk/voice/call-state` | `/realtime-sdk/reference/voice/call-state` | `/realtime-sdk/reference/voice/call-state` | slug_changed | 0.945 |
+| `/sdks/realtime-sdk/voice/call-tap` | `/realtime-sdk/reference/voice/call-tap` | `/realtime-sdk/reference/voice/call-tap` | slug_changed | 0.974 |
 | `/sdks/realtime-sdk/voice/client` | `/realtime-sdk/reference/voice/client` | `/realtime-sdk/reference/voice-client [COLLISION]` | slug_changed | 0.798 |
-| `/sdks/realtime-sdk/voice/device-builder` | `/realtime-sdk/reference/voice/devicebuilder` | `/realtime-sdk/reference/voice/devicebuilder` | slug_changed | 0.927 |
+| `/sdks/realtime-sdk/voice/device-builder` | `/realtime-sdk/reference/voice/device-builder` | `/realtime-sdk/reference/voice/device-builder` | slug_changed | 0.927 |
 | `/sdks/realtime-sdk/voice/playlist` | `/realtime-sdk/reference/voice/playlist` | `/realtime-sdk/reference/voice/playlist` | slug_changed | 0.790 |
 | `/sdks/realtime-sdk/voice/types` | `/realtime-sdk/reference/voice/types` | `/realtime-sdk/reference/voice/types` | slug_changed | 0.864 |
 | `/sms/carrier-fees` | `/platform/sms/carrier-fees` | `/platform/sms/carrier-fees` | matched_changed | 1.000 |
@@ -863,8 +857,8 @@ These old URLs need 301 redirects to their proposed locations.
 | `/video/getting-started/managing-rooms-with-apis` | `/platform/video/getting-started/managing-rooms-with-apis` | `/platform/video/managing-rooms-with-apis` | matched_changed | 1.000 |
 | `/video/getting-started/simple-video-demo` | `/platform/video/getting-started/simple-video-demo` | `/platform/video/simple-video-demo` | matched_changed | 1.000 |
 | `/video/getting-started/video-first-steps` | `/platform/video/getting-started/video-first-steps` | `/platform/video/video-first-steps` | matched_changed | 1.000 |
-| `/video/guides/layout-positions` | `/browser-sdk/video/guides/layout-positions` | `/browser-sdk/guides/layout-positions` | matched_changed | 1.000 |
-| `/video/guides/layouts` | `/browser-sdk/video/guides/layouts` | `/browser-sdk/guides/layouts` | matched_changed | 1.000 |
+| `/video/guides/layout-positions` | `/platform/video/guides/layout-positions` | `/platform/video/layout-positions` | matched_changed | 1.000 |
+| `/video/guides/layouts` | `/platform/video/guides/layouts` | `/platform/video/layouts` | matched_changed | 1.000 |
 | `/video/guides/making-a-clubhouse-clone` | `/platform/video/guides/making-a-clubhouse-clone` | `/platform/video/making-a-clubhouse-clone` | matched_changed | 1.000 |
 | `/video/guides/making-a-zoom-clone` | `/platform/video/guides/making-a-zoom-clone` | `/platform/video/making-a-zoom-clone` | matched_changed | 1.000 |
 | `/video/guides/setting-the-layout-of-your-signalwire-video-calls` | `/platform/video/guides/setting-the-layout-of-your-signalwire-video-calls` | `/platform/video/setting-the-layout-of-your-signalwire-video-calls` | matched_changed | 1.000 |
@@ -892,7 +886,7 @@ These old URLs need 301 redirects to their proposed locations.
 | `/voice/tts/openai` | `/platform/voice/tts/openai` | `/platform/voice/openai` | matched_changed | 1.000 |
 | `/voice/tts/rime` | `/platform/voice/tts/rime` | `/platform/voice/rime` | matched_changed | 1.000 |
 
-## Needs review (42)
+## Needs review (45)
 
 Possible matches with low confidence. Verify manually before redirecting.
 
@@ -900,40 +894,43 @@ Possible matches with low confidence. Verify manually before redirecting.
 |---------|-------------|--------------|------------|-------|
 | `/chat/getting-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.350 | body=0.226 fname=0.846 |
 | `/chat/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | 0.357 | body=0.196 fname=1.000 |
-| `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free` | `/compatibility-api/sdks/methods/available-phone-numbers/find-toll-free` | `/compatibility-api/reference/available-phone-numbers/find-toll-free` | 0.685 | body=0.731 fname=0.500 |
-| `/compatibility-api/client-sdks/api/available-phone-numbers/search-local` | `/compatibility-api/sdks/methods/available-phone-numbers/search-local` | `/compatibility-api/reference/available-phone-numbers/search-local` | 0.464 | body=0.455 fname=0.500 |
-| `/compatibility-api/client-sdks/methods/fax-media/list-all` | `/compatibility-api/sdks/methods/fax-media/list-all` | `/compatibility-api/reference/fax-media/list-all` | 0.592 | body=0.615 fname=0.500 |
-| `/compatibility-api/cxml` | `/compatibility-api/cxml` | `/compatibility-api/reference/cxml` | 0.458 | body=0.447 fname=0.500 |
-| `/compatibility-api/cxml/fax` | `/compatibility-api/cxml/fax` | `/compatibility-api/reference/cxml/fax` | 0.489 | body=0.611 fname=0.000 |
-| `/compatibility-api/cxml/fax/receive` | `/compatibility-api/cxml/fax/receive` | `/compatibility-api/reference/cxml/fax/receive` | 0.700 | body=0.625 fname=1.000 |
-| `/compatibility-api/cxml/messaging` | `/compatibility-api/cxml/fax` | `/compatibility-api/reference/cxml/fax` | 0.311 | body=0.330 fname=0.235 |
-| `/compatibility-api/cxml/messaging/message` | `/compatibility-api/cxml/messaging/message` | `/compatibility-api/reference/cxml/messaging/message` | 0.533 | body=0.416 fname=1.000 |
-| `/compatibility-api/cxml/voice` | `/compatibility-api/cxml/voice` | `/compatibility-api/reference/cxml/voice` | 0.427 | body=0.418 fname=0.462 |
-| `/compatibility-api/cxml/voice/conference-noun` | `/compatibility-api/cxml/voice/conference` | `/compatibility-api/reference/cxml/voice/conference` | 0.561 | body=0.451 fname=1.000 |
-| `/compatibility-api/cxml/voice/dial` | `/compatibility-api/cxml/voice/dial` | `/compatibility-api/reference/cxml/voice/dial` | 0.578 | body=0.472 fname=1.000 |
-| `/compatibility-api/cxml/voice/echo` | `/compatibility-api/cxml/voice/echo` | `/compatibility-api/reference/cxml/voice/echo` | 0.656 | body=0.570 fname=1.000 |
-| `/compatibility-api/cxml/voice/enqueue` | `/compatibility-api/cxml/voice/enqueue` | `/compatibility-api/reference/cxml/voice/enqueue` | 0.477 | body=0.346 fname=1.000 |
-| `/compatibility-api/cxml/voice/number-noun` | `/compatibility-api/cxml/voice/number` | `/compatibility-api/reference/cxml/voice/number` | 0.559 | body=0.448 fname=1.000 |
-| `/compatibility-api/cxml/voice/pay` | `/compatibility-api/cxml/voice/pay` | `/compatibility-api/reference/cxml/voice/pay` | 0.694 | body=0.617 fname=1.000 |
-| `/compatibility-api/cxml/voice/record` | `/compatibility-api/cxml/voice/record` | `/compatibility-api/reference/cxml/voice/record` | 0.625 | body=0.531 fname=1.000 |
-| `/compatibility-api/cxml/voice/sip-noun` | `/compatibility-api/cxml/voice/sip` | `/compatibility-api/reference/cxml/voice/sip` | 0.671 | body=0.588 fname=1.000 |
-| `/compatibility-api/cxml/voice/sms` | `/compatibility-api/cxml/voice/sms` | `/compatibility-api/reference/cxml/voice/sms` | 0.587 | body=0.484 fname=1.000 |
+| `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free` | `/compatibility-api/sdks/methods/available-phone-numbers/find-toll-free` | `/compatibility-api/sdks/reference/available-phone-numbers/find-toll-free` | 0.685 | body=0.731 fname=0.500 |
+| `/compatibility-api/client-sdks/api/available-phone-numbers/search-local` | `/compatibility-api/sdks/methods/available-phone-numbers/search-local` | `/compatibility-api/sdks/reference/available-phone-numbers/search-local` | 0.464 | body=0.455 fname=0.500 |
+| `/compatibility-api/client-sdks/methods/fax-media/list-all` | `/compatibility-api/sdks/methods/fax-media/list-all` | `/compatibility-api/sdks/reference/fax-media/list-all` | 0.592 | body=0.615 fname=0.500 |
+| `/compatibility-api/cxml` | `/compatibility-api/cxml` | `/compatibility-api/cxml/reference` | 0.458 | body=0.447 fname=0.500 |
+| `/compatibility-api/cxml/fax` | `/compatibility-api/cxml/fax` | `/compatibility-api/cxml/reference/fax` | 0.489 | body=0.611 fname=0.000 |
+| `/compatibility-api/cxml/fax/receive` | `/compatibility-api/cxml/fax/receive` | `/compatibility-api/cxml/reference/fax/receive` | 0.700 | body=0.625 fname=1.000 |
+| `/compatibility-api/cxml/messaging` | `/compatibility-api/cxml/fax` | `/compatibility-api/cxml/reference/fax` | 0.311 | body=0.330 fname=0.235 |
+| `/compatibility-api/cxml/messaging/message` | `/compatibility-api/cxml/messaging/message` | `/compatibility-api/cxml/reference/messaging/message` | 0.533 | body=0.416 fname=1.000 |
+| `/compatibility-api/cxml/voice` | `/compatibility-api/cxml/voice` | `/compatibility-api/cxml/reference/voice` | 0.427 | body=0.418 fname=0.462 |
+| `/compatibility-api/cxml/voice/conference-noun` | `/compatibility-api/cxml/voice/conference` | `/compatibility-api/cxml/reference/voice/conference` | 0.561 | body=0.451 fname=1.000 |
+| `/compatibility-api/cxml/voice/dial` | `/compatibility-api/cxml/voice/dial` | `/compatibility-api/cxml/reference/voice/dial` | 0.578 | body=0.472 fname=1.000 |
+| `/compatibility-api/cxml/voice/echo` | `/compatibility-api/cxml/voice/echo` | `/compatibility-api/cxml/reference/voice/echo` | 0.656 | body=0.570 fname=1.000 |
+| `/compatibility-api/cxml/voice/enqueue` | `/compatibility-api/cxml/voice/enqueue` | `/compatibility-api/cxml/reference/voice/enqueue` | 0.477 | body=0.346 fname=1.000 |
+| `/compatibility-api/cxml/voice/number-noun` | `/compatibility-api/cxml/voice/number` | `/compatibility-api/cxml/reference/voice/number` | 0.559 | body=0.448 fname=1.000 |
+| `/compatibility-api/cxml/voice/pay` | `/compatibility-api/cxml/voice/pay` | `/compatibility-api/cxml/reference/voice/pay` | 0.694 | body=0.617 fname=1.000 |
+| `/compatibility-api/cxml/voice/record` | `/compatibility-api/cxml/voice/record` | `/compatibility-api/cxml/reference/voice/record` | 0.625 | body=0.531 fname=1.000 |
+| `/compatibility-api/cxml/voice/sip-noun` | `/compatibility-api/cxml/voice/sip` | `/compatibility-api/cxml/reference/voice/sip` | 0.671 | body=0.588 fname=1.000 |
+| `/compatibility-api/cxml/voice/sms` | `/compatibility-api/cxml/voice/sms` | `/compatibility-api/cxml/reference/voice/sms` | 0.587 | body=0.484 fname=1.000 |
 | `/fax/get-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.381 | body=0.227 fname=1.000 |
 | `/fax/getting-started/first-steps-with-fax` | `/platform/fax` | `/platform/fax` | 0.499 | body=0.570 fname=0.214 |
 | `/fax/getting-started/securing-callback-for-inbound-fax-with-cxml` | `/compatibility-api/cxml/guides/securing-callback-for-inbound-fax` | `/compatibility-api/guides/securing-callback-for-inbound-fax` | 0.367 | body=0.333 fname=0.500 |
 | `/messaging/get-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.380 | body=0.225 fname=1.000 |
+| `/messaging/guides/general` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | 0.320 | body=0.342 fname=0.235 |
 | `/platform/phone-numbers/getting-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.311 | body=0.177 fname=0.846 |
-| `/sdks/browser-sdk/chat/client` | `/browser-sdk/reference/pubsub/pubsub-client` | `/browser-sdk/reference/pubsub/pubsub-client` | 0.332 | body=0.289 fname=0.500 |
-| `/sdks/browser-sdk/chat/member-entity` | `/browser-sdk/reference/chat/chatmemberentity` | `/browser-sdk/reference/chat/chatmemberentity` | 0.482 | body=0.396 fname=0.828 |
-| `/sdks/browser-sdk/chat/message-entity` | `/browser-sdk/reference/chat/chatmessageentity` | `/browser-sdk/reference/chat/chatmessageentity` | 0.462 | body=0.368 fname=0.839 |
-| `/sdks/browser-sdk/pubsub/client` | `/browser-sdk/reference/pubsub/pubsub-client` | `/browser-sdk/reference/pubsub/pubsub-client` | 0.511 | body=0.514 fname=0.500 |
-| `/sdks/browser-sdk/v2/guides` | `/browser-sdk/reference/video/RoomSession/methods/destroy` | `/browser-sdk/reference/video/roomsession/methods/destroy` | 0.301 | body=0.261 fname=0.462 |
-| `/sdks/browser-sdk/video` | `/browser-sdk/reference/video` | `/browser-sdk/reference/video` | 0.516 | body=0.395 fname=1.000 |
-| `/sdks/browser-sdk/video/room-session-stream` | `/browser-sdk/reference/video/video-roomsessionstream` | `/browser-sdk/reference/video/video-roomsessionstream` | 0.592 | body=0.537 fname=0.810 |
+| `/rest/signalwire-rest/guides` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | 0.308 | body=0.322 fname=0.250 |
+| `/sdks/browser-sdk/chat/member-entity` | `/browser-sdk/reference/chat/chat-member-entity` | `/browser-sdk/reference/chat/chat-member-entity` | 0.482 | body=0.396 fname=0.828 |
+| `/sdks/browser-sdk/chat/message-entity` | `/browser-sdk/reference/chat/chat-message-entity` | `/browser-sdk/reference/chat/chat-message-entity` | 0.462 | body=0.368 fname=0.839 |
+| `/sdks/browser-sdk/pubsub/client` | `/browser-sdk/reference/chat/client` | `/browser-sdk/reference/chat/client` | 0.368 | body=0.210 fname=1.000 |
+| `/sdks/browser-sdk/signalwire-client/client` | `/browser-sdk/reference/signalwire-client/client` | `/browser-sdk/reference/signalwire-client/client` | 0.522 | body=0.402 fname=1.000 |
+| `/sdks/browser-sdk/video` | `/browser-sdk/reference/video` | `/browser-sdk/reference/video` | 0.623 | body=0.529 fname=1.000 |
+| `/sdks/browser-sdk/video/room-session-recording` | `/browser-sdk/reference/video/room-session-recording` | `/browser-sdk/reference/video/room-session-recording` | 0.321 | body=0.193 fname=0.833 |
+| `/sdks/browser-sdk/video/room-session-stream` | `/browser-sdk/reference/video/room-session-stream` | `/browser-sdk/reference/video/room-session-stream` | 0.584 | body=0.528 fname=0.810 |
 | `/sdks/realtime-sdk/realtime-client` | `/realtime-sdk/reference/realtime-client` | `/realtime-sdk/reference/realtime-client` | 0.411 | body=0.264 fname=1.000 |
-| `/sdks/realtime-sdk/v3/guides/voice` | `/realtime-sdk/v3/v3/reference/video/client/methods/once` | `/realtime-sdk/v3/reference/video/client/methods/once` | 0.301 | body=0.210 fname=0.667 |
+| `/sdks/realtime-sdk/v3/guides/voice` | `/realtime-sdk/v3/reference/video/client/methods/once` | `/realtime-sdk/v3/reference/video/client/methods/once` | 0.301 | body=0.210 fname=0.667 |
 | `/sdks/realtime-sdk/v3/video/client` | `/realtime-sdk/v3/reference/task/client` | `/realtime-sdk/v3/reference/task-client [COLLISION]` | 0.391 | body=0.363 fname=0.500 |
 | `/sdks/realtime-sdk/v3/voice` | `/realtime-sdk/v3/reference/voice` | `/realtime-sdk/v3/reference/voice` | 0.679 | body=0.599 fname=1.000 |
+| `/sdks/realtime-sdk/video` | `/realtime-sdk/reference/video` | `/realtime-sdk/reference/video` | 0.696 | body=0.620 fname=1.000 |
 | `/sdks/realtime-sdk/video/client` | `/realtime-sdk/reference/video/client/methods/listen` | `/realtime-sdk/reference/video/client/methods/listen` | 0.396 | body=0.329 fname=0.667 |
 | `/sdks/realtime-sdk/voice` | `/realtime-sdk/reference/voice` | `/realtime-sdk/reference/voice` | 0.562 | body=0.452 fname=1.000 |
 | `/swml/methods/ai/swaig/defaults/web_hook_url` | `/swml/methods/ai/swaig/functions/web_hook_url` | `/swml/reference/ai/swaig/functions-web-hook-url` | 0.494 | body=0.492 fname=0.500 |
@@ -941,7 +938,7 @@ Possible matches with low confidence. Verify manually before redirecting.
 | `/video/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | 0.334 | body=0.167 fname=1.000 |
 | `/voice/guides/general/how-to-set-caller-id-or-cnam` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/platform/basics/how-to-set-caller-id-or-cnam` | 0.437 | body=0.296 fname=1.000 |
 
-## Gone (581)
+## Gone (584)
 
 Content removed, auto-generated, or not migrated. Return 410 or let 404.
 
@@ -1013,7 +1010,7 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/compatibility-api/guides/signalwire-status-callbacks` -- Section not migrated to Fern
 - ... and 68 more
 
-### likely_deleted (82)
+### likely_deleted (85)
 
 - `/ai/guides` -- No Fern page above similarity threshold
 - `/ai/guides/integrations` -- No Fern page above similarity threshold
@@ -1041,14 +1038,14 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/livewire/integrate-zendesk-signalwire-ai` -- No Fern page above similarity threshold
 - `/livewire/smart-biz-ai` -- No Fern page above similarity threshold
 - `/messaging/guides/campaign-registry` -- No Fern page above similarity threshold
-- `/messaging/guides/general` -- No Fern page above similarity threshold
 - `/platform/basics` -- No Fern page above similarity threshold
 - `/platform/basics/general` -- No Fern page above similarity threshold
 - `/platform/basics/guides` -- No Fern page above similarity threshold
-- ... and 52 more
+- `/platform/basics/guides/technical-troubleshooting` -- No Fern page above similarity threshold
+- ... and 55 more
 
 
-## No action needed (10)
+## No action needed (11)
 
 URLs that haven't changed or are already covered.
 
@@ -1058,6 +1055,7 @@ URLs that haven't changed or are already covered.
 - `/platform/call-fabric/resources` -> `/platform/call-fabric/resources`
 - `/platform/dashboard` -> `/platform/dashboard`
 - `/platform/dashboard/billing` -> `/platform/dashboard/billing`
+- `/sdks/browser-sdk/v2/guides` -> ``
 - `/swml` -> `/swml`
 - `/swml/guides/call-whisper` -> `/swml/guides/call-whisper`
 - `/swml/guides/deployment` -> `/swml/guides/deployment`
