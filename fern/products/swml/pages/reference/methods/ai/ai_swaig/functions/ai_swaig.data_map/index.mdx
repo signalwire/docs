@@ -58,23 +58,13 @@ If no component produces a valid `output`, the system continues processing in se
 
 
 <ParamField path="data_map.webhooks" type="object[]">
-  An array of objects that define external API calls.
+  An array of objects that define external API calls. If a webhook defines `foreach`, `expressions`, and `output`, they are evaluated in that order.
 </ParamField>
-
-<Warning title="Webhook processing order">
-The webhook properties are processed in the following sequence:
-
-1. `foreach`
-2. `expressions`
-3. `output`
-
-Only applicable when multiple of these properties are set in your configuration.
-</Warning>
 
 <Indent>
 
 <ParamField path="webhooks[].url" type="string" required={true}>
-  The endpoint for the external service or API. Authentication can also be set in the url in the format of `username:password@url`.
+  The endpoint for the external service or API. Authentication can also be set in the url in the format of `username:password@url`. See [webhook runtime request](#webhook-runtime-request) for details on template variable substitution and request behavior.
 </ParamField>
 
 <ParamField path="webhooks[].method" type="string" required={true}>
@@ -167,33 +157,94 @@ Only applicable when multiple of these properties are set in your configuration.
 
 When the AI triggers a function that uses `data_map.webhooks`, SignalWire sends a request to each configured `url`.
 
-### URL substitution
+### Template variables
 
-The `url` field supports `%{args.<name>}` substitution, where `<name>` matches a property defined in the function's [`parameters`](/swml/methods/ai/swaig/functions/parameters) schema.
-For example, `https://api.example.com/weather?city=%{args.location}` will substitute the value the AI extracted for `location`.
+The `url` and `params` fields support `%{variable}` substitution.
+Nested properties use dot notation — for example,
+`https://api.example.com/weather?city=%{args.location}` substitutes the value the AI extracted for `location`.
+For more on [variables](/swml/variables) and scopes, see the [Variables reference](/swml/variables).
 
-### Request body (POST)
+<ParamField path="args" type="object">
+  Function argument values extracted by the AI, keyed by argument name.
+</ParamField>
 
-When `method` is `POST`, the request body contains:
+<Indent>
+
+<ParamField path="args.*" type="any">
+  Individual argument value. The key matches an argument name from the function's [`parameters`](/swml/methods/ai/swaig/functions/parameters) schema.
+</ParamField>
+
+</Indent>
 
 <ParamField path="call_id" type="string">
-  The call ID for the current call.
+  Unique identifier for the current call.
 </ParamField>
 
-<ParamField path="vars" type="object">
-  An object containing the function argument values extracted by the AI, keyed by argument name.
+<ParamField path="ai_session_id" type="string">
+  AI session identifier.
 </ParamField>
 
-### Raw JSON example
+<ParamField path="conversation_id" type="string">
+  Conversation identifier.
+</ParamField>
 
-```json
-{
-  "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "vars": {
-    "location": "New York"
-  }
-}
-```
+<ParamField path="function" type="string">
+  Name of the function being executed.
+</ParamField>
+
+<ParamField path="caller_id_name" type="string">
+  Caller's display name.
+</ParamField>
+
+<ParamField path="caller_id_num" type="string">
+  Caller's phone number.
+</ParamField>
+
+<ParamField path="project_id" type="string">
+  SignalWire project ID.
+</ParamField>
+
+<ParamField path="space_id" type="string">
+  SignalWire space ID.
+</ParamField>
+
+<ParamField path="app_name" type="string">
+  AI application name.
+</ParamField>
+
+<ParamField path="global_data" type="object">
+  The application's global data.
+</ParamField>
+
+<Indent>
+
+<ParamField path="global_data.*" type="any">
+  User-defined property.
+</ParamField>
+
+</Indent>
+
+<ParamField path="meta_data" type="object">
+  Function metadata (when `meta_data_token` is set).
+</ParamField>
+
+<Indent>
+
+<ParamField path="meta_data.*" type="any">
+  User-defined property.
+</ParamField>
+
+</Indent>
+
+### Request body
+
+When `params` is defined (or `method` is `POST`), SignalWire sends the `params` object as the JSON request body.
+Template variables in `params` values are expanded before sending.
+
+If no `params` are defined and `method` is not `POST`, the request is sent without a body.
+
+If [`input_args_as_params`](#properties) is `true`, the function arguments extracted by the AI
+are merged into `params`. If no `params` are defined, the arguments become the entire request body.
 
 ### Response processing
 
@@ -247,6 +298,96 @@ data_map:
 ```
 </CodeBlock>
 </CodeBlocks>
+
+### webhooks with explicit params
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+data_map:
+  webhooks:
+    - url: https://api.example.com/weather
+      method: POST
+      params:
+        call_id: "%{call_id}"
+        city: "%{args.location}"
+      output:
+        response: "The weather in %{city} is %{temp}°F and %{conditions}."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "data_map": {
+    "webhooks": [
+      {
+        "url": "https://api.example.com/weather",
+        "method": "POST",
+        "params": {
+          "call_id": "%{call_id}",
+          "city": "%{args.location}"
+        },
+        "output": {
+          "response": "The weather in %{city} is %{temp}°F and %{conditions}."
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Sends the following request body to `https://api.example.com/weather`:
+
+```json
+{
+  "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "city": "New York"
+}
+```
+
+### webhooks with input_args_as_params
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+data_map:
+  webhooks:
+    - url: https://api.example.com/weather
+      method: POST
+      input_args_as_params: true
+      output:
+        response: "The weather is %{temp}°F and %{conditions}."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "data_map": {
+    "webhooks": [
+      {
+        "url": "https://api.example.com/weather",
+        "method": "POST",
+        "input_args_as_params": true,
+        "output": {
+          "response": "The weather is %{temp}°F and %{conditions}."
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+Sends the AI-extracted arguments directly as the request body:
+
+```json
+{
+  "location": "New York"
+}
+```
 
 ### output with action
 
