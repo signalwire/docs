@@ -8,23 +8,20 @@ description: Defines how a SWAIG function should process and respond to the user
 `functions[].data_map` defines how a [`SWAIG function`](/swml/methods/ai/swaig/functions) should process and respond to the user's input data.
 
 <ParamField path="functions[].data_map" type="object">
-  An object that accepts the following properties.
+  An object that processes function inputs and executes operations through expressions, webhooks, or direct output.
 </ParamField>
-
-
-## **Properties**
 
 <Warning title="Processing order">
 The components are processed in the following sequence:
 
 1. `expressions` - Processes data using pattern matching (includes its own `output`)
-2. `webhooks` - Makes external API calls (includes its own `output` and `expressions`) 
+2. `webhooks` - Makes external API calls (includes its own `output` and `expressions`)
 3. `output` - Returns a direct response and actions to perform
 </Warning>
 
-Similar to a `return` statement in conventional programming languages, 
-when a valid [`output`][output] is encountered within any component, 
-it immediately terminates function execution. 
+Similar to a `return` statement in conventional programming languages,
+when a valid [`output`](#output) is encountered within any component,
+it immediately terminates function execution.
 The `output` provides:
 1. A `response` object: Contains static text for the AI agent's context
 2. An optional `action` object: Defines executable actions to be triggered
@@ -35,29 +32,314 @@ If no component produces a valid `output`, the system continues processing in se
 - If still unsuccessful, attempts top-level `output`
 - If all fail, returns a generic fallback error message
 
+
+## **Properties**
+
 <ParamField path="data_map.expressions" type="object[]">
-  An array of objects that have pattern matching logic to process the user's input data. A user can define multiple expressions to match against the user's input data.
-  
-  See [`expressions`](/swml/methods/ai/swaig/functions/data_map/expressions) for additional details.
+  An array of objects that define plain string or regex patterns to match against the user's input. When a match is found, the `output` object is returned.
 </ParamField>
+
+<Indent>
+
+<ParamField path="expressions[].string" type="string" required={true}>
+  The actual input or value from the user or system.
+</ParamField>
+
+<ParamField path="expressions[].pattern" type="string" required={true}>
+  A regular expression pattern to validate or match the string.
+</ParamField>
+
+<ParamField path="expressions[].output" type="object" required={true}>
+  Defines the response or action to be taken when the pattern matches.
+  See [`output`](#output) for details.
+</ParamField>
+
+</Indent>
 
 
 <ParamField path="data_map.webhooks" type="object[]">
-  An array of objects that define external API webhooks that can be used to make external API calls.
-  
-  See [`webhooks`](/swml/methods/ai/swaig/functions/data_map/webhooks) for additional details.
+  An array of objects that define external API calls.
 </ParamField>
+
+<Warning title="Webhook processing order">
+The webhook properties are processed in the following sequence:
+
+1. `foreach`
+2. `expressions`
+3. `output`
+
+Only applicable when multiple of these properties are set in your configuration.
+</Warning>
+
+<Indent>
+
+<ParamField path="webhooks[].url" type="string" required={true}>
+  The endpoint for the external service or API. Authentication can also be set in the url in the format of `username:password@url`.
+</ParamField>
+
+<ParamField path="webhooks[].method" type="string" required={true}>
+  The HTTP method (GET, POST, etc.) for the API call.
+</ParamField>
+
+<ParamField path="webhooks[].headers" type="object">
+  Any necessary headers for the API call.
+</ParamField>
+
+<ParamField path="webhooks[].params" type="object">
+  An object of any necessary parameters for the API call. The key is the parameter name and the value is the parameter value.
+</ParamField>
+
+<ParamField path="webhooks[].input_args_as_params" type="boolean" default="false">
+  A boolean to determine if the input [parameters](/swml/methods/ai/swaig/functions/parameters) should be passed as parameters.
+</ParamField>
+
+<ParamField path="webhooks[].required_args" type="string | string[]">
+  A string or array of strings that represent the [parameters](/swml/methods/ai/swaig/functions/parameters) that are required to make the webhook request.
+</ParamField>
+
+<ParamField path="webhooks[].error_keys" type="string | string[]">
+  A string or array of strings that represent the keys to be used for error handling.
+</ParamField>
+
+<ParamField path="webhooks[].expressions" type="object">
+  A list of expressions to be evaluated upon matching.
+  See [`expressions`](#expressions) for details.
+</ParamField>
+
+<ParamField path="webhooks[].foreach" type="object">
+  Iterates over an array of objects and processes an output based on each element in the array. Works similarly to JavaScript's [forEach](https://www.w3schools.com/jsref/jsref_foreach.asp) method.
+</ParamField>
+
+<Indent>
+
+<ParamField path="foreach.input_key" type="string" required={true}>
+  The key to be used to access the current element in the array.
+</ParamField>
+
+<ParamField path="foreach.output_key" type="string" required={true}>
+  The key that can be referenced in the output of the `foreach` iteration. The values that are stored from `append` will be stored in this key.
+</ParamField>
+
+<ParamField path="foreach.append" type="string" required={true}>
+  The values to append to the `output_key`.
+  Properties from the object can be referenced and added to the `output_key` by using the following syntax: `${this.property_name}`.
+  The `this` keyword is used to reference the current object in the array.
+</ParamField>
+
+<ParamField path="foreach.max" type="number">
+  The max amount of elements that are iterated over in the array. This will start at the beginning of the array.
+</ParamField>
+
+</Indent>
+
+<ParamField path="webhooks[].output" type="object" required={true}>
+  Defines the response or action to be taken when the webhook is successfully triggered.
+  See [`output`](#output) for details.
+</ParamField>
+
+</Indent>
 
 
 <ParamField path="data_map.output" type="object">
-  An object that defines the output of the SWAIG function. Behaves like a `return` statement in traditional programming.
-  
-  See [`output`](/swml/methods/ai/swaig/functions/data_map/output) for additional details.
+  Similar to a `return` statement in conventional programming languages, the `data_map.output` object immediately
+  terminates function execution and returns control to the caller.
 </ParamField>
 
+<Indent>
 
-## **Examples:**
+<ParamField path="output.response" type="string" required={true}>
+  Static text that will be added to the AI agent's context.
+</ParamField>
 
-1. [Executing SWML from a SWAIG function](/swml/guides/ai/executing_swml)
+<ParamField path="output.action" type="object[]">
+  A list of SWML-compatible objects that are executed upon the execution of a SWAIG function.
+  See [list of valid actions](#actions) for details.
+</ParamField>
 
-[output]: /swml/methods/ai/swaig/functions/data_map/output
+</Indent>
+
+### List of valid actions
+
+<Markdown src="/snippets/swml/_actions.mdx" />
+
+
+## **Webhook runtime request**
+
+When the AI triggers a function that uses `data_map.webhooks`, SignalWire sends a request to each configured `url`.
+
+### URL substitution
+
+The `url` field supports `%{args.<name>}` substitution, where `<name>` matches a property defined in the function's [`parameters`](/swml/methods/ai/swaig/functions/parameters) schema.
+For example, `https://api.example.com/weather?city=%{args.location}` will substitute the value the AI extracted for `location`.
+
+### Request body (POST)
+
+When `method` is `POST`, the request body contains:
+
+<ParamField path="call_id" type="string">
+  The call ID for the current call.
+</ParamField>
+
+<ParamField path="vars" type="object">
+  An object containing the function argument values extracted by the AI, keyed by argument name.
+</ParamField>
+
+### Raw JSON example
+
+```json
+{
+  "call_id": "xxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "vars": {
+    "location": "New York"
+  }
+}
+```
+
+### Response processing
+
+The JSON response from the webhook is processed through the [`output`](#output) template.
+Fields from the response can be referenced using `%{key}` syntax in the output's `response` string.
+For example, if the webhook returns `{"temp": 72, "conditions": "sunny"}`, an output of
+`"The weather is %{temp}°F with %{conditions}"` will produce `"The weather is 72°F with sunny"`.
+
+
+## **Examples**
+
+### expressions
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+data_map:
+  expressions:
+    - string: "starwars"
+      pattern: "(?i)star\\s*wars"
+      output:
+        response: "May the Force be with you!"
+    - string: "startrek"
+      pattern: "(?i)star\\s*trek"
+      output:
+        response: "Live long and prosper!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "data_map": {
+    "expressions": [
+      {
+        "string": "starwars",
+        "pattern": "(?i)star\\s*wars",
+        "output": {
+          "response": "May the Force be with you!"
+        }
+      },
+      {
+        "string": "startrek",
+        "pattern": "(?i)star\\s*trek",
+        "output": {
+          "response": "Live long and prosper!"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### output with action
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+sections:
+  main:
+    - ai:
+        prompt:
+          text: You are a helpful SignalWire assistant.
+        SWAIG:
+          functions:
+            - function: test_function
+              description: This is a test function.
+              parameters:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: The name of the person.
+                required:
+                  - name
+              data_map:
+                output:
+                  response: We are testing the function.
+                  action:
+                    - SWML:
+                        sections:
+                          main:
+                            - play:
+                                url: 'say:We are testing the function.'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "sections": {
+    "main": [
+      {
+        "ai": {
+          "prompt": {
+            "text": "You are a helpful SignalWire assistant."
+          },
+          "SWAIG": {
+            "functions": [
+              {
+                "function": "test_function",
+                "description": "This is a test function.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the person."
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "data_map": {
+                  "output": {
+                    "response": "We are testing the function.",
+                    "action": [
+                      {
+                        "SWML": {
+                          "sections": {
+                            "main": [
+                              {
+                                "play": {
+                                  "url": "say:We are testing the function."
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Related guides
+
+- [Executing SWML from a SWAIG function](/swml/guides/ai/executing_swml)
