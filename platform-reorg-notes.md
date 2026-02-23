@@ -44,6 +44,14 @@ follow-up ticket or session.
 - Needs overhaul: modularize for product-specific use, explore `<llms-only>`
   tags for LLM-consumable reference.
 
+## FreeSWITCH
+
+- **Core dump backtrace guide** — deleted from SignalWire docs. Open a ticket
+  to add this content to the FreeSWITCH Confluence wiki / official FS docs.
+- **Memory address / pool sanitizer guide** — deleted from SignalWire docs.
+  Open a ticket to add this content to the FreeSWITCH Confluence wiki / official
+  FS docs.
+
 ## POM
 
 - Technical-reference page — cross-reference against Agents SDK docs, consider
