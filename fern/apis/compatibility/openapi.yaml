@@ -4740,6 +4740,89 @@ paths:
             schema:
               $ref: '#/components/schemas/RecordingStatusCallbackPayload'
       x-fern-webhook: true
+  /Webhooks/SmsStatus:
+    post:
+      operationId: sms_status_callback
+      summary: SMS status callback
+      description: |2-
+          SignalWire sends this webhook when the status of an SMS/MMS message changes.
+          Configure it by setting the StatusCallback parameter when sending an outgoing message.
+          Use it to track message delivery, failures, and inbound message processing.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsStatusCallbackPayload'
+      x-fern-webhook: true
+  /Webhooks/TenDlcStatus:
+    post:
+      operationId: ten_dlc_status_callback
+      summary: 10DLC status callback
+      description: |2-
+          SignalWire sends this webhook when the state of a 10DLC registration object changes.
+          Use it to monitor the lifecycle of messaging brands, campaigns, number assignment orders,
+          and number assignments in real time.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenDlcStatusCallbackPayload'
+      x-fern-webhook: true
+  /Webhooks/TranscriptionStatus:
+    post:
+      operationId: transcription_status_callback
+      summary: Transcription status callback
+      description: |2-
+          SignalWire sends this webhook when the status of a transcription changes.
+          Configure it by enabling transcription on a recording (transcribe=true) and setting transcribeCallback
+          to your webhook URL.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranscriptionStatusCallbackPayload'
+      x-fern-webhook: true
+  /Webhooks/VoiceStatus:
+    post:
+      operationId: voice_status_callback
+      summary: Voice status callback
+      description: |2-
+          SignalWire sends this webhook when the status of a call changes and you have configured StatusCallback
+          and (optionally) StatusCallbackEvent. Use it to monitor call lifecycle, quality metrics, and associated recordings.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceStatusCallbackPayload'
+      x-fern-webhook: true
 security:
   - SignalWireBasicAuth: []
 components:
@@ -10359,6 +10442,50 @@ components:
           description: The password for SIP authentication.
           example: password123
       description: Request body for sending a fax.
+    SmsStatusCallbackPayload:
+      type: object
+      required:
+        - MessageStatus
+        - MessageSid
+        - AccountSid
+        - From
+        - To
+        - Body
+        - NumMedia
+        - NumSegments
+      properties:
+        MessageStatus:
+          type: string
+          description: The current status of the message at the time of the callback.
+        ErrorCode:
+          type: string
+          description: If the message has failed or is undelivered, the error code may provide more information about what went wrong.
+        MessageSid:
+          type: string
+          description: The unique ID of this message.
+        AccountSid:
+          type: string
+          description: The unique ID of the project this message is associated with.
+        From:
+          type: string
+          description: The From number of the message.
+        To:
+          type: string
+          description: The To number of the message.
+        Body:
+          type: string
+          description: The body of the message.
+        NumMedia:
+          type: integer
+          format: int32
+          description: The number of media files that were included with the message.
+        NumSegments:
+          type: integer
+          format: int32
+          description: The number of segments that make up the entire message.
+      description: |-
+        Payload sent by SignalWire to your SMS Status Callback URL when the status of an SMS/MMS message changes.
+        Configure this callback using the StatusCallback parameter when sending an outgoing message.
     StreamStatus:
       type: string
       enum:
@@ -10466,6 +10593,57 @@ components:
           description: URI for usage. Not supported.
           example: null
       description: A Map of sub-resources that are linked to the given Project.
+    TenDlcStatusCallbackPayload:
+      type: object
+      required:
+        - project_id
+        - event_at
+        - event_category
+        - event_type
+        - state
+        - brand_id
+      properties:
+        project_id:
+          type: string
+          description: The unique ID of the project this object is associated with.
+        event_at:
+          type: string
+          description: The timestamp of when the event occurred, in ISO 8601 format.
+        event_category:
+          type: string
+          description: |2-
+              The category of the event.
+              One of: brand, campaign, number_assignment_order, number_assignment.
+        event_type:
+          type: string
+          description: |2-
+              The specific type of event that occurred.
+              See the 10DLC status callback event types documentation for all possible values.
+        state:
+          type: string
+          description: The current state of the object after the event. Possible values depend on the object type.
+        brand_id:
+          type: string
+          description: The unique identifier for the brand. Present in all event types.
+        campaign_id:
+          type: string
+          description: The unique identifier for the campaign. Present in campaign, number assignment order, and number assignment events.
+        number_assignment_order_id:
+          type: string
+          description: The unique identifier for the number assignment order. Present in number assignment order and number assignment events.
+        number_assignment_id:
+          type: string
+          description: The unique identifier for the number assignment. Present only in number assignment events.
+        phone_number_id:
+          type: string
+          description: The unique identifier for the phone route itself. Present only in number assignment events.
+        phone_number:
+          type: string
+          description: The phone number in E.164 format. Present only in number assignment events.
+      description: |-
+        Payload sent by SignalWire to your 10DLC Status Callback URL when the state of a 10DLC registration object changes.
+        Use this webhook to monitor the lifecycle of messaging brands, campaigns, number assignment orders,
+        and number assignments in real time.
     TokenResponse:
       type: object
       required:
@@ -10697,6 +10875,38 @@ components:
           description: The URI of this resource, relative to the API base URL.
           example: /api/laml/2010-04-01/Accounts/b3877c40-da60-4998-90ad-b792e98472ac/Transcriptions/b3877c40-da60-4998-90ad-b792e98472tr.json
       description: Response containing a single transcription.
+    TranscriptionStatusCallbackPayload:
+      type: object
+      required:
+        - TranscriptionSid
+        - TranscriptionText
+        - TranscriptionStatus
+        - TranscriptionUrl
+        - RecordingSid
+        - RecordingUrl
+      properties:
+        TranscriptionSid:
+          type: string
+          description: The unique ID of the transcription.
+        TranscriptionText:
+          type: string
+          description: The text of the transcription.
+        TranscriptionStatus:
+          type: string
+          description: The status of the transcription (completed or failed).
+        TranscriptionUrl:
+          type: string
+          description: The URL for the transcription's REST API resource.
+        RecordingSid:
+          type: string
+          description: The unique ID of the recording from which the transcription was generated.
+        RecordingUrl:
+          type: string
+          description: The URL for the audio recording from which the transcription was generated.
+      description: |-
+        Payload sent by SignalWire to your Transcription Status Callback URL when the status of a transcription changes.
+        Configure this callback by enabling transcription (transcribe=true) on a recording and setting transcribeCallback
+        to your webhook URL.
     UpdateAccountRequest:
       type: object
       required:
@@ -11191,6 +11401,140 @@ components:
             - fax
             - messaging
       description: Request body for updating an API token.
+    VoiceStatusCallbackPayload:
+      type: object
+      required:
+        - AccountSid
+        - ApiVersion
+        - AudioInAveragePtime
+        - AudioInDtmfPacketCount
+        - AudioInFlushPacketCount
+        - AudioInJitterMaxVariance
+        - AudioInJitterMinVariance
+        - AudioInLargestJbSize
+        - AudioInMos
+        - AudioInMediaPacketCount
+        - AudioInSkipPacketCount
+        - AudioOutDtmfPacketCount
+        - AudioOutMediaPacketCount
+        - CallbackSource
+        - CallSid
+        - CallStatus
+        - Direction
+        - From
+        - SequenceNumber
+        - Timestamp
+        - To
+      properties:
+        AccountSid:
+          type: string
+          description: The unique ID of the project this call is associated with.
+        ApiVersion:
+          type: string
+          description: The version of the SignalWire API used.
+        AudioInAveragePtime:
+          type: integer
+          format: int32
+          description: The average time between packets for the inbound stream.
+        AudioInDtmfPacketCount:
+          type: integer
+          format: int32
+          description: The number of DTMF packets in the inbound media stream.
+        AudioInFlushPacketCount:
+          type: integer
+          format: int32
+          description: The number of incoming packets removed from the jitter buffer due to overflow or underflow.
+        AudioInJitterMaxVariance:
+          type: integer
+          format: int32
+          description: The maximum variance of jitter for incoming audio RTP packets.
+        AudioInJitterMinVariance:
+          type: integer
+          format: int32
+          description: The minimum variance of jitter for incoming audio RTP packets.
+        AudioInLargestJbSize:
+          type: integer
+          format: int32
+          description: The largest jitter buffer size recorded for incoming audio RTP packets during the session.
+        AudioInMos:
+          type: string
+          description: A mean opinion score (1-5) that helps determine inbound audio quality.
+        AudioInMediaPacketCount:
+          type: integer
+          format: int32
+          description: The number of audio packets received in the inbound media stream.
+        AudioInSkipPacketCount:
+          type: integer
+          format: int32
+          description: The number of lost packets from the inbound stream.
+        AudioOutDtmfPacketCount:
+          type: integer
+          format: int32
+          description: The total number of DTMF packets generated in the outbound media stream.
+        AudioOutMediaPacketCount:
+          type: integer
+          format: int32
+          description: The number of audio packets sent in the outbound media stream.
+        CallbackSource:
+          type: string
+          description: The source of the status callback.
+        CallDuration:
+          type: integer
+          format: int32
+          description: The duration, in seconds, of the finished call. Present on completed events.
+        CallerName:
+          type: string
+          description: The name of the caller, when Caller ID lookup is enabled.
+        CallSid:
+          type: string
+          description: A unique identifier for the call.
+        CallStatus:
+          type: string
+          description: The status of the call (e.g., ringing, initiated, in-progress, queued, failed, busy, no-answer, completed).
+        Direction:
+          type: string
+          description: |2-
+              The direction of the call.
+              One of: outbound-dial, outbound-api, inbound.
+        ForwardedFrom:
+          type: string
+          description: The number this call was forwarded from.
+        From:
+          type: string
+          description: The phone number that sent this call, in E.164 format.
+        ParentCallSid:
+          type: string
+          description: A unique identifier for the call that created this call.
+        RecordingDuration:
+          type: integer
+          format: int32
+          description: The duration, in seconds, of the recording.
+        RecordingSid:
+          type: string
+          description: The unique identifier for the audio recording.
+        RecordingUrl:
+          type: string
+          description: The URL of the recorded audio call.
+        SequenceNumber:
+          type: integer
+          format: int32
+          description: The order in which events occur, starting at 0.
+        SipInviteResultPhrase:
+          type: string
+          description: Textual description of the result of the SIP INVITE request.
+        SipResultCode:
+          type: string
+          description: The numeric SIP response code received for the INVITE request.
+        Timestamp:
+          type: string
+          description: The timestamp, in RFC 2822 format, of when the event occurred.
+        To:
+          type: string
+          description: The phone number of the call recipient, in E.164 format.
+      description: |-
+        Payload sent by SignalWire to your Voice Status Callback URL when the status of a call changes.
+        Configure this callback using the StatusCallback and StatusCallbackEvent parameters when creating a call
+        via the API or using Dial with Number, SIP, or Conference.
   securitySchemes:
     SignalWireBasicAuth:
       type: http
