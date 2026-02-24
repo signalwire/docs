@@ -12,27 +12,27 @@ Unified report merging reconciliation and content-matching results.
 
 | Action | Count | Description |
 |--------|-------|-------------|
-| **redirect** | 841 | Old URL -> proposed Fern URL (needs 301 redirect) |
-| **review** | 48 | Possible match, needs manual verification |
-| **gone** | 586 | Content removed or auto-generated (410/404) |
-| **no_action** | 14 | URL unchanged or already covered |
+| **redirect** | 680 | Old URL -> proposed Fern URL (needs 301 redirect) |
+| **review** | 66 | Possible match, needs manual verification |
+| **gone** | 728 | Content removed or auto-generated (410/404) |
+| **no_action** | 15 | URL unchanged or already covered |
 | **Total** | **1489** | |
 
 ### By category
 
 | Category | Count |
 |----------|-------|
-| matched_changed | 633 |
+| matched_changed | 479 |
 | autogen | 401 |
-| slug_changed | 208 |
+| slug_changed | 201 |
+| likely_deleted | 193 |
 | known_deleted | 98 |
-| likely_deleted | 81 |
-| uncertain | 48 |
-| matched_same | 13 |
-| no_source | 6 |
-| already_mapped | 1 |
+| uncertain | 66 |
+| no_source | 36 |
+| matched_same | 12 |
+| already_mapped | 3 |
 
-## Redirects (841)
+## Redirects (680)
 
 These old URLs need 301 redirects to their proposed locations.
 
@@ -47,30 +47,25 @@ These old URLs need 301 redirects to their proposed locations.
 | `/ai/guides/best-practices` | `/platform/ai/guides/best-practices` | `/platform/ai/guides-best-practices` | matched_changed | 1.000 |
 | `/ai/guides/integrations/livekit/inbound` | `/platform/ai/guides/integrations/livekit/inbound` | `/platform/ai/inbound` | matched_changed | 1.000 |
 | `/ai/guides/integrations/livekit/outbound` | `/platform/ai/guides/integrations/livekit/outbound` | `/platform/ai/outbound` | matched_changed | 1.000 |
-| `/ai/guides/integrations/vapi` | `/platform/ai/guides/integrations/vapi` | `/platform/ai/vapi` | matched_changed | 1.000 |
 | `/ai/guides/integrations/vapi/inbound-calls` | `/platform/ai/guides/integrations/vapi/inbound-calls` | `/platform/ai/inbound-calls` | matched_changed | 1.000 |
 | `/ai/guides/integrations/vapi/outbound-calls` | `/platform/ai/guides/integrations/vapi/outbound-calls` | `/platform/ai/outbound-calls` | matched_changed | 1.000 |
 | `/ai/pom` | `/platform/ai/pom` | `/platform/ai/pom` | matched_changed | 1.000 |
 | `/ai/pom/technical-reference` | `/platform/ai/pom/technical-reference` | `/platform/ai/technical-reference` | matched_changed | 1.000 |
-| `/call-flow-builder/ai-agent` | `/call-flow-builder/nodes/ai-agent` | `/call-flow-builder/reference/ai-agent` | slug_changed | 0.788 |
-| `/call-flow-builder/answer-call` | `/call-flow-builder/nodes/answer-call` | `/call-flow-builder/reference/answer-call` | slug_changed | 0.939 |
-| `/call-flow-builder/execute-swml` | `/call-flow-builder/nodes/execute-swml` | `/call-flow-builder/reference/execute-swml` | slug_changed | 0.846 |
-| `/call-flow-builder/handle-call` | `/call-flow-builder/nodes/handle-call` | `/call-flow-builder/reference/handle-call` | slug_changed | 0.983 |
-| `/call-flow-builder/nodes` | `/call-flow-builder/nodes` | `/call-flow-builder/reference/nodes` | matched_changed | 1.000 |
-| `/call-flow-builder/request` | `/call-flow-builder/nodes/request` | `/call-flow-builder/reference/request` | slug_changed | 0.781 |
-| `/call-flow-builder/set-variables` | `/call-flow-builder/nodes/set-variables` | `/call-flow-builder/reference/set-variables` | slug_changed | 0.822 |
-| `/call-flow-builder/start-call-recording` | `/call-flow-builder/nodes/start-call-recording` | `/call-flow-builder/reference/start-call-recording` | slug_changed | 0.761 |
-| `/call-flow-builder/stop-call-recording` | `/call-flow-builder/nodes/stop-call-recording` | `/call-flow-builder/reference/stop-call-recording` | slug_changed | 0.846 |
-| `/call-flow-builder/unset-variables` | `/call-flow-builder/nodes/unset-variables` | `/call-flow-builder/reference/unset-variables` | slug_changed | 0.819 |
-| `/call-flow-builder/variables` | `/call-flow-builder/variables` | `/call-flow-builder/guides/variables` | matched_changed | 1.000 |
-| `/call-flow-builder/version` | `/call-flow-builder/version` | `/call-flow-builder/guides/version` | matched_changed | 1.000 |
-| `/call-flow-builder/voicemail-recording` | `/call-flow-builder/nodes/voicemail-recording` | `/call-flow-builder/reference/voicemail-recording` | slug_changed | 0.826 |
+| `/call-flow-builder/ai-agent` | `/call-flow-builder/reference/ai-agent` | `/call-flow-builder/reference/ai-agent` | slug_changed | 0.788 |
+| `/call-flow-builder/answer-call` | `/call-flow-builder/reference/answer-call` | `/call-flow-builder/reference/answer-call` | slug_changed | 0.939 |
+| `/call-flow-builder/execute-swml` | `/call-flow-builder/reference/execute-swml` | `/call-flow-builder/reference/execute-swml` | slug_changed | 0.846 |
+| `/call-flow-builder/handle-call` | `/call-flow-builder/reference/handle-call` | `/call-flow-builder/reference/handle-call` | slug_changed | 0.983 |
+| `/call-flow-builder/nodes` | `/call-flow-builder/reference` | `/call-flow-builder/reference/reference` | slug_changed | 0.839 |
+| `/call-flow-builder/request` | `/call-flow-builder/reference/request` | `/call-flow-builder/reference/request` | slug_changed | 0.781 |
+| `/call-flow-builder/set-variables` | `/call-flow-builder/reference/set-variables` | `/call-flow-builder/reference/set-variables` | slug_changed | 0.820 |
+| `/call-flow-builder/start-call-recording` | `/call-flow-builder/reference/start-call-recording` | `/call-flow-builder/reference/start-call-recording` | slug_changed | 0.761 |
+| `/call-flow-builder/stop-call-recording` | `/call-flow-builder/reference/stop-call-recording` | `/call-flow-builder/reference/stop-call-recording` | slug_changed | 0.846 |
+| `/call-flow-builder/unset-variables` | `/call-flow-builder/reference/unset-variables` | `/call-flow-builder/reference/unset-variables` | slug_changed | 0.819 |
+| `/call-flow-builder/variables` | `/call-flow-builder/reference/variables` | `/call-flow-builder/guides/variables` | slug_changed | 0.929 |
+| `/call-flow-builder/version` | `/call-flow-builder/reference/versioning` | `/call-flow-builder/guides/versioning` | slug_changed | 0.984 |
+| `/call-flow-builder/voicemail-recording` | `/call-flow-builder/reference/voicemail-recording` | `/call-flow-builder/reference/voicemail-recording` | slug_changed | 0.825 |
 | `/chat` | `/platform/chat` | `/platform/chat` | matched_changed | 1.000 |
-| `/chat/faq` | `/platform/chat/faq` | `/platform/chat/faq` | matched_changed | 1.000 |
-| `/chat/getting-started/chat-first-steps` | `/platform/chat/getting-started/chat-first-steps` | `/platform/chat/chat-first-steps` | matched_changed | 1.000 |
-| `/chat/getting-started/get-started-with-a-simple-chat-demo` | `/platform/chat/getting-started/get-started-with-a-simple-chat-demo` | `/platform/chat/get-started-with-a-simple-chat-demo` | matched_changed | 1.000 |
-| `/chat/guides/build-a-react-chat-application` | `/platform/chat/guides/build-a-react-chat-application` | `/platform/chat/build-a-react-chat-application` | matched_changed | 1.000 |
-| `/chat/guides/using-chat-to-send-sms-and-make-calls` | `/platform/chat/guides/using-chat-to-send-sms-and-make-calls` | `/platform/chat/using-chat-to-send-sms-and-make-calls` | matched_changed | 1.000 |
+| `/chat/getting-started/get-started-with-a-simple-chat-demo` | `/browser-sdk/guides/build-a-chat-application-with-the-browser-sdk` | `/browser-sdk/guides/build-a-chat-application-with-the-browser-sdk` | slug_changed | 0.971 |
 | `/compatibility-api/api-reference/rest-client-sdks/methods` | `/compatibility-api/sdks/methods` | `/compatibility-api/sdks/methods` | slug_changed | 1.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers` | `/compatibility-api/sdks/methods/available-phone-numbers` | `/compatibility-api/sdks/methods/available-phone-numbers` | slug_changed | 1.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/list-resources` | `/compatibility-api/sdks/methods/available-phone-numbers/list-resources` | `/compatibility-api/sdks/methods/available-phone-numbers/list-resources` | slug_changed | 1.000 |
@@ -173,104 +168,39 @@ These old URLs need 301 redirects to their proposed locations.
 | `/compatibility-api/cxml/voice/virtualagent-noun` | `/compatibility-api/cxml/voice/virtualagent` | `/compatibility-api/cxml/reference/voice/virtualagent` | slug_changed | 0.802 |
 | `/compatibility-api/sdks` | `/compatibility-api/sdks` | `/compatibility-api/sdks` | slug_changed | 1.000 |
 | `/fax` | `/platform/fax` | `/platform/fax` | matched_changed | 1.000 |
-| `/fax/getting-started/common-fax-errors` | `/platform/fax/getting-started/common-fax-errors` | `/platform/fax/common-fax-errors` | matched_changed | 1.000 |
-| `/fax/getting-started/fax-to-email` | `/platform/fax/getting-started/fax-to-email` | `/platform/fax/fax-to-email` | matched_changed | 1.000 |
-| `/fax/getting-started/fax-with-retries` | `/platform/fax/getting-started/fax-with-retries` | `/platform/fax/fax-with-retries` | matched_changed | 1.000 |
-| `/fax/getting-started/filter-faxes-by-number-status-and-date` | `/platform/fax/getting-started/filter-faxes-by-number-status-and-date` | `/platform/fax/filter-faxes-by-number-status-and-date` | matched_changed | 1.000 |
-| `/fax/getting-started/list-faxes-to-csv-in-all-languages` | `/platform/fax/getting-started/list-faxes-to-csv-in-all-languages` | `/platform/fax/list-faxes-to-csv-in-all-languages` | matched_changed | 1.000 |
+| `/fax/getting-started/common-fax-errors` | `/platform/fax/common-fax-errors` | `/platform/fax/common-fax-errors` | slug_changed | 0.999 |
 | `/guides` | `/browser-sdk/guides` | `/browser-sdk/guides` | matched_changed | 1.000 |
 | `/messaging` | `/platform/messaging` | `/platform/messaging` | matched_changed | 1.000 |
-| `/messaging/faq` | `/platform/messaging/faq` | `/platform/messaging/messaging-faq` | matched_changed | 1.000 |
 | `/messaging/get-started/campaign-registry` | `/platform/messaging/get-started/campaign-registry` | `/platform/messaging/campaign-registry` | matched_changed | 1.000 |
 | `/messaging/getting-started/campaign-registry/campaign-service-providers` | `/platform/messaging/getting-started/campaign-registry/campaign-service-providers` | `/platform/messaging/campaign-service-providers` | matched_changed | 1.000 |
-| `/messaging/getting-started/campaign-registry/faq` | `/platform/messaging/getting-started/campaign-registry/faq` | `/platform/messaging/campaign-registry-faq` | matched_changed | 1.000 |
-| `/messaging/getting-started/campaign-registry/pricing` | `/platform/messaging/getting-started/campaign-registry/pricing` | `/platform/messaging/pricing` | matched_changed | 1.000 |
 | `/messaging/getting-started/campaign-registry/registration` | `/platform/messaging/getting-started/campaign-registry/registration` | `/platform/messaging/registration` | matched_changed | 1.000 |
-| `/messaging/getting-started/how-to-troubleshoot-common-messaging-issues` | `/platform/messaging/getting-started/how-to-troubleshoot-common-messaging-issues` | `/platform/messaging/how-to-troubleshoot-common-messaging-issues` | matched_changed | 1.000 |
-| `/messaging/getting-started/platform-free-trial` | `/platform/messaging/getting-started/platform-free-trial` | `/platform/messaging/platform-free-trial` | matched_changed | 1.000 |
 | `/messaging/getting-started/receiving-your-first-sms` | `/compatibility-api/cxml/guides/receiving-your-first-sms` | `/compatibility-api/guides/receiving-your-first-sms` | slug_changed | 0.914 |
 | `/messaging/getting-started/sending-your-first-sms` | `/compatibility-api/cxml/guides/sending-your-first-sms` | `/compatibility-api/guides/sending-your-first-sms` | slug_changed | 0.966 |
 | `/messaging/getting-started/sms-best-practices-how-to-ensure-message-delivery` | `/platform/messaging/getting-started/sms-best-practices-how-to-ensure-message-delivery` | `/platform/messaging/sms-best-practices-how-to-ensure-message-delivery` | matched_changed | 1.000 |
-| `/messaging/guides/general/how-to-build-a-private-url-shortener` | `/platform/messaging/guides/general/how-to-build-a-private-url-shortener` | `/platform/messaging/how-to-build-a-private-url-shortener` | matched_changed | 1.000 |
-| `/messaging/guides/general/how-to-find-unregistered-numbers-on-your-project` | `/platform/messaging/guides/general/how-to-find-unregistered-numbers-on-your-project` | `/platform/messaging/how-to-find-unregistered-numbers-on-your-project` | matched_changed | 1.000 |
-| `/messaging/guides/general/messaging-character-limits` | `/platform/messaging/guides/general/messaging-character-limits` | `/platform/messaging/messaging-character-limits` | matched_changed | 1.000 |
-| `/messaging/guides/general/messaging-mime-types` | `/platform/messaging/guides/general/messaging-mime-types` | `/platform/messaging/messaging-mime-types` | matched_changed | 1.000 |
-| `/messaging/guides/general/toll-free-number-overview` | `/platform/messaging/guides/general/toll-free-number-overview` | `/platform/messaging/toll-free-number-overview` | matched_changed | 1.000 |
+| `/messaging/guides/general/messaging-character-limits` | `/platform/messaging/sms/messaging-character-limits` | `/platform/messaging/messaging-character-limits` | slug_changed | 0.967 |
+| `/messaging/guides/general/messaging-mime-types` | `/platform/messaging/sms/messaging-mime-types` | `/platform/messaging/messaging-mime-types` | slug_changed | 1.000 |
 | `/messaging/guides/hosted-messaging` | `/platform/messaging/guides/hosted-messaging` | `/platform/messaging/hosted-messaging` | matched_changed | 1.000 |
 | `/platform/basics/general/signalwire-rate-limits` | `/platform/basics/general/signalwire-rate-limits` | `/platform/basics/signalwire-rate-limits` | matched_changed | 1.000 |
 | `/platform/basics/general/stir-shaken-all-you-need-to-know` | `/platform/basics/general/stir-shaken-all-you-need-to-know` | `/platform/basics/stir-shaken-all-you-need-to-know` | matched_changed | 1.000 |
 | `/platform/basics/general/stun-vs-turn-vs-ice` | `/platform/basics/general/stun-vs-turn-vs-ice` | `/platform/basics/stun-vs-turn-vs-ice` | matched_changed | 1.000 |
-| `/platform/basics/general/what-is-sip` | `/platform/basics/general/what-is-sip` | `/platform/basics/what-is-sip` | matched_changed | 1.000 |
 | `/platform/basics/general/what-is-webrtc` | `/platform/basics/general/what-is-webrtc` | `/platform/basics/what-is-webrtc` | matched_changed | 1.000 |
-| `/platform/basics/guides/getting-started-without-code` | `/platform/basics/guides/getting-started-without-code` | `/platform/basics/getting-started-without-code` | matched_changed | 1.000 |
-| `/platform/basics/guides/how-to-test-api-requests-on-postman` | `/platform/basics/guides/how-to-test-api-requests-on-postman` | `/platform/basics/how-to-test-api-requests-on-postman` | matched_changed | 1.000 |
-| `/platform/basics/guides/technical-troubleshooting/common-webhook-errors` | `/platform/basics/guides/technical-troubleshooting/common-webhook-errors` | `/platform/basics/common-webhook-errors` | matched_changed | 1.000 |
-| `/platform/basics/guides/technical-troubleshooting/creating-a-publically-exposed-webhook` | `/platform/basics/guides/technical-troubleshooting/creating-a-publically-exposed-webhook` | `/platform/basics/creating-a-publically-exposed-webhook` | matched_changed | 1.000 |
-| `/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok` | `/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok` | `/platform/basics/how-to-test-webhooks-with-ngrok` | matched_changed | 1.000 |
-| `/platform/basics/guides/webrtc-with-sip-over-websockets` | `/platform/basics/guides/webrtc-with-sip-over-websockets` | `/platform/basics/webrtc-with-sip-over-websockets` | matched_changed | 1.000 |
-| `/platform/basics/security-and-compliance/fraud` | `/platform/basics/security-and-compliance/fraud` | `/platform/basics/fraud` | matched_changed | 1.000 |
-| `/platform/basics/security-and-compliance/hipaapci-compliance` | `/platform/basics/security-and-compliance/hipaapci-compliance` | `/platform/basics/hipaapci-compliance` | matched_changed | 1.000 |
-| `/platform/basics/security-and-compliance/webhook-security` | `/platform/basics/security-and-compliance/webhook-security` | `/platform/basics/webhook-security` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/ai-agents` | `/platform/call-fabric/resources/ai-agents` | `/platform/call-fabric/ai-agents` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/cxml-scripts` | `/platform/call-fabric/resources/cxml-scripts` | `/platform/call-fabric/cxml-scripts` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/dialogflow-agents` | `/platform/call-fabric/resources/dialogflow-agents` | `/platform/call-fabric/dialogflow-agents` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/freeswitch-connectors` | `/platform/call-fabric/resources/freeswitch-connectors` | `/platform/call-fabric/freeswitch-connectors` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/relay-applications` | `/platform/call-fabric/resources/relay-applications` | `/platform/call-fabric/relay-applications` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/sip-gateways` | `/platform/call-fabric/resources/sip-gateways` | `/platform/call-fabric/sip-gateways` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/subscribers` | `/platform/call-fabric/resources/subscribers` | `/platform/call-fabric/resources-subscribers` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/swml-scripts` | `/platform/call-fabric/resources/swml-scripts` | `/platform/call-fabric/swml-scripts` | matched_changed | 1.000 |
-| `/platform/call-fabric/resources/video-rooms` | `/platform/call-fabric/resources/video-rooms` | `/platform/call-fabric/video-rooms` | matched_changed | 1.000 |
-| `/platform/call-fabric/subscribers` | `/platform/call-fabric/subscribers` | `/platform/call-fabric/call-fabric-subscribers` | matched_changed | 1.000 |
-| `/platform/dashboard/get-started/phone-numbers` | `/platform/dashboard/get-started/phone-numbers` | `/platform/dashboard/phone-numbers` | matched_changed | 1.000 |
-| `/platform/dashboard/getting-started/signing-up-for-a-space` | `/platform/dashboard/getting-started/signing-up-for-a-space` | `/platform/dashboard/signing-up-for-a-space` | matched_changed | 1.000 |
-| `/platform/dashboard/getting-started/your-signalwire-api-space` | `/platform/dashboard/getting-started/your-signalwire-api-space` | `/platform/dashboard/your-signalwire-api-space` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/changing-settings-in-your-signalwire-space` | `/platform/dashboard/guides/changing-settings-in-your-signalwire-space` | `/platform/dashboard/changing-settings-in-your-signalwire-space` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/closing-a-signalwire-account` | `/platform/dashboard/guides/closing-a-signalwire-account` | `/platform/dashboard/closing-a-signalwire-account` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/export-logs-from-your-signalwire-space` | `/platform/dashboard/guides/export-logs-from-your-signalwire-space` | `/platform/dashboard/export-logs-from-your-signalwire-space` | matched_changed | 1.000 |
+| `/platform/basics/security-and-compliance/webhook-security` | `/platform/basics/security/webhook-security` | `/platform/basics/webhook-security` | slug_changed | 0.960 |
+| `/platform/dashboard/get-started/phone-numbers` | `/platform/phone-numbers` | `/platform/phone-numbers` | slug_changed | 0.744 |
+| `/platform/dashboard/getting-started/signing-up-for-a-space` | `/platform/get-started/create-an-account` | `/platform/get-started/create-an-account` | slug_changed | 0.733 |
+| `/platform/dashboard/getting-started/your-signalwire-api-space` | `/platform/get-started/api-credentials` | `/platform/get-started/api-credentials` | slug_changed | 0.729 |
 | `/platform/dashboard/guides/how-to-enable-international-outbound-dialing-sms` | `/platform/dashboard/guides/how-to-enable-international-outbound-dialing-sms` | `/platform/dashboard/how-to-enable-international-outbound-dialing-sms` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/how-to-request-an-increase-to-your-signalwire-space-limits` | `/platform/dashboard/guides/how-to-request-an-increase-to-your-signalwire-space-limits` | `/platform/dashboard/how-to-request-an-increase-to-your-signalwire-space-limits` | matched_changed | 1.000 |
 | `/platform/dashboard/guides/media-protection` | `/platform/dashboard/guides/media-protection` | `/platform/dashboard/media-protection` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/subprojects` | `/platform/dashboard/guides/subprojects` | `/platform/dashboard/subprojects` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/suspended-signalwire-cloud-space` | `/platform/dashboard/guides/suspended-signalwire-cloud-space` | `/platform/dashboard/suspended-signalwire-cloud-space` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/user-management` | `/platform/dashboard/guides/user-management` | `/platform/dashboard/user-management` | matched_changed | 1.000 |
-| `/platform/dashboard/guides/what-is-a-sid` | `/platform/dashboard/guides/what-is-a-sid` | `/platform/dashboard/what-is-a-sid` | matched_changed | 1.000 |
-| `/platform/integrations/carriers/thinq` | `/platform/integrations/carriers/thinq` | `/platform/integrations/thinq` | matched_changed | 1.000 |
-| `/platform/integrations/crm/zoho-crm-click-to-call` | `/platform/integrations/crm/zoho-crm-click-to-call` | `/platform/integrations/zoho-crm-click-to-call` | matched_changed | 1.000 |
-| `/platform/integrations/dialogflow/dialogflow-agents` | `/platform/integrations/dialogflow/dialogflow-agents` | `/platform/integrations/dialogflow-agents` | matched_changed | 1.000 |
-| `/platform/integrations/dialogflow/dialogflow-using-nodejs-to-get-caller-id-send-sms` | `/platform/integrations/dialogflow/dialogflow-using-nodejs-to-get-caller-id-send-sms` | `/platform/integrations/dialogflow-using-nodejs-to-get-caller-id-send-sms` | matched_changed | 1.000 |
+| `/platform/dashboard/guides/what-is-a-sid` | `/platform/basics/segment-ids` | `/platform/basics/segment-ids` | slug_changed | 0.854 |
 | `/platform/integrations/freeswitch/add-ai-to-freeswitch` | `/platform/integrations/freeswitch/add-ai-to-freeswitch` | `/platform/integrations/add-ai-to-freeswitch` | matched_changed | 1.000 |
-| `/platform/integrations/freeswitch/choosing-a-freeswitch-repository` | `/platform/integrations/freeswitch/choosing-a-freeswitch-repository` | `/platform/integrations/choosing-a-freeswitch-repository` | matched_changed | 1.000 |
-| `/platform/integrations/freeswitch/freeswitch-crash-getting-a-backtrace-from-a-core-dump` | `/platform/integrations/freeswitch/freeswitch-crash-getting-a-backtrace-from-a-core-dump` | `/platform/integrations/freeswitch-crash-getting-a-backtrace-from-a-core-dump` | matched_changed | 1.000 |
-| `/platform/integrations/freeswitch/freeswitch-memory-address-and-memory-pool-sanitizer` | `/platform/integrations/freeswitch/freeswitch-memory-address-and-memory-pool-sanitizer` | `/platform/integrations/freeswitch-memory-address-and-memory-pool-sanitizer` | matched_changed | 1.000 |
 | `/platform/integrations/freeswitch/how-to-mod-signalwire-in-freeswitch-clean-and-reconfigure` | `/platform/integrations/freeswitch/how-to-mod_signalwire-in-freeswitch-clean-and-reconfigure` | `/platform/integrations/how-to-mod-signalwire-in-freeswitch-clean-and-reconfigure` | matched_changed | 1.000 |
 | `/platform/integrations/freeswitch/installing-freeswitch-or-freeswitch-advantage` | `/platform/integrations/freeswitch/installing-freeswitch-or-freeswitch-advantage` | `/platform/integrations/installing-freeswitch-or-freeswitch-advantage` | matched_changed | 1.000 |
 | `/platform/integrations/freeswitch/sending-an-sms-from-freeswitch-xml-dialplan-through-signalwire-cloud` | `/platform/integrations/freeswitch/sending-an-sms-from-freeswitch-xml-dialplan-through-signalwire-cloud` | `/platform/integrations/sending-an-sms-from-freeswitch-xml-dialplan-through-signalwire-cloud` | matched_changed | 1.000 |
-| `/platform/integrations/messaging-services/textable` | `/platform/integrations/messaging-services/textable` | `/platform/integrations/textable` | matched_changed | 1.000 |
-| `/platform/integrations/messaging-services/textit` | `/platform/integrations/messaging-services/textit` | `/platform/integrations/textit` | matched_changed | 1.000 |
 | `/platform/integrations/pbx-systems/connect-fusionpbx-with-signalwire` | `/platform/integrations/pbx-systems/connect-fusionpbx-with-signalwire` | `/platform/integrations/connect-fusionpbx-with-signalwire` | matched_changed | 1.000 |
-| `/platform/integrations/pbx-systems/set-up-chan-sip-freepbx-with-signalwire` | `/platform/integrations/pbx-systems/set-up-chan_sip-freepbx-with-signalwire` | `/platform/integrations/set-up-chan-sip-freepbx-with-signalwire` | matched_changed | 1.000 |
 | `/platform/integrations/pbx-systems/set-up-freepbx-with-signalwire` | `/platform/integrations/pbx-systems/set-up-freepbx-with-signalwire` | `/platform/integrations/set-up-freepbx-with-signalwire` | matched_changed | 1.000 |
-| `/platform/integrations/serverless-functions/google-cloud-functions` | `/platform/integrations/serverless-functions/google-cloud-functions` | `/platform/integrations/google-cloud-functions` | matched_changed | 1.000 |
-| `/platform/integrations/serverless-functions/microsoft-azure-functions` | `/platform/integrations/serverless-functions/microsoft-azure-functions` | `/platform/integrations/microsoft-azure-functions` | matched_changed | 1.000 |
-| `/platform/integrations/softphones/connect-signalwire-with-3cx` | `/platform/integrations/softphones/connect-signalwire-with-3cx` | `/platform/integrations/connect-signalwire-with-3cx` | matched_changed | 1.000 |
-| `/platform/integrations/softphones/connect-signalwire-with-linphone` | `/platform/integrations/softphones/connect-signalwire-with-linphone` | `/platform/integrations/connect-signalwire-with-linphone` | matched_changed | 1.000 |
-| `/platform/integrations/softphones/microsip-softphone` | `/platform/integrations/softphones/microsip-softphone` | `/platform/integrations/microsip-softphone` | matched_changed | 1.000 |
-| `/platform/integrations/softphones/set-up-bria-softphone-with-signalwire` | `/platform/integrations/softphones/set-up-bria-softphone-with-signalwire` | `/platform/integrations/set-up-bria-softphone-with-signalwire` | matched_changed | 1.000 |
-| `/platform/integrations/softphones/set-up-zoiper-softphone-with-signalwire` | `/platform/integrations/softphones/set-up-zoiper-softphone-with-signalwire` | `/platform/integrations/set-up-zoiper-softphone-with-signalwire` | matched_changed | 1.000 |
-| `/platform/integrations/workflow-tools/how-to-integrate-signalwire-into-integromat` | `/platform/integrations/workflow-tools/how-to-integrate-signalwire-into-integromat` | `/platform/integrations/how-to-integrate-signalwire-into-integromat` | matched_changed | 1.000 |
-| `/platform/integrations/workflow-tools/zapier/creating-a-zapier-zap` | `/platform/integrations/workflow-tools/zapier/creating-a-zapier-zap` | `/platform/integrations/creating-a-zapier-zap` | matched_changed | 1.000 |
-| `/platform/integrations/workflow-tools/zapier/how-to-use-zapier-webhooks` | `/platform/integrations/workflow-tools/zapier/how-to-use-zapier-webhooks` | `/platform/integrations/how-to-use-zapier-webhooks` | matched_changed | 1.000 |
-| `/platform/phone-numbers` | `/platform/dashboard/get-started/phone-numbers` | `/platform/dashboard/phone-numbers` | matched_changed | 1.000 |
-| `/platform/phone-numbers/getting-started/buying-a-phone-number` | `/platform/phone-numbers/getting-started/buying-a-phone-number` | `/platform/phone-numbers/buying-a-phone-number` | matched_changed | 1.000 |
 | `/platform/phone-numbers/getting-started/e911` | `/platform/phone-numbers/getting-started/e911` | `/platform/phone-numbers/e911` | matched_changed | 1.000 |
-| `/platform/phone-numbers/getting-started/porting-into-signalwire` | `/platform/phone-numbers/getting-started/porting-into-signalwire` | `/platform/phone-numbers/porting-into-signalwire` | matched_changed | 1.000 |
-| `/platform/phone-numbers/getting-started/what-is-e164` | `/platform/phone-numbers/getting-started/what-is-e164` | `/platform/phone-numbers/what-is-e164` | matched_changed | 1.000 |
-| `/platform/phone-numbers/guides/caller-id` | `/platform/phone-numbers/guides/caller-id` | `/platform/phone-numbers/caller-id` | matched_changed | 1.000 |
+| `/platform/phone-numbers/getting-started/porting-into-signalwire` | `/platform/get-started/porting-into-signalwire` | `/platform/get-started/porting-into-signalwire` | slug_changed | 0.879 |
+| `/platform/phone-numbers/getting-started/what-is-e164` | `/platform/phone-numbers/what-is-e164` | `/platform/phone-numbers/what-is-e164` | slug_changed | 1.000 |
 | `/platform/phone-numbers/guides/how-to-configure-your-webhook` | `/platform/phone-numbers/guides/how-to-configure-your-webhook` | `/platform/phone-numbers/how-to-configure-your-webhook` | matched_changed | 1.000 |
-| `/platform/phone-numbers/guides/number-groups` | `/platform/phone-numbers/guides/number-groups` | `/platform/phone-numbers/number-groups` | matched_changed | 1.000 |
-| `/platform/phone-numbers/guides/porting-out-of-signalwire` | `/platform/phone-numbers/guides/porting-out-of-signalwire` | `/platform/phone-numbers/porting-out-of-signalwire` | matched_changed | 1.000 |
-| `/platform/phone-numbers/guides/releasing-dids` | `/platform/phone-numbers/guides/releasing-dids` | `/platform/phone-numbers/releasing-dids` | matched_changed | 1.000 |
-| `/platform/phone-numbers/guides/transferring-dids` | `/platform/phone-numbers/guides/transferring-dids` | `/platform/phone-numbers/transferring-dids` | matched_changed | 1.000 |
 | `/sdks` | `/compatibility-api/sdks` | `/compatibility-api/sdks` | matched_changed | 1.000 |
 | `/sdks/agents-sdk` | `/agents-sdk` | `/agents-sdk` | matched_changed | 1.000 |
 | `/sdks/agents-sdk/advanced/call-recording` | `/agents-sdk/advanced/call-recording` | `/agents-sdk/guides/call-recording` | matched_changed | 1.000 |
@@ -342,6 +272,7 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/agents-sdk/swaig-functions/native-functions` | `/agents-sdk/swaig-functions/native-functions` | `/agents-sdk/guides/native-functions` | matched_changed | 1.000 |
 | `/sdks/agents-sdk/swaig-functions/parameters` | `/agents-sdk/swaig-functions/parameters` | `/agents-sdk/guides/parameters` | matched_changed | 1.000 |
 | `/sdks/agents-sdk/swaig-functions/results-actions` | `/agents-sdk/swaig-functions/results-actions` | `/agents-sdk/guides/results-actions` | matched_changed | 1.000 |
+| `/sdks/browser-sdk` | `/browser-sdk` | `/browser-sdk` | matched_changed | 1.000 |
 | `/sdks/browser-sdk/chat` | `/browser-sdk/reference/chat` | `/browser-sdk/reference/chat` | slug_changed | 0.951 |
 | `/sdks/browser-sdk/chat/member` | `/browser-sdk/reference/chat/chat-member` | `/browser-sdk/reference/chat/chat-member` | slug_changed | 0.900 |
 | `/sdks/browser-sdk/chat/message` | `/browser-sdk/reference/chat/chat-message` | `/browser-sdk/reference/chat/chat-message` | slug_changed | 0.836 |
@@ -359,12 +290,11 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/browser-sdk/signalwire-client/client/conversation` | `/browser-sdk/reference/signalwire-client/client/conversation` | `/browser-sdk/reference/signalwire-client/client/conversation` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/notifications` | `/browser-sdk/reference/signalwire-client/notifications` | `/browser-sdk/reference/signalwire-client/notifications` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/utils` | `/browser-sdk/reference/signalwire-client/utils` | `/browser-sdk/reference/signalwire-client/utils` | slug_changed | 0.996 |
-| `/sdks/browser-sdk/technical-reference` | `/browser-sdk/reference` | `/browser-sdk/reference` | slug_changed | 0.730 |
-| `/sdks/browser-sdk/v2` | `/browser-sdk/v2` | `/browser-sdk/v2` | matched_changed | 1.000 |
-| `/sdks/browser-sdk/v2/call` | `/browser-sdk/v2/reference/call` | `/browser-sdk/v2/reference/call` | slug_changed | 1.000 |
+| `/sdks/browser-sdk/v2` | `/browser-sdk/v2/reference/core/overview` | `/browser-sdk/v2/reference/core/overview` | slug_changed | 0.840 |
+| `/sdks/browser-sdk/v2/call` | `/browser-sdk/v2/reference/core/call` | `/browser-sdk/v2/reference/core/call` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/v2/client` | `/browser-sdk/v2/reference/relay-client` | `/browser-sdk/v2/reference/relay-client` | slug_changed | 0.900 |
 | `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `/browser-sdk/v2/reference/v2-vs-v3` | `/browser-sdk/v2/reference/v2-vs-v3` | slug_changed | 0.998 |
-| `/sdks/browser-sdk/v2/notification` | `/browser-sdk/v2/reference/notification` | `/browser-sdk/v2/reference/notification` | slug_changed | 1.000 |
+| `/sdks/browser-sdk/v2/notification` | `/browser-sdk/v2/reference/core/notification` | `/browser-sdk/v2/reference/core/notification` | slug_changed | 1.000 |
 | `/sdks/browser-sdk/video/local-overlay` | `/browser-sdk/reference/video/local-overlay` | `/browser-sdk/reference/video/local-overlay` | slug_changed | 0.758 |
 | `/sdks/browser-sdk/video/room-device` | `/browser-sdk/reference/video/room-device` | `/browser-sdk/reference/video/room-device` | slug_changed | 0.945 |
 | `/sdks/browser-sdk/video/room-screenshare` | `/browser-sdk/reference/video/room-screen-share` | `/browser-sdk/reference/video/room-screen-share` | slug_changed | 0.959 |
@@ -372,30 +302,15 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/browser-sdk/video/room-session-playback` | `/browser-sdk/reference/video/room-session-playback` | `/browser-sdk/reference/video/room-session-playback` | slug_changed | 0.716 |
 | `/sdks/browser-sdk/video/room-session-screenshare` | `/browser-sdk/reference/video/room-screen-share` | `/browser-sdk/reference/video/room-screen-share` | slug_changed | 0.918 |
 | `/sdks/realtime-sdk` | `/realtime-sdk` | `/realtime-sdk` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/chat` | `/realtime-sdk/reference/chat` | `/realtime-sdk/reference/chat` | slug_changed | 0.805 |
 | `/sdks/realtime-sdk/chat/chat-member` | `/realtime-sdk/reference/chat/chat-member` | `/realtime-sdk/reference/chat/chat-member` | slug_changed | 0.937 |
 | `/sdks/realtime-sdk/chat/chat-message` | `/realtime-sdk/reference/chat/chat-message` | `/realtime-sdk/reference/chat/chat-message` | slug_changed | 0.925 |
-| `/sdks/realtime-sdk/chat/client` | `/realtime-sdk/reference/chat/client` | `/realtime-sdk/reference/chat-client [collision]` | slug_changed | 0.788 |
 | `/sdks/realtime-sdk/guides` | `/realtime-sdk/guides` | `/realtime-sdk/guides` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/messaging/forwarding-texts-to-email` | `/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email-nodejs` | `/realtime-sdk/v3/guides/forwarding-texts-to-email-nodejs` | slug_changed | 0.793 |
-| `/sdks/realtime-sdk/guides/messaging/send-sms-from-the-browser` | `/realtime-sdk/v3/guides/messaging/send-sms-from-the-browser-using-node-js` | `/realtime-sdk/v3/guides/send-sms-from-the-browser-using-node-js` | slug_changed | 0.839 |
-| `/sdks/realtime-sdk/guides/voice/first-steps-with-voice` | `/realtime-sdk/v3/guides/voice/first-steps-with-voice` | `/realtime-sdk/v3/guides/first-steps-with-voice` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/voice/setting-up-voicemail` | `/realtime-sdk/guides/make-a-voicemail-responder-with-the-realtime-sdk` | `/realtime-sdk/guides/make-a-voicemail-responder-with-the-realtime-sdk` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/guides/voice/stop-robocalls` | `/realtime-sdk/guides/filter-robocalls-to-lenny-with-the-realtime-sdk` | `/realtime-sdk/guides/filter-robocalls-to-lenny-with-the-realtime-sdk` | slug_changed | 0.896 |
-| `/sdks/realtime-sdk/guides/voice/weather-phone` | `/realtime-sdk/guides/make-a-weather-phone-ivr-with-the-realtime-sdk` | `/realtime-sdk/guides/make-a-weather-phone-ivr-with-the-realtime-sdk` | slug_changed | 0.898 |
-| `/sdks/realtime-sdk/messaging` | `/realtime-sdk/reference/messaging` | `/realtime-sdk/reference/messaging` | slug_changed | 0.769 |
-| `/sdks/realtime-sdk/messaging/client` | `/realtime-sdk/reference/messaging/client` | `/realtime-sdk/reference/messaging-client [collision]` | slug_changed | 0.852 |
+| `/sdks/realtime-sdk/guides/voice/first-steps-with-voice` | `/realtime-sdk/guides/make-and-receive-calls` | `/realtime-sdk/guides/make-and-receive-calls` | slug_changed | 0.824 |
 | `/sdks/realtime-sdk/messaging/message-contract` | `/realtime-sdk/reference/messaging/message-contract` | `/realtime-sdk/reference/messaging/message-contract` | slug_changed | 0.908 |
 | `/sdks/realtime-sdk/messaging/messaging-sendresult` | `/realtime-sdk/reference/messaging/messaging-send-result` | `/realtime-sdk/reference/messaging/messaging-send-result` | slug_changed | 0.901 |
-| `/sdks/realtime-sdk/pubsub` | `/realtime-sdk/reference/pubsub` | `/realtime-sdk/reference/pubsub` | slug_changed | 0.786 |
-| `/sdks/realtime-sdk/pubsub/client` | `/realtime-sdk/reference/pubsub/client` | `/realtime-sdk/reference/pubsub-client [collision]` | slug_changed | 0.790 |
 | `/sdks/realtime-sdk/pubsub/pubsubmessage` | `/realtime-sdk/reference/pubsub/pubsub-message` | `/realtime-sdk/reference/pubsub/pubsub-message` | slug_changed | 0.828 |
-| `/sdks/realtime-sdk/task` | `/realtime-sdk/reference/task` | `/realtime-sdk/reference/task` | slug_changed | 0.862 |
-| `/sdks/realtime-sdk/task/client` | `/realtime-sdk/reference/task/client` | `/realtime-sdk/reference/task-client [collision]` | slug_changed | 0.768 |
-| `/sdks/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v2/guides/v2-vs-v3` | `/realtime-sdk/v2/guides/v2-vs-v3` | `/realtime-sdk/v2/guides/v2-vs-v3` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v2/guides/voice/stop-robocalls` | `/realtime-sdk/v2/guides/stop-robocalls` | `/realtime-sdk/v2/guides/stop-robocalls` | slug_changed | 0.897 |
 | `/sdks/realtime-sdk/v2/language/dotnet` | `/realtime-sdk/v2/reference/dotnet` | `/realtime-sdk/v2/reference/dotnet` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v2/language/dotnet/calling` | `/realtime-sdk/v2/reference/dotnet/calling` | `/realtime-sdk/v2/reference/dotnet/calling` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v2/language/dotnet/calling/actions` | `/realtime-sdk/v2/reference/dotnet/calling/actions` | `/realtime-sdk/v2/reference/dotnet/calling/actions` | matched_changed | 1.000 |
@@ -671,37 +586,21 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/realtime-sdk/v2/language/ruby/messaging/send-result` | `/realtime-sdk/v2/reference/ruby/messaging/send-result` | `/realtime-sdk/v2/reference/ruby/messaging/send-result` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v2/language/ruby/relay-client` | `/realtime-sdk/v2/reference/ruby/relay-client` | `/realtime-sdk/v2/reference/ruby/relay-client` | matched_changed | 1.000 |
 | `/sdks/realtime-sdk/v2/language/ruby/task` | `/realtime-sdk/v2/reference/ruby/task` | `/realtime-sdk/v2/reference/ruby/task` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3` | `/realtime-sdk/v3` | `/realtime-sdk/v3` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/chat` | `/realtime-sdk/v3/reference/chat` | `/realtime-sdk/v3/reference/chat` | slug_changed | 0.732 |
-| `/sdks/realtime-sdk/v3/chat/client` | `/realtime-sdk/v3/reference/chat/client` | `/realtime-sdk/v3/reference/chat-client [collision]` | slug_changed | 0.840 |
 | `/sdks/realtime-sdk/v3/chat/member` | `/realtime-sdk/v3/reference/chat/chat-member` | `/realtime-sdk/v3/reference/chat/chat-member` | slug_changed | 0.900 |
 | `/sdks/realtime-sdk/v3/chat/message` | `/realtime-sdk/v3/reference/chat/chat-message` | `/realtime-sdk/v3/reference/chat/chat-message` | slug_changed | 0.900 |
-| `/sdks/realtime-sdk/v3/guides` | `/realtime-sdk/v3/guides` | `/realtime-sdk/v3/guides` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/v3/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/v3/guides/first-steps-with-messaging` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email` | `/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email-nodejs` | `/realtime-sdk/v3/guides/forwarding-texts-to-email-nodejs` | slug_changed | 0.842 |
-| `/sdks/realtime-sdk/v3/guides/messaging/send-sms-from-the-browser` | `/realtime-sdk/v3/guides/messaging/send-sms-from-the-browser-using-node-js` | `/realtime-sdk/v3/guides/send-sms-from-the-browser-using-node-js` | slug_changed | 0.871 |
-| `/sdks/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3` | `/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3` | `/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/guides/voice/first-steps-with-voice` | `/realtime-sdk/v3/guides/voice/first-steps-with-voice` | `/realtime-sdk/v3/guides/first-steps-with-voice` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/guides/voice/setting-up-voicemail` | `/realtime-sdk/v3/guides/voice/setting-up-voicemail` | `/realtime-sdk/v3/guides/setting-up-voicemail` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/guides/voice/weather-phone` | `/realtime-sdk/v3/guides/voice/weather-phone-with-signalwire-realtime-api` | `/realtime-sdk/v3/guides/weather-phone-with-signalwire-realtime-api` | slug_changed | 0.884 |
-| `/sdks/realtime-sdk/v3/messaging` | `/realtime-sdk/v3/reference/messaging` | `/realtime-sdk/v3/reference/messaging` | slug_changed | 0.795 |
-| `/sdks/realtime-sdk/v3/messaging/client` | `/realtime-sdk/v3/reference/messaging/client` | `/realtime-sdk/v3/reference/messaging-client [collision]` | slug_changed | 0.822 |
+| `/sdks/realtime-sdk/v3/guides/messaging/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | `/realtime-sdk/guides/first-steps-with-messaging` | slug_changed | 0.844 |
+| `/sdks/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3` | `/realtime-sdk/v3/migration-to-v4` | `/realtime-sdk/v3/migration-to-v4` | slug_changed | 0.883 |
+| `/sdks/realtime-sdk/v3/guides/voice/first-steps-with-voice` | `/realtime-sdk/guides/make-and-receive-calls` | `/realtime-sdk/guides/make-and-receive-calls` | slug_changed | 0.707 |
 | `/sdks/realtime-sdk/v3/messaging/message-contract` | `/realtime-sdk/v3/reference/messaging/message-contract` | `/realtime-sdk/v3/reference/messaging/message-contract` | slug_changed | 0.946 |
 | `/sdks/realtime-sdk/v3/messaging/messaging-sendresult` | `/realtime-sdk/v3/reference/messaging/messaging-send-result` | `/realtime-sdk/v3/reference/messaging/messaging-send-result` | slug_changed | 0.963 |
-| `/sdks/realtime-sdk/v3/pubsub` | `/realtime-sdk/v3/reference/pubsub` | `/realtime-sdk/v3/reference/pubsub` | slug_changed | 0.781 |
-| `/sdks/realtime-sdk/v3/pubsub/client` | `/realtime-sdk/v3/reference/pubsub/client` | `/realtime-sdk/v3/reference/pubsub-client [collision]` | slug_changed | 0.811 |
-| `/sdks/realtime-sdk/v3/realtime-client` | `/realtime-sdk/v3/reference/realtime-client` | `/realtime-sdk/v3/reference/realtime-client` | slug_changed | 0.792 |
-| `/sdks/realtime-sdk/v3/task` | `/realtime-sdk/v3/reference/task` | `/realtime-sdk/v3/reference/task` | slug_changed | 0.940 |
-| `/sdks/realtime-sdk/v3/task/client` | `/realtime-sdk/v3/reference/task/client` | `/realtime-sdk/v3/reference/task-client [collision]` | slug_changed | 0.789 |
+| `/sdks/realtime-sdk/v3/realtime-client` | `/realtime-sdk/v3/reference/realtime-client` | `/realtime-sdk/v3/reference/realtime-client` | slug_changed | 0.877 |
+| `/sdks/realtime-sdk/v3/task` | `/realtime-sdk/v3/reference/task` | `/realtime-sdk/v3/reference/task` | slug_changed | 0.764 |
 | `/sdks/realtime-sdk/v3/tech-ref/pubsub/pubsub-pubsubmessage` | `/realtime-sdk/v3/reference/pubsub/pubsub-message` | `/realtime-sdk/v3/reference/pubsub/pubsub-message` | matched_changed | 1.000 |
-| `/sdks/realtime-sdk/v3/video` | `/realtime-sdk/v3/reference/video` | `/realtime-sdk/v3/reference/video` | slug_changed | 0.702 |
-| `/sdks/realtime-sdk/v3/video/room-session` | `/realtime-sdk/v3/reference/video/room-session` | `/realtime-sdk/v3/reference/video-room-session [collision]` | slug_changed | 0.939 |
 | `/sdks/realtime-sdk/v3/video/roomsession-fullstate` | `/realtime-sdk/v3/reference/video/room-session-full-state` | `/realtime-sdk/v3/reference/video/room-session-full-state` | slug_changed | 0.932 |
 | `/sdks/realtime-sdk/v3/video/roomsession-member` | `/realtime-sdk/v3/reference/video/room-session-member` | `/realtime-sdk/v3/reference/video/room-session-member` | slug_changed | 0.958 |
 | `/sdks/realtime-sdk/v3/video/roomsession-playback` | `/realtime-sdk/v3/reference/video/room-session-playback` | `/realtime-sdk/v3/reference/video/room-session-playback` | slug_changed | 0.965 |
 | `/sdks/realtime-sdk/v3/video/roomsession-recording` | `/realtime-sdk/v3/reference/video/room-session-recording` | `/realtime-sdk/v3/reference/video/room-session-recording` | slug_changed | 0.970 |
 | `/sdks/realtime-sdk/v3/video/roomsession-stream` | `/realtime-sdk/v3/reference/video/room-session-stream` | `/realtime-sdk/v3/reference/video/room-session-stream` | slug_changed | 0.966 |
-| `/sdks/realtime-sdk/v3/voice/call` | `/realtime-sdk/v3/reference/voice/call` | `/realtime-sdk/v3/reference/voice-call [collision]` | slug_changed | 0.868 |
 | `/sdks/realtime-sdk/v3/voice/call-collect` | `/realtime-sdk/v3/reference/voice/call-collect` | `/realtime-sdk/v3/reference/voice/call-collect` | slug_changed | 0.991 |
 | `/sdks/realtime-sdk/v3/voice/call-detect` | `/realtime-sdk/v3/reference/voice/call-detect` | `/realtime-sdk/v3/reference/voice/call-detect` | slug_changed | 0.981 |
 | `/sdks/realtime-sdk/v3/voice/call-playback` | `/realtime-sdk/v3/reference/voice/call-playback` | `/realtime-sdk/v3/reference/voice/call-playback` | slug_changed | 0.983 |
@@ -709,17 +608,14 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/realtime-sdk/v3/voice/call-recording` | `/realtime-sdk/v3/reference/voice/call-recording` | `/realtime-sdk/v3/reference/voice/call-recording` | slug_changed | 0.982 |
 | `/sdks/realtime-sdk/v3/voice/call-state` | `/realtime-sdk/v3/reference/voice/call-state` | `/realtime-sdk/v3/reference/voice/call-state` | slug_changed | 0.950 |
 | `/sdks/realtime-sdk/v3/voice/call-tap` | `/realtime-sdk/v3/reference/voice/call-tap` | `/realtime-sdk/v3/reference/voice/call-tap` | slug_changed | 0.984 |
-| `/sdks/realtime-sdk/v3/voice/client` | `/realtime-sdk/v3/reference/voice/client` | `/realtime-sdk/v3/reference/voice-client [collision]` | slug_changed | 0.856 |
 | `/sdks/realtime-sdk/v3/voice/device-builder` | `/realtime-sdk/v3/reference/voice/device-builder` | `/realtime-sdk/v3/reference/voice/device-builder` | slug_changed | 0.948 |
 | `/sdks/realtime-sdk/v3/voice/playlist` | `/realtime-sdk/v3/reference/voice/playlist` | `/realtime-sdk/v3/reference/voice/playlist` | slug_changed | 0.840 |
 | `/sdks/realtime-sdk/v3/voice/types` | `/realtime-sdk/v3/reference/voice/types` | `/realtime-sdk/v3/reference/voice/types` | slug_changed | 0.981 |
 | `/sdks/realtime-sdk/video/room-session-member` | `/realtime-sdk/reference/video/room-session-member` | `/realtime-sdk/reference/video/room-session-member` | slug_changed | 0.936 |
 | `/sdks/realtime-sdk/video/room-session-playback` | `/realtime-sdk/reference/video/room-session-playback` | `/realtime-sdk/reference/video/room-session-playback` | slug_changed | 0.943 |
-| `/sdks/realtime-sdk/video/roomsession` | `/realtime-sdk/reference/video/room-session` | `/realtime-sdk/reference/video-room-session [collision]` | slug_changed | 0.868 |
 | `/sdks/realtime-sdk/video/roomsession-fullstate` | `/realtime-sdk/reference/video/room-session-full-state` | `/realtime-sdk/reference/video/room-session-full-state` | slug_changed | 0.904 |
 | `/sdks/realtime-sdk/video/roomsession-recording` | `/realtime-sdk/reference/video/room-session-recording` | `/realtime-sdk/reference/video/room-session-recording` | slug_changed | 0.954 |
 | `/sdks/realtime-sdk/video/roomsession-stream` | `/realtime-sdk/reference/video/room-session-stream` | `/realtime-sdk/reference/video/room-session-stream` | slug_changed | 0.935 |
-| `/sdks/realtime-sdk/voice/call` | `/realtime-sdk/reference/voice/call` | `/realtime-sdk/reference/voice-call [collision]` | slug_changed | 0.830 |
 | `/sdks/realtime-sdk/voice/call-collect` | `/realtime-sdk/reference/voice/call-collect` | `/realtime-sdk/reference/voice/call-collect` | slug_changed | 0.955 |
 | `/sdks/realtime-sdk/voice/call-detect` | `/realtime-sdk/reference/voice/call-detect` | `/realtime-sdk/reference/voice/call-detect` | slug_changed | 0.968 |
 | `/sdks/realtime-sdk/voice/call-playback` | `/realtime-sdk/reference/voice/call-playback` | `/realtime-sdk/reference/voice/call-playback` | slug_changed | 0.974 |
@@ -727,11 +623,9 @@ These old URLs need 301 redirects to their proposed locations.
 | `/sdks/realtime-sdk/voice/call-recording` | `/realtime-sdk/reference/voice/call-recording` | `/realtime-sdk/reference/voice/call-recording` | slug_changed | 0.976 |
 | `/sdks/realtime-sdk/voice/call-state` | `/realtime-sdk/reference/voice/call-state` | `/realtime-sdk/reference/voice/call-state` | slug_changed | 0.945 |
 | `/sdks/realtime-sdk/voice/call-tap` | `/realtime-sdk/reference/voice/call-tap` | `/realtime-sdk/reference/voice/call-tap` | slug_changed | 0.974 |
-| `/sdks/realtime-sdk/voice/client` | `/realtime-sdk/reference/voice/client` | `/realtime-sdk/reference/voice-client [collision]` | slug_changed | 0.798 |
 | `/sdks/realtime-sdk/voice/device-builder` | `/realtime-sdk/reference/voice/device-builder` | `/realtime-sdk/reference/voice/device-builder` | slug_changed | 0.927 |
 | `/sdks/realtime-sdk/voice/playlist` | `/realtime-sdk/reference/voice/playlist` | `/realtime-sdk/reference/voice/playlist` | slug_changed | 0.790 |
 | `/sdks/realtime-sdk/voice/types` | `/realtime-sdk/reference/voice/types` | `/realtime-sdk/reference/voice/types` | slug_changed | 0.864 |
-| `/sms/carrier-fees` | `/platform/sms/carrier-fees` | `/platform/sms/carrier-fees` | matched_changed | 1.000 |
 | `/swml/expressions` | `/swml/expressions` | `/swml/reference/expressions` | matched_changed | 1.000 |
 | `/swml/guides/ai/context-switch` | `/swml/guides/ai/context_switch` | `/swml/guides/context-switch` | matched_changed | 1.000 |
 | `/swml/guides/ai/executing-swml` | `/swml/guides/ai/executing_swml` | `/swml/guides/executing-swml` | matched_changed | 1.000 |
@@ -743,52 +637,25 @@ These old URLs need 301 redirects to their proposed locations.
 | `/swml/guides/methods/request` | `/swml/guides/methods/request` | `/swml/guides/request` | matched_changed | 1.000 |
 | `/swml/methods` | `/swml/methods` | `/swml/reference` | matched_changed | 1.000 |
 | `/swml/methods/ai` | `/swml/methods/ai` | `/swml/reference/ai` | matched_changed | 1.000 |
-| `/swml/methods/ai/hints` | `/swml/methods/ai/hints` | `/swml/reference/ai/hints` | matched_changed | 1.000 |
 | `/swml/methods/ai/languages` | `/swml/methods/ai/languages` | `/swml/reference/ai/languages` | matched_changed | 1.000 |
 | `/swml/methods/ai/params` | `/swml/methods/ai/params` | `/swml/reference/ai/params` | matched_changed | 1.000 |
-| `/swml/methods/ai/post-prompt` | `/swml/methods/ai/post_prompt` | `/swml/reference/ai/post-prompt` | matched_changed | 1.000 |
-| `/swml/methods/ai/post-prompt-url` | `/swml/methods/ai/post_prompt_url` | `/swml/reference/ai/post-prompt-url` | matched_changed | 1.000 |
 | `/swml/methods/ai/prompt` | `/swml/methods/ai/prompt` | `/swml/reference/ai/prompt` | matched_changed | 1.000 |
-| `/swml/methods/ai/prompt/contexts` | `/swml/methods/ai/prompt/contexts` | `/swml/reference/ai/prompt/contexts` | matched_changed | 1.000 |
-| `/swml/methods/ai/prompt/contexts/steps` | `/swml/methods/ai/prompt/contexts/steps` | `/swml/reference/ai/prompt/contexts-steps` | matched_changed | 1.000 |
-| `/swml/methods/ai/prompt/pom` | `/swml/methods/ai/prompt/pom` | `/swml/reference/ai/prompt/pom` | matched_changed | 1.000 |
-| `/swml/methods/ai/pronounce` | `/swml/methods/ai/pronounce` | `/swml/reference/ai/pronounce` | matched_changed | 1.000 |
 | `/swml/methods/ai/swaig` | `/swml/methods/ai/swaig` | `/swml/reference/ai/swaig` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/defaults` | `/swml/methods/ai/swaig/defaults` | `/swml/reference/ai/swaig/defaults` | matched_changed | 1.000 |
 | `/swml/methods/ai/swaig/functions` | `/swml/methods/ai/swaig/functions` | `/swml/reference/ai/swaig/functions` | matched_changed | 1.000 |
 | `/swml/methods/ai/swaig/functions/data-map` | `/swml/methods/ai/swaig/functions/data_map` | `/swml/reference/ai/swaig/functions-data-map` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/functions/data-map/expressions` | `/swml/methods/ai/swaig/functions/data_map/expressions` | `/swml/reference/ai/swaig/functions-data-map-expressions` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/functions/data-map/output` | `/swml/methods/ai/swaig/functions/data_map/output` | `/swml/reference/ai/swaig/functions-data-map-output` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/functions/data-map/webhooks` | `/swml/methods/ai/swaig/functions/data_map/webhooks` | `/swml/reference/ai/swaig/functions-data-map-webhooks` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/functions/data-map/webhooks/foreach` | `/swml/methods/ai/swaig/functions/data_map/webhooks/foreach` | `/swml/reference/ai/swaig/functions-data-map-webhooks-foreach` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/functions/fillers` | `/swml/methods/ai/swaig/functions/fillers` | `/swml/reference/ai/swaig/functions-fillers` | matched_changed | 1.000 |
 | `/swml/methods/ai/swaig/functions/parameters` | `/swml/methods/ai/swaig/functions/parameters` | `/swml/reference/ai/swaig/functions-parameters` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/functions/web-hook-url` | `/swml/methods/ai/swaig/functions/web_hook_url` | `/swml/reference/ai/swaig/functions-web-hook-url` | matched_changed | 1.000 |
 | `/swml/methods/ai/swaig/includes` | `/swml/methods/ai/swaig/includes` | `/swml/reference/ai/swaig/includes` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/internal-fillers` | `/swml/methods/ai/swaig/internal_fillers` | `/swml/reference/ai/swaig/internal-fillers` | matched_changed | 1.000 |
-| `/swml/methods/ai/swaig/native-functions` | `/swml/methods/ai/swaig/native_functions` | `/swml/reference/ai/swaig/native-functions` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock` | `/swml/methods/amazon_bedrock` | `/swml/reference/amazon-bedrock` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/params` | `/swml/methods/amazon_bedrock/params` | `/swml/reference/amazon-bedrock/params` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/post-prompt` | `/swml/methods/amazon_bedrock/post_prompt` | `/swml/reference/amazon-bedrock/post-prompt` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/post-prompt-url` | `/swml/methods/amazon_bedrock/post_prompt_url` | `/swml/reference/amazon-bedrock/post-prompt-url` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/prompt` | `/swml/methods/amazon_bedrock/prompt` | `/swml/reference/amazon-bedrock/prompt` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/prompt/pom` | `/swml/methods/amazon_bedrock/prompt/pom` | `/swml/reference/amazon-bedrock/prompt/pom` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/swaig` | `/swml/methods/amazon_bedrock/swaig` | `/swml/reference/amazon-bedrock/swaig` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/defaults` | `/swml/methods/amazon_bedrock/swaig/defaults` | `/swml/reference/amazon-bedrock/swaig/defaults` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/swaig/functions` | `/swml/methods/amazon_bedrock/swaig/functions` | `/swml/reference/amazon-bedrock/swaig/functions` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/swaig/functions/data-map` | `/swml/methods/amazon_bedrock/swaig/functions/data_map` | `/swml/reference/amazon-bedrock/swaig/functions-data-map` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/functions/data-map/expressions` | `/swml/methods/amazon_bedrock/swaig/functions/data_map/expressions` | `/swml/reference/amazon-bedrock/swaig/functions-data-map-expressions` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/functions/data-map/output` | `/swml/methods/amazon_bedrock/swaig/functions/data_map/output` | `/swml/reference/amazon-bedrock/swaig/functions-data-map-output` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/functions/data-map/webhooks` | `/swml/methods/amazon_bedrock/swaig/functions/data_map/webhooks` | `/swml/reference/amazon-bedrock/swaig/functions-data-map-webhooks` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/functions/data-map/webhooks/foreach` | `/swml/methods/amazon_bedrock/swaig/functions/data_map/webhooks/foreach` | `/swml/reference/amazon-bedrock/swaig/functions-data-map-webhooks-foreach` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/swaig/functions/parameters` | `/swml/methods/amazon_bedrock/swaig/functions/parameters` | `/swml/reference/amazon-bedrock/swaig/functions-parameters` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/functions/web-hook-url` | `/swml/methods/amazon_bedrock/swaig/functions/web_hook_url` | `/swml/reference/amazon-bedrock/swaig/functions-web-hook-url` | matched_changed | 1.000 |
 | `/swml/methods/amazon-bedrock/swaig/includes` | `/swml/methods/amazon_bedrock/swaig/includes` | `/swml/reference/amazon-bedrock/swaig/includes` | matched_changed | 1.000 |
-| `/swml/methods/amazon-bedrock/swaig/native-functions` | `/swml/methods/amazon_bedrock/swaig/native_functions` | `/swml/reference/amazon-bedrock/swaig/native-functions` | matched_changed | 1.000 |
 | `/swml/methods/answer` | `/swml/methods/answer` | `/swml/reference/answer` | matched_changed | 1.000 |
 | `/swml/methods/cond` | `/swml/methods/cond` | `/swml/reference/cond` | matched_changed | 1.000 |
 | `/swml/methods/connect` | `/swml/methods/connect` | `/swml/reference/connect` | matched_changed | 1.000 |
-| `/swml/methods/connect/headers` | `/swml/methods/connect/headers` | `/swml/reference/connect/headers` | matched_changed | 1.000 |
 | `/swml/methods/denoise` | `/swml/methods/denoise` | `/swml/reference/denoise` | matched_changed | 1.000 |
 | `/swml/methods/detect-machine` | `/swml/methods/detect_machine` | `/swml/reference/detect-machine` | matched_changed | 1.000 |
 | `/swml/methods/enter-queue` | `/swml/methods/enter_queue` | `/swml/reference/enter-queue` | matched_changed | 1.000 |
@@ -799,21 +666,8 @@ These old URLs need 301 redirects to their proposed locations.
 | `/swml/methods/join-room` | `/swml/methods/join_room` | `/swml/reference/join-room` | matched_changed | 1.000 |
 | `/swml/methods/label` | `/swml/methods/label` | `/swml/reference/label` | matched_changed | 1.000 |
 | `/swml/methods/live-transcribe` | `/swml/methods/live_transcribe` | `/swml/reference/live-transcribe` | matched_changed | 1.000 |
-| `/swml/methods/live-transcribe/action` | `/swml/methods/live_transcribe/action` | `/swml/reference/live-transcribe/action` | matched_changed | 1.000 |
-| `/swml/methods/live-transcribe/action/start` | `/swml/methods/live_transcribe/action/start` | `/swml/reference/live-transcribe/action/start` | matched_changed | 1.000 |
-| `/swml/methods/live-transcribe/action/stop` | `/swml/methods/live_transcribe/action/stop` | `/swml/reference/live-transcribe/action/stop` | matched_changed | 1.000 |
-| `/swml/methods/live-transcribe/action/summarize` | `/swml/methods/live_transcribe/action/summarize` | `/swml/reference/live-transcribe/action/summarize` | matched_changed | 1.000 |
 | `/swml/methods/live-translate` | `/swml/methods/live_translate` | `/swml/reference/live-translate` | matched_changed | 1.000 |
-| `/swml/methods/live-translate/action` | `/swml/methods/live_translate/action` | `/swml/reference/live-translate/action` | matched_changed | 1.000 |
-| `/swml/methods/live-translate/action/inject` | `/swml/methods/live_translate/action/inject` | `/swml/reference/live-translate/action/inject` | matched_changed | 1.000 |
-| `/swml/methods/live-translate/action/start` | `/swml/methods/live_translate/action/start` | `/swml/reference/live-translate/action/start` | matched_changed | 1.000 |
-| `/swml/methods/live-translate/action/stop` | `/swml/methods/live_translate/action/stop` | `/swml/reference/live-translate/action/stop` | matched_changed | 1.000 |
-| `/swml/methods/live-translate/action/summarize` | `/swml/methods/live_translate/action/summarize` | `/swml/reference/live-translate/action/summarize` | matched_changed | 1.000 |
 | `/swml/methods/pay` | `/swml/methods/pay` | `/swml/reference/pay` | matched_changed | 1.000 |
-| `/swml/methods/pay/parameters` | `/swml/methods/pay/parameters` | `/swml/reference/pay/parameters` | matched_changed | 1.000 |
-| `/swml/methods/pay/payment-connector-url` | `/swml/methods/pay/payment_connector_url` | `/swml/reference/pay/payment-connector-url` | matched_changed | 1.000 |
-| `/swml/methods/pay/prompts` | `/swml/methods/pay/prompts` | `/swml/reference/pay/prompts` | matched_changed | 1.000 |
-| `/swml/methods/pay/prompts/actions` | `/swml/methods/pay/prompts/actions` | `/swml/reference/pay/prompts/actions` | matched_changed | 1.000 |
 | `/swml/methods/play` | `/swml/methods/play` | `/swml/reference/play` | matched_changed | 1.000 |
 | `/swml/methods/prompt` | `/swml/methods/prompt` | `/swml/reference/prompt` | matched_changed | 1.000 |
 | `/swml/methods/receive-fax` | `/swml/methods/receive_fax` | `/swml/reference/receive-fax` | matched_changed | 1.000 |
@@ -843,34 +697,19 @@ These old URLs need 301 redirects to their proposed locations.
 | `/tools/swsh` | `/platform/tools/swsh` | `/platform/tools/swsh` | matched_changed | 1.000 |
 | `/tools/wirestarter` | `/platform/tools/wirestarter` | `/platform/tools/wirestarter` | matched_changed | 1.000 |
 | `/video` | `/platform/video` | `/platform/video` | matched_changed | 1.000 |
-| `/video/conference` | `/platform/video/conference` | `/platform/video/conference` | matched_changed | 1.000 |
-| `/video/conference/technical-reference` | `/platform/video/conference/technical-reference` | `/platform/video/technical-reference` | matched_changed | 1.000 |
-| `/video/faq` | `/platform/video/faq` | `/platform/video/faq` | matched_changed | 1.000 |
-| `/video/getting-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | matched_changed | 1.000 |
-| `/video/getting-started/extending-rooms-with-custom-code` | `/platform/video/getting-started/extending-rooms-with-custom-code` | `/platform/video/extending-rooms-with-custom-code` | matched_changed | 1.000 |
-| `/video/getting-started/managing-rooms-with-apis` | `/platform/video/getting-started/managing-rooms-with-apis` | `/platform/video/managing-rooms-with-apis` | matched_changed | 1.000 |
-| `/video/getting-started/simple-video-demo` | `/platform/video/getting-started/simple-video-demo` | `/platform/video/simple-video-demo` | matched_changed | 1.000 |
-| `/video/getting-started/video-first-steps` | `/platform/video/getting-started/video-first-steps` | `/platform/video/video-first-steps` | matched_changed | 1.000 |
-| `/video/guides/layout-positions` | `/platform/video/guides/layout-positions` | `/platform/video/layout-positions` | matched_changed | 1.000 |
-| `/video/guides/layouts` | `/platform/video/guides/layouts` | `/platform/video/layouts` | matched_changed | 1.000 |
-| `/video/guides/making-a-clubhouse-clone` | `/platform/video/guides/making-a-clubhouse-clone` | `/platform/video/making-a-clubhouse-clone` | matched_changed | 1.000 |
-| `/video/guides/making-a-zoom-clone` | `/platform/video/guides/making-a-zoom-clone` | `/platform/video/making-a-zoom-clone` | matched_changed | 1.000 |
-| `/video/guides/setting-the-layout-of-your-signalwire-video-calls` | `/platform/video/guides/setting-the-layout-of-your-signalwire-video-calls` | `/platform/video/setting-the-layout-of-your-signalwire-video-calls` | matched_changed | 1.000 |
+| `/video/faq` | `/platform/video` | `/platform/video` | slug_changed | 0.710 |
+| `/video/getting-started/simple-video-demo` | `/browser-sdk/guides/build-a-video-calling-application-with-the-browser-sdk` | `/browser-sdk/guides/build-a-video-calling-application-with-the-browser-sdk` | slug_changed | 0.854 |
+| `/video/guides/making-a-clubhouse-clone` | `/browser-sdk/guides/make-a-clubhouse-like-application` | `/browser-sdk/guides/make-a-clubhouse-like-application` | slug_changed | 0.987 |
+| `/video/guides/making-a-zoom-clone` | `/browser-sdk/guides/make-a-zoom-like-application` | `/browser-sdk/guides/make-a-zoom-like-application` | slug_changed | 0.917 |
 | `/voice` | `/platform/voice` | `/platform/voice` | matched_changed | 1.000 |
-| `/voice/faq` | `/platform/voice/faq` | `/platform/voice/faq` | matched_changed | 1.000 |
-| `/voice/getting-started/how-to-forward-calls` | `/platform/voice/getting-started/how-to-forward-calls` | `/platform/voice/how-to-forward-calls` | matched_changed | 1.000 |
 | `/voice/getting-started/how-to-gather-keypad-input-from-user` | `/compatibility-api/cxml/guides/gathering-user-input` | `/compatibility-api/guides/gathering-user-input` | slug_changed | 0.702 |
-| `/voice/getting-started/how-to-set-up-voicemail` | `/platform/voice/getting-started/how-to-set-up-voicemail` | `/platform/voice/how-to-set-up-voicemail` | matched_changed | 1.000 |
-| `/voice/getting-started/making-and-receiving-phone-calls` | `/platform/voice/getting-started/making-and-receiving-phone-calls` | `/platform/voice/making-and-receiving-phone-calls` | matched_changed | 1.000 |
-| `/voice/getting-started/recording-calls` | `/platform/voice/getting-started/recording-calls` | `/platform/voice/recording-calls` | matched_changed | 1.000 |
+| `/voice/getting-started/recording-calls` | `/swml/guides/recipes/recording-calls` | `/swml/guides/recording-calls` | slug_changed | 0.796 |
 | `/voice/getting-started/sip/allowing-signalwire-ips-through-your-firewall` | `/platform/voice/getting-started/sip/allowing-signalwire-ips-through-your-firewall` | `/platform/voice/allowing-signalwire-ips-through-your-firewall` | matched_changed | 1.000 |
 | `/voice/getting-started/sip/sip-byoc-bring-your-own-carrier` | `/platform/voice/getting-started/sip/sip-byoc-bring-your-own-carrier` | `/platform/voice/sip-byoc-bring-your-own-carrier` | matched_changed | 1.000 |
 | `/voice/getting-started/sip/sip-domain-applications` | `/platform/voice/getting-started/sip/sip-domain-applications` | `/platform/voice/sip-domain-applications` | matched_changed | 1.000 |
-| `/voice/getting-started/sip/sip-gateways` | `/platform/voice/getting-started/sip/sip-gateways` | `/platform/voice/sip-gateways` | matched_changed | 1.000 |
 | `/voice/getting-started/sip/sip-trunking` | `/platform/voice/getting-started/sip/sip-trunking` | `/platform/voice/sip-trunking` | matched_changed | 1.000 |
 | `/voice/getting-started/voice-and-languages` | `/platform/voice/getting-started/voice-and-languages` | `/platform/voice/voice-and-languages` | matched_changed | 1.000 |
 | `/voice/sip` | `/platform/voice/sip` | `/platform/voice/sip` | matched_changed | 1.000 |
-| `/voice/sip/get-started` | `/platform/voice/sip/get-started` | `/platform/voice/get-started` | matched_changed | 1.000 |
 | `/voice/tts/amazon-polly` | `/platform/voice/tts/amazon-polly` | `/platform/voice/amazon-polly` | matched_changed | 1.000 |
 | `/voice/tts/azure` | `/platform/voice/tts/azure` | `/platform/voice/azure` | matched_changed | 1.000 |
 | `/voice/tts/cartesia` | `/platform/voice/tts/cartesia` | `/platform/voice/cartesia` | matched_changed | 1.000 |
@@ -880,19 +719,18 @@ These old URLs need 301 redirects to their proposed locations.
 | `/voice/tts/openai` | `/platform/voice/tts/openai` | `/platform/voice/openai` | matched_changed | 1.000 |
 | `/voice/tts/rime` | `/platform/voice/tts/rime` | `/platform/voice/rime` | matched_changed | 1.000 |
 
-## Needs review (48)
+## Needs review (66)
 
 Possible matches with low confidence. Verify manually before redirecting.
 
 | Old URL | Current full URL | Proposed full URL | Confidence | Notes |
 |---------|------------------|-------------------|------------|-------|
-| `/call-flow-builder/conditions` | `/call-flow-builder/nodes/conditions` | `/call-flow-builder/reference/conditions` | 0.544 | body=0.429 fname=1.000 |
-| `/call-flow-builder/forward-to-phone` | `/call-flow-builder/nodes/forward-to-phone` | `/call-flow-builder/reference/forward-to-phone` | 0.698 | body=0.623 fname=1.000 |
-| `/call-flow-builder/gather-input` | `/call-flow-builder/nodes/gather-input` | `/call-flow-builder/reference/gather-input` | 0.625 | body=0.531 fname=1.000 |
-| `/call-flow-builder/hangup-call` | `/call-flow-builder/nodes/hangup-call` | `/call-flow-builder/reference/hangup-call` | 0.663 | body=0.579 fname=1.000 |
-| `/call-flow-builder/play-audio-or-tts` | `/call-flow-builder/nodes/play-audio-or-tts` | `/call-flow-builder/reference/play-audio-or-tts` | 0.454 | body=0.318 fname=1.000 |
-| `/chat/getting-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.350 | body=0.226 fname=0.846 |
-| `/chat/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | 0.357 | body=0.196 fname=1.000 |
+| `/call-flow-builder/conditions` | `/call-flow-builder/reference/conditions` | `/call-flow-builder/reference/conditions` | 0.544 | body=0.429 fname=1.000 |
+| `/call-flow-builder/forward-to-phone` | `/call-flow-builder/reference/forward-to-phone` | `/call-flow-builder/reference/forward-to-phone` | 0.698 | body=0.622 fname=1.000 |
+| `/call-flow-builder/gather-input` | `/call-flow-builder/reference/gather-input` | `/call-flow-builder/reference/gather-input` | 0.625 | body=0.531 fname=1.000 |
+| `/call-flow-builder/hangup-call` | `/call-flow-builder/reference/hangup-call` | `/call-flow-builder/reference/hangup-call` | 0.663 | body=0.579 fname=1.000 |
+| `/call-flow-builder/play-audio-or-tts` | `/call-flow-builder/reference/play-audio-or-tts` | `/call-flow-builder/reference/play-audio-or-tts` | 0.454 | body=0.317 fname=1.000 |
+| `/chat/faq` | `/platform/chat` | `/platform/chat` | 0.437 | body=0.546 fname=0.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free` | `/compatibility-api/sdks/methods/available-phone-numbers/find-toll-free` | `/compatibility-api/sdks/reference/available-phone-numbers/find-toll-free` | 0.685 | body=0.731 fname=0.500 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/search-local` | `/compatibility-api/sdks/methods/available-phone-numbers/search-local` | `/compatibility-api/sdks/reference/available-phone-numbers/search-local` | 0.464 | body=0.455 fname=0.500 |
 | `/compatibility-api/client-sdks/methods/fax-media/list-all` | `/compatibility-api/sdks/methods/fax-media/list-all` | `/compatibility-api/sdks/reference/fax-media/list-all` | 0.592 | body=0.615 fname=0.500 |
@@ -911,31 +749,50 @@ Possible matches with low confidence. Verify manually before redirecting.
 | `/compatibility-api/cxml/voice/record` | `/compatibility-api/cxml/voice/record` | `/compatibility-api/cxml/reference/voice/record` | 0.625 | body=0.531 fname=1.000 |
 | `/compatibility-api/cxml/voice/sip-noun` | `/compatibility-api/cxml/voice/sip` | `/compatibility-api/cxml/reference/voice/sip` | 0.671 | body=0.588 fname=1.000 |
 | `/compatibility-api/cxml/voice/sms` | `/compatibility-api/cxml/voice/sms` | `/compatibility-api/cxml/reference/voice/sms` | 0.587 | body=0.484 fname=1.000 |
-| `/fax/get-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.381 | body=0.227 fname=1.000 |
+| `/fax/get-started` | `/browser-sdk/reference/video/roomsession/methods/leave` | `/browser-sdk/reference/video/roomsession/methods/leave` | 0.304 | body=0.286 fname=0.375 |
 | `/fax/getting-started/first-steps-with-fax` | `/platform/fax` | `/platform/fax` | 0.499 | body=0.570 fname=0.214 |
 | `/fax/getting-started/securing-callback-for-inbound-fax-with-cxml` | `/compatibility-api/cxml/guides/securing-callback-for-inbound-fax` | `/compatibility-api/guides/securing-callback-for-inbound-fax` | 0.367 | body=0.333 fname=0.500 |
-| `/messaging/get-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.380 | body=0.225 fname=1.000 |
+| `/messaging/faq` | `/platform/messaging` | `/platform/messaging` | 0.540 | body=0.675 fname=0.000 |
 | `/messaging/guides/general` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | 0.320 | body=0.342 fname=0.235 |
-| `/platform/phone-numbers/getting-started` | `/platform/video/getting-started` | `/platform/video/getting-started` | 0.311 | body=0.177 fname=0.846 |
+| `/platform/basics/general/what-is-sip` | `/platform/voice/sip` | `/platform/voice/sip` | 0.373 | body=0.440 fname=0.105 |
 | `/rest/signalwire-rest/guides` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | `/browser-sdk/reference/signalwire-client/client/methods/disconnect` | 0.308 | body=0.322 fname=0.250 |
 | `/sdks/browser-sdk/chat/member-entity` | `/browser-sdk/reference/chat/chat-member-entity` | `/browser-sdk/reference/chat/chat-member-entity` | 0.482 | body=0.396 fname=0.828 |
 | `/sdks/browser-sdk/chat/message-entity` | `/browser-sdk/reference/chat/chat-message-entity` | `/browser-sdk/reference/chat/chat-message-entity` | 0.462 | body=0.368 fname=0.839 |
 | `/sdks/browser-sdk/pubsub/client` | `/browser-sdk/reference/chat/client` | `/browser-sdk/reference/chat/client` | 0.368 | body=0.210 fname=1.000 |
 | `/sdks/browser-sdk/signalwire-client/client` | `/browser-sdk/reference/signalwire-client/client` | `/browser-sdk/reference/signalwire-client/client` | 0.522 | body=0.402 fname=1.000 |
+| `/sdks/browser-sdk/technical-reference` | `/browser-sdk` | `/browser-sdk` | 0.674 | body=0.787 fname=0.222 |
 | `/sdks/browser-sdk/video` | `/browser-sdk/reference/video` | `/browser-sdk/reference/video` | 0.623 | body=0.529 fname=1.000 |
 | `/sdks/browser-sdk/video/room-session-recording` | `/browser-sdk/reference/video/room-session-recording` | `/browser-sdk/reference/video/room-session-recording` | 0.321 | body=0.193 fname=0.833 |
 | `/sdks/browser-sdk/video/room-session-stream` | `/browser-sdk/reference/video/room-session-stream` | `/browser-sdk/reference/video/room-session-stream` | 0.584 | body=0.528 fname=0.810 |
+| `/sdks/realtime-sdk/chat` | `/realtime-sdk/reference/chat` | `/realtime-sdk/reference/chat` | 0.624 | body=0.781 fname=0.000 |
+| `/sdks/realtime-sdk/messaging` | `/realtime-sdk/reference/messaging` | `/realtime-sdk/reference/messaging` | 0.616 | body=0.712 fname=0.235 |
+| `/sdks/realtime-sdk/messaging/client` | `/realtime-sdk/reference/messaging/client/methods/listen` | `/realtime-sdk/reference/messaging/client/methods/listen` | 0.381 | body=0.310 fname=0.667 |
+| `/sdks/realtime-sdk/pubsub` | `/realtime-sdk/reference/pubsub` | `/realtime-sdk/reference/pubsub` | 0.608 | body=0.759 fname=0.000 |
+| `/sdks/realtime-sdk/pubsub/client` | `/realtime-sdk/reference/pubsub/client/methods/listen` | `/realtime-sdk/reference/pubsub/client/methods/listen` | 0.507 | body=0.467 fname=0.667 |
 | `/sdks/realtime-sdk/realtime-client` | `/realtime-sdk/reference/realtime-client` | `/realtime-sdk/reference/realtime-client` | 0.411 | body=0.264 fname=1.000 |
+| `/sdks/realtime-sdk/task` | `/realtime-sdk/reference/task` | `/realtime-sdk/reference/task` | 0.687 | body=0.858 fname=0.000 |
+| `/sdks/realtime-sdk/task/client` | `/realtime-sdk/reference/task/client/methods/listen` | `/realtime-sdk/reference/task/client/methods/listen` | 0.439 | body=0.382 fname=0.667 |
+| `/sdks/realtime-sdk/v3/chat` | `/realtime-sdk/v3/reference/chat` | `/realtime-sdk/v3/reference/chat` | 0.549 | body=0.687 fname=0.000 |
 | `/sdks/realtime-sdk/v3/guides/voice` | `/realtime-sdk/v3/reference/video/client/methods/once` | `/realtime-sdk/v3/reference/video/client/methods/once` | 0.301 | body=0.210 fname=0.667 |
-| `/sdks/realtime-sdk/v3/video/client` | `/realtime-sdk/v3/reference/task/client` | `/realtime-sdk/v3/reference/task-client [collision]` | 0.391 | body=0.363 fname=0.500 |
-| `/sdks/realtime-sdk/v3/voice` | `/realtime-sdk/v3/reference/voice` | `/realtime-sdk/v3/reference/voice` | 0.679 | body=0.599 fname=1.000 |
-| `/sdks/realtime-sdk/video` | `/realtime-sdk/reference/video` | `/realtime-sdk/reference/video` | 0.696 | body=0.620 fname=1.000 |
+| `/sdks/realtime-sdk/v3/messaging` | `/realtime-sdk/v3/reference/messaging` | `/realtime-sdk/v3/reference/messaging` | 0.665 | body=0.773 fname=0.235 |
+| `/sdks/realtime-sdk/v3/pubsub` | `/realtime-sdk/v3/reference/pubsub` | `/realtime-sdk/v3/reference/pubsub` | 0.600 | body=0.750 fname=0.000 |
+| `/sdks/realtime-sdk/v3/pubsub/client` | `/realtime-sdk/v3/reference/pubsub/client/methods/publish` | `/realtime-sdk/v3/reference/pubsub/client/methods/publish` | 0.379 | body=0.397 fname=0.308 |
+| `/sdks/realtime-sdk/v3/task/client` | `/realtime-sdk/v3/reference/task/client/events` | `/realtime-sdk/v3/reference/task/client/events` | 0.364 | body=0.330 fname=0.500 |
+| `/sdks/realtime-sdk/v3/video` | `/realtime-sdk/v3/reference/video` | `/realtime-sdk/v3/reference/video` | 0.607 | body=0.643 fname=0.462 |
+| `/sdks/realtime-sdk/v3/voice` | `/realtime-sdk/v3/reference/voice` | `/realtime-sdk/v3/reference/voice` | 0.585 | body=0.616 fname=0.462 |
+| `/sdks/realtime-sdk/v3/voice/client` | `/realtime-sdk/v3/reference/voice/device-builder` | `/realtime-sdk/v3/reference/voice/device-builder` | 0.369 | body=0.401 fname=0.240 |
+| `/sdks/realtime-sdk/video` | `/realtime-sdk/reference/video` | `/realtime-sdk/reference/video` | 0.588 | body=0.620 fname=0.462 |
 | `/sdks/realtime-sdk/video/client` | `/realtime-sdk/reference/video/client/methods/listen` | `/realtime-sdk/reference/video/client/methods/listen` | 0.396 | body=0.329 fname=0.667 |
-| `/sdks/realtime-sdk/voice` | `/realtime-sdk/reference/voice` | `/realtime-sdk/reference/voice` | 0.562 | body=0.452 fname=1.000 |
-| `/video/guides` | `/realtime-sdk/v2/guides` | `/realtime-sdk/v2/guides` | 0.334 | body=0.167 fname=1.000 |
-| `/voice/guides/general/how-to-set-caller-id-or-cnam` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/platform/basics/how-to-set-caller-id-or-cnam` | 0.437 | body=0.296 fname=1.000 |
+| `/sdks/realtime-sdk/voice` | `/realtime-sdk/reference/task` | `/realtime-sdk/reference/task` | 0.472 | body=0.475 fname=0.462 |
+| `/swml/methods/ai/prompt/contexts` | `/swml/methods/ai/prompt` | `/swml/reference/ai/prompt` | 0.376 | body=0.399 fname=0.286 |
+| `/swml/methods/ai/prompt/pom` | `/swml/methods/amazon_bedrock/prompt` | `/swml/reference/amazon-bedrock/prompt` | 0.399 | body=0.332 fname=0.667 |
+| `/voice/faq` | `/platform/voice` | `/platform/voice` | 0.607 | body=0.758 fname=0.000 |
+| `/voice/getting-started/how-to-forward-calls` | `/swml/guides/recipes/forwarding-calls` | `/swml/guides/forwarding-calls` | 0.678 | body=0.667 fname=0.722 |
+| `/voice/getting-started/how-to-set-up-voicemail` | `/swml/guides/recipes/voicemail` | `/swml/guides/voicemail` | 0.391 | body=0.364 fname=0.500 |
+| `/voice/getting-started/making-and-receiving-phone-calls` | `/swml/guides/recipes/making-and-receiving-calls` | `/swml/guides/making-and-receiving-calls` | 0.603 | body=0.529 fname=0.897 |
+| `/voice/guides/general/how-to-set-caller-id-or-cnam` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/platform/basics/how-to-set-caller-id-or-cnam` | 0.327 | body=0.245 fname=0.652 |
 
-## Gone (586)
+## Gone (728)
 
 Content removed, auto-generated, or not migrated. Return 410 or let 404.
 
@@ -973,6 +830,40 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/rest/compatibility-api/endpoints/delete-incoming-phone-number` -- OpenAPI-generated endpoint (no MDX source in docs/main/rest/)
 - ... and 371 more
 
+### likely_deleted (193)
+
+- `/ai/guides` -- No Fern page above similarity threshold
+- `/ai/guides/integrations` -- No Fern page above similarity threshold
+- `/ai/guides/integrations/livekit` -- No Fern page above similarity threshold
+- `/ai/guides/integrations/vapi` -- No Fern page above similarity threshold
+- `/cantina/user-guide` -- No Fern page above similarity threshold
+- `/cantina/user-guide-for-admin-rights` -- No Fern page above similarity threshold
+- `/chat/getting-started` -- No Fern page above similarity threshold
+- `/chat/getting-started/chat-first-steps` -- No Fern page above similarity threshold
+- `/chat/guides` -- No Fern page above similarity threshold
+- `/chat/guides/build-a-react-chat-application` -- No Fern page above similarity threshold
+- `/chat/guides/using-chat-to-send-sms-and-make-calls` -- No Fern page above similarity threshold
+- `/cluecon-2024` -- No Fern page above similarity threshold
+- `/compatibility-api/cxml/stream-openai-realtime` -- No Fern page above similarity threshold
+- `/demos/admin-assistant` -- No Fern page above similarity threshold
+- `/demos/ai-cal` -- No Fern page above similarity threshold
+- `/demos/bobbys-table` -- No Fern page above similarity threshold
+- `/demos/esp8266-sensor-bot` -- No Fern page above similarity threshold
+- `/demos/flos-flowers` -- No Fern page above similarity threshold
+- `/demos/flos-flowers-2` -- No Fern page above similarity threshold
+- `/demos/mfa` -- No Fern page above similarity threshold
+- `/demos/roomieserve` -- No Fern page above similarity threshold
+- `/demos/tier-1` -- No Fern page above similarity threshold
+- `/demos/weather-bot` -- No Fern page above similarity threshold
+- `/events/demos/server/room-service/menu` -- No Fern page above similarity threshold
+- `/fax/getting-started/fax-to-email` -- No Fern page above similarity threshold
+- `/fax/getting-started/fax-with-retries` -- No Fern page above similarity threshold
+- `/fax/getting-started/filter-faxes-by-number-status-and-date` -- No Fern page above similarity threshold
+- `/fax/getting-started/list-faxes-to-csv-in-all-languages` -- No Fern page above similarity threshold
+- `/home/calling/voice/getting-started` -- No Fern page above similarity threshold
+- `/home/calling/voice/guides` -- No Fern page above similarity threshold
+- ... and 163 more
+
 ### known_deleted (98)
 
 - `/compatibility-api/guides` -- Section not migrated to Fern
@@ -1007,51 +898,42 @@ Content removed, auto-generated, or not migrated. Return 410 or let 404.
 - `/compatibility-api/guides/signalwire-status-callbacks` -- Section not migrated to Fern
 - ... and 68 more
 
-### likely_deleted (81)
-
-- `/ai/guides` -- No Fern page above similarity threshold
-- `/ai/guides/integrations` -- No Fern page above similarity threshold
-- `/ai/guides/integrations/livekit` -- No Fern page above similarity threshold
-- `/cantina/user-guide` -- No Fern page above similarity threshold
-- `/cantina/user-guide-for-admin-rights` -- No Fern page above similarity threshold
-- `/cluecon-2024` -- No Fern page above similarity threshold
-- `/compatibility-api/cxml/stream-openai-realtime` -- No Fern page above similarity threshold
-- `/demos/admin-assistant` -- No Fern page above similarity threshold
-- `/demos/ai-cal` -- No Fern page above similarity threshold
-- `/demos/bobbys-table` -- No Fern page above similarity threshold
-- `/demos/esp8266-sensor-bot` -- No Fern page above similarity threshold
-- `/demos/flos-flowers` -- No Fern page above similarity threshold
-- `/demos/flos-flowers-2` -- No Fern page above similarity threshold
-- `/demos/mfa` -- No Fern page above similarity threshold
-- `/demos/roomieserve` -- No Fern page above similarity threshold
-- `/demos/tier-1` -- No Fern page above similarity threshold
-- `/demos/weather-bot` -- No Fern page above similarity threshold
-- `/events/demos/server/room-service/menu` -- No Fern page above similarity threshold
-- `/home/calling/voice/getting-started` -- No Fern page above similarity threshold
-- `/home/calling/voice/guides` -- No Fern page above similarity threshold
-- `/home/messaging/sms/guides` -- No Fern page above similarity threshold
-- `/home/platform/dashboard/administration` -- No Fern page above similarity threshold
-- `/livewire/integrate-zendesk-signalwire-ai` -- No Fern page above similarity threshold
-- `/livewire/smart-biz-ai` -- No Fern page above similarity threshold
-- `/messaging/guides/campaign-registry` -- No Fern page above similarity threshold
-- `/platform/basics` -- No Fern page above similarity threshold
-- `/platform/basics/general` -- No Fern page above similarity threshold
-- `/platform/basics/guides` -- No Fern page above similarity threshold
-- `/platform/basics/guides/technical-troubleshooting` -- No Fern page above similarity threshold
-- `/platform/basics/security-and-compliance` -- No Fern page above similarity threshold
-- ... and 51 more
-
-### no_source (6)
+### no_source (36)
 
 - `/call-flow-builder/send-sms` -- No source file found in main/call-flow-builder docs dir
+- `/platform/integrations/pbx-systems/set-up-chan-sip-freepbx-with-signalwire` -- No source file found in main docs dir
 - `/swml/guides/ai/background-audio` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/params/hold-music` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/params/interrupt-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/post-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/post-prompt-url` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/expressions` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/output` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/webhooks` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/webhooks/foreach` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/internal-fillers` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/native-functions` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/post-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/post-prompt-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/prompt/pom` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/defaults` -- No source file found in main/swml docs dir
 - `/swml/methods/amazon-bedrock/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/expressions` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/output` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/webhooks` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/webhooks/foreach` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/native-functions` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action/start` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action/stop` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action/summarize` -- No source file found in main/swml docs dir
+- ... and 6 more
 
 
-## No action needed (14)
+## No action needed (15)
 
 URLs that haven't changed or are already covered.
 
@@ -1060,9 +942,10 @@ URLs that haven't changed or are already covered.
 - `/platform/call-fabric` -> `/platform/call-fabric`
 - `/platform/call-fabric/addresses` -> `/platform/call-fabric/addresses`
 - `/platform/call-fabric/resources` -> `/platform/call-fabric/resources`
-- `/platform/dashboard` -> `/platform/dashboard`
-- `/platform/dashboard/billing` -> `/platform/dashboard/billing`
+- `/platform/call-fabric/subscribers` -> `/platform/call-fabric/subscribers`
 - `/sdks/browser-sdk/v2/guides` -> ``
+- `/sdks/realtime-sdk/v2/guides` -> ``
+- `/sdks/realtime-sdk/v3/guides` -> ``
 - `/swml` -> `/swml`
 - `/swml/guides/call-whisper` -> `/swml/guides/call-whisper`
 - `/swml/guides/creating-ivr` -> `/swml/guides/creating-ivr`

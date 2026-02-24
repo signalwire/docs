@@ -4,14 +4,14 @@
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| **slug_changed** | 208 | Page exists in Fern under a different slug |
-| already_mapped | 1 | Source file maps to a known slug via different URL |
-| uncertain | 48 | Possible match, needs manual review |
-| likely_deleted | 81 | No similar page found in Fern |
+| **slug_changed** | 201 | Page exists in Fern under a different slug |
+| already_mapped | 3 | Source file maps to a known slug via different URL |
+| uncertain | 66 | Possible match, needs manual review |
+| likely_deleted | 193 | No similar page found in Fern |
 | autogen | 401 | OpenAPI-generated endpoint (no MDX source) |
 | known_deleted | 98 | Section known to be not migrated |
-| no_source | 6 | No Docusaurus source file found |
-| **Total** | **843** | |
+| no_source | 36 | No Docusaurus source file found |
+| **Total** | **998** | |
 
 ## Slug changed
 
@@ -19,16 +19,20 @@ Pages that exist in Fern but with a different URL.
 
 | Old URL | Fern file | Current slug | New slug | Confidence |
 |---------|-----------|--------------|----------|------------|
-| `/call-flow-builder/ai-agent` | `call-flow-builder/pages/nodes/ai_agent.mdx` | `/call-flow-builder/nodes/ai-agent` | `/reference/ai-agent` | 0.788 |
-| `/call-flow-builder/answer-call` | `call-flow-builder/pages/nodes/answer_call.mdx` | `/call-flow-builder/nodes/answer-call` | `/reference/answer-call` | 0.939 |
-| `/call-flow-builder/execute-swml` | `call-flow-builder/pages/nodes/execute_swml.mdx` | `/call-flow-builder/nodes/execute-swml` | `/reference/execute-swml` | 0.846 |
-| `/call-flow-builder/handle-call` | `call-flow-builder/pages/nodes/handle_call.mdx` | `/call-flow-builder/nodes/handle-call` | `/reference/handle-call` | 0.983 |
-| `/call-flow-builder/request` | `call-flow-builder/pages/nodes/request.mdx` | `/call-flow-builder/nodes/request` | `/reference/request` | 0.781 |
-| `/call-flow-builder/set-variables` | `call-flow-builder/pages/nodes/set_variables.mdx` | `/call-flow-builder/nodes/set-variables` | `/reference/set-variables` | 0.822 |
-| `/call-flow-builder/start-call-recording` | `call-flow-builder/pages/nodes/start_call_recording.mdx` | `/call-flow-builder/nodes/start-call-recording` | `/reference/start-call-recording` | 0.761 |
-| `/call-flow-builder/stop-call-recording` | `call-flow-builder/pages/nodes/stop_call_recording.mdx` | `/call-flow-builder/nodes/stop-call-recording` | `/reference/stop-call-recording` | 0.846 |
-| `/call-flow-builder/unset-variables` | `call-flow-builder/pages/nodes/unset_variables.mdx` | `/call-flow-builder/nodes/unset-variables` | `/reference/unset-variables` | 0.819 |
-| `/call-flow-builder/voicemail-recording` | `call-flow-builder/pages/nodes/voicemail_recording.mdx` | `/call-flow-builder/nodes/voicemail-recording` | `/reference/voicemail-recording` | 0.826 |
+| `/call-flow-builder/ai-agent` | `call-flow-builder/pages/nodes/ai_agent.mdx` | `/reference/ai-agent` | `/reference/ai-agent` | 0.788 |
+| `/call-flow-builder/answer-call` | `call-flow-builder/pages/nodes/answer_call.mdx` | `/reference/answer-call` | `/reference/answer-call` | 0.939 |
+| `/call-flow-builder/execute-swml` | `call-flow-builder/pages/nodes/execute_swml.mdx` | `/reference/execute-swml` | `/reference/execute-swml` | 0.846 |
+| `/call-flow-builder/handle-call` | `call-flow-builder/pages/nodes/handle_call.mdx` | `/reference/handle-call` | `/reference/handle-call` | 0.983 |
+| `/call-flow-builder/nodes` | `call-flow-builder/pages/nodes/overview.mdx` | `/reference` | `/reference/reference` | 0.839 |
+| `/call-flow-builder/request` | `call-flow-builder/pages/nodes/request.mdx` | `/reference/request` | `/reference/request` | 0.781 |
+| `/call-flow-builder/set-variables` | `call-flow-builder/pages/nodes/set_variables.mdx` | `/reference/set-variables` | `/reference/set-variables` | 0.820 |
+| `/call-flow-builder/start-call-recording` | `call-flow-builder/pages/nodes/start_call_recording.mdx` | `/reference/start-call-recording` | `/reference/start-call-recording` | 0.761 |
+| `/call-flow-builder/stop-call-recording` | `call-flow-builder/pages/nodes/stop_call_recording.mdx` | `/reference/stop-call-recording` | `/reference/stop-call-recording` | 0.846 |
+| `/call-flow-builder/unset-variables` | `call-flow-builder/pages/nodes/unset_variables.mdx` | `/reference/unset-variables` | `/reference/unset-variables` | 0.819 |
+| `/call-flow-builder/variables` | `call-flow-builder/pages/core/variables.mdx` | `/reference/variables` | `/guides/variables` | 0.929 |
+| `/call-flow-builder/version` | `call-flow-builder/pages/core/version.mdx` | `/reference/versioning` | `/guides/versioning` | 0.984 |
+| `/call-flow-builder/voicemail-recording` | `call-flow-builder/pages/nodes/voicemail_recording.mdx` | `/reference/voicemail-recording` | `/reference/voicemail-recording` | 0.825 |
+| `/chat/getting-started/get-started-with-a-simple-chat-demo` | `browser-sdk/pages/latest/guides/chat/get-started-with-a-simple-chat-demo/index.mdx` | `/guides/build-a-chat-application-with-the-browser-sdk` | `/guides/build-a-chat-application-with-the-browser-sdk` | 0.971 |
 | `/compatibility-api/api-reference/rest-client-sdks/methods` | `compatibility-api\pages\sdks\methods\overview.mdx` | `sdks/methods` | -- | 1.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers` | `compatibility-api\pages\sdks\methods\available-phone-numbers\index.mdx` | `sdks/methods/available-phone-numbers` | -- | 1.000 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/list-resources` | `compatibility-api\pages\sdks\methods\available-phone-numbers\list-resources.mdx` | `sdks/methods/available-phone-numbers/list-resources` | -- | 1.000 |
@@ -130,8 +134,18 @@ Pages that exist in Fern but with a different URL.
 | `/compatibility-api/cxml/voice/verto-noun` | `compatibility-api/pages/cxml/voice/verto-noun.mdx` | `cxml/voice/verto` | `/cxml/reference/voice/verto` | 0.992 |
 | `/compatibility-api/cxml/voice/virtualagent-noun` | `compatibility-api/pages/cxml/voice/virtualagent-noun.mdx` | `cxml/voice/virtualagent` | `/cxml/reference/voice/virtualagent` | 0.802 |
 | `/compatibility-api/sdks` | `compatibility-api\pages\sdks\core\overview.mdx` | `sdks` | -- | 1.000 |
+| `/fax/getting-started/common-fax-errors` | `platform/pages/calling/fax/common-fax-errors.mdx` | `/fax/common-fax-errors` | `/fax/common-fax-errors` | 0.999 |
 | `/messaging/getting-started/receiving-your-first-sms` | `compatibility-api/pages/cxml/guides/receiving-your-first-sms.mdx` | `/cxml/guides/receiving-your-first-sms` | `/guides/receiving-your-first-sms` | 0.914 |
 | `/messaging/getting-started/sending-your-first-sms` | `compatibility-api/pages/cxml/guides/sending-your-first-sms.mdx` | `/cxml/guides/sending-your-first-sms` | `/guides/sending-your-first-sms` | 0.966 |
+| `/messaging/guides/general/messaging-character-limits` | `platform/pages/messaging/sms/messaging-character-limits.mdx` | `/messaging/sms/messaging-character-limits` | `/messaging/messaging-character-limits` | 0.967 |
+| `/messaging/guides/general/messaging-mime-types` | `platform/pages/messaging/sms/messaging-mime-types.mdx` | `/messaging/sms/messaging-mime-types` | `/messaging/messaging-mime-types` | 1.000 |
+| `/platform/basics/security-and-compliance/webhook-security` | `platform/pages/platform/core/webhooks/webhook-security.mdx` | `/basics/security/webhook-security` | `/basics/webhook-security` | 0.960 |
+| `/platform/dashboard/get-started/phone-numbers` | `platform/pages/platform/phone-numbers/overview.mdx` | `/phone-numbers` | `/phone-numbers` | 0.744 |
+| `/platform/dashboard/getting-started/signing-up-for-a-space` | `platform/pages/setup/create-an-account.mdx` | `/get-started/create-an-account` | `/get-started/create-an-account` | 0.733 |
+| `/platform/dashboard/getting-started/your-signalwire-api-space` | `platform/pages/setup/api-credentials.mdx` | `/get-started/api-credentials` | `/get-started/api-credentials` | 0.729 |
+| `/platform/dashboard/guides/what-is-a-sid` | `platform/pages/platform/core/segment-ids.mdx` | `/platform/basics/segment-ids` | `/basics/segment-ids` | 0.854 |
+| `/platform/phone-numbers/getting-started/porting-into-signalwire` | `platform/pages/setup/porting-into-signalwire.mdx` | `/get-started/porting-into-signalwire` | `/get-started/porting-into-signalwire` | 0.879 |
+| `/platform/phone-numbers/getting-started/what-is-e164` | `platform/pages/platform/phone-numbers/what-is-e164.mdx` | `/platform/phone-numbers/what-is-e164` | `/phone-numbers/what-is-e164` | 1.000 |
 | `/sdks/browser-sdk/chat` | `browser-sdk/pages/latest/reference/chat/index.mdx` | `/reference/chat` | `/reference/chat` | 0.951 |
 | `/sdks/browser-sdk/chat/member` | `browser-sdk/pages/latest/reference/chat/chat-chatmember.mdx` | `/reference/chat/chat-member` | `/reference/chat/chat-member` | 0.900 |
 | `/sdks/browser-sdk/chat/message` | `browser-sdk/pages/latest/reference/chat/chat-chatmessage.mdx` | `/reference/chat/chat-message` | `/reference/chat/chat-message` | 0.836 |
@@ -144,59 +158,37 @@ Pages that exist in Fern but with a different URL.
 | `/sdks/browser-sdk/signalwire-client/client/conversation` | `browser-sdk/pages/latest/reference/signalwire-client/client/conversation.mdx` | `/reference/signalwire-client/client/conversation` | `/reference/signalwire-client/client/conversation` | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/notifications` | `browser-sdk/pages/latest/reference/signalwire-client/notifications.mdx` | `/reference/signalwire-client/notifications` | `/reference/signalwire-client/notifications` | 1.000 |
 | `/sdks/browser-sdk/signalwire-client/utils` | `browser-sdk/pages/latest/reference/signalwire-client/utils.mdx` | `/reference/signalwire-client/utils` | `/reference/signalwire-client/utils` | 0.996 |
-| `/sdks/browser-sdk/technical-reference` | `browser-sdk/pages/latest/reference/index.mdx` | `/reference` | `/reference` | 0.730 |
-| `/sdks/browser-sdk/v2/call` | `browser-sdk/pages/v2/reference/call/index.mdx` | `` | `/reference/call` | 1.000 |
-| `/sdks/browser-sdk/v2/client` | `browser-sdk/pages/v2/reference/relay-client.mdx` | `/reference/relay-client` | `/reference/relay-client` | 0.900 |
-| `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `browser-sdk/pages/v2/reference/v2-vs-v3.mdx` | `/reference/v2-vs-v3` | `/reference/v2-vs-v3` | 0.998 |
-| `/sdks/browser-sdk/v2/notification` | `browser-sdk/pages/v2/reference/notification/index.mdx` | `` | `/reference/notification` | 1.000 |
+| `/sdks/browser-sdk/v2` | `browser-sdk/pages/v2/reference/core/overview.mdx` | `` | `/reference/core/overview` | 0.840 |
+| `/sdks/browser-sdk/v2/call` | `browser-sdk/pages/v2/reference/core/call.mdx` | `` | `/reference/core/call` | 1.000 |
+| `/sdks/browser-sdk/v2/client` | `browser-sdk/pages/v2/reference/core/relay-client.mdx` | `/reference/relay-client` | `/reference/relay-client` | 0.900 |
+| `/sdks/browser-sdk/v2/guides/v2-vs-v3` | `browser-sdk/pages/v2/reference/core/v2-vs-v3.mdx` | `/reference/v2-vs-v3` | `/reference/v2-vs-v3` | 0.998 |
+| `/sdks/browser-sdk/v2/notification` | `browser-sdk/pages/v2/reference/core/notification.mdx` | `` | `/reference/core/notification` | 1.000 |
 | `/sdks/browser-sdk/video/local-overlay` | `browser-sdk/pages/latest/reference/video/video-localoverlay.mdx` | `/reference/video/local-overlay` | `/reference/video/local-overlay` | 0.758 |
 | `/sdks/browser-sdk/video/room-device` | `browser-sdk/pages/latest/reference/video/video-roomdevice.mdx` | `/reference/video/room-device` | `/reference/video/room-device` | 0.945 |
 | `/sdks/browser-sdk/video/room-screenshare` | `browser-sdk/pages/latest/reference/video/video-roomscreenshare.mdx` | `/reference/video/room-screen-share` | `/reference/video/room-screen-share` | 0.959 |
 | `/sdks/browser-sdk/video/room-session-device` | `browser-sdk/pages/latest/reference/video/video-roomdevice.mdx` | `/reference/video/room-device` | `/reference/video/room-device` | 0.885 |
 | `/sdks/browser-sdk/video/room-session-playback` | `browser-sdk/pages/latest/reference/video/video-roomsessionplayback.mdx` | `/reference/video/room-session-playback` | `/reference/video/room-session-playback` | 0.716 |
 | `/sdks/browser-sdk/video/room-session-screenshare` | `browser-sdk/pages/latest/reference/video/video-roomscreenshare.mdx` | `/reference/video/room-screen-share` | `/reference/video/room-screen-share` | 0.918 |
-| `/sdks/realtime-sdk/chat` | `realtime-sdk/pages/latest/tech-ref/chat/index.mdx` | `reference/chat` | `/reference/chat` | 0.805 |
 | `/sdks/realtime-sdk/chat/chat-member` | `realtime-sdk/pages/latest/tech-ref/chat/chat-chatmember.mdx` | `reference/chat/chat-member` | `/reference/chat/chat-member` | 0.937 |
 | `/sdks/realtime-sdk/chat/chat-message` | `realtime-sdk/pages/latest/tech-ref/chat/chat-chatmessage.mdx` | `reference/chat/chat-message` | `/reference/chat/chat-message` | 0.925 |
-| `/sdks/realtime-sdk/chat/client` | `realtime-sdk/pages/latest/tech-ref/chat/chat-client.mdx` | `reference/chat/client` | `/reference/chat-client [COLLISION]` | 0.788 |
-| `/sdks/realtime-sdk/guides/messaging/forwarding-texts-to-email` | `realtime-sdk/pages/v3/guides/messaging/forwarding-texts-to-email-nodejs.mdx` | `guides/messaging/forwarding-texts-to-email-nodejs` | `/guides/forwarding-texts-to-email-nodejs` | 0.793 |
-| `/sdks/realtime-sdk/guides/messaging/send-sms-from-the-browser` | `realtime-sdk/pages/v3/guides/messaging/send-sms-from-the-browser-using-node-js.mdx` | `guides/messaging/send-sms-from-the-browser-using-node-js` | `/guides/send-sms-from-the-browser-using-node-js` | 0.839 |
-| `/sdks/realtime-sdk/guides/voice/stop-robocalls` | `realtime-sdk/pages/latest/guides/voice/stop-robocalls-with-signalwires-communication-api.mdx` | `/guides/filter-robocalls-to-lenny-with-the-realtime-sdk` | `/guides/filter-robocalls-to-lenny-with-the-realtime-sdk` | 0.896 |
-| `/sdks/realtime-sdk/guides/voice/weather-phone` | `realtime-sdk/pages/latest/guides/voice/weather-phone-with-signalwire-realtime-api.mdx` | `/guides/make-a-weather-phone-ivr-with-the-realtime-sdk` | `/guides/make-a-weather-phone-ivr-with-the-realtime-sdk` | 0.898 |
-| `/sdks/realtime-sdk/messaging` | `realtime-sdk/pages/latest/tech-ref/messaging/index.mdx` | `reference/messaging` | `/reference/messaging` | 0.769 |
-| `/sdks/realtime-sdk/messaging/client` | `realtime-sdk/pages/latest/tech-ref/messaging/messaging-client.mdx` | `reference/messaging/client` | `/reference/messaging-client [COLLISION]` | 0.852 |
+| `/sdks/realtime-sdk/guides/voice/first-steps-with-voice` | `realtime-sdk/pages/latest/guides/voice/make-and-receive-calls.mdx` | `/guides/make-and-receive-calls` | `/guides/make-and-receive-calls` | 0.824 |
 | `/sdks/realtime-sdk/messaging/message-contract` | `realtime-sdk/pages/latest/tech-ref/messaging/messaging-messagecontract.mdx` | `reference/messaging/message-contract` | `/reference/messaging/message-contract` | 0.908 |
 | `/sdks/realtime-sdk/messaging/messaging-sendresult` | `realtime-sdk/pages/latest/tech-ref/messaging/messaging-messagingsendresult.mdx` | `reference/messaging/messaging-send-result` | `/reference/messaging/messaging-send-result` | 0.901 |
-| `/sdks/realtime-sdk/pubsub` | `realtime-sdk/pages/latest/tech-ref/pubsub/index.mdx` | `reference/pubsub` | `/reference/pubsub` | 0.786 |
-| `/sdks/realtime-sdk/pubsub/client` | `realtime-sdk/pages/latest/tech-ref/pubsub/pubsub-client.mdx` | `reference/pubsub/client` | `/reference/pubsub-client [COLLISION]` | 0.790 |
 | `/sdks/realtime-sdk/pubsub/pubsubmessage` | `realtime-sdk/pages/latest/tech-ref/pubsub/pubsub-pubsubmessage.mdx` | `reference/pubsub/pubsub-message` | `/reference/pubsub/pubsub-message` | 0.828 |
-| `/sdks/realtime-sdk/task` | `realtime-sdk/pages/latest/tech-ref/task/index.mdx` | `reference/task` | `/reference/task` | 0.862 |
-| `/sdks/realtime-sdk/task/client` | `realtime-sdk/pages/latest/tech-ref/task/task-client.mdx` | `reference/task/client` | `/reference/task-client [COLLISION]` | 0.768 |
-| `/sdks/realtime-sdk/v2/guides/voice/stop-robocalls` | `realtime-sdk/pages/v2/guides/voice/stop-robocalls-with-signalwires-communication-api.mdx` | `guides/stop-robocalls` | `/guides/stop-robocalls` | 0.897 |
-| `/sdks/realtime-sdk/v3/chat` | `realtime-sdk/pages/v3/tech-ref/chat/index.mdx` | `reference/chat` | `/reference/chat` | 0.732 |
-| `/sdks/realtime-sdk/v3/chat/client` | `realtime-sdk/pages/v3/tech-ref/chat/chat-client.mdx` | `reference/chat/client` | `/reference/chat-client [COLLISION]` | 0.840 |
 | `/sdks/realtime-sdk/v3/chat/member` | `realtime-sdk/pages/v3/tech-ref/chat/chat-chatmember.mdx` | `reference/chat/chat-member` | `/reference/chat/chat-member` | 0.900 |
 | `/sdks/realtime-sdk/v3/chat/message` | `realtime-sdk/pages/v3/tech-ref/chat/chat-chatmessage.mdx` | `reference/chat/chat-message` | `/reference/chat/chat-message` | 0.900 |
-| `/sdks/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email` | `realtime-sdk/pages/v3/guides/messaging/forwarding-texts-to-email-nodejs.mdx` | `guides/messaging/forwarding-texts-to-email-nodejs` | `/guides/forwarding-texts-to-email-nodejs` | 0.842 |
-| `/sdks/realtime-sdk/v3/guides/messaging/send-sms-from-the-browser` | `realtime-sdk/pages/v3/guides/messaging/send-sms-from-the-browser-using-node-js.mdx` | `guides/messaging/send-sms-from-the-browser-using-node-js` | `/guides/send-sms-from-the-browser-using-node-js` | 0.871 |
-| `/sdks/realtime-sdk/v3/guides/voice/weather-phone` | `realtime-sdk/pages/v3/guides/voice/weather-phone-with-signalwire-realtime-api.mdx` | `guides/voice/weather-phone-with-signalwire-realtime-api` | `/guides/weather-phone-with-signalwire-realtime-api` | 0.884 |
-| `/sdks/realtime-sdk/v3/messaging` | `realtime-sdk/pages/v3/tech-ref/messaging/index.mdx` | `reference/messaging` | `/reference/messaging` | 0.795 |
-| `/sdks/realtime-sdk/v3/messaging/client` | `realtime-sdk/pages/v3/tech-ref/messaging/messaging-client.mdx` | `reference/messaging/client` | `/reference/messaging-client [COLLISION]` | 0.822 |
+| `/sdks/realtime-sdk/v3/guides/messaging/first-steps-with-messaging` | `realtime-sdk/pages/latest/guides/messaging/first-steps-with-messaging.mdx` | `/guides/first-steps-with-messaging` | `/guides/first-steps-with-messaging` | 0.844 |
+| `/sdks/realtime-sdk/v3/guides/realtime-relay-v4-vs-v3` | `realtime-sdk/pages/v3/tech-ref/core/migration-to-v4.mdx` | `/migration-to-v4` | `/migration-to-v4` | 0.883 |
+| `/sdks/realtime-sdk/v3/guides/voice/first-steps-with-voice` | `realtime-sdk/pages/latest/guides/voice/make-and-receive-calls.mdx` | `/guides/make-and-receive-calls` | `/guides/make-and-receive-calls` | 0.707 |
 | `/sdks/realtime-sdk/v3/messaging/message-contract` | `realtime-sdk/pages/v3/tech-ref/messaging/messaging-messagecontract.mdx` | `reference/messaging/message-contract` | `/reference/messaging/message-contract` | 0.946 |
 | `/sdks/realtime-sdk/v3/messaging/messaging-sendresult` | `realtime-sdk/pages/v3/tech-ref/messaging/messaging-messagingsendresult.mdx` | `reference/messaging/messaging-send-result` | `/reference/messaging/messaging-send-result` | 0.963 |
-| `/sdks/realtime-sdk/v3/pubsub` | `realtime-sdk/pages/v3/tech-ref/pubsub/index.mdx` | `reference/pubsub` | `/reference/pubsub` | 0.781 |
-| `/sdks/realtime-sdk/v3/pubsub/client` | `realtime-sdk/pages/v3/tech-ref/pubsub/pubsub-client.mdx` | `reference/pubsub/client` | `/reference/pubsub-client [COLLISION]` | 0.811 |
-| `/sdks/realtime-sdk/v3/realtime-client` | `realtime-sdk/pages/v3/tech-ref/realtime-client/index.mdx` | `reference/realtime-client` | `/reference/realtime-client` | 0.792 |
-| `/sdks/realtime-sdk/v3/task` | `realtime-sdk/pages/v3/tech-ref/task/index.mdx` | `reference/task` | `/reference/task` | 0.940 |
-| `/sdks/realtime-sdk/v3/task/client` | `realtime-sdk/pages/v3/tech-ref/task/task-client.mdx` | `reference/task/client` | `/reference/task-client [COLLISION]` | 0.789 |
-| `/sdks/realtime-sdk/v3/video` | `realtime-sdk/pages/v3/tech-ref/video/index.mdx` | `reference/video` | `/reference/video` | 0.702 |
-| `/sdks/realtime-sdk/v3/video/room-session` | `realtime-sdk/pages/v3/tech-ref/video/video-roomsession.mdx` | `reference/video/room-session` | `/reference/video-room-session [COLLISION]` | 0.939 |
+| `/sdks/realtime-sdk/v3/realtime-client` | `realtime-sdk/pages/v3/tech-ref/realtime-client/index.mdx` | `reference/realtime-client` | `/reference/realtime-client` | 0.877 |
+| `/sdks/realtime-sdk/v3/task` | `realtime-sdk/pages/v3/tech-ref/task/overview.mdx` | `reference/task` | `/reference/task` | 0.764 |
 | `/sdks/realtime-sdk/v3/video/roomsession-fullstate` | `realtime-sdk/pages/v3/tech-ref/video/video-roomsessionfullstate.mdx` | `reference/video/room-session-full-state` | `/reference/video/room-session-full-state` | 0.932 |
 | `/sdks/realtime-sdk/v3/video/roomsession-member` | `realtime-sdk/pages/v3/tech-ref/video/video-roomsessionmember.mdx` | `reference/video/room-session-member` | `/reference/video/room-session-member` | 0.958 |
 | `/sdks/realtime-sdk/v3/video/roomsession-playback` | `realtime-sdk/pages/v3/tech-ref/video/video-roomsessionplayback.mdx` | `reference/video/room-session-playback` | `/reference/video/room-session-playback` | 0.965 |
 | `/sdks/realtime-sdk/v3/video/roomsession-recording` | `realtime-sdk/pages/v3/tech-ref/video/video-roomsessionrecording.mdx` | `reference/video/room-session-recording` | `/reference/video/room-session-recording` | 0.970 |
 | `/sdks/realtime-sdk/v3/video/roomsession-stream` | `realtime-sdk/pages/v3/tech-ref/video/video-roomsessionstream.mdx` | `reference/video/room-session-stream` | `/reference/video/room-session-stream` | 0.966 |
-| `/sdks/realtime-sdk/v3/voice/call` | `realtime-sdk/pages/v3/tech-ref/voice/voice-call.mdx` | `reference/voice/call` | `/reference/voice-call [COLLISION]` | 0.868 |
 | `/sdks/realtime-sdk/v3/voice/call-collect` | `realtime-sdk/pages/v3/tech-ref/voice/callcollect.mdx` | `reference/voice/call-collect` | `/reference/voice/call-collect` | 0.991 |
 | `/sdks/realtime-sdk/v3/voice/call-detect` | `realtime-sdk/pages/v3/tech-ref/voice/calldetect.mdx` | `reference/voice/call-detect` | `/reference/voice/call-detect` | 0.981 |
 | `/sdks/realtime-sdk/v3/voice/call-playback` | `realtime-sdk/pages/v3/tech-ref/voice/callplayback.mdx` | `reference/voice/call-playback` | `/reference/voice/call-playback` | 0.983 |
@@ -204,17 +196,14 @@ Pages that exist in Fern but with a different URL.
 | `/sdks/realtime-sdk/v3/voice/call-recording` | `realtime-sdk/pages/v3/tech-ref/voice/callrecording.mdx` | `reference/voice/call-recording` | `/reference/voice/call-recording` | 0.982 |
 | `/sdks/realtime-sdk/v3/voice/call-state` | `realtime-sdk/pages/v3/tech-ref/voice/callstate.mdx` | `reference/voice/call-state` | `/reference/voice/call-state` | 0.950 |
 | `/sdks/realtime-sdk/v3/voice/call-tap` | `realtime-sdk/pages/v3/tech-ref/voice/calltap.mdx` | `reference/voice/call-tap` | `/reference/voice/call-tap` | 0.984 |
-| `/sdks/realtime-sdk/v3/voice/client` | `realtime-sdk/pages/v3/tech-ref/voice/voice-client.mdx` | `reference/voice/client` | `/reference/voice-client [COLLISION]` | 0.856 |
 | `/sdks/realtime-sdk/v3/voice/device-builder` | `realtime-sdk/pages/v3/tech-ref/voice/voice-devicebuilder.mdx` | `reference/voice/device-builder` | `/reference/voice/device-builder` | 0.948 |
 | `/sdks/realtime-sdk/v3/voice/playlist` | `realtime-sdk/pages/v3/tech-ref/voice/voice-playlist.mdx` | `reference/voice/playlist` | `/reference/voice/playlist` | 0.840 |
 | `/sdks/realtime-sdk/v3/voice/types` | `realtime-sdk/pages/v3/tech-ref/voice/types.mdx` | `reference/voice/types` | `/reference/voice/types` | 0.981 |
 | `/sdks/realtime-sdk/video/room-session-member` | `realtime-sdk/pages/latest/tech-ref/video/video-roomsessionmember.mdx` | `reference/video/room-session-member` | `/reference/video/room-session-member` | 0.936 |
 | `/sdks/realtime-sdk/video/room-session-playback` | `realtime-sdk/pages/latest/tech-ref/video/video-roomsessionplayback.mdx` | `reference/video/room-session-playback` | `/reference/video/room-session-playback` | 0.943 |
-| `/sdks/realtime-sdk/video/roomsession` | `realtime-sdk/pages/latest/tech-ref/video/video-roomsession.mdx` | `reference/video/room-session` | `/reference/video-room-session [COLLISION]` | 0.868 |
 | `/sdks/realtime-sdk/video/roomsession-fullstate` | `realtime-sdk/pages/latest/tech-ref/video/video-roomsessionfullstate.mdx` | `reference/video/room-session-full-state` | `/reference/video/room-session-full-state` | 0.904 |
 | `/sdks/realtime-sdk/video/roomsession-recording` | `realtime-sdk/pages/latest/tech-ref/video/video-roomsessionrecording.mdx` | `reference/video/room-session-recording` | `/reference/video/room-session-recording` | 0.954 |
 | `/sdks/realtime-sdk/video/roomsession-stream` | `realtime-sdk/pages/latest/tech-ref/video/video-roomsessionstream.mdx` | `reference/video/room-session-stream` | `/reference/video/room-session-stream` | 0.935 |
-| `/sdks/realtime-sdk/voice/call` | `realtime-sdk/pages/latest/tech-ref/voice/voice-call.mdx` | `reference/voice/call` | `/reference/voice-call [COLLISION]` | 0.830 |
 | `/sdks/realtime-sdk/voice/call-collect` | `realtime-sdk/pages/latest/tech-ref/voice/callcollect.mdx` | `reference/voice/call-collect` | `/reference/voice/call-collect` | 0.955 |
 | `/sdks/realtime-sdk/voice/call-detect` | `realtime-sdk/pages/latest/tech-ref/voice/calldetect.mdx` | `reference/voice/call-detect` | `/reference/voice/call-detect` | 0.968 |
 | `/sdks/realtime-sdk/voice/call-playback` | `realtime-sdk/pages/latest/tech-ref/voice/callplayback.mdx` | `reference/voice/call-playback` | `/reference/voice/call-playback` | 0.974 |
@@ -222,23 +211,26 @@ Pages that exist in Fern but with a different URL.
 | `/sdks/realtime-sdk/voice/call-recording` | `realtime-sdk/pages/latest/tech-ref/voice/callrecording.mdx` | `reference/voice/call-recording` | `/reference/voice/call-recording` | 0.976 |
 | `/sdks/realtime-sdk/voice/call-state` | `realtime-sdk/pages/latest/tech-ref/voice/callstate.mdx` | `reference/voice/call-state` | `/reference/voice/call-state` | 0.945 |
 | `/sdks/realtime-sdk/voice/call-tap` | `realtime-sdk/pages/latest/tech-ref/voice/calltap.mdx` | `reference/voice/call-tap` | `/reference/voice/call-tap` | 0.974 |
-| `/sdks/realtime-sdk/voice/client` | `realtime-sdk/pages/latest/tech-ref/voice/voice-client.mdx` | `reference/voice/client` | `/reference/voice-client [COLLISION]` | 0.798 |
 | `/sdks/realtime-sdk/voice/device-builder` | `realtime-sdk/pages/latest/tech-ref/voice/voice-devicebuilder.mdx` | `reference/voice/device-builder` | `/reference/voice/device-builder` | 0.927 |
 | `/sdks/realtime-sdk/voice/playlist` | `realtime-sdk/pages/latest/tech-ref/voice/voice-playlist.mdx` | `reference/voice/playlist` | `/reference/voice/playlist` | 0.790 |
 | `/sdks/realtime-sdk/voice/types` | `realtime-sdk/pages/latest/tech-ref/voice/types.mdx` | `reference/voice/types` | `/reference/voice/types` | 0.864 |
+| `/video/faq` | `platform/pages/calling/video/overview.mdx` | `/video` | `/video` | 0.710 |
+| `/video/getting-started/simple-video-demo` | `browser-sdk/pages/latest/guides/video/getting-started-with-the-signalwire-video/index.mdx` | `/guides/build-a-video-calling-application-with-the-browser-sdk` | `/guides/build-a-video-calling-application-with-the-browser-sdk` | 0.854 |
+| `/video/guides/making-a-clubhouse-clone` | `browser-sdk/pages/latest/guides/video/making-a-clubhouse-clone/index.mdx` | `/guides/make-a-clubhouse-like-application` | `/guides/make-a-clubhouse-like-application` | 0.987 |
+| `/video/guides/making-a-zoom-clone` | `browser-sdk/pages/latest/guides/video/zoom-clone-2/index.mdx` | `/guides/make-a-zoom-like-application` | `/guides/make-a-zoom-like-application` | 0.917 |
 | `/voice/getting-started/how-to-gather-keypad-input-from-user` | `compatibility-api/pages/cxml/guides/gathering-user-input.mdx` | `/cxml/guides/gathering-user-input` | `/guides/gathering-user-input` | 0.702 |
+| `/voice/getting-started/recording-calls` | `swml/pages/guides/recipes/recording-calls.mdx` | `/guides/recipes/recording-calls` | `/guides/recording-calls` | 0.796 |
 
 ## Uncertain matches (manual review needed)
 
 | Old URL | Fern file | Current slug | New slug | Confidence |
 |---------|-----------|--------------|----------|------------|
-| `/call-flow-builder/conditions` | `call-flow-builder/pages/nodes/conditions.mdx` | `/call-flow-builder/nodes/conditions` | `/reference/conditions` | 0.544 |
-| `/call-flow-builder/forward-to-phone` | `call-flow-builder/pages/nodes/forward_to_phone.mdx` | `/call-flow-builder/nodes/forward-to-phone` | `/reference/forward-to-phone` | 0.698 |
-| `/call-flow-builder/gather-input` | `call-flow-builder/pages/nodes/gather_input.mdx` | `/call-flow-builder/nodes/gather-input` | `/reference/gather-input` | 0.625 |
-| `/call-flow-builder/hangup-call` | `call-flow-builder/pages/nodes/hangup_call.mdx` | `/call-flow-builder/nodes/hangup-call` | `/reference/hangup-call` | 0.663 |
-| `/call-flow-builder/play-audio-or-tts` | `call-flow-builder/pages/nodes/play_audio_or_tts.mdx` | `/call-flow-builder/nodes/play-audio-or-tts` | `/reference/play-audio-or-tts` | 0.454 |
-| `/chat/getting-started` | `platform/pages/calling/video/get-started/index.mdx` | `/video/getting-started` | `/video/getting-started` | 0.350 |
-| `/chat/guides` | `realtime-sdk/pages/v2/guides/index.mdx` | `guides` | `/guides` | 0.357 |
+| `/call-flow-builder/conditions` | `call-flow-builder/pages/nodes/conditions.mdx` | `/reference/conditions` | `/reference/conditions` | 0.544 |
+| `/call-flow-builder/forward-to-phone` | `call-flow-builder/pages/nodes/forward_to_phone.mdx` | `/reference/forward-to-phone` | `/reference/forward-to-phone` | 0.698 |
+| `/call-flow-builder/gather-input` | `call-flow-builder/pages/nodes/gather_input.mdx` | `/reference/gather-input` | `/reference/gather-input` | 0.625 |
+| `/call-flow-builder/hangup-call` | `call-flow-builder/pages/nodes/hangup_call.mdx` | `/reference/hangup-call` | `/reference/hangup-call` | 0.663 |
+| `/call-flow-builder/play-audio-or-tts` | `call-flow-builder/pages/nodes/play_audio_or_tts.mdx` | `/reference/play-audio-or-tts` | `/reference/play-audio-or-tts` | 0.454 |
+| `/chat/faq` | `platform/pages/messaging/chat/overview.mdx` | `/chat` | `/chat` | 0.437 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/find-toll-free` | `compatibility-api/pages/sdks/methods/available-phone-numbers/toll-free.mdx` | `sdks/methods/available-phone-numbers/find-toll-free` | `/sdks/reference/available-phone-numbers/find-toll-free` | 0.685 |
 | `/compatibility-api/client-sdks/api/available-phone-numbers/search-local` | `compatibility-api/pages/sdks/methods/available-phone-numbers/local.mdx` | `sdks/methods/available-phone-numbers/search-local` | `/sdks/reference/available-phone-numbers/search-local` | 0.464 |
 | `/compatibility-api/client-sdks/methods/fax-media/list-all` | `compatibility-api/pages/sdks/methods/fax-media/list-all-media.mdx` | `sdks/methods/fax-media/list-all` | `/sdks/reference/fax-media/list-all` | 0.592 |
@@ -257,29 +249,48 @@ Pages that exist in Fern but with a different URL.
 | `/compatibility-api/cxml/voice/record` | `compatibility-api/pages/cxml/voice/record.mdx` | `cxml/voice/record` | `/cxml/reference/voice/record` | 0.625 |
 | `/compatibility-api/cxml/voice/sip-noun` | `compatibility-api/pages/cxml/voice/sip-noun.mdx` | `cxml/voice/sip` | `/cxml/reference/voice/sip` | 0.671 |
 | `/compatibility-api/cxml/voice/sms` | `compatibility-api/pages/cxml/voice/sms.mdx` | `cxml/voice/sms` | `/cxml/reference/voice/sms` | 0.587 |
-| `/fax/get-started` | `platform/pages/calling/video/get-started/index.mdx` | `/video/getting-started` | `/video/getting-started` | 0.381 |
+| `/fax/get-started` | `browser-sdk/pages/latest/reference/video/RoomSession/methods/leave.mdx` | `` | `/reference/video/roomsession/methods/leave` | 0.304 |
 | `/fax/getting-started/first-steps-with-fax` | `platform/pages/calling/fax/overview.mdx` | `/fax` | `/fax` | 0.499 |
 | `/fax/getting-started/securing-callback-for-inbound-fax-with-cxml` | `compatibility-api/pages/cxml/guides/securing-callback-for-inbound-fax.mdx` | `/cxml/guides/securing-callback-for-inbound-fax` | `/guides/securing-callback-for-inbound-fax` | 0.367 |
-| `/messaging/get-started` | `platform/pages/calling/video/get-started/index.mdx` | `/video/getting-started` | `/video/getting-started` | 0.380 |
+| `/messaging/faq` | `platform/pages/messaging/sms/overview.mdx` | `/messaging` | `/messaging` | 0.540 |
 | `/messaging/guides/general` | `browser-sdk/pages/latest/reference/signalwire-client/client/methods/disconnect.mdx` | `` | `/reference/signalwire-client/client/methods/disconnect` | 0.320 |
-| `/platform/phone-numbers/getting-started` | `platform/pages/calling/video/get-started/index.mdx` | `/video/getting-started` | `/video/getting-started` | 0.311 |
+| `/platform/basics/general/what-is-sip` | `platform/pages/calling/voice/SIP/overview.mdx` | `/voice/sip` | `/voice/sip` | 0.373 |
 | `/rest/signalwire-rest/guides` | `browser-sdk/pages/latest/reference/signalwire-client/client/methods/disconnect.mdx` | `` | `/reference/signalwire-client/client/methods/disconnect` | 0.308 |
 | `/sdks/browser-sdk/chat/member-entity` | `browser-sdk/pages/latest/reference/chat/chatmemberentity.mdx` | `/reference/chat/chat-member-entity` | `/reference/chat/chat-member-entity` | 0.482 |
 | `/sdks/browser-sdk/chat/message-entity` | `browser-sdk/pages/latest/reference/chat/chatmessageentity.mdx` | `/reference/chat/chat-message-entity` | `/reference/chat/chat-message-entity` | 0.462 |
 | `/sdks/browser-sdk/pubsub/client` | `browser-sdk/pages/latest/reference/chat/Client/index.mdx` | `/reference/chat/client` | `/reference/chat/client` | 0.368 |
 | `/sdks/browser-sdk/signalwire-client/client` | `browser-sdk/pages/latest/reference/signalwire-client/client/index.mdx` | `/reference/signalwire-client/client` | `/reference/signalwire-client/client` | 0.522 |
+| `/sdks/browser-sdk/technical-reference` | `browser-sdk/pages/latest/reference/core/overview.mdx` | `/` | `/` | 0.674 |
 | `/sdks/browser-sdk/video` | `browser-sdk/pages/latest/reference/video/index.mdx` | `/reference/video` | `/reference/video` | 0.623 |
 | `/sdks/browser-sdk/video/room-session-recording` | `browser-sdk/pages/latest/reference/video/video-roomsessionrecording.mdx` | `/reference/video/room-session-recording` | `/reference/video/room-session-recording` | 0.321 |
 | `/sdks/browser-sdk/video/room-session-stream` | `browser-sdk/pages/latest/reference/video/video-roomsessionstream.mdx` | `/reference/video/room-session-stream` | `/reference/video/room-session-stream` | 0.584 |
+| `/sdks/realtime-sdk/chat` | `realtime-sdk/pages/latest/tech-ref/chat/overview.mdx` | `reference/chat` | `/reference/chat` | 0.624 |
+| `/sdks/realtime-sdk/messaging` | `realtime-sdk/pages/latest/tech-ref/messaging/overview.mdx` | `reference/messaging` | `/reference/messaging` | 0.616 |
+| `/sdks/realtime-sdk/messaging/client` | `realtime-sdk/pages/latest/tech-ref/messaging/client/methods/listen.mdx` | `reference/messaging/client/methods/listen` | `/reference/messaging/client/methods/listen` | 0.381 |
+| `/sdks/realtime-sdk/pubsub` | `realtime-sdk/pages/latest/tech-ref/pubsub/overview.mdx` | `reference/pubsub` | `/reference/pubsub` | 0.608 |
+| `/sdks/realtime-sdk/pubsub/client` | `realtime-sdk/pages/latest/tech-ref/pubsub/client/methods/listen.mdx` | `reference/pubsub/client/methods/listen` | `/reference/pubsub/client/methods/listen` | 0.507 |
 | `/sdks/realtime-sdk/realtime-client` | `realtime-sdk/pages/latest/tech-ref/core/realtime-client/index.mdx` | `reference/realtime-client` | `/reference/realtime-client` | 0.411 |
+| `/sdks/realtime-sdk/task` | `realtime-sdk/pages/latest/tech-ref/task/overview.mdx` | `reference/task` | `/reference/task` | 0.687 |
+| `/sdks/realtime-sdk/task/client` | `realtime-sdk/pages/latest/tech-ref/task/client/methods/listen.mdx` | `reference/task/client/methods/listen` | `/reference/task/client/methods/listen` | 0.439 |
+| `/sdks/realtime-sdk/v3/chat` | `realtime-sdk/pages/v3/tech-ref/chat/overview.mdx` | `reference/chat` | `/reference/chat` | 0.549 |
 | `/sdks/realtime-sdk/v3/guides/voice` | `realtime-sdk/pages/v3/tech-ref/video/client/methods/once.mdx` | `reference/video/client/methods/once` | `/reference/video/client/methods/once` | 0.301 |
-| `/sdks/realtime-sdk/v3/video/client` | `realtime-sdk/pages/v3/tech-ref/task/task-client.mdx` | `reference/task/client` | `/reference/task-client [COLLISION]` | 0.391 |
-| `/sdks/realtime-sdk/v3/voice` | `realtime-sdk/pages/v3/tech-ref/voice/index.mdx` | `reference/voice` | `/reference/voice` | 0.679 |
-| `/sdks/realtime-sdk/video` | `realtime-sdk/pages/latest/tech-ref/video/index.mdx` | `reference/video` | `/reference/video` | 0.696 |
+| `/sdks/realtime-sdk/v3/messaging` | `realtime-sdk/pages/v3/tech-ref/messaging/overview.mdx` | `reference/messaging` | `/reference/messaging` | 0.665 |
+| `/sdks/realtime-sdk/v3/pubsub` | `realtime-sdk/pages/v3/tech-ref/pubsub/overview.mdx` | `reference/pubsub` | `/reference/pubsub` | 0.600 |
+| `/sdks/realtime-sdk/v3/pubsub/client` | `realtime-sdk/pages/v3/tech-ref/pubsub/client/methods/publish.mdx` | `reference/pubsub/client/methods/publish` | `/reference/pubsub/client/methods/publish` | 0.379 |
+| `/sdks/realtime-sdk/v3/task/client` | `realtime-sdk/pages/v3/tech-ref/task/client/events.mdx` | `reference/task/client/events` | `/reference/task/client/events` | 0.364 |
+| `/sdks/realtime-sdk/v3/video` | `realtime-sdk/pages/v3/tech-ref/video/overview.mdx` | `reference/video` | `/reference/video` | 0.607 |
+| `/sdks/realtime-sdk/v3/voice` | `realtime-sdk/pages/v3/tech-ref/voice/overview.mdx` | `reference/voice` | `/reference/voice` | 0.585 |
+| `/sdks/realtime-sdk/v3/voice/client` | `realtime-sdk/pages/v3/tech-ref/voice/voice-devicebuilder.mdx` | `reference/voice/device-builder` | `/reference/voice/device-builder` | 0.369 |
+| `/sdks/realtime-sdk/video` | `realtime-sdk/pages/latest/tech-ref/video/overview.mdx` | `reference/video` | `/reference/video` | 0.588 |
 | `/sdks/realtime-sdk/video/client` | `realtime-sdk/pages/latest/tech-ref/video/client/methods/listen.mdx` | `reference/video/client/methods/listen` | `/reference/video/client/methods/listen` | 0.396 |
-| `/sdks/realtime-sdk/voice` | `realtime-sdk/pages/latest/tech-ref/voice/index.mdx` | `reference/voice` | `/reference/voice` | 0.562 |
-| `/video/guides` | `realtime-sdk/pages/v2/guides/index.mdx` | `guides` | `/guides` | 0.334 |
-| `/voice/guides/general/how-to-set-caller-id-or-cnam` | `platform/pages/platform/basics/general/how-to-set-caller-id-or-cnam.mdx` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/basics/how-to-set-caller-id-or-cnam` | 0.437 |
+| `/sdks/realtime-sdk/voice` | `realtime-sdk/pages/latest/tech-ref/task/overview.mdx` | `reference/task` | `/reference/task` | 0.472 |
+| `/swml/methods/ai/prompt/contexts` | `swml/pages/reference/methods/ai/prompt/index.mdx` | `/swml/methods/ai/prompt` | `/reference/ai/prompt` | 0.376 |
+| `/swml/methods/ai/prompt/pom` | `swml/pages/reference/methods/bedrock/prompt/index.mdx` | `/swml/methods/amazon_bedrock/prompt` | `/reference/amazon-bedrock/prompt` | 0.399 |
+| `/voice/faq` | `platform/pages/calling/voice/overview.mdx` | `/voice` | `/voice` | 0.607 |
+| `/voice/getting-started/how-to-forward-calls` | `swml/pages/guides/recipes/forwarding-calls.mdx` | `/guides/recipes/forwarding-calls` | `/guides/forwarding-calls` | 0.678 |
+| `/voice/getting-started/how-to-set-up-voicemail` | `swml/pages/guides/recipes/voicemail.mdx` | `/guides/recipes/voicemail` | `/guides/voicemail` | 0.391 |
+| `/voice/getting-started/making-and-receiving-phone-calls` | `swml/pages/guides/recipes/making-and-receiving-calls.mdx` | `/guides/recipes/making-and-receiving-calls` | `/guides/making-and-receiving-calls` | 0.603 |
+| `/voice/guides/general/how-to-set-caller-id-or-cnam` | `platform/pages/calling/voice/basics/caller-id-and-cnam.mdx` | `/platform/basics/general/how-to-set-caller-id-or-cnam` | `/basics/how-to-set-caller-id-or-cnam` | 0.327 |
 
 ## Likely deleted
 
@@ -288,8 +299,14 @@ Pages with no matching content in Fern.
 - `/ai/guides` -- No Fern page above similarity threshold
 - `/ai/guides/integrations` -- No Fern page above similarity threshold
 - `/ai/guides/integrations/livekit` -- No Fern page above similarity threshold
+- `/ai/guides/integrations/vapi` -- No Fern page above similarity threshold
 - `/cantina/user-guide` -- No Fern page above similarity threshold
 - `/cantina/user-guide-for-admin-rights` -- No Fern page above similarity threshold
+- `/chat/getting-started` -- No Fern page above similarity threshold
+- `/chat/getting-started/chat-first-steps` -- No Fern page above similarity threshold
+- `/chat/guides` -- No Fern page above similarity threshold
+- `/chat/guides/build-a-react-chat-application` -- No Fern page above similarity threshold
+- `/chat/guides/using-chat-to-send-sms-and-make-calls` -- No Fern page above similarity threshold
 - `/cluecon-2024` -- No Fern page above similarity threshold
 - `/compatibility-api/cxml/stream-openai-realtime` -- No Fern page above similarity threshold
 - `/demos/admin-assistant` -- No Fern page above similarity threshold
@@ -303,31 +320,96 @@ Pages with no matching content in Fern.
 - `/demos/tier-1` -- No Fern page above similarity threshold
 - `/demos/weather-bot` -- No Fern page above similarity threshold
 - `/events/demos/server/room-service/menu` -- No Fern page above similarity threshold
+- `/fax/getting-started/fax-to-email` -- No Fern page above similarity threshold
+- `/fax/getting-started/fax-with-retries` -- No Fern page above similarity threshold
+- `/fax/getting-started/filter-faxes-by-number-status-and-date` -- No Fern page above similarity threshold
+- `/fax/getting-started/list-faxes-to-csv-in-all-languages` -- No Fern page above similarity threshold
 - `/home/calling/voice/getting-started` -- No Fern page above similarity threshold
 - `/home/calling/voice/guides` -- No Fern page above similarity threshold
 - `/home/messaging/sms/guides` -- No Fern page above similarity threshold
 - `/home/platform/dashboard/administration` -- No Fern page above similarity threshold
 - `/livewire/integrate-zendesk-signalwire-ai` -- No Fern page above similarity threshold
 - `/livewire/smart-biz-ai` -- No Fern page above similarity threshold
+- `/messaging/get-started` -- No Fern page above similarity threshold
+- `/messaging/getting-started/campaign-registry/faq` -- No Fern page above similarity threshold
+- `/messaging/getting-started/campaign-registry/pricing` -- No Fern page above similarity threshold
+- `/messaging/getting-started/how-to-troubleshoot-common-messaging-issues` -- No Fern page above similarity threshold
+- `/messaging/getting-started/platform-free-trial` -- No Fern page above similarity threshold
 - `/messaging/guides/campaign-registry` -- No Fern page above similarity threshold
+- `/messaging/guides/general/how-to-build-a-private-url-shortener` -- No Fern page above similarity threshold
+- `/messaging/guides/general/how-to-find-unregistered-numbers-on-your-project` -- No Fern page above similarity threshold
+- `/messaging/guides/general/toll-free-number-overview` -- No Fern page above similarity threshold
 - `/platform/basics` -- No Fern page above similarity threshold
 - `/platform/basics/general` -- No Fern page above similarity threshold
 - `/platform/basics/guides` -- No Fern page above similarity threshold
+- `/platform/basics/guides/getting-started-without-code` -- No Fern page above similarity threshold
+- `/platform/basics/guides/how-to-test-api-requests-on-postman` -- No Fern page above similarity threshold
 - `/platform/basics/guides/technical-troubleshooting` -- No Fern page above similarity threshold
+- `/platform/basics/guides/technical-troubleshooting/common-webhook-errors` -- No Fern page above similarity threshold
+- `/platform/basics/guides/technical-troubleshooting/creating-a-publically-exposed-webhook` -- No Fern page above similarity threshold
+- `/platform/basics/guides/technical-troubleshooting/how-to-test-webhooks-with-ngrok` -- No Fern page above similarity threshold
+- `/platform/basics/guides/webrtc-with-sip-over-websockets` -- No Fern page above similarity threshold
 - `/platform/basics/security-and-compliance` -- No Fern page above similarity threshold
+- `/platform/basics/security-and-compliance/fraud` -- No Fern page above similarity threshold
+- `/platform/basics/security-and-compliance/hipaapci-compliance` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/ai-agents` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/cxml-scripts` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/dialogflow-agents` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/freeswitch-connectors` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/relay-applications` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/sip-gateways` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/subscribers` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/swml-scripts` -- No Fern page above similarity threshold
+- `/platform/call-fabric/resources/video-rooms` -- No Fern page above similarity threshold
+- `/platform/dashboard` -- No Fern page above similarity threshold
+- `/platform/dashboard/billing` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/changing-settings-in-your-signalwire-space` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/closing-a-signalwire-account` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/export-logs-from-your-signalwire-space` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/how-to-request-an-increase-to-your-signalwire-space-limits` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/subprojects` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/suspended-signalwire-cloud-space` -- No Fern page above similarity threshold
+- `/platform/dashboard/guides/user-management` -- No Fern page above similarity threshold
 - `/platform/dashboard/reference-app` -- No Fern page above similarity threshold
 - `/platform/integrations` -- No Fern page above similarity threshold
 - `/platform/integrations/carriers` -- No Fern page above similarity threshold
+- `/platform/integrations/carriers/thinq` -- No Fern page above similarity threshold
 - `/platform/integrations/crm` -- No Fern page above similarity threshold
+- `/platform/integrations/crm/zoho-crm-click-to-call` -- No Fern page above similarity threshold
 - `/platform/integrations/dialogflow` -- No Fern page above similarity threshold
+- `/platform/integrations/dialogflow/dialogflow-agents` -- No Fern page above similarity threshold
+- `/platform/integrations/dialogflow/dialogflow-using-nodejs-to-get-caller-id-send-sms` -- No Fern page above similarity threshold
 - `/platform/integrations/freeswitch` -- No Fern page above similarity threshold
+- `/platform/integrations/freeswitch/choosing-a-freeswitch-repository` -- No Fern page above similarity threshold
+- `/platform/integrations/freeswitch/freeswitch-crash-getting-a-backtrace-from-a-core-dump` -- No Fern page above similarity threshold
+- `/platform/integrations/freeswitch/freeswitch-memory-address-and-memory-pool-sanitizer` -- No Fern page above similarity threshold
 - `/platform/integrations/messaging-services` -- No Fern page above similarity threshold
+- `/platform/integrations/messaging-services/textable` -- No Fern page above similarity threshold
+- `/platform/integrations/messaging-services/textit` -- No Fern page above similarity threshold
 - `/platform/integrations/pbx-systems` -- No Fern page above similarity threshold
 - `/platform/integrations/serverless-functions` -- No Fern page above similarity threshold
+- `/platform/integrations/serverless-functions/google-cloud-functions` -- No Fern page above similarity threshold
+- `/platform/integrations/serverless-functions/microsoft-azure-functions` -- No Fern page above similarity threshold
 - `/platform/integrations/softphones` -- No Fern page above similarity threshold
+- `/platform/integrations/softphones/connect-signalwire-with-3cx` -- No Fern page above similarity threshold
+- `/platform/integrations/softphones/connect-signalwire-with-linphone` -- No Fern page above similarity threshold
+- `/platform/integrations/softphones/microsip-softphone` -- No Fern page above similarity threshold
+- `/platform/integrations/softphones/set-up-bria-softphone-with-signalwire` -- No Fern page above similarity threshold
+- `/platform/integrations/softphones/set-up-zoiper-softphone-with-signalwire` -- No Fern page above similarity threshold
 - `/platform/integrations/workflow-tools` -- No Fern page above similarity threshold
+- `/platform/integrations/workflow-tools/how-to-integrate-signalwire-into-integromat` -- No Fern page above similarity threshold
 - `/platform/integrations/workflow-tools/zapier` -- No Fern page above similarity threshold
+- `/platform/integrations/workflow-tools/zapier/creating-a-zapier-zap` -- No Fern page above similarity threshold
+- `/platform/integrations/workflow-tools/zapier/how-to-use-zapier-webhooks` -- No Fern page above similarity threshold
+- `/platform/phone-numbers` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/getting-started` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/getting-started/buying-a-phone-number` -- No Fern page above similarity threshold
 - `/platform/phone-numbers/guides` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/guides/caller-id` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/guides/number-groups` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/guides/porting-out-of-signalwire` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/guides/releasing-dids` -- No Fern page above similarity threshold
+- `/platform/phone-numbers/guides/transferring-dids` -- No Fern page above similarity threshold
 - `/rest/compatibility-api/overview/error-codes` -- No Fern page above similarity threshold
 - `/rest/compatibility-api/overview/paging` -- No Fern page above similarity threshold
 - `/rest/overview/authorization` -- No Fern page above similarity threshold
@@ -344,7 +426,6 @@ Pages with no matching content in Fern.
 - `/rest/signalwire-rest/overview/error-codes` -- No Fern page above similarity threshold
 - `/rest/signalwire-rest/overview/paging` -- No Fern page above similarity threshold
 - `/rest/signalwire-rest/overview/permissions` -- No Fern page above similarity threshold
-- `/sdks/browser-sdk` -- No Fern page above similarity threshold
 - `/sdks/browser-sdk/chat/client` -- No Fern page above similarity threshold
 - `/sdks/browser-sdk/guides/video` -- No Fern page above similarity threshold
 - `/sdks/browser-sdk/guides/video/highlighting-whos-speaking` -- No Fern page above similarity threshold
@@ -352,20 +433,62 @@ Pages with no matching content in Fern.
 - `/sdks/browser-sdk/guides/video/video-overlays` -- No Fern page above similarity threshold
 - `/sdks/browser-sdk/video/room-session` -- No Fern page above similarity threshold
 - `/sdks/browser-sdk/webrtc` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/chat/client` -- No Fern page above similarity threshold
 - `/sdks/realtime-sdk/guides/messaging` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/guides/messaging/forwarding-texts-to-email` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/guides/messaging/send-sms-from-the-browser` -- No Fern page above similarity threshold
 - `/sdks/realtime-sdk/guides/voice` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/guides/voice/setting-up-voicemail` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/guides/voice/stop-robocalls` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/guides/voice/weather-phone` -- No Fern page above similarity threshold
 - `/sdks/realtime-sdk/technical-reference` -- No Fern page above similarity threshold
 - `/sdks/realtime-sdk/v2` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v2/guides/voice/stop-robocalls` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/chat/client` -- No Fern page above similarity threshold
 - `/sdks/realtime-sdk/v3/guides/messaging` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/guides/messaging/forwarding-texts-to-email` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/guides/messaging/send-sms-from-the-browser` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/guides/voice/setting-up-voicemail` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/guides/voice/weather-phone` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/messaging/client` -- No Fern page above similarity threshold
 - `/sdks/realtime-sdk/v3/technical-reference` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/video/client` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/video/room-session` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/v3/voice/call` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/video/roomsession` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/voice/call` -- No Fern page above similarity threshold
+- `/sdks/realtime-sdk/voice/client` -- No Fern page above similarity threshold
+- `/sms/carrier-fees` -- No Fern page above similarity threshold
 - `/swml/guides` -- No Fern page above similarity threshold
 - `/swml/guides/ai` -- No Fern page above similarity threshold
 - `/swml/guides/ai/holiday-special-santa-ai` -- No Fern page above similarity threshold
 - `/swml/guides/ai/swaig/functions` -- No Fern page above similarity threshold
 - `/swml/guides/ai/voicemail-bot-example` -- No Fern page above similarity threshold
 - `/swml/guides/methods` -- No Fern page above similarity threshold
+- `/swml/methods/ai/hints` -- No Fern page above similarity threshold
 - `/swml/methods/ai/languages/params` -- No Fern page above similarity threshold
 - `/swml/methods/ai/params/conscience` -- No Fern page above similarity threshold
+- `/swml/methods/ai/prompt/contexts/steps` -- No Fern page above similarity threshold
+- `/swml/methods/ai/pronounce` -- No Fern page above similarity threshold
+- `/swml/methods/ai/swaig/defaults` -- No Fern page above similarity threshold
+- `/swml/methods/ai/swaig/functions/fillers` -- No Fern page above similarity threshold
+- `/swml/methods/connect/headers` -- No Fern page above similarity threshold
+- `/swml/methods/pay/parameters` -- No Fern page above similarity threshold
+- `/swml/methods/pay/prompts` -- No Fern page above similarity threshold
+- `/swml/methods/pay/prompts/actions` -- No Fern page above similarity threshold
+- `/video/conference` -- No Fern page above similarity threshold
+- `/video/conference/technical-reference` -- No Fern page above similarity threshold
+- `/video/getting-started` -- No Fern page above similarity threshold
+- `/video/getting-started/extending-rooms-with-custom-code` -- No Fern page above similarity threshold
+- `/video/getting-started/managing-rooms-with-apis` -- No Fern page above similarity threshold
+- `/video/getting-started/video-first-steps` -- No Fern page above similarity threshold
+- `/video/guides` -- No Fern page above similarity threshold
+- `/video/guides/layout-positions` -- No Fern page above similarity threshold
+- `/video/guides/layouts` -- No Fern page above similarity threshold
+- `/video/guides/setting-the-layout-of-your-signalwire-video-calls` -- No Fern page above similarity threshold
+- `/voice/getting-started/sip/sip-gateways` -- No Fern page above similarity threshold
+- `/voice/sip/get-started` -- No Fern page above similarity threshold
 
 ## Auto-generated API reference (401 pages)
 
@@ -419,15 +542,40 @@ These sections were not migrated to Fern.
 - `/compatibility-api/guides/messaging/general/how-to-send-sms-from-google-sheets`
 - ... and 78 more
 
-## No source file found (6 pages)
+## No source file found (36 pages)
 
 - `/call-flow-builder/send-sms` -- No source file found in main/call-flow-builder docs dir
+- `/platform/integrations/pbx-systems/set-up-chan-sip-freepbx-with-signalwire` -- No source file found in main docs dir
 - `/swml/guides/ai/background-audio` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/params/hold-music` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/params/interrupt-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/post-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/post-prompt-url` -- No source file found in main/swml docs dir
 - `/swml/methods/ai/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/expressions` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/output` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/webhooks` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/data-map/webhooks/foreach` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/functions/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/internal-fillers` -- No source file found in main/swml docs dir
+- `/swml/methods/ai/swaig/native-functions` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/post-prompt` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/post-prompt-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/prompt/pom` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/defaults` -- No source file found in main/swml docs dir
 - `/swml/methods/amazon-bedrock/swaig/defaults/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/expressions` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/output` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/webhooks` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/data-map/webhooks/foreach` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/functions/web-hook-url` -- No source file found in main/swml docs dir
+- `/swml/methods/amazon-bedrock/swaig/native-functions` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action/start` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action/stop` -- No source file found in main/swml docs dir
+- `/swml/methods/live-transcribe/action/summarize` -- No source file found in main/swml docs dir
+- ... and 6 more
 
 ## Output files
 
-- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-matches.csv` -- full results (843 rows)
+- `C:\Users\devon\projects\signalwire-fern-config\scripts\slug-reconciliation\reports\slug-matches.csv` -- full results (998 rows)
