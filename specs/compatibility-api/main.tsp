@@ -18,6 +18,7 @@ import "./recordings/main.tsp";
 import "./transcriptions/main.tsp";
 import "./queues/main.tsp";
 import "./tokens/main.tsp";
+import "./webhooks/main.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -43,6 +44,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(RECORDINGS_TAG, RECORDINGS_TAG_METADATA)
 @tagMetadata(TRANSCRIPTIONS_TAG, TRANSCRIPTIONS_TAG_METADATA)
 @tagMetadata(TOKENS_TAG, TOKENS_TAG_METADATA)
+@tagMetadata(WEBHOOKS_TAG, WEBHOOKS_TAG_METADATA)
 @service(#{ title: "Compatibility API" })
 @info(#{ version: "1.0.0" })
 @server(

@@ -3,6 +3,8 @@ info:
   title: Compatibility API
   version: 1.0.0
 tags:
+  - name: Webhooks
+    description: Webhook payloads sent by SignalWire to your callback URLs.
   - name: Tokens
     description: Manage API tokens for authentication.
   - name: Recording Transcriptions
@@ -4696,6 +4698,48 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/UpdateAccountRequest'
+  /Webhooks/InboundCallStatus:
+    post:
+      operationId: inbound_call_status_callback
+      summary: Inbound call status callback
+      description: |2-
+          SignalWire sends this webhook for inbound calls to a phone number when the call is completed or failed.
+          Enable it at the phone number level: Phone Numbers tab → select the number → Phone Number Settings.
+          Suited for tracking inbound calls, success rate, call quality, and total calls in a call center.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboundCallStatusCallbackPayload'
+      x-fern-webhook: true
+  /Webhooks/RecordingStatus:
+    post:
+      operationId: recording_status_callback
+      summary: Recording status callback
+      description: |2-
+          SignalWire sends this webhook to your RecordingStatusCallback URL when recording status events occur.
+          Configure the callback URL when creating a call (Create a Call), or when using Dial, Conference, or Record.
+          Use RecordingStatusCallbackEvent to request one or more of: in-progress, completed, absent. Default is completed.
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingStatusCallbackPayload'
+      x-fern-webhook: true
 security:
   - SignalWireBasicAuth: []
 components:
@@ -7536,7 +7580,7 @@ components:
         RecordingStatusCallback:
           type: string
           format: uri
-          description: The URL to request when recording is available.
+          description: The URL to request when recording is available. See the [Recording status callback](/rest/compatibility-api/endpoints/recording-status-callback) webhook for the payload your URL will receive.
           example: https://your-api-endpoint.com/path
         RecordingStatusCallbackMethod:
           type: string
@@ -8580,6 +8624,47 @@ components:
             - sms
             - voice
       description: Request body for importing a phone number.
+    InboundCallStatusCallbackPayload:
+      type: object
+      required:
+        - CallSid
+        - AccountSid
+        - From
+        - To
+        - Timestamp
+        - CallStatus
+        - CallDuration
+        - AudioInMos
+      properties:
+        CallSid:
+          type: string
+          description: A unique identifier for the call. May be used to later retrieve this call from the REST API.
+        AccountSid:
+          type: string
+          description: The unique ID of the project this call is associated with.
+        From:
+          type: string
+          description: The From number in E.164 format.
+        To:
+          type: string
+          description: The To number in E.164 format.
+        Timestamp:
+          type: string
+          description: The timestamp of the call creation date/time.
+        CallStatus:
+          type: string
+          description: The status of the call. Typically failed or completed.
+        CallDuration:
+          type: string
+          description: The duration, in seconds, of the call.
+        AudioInMos:
+          type: string
+          description: The score that represents the quality of the call (1-5).
+      description: |-
+        Payload sent by SignalWire to your Inbound Call Status Callback URL for inbound calls to a phone number.
+        This webhook is enabled at the phone number level in the dashboard: Phone Numbers → select number → Phone Number Settings.
+        By default the webhook is called when the call is completed or failed. Suited for tracking inbound calls,
+        success rate, call quality, and total calls.
     IncomingPhoneNumber:
       type: object
       required:
@@ -10146,6 +10231,52 @@ components:
         - absent
         - stopped
       description: Recording status.
+    RecordingStatusCallbackPayload:
+      type: object
+      required:
+        - AccountSid
+        - CallSid
+        - RecordingSid
+        - RecordingUrl
+        - RecordingStatus
+        - RecordingDuration
+        - RecordingChannels
+        - RecordingSource
+      properties:
+        AccountSid:
+          type: string
+          description: The unique ID of the project this call is associated with.
+        CallSid:
+          type: string
+          description: A unique identifier for the call. May be used to later retrieve this call from the REST API.
+        RecordingSid:
+          type: string
+          description: The unique identifier for the recording.
+        RecordingUrl:
+          type: string
+          description: The URL for the audio recording.
+        RecordingStatus:
+          type: string
+          description: |2-
+              The status of the recording. Possible values: in-progress (recording has begun),
+              completed (file is available), absent (recording was too short or no audio detected).
+        RecordingDuration:
+          type: integer
+          format: int32
+          description: The duration, in seconds, of the recording.
+        RecordingChannels:
+          type: integer
+          format: int32
+          description: The number of channels in the recording.
+        RecordingSource:
+          type: string
+          description: The type of call that initiated the recording.
+      description: |-
+        Payload sent by SignalWire to your RecordingStatusCallback URL when recording status events occur.
+        Configure RecordingStatusCallback (and optionally RecordingStatusCallbackEvent) when creating a call
+        or when using Dial, Conference, or Record. SignalWire sends an HTTP GET or POST to your URL with
+        these parameters. Use recordingStatusCallbackEvent to request one or more of: in-progress, completed, absent.
+        Default is completed.
     RecordingSubresourceUris:
       type: object
       required:
