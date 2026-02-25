@@ -35,26 +35,205 @@ Text and POM are mutually exclusive — use one or the other. Contexts can be co
   An object that contains the [`prompt parameters`][prompt-properties].
 </ParamField>
 
+The `prompt` property accepts one of the following objects:
+
+<Tabs>
+    <Tab title="Regular Prompt">
+
+<ParamField path="prompt.text" type="string" required={true}>
+  The main identity prompt for the AI. This prompt will be used to outline the agent's personality, role, and other characteristics.
+</ParamField>
+
+<ParamField path="prompt.temperature" type="number" default="1.0">
+  Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+</ParamField>
+
+<ParamField path="prompt.top_p" type="number" default="1.0">
+  Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random.
+</ParamField>
+
+<ParamField path="prompt.confidence" type="number" default="0.6">
+  Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0. Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
+</ParamField>
+
+<ParamField path="prompt.presence_penalty" type="number" default="0">
+  Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics.
+</ParamField>
+
+<ParamField path="prompt.frequency_penalty" type="number" default="0">
+  Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim.
+</ParamField>
+
+<ParamField path="prompt.max_tokens" type="integer" default="256">
+  Limits the amount of tokens that the AI agent may generate when creating its response. Valid value range: `0` - `4096`.
+</ParamField>
+
+    </Tab>
+    <Tab title="POM Prompts">
+
+<Warning title="Want a library for working with the POM?">
+SignalWire provides a Python library for working with the POM.
+More information can be found in the [POM reference](/ai/pom).
+</Warning>
+
+<ParamField path="prompt.pom" type="object[]" required={true}>
+  An array of objects that defines the prompt object model (POM) for the AI. The POM is a structured data format for organizing and rendering prompts that are clearly structured and easy to understand. By breaking prompts into sections, users can manage each section independently and then combine them into a single cohesive prompt. SignalWire renders the POM into a markdown document before sending it to the LLM. If the `text` parameter is present while using `pom`, the `pom` prompt will be used instead of `text`.
+</ParamField>
+
 <Indent>
 
-The `prompt` property accepts one of the following prompt types, plus shared configuration parameters:
+<ParamField path="pom[].title" type="string">
+  The title of the section. Will be a heading in the rendered prompt.
+</ParamField>
 
-- **Text prompt** — See [Text prompt properties](#text-prompt-properties).
-- **POM prompt** — See [POM prompt properties](#pom-prompt-properties).
+<ParamField path="pom[].body" type="string">
+  The body of the section. This will be a paragraph in the rendered prompt.
+  Required if `bullets` is not present.
+</ParamField>
 
-Both formats share [common parameters](#common-prompt-parameters) for tuning model behavior.
+<ParamField path="pom[].bullets" type="string[]">
+  An array of strings that represent the bullets of the section.
+  This will be a list of short statements/rules in the rendered prompt.
+  Optional if `body` is present.
+</ParamField>
 
-### Text prompt properties
+<ParamField path="pom[].subsections" type="object[]">
+  An array of section objects allowing users to nest sections within sections. Each subsection accepts the same properties as a top-level POM section (`title`, `body`, `bullets`, `numbered`, `numberedBullets`).
+</ParamField>
 
-<Markdown src="/snippets/swml/_prompt-regular.mdx" />
+<ParamField path="pom[].numbered" type="boolean" default="false">
+  If `true`, the section will be numbered in the rendered prompt.
+</ParamField>
 
-### POM prompt properties
+<ParamField path="pom[].numberedBullets" type="boolean" default="false">
+  If `true`, the bullets will be numbered in the rendered prompt.
+</ParamField>
 
-<Markdown src="/snippets/swml/_prompt-pom.mdx" />
+</Indent>
 
-### Common prompt parameters
+<ParamField path="prompt.temperature" type="number" default="1.0">
+  Randomness setting. Float value between 0.0 and 1.5. Closer to 0 will make the output less random.
+</ParamField>
 
-<Markdown src="/snippets/swml/_prompt-shared-params.mdx" />
+<ParamField path="prompt.top_p" type="number" default="1.0">
+  Randomness setting. Alternative to `temperature`. Float value between 0.0 and 1.0. Closer to 0 will make the output less random.
+</ParamField>
+
+<ParamField path="prompt.confidence" type="number" default="0.6">
+  Threshold to fire a speech-detect event at the end of the utterance. Float value between 0.0 and 1.0. Decreasing this value will reduce the pause after the user speaks, but may introduce false positives.
+</ParamField>
+
+<ParamField path="prompt.presence_penalty" type="number" default="0">
+  Aversion to staying on topic. Float value between -2.0 and 2.0. Positive values increase the model's likelihood to talk about new topics.
+</ParamField>
+
+<ParamField path="prompt.frequency_penalty" type="number" default="0">
+  Aversion to repeating lines. Float value between -2.0 and 2.0. Positive values decrease the model's likelihood to repeat the same line verbatim.
+</ParamField>
+
+<ParamField path="prompt.max_tokens" type="integer" default="256">
+  Limits the amount of tokens that the AI agent may generate when creating its response. Valid value range: `0` - `4096`.
+</ParamField>
+
+    </Tab>
+</Tabs>
+
+<ParamField path="prompt.contexts" type="object">
+  An object that defines the available contexts for the AI. Each context represents a set of steps that guide the flow of the conversation. The object must include a `default` key, which specifies the initial context used at the start of the conversation. Additional contexts can be added as other keys within the object.
+</ParamField>
+
+<Indent>
+
+<ParamField path="contexts.default" type="object" required={true}>
+  The default context used at the beginning of the conversation.
+</ParamField>
+
+<ParamField path="contexts.*" type="object">
+  Additional contexts for specialized conversation flows. The key is user-defined (e.g., `support`, `sales`, `billing`).
+</ParamField>
+
+<Indent>
+
+<ParamField path="*.steps" type="object[]" required={true}>
+  An array of step objects that define the conversation flow for this context. Steps execute sequentially unless otherwise specified. Each step contains either a `text` string or a `pom` array to provide prompt instructions.
+</ParamField>
+
+<ParamField path="*.isolated" type="boolean" default="false">
+  When `true`, resets conversation history to only the system prompt when entering this context. Useful for focused tasks that shouldn't be influenced by previous conversation.
+</ParamField>
+
+<ParamField path="*.enter_fillers" type="object[]">
+  Language-specific filler phrases played when transitioning into this context.
+</ParamField>
+
+<Indent>
+
+<ParamField path="enter_fillers[].<language_code>" type="string[]">
+  An array of filler phrases for the specified language code. One phrase is randomly selected during transitions. Possible language codes:
+  - `default` - Default language set by the user in the [`ai.languages`](/swml/methods/ai/languages) property
+  - `bg` - Bulgarian
+  - `ca` - Catalan
+  - `cs` - Czech
+  - `da` - Danish
+  - `da-DK` - Danish (Denmark)
+  - `de` - German
+  - `de-CH` - German (Switzerland)
+  - `el` - Greek
+  - `en` - English
+  - `en-AU` - English (Australia)
+  - `en-GB` - English (United Kingdom)
+  - `en-IN` - English (India)
+  - `en-NZ` - English (New Zealand)
+  - `en-US` - English (United States)
+  - `es` - Spanish
+  - `es-419` - Spanish (Latin America)
+  - `et` - Estonian
+  - `fi` - Finnish
+  - `fr` - French
+  - `fr-CA` - French (Canada)
+  - `hi` - Hindi
+  - `hu` - Hungarian
+  - `id` - Indonesian
+  - `it` - Italian
+  - `ja` - Japanese
+  - `ko` - Korean
+  - `ko-KR` - Korean (South Korea)
+  - `lt` - Lithuanian
+  - `lv` - Latvian
+  - `ms` - Malay
+  - `multi` - Multilingual (Spanish + English)
+  - `nl` - Dutch
+  - `nl-BE` - Flemish (Belgian Dutch)
+  - `no` - Norwegian
+  - `pl` - Polish
+  - `pt` - Portuguese
+  - `pt-BR` - Portuguese (Brazil)
+  - `pt-PT` - Portuguese (Portugal)
+  - `ro` - Romanian
+  - `ru` - Russian
+  - `sk` - Slovak
+  - `sv` - Swedish
+  - `sv-SE` - Swedish (Sweden)
+  - `th` - Thai
+  - `th-TH` - Thai (Thailand)
+  - `tr` - Turkish
+  - `uk` - Ukrainian
+  - `vi` - Vietnamese
+  - `zh` - Chinese (Simplified)
+  - `zh-CN` - Chinese (Simplified, China)
+  - `zh-Hans` - Chinese (Simplified Han)
+  - `zh-Hant` - Chinese (Traditional Han)
+  - `zh-HK` - Chinese (Traditional, Hong Kong)
+  - `zh-TW` - Chinese (Traditional, Taiwan)
+</ParamField>
+
+</Indent>
+
+<ParamField path="*.exit_fillers" type="object[]">
+  Language-specific filler phrases played when leaving this context. Same format as `enter_fillers`.
+</ParamField>
+
+</Indent>
 
 </Indent>
 
