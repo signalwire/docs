@@ -20,8 +20,6 @@ tags:
     externalDocs:
       url: https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling/calls
       description: Developer documentation on Calling API Call endpoints
-  - name: Service Events
-    description: Service-level event callbacks
 paths:
   /calls:
     post:
@@ -4063,22 +4061,6 @@ components:
             - $ref: '#/components/schemas/Output'
           description: An object that contains a response and a list of actions to be performed upon a expression match.
       title: Expression object
-    FallbackEventPayload:
-      type: object
-      required:
-        - call_id
-        - reason
-      properties:
-        call_id:
-          type: string
-          description: The call ID.
-          example: 0e9c80d7-a149-4917-892d-420043709f45
-        reason:
-          type: string
-          description: The error that triggered the fallback.
-          example: timeout
-      description: Fired when a fallback URL is triggered.
-      title: Fallback event
     FunctionFillers:
       anyOf:
         - type: object
@@ -7185,22 +7167,6 @@ components:
           description: Send an outbound SMS or MMS message to a PSTN phone number.
           title: send_sms
       title: send_sms Method
-    ServiceEventPayload:
-      type: object
-      required:
-        - event
-        - timestamp
-      properties:
-        event:
-          type: string
-          description: The event type.
-          example: service.ready
-        timestamp:
-          type: string
-          description: ISO 8601 timestamp.
-          example: '2025-01-15T10:30:00Z'
-      description: A service-level event fired when the API state changes.
-      title: Service event
     Set:
       type: object
       required:
@@ -7836,14 +7802,6 @@ components:
           description: Start background call tap. Media is streamed over Websocket or RTP to customer controlled URI.
           title: tap
       title: tap Method
-    TestExplicitTagParams:
-      type: object
-      properties:
-        fallback_webhook_url:
-          type: string
-          format: uri
-          description: URL to receive fallback events.
-          example: https://example.com/fallback-webhook
     ToggleFunctionsAction:
       type: object
       required:
@@ -8474,211 +8432,3 @@ servers:
       space_name:
         default: '{Your_Space_Name}'
         description: The domain of the users SignalWire space.
-webhooks:
-  serviceEvent:
-    post:
-      operationId: service_event
-      summary: Service event
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                event:
-                  type: string
-                  description: The event type.
-                  example: service.ready
-                timestamp:
-                  type: string
-                  description: ISO 8601 timestamp.
-                  example: '2025-01-15T10:30:00Z'
-              required:
-                - event
-                - timestamp
-              description: A service-level event fired when the API state changes.
-      responses:
-        '200':
-          description: Webhook received
-      description: A service-level event fired when the API state changes.
-      tags:
-        - Service Events
-  fallbackEvent:
-    post:
-      operationId: fallback_event
-      summary: Fallback event
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: The call ID.
-                  example: 0e9c80d7-a149-4917-892d-420043709f45
-                reason:
-                  type: string
-                  description: The error that triggered the fallback.
-                  example: timeout
-              required:
-                - call_id
-                - reason
-              description: Fired when a fallback URL is triggered.
-      responses:
-        '200':
-          description: Webhook received
-      description: Fired when a fallback URL is triggered.
-      tags:
-        - Calls
-  callStatusCallback:
-    post:
-      operationId: call_status_callback
-      summary: Call status callback
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: The unique identifier of the call.
-                  example: 0e9c80d7-a149-4917-892d-420043709f45
-                status:
-                  type: string
-                  enum:
-                    - answered
-                    - queued
-                    - initiated
-                    - ringing
-                    - ending
-                    - ended
-                  description: The current status of the call.
-                  example: answered
-                from:
-                  type: string
-                  description: The origin number or SIP address.
-                  example: '+12069708643'
-                to:
-                  type: string
-                  description: The destination number or SIP address.
-                  example: '+15550198765'
-                direction:
-                  type: string
-                  enum:
-                    - outbound-api
-                  description: The direction of the call.
-                  example: outbound-api
-                type:
-                  type: string
-                  enum:
-                    - relay_pstn_call
-                    - relay_sip_call
-                    - relay_webrtc_call
-                  description: The type of call.
-                  example: relay_pstn_call
-                duration:
-                  type: integer
-                  nullable: true
-                  description: The duration of the call in seconds at the time of the event. Null if the call has not yet been answered.
-                  example: null
-                duration_ms:
-                  type: integer
-                  nullable: true
-                  description: The duration of the call in milliseconds at the time of the event. Null if the call has not yet been answered.
-                  example: null
-                created_at:
-                  type: string
-                  description: The date and time when the call was created.
-                  example: '2025-01-15T10:30:00Z'
-              required:
-                - call_id
-                - status
-                - from
-                - to
-                - direction
-                - type
-                - duration
-                - duration_ms
-                - created_at
-              description: |-
-                Payload sent by SignalWire to your `status_url` when call status events occur.
-                Configure the callback URL and events using the `status_url` and `status_events`
-                parameters when creating a call with the `dial` command.
-      responses:
-        '200':
-          description: Webhook received
-      description: |-
-        Payload sent by SignalWire to your `status_url` when call status events occur.
-        Configure the callback URL and events using the `status_url` and `status_events`
-        parameters when creating a call with the `dial` command.
-      tags:
-        - Calls
-  transcriptionEvent:
-    post:
-      operationId: transcription_event
-      summary: Transcription event callback
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                call_id:
-                  type: string
-                  description: The unique identifier of the call being transcribed.
-                  example: 0e9c80d7-a149-4917-892d-420043709f45
-                event_type:
-                  type: string
-                  enum:
-                    - utterance
-                    - summary
-                  description: The type of transcription event.
-                  example: utterance
-                text:
-                  type: string
-                  description: The transcribed or translated text.
-                  example: Hello, how can I help you today?
-                language:
-                  type: string
-                  description: The language of the transcribed text.
-                  example: en-US
-                direction:
-                  type: string
-                  enum:
-                    - local-caller
-                    - remote-caller
-                  description: The direction of the speaker.
-                  example: local-caller
-                confidence:
-                  type: number
-                  description: Confidence score of the transcription (0-1).
-                  example: 0.95
-                timestamp:
-                  type: string
-                  description: Timestamp of the event in ISO 8601 format.
-                  example: '2025-01-15T10:30:05Z'
-              required:
-                - call_id
-                - event_type
-                - text
-                - language
-                - direction
-                - confidence
-                - timestamp
-              description: |-
-                Payload sent by SignalWire to your webhook URL during live transcription or translation.
-                Contains real-time utterance data as speech is recognized.
-      responses:
-        '200':
-          description: Webhook received
-      description: |-
-        Payload sent by SignalWire to your webhook URL during live transcription or translation.
-        Contains real-time utterance data as speech is recognized.
-      tags:
-        - Calls
