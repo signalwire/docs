@@ -1,7 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi3";
 import "../../../../swml";
-import "./webhooks.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -138,7 +137,6 @@ model LiveTranscribeStartAction {
     ])
     direction: TranscribeDirection[];
 
-    @webhook("transcriptionEvent", TranscriptionEventPayload)
     @doc("The webhook URL to receive transcription events.")
     @example("https://example.com/webhook")
     webhook?: string;
@@ -257,7 +255,6 @@ model LiveTranslateStartAction {
     @example("professional")
     filter_to?: TranslationFilter;
 
-    @webhook("transcriptionEvent", TranscriptionEventPayload)
     @doc("The webhook URL to receive translation events.")
     @example("https://example.com/webhook")
     webhook?: string;
@@ -380,7 +377,6 @@ model CallCreateParamsBase {
   @example(CallFallbackURLExample)
   fallback_url?: string;
 
-  @webhook("callStatusCallback", CallStatusCallbackPayload)
   @doc("A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.")
   @example("https://example.com/status_callback")
   status_url?: url;
