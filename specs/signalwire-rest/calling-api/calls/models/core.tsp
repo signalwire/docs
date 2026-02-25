@@ -10,7 +10,7 @@ model Call {
   from: string;
 
   @doc("The destination number or address.")
-  @example("+18048390497")
+  @example("+15550198765")
   to: string;
 
   @doc("The direction of the call.")
