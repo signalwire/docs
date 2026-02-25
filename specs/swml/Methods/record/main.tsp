@@ -69,6 +69,6 @@ model Record {
 
     @doc("URL to send recording status events to.")
     @example("https://example.com/recording-status")
-    status_url?: string;
+    status_url?: url;
   };
 }

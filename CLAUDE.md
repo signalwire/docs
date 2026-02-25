@@ -15,6 +15,72 @@ ask the user to install the [Serena MCP plugin](https://github.com/oraios/serena
 Preferably, install the plugin via Claude's `/plugin` command.
 Once installed, you can use Serena tools like `list_memories` and `read_memory` to retrieve stored context.
 
+## API Audit Tooling
+
+This repo includes Claude Code extensions (subagents, skills, and rules) for
+auditing TypeSpec API specs against the Rails backend (`temp/prime-rails/`).
+The full audit procedure is documented in `temp/audit-guide.md`.
+
+### Subagents (`.claude/agents/`)
+
+Specialized agents available in any session — no extra setup required:
+
+| Agent | Purpose |
+|-------|---------|
+| `rails-investigator` | Reads Rails routes, controllers, contracts, serializers, models, schema |
+| `typespec-reviewer` | Compares TypeSpec definitions against Rails ground truth |
+| `typespec-writer` | Implements TypeSpec fixes based on audit findings |
+| `audit-reporter` | Synthesizes findings into structured reports |
+
+Delegate to them by name (e.g., "Use the rails-investigator to check the
+rooms resource in the video API").
+
+### Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/audit <api> [tag-groups...]` | Spawn a specialist team to audit one or more tag groups against Rails |
+
+### Rules (`.claude/rules/`)
+
+Path-scoped rules load automatically for relevant files:
+- `typespec-conventions.md` — Loaded when editing `specs/**/*.tsp`
+- `rails-patterns.md` — Loaded when reading `temp/prime-rails/**/*.rb`
+- `audit-process.md` — General audit workflow reference
+
+### Audit Reports
+
+Audit reports are ephemeral — used during the audit session to coordinate
+findings between phases and present results. Once fixes are implemented, the
+TypeSpec files are the source of truth and reports are deleted. Re-run
+`/audit` at any time to get a fresh assessment.
+
+### Team Knowledge Management
+
+Teammates load standard project context (CLAUDE.md, `.claude/rules/`, skills)
+automatically — they do NOT inherit the lead's conversation history. Reusable
+patterns discovered during audits belong in `.claude/rules/` (committed,
+shared with team, auto-loaded by path scope). Teammates should report new
+patterns to the team lead rather than creating their own memory files.
+
+### Agent Teams (Required for `/audit`)
+
+The `/audit` skill spawns a specialist team with 4 roles: typespec-reviewer
+(discovery + gap analysis), rails-investigator, audit-reporter, and
+typespec-writer. Multiple tag groups are audited in parallel.
+
+Agent teams require:
+1. `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your environment or settings
+2. A terminal that supports the chosen display mode (in-process works anywhere;
+   split-panes need tmux or iTerm2)
+
+On **Windows** or terminals without tmux/iTerm2, launch Claude Code with:
+```
+claude --teammate-mode in-process
+```
+This runs teammates as background processes instead of split panes, which is
+the only mode that works reliably outside tmux.
+
 ## Directory Structure
 
 ```
@@ -38,7 +104,7 @@ tools/scripts/         # Migration scripts
 .serena/memories/      # Session notes and migration logs
 ```
 
-## Docusaurus to Fern Migration Patterns
+## Content Migration
 
 When migrating MDX content from Docusaurus to Fern,
 apply these conversions:
@@ -72,12 +138,16 @@ import UiAccordion from '/docs/main/_common/dashboard/_ui-accordion.mdx'
 <Markdown src="/snippets/common/dashboard/_ui-accordion.mdx" />
 ```
 
-Shared snippets live in `fern/snippets/common/` and are organized by topic:
+Shared snippets live in `fern/snippets/` and are organized by topic:
 - `fern/snippets/common/dashboard/` - Dashboard UI components
 - `fern/snippets/common/call-fabric/` - Call Fabric shared content
 - `fern/snippets/common/sip/` - SIP-related shared content
+- `fern/snippets/swml/` - SWML-specific shared content (actions, playable sounds, voice table, language codes, web_hook_url)
 
 The old Docusaurus path `/docs/main/_common/` maps to `/snippets/common/` in Fern.
+The old Docusaurus path `swml/reference/methods/_sharedtables/` maps to `/snippets/swml/` in Fern.
+
+**Nested snippets:** Fern `<Markdown src>` components can be nested — a snippet can include other snippets. For example, `_web-hook-url.mdx` includes `_actions.mdx` via `<Markdown src="/snippets/swml/_actions.mdx" />`.
 
 ### Component Migration
 
@@ -603,6 +673,32 @@ The <Tooltip tip="Explanation text">term</Tooltip> is important.
 ```
 
 Props: `tip` (string | ReactNode), `side` (`"top"` | `"right"` | `"bottom"` | `"left"`)
+For Docusaurus-to-Fern migration patterns, component conversions, Fern component
+reference, and common migration issues, Claude will auto-load the
+`migration-reference` skill when working on MDX files.
+
+## Slug Behavior
+
+Each product in `docs.yml` declares a base slug (e.g., `slug: swml`). Fern
+automatically prepends this product slug to every page URL within that product.
+
+**Do NOT repeat the product slug in page-level frontmatter.** Fern deduplicates
+redundant prefixes, so `slug: /swml/methods/ai` and `slug: /methods/ai` both
+resolve to the same URL — but only the second form is correct. The first form
+works by accident (Fern silently strips the duplicate prefix).
+
+```yaml
+# BAD — redundant product slug
+slug: /swml/methods/ai
+
+# GOOD — product slug is inherited automatically
+slug: /methods/ai
+```
+
+For a product's landing page, use `slug: /` to indicate the product root.
+
+For the per-product slug proposal rules and standardization conventions, see
+[slug-standardization.md](slug-standardization.md).
 
 ## Important Warnings
 
@@ -630,6 +726,22 @@ and reverts all changes. Always use line-by-line text manipulation
 - `` ```yaml andJSON `` or `` ```yaml andJson `` - remove `andJSON`/`andJson` (Fern has no auto-JSON generation)
 - `src={require("...").default}` - convert to plain `src="..."` string paths
 - `onChange` prop on Accordion - remove (not supported in Fern)
+- Callout titles left as inline text instead of `title=` prop — Docusaurus rendered the first line of a callout as an ALL CAPS title automatically. In Fern, the title must be an explicit prop. Convert `<Tip>\nMY TITLE\nBody text</Tip>` to `<Tip title="My title">\nBody text</Tip>`. Sentence-case the title.
+- Inline bold text used as subtitle — some pages have `---**Subtitle text**` (bold text immediately after frontmatter) instead of using the `subtitle:` frontmatter field. Convert to `subtitle: Subtitle text` in frontmatter.
+
+## Style Guidelines
+
+### Page titles
+
+Guide titles should describe what the page teaches the reader to **do**, not just name the feature:
+- Bad: "Using context_switch", "Use set_meta_data"
+- Good: "Switch AI context mid-call", "Store data outside LLM context", "Enable functions dynamically"
+
+Keep titles short. Be precise about what makes the feature distinctive.
+
+### Casing
+
+All titles (frontmatter `title:`, callout `title=`, sidebar labels) should use **sentence case** — capitalize only the first word and proper nouns.
 
 ## Commands
 

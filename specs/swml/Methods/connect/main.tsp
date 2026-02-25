@@ -158,6 +158,14 @@ model ConnectDeviceBase {
         - `ended`
     """)
   call_state_events?: CallStatus[] = #[CallStatus.ended];
+
+  @doc("""
+    HTTP or HTTPS URL to deliver connect status events.
+    These events report the overall status of the connect operation
+    (connecting, connected, failed, disconnected) via a `calling.call.connect` event.
+    """)
+  @example("https://example.com/connect-status")
+  status_url?: url;
 }
 
 @summary("Single Destination")
@@ -168,9 +176,45 @@ model ConnectDeviceSingle is ConnectDeviceBase {
     - SIP URI (e.g., "sip:alice@example.com")
     - Call Fabric Resource address (e.g., "/public/test_room")
     - Queue (e.g., "queue:support")
+    - WebSocket stream (e.g., "stream:wss://example.com/audio")
     """)
   @example("+15559876543")
   to: string;
+
+  // Stream-specific properties (only apply when `to` starts with "stream:wss://")
+
+  @doc("Stream name identifier. Only applies to stream destinations.")
+  @example("my-stream")
+  name?: string;
+
+  @doc("""
+    Audio codec for the stream. Supported values: `PCMU`, `PCMA`, `G722`, `L16`.
+    Codec can include rate and ptime modifiers (e.g., `PCMU@40i`, `L16@24000h@40i`).
+    Only applies to stream destinations.
+    """)
+  @example("PCMU")
+  codec?: string;
+
+  @doc("""
+    Enable realtime mode for bidirectional audio.
+    Only applies to stream destinations.
+    """)
+  @example(true)
+  realtime?: boolean | SWMLVar = false;
+
+  @doc("""
+    HTTP method for the stream status webhook.
+    Only applies to stream destinations.
+    """)
+  @example("POST")
+  status_url_method?: "GET" | "POST" = "POST";
+
+  @doc("Bearer token sent as an `Authorization` header during the WebSocket handshake. Only applies to stream destinations.")
+  @example("my-secret-token")
+  authorization_bearer_token?: string;
+
+  @doc("Custom key-value pairs sent in the WebSocket start message. Only applies to stream destinations.")
+  custom_parameters?: TypeSpec.Record<string>;
 }
 
 @summary("Serial Dialing")
@@ -202,7 +246,7 @@ alias ConnectDevice =
 
 @summary("connect Method")
 model Connect {
-  @doc("Dial a SIP URI or phone number.")
+  @doc("Connect to a phone number, SIP URI, Call Fabric resource, queue, or WebSocket stream.")
   @oneOf
   connect: ConnectDevice;
 }

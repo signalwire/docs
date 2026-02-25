@@ -1,6 +1,6 @@
 ---
+id: a1f9b9bc-2467-4d55-af2a-3d8fe9de2c51
 title: live_translate
-sidebar-title: live_translate
 slug: /swml/methods/live_translate
 description: Translate a voice interaction in real-time.
 ---
@@ -8,53 +8,331 @@ description: Translate a voice interaction in real-time.
 Start live translation of the call. The translation will be sent to the specified webhook URL.
 
 <ParamField path="live_translate" type="object" required={true}>
-  An object that accepts the [`live_translate parameters`](#live_translate-parameters).
+  An object that accepts the following properties.
 </ParamField>
 
-## **live_translate Parameters**
+## **Properties**
 
 <ParamField path="live_translate.action" type="string | object" required={true}>
-  The action to be performed.
+  The action to perform. See [actions](#actions) below.
 </ParamField>
 
-An object that contains **one** of the [`live_translate actions`](./action/index.mdx)
-**Possible Values:** [[`stop`](/swml/methods/live_translate/action/stop), [`start`](/swml/methods/live_translate/action/start), [`summarize`](/swml/methods/live_translate/action/summarize), [`inject`](/swml/methods/live_translate/action/inject)]
+## **Actions**
 
-## Action Usage Context
+The `action` property controls the translation session. Use `start` to begin translating with configuration options, `stop` to end an active session, `summarize` to request an on-demand AI summary mid-session, or `inject` to insert a translated message into the conversation.
 
-| Action | Call Start | Live Call |
+<Tabs>
+<Tab title="start">
+
+<ParamField path="action.start" type="object" required={true}>
+  Start a live translation session.
+</ParamField>
+
+<Indent>
+
+<ParamField path="start.webhook" type="string">
+  The URL to receive translation events via HTTP POST.
+  When `live_events` is enabled, partial results are sent as they occur.
+  When `ai_summary` is enabled, summaries in both languages are sent when the session ends.
+  Authentication can also be set in the URL in the format of `username:password@url`.
+</ParamField>
+
+<ParamField path="start.from_lang" type="string" required={true}>
+  The language to translate from.
+  See [supported voices & languages](/voice/getting-started/voice-and-languages).
+</ParamField>
+
+<ParamField path="start.to_lang" type="string" required={true}>
+  The language to translate to.
+  See [supported voices & languages](/voice/getting-started/voice-and-languages).
+</ParamField>
+
+<ParamField path="start.from_voice" type="string" default="elevenlabs.josh">
+  The TTS voice to use for the source language.
+  See [supported voices & languages](/voice/getting-started/voice-and-languages).
+</ParamField>
+
+<ParamField path="start.to_voice" type="string" default="elevenlabs.josh">
+  The TTS voice to use for the target language.
+  See [supported voices & languages](/voice/getting-started/voice-and-languages).
+</ParamField>
+
+<ParamField path="start.filter_from" type="string">
+  Translation filter to apply to the source language direction.
+  Adjusts the tone or style of translated speech.
+
+  Preset values: `polite` (removes insults, maintains sentiment), `rude` (adds insults, maintains sentiment),
+  `professional` (removes slang), `shakespeare` (iambic pentameter), `gen-z` (Gen-Z slang and expressions).
+
+  For custom filters, use the `prompt:` prefix (e.g., `prompt:Use formal business language`).
+</ParamField>
+
+<ParamField path="start.filter_to" type="string">
+  Translation filter to apply to the target language direction.
+  Adjusts the tone or style of translated speech.
+
+  Preset values: `polite`, `rude`, `professional`, `shakespeare`, `gen-z`.
+
+  For custom filters, use the `prompt:` prefix.
+</ParamField>
+
+<ParamField path="start.live_events" type="boolean" default="false">
+  Whether to enable live events.
+</ParamField>
+
+<ParamField path="start.ai_summary" type="boolean" default="false">
+  Whether to enable automatic AI summarization.
+  When enabled, AI-generated summaries in both languages will be sent to your webhook when the translation session ends.
+</ParamField>
+
+<ParamField path="start.speech_timeout" type="integer" default="60000">
+  The timeout for speech recognition in milliseconds. Minimum value: `1500`.
+</ParamField>
+
+<ParamField path="start.vad_silence_ms" type="integer" default="300 | 500">
+  Voice activity detection silence time in milliseconds.
+  Default depends on the speech engine: `300` for Deepgram, `500` for Google. Minimum value: `1`.
+</ParamField>
+
+<ParamField path="start.vad_thresh" type="integer" default="400">
+  Voice activity detection threshold. Range: `0` to `1800`.
+</ParamField>
+
+<ParamField path="start.debug_level" type="integer" default="0">
+  Debug level for logging.
+</ParamField>
+
+<ParamField path="start.direction" type="string[]" required={true}>
+  The direction of the call that should be translated. Possible values: `remote-caller`, `local-caller`.
+</ParamField>
+
+<ParamField path="start.speech_engine" type="string" default="deepgram">
+  The speech recognition engine to use. Possible values: `deepgram`, `google`.
+</ParamField>
+
+<ParamField path="start.ai_summary_prompt" type="string">
+  The AI prompt that instructs how to summarize the conversation when `ai_summary` is enabled.
+  This prompt is sent to an AI model to guide how it generates the summary.
+</ParamField>
+
+</Indent>
+
+</Tab>
+<Tab title="stop">
+
+Set `action` to the string `"stop"` to stop the live translation session.
+
+This action is designed for use on active calls that have an existing translation session running.
+You can send this action via the [Call Commands REST API](/rest/signalwire-rest/endpoints/calling/call-commands),
+or include it in a SWML section executed via [`transfer`](/swml/methods/transfer) or [`execute`](/swml/methods/execute) during a call.
+
+</Tab>
+<Tab title="summarize">
+
+<ParamField path="action.summarize" type="object" required={true}>
+  <Tip title="ai_summary vs summarize">
+  If you want automatic summarization when the session ends instead, use `ai_summary: true` in the `start` action.
+  </Tip>
+
+  Request an on-demand AI summary of the conversation while translation is still active.
+  This action is designed for use on active calls that have an existing translation session running.
+  You can send this action via the [Call Commands REST API](/rest/signalwire-rest/endpoints/calling/call-commands),
+  or include it in a SWML section executed via [`transfer`](/swml/methods/transfer) or [`execute`](/swml/methods/execute) during a call.
+  If called with an empty object, the default summarization prompt and webhook will be used.
+</ParamField>
+
+<Indent>
+
+<ParamField path="summarize.webhook" type="string">
+  The webhook URI to be called. Authentication can also be set in the URL in the format of `username:password@url`.
+</ParamField>
+
+<ParamField path="summarize.prompt" type="string">
+  The AI prompt that instructs the AI model how to summarize the conversation.
+  This guides the style and content of the generated summary.
+</ParamField>
+
+</Indent>
+
+</Tab>
+<Tab title="inject">
+
+<ParamField path="action.inject" type="object" required={true}>
+  Inject a message into the conversation to be translated and spoken to the specified party.
+</ParamField>
+
+This action is designed for use on active calls that have an existing translation session running.
+You can send this action via the [Call Commands REST API](/rest/signalwire-rest/endpoints/calling/call-commands),
+or include it in a SWML section executed via [`transfer`](/swml/methods/transfer) or [`execute`](/swml/methods/execute) during a call.
+
+<Indent>
+
+<ParamField path="inject.message" type="string" required={true}>
+  The message to be injected.
+</ParamField>
+
+<ParamField path="inject.direction" type="string" required={true} default="local-caller">
+  The direction of the message. Possible values: `remote-caller`, `local-caller`.
+</ParamField>
+
+</Indent>
+
+</Tab>
+</Tabs>
+
+## Action usage context
+
+| Action | Call start | Live call |
 |--------|-----------|-----------|
 | `start` | ✅ Primary use | ✅ Can start mid-call |
 | `stop` | ❌ No session to stop | ✅ Designed for this |
 | `summarize` | ❌ No content to summarize | ✅ Designed for this |
 | `inject` | ❌ No session exists | ✅ Designed for this |
 
-**Call Start:** The initial SWML document returned when a call first arrives.
+**Call start:** The initial SWML document returned when a call first arrives.
 
-**Live Call:** Actions sent to active calls via:
-- The [Call Commands REST API](/rest/signalwire-rest/endpoints/calling/call-commands)
-- SWML sections executed via [`transfer`](/swml/methods/transfer) or [`execute`](/swml/methods/execute) during a call
+**Live call:** Actions sent to active calls via the [Call Commands REST API](/rest/signalwire-rest/endpoints/calling/call-commands) or SWML sections executed via [`transfer`](/swml/methods/transfer) or [`execute`](/swml/methods/execute) during a call.
 
-<Info>
-ai_summary vs summarize action
+<Info title="ai_summary vs summarize action">
 - **`ai_summary: true`** (in `start`): Automatically generates summary when session **ends**
 - **`summarize` action**: On-demand summary **during** an active session
 </Info>
 
-### **Example**
+## **Examples**
 
 <Tabs>
-  <Tab title="Start Example">
-    See [start action](/swml/methods/live_translate/action/start) for details.
+  <Tab title="Start">
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - live_translate:
+        action:
+          start:
+            webhook: 'https://example.com/webhook'
+            from_lang: en-US
+            to_lang: es-ES
+            from_voice: elevenlabs.josh
+            to_voice: elevenlabs.josh
+            live_events: true
+            direction:
+              - remote-caller
+              - local-caller
+            speech_engine: deepgram
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "live_translate": {
+          "action": {
+            "start": {
+              "webhook": "https://example.com/webhook",
+              "from_lang": "en-US",
+              "to_lang": "es-ES",
+              "from_voice": "elevenlabs.josh",
+              "to_voice": "elevenlabs.josh",
+              "live_events": true,
+              "direction": ["remote-caller", "local-caller"],
+              "speech_engine": "deepgram"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
   </Tab>
-  <Tab title="Stop Example">
-    See [stop action](/swml/methods/live_translate/action/stop) for details.
+  <Tab title="Stop">
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+live_translate:
+  action: stop
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "live_translate": {
+    "action": "stop"
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
   </Tab>
-  <Tab title="Summarize Example">
-    See [summarize action](/swml/methods/live_translate/action/summarize) for details.
+  <Tab title="Summarize">
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+live_translate:
+  action:
+    summarize:
+      webhook: 'https://example.com/webhook'
+      prompt: Summarize the key points of this conversation.
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "live_translate": {
+    "action": {
+      "summarize": {
+        "webhook": "https://example.com/webhook",
+        "prompt": "Summarize the key points of this conversation."
+      }
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
   </Tab>
-  <Tab title="Inject Example">
-    See [inject action](/swml/methods/live_translate/action/inject) for details.
+  <Tab title="Inject">
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+live_translate:
+  action:
+    inject:
+      message: This is an injected message.
+      direction: remote-caller
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "live_translate": {
+    "action": {
+      "inject": {
+        "message": "This is an injected message.",
+        "direction": "remote-caller"
+      }
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
   </Tab>
 </Tabs>
-
