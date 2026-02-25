@@ -1,3 +1,5 @@
+import "./webhooks.tsp";
+
 using TypeSpec.Http;
 
 @doc("Request body for creating a call.")
@@ -40,6 +42,7 @@ model CreateCallRequest {
   @example("POST")
   FallbackMethod?: "GET" | "POST" = "POST";
 
+  @webhook("voiceStatusCallback", VoiceStatusCallbackPayload)
   @doc("The URL SignalWire will send webhooks to on every requested `StatusCallbackEvent` event.")
   @format("uri")
   @example("https://your-api-endpoint.com/path")
@@ -132,6 +135,7 @@ model CreateCallRequest {
   @example("both")
   RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
+  @webhook("recordingStatusCallback", RecordingStatusCallbackPayload, "Recordings")
   @doc("The URL to request when recording is available. See the [Recording status callback](/rest/compatibility-api/endpoints/recording-status-callback) webhook for the payload your URL will receive.")
   @format("uri")
   @example("https://your-api-endpoint.com/path")
@@ -262,6 +266,7 @@ model CreateCallRecordingRequest {
   @example("mono")
   RecordingChannels?: "mono" | "dual" = "mono";
 
+  @webhook("recordingStatusCallback", RecordingStatusCallbackPayload, "Recordings")
   @doc("The URL to request to when recording is available.")
   @format("uri")
   @example("https://your-api-endpoint.com/recording-status")

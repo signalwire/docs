@@ -93,8 +93,3 @@ const TOKENS_TAG = "Tokens";
 const TOKENS_TAG_METADATA = #{
   description: "Manage API tokens for authentication.",
 };
-
-const WEBHOOKS_TAG = "Webhooks";
-const WEBHOOKS_TAG_METADATA = #{
-  description: "Webhook payloads sent by SignalWire to your callback URLs.",
-};

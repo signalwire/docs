@@ -185,7 +185,7 @@ function parseTag(tag) {
 }
 
 export function $webhook(context, target, name, payload, tag, operationId) {
-  const namespace = target.kind === "Namespace" ? target : findServiceNamespace(target, context.program);
+  const namespace = findServiceNamespace(target, context.program);
   if (!namespace) return;
 
   // Deduplicate — first declaration wins
