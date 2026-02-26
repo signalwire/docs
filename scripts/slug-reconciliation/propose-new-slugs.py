@@ -11,30 +11,27 @@ Conventions:
 """
 
 import csv
+import re
 import sys
 from collections import defaultdict
+from pathlib import Path
+
+from utils import (
+    clean_slug,
+    normalize_slug as normalize,
+    segments,
+    extract_version,
+    slug_from_filepath,
+    VERSIONED_PRODUCTS,
+)
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPORTS_DIR = SCRIPT_DIR / "reports"
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def normalize(slug):
-    """Underscores → dashes, lowercase, ensure leading /, strip trailing /."""
-    if not slug:
-        return ""
-    s = slug.strip().replace("_", "-").lower()
-    if not s.startswith("/"):
-        s = "/" + s
-    if s != "/" and s.endswith("/"):
-        s = s.rstrip("/")
-    return s
-
-
-def segments(slug):
-    """Split slug into non-empty path segments."""
-    return [p for p in slug.split("/") if p]
-
 
 def last(slug, n=1):
     """Return the last n segments joined by /."""
@@ -133,23 +130,13 @@ def agents_sdk(slug, fp):
     parts = segments(slug)
     # Reference tab pages live under /api/ and /appendix/
     if parts[0] in ("api", "appendix"):
-        return reference_slug(slug, strip_prefixes=("api", "appendix"))
+        ref = reference_slug(slug, strip_prefixes=("api", "appendix"))
+        # Flatten subcategories: /reference/cli/swaig-test → /reference/cli-swaig-test
+        ref_parts = segments(ref)
+        if len(ref_parts) > 2:
+            return "/reference/" + "-".join(ref_parts[1:])
+        return ref
     return "/guides/" + parts[-1]
-
-
-def slug_from_filepath(fp):
-    """Derive a slug from file path, stripping product/pages/version prefixes."""
-    parts = segments(fp)
-    # Strip: <product>/pages/<version>/
-    if len(parts) >= 3 and parts[1] == "pages":
-        parts = parts[3:]  # skip product, pages, version
-    # Strip index.mdx → use parent dir name
-    if parts and parts[-1] in ("index.mdx", "index.md"):
-        parts = parts[:-1]
-    elif parts:
-        # Strip .mdx extension from last segment
-        parts[-1] = parts[-1].rsplit(".", 1)[0]
-    return "/" + "/".join(parts) if parts else "/"
 
 
 def browser_sdk(slug, fp):
@@ -185,16 +172,22 @@ def compatibility_api(slug, fp):
     # Guide pages
     if "guides" in parts:
         return guide_slug(slug)
-    # cXML reference
+    # cXML reference — sub-product first, then reference
     if parts[0] == "cxml":
         rest = parts[1:]
         if not rest:
-            return "/reference/cxml"
-        return "/reference/cxml/" + "/".join(rest)
-    # SDK reference — strip 'sdks' and 'methods' boilerplate
+            return "/cxml/reference"
+        return "/cxml/reference/" + "/".join(rest)
+    # SDK reference — sub-product first, then reference; strip 'methods' boilerplate
     if parts[0] == "sdks":
+        # /sdks → /sdks (sub-product landing page)
+        if len(parts) == 1:
+            return "/sdks"
+        # Strip 'methods' boilerplate from path
         rest = [p for p in parts[1:] if p != "methods"]
-        return "/reference/" + "/".join(rest) if rest else "/reference"
+        if not rest:
+            return "/sdks/reference"  # /sdks/methods → /sdks/reference
+        return "/sdks/reference/" + "/".join(rest)
     return slug
 
 
@@ -207,19 +200,6 @@ HANDLERS = {
     "realtime-sdk": realtime_sdk,
     "compatibility-api": compatibility_api,
 }
-
-# Products whose pages live under version subdirectories (latest/, v3/, v2/).
-# Pages in different version dirs may share the same slug — that's expected.
-VERSIONED_PRODUCTS = {"realtime-sdk", "browser-sdk"}
-
-import re
-_VERSION_RE = re.compile(r"^[^/]+/pages/(latest|v\d+)/")
-
-
-def extract_version(file_path):
-    """Return version directory ('latest', 'v3', etc.) or '' for unversioned."""
-    m = _VERSION_RE.match(file_path)
-    return m.group(1) if m else ""
 
 
 def collision_key(row):
@@ -278,44 +258,34 @@ def resolve_collisions(rows):
 # ---------------------------------------------------------------------------
 
 def main():
-    input_csv = sys.argv[1] if len(sys.argv) > 1 else "frontmatter-export.csv"
-    output_csv = sys.argv[2] if len(sys.argv) > 2 else "slug-proposals.csv"
+    input_csv = sys.argv[1] if len(sys.argv) > 1 else str(REPORTS_DIR / "frontmatter-export.csv")
+    output_csv = sys.argv[2] if len(sys.argv) > 2 else str(REPORTS_DIR / "slug-proposals.csv")
 
     rows = []
     with open(input_csv, newline="") as f:
         for row in csv.DictReader(f):
             product = row["product"]
-            slug = normalize(row["slug"])
+            slug = clean_slug(row["slug"])       # preserve underscores for current state
             fp = row["file_path"]
 
+            # Strip redundant product prefix from raw frontmatter slug
+            if product and product != "/" and slug.startswith("/" + product + "/"):
+                slug = slug[len("/" + product):]
+            elif product and product != "/" and slug == "/" + product:
+                slug = "/"
+
             handler = HANDLERS.get(product)
-            new_slug = normalize(handler(slug, fp)) if handler else slug
+            # Handlers receive clean slug; new_slug gets normalized (underscores→dashes)
+            new_slug = normalize(handler(slug, fp)) if handler else normalize(slug)
 
             row["slug"] = slug
             row["new_slug"] = new_slug
-            # Build full URL: product prefix + new_slug
-            if "COLLISION" not in new_slug and new_slug:
-                prefix = "" if product == "/" else "/" + product
-                full = prefix + new_slug if new_slug != "/" else prefix + "/"
-                row["new_slug (prefixed by product)"] = full.rstrip("/") or "/"
-            else:
-                row["new_slug (prefixed by product)"] = new_slug
             rows.append(row)
 
     collisions = resolve_collisions(rows)
-    # Re-derive full slugs after collision resolution
-    for r in rows:
-        ns = r["new_slug"]
-        product = r["product"]
-        if ns and "COLLISION" not in ns:
-            prefix = "" if product == "/" else "/" + product
-            full = prefix + ns if ns != "/" else prefix + "/"
-            r["new_slug (prefixed by product)"] = full.rstrip("/") or "/"
-        else:
-            r["new_slug (prefixed by product)"] = ns
 
     # Write output
-    fields = ["id", "title", "description", "file_path", "product", "slug", "new_slug (prefixed by product)"]
+    fields = ["id", "title", "description", "file_path", "product", "slug", "new_slug"]
     with open(output_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         w.writeheader()

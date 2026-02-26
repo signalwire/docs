@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-PRODUCTS_DIR="$(cd "$(dirname "$0")/../fern/products" && pwd)"
+PRODUCTS_DIR="$(cd "$(dirname "$0")/../../fern/products" && pwd)"
 count=0
 skipped=0
 

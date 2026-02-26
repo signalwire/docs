@@ -1,6 +1,29 @@
 # Slug standardization
 
-Reference: `scripts/propose-new-slugs.py`
+## Usage
+
+```bash
+# 1. Collect current slugs from frontmatter into a CSV
+python3 scripts/slug-reconciliation/collect-old-slugs.py            # → reports/frontmatter-export.csv
+
+# 2. Propose new slugs based on per-product conventions
+python3 scripts/slug-reconciliation/propose-new-slugs.py            # → reports/slug-proposals.csv
+
+# 3. Run the full reconciliation pipeline (fetch old sitemap, reconcile, match, report)
+python3 scripts/slug-reconciliation/run-pipeline.py                 # → reports/slug-final-report.csv + .md
+python3 scripts/slug-reconciliation/run-pipeline.py --skip-fetch    # reuse cached sitemap
+```
+
+**Data flow:** `collect-old-slugs.py` reads every `.mdx` file's frontmatter and
+writes `frontmatter-export.csv` (columns: id, title, product, slug, description,
+file\_path). `propose-new-slugs.py` reads that CSV, applies per-product rules,
+and writes `slug-proposals.csv` (adds a `new_slug` column). `run-pipeline.py`
+then fetches the old Docusaurus sitemap, reconciles against proposals, content-matches
+unmatched pages, and produces a unified redirect report.
+
+All outputs go to `scripts/slug-reconciliation/reports/`.
+
+Requires `python-frontmatter` (`pip install python-frontmatter`).
 
 ## Conventions
 
@@ -49,9 +72,11 @@ so we strip that first.
 - `/reference/...` → unchanged (already correct)
 
 **Compatibility API** — Tabs: `cxml`, `sdks`, `rest-api`.
+Sub-product (tab name) comes before `reference` — these are distinct sub-products,
+not just subcategories within a single reference section.
 - Anything with `guides` in the path → `/guides/<last-segment>`
-- `/cxml/...` → `/reference/cxml/...` (keep subcategories)
-- `/sdks/...` → `/reference/...` (strip `sdks` and `methods` boilerplate)
+- `/cxml/...` → `/cxml/reference/...` (sub-product first, then reference)
+- `/sdks/...` → `/sdks/reference/...` (strip `methods` boilerplate, sub-product first)
 
 ## Collision resolution
 

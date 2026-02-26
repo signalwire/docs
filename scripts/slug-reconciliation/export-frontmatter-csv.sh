@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# Export frontmatter fields (id, title, slug, description) + file path to CSV
-# from all MDX pages in fern/products/.
+# DEPRECATED — use collect-old-slugs.py instead.
+# This bash version has edge-case bugs with multi-line values, quoted strings,
+# and BOM-prefixed files. The Python replacement uses python-frontmatter for
+# robust parsing.
+#
+# Original purpose: export frontmatter fields to CSV from fern/products/.
 
 set -euo pipefail
 
-FERN_DIR="$(cd "$(dirname "$0")/../fern" && pwd)"
+FERN_DIR="$(cd "$(dirname "$0")/../../fern" && pwd)"
+REPORTS_DIR="$(cd "$(dirname "$0")" && pwd)/reports"
 PRODUCTS_DIR="$FERN_DIR/products"
 DOCS_YML="$FERN_DIR/docs.yml"
-OUTPUT="${1:-frontmatter-export.csv}"
+OUTPUT="${1:-$REPORTS_DIR/frontmatter-export.csv}"
 
 # Build associative array: directory name → product slug from docs.yml
 declare -A DIR_TO_SLUG
