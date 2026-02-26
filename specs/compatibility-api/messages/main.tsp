@@ -11,7 +11,6 @@ import "../../_shared/alias/token-permissions.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-@webhook("tenDlcStatusCallback", TenDlcStatusCallbackPayload, "Messages")
 @route("/Accounts/{AccountSid}/Messages")
 namespace CompatibilityAPI.Messages {
   @tag(MESSAGES_TAG)
