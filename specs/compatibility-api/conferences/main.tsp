@@ -356,7 +356,7 @@ namespace CompatibilityAPI.Conferences {
   @route("/{ConferenceSid}/Streams")
   interface ConferenceStreams {
     @operationId("create_conference_stream")
-    @summary("Create a Conference Stream.")
+    @summary("Create a Conference Stream")
     @doc("""
       Create a stream for an existing conference.
       

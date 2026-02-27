@@ -50,7 +50,7 @@ namespace VideoAPI.RoomRecordings {
       | StatusCode500;
 
     @operationId("delete_room_recording")
-    @summary("Delete a Room Recording.")
+    @summary("Delete a Room Recording")
     @doc("Delete a Room Recording.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
