@@ -1,3 +1,5 @@
+import "./webhooks.tsp";
+
 using TypeSpec.Http;
 
 @doc("Request body for creating an incoming phone number.")
@@ -36,6 +38,7 @@ model CreateIncomingPhoneNumberRequest {
   @example("https://example.com/sms")
   SmsUrl?: string;
 
+  @webhook("inboundCallStatusCallback", InboundCallStatusCallbackPayload)
   @doc("The URL to request to pass status updates to.")
   @format("uri")
   @example("https://example.com/status")

@@ -7536,7 +7536,7 @@ components:
         RecordingStatusCallback:
           type: string
           format: uri
-          description: The URL to request when recording is available.
+          description: The URL to request when recording is available. See the [Recording status callback](/rest/compatibility-api/endpoints/recording-status-callback) webhook for the payload your URL will receive.
           example: https://your-api-endpoint.com/path
         RecordingStatusCallbackMethod:
           type: string
@@ -11089,3 +11089,545 @@ servers:
       space_name:
         default: YOUR_SPACE
         description: Your SignalWire Space name
+webhooks:
+  transcriptionStatusCallback:
+    post:
+      operationId: transcription_status_callback
+      summary: Transcription status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                TranscriptionSid:
+                  type: string
+                  description: The unique, 34-character ID of the transcription.
+                TranscriptionText:
+                  type: string
+                  description: The text of the transcription.
+                TranscriptionStatus:
+                  type: string
+                  enum:
+                    - completed
+                    - failed
+                  description: The status of the transcription.
+                TranscriptionUrl:
+                  type: string
+                  description: The URL for the transcription's REST API resource.
+                RecordingSid:
+                  type: string
+                  description: The unique, 34-character identifier for the recording from which the transcription was generated.
+                RecordingUrl:
+                  type: string
+                  description: The URL for the audio recording from which the transcription was generated.
+              required:
+                - TranscriptionSid
+                - TranscriptionText
+                - TranscriptionStatus
+                - TranscriptionUrl
+                - RecordingSid
+                - RecordingUrl
+              description: |-
+                Payload sent by SignalWire to your Transcription Status Callback URL when the status of a transcription changes.
+
+                Configure this callback by enabling transcription on a recording via the
+                [Record](/compatibility-api/cxml/voice/record) verb (`transcribe=true`) and setting `transcribeCallback`
+                to your webhook URL.
+
+                Your app can use these parameters to handle the transcription — for example, uploading the text to
+                your CRM, sending it via email, or forwarding the body via SignalWire SMS.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Payload sent by SignalWire to your Transcription Status Callback URL when the status of a transcription changes.
+
+        Configure this callback by enabling transcription on a recording via the
+        [Record](/compatibility-api/cxml/voice/record) verb (`transcribe=true`) and setting `transcribeCallback`
+        to your webhook URL.
+
+        Your app can use these parameters to handle the transcription — for example, uploading the text to
+        your CRM, sending it via email, or forwarding the body via SignalWire SMS.
+      tags:
+        - Recording Transcriptions
+  voiceStatusCallback:
+    post:
+      operationId: voice_status_callback
+      summary: Voice status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                AccountSid:
+                  type: string
+                  description: The unique ID of the project this call is associated with.
+                ApiVersion:
+                  type: string
+                  description: |-
+                    The version of the SignalWire API.
+                    Incoming calls use the API version placed on the number called.
+                    Outgoing calls use the version of the REST API request.
+                AudioInAveragePtime:
+                  type: integer
+                  description: The average time between packets for the inbound stream.
+                AudioInDtmfPacketCount:
+                  type: integer
+                  description: The number of DTMF packets in the inbound media stream.
+                AudioInFlushPacketCount:
+                  type: integer
+                  description: |-
+                    The number of incoming packets removed from the jitter buffer due to buffer overflow or underflow,
+                    causing these packets to be discarded or lost.
+                AudioInJitterMaxVariance:
+                  type: integer
+                  description: The maximum variance of jitter for incoming audio RTP packets.
+                AudioInJitterMinVariance:
+                  type: integer
+                  description: The minimum variance of jitter for incoming audio RTP packets.
+                AudioInLargestJbSize:
+                  type: integer
+                  description: The largest jitter buffer size recorded for incoming audio RTP packets during the session.
+                AudioInMos:
+                  type: string
+                  description: A mean opinion score on a scale of 1–5 that helps determine audio quality.
+                AudioInMediaPacketCount:
+                  type: integer
+                  description: The number of audio packets received in the inbound media stream.
+                AudioInSkipPacketCount:
+                  type: integer
+                  description: |-
+                    Increased with every packet not received at a given ptime.
+                    Increases with every lost packet from the inbound stream.
+                AudioOutDtmfPacketCount:
+                  type: integer
+                  description: The total number of DTMF packets generated in the outbound media stream.
+                AudioOutMediaPacketCount:
+                  type: integer
+                  description: The number of audio packets sent in the outbound media stream.
+                CallbackSource:
+                  type: string
+                  description: The source of the status callback.
+                CallDuration:
+                  type: integer
+                  description: The duration, in seconds, of the finished call. Only present on the `completed` event.
+                CallerName:
+                  type: string
+                  description: The name of the caller. Only available if Caller ID lookup is enabled.
+                CallSid:
+                  type: string
+                  description: A unique identifier for the call.
+                CallStatus:
+                  type: string
+                  enum:
+                    - initiated
+                    - ringing
+                    - in-progress
+                    - queued
+                    - failed
+                    - busy
+                    - no-answer
+                    - completed
+                    - canceled
+                  description: |-
+                    The status of the call.
+
+                    | Status | Description |
+                    |--------|-------------|
+                    | `initiated` | The initial dial has begun. |
+                    | `ringing` | The call is ringing. |
+                    | `in-progress` | The call was answered and is in progress. |
+                    | `queued` | The call is ready and in line to initiate. |
+                    | `failed` | The call could not be completed. Usually occurs when the phone number does not exist. |
+                    | `busy` | The caller encountered a busy signal. |
+                    | `no-answer` | The call ended without an answer. |
+                    | `completed` | The call was answered and ended normally. |
+                    | `canceled` | The REST API canceled the call while it was ringing or queued. |
+                Direction:
+                  type: string
+                  enum:
+                    - outbound-dial
+                    - outbound-api
+                    - inbound
+                  description: |-
+                    The direction of the call.
+                    - `outbound-dial`: calls launched through the Dial verb.
+                    - `outbound-api`: calls launched through the REST API.
+                    - `inbound`: inbound calls.
+                ForwardedFrom:
+                  type: string
+                  description: The number this call was forwarded from.
+                From:
+                  type: string
+                  description: The phone number that sent this call, in E.164 format.
+                ParentCallSid:
+                  type: string
+                  description: A unique identifier for the call that created this call.
+                RecordingDuration:
+                  type: integer
+                  description: The duration, in seconds, of the recording.
+                RecordingSid:
+                  type: string
+                  description: The unique identifier for the audio recording.
+                RecordingUrl:
+                  type: string
+                  description: The URL of the recorded audio call.
+                SequenceNumber:
+                  type: integer
+                  description: |-
+                    The order in which events occur, starting at 0.
+                    Although events are fired in order, they each take time and may not appear in the order you expect.
+                SipInviteResultPhrase:
+                  type: string
+                  description: A textual description of the result of the SIP INVITE request, indicating success or failure with additional details.
+                SipResultCode:
+                  type: string
+                  description: The numeric SIP response code received for the INVITE request, indicating the outcome of the call attempt. See the [list of SIP response codes](https://en.wikipedia.org/wiki/List_of_SIP_response_codes) for possible values.
+                Timestamp:
+                  type: string
+                  description: The timestamp, in RFC 2822 format, of when the event occurred.
+                To:
+                  type: string
+                  description: The phone number of the call recipient, in E.164 format.
+              required:
+                - AccountSid
+                - ApiVersion
+                - AudioInAveragePtime
+                - AudioInDtmfPacketCount
+                - AudioInFlushPacketCount
+                - AudioInJitterMaxVariance
+                - AudioInJitterMinVariance
+                - AudioInLargestJbSize
+                - AudioInMos
+                - AudioInMediaPacketCount
+                - AudioInSkipPacketCount
+                - AudioOutDtmfPacketCount
+                - AudioOutMediaPacketCount
+                - CallbackSource
+                - CallSid
+                - CallStatus
+                - Direction
+                - From
+                - SequenceNumber
+                - Timestamp
+                - To
+              description: |-
+                Payload sent by SignalWire to your Voice Status Callback URL when the status of a call changes.
+
+                Configure this callback using the `StatusCallback` and `StatusCallbackEvent` parameters when
+                [creating a call via the API](/rest/compatibility-api/endpoints/create-a-call) or using
+                [Dial](/compatibility-api/cxml/voice/dial) with
+                [Number](/compatibility-api/cxml/voice/number-noun),
+                [SIP](/compatibility-api/cxml/voice/sip-noun), or
+                [Conference](/compatibility-api/cxml/voice/conference-noun).
+
+                Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
+                along with current call state and all parameters below.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Payload sent by SignalWire to your Voice Status Callback URL when the status of a call changes.
+
+        Configure this callback using the `StatusCallback` and `StatusCallbackEvent` parameters when
+        [creating a call via the API](/rest/compatibility-api/endpoints/create-a-call) or using
+        [Dial](/compatibility-api/cxml/voice/dial) with
+        [Number](/compatibility-api/cxml/voice/number-noun),
+        [SIP](/compatibility-api/cxml/voice/sip-noun), or
+        [Conference](/compatibility-api/cxml/voice/conference-noun).
+
+        Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
+        along with current call state and all parameters below.
+      tags:
+        - Calls
+  recordingStatusCallback:
+    post:
+      operationId: recording_status_callback
+      summary: Recording status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                AccountSid:
+                  type: string
+                  description: The unique ID of the project this call is associated with.
+                CallSid:
+                  type: string
+                  description: A unique identifier for the call. May be used to later retrieve this call from the REST API.
+                RecordingSid:
+                  type: string
+                  description: The unique identifier for the recording.
+                RecordingUrl:
+                  type: string
+                  description: The URL for the audio recording.
+                RecordingStatus:
+                  type: string
+                  enum:
+                    - in-progress
+                    - completed
+                    - absent
+                  description: |-
+                    The status of the recording.
+                    - `in-progress`: Recording has begun.
+                    - `completed`: File is available.
+                    - `absent`: Recording was too short or no audio was detected.
+                RecordingDuration:
+                  type: integer
+                  description: The duration, in seconds, of the recording.
+                RecordingChannels:
+                  type: integer
+                  description: The number of channels in the recording.
+                RecordingSource:
+                  type: string
+                  description: The type of call that initiated the recording.
+              required:
+                - AccountSid
+                - CallSid
+                - RecordingSid
+                - RecordingUrl
+                - RecordingStatus
+                - RecordingDuration
+                - RecordingChannels
+                - RecordingSource
+              description: |-
+                Payload sent by SignalWire to your `RecordingStatusCallback` URL when a recording status event occurs.
+
+                Recordings are not always available immediately — especially at high call volumes. This callback lets
+                your app react as soon as a recording is ready, whether that means uploading it to external storage,
+                sending it via email, or forwarding the URL via SMS.
+
+                Configure `RecordingStatusCallback` when
+                [creating a call via the API](/rest/compatibility-api/endpoints/create-a-call) or when using
+                [Dial](/compatibility-api/cxml/voice/dial),
+                [Conference](/compatibility-api/cxml/voice/conference-noun), or
+                [Record](/compatibility-api/cxml/voice/record).
+
+                Use `RecordingStatusCallbackEvent` to request callbacks for specific events. If omitted, only the
+                `completed` event is sent. Possible values: `in-progress`, `completed`, `absent`.
+
+                | Status | Description |
+                |--------|-------------|
+                | `in-progress` | The recording has begun. |
+                | `completed` | The file is available for access. |
+                | `absent` | The recording was too short or the call was silent — no audio was detected. |
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Payload sent by SignalWire to your `RecordingStatusCallback` URL when a recording status event occurs.
+
+        Recordings are not always available immediately — especially at high call volumes. This callback lets
+        your app react as soon as a recording is ready, whether that means uploading it to external storage,
+        sending it via email, or forwarding the URL via SMS.
+
+        Configure `RecordingStatusCallback` when
+        [creating a call via the API](/rest/compatibility-api/endpoints/create-a-call) or when using
+        [Dial](/compatibility-api/cxml/voice/dial),
+        [Conference](/compatibility-api/cxml/voice/conference-noun), or
+        [Record](/compatibility-api/cxml/voice/record).
+
+        Use `RecordingStatusCallbackEvent` to request callbacks for specific events. If omitted, only the
+        `completed` event is sent. Possible values: `in-progress`, `completed`, `absent`.
+
+        | Status | Description |
+        |--------|-------------|
+        | `in-progress` | The recording has begun. |
+        | `completed` | The file is available for access. |
+        | `absent` | The recording was too short or the call was silent — no audio was detected. |
+      tags:
+        - Recordings
+  inboundCallStatusCallback:
+    post:
+      operationId: inbound_call_status_callback
+      summary: Inbound call status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                CallSid:
+                  type: string
+                  description: A unique identifier for the call. May be used to later retrieve this call from the REST API.
+                AccountSid:
+                  type: string
+                  description: The unique ID of the project this call is associated with.
+                From:
+                  type: string
+                  description: The From number in E.164 format.
+                To:
+                  type: string
+                  description: The To number in E.164 format.
+                Timestamp:
+                  type: string
+                  description: The timestamp of the call creation date/time.
+                CallStatus:
+                  type: string
+                  enum:
+                    - failed
+                    - completed
+                  description: The status of the call. For this callback, the value will be either `failed` or `completed`.
+                CallDuration:
+                  type: string
+                  description: The duration, in seconds, of the call.
+                AudioInMos:
+                  type: string
+                  description: A mean opinion score on a scale of 1–5 that represents the quality of the call.
+              required:
+                - CallSid
+                - AccountSid
+                - From
+                - To
+                - Timestamp
+                - CallStatus
+                - CallDuration
+                - AudioInMos
+              description: |-
+                Payload sent by SignalWire to your Inbound Call Status Callback URL for inbound calls to a phone number.
+
+                Configure `StatusCallback` at the phone number level via the dashboard
+                (**Phone Numbers** → select a number → **Phone Number Settings**) or programmatically via the
+                [create](/rest/compatibility-api/endpoints/create-incoming-phone-number) or
+                [update](/rest/compatibility-api/endpoints/update-incoming-phone-number) Incoming Phone Number API endpoints.
+
+                By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
+                for tracking inbound call success rate, call quality, and total call volume in a call center context.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Payload sent by SignalWire to your Inbound Call Status Callback URL for inbound calls to a phone number.
+
+        Configure `StatusCallback` at the phone number level via the dashboard
+        (**Phone Numbers** → select a number → **Phone Number Settings**) or programmatically via the
+        [create](/rest/compatibility-api/endpoints/create-incoming-phone-number) or
+        [update](/rest/compatibility-api/endpoints/update-incoming-phone-number) Incoming Phone Number API endpoints.
+
+        By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
+        for tracking inbound call success rate, call quality, and total call volume in a call center context.
+      tags:
+        - Incoming Phone Numbers
+  smsStatusCallback:
+    post:
+      operationId: sms_status_callback
+      summary: SMS status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                MessageStatus:
+                  type: string
+                  enum:
+                    - queued
+                    - sending
+                    - sent
+                    - delivered
+                    - undelivered
+                    - failed
+                    - receiving
+                    - received
+                  description: |-
+                    The current status of the message at the time of the callback.
+                    One of: `queued`, `sending`, `sent`, `delivered`, `undelivered`, `failed`, `receiving`, `received`.
+                ErrorCode:
+                  type: string
+                  description: If the message has failed or is undelivered, the error code may provide more information about what went wrong.
+                MessageSid:
+                  type: string
+                  description: The unique ID of this message.
+                AccountSid:
+                  type: string
+                  description: The unique ID of the project this message is associated with.
+                From:
+                  type: string
+                  description: The From number of the message.
+                To:
+                  type: string
+                  description: The To number of the message.
+                Body:
+                  type: string
+                  description: The body of the message.
+                NumMedia:
+                  type: integer
+                  description: The number of media files that were included with the message.
+                NumSegments:
+                  type: integer
+                  description: |-
+                    The number of segments that make up the entire message.
+                    If the body exceeds 160 GSM-7 characters or 70 UCS-2 characters, it is automatically split into
+                    smaller segments that are annotated for reconstruction on the recipient handset.
+              required:
+                - MessageStatus
+                - MessageSid
+                - AccountSid
+                - From
+                - To
+                - Body
+                - NumMedia
+                - NumSegments
+              description: |-
+                Payload sent by SignalWire to your SMS Status Callback URL when the status of an SMS/MMS message changes.
+
+                Configure this callback using the `StatusCallback` parameter when
+                [sending an outgoing message](/rest/compatibility-api/endpoints/create-message).
+
+                There are 8 possible message statuses:
+
+                | Status | Description |
+                |--------|-------------|
+                | `queued` | The API request was processed and the message is waiting to be sent. |
+                | `sending` | The message is being transmitted to the nearest upstream carrier. |
+                | `sent` | The nearest upstream carrier has accepted the message. |
+                | `delivered` | The nearest upstream carrier confirmed receipt of the message. |
+                | `undelivered` | SignalWire received notice from the upstream carrier that the message was not delivered. |
+                | `failed` | SignalWire could not send the message. There is no charge for failed messages. |
+                | `receiving` | SignalWire has received and is currently processing an inbound message. |
+                | `received` | The inbound message has been received by a number in your account. |
+
+                <Note>
+                SignalWire only marks a message as `delivered` when it receives a Delivery Receipt (DLR)
+                from the receiving carrier confirming entry into the end carrier's network. `sent` means the message
+                left SignalWire and reached the downstream peer. Some carriers send delayed DLRs; others send none
+                at all. MMS messages never receive DLRs, so they will only ever reach `sent` status.
+                </Note>
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Payload sent by SignalWire to your SMS Status Callback URL when the status of an SMS/MMS message changes.
+
+        Configure this callback using the `StatusCallback` parameter when
+        [sending an outgoing message](/rest/compatibility-api/endpoints/create-message).
+
+        There are 8 possible message statuses:
+
+        | Status | Description |
+        |--------|-------------|
+        | `queued` | The API request was processed and the message is waiting to be sent. |
+        | `sending` | The message is being transmitted to the nearest upstream carrier. |
+        | `sent` | The nearest upstream carrier has accepted the message. |
+        | `delivered` | The nearest upstream carrier confirmed receipt of the message. |
+        | `undelivered` | SignalWire received notice from the upstream carrier that the message was not delivered. |
+        | `failed` | SignalWire could not send the message. There is no charge for failed messages. |
+        | `receiving` | SignalWire has received and is currently processing an inbound message. |
+        | `received` | The inbound message has been received by a number in your account. |
+
+        <Note>
+        SignalWire only marks a message as `delivered` when it receives a Delivery Receipt (DLR)
+        from the receiving carrier confirming entry into the end carrier's network. `sent` means the message
+        left SignalWire and reached the downstream peer. Some carriers send delayed DLRs; others send none
+        at all. MMS messages never receive DLRs, so they will only ever reach `sent` status.
+        </Note>
+      tags:
+        - Messages
