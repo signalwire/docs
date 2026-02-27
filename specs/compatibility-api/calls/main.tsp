@@ -183,7 +183,7 @@ namespace CompatibilityAPI.Calls {
   @route("/{CallSid}/Recordings")
   interface CallRecordings {
     @operationId("create_recording")
-    @summary("Create a Recording.")
+    @summary("Create a Recording")
     @doc("""
       Create a recording.
       
@@ -232,7 +232,7 @@ namespace CompatibilityAPI.Calls {
   @route("/{CallSid}/Streams")
   interface CallStreams {
     @operationId("create_stream")
-    @summary("Create a Stream.")
+    @summary("Create a Stream")
     @doc("""
       Create a stream.
       

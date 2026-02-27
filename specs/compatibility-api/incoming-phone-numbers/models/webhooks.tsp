@@ -1,6 +1,6 @@
 import "../../../_shared/webhook/decorator.tsp";
 
-@summary("Inbound call status callback")
+@summary("Incoming call status callback")
 @doc("""
   Payload sent by SignalWire to your Inbound Call Status Callback URL for inbound calls to a phone number.
 

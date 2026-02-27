@@ -20,9 +20,9 @@ namespace FabricAPI.DomainApplications {
     @summary("Assign a resource as a call handler for a Domain Application.")
     @doc("""
       This endpoint assigns a specific resource to a Domain Application, allowing inbound calls to be handled by the resource.
-      :::important
+      <Note>
       Currently only supports `calling` as a handler and automatically defaults to it.
-      :::
+      </Note>
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

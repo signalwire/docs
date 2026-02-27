@@ -65,7 +65,7 @@ namespace CompatibilityAPI.Transcriptions {
       | CompatibilityStatusCode422;
 
     @operationId("retrieve_transcription")
-    @summary("Retrieve a Transcription.")
+    @summary("Retrieve a Transcription")
     @doc("""
       Retrieve a single recording transcription.
       
@@ -79,7 +79,7 @@ namespace CompatibilityAPI.Transcriptions {
       | CompatibilityStatusCode404;
 
     @operationId("delete_transcription")
-    @summary("Delete a Recording Transcription.")
+    @summary("Delete a Recording Transcription")
     @doc("""
       Delete a recording transcription from your account. If the delete is successful, a 204 response, with no body, will be returned.
       
