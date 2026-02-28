@@ -87,7 +87,7 @@ namespace CompatibilityAPI.Faxes {
       | CompatibilityStatusCode422;
 
     @operationId("retrieve_fax")
-    @summary("Retrieve a fax.")
+    @summary("Retrieve a Fax")
     @doc("""
       Retrieve a fax.
       
@@ -101,7 +101,7 @@ namespace CompatibilityAPI.Faxes {
       | CompatibilityStatusCode404;
 
     @operationId("update_fax")
-    @summary("Update a fax")
+    @summary("Update a Fax")
     @doc("""
       Allows you to cancel a queued fax. Only faxes in 'queued' status can be canceled.
       

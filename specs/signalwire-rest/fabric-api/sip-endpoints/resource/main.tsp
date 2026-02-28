@@ -20,9 +20,9 @@ namespace FabricAPI.SipEndpoints.Resource {
     @summary("Assign a Resource to a SIP endpoint")
     @doc("""
       This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.
-      :::important
+      <Note>
       Currently only supports `calling` as a handler and automatically defaults to it.
-      :::
+      </Note>
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
