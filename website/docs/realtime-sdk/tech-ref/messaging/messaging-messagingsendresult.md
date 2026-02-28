@@ -1,6 +1,7 @@
 ---
 slug: /messaging/messaging-sendresult
 sidebar_label: MessagingSendResult
+unlisted: true
 ---
 
 # MessagingSendResult

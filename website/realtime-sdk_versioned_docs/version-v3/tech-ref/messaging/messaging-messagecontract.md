@@ -1,6 +1,7 @@
 ---
 title: "MessageContract"
 slug: /messaging/message-contract
+unlisted: true
 ---
 
 [link]: #messagingmessagestate

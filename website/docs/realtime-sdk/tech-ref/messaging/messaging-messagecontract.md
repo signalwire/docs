@@ -1,6 +1,7 @@
 ---
 slug: /messaging/message-contract
 sidebar_label: MessageContract
+unlisted: true
 ---
 
 # MessageContract

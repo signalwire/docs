@@ -1,6 +1,7 @@
 ---
 title: "MessagingSendResult"
 slug: /messaging/messaging-sendresult
+unlisted: true
 ---
 
 ## Properties
