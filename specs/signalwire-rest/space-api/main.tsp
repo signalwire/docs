@@ -38,7 +38,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(SHORT_CODES_TAG, SHORT_CODES_TAG_METADATA)
 @service(#{ title: "RELAY REST API" })
 @externalDocs(
-  "https://developer.signalwire.com",
+  "https://signalwire.com/docs/apis",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{

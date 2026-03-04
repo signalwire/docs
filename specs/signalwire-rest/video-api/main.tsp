@@ -17,8 +17,16 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+@tagMetadata(ROOMS_TAG, ROOMS_TAG_METADATA)
+@tagMetadata(STREAMS_TAG, STREAMS_TAG_METADATA)
+@tagMetadata(ROOM_SESSIONS_TAG, ROOM_SESSIONS_TAG_METADATA)
+@tagMetadata(ROOM_TOKENS_TAG, ROOM_TOKENS_TAG_METADATA)
+@tagMetadata(ROOM_RECORDINGS_TAG, ROOM_RECORDINGS_TAG_METADATA)
+@tagMetadata(CONFERENCES_TAG, CONFERENCES_TAG_METADATA)
+@tagMetadata(CONFERENCE_TOKENS_TAG, CONFERENCE_TOKENS_TAG_METADATA)
+@tagMetadata(LOGS_TAG, LOGS_TAG_METADATA)
 @externalDocs(
-  "https://developer.signalwire.com",
+  "https://signalwire.com/docs/apis",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{

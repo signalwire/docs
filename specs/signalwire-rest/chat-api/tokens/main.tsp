@@ -12,7 +12,7 @@ using Types.StatusCodes;
 
 @route("/tokens")
 namespace ChatAPI.Tokens {
-  @tag("Tokens")
+  @tag(TOKENS_TAG)
   @friendlyName("Tokens")
   interface ChatTokens {
     @operationId("create_chat_token")

@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 @tagMetadata(LOGS_TAG, LOGS_TAG_METADATA)
 @service(#{ title: "Fax API" })
 @externalDocs(
-  "https://developers.signalwire.com/rest/signalwire-rest/endpoints/fax",
+  "https://signalwire.com/docs/apis",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{

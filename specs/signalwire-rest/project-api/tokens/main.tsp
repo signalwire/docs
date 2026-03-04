@@ -13,7 +13,7 @@ using Types.StatusCodes;
 
 @route("/tokens")
 namespace ProjectAPI.Tokens {
-  @tag("Tokens")
+  @tag(TOKENS_TAG)
   @friendlyName("Tokens")
   interface ProjectTokens {
     @operationId("create_token")
