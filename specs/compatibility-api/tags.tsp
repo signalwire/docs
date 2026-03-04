@@ -57,10 +57,9 @@ const IMPORTED_PHONE_NUMBERS_TAG_METADATA = #{
   description: "Import phone numbers hosted elsewhere into your SignalWire Space.",
 };
 
-const CXML_SCRIPTS_TAG = "cXML Scripts";
+const CXML_SCRIPTS_TAG = "CXML Scripts";
 const CXML_SCRIPTS_TAG_METADATA = #{
-  description: "Manage cXML scripts for storing XML instructions.",
-  `x-displayName`: "cXML Scripts",
+  description: "Manage cXML scripts for storing XML instructions."
 };
 
 const MESSAGES_TAG = "Messages";
