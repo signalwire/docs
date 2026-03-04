@@ -35,7 +35,7 @@ const hangupCallExample = #{
   request: #{
     command: "calling.end",
     id: callId,
-    params: #{ reason: "hangup" },
+    params: #{ reason: HangupReason.hangup },
   },
 };
 
@@ -170,14 +170,20 @@ const liveTranslateInjectExample = #{
   },
 };
 
-// Placeholder example that will be ignored by Fern (last example in OpenAPI is skipped)
-const ignoredExample = #{
+// Transfer example
+const transferCallExample = #{
   request: #{
-    command: "dial",
-    params: #{
-      from: "+10000000000",
-      to: "+10000000001",
-      url: "https://example.com/ignored",
-    },
+    command: "calling.transfer",
+    id: callId,
+    params: #{ dest: "sip:destination@example.com" },
+  },
+};
+
+// User Event example
+const userEventCallExample = #{
+  request: #{
+    command: "calling.user_event",
+    id: callId,
+    params: #{ event: #{ action: "custom_action", data: "example" } },
   },
 };

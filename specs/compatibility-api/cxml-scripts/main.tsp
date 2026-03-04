@@ -15,7 +15,7 @@ namespace CompatibilityAPI.CxmlScripts {
   @tag(CXML_SCRIPTS_TAG)
   @friendlyName("cXML Scripts")
   interface CxmlScripts {
-    @operationId("list_cxml_applications")
+    @operationId("list_cxml_scripts")
     @summary("List All cXML Scripts")
     @doc("""
       Returns a list of your cXML scripts. The scripts are returned sorted by creation date, with the most recent appearing first.
@@ -52,7 +52,7 @@ namespace CompatibilityAPI.CxmlScripts {
       | CompatibilityStatusCode401
       | CompatibilityStatusCode422;
 
-    @operationId("create_cxml_application")
+    @operationId("create_cxml_script")
     @summary("Create a cXML Script")
     @doc("""
       Create a cXML script.
@@ -70,7 +70,7 @@ namespace CompatibilityAPI.CxmlScripts {
       | CompatibilityStatusCode401
       | CompatibilityStatusCode422;
 
-    @operationId("retrieve_cxml_application")
+    @operationId("retrieve_cxml_script")
     @summary("Retrieve a cXML Script")
     @doc("""
       Retrieve a cXML script.
@@ -84,7 +84,7 @@ namespace CompatibilityAPI.CxmlScripts {
       | CompatibilityStatusCode401
       | CompatibilityStatusCode404;
 
-    @operationId("update_cxml_application")
+    @operationId("update_cxml_script")
     @summary("Update a cXML Script")
     @doc("""
       Update a cXML script.
@@ -105,7 +105,7 @@ namespace CompatibilityAPI.CxmlScripts {
       | CompatibilityStatusCode404
       | CompatibilityStatusCode422;
 
-    @operationId("delete_cxml_application")
+    @operationId("delete_cxml_script")
     @summary("Delete a cXML Script")
     @doc("""
       Delete a cXML script.

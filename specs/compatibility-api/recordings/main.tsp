@@ -75,7 +75,7 @@ namespace CompatibilityAPI.Recordings {
       | CompatibilityStatusCode422;
 
     @operationId("retrieve_recording")
-    @summary("Retrieve a Recording.")
+    @summary("Retrieve a Recording")
     @doc("""
       Retrieve a single recording media or its metadata.
       
