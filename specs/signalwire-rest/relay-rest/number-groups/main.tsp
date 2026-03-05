@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/number_groups")
-namespace SpaceAPI.NumberGroups {
+namespace RelayRestAPI.NumberGroups {
   @tag(NUMBER_GROUPS_TAG)
   @friendlyName("Number Groups")
   interface NumberGroups {
@@ -132,7 +132,7 @@ namespace SpaceAPI.NumberGroups {
 }
 
 @route("/number_group_memberships")
-namespace SpaceAPI.NumberGroupMemberships {
+namespace RelayRestAPI.NumberGroupMemberships {
   @tag(NUMBER_GROUP_MEMBERSHIP_TAG)
   @friendlyName("Number Group Membership")
   interface NumberGroupMemberships {

@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/queues")
-namespace SpaceAPI.Queues {
+namespace RelayRestAPI.Queues {
   @tag(QUEUES_TAG)
   @friendlyName("Queues")
   interface Queues {

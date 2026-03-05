@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/verified_caller_ids")
-namespace SpaceAPI.VerifiedCallerIds {
+namespace RelayRestAPI.VerifiedCallerIds {
   @tag(VERIFIED_CALLER_IDS_TAG)
   @friendlyName("Verified Caller IDs")
   interface VerifiedCallerIds {

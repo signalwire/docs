@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/domain_applications")
-namespace SpaceAPI.DomainApplications {
+namespace RelayRestAPI.DomainApplications {
   @tag(DOMAIN_APPLICATIONS_TAG)
   @friendlyName("Domain Applications")
   interface DomainApplications {
