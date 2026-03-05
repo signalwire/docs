@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/endpoints/sip")
-namespace SpaceAPI.SipEndpoints {
+namespace RelayRestAPI.SipEndpoints {
   @tag(SIP_ENDPOINTS_TAG)
   @friendlyName("SIP Endpoints")
   interface SipEndpoints {

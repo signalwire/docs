@@ -58,4 +58,4 @@ using TypeSpec.OpenAPI;
   }
 )
 @useAuth(SignalWireBasicAuth)
-namespace SpaceAPI;
+namespace RelayRestAPI;
