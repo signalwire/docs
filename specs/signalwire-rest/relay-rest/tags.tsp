@@ -7,7 +7,7 @@ const ADDRESSES_TAG_METADATA = #{
   },
 };
 
-const CAMPAIGN_REGISTRY_TAG = "Campaign Registry (Beta)";
+const CAMPAIGN_REGISTRY_TAG = "Campaign Registry";
 const CAMPAIGN_REGISTRY_TAG_METADATA = #{
   description: "Manage 10DLC campaign registration for A2P messaging compliance.",
   externalDocs: #{

@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/short_codes")
-namespace SpaceAPI.ShortCodes {
+namespace RelayRestAPI.ShortCodes {
   @tag(SHORT_CODES_TAG)
   @friendlyName("Short Codes")
   interface ShortCodes {
