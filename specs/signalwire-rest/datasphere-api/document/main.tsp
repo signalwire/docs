@@ -13,7 +13,7 @@ using Types.StatusCodes;
 
 namespace DatasphereAPI.Documents {
   @route("/documents")
-  @tag("Documents")
+  @tag(DOCUMENTS_TAG)
   interface Documents {
     @operationId("list_documents")
     @doc("""
@@ -121,7 +121,7 @@ namespace DatasphereAPI.Documents {
 
 namespace DatasphereAPI.Chunks {
   @route("/documents/{documentId}/chunks")
-  @tag("Chunks")
+  @tag(CHUNKS_TAG)
   @friendlyName("Chunks")
   interface Chunks {
     @operationId("list_document_chunks")

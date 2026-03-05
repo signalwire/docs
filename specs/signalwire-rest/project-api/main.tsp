@@ -4,13 +4,15 @@ import "../types";
 import "./tokens";
 import "../_globally_shared/const.tsp";
 import "../../_shared/auth.tsp";
+import "./tags.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+@tagMetadata(TOKENS_TAG, TOKENS_TAG_METADATA)
 @externalDocs(
-  "https://developer.signalwire.com",
+  "https://signalwire.com/docs/apis",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{

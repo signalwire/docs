@@ -12,7 +12,7 @@ using Types.StatusCodes;
 
 @tagMetadata(TOKENS_TAG, TOKENS_TAG_METADATA)
 @externalDocs(
-  "https://developer.signalwire.com/rest/signalwire-rest/endpoints/pubsub",
+  "https://signalwire.com/docs/apis",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{
