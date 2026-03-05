@@ -108,7 +108,7 @@ const MFA_TAG_METADATA = #{
   },
 };
 
-const VERIFIED_CALLER_IDS_TAG = "Verified Caller IDs";
+const VERIFIED_CALLER_IDS_TAG = "Verified Caller ID";
 const VERIFIED_CALLER_IDS_TAG_METADATA = #{
   description: "Manage verified caller IDs for phone numbers not purchased through SignalWire.",
   externalDocs: #{

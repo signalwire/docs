@@ -3,7 +3,7 @@ import "../../../types";
 using TypeSpec.Http;
 using Types;
 
-model VerifiedCallerIdPathID {
+model VerifiedCallerIDPathID {
   @doc("Unique ID of the verified caller ID.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
   @format("uuid")
@@ -12,7 +12,7 @@ model VerifiedCallerIdPathID {
 }
 
 @doc("Verified caller ID model.")
-model VerifiedCallerId {
+model VerifiedCallerID {
   @doc("The type of the returned object, this should be verified_caller_id.")
   @example("verified_caller_id")
   type?: string;

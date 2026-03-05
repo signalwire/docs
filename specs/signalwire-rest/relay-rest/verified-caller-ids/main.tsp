@@ -12,10 +12,10 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/verified_caller_ids")
-namespace RelayRestAPI.VerifiedCallerIds {
+namespace RelayRestAPI.VerifiedCallerID {
   @tag(VERIFIED_CALLER_IDS_TAG)
   @friendlyName("Verified Caller IDs")
-  interface VerifiedCallerIds {
+  interface VerifiedCallerID {
     @operationId("list_verified_caller_ids")
     @summary("List all Verified Caller IDs")
     @doc("""
@@ -30,7 +30,7 @@ namespace RelayRestAPI.VerifiedCallerIds {
       @query
       @doc("String representing the number assigned to the caller ID. Will return all Verified Caller IDs containing this value as a substring.")
       filter_number?: string,
-    ): VerifiedCallerIdListResponse | StatusCode401 | StatusCode500;
+    ): VerifiedCallerIDListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_verified_caller_id")
     @summary("Create a new Verified Caller ID")
@@ -40,10 +40,10 @@ namespace RelayRestAPI.VerifiedCallerIds {
       ${tokenPermissions<"_Voice_">}
       """)
     @post
-    create(@body body: CreateVerifiedCallerIdRequest):
+    create(@body body: CreateVerifiedCallerIDRequest):
       | {
           @statusCode statusCode: 201;
-          @body verified_caller_id: VerifiedCallerIdResponse;
+          @body verified_caller_id: VerifiedCallerIDResponse;
         }
       | StatusCode401
       | ValidationError
@@ -56,8 +56,8 @@ namespace RelayRestAPI.VerifiedCallerIds {
       
       ${tokenPermissions<"_Voice_">}
       """)
-    read(...VerifiedCallerIdPathID):
-      | VerifiedCallerIdResponse
+    read(...VerifiedCallerIDPathID):
+      | VerifiedCallerIDResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;
@@ -71,10 +71,10 @@ namespace RelayRestAPI.VerifiedCallerIds {
       """)
     @put
     update(
-      ...VerifiedCallerIdPathID,
-      @body body: UpdateVerifiedCallerIdRequest,
+      ...VerifiedCallerIDPathID,
+      @body body: UpdateVerifiedCallerIDRequest,
     ):
-      | VerifiedCallerIdResponse
+      | VerifiedCallerIDResponse
       | StatusCode401
       | StatusCode404
       | ValidationError
@@ -89,8 +89,8 @@ namespace RelayRestAPI.VerifiedCallerIds {
       """)
     @route("/{id}/verification")
     @post
-    redialVerification(...VerifiedCallerIdPathID):
-      | VerifiedCallerIdResponse
+    redialVerification(...VerifiedCallerIDPathID):
+      | VerifiedCallerIDResponse
       | StatusCode401
       | StatusCode404
       | StatusCode500;
@@ -105,10 +105,10 @@ namespace RelayRestAPI.VerifiedCallerIds {
     @route("/{id}/verification")
     @put
     validateVerification(
-      ...VerifiedCallerIdPathID,
-      @body body: VerifyCallerIdRequest,
+      ...VerifiedCallerIDPathID,
+      @body body: VerifyCallerIDRequest,
     ):
-      | VerifiedCallerIdResponse
+      | VerifiedCallerIDResponse
       | StatusCode401
       | StatusCode404
       | ValidationError
@@ -122,7 +122,7 @@ namespace RelayRestAPI.VerifiedCallerIds {
       ${tokenPermissions<"_Voice_">}
       """)
     @delete
-    delete(...VerifiedCallerIdPathID):
+    delete(...VerifiedCallerIDPathID):
       | {
           @statusCode statusCode: 204;
         }
