@@ -43,7 +43,7 @@ model CreateCallRequest {
   FallbackMethod?: "GET" | "POST" = "POST";
 
   @webhook("voiceStatusCallback", VoiceStatusCallbackPayload)
-  @doc("The URL SignalWire will send webhooks to on every requested `StatusCallbackEvent` event.")
+  @doc("The URL SignalWire will send webhooks to on every requested `StatusCallbackEvent` event. See the [Voice status callback](/docs/compatibility-api/rest/calls/webhooks/voice-status-callback) webhook for the payload your URL will receive.")
   @format("uri")
   @example("https://your-api-endpoint.com/path")
   StatusCallback?: string;
@@ -136,7 +136,7 @@ model CreateCallRequest {
   RecordingTrack?: "inbound" | "outbound" | "both" = "both";
 
   @webhook("recordingStatusCallback", RecordingStatusCallbackPayload, "Recordings")
-  @doc("The URL to request when recording is available. See the [Recording status callback](/rest/compatibility-api/endpoints/recording-status-callback) webhook for the payload your URL will receive.")
+  @doc("The URL to request when recording is available. See the [Recording status callback](/docs/compatibility-api/rest/recordings/webhooks/recording-status-callback) webhook for the payload your URL will receive.")
   @format("uri")
   @example("https://your-api-endpoint.com/path")
   RecordingStatusCallback?: string;
@@ -267,7 +267,7 @@ model CreateCallRecordingRequest {
   RecordingChannels?: "mono" | "dual" = "mono";
 
   @webhook("recordingStatusCallback", RecordingStatusCallbackPayload, "Recordings")
-  @doc("The URL to request to when recording is available.")
+  @doc("The URL to request to when recording is available. See the [Recording status callback](/docs/compatibility-api/rest/recordings/webhooks/recording-status-callback) webhook for the payload your URL will receive.")
   @format("uri")
   @example("https://your-api-endpoint.com/recording-status")
   RecordingStatusCallback?: string;

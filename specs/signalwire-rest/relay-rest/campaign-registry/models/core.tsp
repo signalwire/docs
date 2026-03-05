@@ -122,7 +122,7 @@ model Brand {
   @example(false)
   csp_self_registered?: boolean;
 
-  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes.")
+  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   status_callback_url?: string;
 
@@ -241,7 +241,7 @@ model Campaign {
   @example("1231231")
   csp_campaign_reference?: string;
 
-  @doc("Optional: Specify a URL to receive webhook notifications when your campaign's state changes.")
+  @doc("Optional: Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   status_callback_url?: string;
 
@@ -266,7 +266,7 @@ model AssignedPhoneNumber {
   @example("+15558675309")
   number?: string;
 
-  @doc("Optional: Specify a URL to receive webhook notifications.")
+  @doc("Optional: Specify a URL to receive webhook notifications. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   status_callback_url?: string;
 }
@@ -317,7 +317,7 @@ model Order {
   @doc("Timestamp when the order was last updated.")
   updated_at?: utcDateTime;
 
-  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.")
+  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   status_callback_url?: string;
 }

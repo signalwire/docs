@@ -87,7 +87,7 @@ model CreateManagedBrandRequest {
   @example("www.example.com")
   company_website: string;
 
-  @doc("Specify a URL to receive webhook notifications when your brand's state changes.")
+  @doc("Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
   status_callback_url?: string;
@@ -109,7 +109,7 @@ model CreateCspBrandRequest {
   @example("B123456")
   csp_brand_reference: string;
 
-  @doc("Specify a URL to receive webhook notifications when your brand's state changes.")
+  @doc("Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
   status_callback_url?: string;
@@ -131,7 +131,7 @@ model UpdateBrandRequest {
   @example("+18995551212")
   contact_phone?: string;
 
-  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes.")
+  @doc("Optional: Specify a URL to receive webhook notifications when your brand's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   status_callback_url?: string;
 }
@@ -253,7 +253,7 @@ model CreateManagedCampaignRequest {
   @example(true)
   terms_and_conditions: boolean;
 
-  @doc("Specify a URL to receive webhook notifications when your campaign's state changes.")
+  @doc("Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
   status_callback_url?: string;
@@ -276,7 +276,7 @@ model CreatePartnerCampaignRequest {
   @example("C123456")
   csp_campaign_reference: string;
 
-  @doc("Specify a URL to receive webhook notifications when your campaign's state changes.")
+  @doc("Specify a URL to receive webhook notifications when your campaign's state changes. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   @format("uri")
   status_callback_url?: string;
@@ -297,7 +297,7 @@ model CreateOrderRequest {
   @example(#["+15558675309"])
   phone_numbers?: string[];
 
-  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state.")
+  @doc("Optional: Specify a URL to receive webhook notifications when your number assignment order and the number assignments that belong to it change state. See the [10DLC status callback](/docs/apis/space/campaign-registry-beta/webhooks/ten-dlc-status-callback) docs for the webhook payload.")
   @example("https://example.com/handle_callback")
   status_callback_url?: string;
 }
