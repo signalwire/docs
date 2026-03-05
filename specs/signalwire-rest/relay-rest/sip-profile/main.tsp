@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/sip_profile")
-namespace SpaceAPI.SipProfile {
+namespace RelayRestAPI.SipProfile {
   @tag(SIP_PROFILE_TAG)
   @friendlyName("SIP Profile")
   interface SipProfile {

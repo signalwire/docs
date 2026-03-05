@@ -10,7 +10,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/mfa")
-namespace SpaceAPI.Mfa {
+namespace RelayRestAPI.Mfa {
   @tag(MFA_TAG)
   @friendlyName("Multi-Factor Authentication")
   interface Mfa {
