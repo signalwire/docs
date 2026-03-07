@@ -12,7 +12,7 @@ using Types.StatusCodes;
 
 @route("/calls")
 namespace CallingAPI.Calls {
-  @tag("Calls")
+  @tag(CALLS_TAG)
   @friendlyName("Calls")
   interface Calls {
     @summary("Send Call Commands")
