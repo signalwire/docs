@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 
 @tagMetadata(MESSAGE_LOGS_TAG, MESSAGE_LOGS_TAG_METADATA)
 @externalDocs(
-  "https://developer.signalwire.com/rest/signalwire-rest/endpoints/messaging",
+  "https://signalwire.com/docs/apis",
   "Find more information about this and other SignalWire APIs."
 )
 @info(#{

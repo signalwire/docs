@@ -1,3 +1,5 @@
+import "./webhooks.tsp";
+
 using TypeSpec.Http;
 
 @doc("Request body for creating a message.")
@@ -33,7 +35,8 @@ model CreateMessageRequest {
   @example("0.0075")
   MaxPrice?: string;
 
-  @doc("A URL endpoint to receive callbacks each time the status of the message changes.")
+  @webhook("smsStatusCallback", SmsStatusCallbackPayload)
+  @doc("A URL endpoint to receive callbacks each time the status of the message changes. See the [SMS status callback](/docs/compatibility-api/rest/messages/webhooks/sms-status-callback) webhook for the payload your URL will receive.")
   @format("uri")
   @example("https://example.com/status-callback")
   StatusCallback?: string;

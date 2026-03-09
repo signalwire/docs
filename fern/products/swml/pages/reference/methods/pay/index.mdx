@@ -1,21 +1,15 @@
 ---
+id: e82f548a-f56c-4e0b-ab8d-a981119597a8
 title: pay
-slug: /swml/methods/pay
+slug: /reference/pay
 description: Enable secure payment processing during voice calls.
+max-toc-depth: 3
 ---
 
-[prompt-object]: /swml/methods/pay/prompts
-[parameters-object]: /swml/methods/pay/parameters
-[supported-languages-voice]: /voice/getting-started/voice-and-languages
-[payment_connector_url]: /swml/methods/pay/payment_connector_url
+[supported-languages-voice]: /platform/voice/tts
 [currency-code]: https://en.wikipedia.org/wiki/ISO_4217
 
 Enable secure payment processing during voice calls. When implemented in your voice application, it manages the entire payment flow, including data collection, validation, and processing, through your configured payment gateway.
-
-<ParamField path="pay" type="object" required={true}>
-  An object that accepts the following properties.
-</ParamField>
-
 
 ## **Transaction Types**
 
@@ -99,8 +93,14 @@ sections:
 
 ## **Properties**
 
+<ParamField path="pay" type="object" required={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
 <ParamField path="pay.payment_connector_url" type="string" required={true}>
-  The URL to make `POST` requests with all the gathered payment details. This URL is used to process the final payment transaction and return the results through the response. Visit the [`payment_connector_url`][payment_connector_url] page for more **important** details.
+  The URL to make `POST` requests with all the gathered payment details. This URL processes the final payment transaction and returns the results in the response. See [`payment_connector_url` details](#payment_connector_url) below.
 </ParamField>
 
 
@@ -140,8 +140,21 @@ sections:
 
 
 <ParamField path="pay.parameters" type="object[]">
-  Array of [parameter objects][parameters-object] to pass to your payment processor.
+  Array of parameter objects to pass to your payment processor.
+  Enables you to pass custom parameters or include additional payment details not covered by the standard `pay` attributes.
 </ParamField>
+
+<Indent>
+
+<ParamField path="parameters[].name" type="string" required={true}>
+  The identifier for your custom parameter. This will be the key in the `parameters` object.
+</ParamField>
+
+<ParamField path="parameters[].value" type="string" required={true}>
+  The value associated with the parameter. This will be the value in the `parameters` object.
+</ParamField>
+
+</Indent>
 
 
 <ParamField path="pay.payment_method" type="string">
@@ -155,8 +168,68 @@ sections:
 
 
 <ParamField path="pay.prompts" type="object[]">
-  Array of [prompt objects][prompt-object] for customizing the audio prompts during different stages of the payment process.
+  Array of prompt objects for customizing the audio prompts played during different stages of the payment process.
+  If no custom prompts are provided, default prompts will be used.
+  If custom prompts are provided but certain payment steps are omitted, the system will fall back to the default prompts for those steps.
 </ParamField>
+
+<Indent>
+
+<ParamField path="prompts[].for" type="string" required={true}>
+  The payment step this prompt is for. Possible values:
+
+  - `payment-card-number` - Collect the payment card number. Default: *"Please enter your credit card number"*
+  - `expiration-date` - Collect the expiration date. Default: *"Please enter your credit card's expiration date. 2 digits for the month and 2 digits for the year"*
+  - `security-code` - Collect the security code. Default: *"Please enter your credit card's security code. It's the 3 digits located on the back of your card"*
+  - `postal-code` - Collect the postal code. Default: *"Please enter your billing postal code"*
+  - `payment-processing` - Played during payment processing. Default: *"Payment processing. Please wait"*
+  - `payment-completed` - Played when payment succeeds. Default: *"Payment completed. Thank you"*
+  - `payment-failed` - Played when payment fails. Default: *"Payment failed"*
+  - `payment-canceled` - Played when payment is cancelled. Default: *"Payment canceled"*
+</ParamField>
+
+<ParamField path="prompts[].actions" type="object[]" required={true}>
+  Array of action objects to execute for this prompt. Each action can either play an audio file or speak a phrase using text-to-speech.
+</ParamField>
+
+<Indent>
+
+<ParamField path="actions[].type" type="string" required={true}>
+  The action to perform. Allowed values: `Say` (text-to-speech), `Play` (play an audio file).
+</ParamField>
+
+<ParamField path="actions[].phrase" type="string" required={true}>
+  When `type` is `Say`, the text to be spoken. When `type` is `Play`, the URL to the audio file.
+</ParamField>
+
+</Indent>
+
+<ParamField path="prompts[].attempts" type="string">
+  Which payment attempt(s) this prompt applies to. The value increments when a payment fails. Use a single number (e.g., `"1"`) or space-separated numbers (e.g., `"2 3"`) to target specific attempts.
+</ParamField>
+
+<ParamField path="prompts[].card_type" type="string">
+  Space-separated list of card types this prompt applies to.
+  Allowed values: `visa`, `mastercard`, `amex`, `maestro`, `discover`, `optima`, `jcb`, `diners-club`.
+</ParamField>
+
+<ParamField path="prompts[].error_type" type="string">
+  Space-separated list of error types this prompt applies to. Possible values:
+
+  - `timeout` - User input timeout
+  - `invalid-card-number` - Failed card validation
+  - `invalid-card-type` - Unsupported card type
+  - `invalid-date` - Invalid expiration date
+  - `invalid-security-code` - Invalid CVV format
+  - `invalid-postal-code` - Invalid postal code format
+  - `session-in-progress` - Concurrent session attempt
+  - `invalid-bank-routing-number` - Invalid bank routing number
+  - `invalid-bank-account-number` - Invalid bank account number
+  - `input-matching-failed` - Input matching failed
+  - `card-declined` - Payment declined
+</ParamField>
+
+</Indent>
 
 
 <ParamField path="pay.security_code" type="boolean" default="true">
@@ -175,23 +248,21 @@ sections:
 
 
 <ParamField path="pay.token_type" type="string" default="reusable">
-  Whether the payment is a one off payment or re-occurring.
+  Whether the payment is a one off payment or re-occurring. Allowed values: `one-time`, `reusable`.
 </ParamField>
-
-**Allowed values:** `one-time`, `reusable`.
 
 <ParamField path="pay.valid_card_types" type="string" default="visa mastercard amex">
   List of payment cards allowed to use in the requested payment process, separated by a space.
+  Allowed values: `visa`, `mastercard`, `amex`, `maestro`, `discover`, `jcb`, `diners-club`.
 </ParamField>
-
-**Allowed values:** `visa`, `mastercard`, `amex`, `maestro`, `discover`, `jcb`, `diners-club`.
 
 <ParamField path="pay.voice" type="string" default="woman">
   Text-to-speech voice to use. Supported voices are listed in the [Voice and Languages][supported-languages-voice] page.
 </ParamField>
 
+</Indent>
 
-### `status_url` request body
+## `status_url` request body
 
 The `status_url` parameter is used to send requests for each status change during the payment process.
 
@@ -321,145 +392,264 @@ Below is an example of the request body that will be sent to the `status_url`.
 }
 ```
 
+## `payment_connector_url`
+
+SignalWire sends a `POST` request to the `payment_connector_url` once all required payment information has been collected from the caller.
+Your endpoint processes the payment and returns the result.
+
+### Request body
+
+<ParamField path="transaction_id" type="string">
+  Unique identifier for the transaction.
+</ParamField>
+
+<ParamField path="method" type="string">
+  The payment method (e.g., `credit-card`).
+</ParamField>
+
+<ParamField path="cardnumber" type="string">
+  The card number collected from the caller.
+</ParamField>
+
+<ParamField path="cvv" type="string">
+  The card security code.
+</ParamField>
+
+<ParamField path="expiry_month" type="string">
+  The card expiry month (e.g., `12`).
+</ParamField>
+
+<ParamField path="expiry_year" type="string">
+  The card expiry year (e.g., `99`).
+</ParamField>
+
+<ParamField path="postal_code" type="string">
+  The billing postal code.
+</ParamField>
+
+<ParamField path="chargeAmount" type="string">
+  The amount to charge.
+</ParamField>
+
+<ParamField path="currency_code" type="string">
+  The [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) currency code.
+</ParamField>
+
+<ParamField path="token_type" type="string">
+  The token type (`one-time` or `reusable`).
+</ParamField>
+
+<ParamField path="description" type="string">
+  The payment description provided in the `pay` method.
+</ParamField>
+
+#### Request example
+
+```json
+{
+  "transaction_id": "8c9d14d5-52ae-4e2e-b880-a14e6e1cda7d",
+  "method": "credit-card",
+  "cardnumber": "************1234",
+  "cvv": "***",
+  "postal_code": "123456",
+  "description": "Payment description",
+  "chargeAmount": "10.55",
+  "token_type": "reusable",
+  "expiry_month": "12",
+  "expiry_year": "99",
+  "currency_code": "usd"
+}
+```
+
+### Response format
+
+Your endpoint must respond with JSON. The format varies depending on the transaction type.
+
+<Tabs>
+<Tab title="Successful charge">
+
+Return a `200` HTTP status code with:
+
+<ParamField path="charge_id" type="string">
+  A unique identifier for the successful transaction.
+</ParamField>
+
+<ParamField path="error_code" type="null">
+  Must be `null` for successful transactions.
+</ParamField>
+
+<ParamField path="error_message" type="null">
+  Must be `null` for successful transactions.
+</ParamField>
+
+```json
+{
+  "charge_id": "ch_123456789",
+  "error_code": null,
+  "error_message": null
+}
+```
+
+</Tab>
+<Tab title="Successful tokenization">
+
+Return a `200` HTTP status code with:
+
+<ParamField path="token_id" type="string">
+  A unique identifier for the stored payment method.
+</ParamField>
+
+<ParamField path="error_code" type="null">
+  Must be `null` for successful transactions.
+</ParamField>
+
+<ParamField path="error_message" type="null">
+  Must be `null` for successful transactions.
+</ParamField>
+
+```json
+{
+  "token_id": "tok_123456789",
+  "error_code": null,
+  "error_message": null
+}
+```
+
+</Tab>
+<Tab title="Failed charge">
+
+Return a non-`200` HTTP status code with:
+
+<ParamField path="charge_id" type="null">
+  Must be `null` for failed transactions.
+</ParamField>
+
+<ParamField path="error_code" type="string">
+  An error code identifying the type of failure.
+</ParamField>
+
+<ParamField path="error_message" type="string">
+  A human-readable description of the error.
+</ParamField>
+
+```json
+{
+  "charge_id": null,
+  "error_code": "insufficient_funds",
+  "error_message": "Card has insufficient funds"
+}
+```
+
+</Tab>
+<Tab title="Failed tokenization">
+
+Return a non-`200` HTTP status code with:
+
+<ParamField path="token_id" type="null">
+  Must be `null` for failed transactions.
+</ParamField>
+
+<ParamField path="error_code" type="string">
+  An error code identifying the type of failure.
+</ParamField>
+
+<ParamField path="error_message" type="string">
+  A human-readable description of the error.
+</ParamField>
+
+```json
+{
+  "token_id": null,
+  "error_code": "invalid_card",
+  "error_message": "Card validation failed"
+}
+```
+
+</Tab>
+</Tabs>
+
+<Note>
+Error responses will trigger the `payment-failed` prompt in your SWML application.
+</Note>
+
 ## **Variables**
 
-The following variables are available after the payment process completes:
-
-<ParamField path="pay_payment_results" type="object">
-  An object containing the payment results of the payment process. Please refer to the [pay_payment_results](#pay_payment_results) section for more details.
-</ParamField>
-
+When the payment process completes, the following [variables](/swml/reference/variables) are set in the `vars` scope.
+Access them in subsequent SWML instructions using the `${variable}` syntax (e.g., `${pay_result}`).
 
 <ParamField path="pay_result" type="string">
-  The result of the payment process. Please refer to the [pay_result](#pay_result) section for possible values.
+  The overall outcome of the payment process. Possible values:
+
+  - `success` - The payment was successful.
+  - `too-many-failed-attempts` - The caller exceeded the `max_attempts` limit.
+  - `payment-connector-error` - The payment connector returned an error.
+  - `caller-interrupted-with-star` - The caller pressed the `*` key to cancel.
+  - `relay-pay-stop` - The payment was stopped via the `STOP` command.
+  - `caller-hung-up` - The caller hung up before completing payment.
+  - `validation-error` - Card details failed validation.
+  - `internal-error` - An internal system error occurred.
 </ParamField>
 
-
-### pay_payment_results
-
-<ParamField path="payment_token" type="string">
-  Payment token from processor
+<ParamField path="pay_payment_results" type="object">
+  Detailed payment results returned by the payment processor, including card details, tokens, and any error information.
+  Access nested properties with dot notation (e.g., `${pay_payment_results.payment_token}`).
 </ParamField>
 
+<Indent>
 
-<ParamField path="payment_confirmation_code" type="string">
-  Confirmation code for the transaction
+<ParamField path="pay_payment_results.payment_token" type="string">
+  Token generated by the payment processor. Use this for future transactions when using tokenization (`charge_amount: 0`).
 </ParamField>
 
-
-<ParamField path="payment_card_number" type="string">
-  Redacted card number
+<ParamField path="pay_payment_results.payment_confirmation_code" type="string">
+  Confirmation code returned by the payment processor for a successful charge.
 </ParamField>
 
-
-<ParamField path="payment_card_type" type="string">
-  Type of card used
+<ParamField path="pay_payment_results.payment_card_number" type="string">
+  Redacted card number (e.g., `************1234`).
 </ParamField>
 
-
-<ParamField path="payment_card_expiration_date" type="string">
-  Card expiration date
+<ParamField path="pay_payment_results.payment_card_type" type="string">
+  Type of card used (e.g., `visa`, `mastercard`, `amex`).
 </ParamField>
 
-
-<ParamField path="payment_card_security_code" type="string">
-  Redacted security code
+<ParamField path="pay_payment_results.payment_card_expiration_date" type="string">
+  Card expiration date (e.g., `1225` for December 2025).
 </ParamField>
 
-
-<ParamField path="payment_card_postal_code" type="string">
-  Postal code used
+<ParamField path="pay_payment_results.payment_card_security_code" type="string">
+  Redacted security code (e.g., `***`).
 </ParamField>
 
-
-<ParamField path="payment_error" type="string">
-  Error description if payment failed
+<ParamField path="pay_payment_results.payment_card_postal_code" type="string">
+  Postal code entered by the caller.
 </ParamField>
 
-
-<ParamField path="payment_error_code" type="string">
-  Error code if payment failed
+<ParamField path="pay_payment_results.payment_error" type="string">
+  Error description if the payment failed. Empty on success.
 </ParamField>
 
+<ParamField path="pay_payment_results.payment_error_code" type="string">
+  Error code if the payment failed. Empty on success.
+</ParamField>
 
-<ParamField path="connector_error" type="object">
-  Connector-specific error object
+<ParamField path="pay_payment_results.connector_error" type="object">
+  Error object from the payment connector. Only present when the connector returns an error.
 </ParamField>
 
 <Indent>
 
 <ParamField path="connector_error.code" type="string">
-  Connector-specific error code
+  Connector-specific error code.
 </ParamField>
 
-
 <ParamField path="connector_error.message" type="string">
-  Connector-specific error message
+  Connector-specific error message.
 </ParamField>
 
 </Indent>
 
-#### Example
-
-```json
-{
-  "payment_token": "1234567890",
-  "payment_confirmation_code": "1234567890",
-  "payment_card_number": "1234567890",
-  "payment_card_type": "visa",
-  "payment_card_expiration_date": "12/2025",
-  "payment_card_security_code": "123",
-  "payment_card_postal_code": "12345",
-  "payment_error": "Invalid card number",
-  "payment_error_code": "invalid-card-number",
-  "connector_error": {
-    "code": "invalid-card-number",
-    "message": "Invalid card number"
-  }
-}
-```
-
-### pay_result
-
-<ParamField path="success" type="string">
-  The payment was successful.
-</ParamField>
-
-
-<ParamField path="too-many-failed-attempts" type="string">
-  The payment failed because the caller entered too many failed attempts.
-</ParamField>
-
-
-<ParamField path="payment-connector-error" type="string">
-  The payment failed because of an error from the payment connector.
-</ParamField>
-
-
-<ParamField path="caller-interrupted-with-star" type="string">
-  The payment failed because the caller interrupted the payment process with a `*` key.
-</ParamField>
-
-
-<ParamField path="relay-pay-stop" type="string">
-  The payment failed because the caller stopped the payment process with the `STOP` command.
-</ParamField>
-
-
-<ParamField path="caller-hung-up" type="string">
-  The payment failed because the caller hung up.
-</ParamField>
-
-
-<ParamField path="validation-error" type="string">
-  The payment failed because of a validation error.
-</ParamField>
-
-
-<ParamField path="internal-error" type="string">
-  The payment failed because of an internal error.
-</ParamField>
-
+</Indent>
 
 ## **Examples**
 
@@ -567,6 +757,47 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
+### Custom parameters
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - pay:
+        charge_amount: "10.00"
+        payment_connector_url: "https://example.com/process"
+        parameters:
+          - name: "my_custom_parameter_1"
+            value: "my_custom_value_1"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "pay": {
+          "charge_amount": "10.00",
+          "payment_connector_url": "https://example.com/process",
+          "parameters": [
+            {
+              "name": "my_custom_parameter_1",
+              "value": "my_custom_value_1"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
 ### International payment with custom prompts
 
 <CodeBlocks>
@@ -647,6 +878,71 @@ sections:
             }
           ]
         }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Handling payment results
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - pay:
+        charge_amount: '25.00'
+        payment_connector_url: "https://example.com/process"
+    - cond:
+        - when: "pay_result == 'success'"
+          then:
+            - play:
+                url: 'say: Payment successful. Your confirmation code is ${pay_payment_results.payment_confirmation_code}.'
+        - else:
+            - play:
+                url: 'say: Payment was not completed. Please try again later.'
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      {
+        "pay": {
+          "charge_amount": "25.00",
+          "payment_connector_url": "https://example.com/process"
+        }
+      },
+      {
+        "cond": [
+          {
+            "when": "pay_result == 'success'",
+            "then": [
+              {
+                "play": {
+                  "url": "say: Payment successful. Your confirmation code is ${pay_payment_results.payment_confirmation_code}."
+                }
+              }
+            ]
+          },
+          {
+            "else": [
+              {
+                "play": {
+                  "url": "say: Payment was not completed. Please try again later."
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   }

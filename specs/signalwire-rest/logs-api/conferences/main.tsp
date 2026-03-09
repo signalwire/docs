@@ -15,7 +15,7 @@ using Types.StatusCodes;
 @useAuth(SignalWireBasicAuth)
 @route("/conferences")
 namespace LogsAPI.Conferences {
-  @tag("Conferences")
+  @tag(CONFERENCES_TAG)
   @friendlyName("Conferences")
   interface Conferences {
     @operationId("list_conferences")

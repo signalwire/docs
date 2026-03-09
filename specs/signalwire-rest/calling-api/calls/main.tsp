@@ -12,7 +12,7 @@ using Types.StatusCodes;
 
 @route("/calls")
 namespace CallingAPI.Calls {
-  @tag("Calls")
+  @tag(CALLS_TAG)
   @friendlyName("Calls")
   interface Calls {
     @summary("Send Call Commands")
@@ -23,6 +23,20 @@ namespace CallingAPI.Calls {
       
       ${tokenPermissions<"_Voice_">}
       """)
+    @opExample(
+      #{ parameters: userEventCallExample },
+      #{
+        title: "calling.user_event",
+        description: "Fire a custom user event on an active call",
+      }
+    )
+    @opExample(
+      #{ parameters: transferCallExample },
+      #{
+        title: "calling.transfer",
+        description: "Transfer an active call to a new destination",
+      }
+    )
     @opExample(
       #{ parameters: liveTranslateStartExample },
       #{
@@ -79,13 +93,6 @@ namespace CallingAPI.Calls {
         description: "Initiate a new outbound call with the dial command",
       }
     )
-    @opExample(
-      #{ parameters: ignoredExample },
-      #{
-        title: "_ignored",
-        description: "This example is intentionally ignored by Fern generation",
-      }
-    )
     @post
     @operationId("call-commands")
     callCommand(@body request: CallRequest):
@@ -93,6 +100,7 @@ namespace CallingAPI.Calls {
           @statusCode statusCode: 200;
           @body call: CallResponse;
         }
+      | StatusCode400
       | StatusCode401
       | StatusCode404
       | CallCreate422Error

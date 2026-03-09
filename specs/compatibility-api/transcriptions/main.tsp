@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/responses.tsp";
+import "./models/webhooks.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
 import "../../_shared/alias/token-permissions.tsp";
@@ -9,6 +10,7 @@ import "../../_shared/alias/token-permissions.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
+@webhook("transcriptionStatusCallback", TranscriptionStatusCallbackPayload, "Recording Transcriptions")
 @route("/Accounts/{AccountSid}/Transcriptions")
 namespace CompatibilityAPI.Transcriptions {
   @tag(TRANSCRIPTIONS_TAG)
@@ -63,7 +65,7 @@ namespace CompatibilityAPI.Transcriptions {
       | CompatibilityStatusCode422;
 
     @operationId("retrieve_transcription")
-    @summary("Retrieve a Transcription.")
+    @summary("Retrieve a Transcription")
     @doc("""
       Retrieve a single recording transcription.
       
@@ -77,7 +79,7 @@ namespace CompatibilityAPI.Transcriptions {
       | CompatibilityStatusCode404;
 
     @operationId("delete_transcription")
-    @summary("Delete a Recording Transcription.")
+    @summary("Delete a Recording Transcription")
     @doc("""
       Delete a recording transcription from your account. If the delete is successful, a 204 response, with no body, will be returned.
       

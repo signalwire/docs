@@ -116,7 +116,7 @@ namespace CompatibilityAPI.AvailablePhoneNumbers {
       | CompatibilityStatusCode422;
 
     @operationId("search_toll_free_available_phone_numbers")
-    @summary("Find toll-free numbers.")
+    @summary("Find toll-free numbers")
     @doc("""
       Search for toll-free AvailablePhoneNumbers.
       

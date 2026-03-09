@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
+import "./models/webhooks.tsp";
 import "../_shared/errors.tsp";
 import "../tags.tsp";
 import "../../_shared/alias/token-permissions.tsp";

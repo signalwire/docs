@@ -4,6 +4,7 @@ import "../types";
 import "./calls";
 import "../_globally_shared/const.tsp";
 import "../../_shared/auth.tsp";
+import "../../_shared/webhook/decorator.tsp";
 import "./tags.tsp";
 
 using TypeSpec.Http;
@@ -12,7 +13,7 @@ using Types.StatusCodes;
 
 @tagMetadata(CALLS_TAG, CALLS_TAG_METADATA)
 @externalDocs(
-  "https://developer.signalwire.com/rest/signalwire-rest/endpoints/calling",
+  "https://signalwire.com/docs/apis",
   "The Calling API holds a collection of endpoints that will help you create and manage calls."
 )
 @info(#{
