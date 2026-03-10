@@ -336,7 +336,7 @@ const LYCHEE_EXIT = {
 function runLychee(urls, options = {}) {
   const {
     noProgress = false,
-    concurrency = 20,
+    concurrency,
     label = 'links',
   } = options;
 
@@ -345,7 +345,8 @@ function runLychee(urls, options = {}) {
     return { exitCode: 0, failed: false, results: null };
   }
 
-  log.step(`Checking ${urls.length} ${label} with lychee (concurrency: ${concurrency})...`);
+  const concurrencyLabel = concurrency ? `, concurrency: ${concurrency}` : '';
+  log.step(`Checking ${urls.length} ${label} with lychee${concurrencyLabel}...`);
 
   // Write URLs to temp file for lychee to read
   const tempFile = join(LINK_CHECK_DIR, `urls-${Date.now()}.txt`);
@@ -357,9 +358,12 @@ function runLychee(urls, options = {}) {
     '--config', LYCHEE_CONFIG,
     '--format', 'json',
     '--output', outputFile,
-    '--max-concurrency', String(concurrency),
     '--files-from', tempFile,
   ];
+
+  if (concurrency) {
+    args.push('--max-concurrency', String(concurrency));
+  }
 
   if (noProgress) {
     args.push('--no-progress');
@@ -788,7 +792,6 @@ Examples:
     // Main lychee run - exclude GitHub entirely (handled separately)
     results.httpMain = runLychee(sitemapUrls, {
       noProgress,
-      concurrency: 20,
       label: 'non-GitHub links',
     });
 
