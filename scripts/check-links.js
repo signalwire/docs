@@ -232,6 +232,22 @@ function verifyGitHubUrl(url, reposDir) {
       }
     }
 
+    // If no path, just verify the ref exists
+    if (!path) {
+      try {
+        execSync(`git rev-parse --verify "${ref}"`, { cwd: repoDir, stdio: 'ignore' });
+        return { valid: true };
+      } catch {
+        // ref might not be fetched (non-default branch) — try fetching it
+        try {
+          execSync(`git fetch --depth 1 origin "${ref}"`, { cwd: repoDir, stdio: 'ignore' });
+          return { valid: true };
+        } catch {
+          return { valid: false, error: `Ref not found: ${ref}` };
+        }
+      }
+    }
+
     // Check file
     const files = execSync(`git ls-tree -r --name-only "${ref}" -- "${path}"`, {
       cwd: repoDir,
@@ -321,7 +337,6 @@ function runLychee(urls, options = {}) {
   const {
     noProgress = false,
     concurrency = 20,
-    excludeGithub = false,
     label = 'links',
   } = options;
 
@@ -349,11 +364,6 @@ function runLychee(urls, options = {}) {
   if (noProgress) {
     args.push('--no-progress');
   }
-
-  // Note: GitHub exclusion is now handled in lychee.toml to avoid
-  // command-line --exclude overriding config file exclude patterns.
-  // The excludeGithub option is kept for documentation but the actual
-  // exclusion happens via the config file.
 
   // Run lychee
   const result = spawnSync('lychee', args, {
@@ -779,7 +789,6 @@ Examples:
     results.httpMain = runLychee(sitemapUrls, {
       noProgress,
       concurrency: 20,
-      excludeGithub: true,
       label: 'non-GitHub links',
     });
 
@@ -789,7 +798,6 @@ Examples:
       results.githubHttp = runLychee(githubUrls.httpCheck, {
         noProgress,
         concurrency: GITHUB_HTTP_CONCURRENCY,
-        excludeGithub: false,
         label: 'GitHub HTTP links',
       });
     }
