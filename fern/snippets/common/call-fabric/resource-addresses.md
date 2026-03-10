@@ -42,5 +42,5 @@ Additionally, you can view the created resource in the `Resources` tab of the Si
 Here, you can view the address, type, and other details of the resource.
 
 <Frame caption="The filterable Resources list in the SignalWire Dashboard.">
-  <img src="/assets/images/dashboard/resources/resource-list.webp" alt="The Resources page of the SignalWire Dashboard." />
+  <img src="/docs/assets/images/dashboard/resources/resource-list.webp" alt="The Resources page of the SignalWire Dashboard." />
 </Frame>
