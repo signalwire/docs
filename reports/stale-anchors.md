@@ -1,0 +1,101 @@
+# Stale Local Anchor References
+
+Ref definitions that ARE used in content but point to a local `#anchor`
+that doesn't exist as a heading on the page. These likely reference methods
+that moved to subpages during the SDK page split.
+
+**Action:** Review and update URLs in Stage 2.
+
+| File | Label | Anchor |
+|------|-------|--------|
+| fern\products\browser-sdk\pages\v2\reference\v2-vs-v3.mdx | `sec_relay_sdk` | `#i-am-building-a-one-to-one-communication-app-which-should-dial-other-browsers-or-phones` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\chat\client\events.mdx | `getmessages` | `#getmessages` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\chat\client\methods\getmessages.mdx | `paginationcursor` | `#paginationcursor` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\chat\client\methods\listen.mdx | `events` | `#events` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\messaging\client\methods\listen.mdx | `events` | `#events` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\pubsub\client\methods\listen.mdx | `events` | `#events` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\task\client\methods\listen.mdx | `events` | `#events` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\demote.mdx | `link` | `#promote` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\getmeta.mdx | `link-1` | `#field-meta` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\listen.mdx | `link-2` | `#events` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\promote.mdx | `link-3` | `#demote` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\setlayout.mdx | `link-4` | `#videopositions` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\setpositions.mdx | `link-4` | `#videopositions` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\updatemembermeta.mdx | `link-5` | `#setmembermeta` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\video\roomsession\methods\updatemeta.mdx | `link-6` | `#setmeta` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\events.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\amd.mdx | `detectansweringmachine` | `#voice_call_detect_answering` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\answer.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\collect.mdx | `promptaudio` | `#promptaudio` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\collect.mdx | `promptringtone` | `#promptringtone` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\collect.mdx | `prompttts` | `#prompttts` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\collect.mdx | `startinput` | `#voice_call_oncollectinputstarted` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connect.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connect.mdx | `connectphone` | `#connectphone` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connect.mdx | `connectsip` | `#connectsip` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connect.mdx | `disconnected` | `#disconnected` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connectphone.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connectphone.mdx | `disconnected` | `#disconnected` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connectsip.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\connectsip.mdx | `disconnected` | `#disconnected` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\detect.mdx | `amd` | `#amd` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\detect.mdx | `detectansweringmachine` | `#voice_call_detect_answering` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\detect.mdx | `detectdigit` | `#detectdigit` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\detect.mdx | `detectfax` | `#voice_call_detect_fax` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\detectdigit.mdx | `prompt` | `#prompt` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\disconnect.mdx | `connect` | `#connect` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\disconnected.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\disconnected.mdx | `connect` | `#connect` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\disconnected.mdx | `connectphone` | `#connectphone` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\disconnected.mdx | `connectsip` | `#connectsip` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\listen.mdx | `call-events` | `#events` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\listen.mdx | `onstatechanged` | `#onstatechanged` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\pass.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\play.mdx | `playaudio` | `#playaudio` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\play.mdx | `playringtone` | `#playringtone` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\play.mdx | `playsilence` | `#playsilence` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\play.mdx | `playtts` | `#playtts` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\prompt.mdx | `promptaudio` | `#promptaudio` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\prompt.mdx | `promptringtone` | `#promptringtone` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\prompt.mdx | `prompttts` | `#prompttts` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\record.mdx | `recordaudio` | `#voice_call_record_audio` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\senddigits.mdx | `call` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\call\methods\tap.mdx | `tapaudio` | `#tapaudio` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callcollect.mdx | `callcollect` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callcollect.mdx | `result` | `#field-result` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callcollect.mdx | `type` | `#field-type` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\calldetect.mdx | `calldetect` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callplayback.mdx | `callplayback` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callprompt.mdx | `callprompt` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callprompt.mdx | `type` | `#field-type` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\callrecording.mdx | `callrecording` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\calltap.mdx | `calltap` | `#` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\client\methods\dial.mdx | `dialphone` | `#dialphone` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\client\methods\dial.mdx | `dialsip` | `#dialsip` |
+| fern\products\realtime-sdk\pages\latest\tech-ref\voice\client\methods\listen.mdx | `events` | `#events` |
+| fern\products\realtime-sdk\pages\v2\language\golang\calling\actions\play.mdx | `link` | `#` |
+| fern\products\realtime-sdk\pages\v2\language\nodejs\calling\call.mdx | `relay-calling-call` | `#` |
+| fern\products\realtime-sdk\pages\v2\language\nodejs\relay-client.mdx | `link-1` | `#` |
+| fern\products\realtime-sdk\pages\v2\language\php\calling\call.mdx | `relay-calling-call-2` | `#` |
+| fern\products\realtime-sdk\pages\v2\language\php\relay-client.mdx | `relay-client-1` | `#` |
+| fern\products\realtime-sdk\pages\v2\language\ruby\calling\call.mdx | `relay-calling-call` | `#` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\chat\client\methods\getmembers.mdx | `link` | `#chatmemberentity` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\chat\client\methods\getmessages.mdx | `link-1` | `#chatmessageentity` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\chat\client\methods\subscribe.mdx | `link-2` | `#unsubscribe` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\video\roomsession\index.mdx | `link` | `#getrecordings` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\video\roomsession\methods\demote.mdx | `link-1` | `#promote` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\video\roomsession\methods\promote.mdx | `link-2` | `#demote` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\video\roomsession\methods\updatemembermeta.mdx | `link-3` | `#setmembermeta` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\video\roomsession\methods\updatemeta.mdx | `link-4` | `#setmeta` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\amd.mdx | `link` | `#detectansweringmachine` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\collect.mdx | `link-1` | `#collectstartofinput` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\detect.mdx | `link-2` | `#amd` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\detect.mdx | `link-3` | `#detectfax` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\detect.mdx | `link-4` | `#detectdigit` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\detect.mdx | `link` | `#detectansweringmachine` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\detectdigit.mdx | `link-5` | `#prompt` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\disconnected.mdx | `link-6` | `#connect` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\record.mdx | `link-7` | `#recordaudio` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\call\methods\waitfordisconnected.mdx | `link-8` | `#disconnected` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\client\methods\dial.mdx | `link-1` | `#dialphone` |
+| fern\products\realtime-sdk\pages\v3\tech-ref\voice\client\methods\dial.mdx | `link-2` | `#dialsip` |
