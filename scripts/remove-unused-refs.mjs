@@ -108,10 +108,19 @@ function analyseFile(filePath) {
       const label = node.label?.toLowerCase() || node.identifier?.toLowerCase();
       if (label) usages.add(label);
     } else if (node.type === "heading") {
-      // Extract auto-generated anchor from heading text
+      // Extract anchor from heading text
       const text = headingText(node);
       if (text) {
-        headingAnchors.add("#" + slugify(text));
+        // Check for explicit Fern anchor syntax [#anchor-id]
+        const explicitMatch = text.match(/\[#([^\]]+)\]/);
+        if (explicitMatch) {
+          headingAnchors.add("#" + explicitMatch[1]);
+        }
+        // Also add the slugified version (auto-generated anchor)
+        const cleanText = text.replace(/\[#[^\]]+\]/, "").trim();
+        if (cleanText) {
+          headingAnchors.add("#" + slugify(cleanText));
+        }
       }
     }
   });
@@ -169,9 +178,9 @@ for (const filePath of files) {
         fileRemovedCount++;
       }
     } else {
-      // Used — check for stale local anchors
+      // Used — check for stale local anchors (skip # self-references)
       for (const entry of entries) {
-        if (entry.url.startsWith("#")) {
+        if (entry.url.startsWith("#") && entry.url !== "#") {
           if (!headingAnchors.has(entry.url)) {
             staleAnchors.push({
               file: relative(ROOT, filePath),
