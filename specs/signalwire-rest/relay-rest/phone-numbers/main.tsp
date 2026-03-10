@@ -186,7 +186,7 @@ namespace RelayRestAPI.PhoneNumberLookup {
       
       No API token scope is required to make a successful request to this endpoint.
       
-      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
       """)
     @route("/{e164_number}")
     @get
