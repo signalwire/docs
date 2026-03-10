@@ -10,5 +10,5 @@ The SignalWire platform facilitates smooth transitions between different communi
 such as switching from a voice call to a video conference, or from a text chat to a voice call.
 
 <Frame caption="Viewing details for a Subscriber in the Resources tab of the SignalWire Dashboard.">
-  <img src="/docs/assets/images/dashboard/resources/subscriber.webp" alt="Subscribers." />
+  <img src="/assets/images/dashboard/resources/subscriber.webp" alt="Subscribers." />
 </Frame>
