@@ -119,7 +119,7 @@ namespace CompatibilityAPI.Recordings {
       
       This permission is only required for authenticated requests to retrieve recording metadata (.json extension).
       
-      [Learn more about API scopes](/platform/dashboard/getting-started/your-signalwire-api-space#api-token-scopes).
+      [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
       """)
     @route("/{Sid}")
     read(...RecordingsAccountSidPath, ...RecordingSidPath):
