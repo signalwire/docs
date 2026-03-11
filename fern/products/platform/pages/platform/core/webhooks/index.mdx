@@ -6,14 +6,8 @@ slug: /webhooks
 description: An introduction to using webhooks to receive information and events about calls and messages.
 ---
 
-## What is a Webhook?
-
 <Note>
-draft
-</Note>
-
-<Note>
-Looking for TwiML(tm) compatible webhooks? Please refer to the [Compatibility API](/docs/compatibility-api/guides/webhooks) documentation.
+Looking for TwiML™ compatible webhooks? Please refer to the [Compatibility API webhooks](/docs/compatibility-api/guides/webhooks) documentation.
 </Note>
 
 [Webhooks](https://en.wikipedia.org/wiki/Webhook) are HTTP requests sent to your server from SignalWire when an event occurs. They help receive information about events like inbound calls to your phone numbers, or messages. 
@@ -23,6 +17,7 @@ SignalWire notifies your server of key events by sending an HTTP request to the 
 - Inbound calls and messages to your phone numbers
 - Campaign Registry events
 - AI agent conversation summaries
+- Call recording status updates
 
 ```mermaid
 flowchart LR
@@ -33,7 +28,7 @@ flowchart LR
     D --> F[Other internal services]
 ```
 
-In addition to getting information about events, some webhooks also allow you to tell SignalWire how an event should be handled. 
+In addition to getting information about events, some webhooks also allow you to tell SignalWire how an event should be handled (via [SWML](/docs/swml)). 
  
 ```mermaid
 flowchart LR
@@ -44,26 +39,18 @@ flowchart LR
     F -- "200 OK, SWML" --> B
 ```
 
-For example, you might use a webhook to handle an inbound call by reading the instructions in your webhook to play an IVR, route the customer to the right department, and connect them with an agent. You could also use a webhook as a status callback where each status change of a message is sent to your web application which might store some instructions for handling emergent errors.
+For example, you might use a webhook to handle an inbound call by reading the instructions in your webhook to play an IVR, route the customer to the right department, and connect them with an agent, all by replying with appropriate SWML instructions. 
 
-To learn how to use ngrok for local testing, visit [ngrok.com](https://ngrok.com).
+During development, you can use localhost tunneling applications like [ngrok](https://ngrok.com) to test your webhook handlers running on your development machine..
 
-<Info>
+To learn how to use ngrok for local testing, visit [the ngrok quickstart guide](https://ngrok.com/docs/getting-started).
 
-Some webhooks require `<Response>` from your web application. In this instance, your web application **MUST** send valid XML to the webhook request, **EVEN** if the XML response is just an empty `<Response>` tag. 
+## Status callbacks to keep track of events
 
-... swml ...
+You can configure SignalWire to send status callbacks to your webhook handler when certain events occur. The setting
+for webhooks can be found in the **Phone Number Settings** page in the SignalWire Dashboard, and they are assigned per phone number.
 
-Other webhooks do not require a response, such as the status callback example above. This webhook request only requires an HTTP status code of 200 OK, meaning that the request was successful.
-
-</Info>
-
-
-### Status Callback
-
-When one of your SignalWire phone numbers receives a call or is used to place an outgoing call, you can have asynchronous HTTP requests sent to your server that tell you about the status changes and the call details. You can do this by setting the `StatusCallback` parameter when [placing an outbound call](/docs/apis/calling/calls/call-commands) through the API.
-
-SignalWire will send you a status callback when the call is completed unless directed otherwise; you can use the events `initiated`, `ringing`, `answered`, and `completed` in the `StatusCallbackEvent` parameter in order to get updates when each of those statuses is reached.
+You can also set status callback URLs programmatically when creating a resource or a phone number from the API.
 
 <Cards>
 <Card
@@ -78,20 +65,44 @@ SignalWire will send you a status callback when the call is completed unless dir
 >
   Learn how to receive recording status updates via webhooks.
 </Card>
+<Card
+  title="Message status callback"
+  href="/docs/compatibility-api/rest/messages/webhooks/message-status-callback"
+>
+  Learn how to receive message status updates via webhooks.
+</Card>
+<Card
+  title="SMS status callback"
+  href="/docs/compatibility-api/rest/messages/webhooks/sms-status-callback"
+>
+  Learn how to receive SMS delivery status updates via webhooks.
+</Card>
+<Card
+  title="Transcription status callback"
+  href="/docs/compatibility-api/rest/recording-transcriptions/webhooks/transcription-status-callback"
+>
+  Learn how to receive transcription status updates via webhooks.
+</Card>
+<Card
+  title="10DLC status callback"
+  href="/docs/apis/relay-rest/campaign-registry/webhooks/ten-dlc-status-callback"
+>
+  Learn how to receive 10DLC campaign registration status updates via webhooks.
+</Card>
 </Cards>
 
+## Handle events with SWML
 
-<Info>
+You can configure a phone number to handle incoming calls by using a [SWML script](/docs/swml). SWML is a JSON or YAML format that tells SignalWire how to handle a phone call. You can return SWML from your webhook handler to SignalWire to handle the call.
 
-SignalWire doesn't show a message as Delivered unless we can 100% confirm delivery to the end network by getting a Delivery Receipt (DLR) from the receiving carrier. A status of **Sent** means that the message left SignalWire successfully and reached our downstream peer. Once we receive the Delivery Receipt indicating that the message entered the end carrier's network, it switches to **Delivered**.
+<Card
+  title="Handling calls from code"
+  href="/docs/swml/guides/remote-server"
+>
+  Learn how to handle incoming calls and messages from code.
+</Card>
 
-If you see a message with a status of **Delivered** that did not reach the end handset, feel free to open a support ticket with the [message SID](/docs/platform/what-is-a-sid) for us to escalate the example to our carrier partners to find out why the MNOs (Verizon, AT&T, T-Mobile, etc) marked it as **Delivered**.
-
-Some carriers may send delayed DLRs, and others may not send DLRs at all. Providers do not currently allow for any DLRs for MMS, so you will only ever see the status **Sent**.
-
-</Info>
-
-## How to Configure Your Webhook to a SignalWire Number
+## Configure webhooks for phone numbers
 
 To access the number settings and configure the webhooks in the SignalWire Space, click on **Phone Numbers** and find the number to set up.
 
@@ -101,37 +112,44 @@ To access the number settings and configure the webhooks in the SignalWire Space
 
 </Frame>
 
-Click on the phone number to be set up and then click to **Edit Settings**.
+Click on the phone number to be set up and then click to **Edit Settings**. In phone number settings you can set webhooks to handle events with SWML, or cXML. You can also set status callback URLs for events.
 
-In the Edit Settings page, the number can be given a name and set up **Voice/Fax & Messaging** settings.
+## Verify webhook signature
 
-Navigate to either the **Voice & Fax** section or the **Messaging** section depending on your use case, as you will have to set different webhooks for each.
+To verify webhooks that originated from SignalWire, SignalWire signs its requests with a digital HMAC security key. You can verify that the security key matches the key documented in your Dashboard's [API Credentials](https://my.signalwire.com?page=credentials) with the `validateRequest` method.
 
-For detailed instructions on how to configure your webhook to a SignalWire number, see the [Making and Receiving Phone Calls](/docs/swml/guides/make-and-receive-calls) guide.
+<Frame caption="The Signing Key on the API Credentials page">
 
-<Warning title="Voice vs Fax">
-If you set your phone number to handle incoming calls using Fax, you will **NOT** be able to also use it for voice. The reverse is also true! You can only use a phone number for voice **OR** fax, not both.
+![The API Credentials page in a SignalWire Space showing the signing key](/assets/images/dashboard/credentials/api-credentials-with-signing-key.webp)
+
+</Frame>
+
+<Warning title="This step is not optional!">
+For production applications, it is extremely important to verify the webhook signature to ensure the requests are coming from SignalWire and not a malicious third party. 
 </Warning>
 
-Select **SWML Script** for **When a Call Comes In** to use a SWML script. If you are using the [RELAY Realtime API](/docs/server-sdk/node), select **RELAY** for **When a Call Comes In**. The other options are all third-party integrations you can choose to use for different use cases!
-
-GET and POST are two different types of HTTP methods. GET is used for requesting something from a resource, whereas POST is used to send data to a server. If you were using a webhook that pointed towards your web application for handling inbound calls, you would use a POST request. If you were using an XML Bin to `<Say>` (text to speech) a quick message for your customers to listen to when calling your number, you would use GET.
-
-## How to Verify Webhooks
-
-To verify webhooks that originated from SignalWire, SignalWire signs its requests with a digital HMAC security key. You can verify that the security key matches the key documented in your Dashboard's [API Credentials](https://my.signalwire.com?page=credentials) with the `validateRequest` method:
-
 ```js
-import { verifyWebhook } from "@signalwire/signalwire-js";
+import { validateRequest } from "@signalwire/js";
 
-app.post("/mywebhook", (req, res) => {
-  const valid = verifyWebhook(
-    "<--Signing Key copied from your credentials page-->",
-    req.headers["x-signalwire-signature"],
-    "https://example.ngrok.io/mywebhook",
-    req.body
+// prepare raw body for validation
+app.use(express.json({
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+
+app.post("/mywebhook", (req: any, res) => {
+  const valid = validateRequest(
+    "<SIGNING_KEY_FROM_Dashboard>",
+    req.headers["x-signalwire-signature"] as string,
+    "https://example.ngrok.io/mywebhook", //this should be the public-facing URL of your webhook handler
+    req.rawBody
   );
+
+  if (!valid) return res.status(401).send("Invalid signature");
+
+  res.sendStatus(200);
 });
 ```
 
-This method responds with a boolean value. You can continue your application's logic in the truth case and return unauthorized for the false case.
+This ensures that if a malicious third party tries to spoof a webhook request, it will be rejected.
