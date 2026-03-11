@@ -10,7 +10,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "username is required",
       attribute: "username",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })
@@ -24,7 +24,7 @@ model ResourceSipEndpointCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "encryption must be one of: disabled, optional, required",
       attribute: "encryption",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })

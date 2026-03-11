@@ -50,7 +50,7 @@ union CallResponse {
       code: "missing_required_parameter",
       message: "url must be a valid http or https url",
       attribute: "url",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-http-url-required",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })
