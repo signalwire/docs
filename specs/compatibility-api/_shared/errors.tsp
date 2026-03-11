@@ -11,7 +11,7 @@ model CompatibilityErrorResponse {
   message: string;
 
   @doc("URL for more information about the error.")
-  @example("https://developer.signalwire.com/compatibility-api/reference/errors")
+  @example("https://signalwire.com/docs/compatibility-api/reference/errors")
   more_info: string;
 
   @doc("HTTP status code.")
@@ -30,7 +30,7 @@ model CompatibilityErrorArrayItem {
   message?: string;
 
   @doc("Url for more information on error code")
-  @example("https://developer.signalwire.com/rest/compatibility-api/error-codes")
+  @example("https://signalwire.com/docs/rest/compatibility-api/error-codes")
   more_info?: string;
 }
 
@@ -124,7 +124,7 @@ model CompatibilityImportedPhoneNumberError {
   message?: string;
 
   @doc("A URL to more information about the error.")
-  @example("https://developer.signalwire.com/rest/compatibility-api/overview/error-codes")
+  @example("https://signalwire.com/docs/rest/compatibility-api/overview/error-codes")
   more_info?: string;
 
   @doc("The HTTP status code.")
