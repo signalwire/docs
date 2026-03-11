@@ -1,26 +1,48 @@
 ---
 id: 7ddc31e0-f27e-435b-b311-874b591dea27
 title: Webhooks
-sidebar-title: Webhooks
 position: 0
 slug: /webhooks
-x-custom:
-  ported_from_readme: true
-  tags:
-    - product:numbers
-    - product:voice
-    - product:messaging
-    - product:fax
-    - sdk:compatibility
-    - language:nodejs
 description: An introduction to using webhooks to receive information and events about calls and messages.
 ---
 
 ## What is a Webhook?
 
-SignalWire APIs allow you to easily send/receive HTTP requests from/to the SignalWire servers. For example, you can easily make an HTTP request to SignalWire in order to [Create a Call](/docs/apis/calling/calls/call-commands) or [Send a Message](/docs/compatibility-api/rest/messages/create-message). However, if you are using SignalWire to handle inbound calls or inbound messages, you will need to use a webhook!
+<Note>
+draft
+</Note>
 
-A webhook is an HTTP(S) request sent to your web application when a key event has occurred, such as an inbound call, inbound message, or a status change. This allows SignalWire to query your web application in order for instructions on what to do next.
+<Note>
+Looking for TwiML(tm) compatible webhooks? Please refer to the [Compatibility API](/docs/compatibility-api/guides/webhooks) documentation.
+</Note>
+
+[Webhooks](https://en.wikipedia.org/wiki/Webhook) are HTTP requests sent to your server from SignalWire when an event occurs. They help receive information about events like inbound calls to your phone numbers, or messages. 
+
+SignalWire notifies your server of key events by sending an HTTP request to the webhook URL you have configured. Some common webhooks include:
+
+- Inbound calls and messages to your phone numbers
+- Campaign Registry events
+- AI agent conversation summaries
+
+```mermaid
+flowchart LR
+    A["Inbound Call"] --> B[SignalWire]
+    B --> C["Webhook HTTP request to your server"]
+    C --> D[[Your webhook handler]]
+    D --> E[(Database)]
+    D --> F[Other internal services]
+```
+
+In addition to getting information about events, some webhooks also allow you to tell SignalWire how an event should be handled. 
+ 
+```mermaid
+flowchart LR
+    A["Incoming messsage"] --> B[SignalWire]
+    B --> C["Webhook HTTP request to your server"]
+    C --> D[[Your webhook handler]]
+    D --> F["Generate SWML to reply to the message"]
+    F -- "200 OK, SWML" --> B
+```
 
 For example, you might use a webhook to handle an inbound call by reading the instructions in your webhook to play an IVR, route the customer to the right department, and connect them with an agent. You could also use a webhook as a status callback where each status change of a message is sent to your web application which might store some instructions for handling emergent errors.
 
@@ -28,17 +50,14 @@ To learn how to use ngrok for local testing, visit [ngrok.com](https://ngrok.com
 
 <Info>
 
-Some webhooks require `<Response>` from your web application, such as the earlier example of the inbound call being routed through an IVR in your application. In this instance, your web application **MUST** send valid XML to the webhook request, **EVEN** if the XML response is just an empty `<Response>` tag. If you do not return valid XML, you will get a document parse error and inconsistent results.
+Some webhooks require `<Response>` from your web application. In this instance, your web application **MUST** send valid XML to the webhook request, **EVEN** if the XML response is just an empty `<Response>` tag. 
+
+... swml ...
 
 Other webhooks do not require a response, such as the status callback example above. This webhook request only requires an HTTP status code of 200 OK, meaning that the request was successful.
 
 </Info>
 
-## Voice Webhooks
-
-### Inbound Voice Call
-
-You will receive an incoming voice call webhook request when you have your webhook configured to handle inbound calls to a number. You can use a webhook that points to your web application hosted on a server or ssh tunnel, or you could also use SWML Scripts as webhooks for serverless code!
 
 ### Status Callback
 
@@ -46,36 +65,25 @@ When one of your SignalWire phone numbers receives a call or is used to place an
 
 SignalWire will send you a status callback when the call is completed unless directed otherwise; you can use the events `initiated`, `ringing`, `answered`, and `completed` in the `StatusCallbackEvent` parameter in order to get updates when each of those statuses is reached.
 
-### Recording Status Callback
-
-If you are recording your voice calls, you may notice that the recording is not always instantly available due to the need for some audio processing to transcode it into a compressed audio format after the voice call is complete. If you would like to be notified when it's done, you can use recording status callbacks!
-
-There are a few different statuses your recording could have; `in-progress`, `completed`, `absent`, or `failed`. When the voice recording is complete, a request will be sent with the completed status and the audio file link within the 'RecordingUrl' parameter.
-
-## SMS Webhooks
-
-### Inbound Message
-
-You will receive an incoming message webhook request when you have your webhook configured to handle inbound messages to a number. You can use a webhook that points to your web application hosted on a server or ssh tunnel, or you could also use SWML Scripts as webhooks for serverless code!
-
-It is also possible to receive an incoming text message, and not send a reply message back to the user. To do that, you can simply use a LaML Bin with an empty response tag for handling inbound messages, as shown below:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-</Response>
-```
-
-### Status Callbacks
-
-Like status callbacks for voice, SMS status callbacks are a way to have updates on the delivery of your messages sent directly to your server! Each time the message status changes (e.g., from `queued` to `sending` to `sent` to `delivered`), SignalWire will send an update to the URL that you have designated.
-
-You can do this by setting the `StatusCallback` parameter when [sending an outbound message](/docs/compatibility-api/rest/messages/create-message) through the API.
+<Cards>
+<Card
+  title="Incoming call status callback"
+  href="/docs/compatibility-api/rest/incoming-phone-numbers/webhooks/incoming-call-status-callback"
+>
+  Learn how to track incoming call status changes via webhooks.
+</Card>
+<Card
+  title="Recording status callback"
+  href="/docs/compatibility-api/rest/recordings/webhooks/recording-status-callback"
+>
+  Learn how to receive recording status updates via webhooks.
+</Card>
+</Cards>
 
 
 <Info>
 
-SignalWire can’t and won’t show a message as Delivered unless we can 100% confirm delivery to the end network by getting a Delivery Receipt (DLR) from the receiving carrier. A status of **Sent** means that the message left SignalWire successfully and reached our downstream peer. Once we receive the Delivery Receipt indicating that the message entered the end carrier's network, it switches to **Delivered**.
+SignalWire doesn't show a message as Delivered unless we can 100% confirm delivery to the end network by getting a Delivery Receipt (DLR) from the receiving carrier. A status of **Sent** means that the message left SignalWire successfully and reached our downstream peer. Once we receive the Delivery Receipt indicating that the message entered the end carrier's network, it switches to **Delivered**.
 
 If you see a message with a status of **Delivered** that did not reach the end handset, feel free to open a support ticket with the [message SID](/docs/platform/what-is-a-sid) for us to escalate the example to our carrier partners to find out why the MNOs (Verizon, AT&T, T-Mobile, etc) marked it as **Delivered**.
 
@@ -114,10 +122,10 @@ GET and POST are two different types of HTTP methods. GET is used for requesting
 To verify webhooks that originated from SignalWire, SignalWire signs its requests with a digital HMAC security key. You can verify that the security key matches the key documented in your Dashboard's [API Credentials](https://my.signalwire.com?page=credentials) with the `validateRequest` method:
 
 ```js
-import { RestClient } from "@signalwire/compatibility-api";
+import { verifyWebhook } from "@signalwire/signalwire-js";
 
 app.post("/mywebhook", (req, res) => {
-  const valid = RestClient.validateRequest(
+  const valid = verifyWebhook(
     "<--Signing Key copied from your credentials page-->",
     req.headers["x-signalwire-signature"],
     "https://example.ngrok.io/mywebhook",
@@ -126,40 +134,4 @@ app.post("/mywebhook", (req, res) => {
 });
 ```
 
-This method respond with a boolean value. You can continue your application's logic in the truth case and return unauthorized for the false case.
-
-## Webhook Connection Overrides
-
-SignalWire supports URL fragment parameters that can be added to your webhook URL to override default HTTP callback connection settings on a per-request basis. These overrides allow you to:
-
-- Set longer timeouts to better support intermittent network issues between SignalWire and your server
-- Set shorter timeouts to speed up failover to a fallback URL in case of an outage
-- Control the total timeout limit for all retries
-
-### Supported URL Fragment Parameters
-
-SignalWire allows per-request HTTP callback overrides using URL fragments:
-
-```
-https://your-server.com/endpoint#key=value&key2=value2
-```
-
-### Parameters
-
-| Parameter | Valid values | Default | Notes |
-|-----------|--------------|---------|-------|
-| Connect Timeout (`ct`) | 100 - 10000 (ms) | 5000 | The timeout in milliseconds SignalWire will wait to establish its TCP connection to your web server. |
-| Read Timeout (`rt`) | 100 - 15000 (ms) | 15000 | The amount of time in milliseconds after sending your webhook an HTTP request that SignalWire will wait for the initial HTTP response packet. Also applies to the amount of time SignalWire will wait between individual packets within your HTTP response. |
-| Total Time (`tt`) | 100 - 15000 (ms) | 15000 | The total time allowed for all timeouts including retries. If not set, the maximum limit is enforced. |
-
-### Examples
-
-#### Set Connect Timeout to 1 second
-```
-https://example.com/foo#ct=1000
-```
-
-#### Set Connect + Read Timeout to 1 second each
-```
-https://example.com/foo#ct=1000&rt=1000
-```
+This method responds with a boolean value. You can continue your application's logic in the truth case and return unauthorized for the false case.
