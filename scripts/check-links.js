@@ -847,8 +847,17 @@ Examples:
     }
 
     // Add other errors
-    for (const { url, error, sourceUrl } of allOtherErrors) {
-      results.finalFailures.push({ url, error, sourceUrl });
+    for (const { url, error, status, sourceUrl } of allOtherErrors) {
+      // Derive a human-readable status string from the lychee error object.
+      // `status` may be a number, a string, or undefined; `error` is the raw
+      // lychee object (e.g. { status: { text: "...", code: 0 }, url: "..." }).
+      const readableStatus =
+        status ||
+        error?.status?.text ||
+        (typeof error === 'string' ? error : null) ||
+        error?.message ||
+        'unknown';
+      results.finalFailures.push({ url, status: readableStatus, sourceUrl });
     }
   }
 
