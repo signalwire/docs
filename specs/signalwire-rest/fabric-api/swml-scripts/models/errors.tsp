@@ -10,7 +10,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "contents is required",
       attribute: "contents",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })
@@ -24,7 +24,7 @@ model SwmlScriptCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "contents must be valid SWML JSON",
       attribute: "contents",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })

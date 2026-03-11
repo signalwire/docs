@@ -10,7 +10,7 @@ using Types.StatusCodes;
       code: "missing_required_parameter",
       message: "display_name is required",
       attribute: "display_name",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-missing-required-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })
@@ -24,7 +24,7 @@ model ConferenceRoomCreateStatusCode422 is StatusCode422;
       code: "invalid_parameter_value",
       message: "max_members must be greater than 0",
       attribute: "max_members",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })

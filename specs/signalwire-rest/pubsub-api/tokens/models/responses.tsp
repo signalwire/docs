@@ -8,7 +8,7 @@ import "../../../types/status-codes";
       code: "not_a_valid_json",
       message: "Permissions must be valid JSON",
       attribute: "permissions",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#not_a_valid_json",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })
