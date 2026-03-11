@@ -10,7 +10,7 @@ using Types.StatusCodes;
       code: "exceeds_history_logs_limit",
       message: "The value exceeds the 2025-02-09 date limit.",
       attribute: "created_before",
-      url: "https://developer.signalwire.com/rest/overview/error-codes/#exceeds_history_logs_limit",
+      url: "https://signalwire.com/docs/rest/overview/error-codes/#exceeds_history_logs_limit",
     }
   ],
 })
@@ -24,7 +24,7 @@ model FaxLogsListStatusCode422 is StatusCode422;
       code: "exceeds_history_logs_limit",
       message: "The value exceeds the 2025-02-09 date limit.",
       attribute: "created_at",
-      url: "https://developer.signalwire.com/rest/overview/error-codes/#exceeds_history_logs_limit",
+      url: "https://signalwire.com/docs/rest/overview/error-codes/#exceeds_history_logs_limit",
     }
   ],
 })
