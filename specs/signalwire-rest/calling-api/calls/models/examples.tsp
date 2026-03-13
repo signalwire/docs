@@ -170,6 +170,263 @@ const liveTranslateInjectExample = #{
   },
 };
 
+// Disconnect example
+const disconnectCallExample = #{
+  request: #{
+    command: "calling.disconnect",
+    id: callId,
+    params: #{},
+  },
+};
+
+// Play examples
+const playCallExample = #{
+  request: #{
+    command: "calling.play",
+    id: callId,
+    params: #{
+      control_id: "play-control-1",
+      play: #[#{ type: PlayMediaType.audio, params: #{ url: "https://example.com/audio.mp3" } }],
+      volume: 0,
+      direction: PlayDirection.both,
+    },
+  },
+};
+
+const playPauseCallExample = #{
+  request: #{
+    command: "calling.play.pause",
+    id: callId,
+    params: #{ control_id: "play-control-1" },
+  },
+};
+
+const playResumeCallExample = #{
+  request: #{
+    command: "calling.play.resume",
+    id: callId,
+    params: #{ control_id: "play-control-1" },
+  },
+};
+
+const playStopCallExample = #{
+  request: #{
+    command: "calling.play.stop",
+    id: callId,
+    params: #{ control_id: "play-control-1" },
+  },
+};
+
+const playVolumeCallExample = #{
+  request: #{
+    command: "calling.play.volume",
+    id: callId,
+    params: #{ control_id: "play-control-1", volume: 5 },
+  },
+};
+
+// Record examples
+const recordCallExample = #{
+  request: #{
+    command: "calling.record",
+    id: callId,
+    params: #{
+      control_id: "record-control-1",
+      audio: #{ format: RecordFormat.mp3, direction: PlayDirection.both, stereo: false },
+    },
+  },
+};
+
+const recordPauseCallExample = #{
+  request: #{
+    command: "calling.record.pause",
+    id: callId,
+    params: #{ control_id: "record-control-1" },
+  },
+};
+
+const recordResumeCallExample = #{
+  request: #{
+    command: "calling.record.resume",
+    id: callId,
+    params: #{ control_id: "record-control-1" },
+  },
+};
+
+const recordStopCallExample = #{
+  request: #{
+    command: "calling.record.stop",
+    id: callId,
+    params: #{ control_id: "record-control-1" },
+  },
+};
+
+// Collect examples
+const collectCallExample = #{
+  request: #{
+    command: "calling.collect",
+    id: callId,
+    params: #{
+      control_id: "collect-control-1",
+      initial_timeout: 5,
+      digits: #{ max: 4, terminators: "#" },
+    },
+  },
+};
+
+const collectStopCallExample = #{
+  request: #{
+    command: "calling.collect.stop",
+    id: callId,
+    params: #{ control_id: "collect-control-1" },
+  },
+};
+
+const collectStartInputTimersCallExample = #{
+  request: #{
+    command: "calling.collect.start_input_timers",
+    id: callId,
+    params: #{ control_id: "collect-control-1" },
+  },
+};
+
+// Detect examples
+const detectCallExample = #{
+  request: #{
+    command: "calling.detect",
+    id: callId,
+    params: #{
+      control_id: "detect-control-1",
+      detect: #{ type: DetectType.machine },
+      timeout: 30,
+    },
+  },
+};
+
+const detectStopCallExample = #{
+  request: #{
+    command: "calling.detect.stop",
+    id: callId,
+    params: #{ control_id: "detect-control-1" },
+  },
+};
+
+// Tap examples
+const tapCallExample = #{
+  request: #{
+    command: "calling.tap",
+    id: callId,
+    params: #{
+      control_id: "tap-control-1",
+      tap: #{ type: "audio", params: #{ direction: PlayDirection.both } },
+      device: #{ type: TapDeviceType.rtp, params: #{ addr: "192.168.1.100", port: 5060 } },
+    },
+  },
+};
+
+const tapStopCallExample = #{
+  request: #{
+    command: "calling.tap.stop",
+    id: callId,
+    params: #{ control_id: "tap-control-1" },
+  },
+};
+
+// Stream examples
+const streamCallExample = #{
+  request: #{
+    command: "calling.stream",
+    id: callId,
+    params: #{
+      control_id: "stream-control-1",
+      url: "wss://example.com/stream",
+      track: StreamTrack.both_tracks,
+    },
+  },
+};
+
+const streamStopCallExample = #{
+  request: #{
+    command: "calling.stream.stop",
+    id: callId,
+    params: #{ control_id: "stream-control-1" },
+  },
+};
+
+// Denoise examples
+const denoiseCallExample = #{
+  request: #{
+    command: "calling.denoise",
+    id: callId,
+    params: #{},
+  },
+};
+
+const denoiseStopCallExample = #{
+  request: #{
+    command: "calling.denoise.stop",
+    id: callId,
+    params: #{},
+  },
+};
+
+// Transcribe examples (distinct from live_transcribe)
+const transcribeCallExample = #{
+  request: #{
+    command: "calling.transcribe",
+    id: callId,
+    params: #{
+      control_id: "transcribe-control-1",
+      status_url: "https://example.com/status_callback",
+    },
+  },
+};
+
+const transcribeStopCallExample = #{
+  request: #{
+    command: "calling.transcribe.stop",
+    id: callId,
+    params: #{ control_id: "transcribe-control-1" },
+  },
+};
+
+// AI Stop example
+const aiStopCallExample = #{
+  request: #{
+    command: "calling.ai.stop",
+    id: callId,
+    params: #{ control_id: "ai-control-1" },
+  },
+};
+
+// Fax Stop examples
+const sendFaxStopCallExample = #{
+  request: #{
+    command: "calling.send_fax.stop",
+    id: callId,
+    params: #{ control_id: "fax-send-control-1" },
+  },
+};
+
+const receiveFaxStopCallExample = #{
+  request: #{
+    command: "calling.receive_fax.stop",
+    id: callId,
+    params: #{ control_id: "fax-receive-control-1" },
+  },
+};
+
+// Refer example
+const referCallExample = #{
+  request: #{
+    command: "calling.refer",
+    id: callId,
+    params: #{
+      device: #{ type: "sip", params: #{ to: "sip:destination@example.com" } },
+    },
+  },
+};
+
 // Transfer example
 const transferCallExample = #{
   request: #{
