@@ -5,7 +5,7 @@ import "../../../_shared/webhook/decorator.tsp";
   Payload sent by SignalWire to your SMS Status Callback URL when the status of an SMS/MMS message changes.
 
   Configure this callback using the `StatusCallback` parameter when
-  [sending an outgoing message](/rest/compatibility-api/endpoints/create-message).
+  [sending an outgoing message](/docs/compatibility-api/rest/messages/create-message).
 
   There are 8 possible message statuses:
 
