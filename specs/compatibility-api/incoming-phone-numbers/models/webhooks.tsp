@@ -6,8 +6,8 @@ import "../../../_shared/webhook/decorator.tsp";
 
   Configure `StatusCallback` at the phone number level via the dashboard
   (**Phone Numbers** → select a number → **Phone Number Settings**) or programmatically via the
-  [create](/rest/compatibility-api/endpoints/create-incoming-phone-number) or
-  [update](/rest/compatibility-api/endpoints/update-incoming-phone-number) Incoming Phone Number API endpoints.
+  [create](/docs/compatibility-api/rest/incoming-phone-numbers/create-incoming-phone-number) or
+  [update](/docs/compatibility-api/rest/incoming-phone-numbers/update-incoming-phone-number) Incoming Phone Number API endpoints.
 
   By default, the webhook fires only when the call is `completed` or `failed`, making it well-suited
   for tracking inbound call success rate, call quality, and total call volume in a call center context.

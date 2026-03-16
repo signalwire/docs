@@ -32,7 +32,7 @@ model LanguagesBase {
   @doc("""
     Enables emotion detection for the set TTS engine. This allows the AI to express emotions when speaking.
     A global emotion or specific emotions for certain topics can be set within the prompt of the AI.
-    IMPORTANT: Only works with [`Cartesia`](/voice/getting-started/voice-and-languages#cartesia) TTS engine.
+    IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
     """)
   @example("auto")
   emotion?: "auto";
@@ -40,7 +40,7 @@ model LanguagesBase {
   @doc("""
     The speed to use for the specified TTS engine. This allows the AI to speak at a different speed at different points in the conversation.
     The speed behavior can be defined in the prompt of the AI.
-    IMPORTANT: Only works with [`Cartesia`](/voice/getting-started/voice-and-languages#cartesia) TTS engine.
+    IMPORTANT: Only works with [`Cartesia`](/docs/platform/voice/tts/cartesia) TTS engine.
     """)
   @example("auto")
   speed?: "auto";
