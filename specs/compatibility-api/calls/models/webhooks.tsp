@@ -5,11 +5,11 @@ import "../../../_shared/webhook/decorator.tsp";
   Payload sent by SignalWire to your Voice Status Callback URL when the status of a call changes.
 
   Configure this callback using the `StatusCallback` and `StatusCallbackEvent` parameters when
-  [creating a call via the API](/rest/compatibility-api/endpoints/create-a-call) or using
-  [Dial](/compatibility-api/cxml/voice/dial) with
-  [Number](/compatibility-api/cxml/voice/number-noun),
-  [SIP](/compatibility-api/cxml/voice/sip-noun), or
-  [Conference](/compatibility-api/cxml/voice/conference-noun).
+  [creating a call via the API](/docs/compatibility-api/rest/calls/create-a-call) or using
+  [Dial](/docs/compatibility-api/cxml/reference/voice/dial) with
+  [Number](/docs/compatibility-api/cxml/reference/voice/number),
+  [SIP](/docs/compatibility-api/cxml/reference/voice/sip), or
+  [Conference](/docs/compatibility-api/cxml/reference/voice/conference).
 
   Use `StatusCallbackEvent` to receive every call progress event — not just the final status —
   along with current call state and all parameters below.
@@ -177,10 +177,10 @@ model VoiceStatusCallbackPayload {
   sending it via email, or forwarding the URL via SMS.
 
   Configure `RecordingStatusCallback` when
-  [creating a call via the API](/rest/compatibility-api/endpoints/create-a-call) or when using
-  [Dial](/compatibility-api/cxml/voice/dial),
-  [Conference](/compatibility-api/cxml/voice/conference-noun), or
-  [Record](/compatibility-api/cxml/voice/record).
+  [creating a call via the API](/docs/compatibility-api/rest/calls/create-a-call) or when using
+  [Dial](/docs/compatibility-api/cxml/reference/voice/dial),
+  [Conference](/docs/compatibility-api/cxml/reference/voice/conference), or
+  [Record](/docs/compatibility-api/cxml/reference/voice/record).
 
   Use `RecordingStatusCallbackEvent` to request callbacks for specific events. If omitted, only the
   `completed` event is sent. Possible values: `in-progress`, `completed`, `absent`.

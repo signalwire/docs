@@ -5,7 +5,7 @@ import "../../../_shared/webhook/decorator.tsp";
   Payload sent by SignalWire to your Transcription Status Callback URL when the status of a transcription changes.
 
   Configure this callback by enabling transcription on a recording via the
-  [Record](/compatibility-api/cxml/voice/record) verb (`transcribe=true`) and setting `transcribeCallback`
+  [Record](/docs/compatibility-api/cxml/reference/voice/record) verb (`transcribe=true`) and setting `transcribeCallback`
   to your webhook URL.
 
   Your app can use these parameters to handle the transcription — for example, uploading the text to
