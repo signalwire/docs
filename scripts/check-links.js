@@ -338,6 +338,8 @@ function runLychee(urls, options = {}) {
     noProgress = false,
     concurrency,
     label = 'links',
+    remap,
+    allowHttp = false,
   } = options;
 
   if (urls.length === 0) {
@@ -363,6 +365,14 @@ function runLychee(urls, options = {}) {
 
   if (concurrency) {
     args.push('--max-concurrency', String(concurrency));
+  }
+
+  if (remap) {
+    args.push('--remap', remap);
+  }
+
+  if (allowHttp) {
+    args.push('--scheme', 'https', '--scheme', 'http', '--insecure');
   }
 
   if (noProgress) {
@@ -708,6 +718,9 @@ async function main() {
   let skipHttp = false;
   let noProgress = false;
   let outputFile = null;
+  let remap = null;
+  let concurrency = null;
+  let local = null;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--sitemap' && args[i + 1]) sitemapUrl = args[++i];
@@ -715,12 +728,18 @@ async function main() {
     if (args[i] === '--skip-http') skipHttp = true;
     if (args[i] === '--no-progress') noProgress = true;
     if (args[i] === '--output' && args[i + 1]) outputFile = args[++i];
+    if (args[i] === '--remap' && args[i + 1]) remap = args[++i];
+    if (args[i] === '--concurrency' && args[i + 1]) concurrency = parseInt(args[++i], 10);
+    if (args[i] === '--local' && args[i + 1]) local = parseInt(args[++i], 10);
     if (args[i] === '-h' || args[i] === '--help') {
       console.log(`
 Usage: node scripts/check-links.js --sitemap <url> [options]
 
 Options:
   --sitemap <url>   Sitemap URL to check (required)
+  --local <port>    Check against localhost on the given port (auto-remaps and sets sitemap)
+  --remap <mapping> Remap URLs before checking (e.g. "https://old.com https://new.com")
+  --concurrency <n> Max concurrent requests for lychee (default: from lychee.toml)
   --skip-github     Skip GitHub URL verification (both local and HTTP)
   --skip-http       Skip all HTTP link checking (lychee)
   --no-progress     Disable progress output (for CI)
@@ -736,6 +755,12 @@ Examples:
   # Check a preview deployment
   node scripts/check-links.js --sitemap https://preview-xxx.docs.buildwithfern.com/sitemap.xml
 
+  # Check against local self-hosted container
+  node scripts/check-links.js --local 3000 --skip-github
+
+  # Check self-hosted docs via tunnel (remap production URLs to tunnel)
+  node scripts/check-links.js --sitemap https://tunnel.trycloudflare.com/docs/sitemap.xml --remap "https://signalwire.com/docs https://tunnel.trycloudflare.com/docs"
+
   # Quick check (skip GitHub for speed)
   node scripts/check-links.js --sitemap <url> --skip-github
 `);
@@ -746,6 +771,56 @@ Examples:
   log.header('Link Checker');
   log.newline();
 
+  // --local: auto-configure sitemap, remap, and scheme for localhost
+  if (local) {
+    const localBase = `http://localhost:${local}`;
+
+    // Read custom-domain from docs.yml to know what to remap from
+    const docsYmlPath = join(REPO_ROOT, 'fern', 'docs.yml');
+    let productionBase = null;
+    try {
+      const docsYml = readFileSync(docsYmlPath, 'utf8');
+      const domainMatch = docsYml.match(/custom-domain:\s*(.+)/);
+      if (domainMatch) {
+        productionBase = `https://${domainMatch[1].trim()}`;
+      }
+    } catch {
+      // Fall through
+    }
+
+    if (!productionBase) {
+      log.error('Could not read custom-domain from fern/docs.yml');
+      process.exit(1);
+    }
+
+    // Detect base path from sitemap
+    let basePath = '';
+    try {
+      // Try common paths
+      for (const tryPath of ['/docs/sitemap.xml', '/sitemap.xml']) {
+        const resp = await fetch(`${localBase}${tryPath}`);
+        if (resp.ok) {
+          sitemapUrl = `${localBase}${tryPath}`;
+          basePath = tryPath.replace('/sitemap.xml', '');
+          break;
+        }
+      }
+    } catch {
+      // Fall through
+    }
+
+    if (!sitemapUrl) {
+      log.error(`Could not find sitemap at ${localBase}. Is the container running?`);
+      process.exit(1);
+    }
+
+    remap = `${productionBase} ${localBase}${basePath}`;
+    log.info(`Local mode: port ${local}`);
+    log.info(`Sitemap: ${sitemapUrl}`);
+    log.info(`Remap: ${productionBase} → ${localBase}${basePath}`);
+    log.newline();
+  }
+
   // Sitemap URL is required
   if (!sitemapUrl) {
     log.error('Error: --sitemap <url> is required');
@@ -754,7 +829,17 @@ Examples:
   }
 
   // 1. Fetch sitemap URLs
-  const sitemapUrls = await fetchSitemap(sitemapUrl);
+  let sitemapUrls = await fetchSitemap(sitemapUrl);
+
+  // Remap sitemap URLs if --remap is specified
+  if (remap) {
+    const [from, to] = remap.split(' ');
+    if (from && to) {
+      log.info(`Remapping URLs: ${from} → ${to}`);
+      sitemapUrls = sitemapUrls.map(url => url.replace(from, to));
+    }
+  }
+
   log.info(`Found ${sitemapUrls.length} URLs in sitemap`);
   log.debug(`Sample URLs: ${sitemapUrls.slice(0, 3).join(', ')}${sitemapUrls.length > 3 ? '...' : ''}`);
 
@@ -792,6 +877,9 @@ Examples:
     // Main lychee run - exclude GitHub entirely (handled separately)
     results.httpMain = runLychee(sitemapUrls, {
       noProgress,
+      remap,
+      concurrency,
+      allowHttp: !!local,
       label: 'non-GitHub links',
     });
 
@@ -800,6 +888,7 @@ Examples:
       log.newline();
       results.githubHttp = runLychee(githubUrls.httpCheck, {
         noProgress,
+        remap,
         concurrency: GITHUB_HTTP_CONCURRENCY,
         label: 'GitHub HTTP links',
       });
