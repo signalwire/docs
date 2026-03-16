@@ -10,7 +10,7 @@ using Types.StatusCodes;
       code: "invalid_parameter",
       message: "Parameter value is invalid",
       attribute: "page_size",
-      url: "https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#field-invalid-parameter",
+      url: "https://signalwire.com/docs/apis/error-codes",
     }
   ],
 })

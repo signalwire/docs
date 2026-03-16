@@ -101,7 +101,7 @@ namespace Types.StatusCodes {
     attribute?: string | null;
 
     @doc("A link to documentation about this error.")
-    @example("https://developer.signalwire.com/rest/signalwire-rest/overview/error-codes#invalid_parameter")
+    @example("https://signalwire.com/docs/apis/error-codes")
     url: string;
   }
 
@@ -137,7 +137,7 @@ namespace Types.StatusCodes {
     message: string;
 
     @doc("A link to documentation about this error.")
-    @example("https://developer.signalwire.com/compatibility-api/reference/error-codes")
+    @example("https://signalwire.com/docs/compatibility-api/reference/error-codes")
     more_info: string;
 
     @doc("The HTTP status code.")

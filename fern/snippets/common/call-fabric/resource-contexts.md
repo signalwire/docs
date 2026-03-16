@@ -1,7 +1,7 @@
 {/* Shared component: Resource Contexts */}
 
 `Contexts` in Call Fabric define the operational environment or 'scenario' under which
-[Resources](/platform/call-fabric/resources) operate.
+[Resources](/docs/platform/call-fabric/resources) operate.
 They determine how resources are routed and interact with each other.
 
 Every Space has two contexts:

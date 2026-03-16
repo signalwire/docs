@@ -25,7 +25,13 @@ max_retries = 3
 retry_wait_time = 10
 
 # Maximum concurrent requests
-max_concurrency = 20
+max_concurrency = 128
+
+# Don't check URL fragments/anchors (e.g. #section-name).
+# Fragment validation requires fetching and parsing the full HTML of each target
+# page, which greatly increases the number of requests and triggers the known
+# lychee SendError panic (race condition during shutdown).
+include_fragments = false
 
 # Only test links with the given schemes (e.g. https).
 # Omit to check links with any other scheme.
@@ -41,6 +47,8 @@ exclude = [
   "^https://example\\.com",
   "^https://github\\.com/owner/repo",
   "github\\.com/your-org/",
+  # Government sites that block automated requests
+  "^https://(www\\.)?fcc\\.gov",
 
   # Analytics and tracking
   "^https://us\\.i\\.posthog\\.com",
@@ -54,11 +62,23 @@ exclude = [
   "^https://x\\.com",
   "^https://www\\.npmjs\\.com",
   "^https://cdn\\.simpleicons\\.org",
+  "^https://(www\\.)?ctia\\.org",
+  "^https://(www\\.)?pcre\\.org",
+
+  # Auto-generated links (Fern "Ask AI" feature)
+  "^https://claude\\.ai",
 
   # GitHub URLs (verified locally or via separate low-concurrency check)
   # Note: This blanket exclude is used when excludeGithub=true in the Node script
   # The script handles GitHub URLs separately to avoid rate limiting
   "^https://github\\.com/",
+
+  # Static assets (CSS, JS, fonts, images) — no need to link-check these
+  "\\.(css|js|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|ico)([?#]|$)",
+
+  # Fern renders a phantom /assets/images/... URL from a CSS comment (fixed in styles.css,
+  # but keep this exclude until the fix is deployed and confirmed)
+  "/assets/images/\\.\\.\\.",
 
   # Non-HTTP schemes
   "^mailto:",
