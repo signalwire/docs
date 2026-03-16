@@ -512,6 +512,917 @@ model CallUpdateCurrentCallRequest {
   params: CallUpdateParamsAlias;
 }
 
+// ============================================
+// Disconnect Command
+// ============================================
+
+@summary("calling.disconnect")
+model CallDisconnectRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.disconnect` command is used to disconnect a call leg.")
+  @example("calling.disconnect")
+  command: "calling.disconnect";
+
+  @doc(paramsDescription)
+  params: {};
+}
+
+// ============================================
+// Play Commands
+// ============================================
+
+@doc("The type of media to play.")
+enum PlayMediaType {
+  @doc("Play an audio file from a URL.")
+  audio,
+
+  @doc("Play text-to-speech.")
+  tts,
+
+  @doc("Play silence for a specified duration.")
+  silence,
+
+  @doc("Play a ringing tone.")
+  ring,
+}
+
+@doc("The direction of audio playback relative to the call participants.")
+enum PlayDirection {
+  @doc("Play audio only to the caller (listen direction).")
+  listen,
+
+  @doc("Play audio only to the called party (speak direction).")
+  speak,
+
+  @doc("Play audio to both parties.")
+  both,
+}
+
+@doc("A media item to play on the call.")
+model PlayMediaItem {
+  @doc("The type of media to play.")
+  @example(PlayMediaType.audio)
+  type: PlayMediaType;
+
+  @doc("Type-specific parameters for the media item.")
+  @example(#{ url: "https://example.com/audio.mp3" })
+  params?: TypeSpec.Record<unknown>;
+}
+
+@summary("calling.play")
+model CallPlayRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.play` command is used to play media on an active call.")
+  @example("calling.play")
+  command: "calling.play";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this play operation, used to control it later.")
+    @example("play-control-1")
+    control_id?: string;
+
+    @doc("Array of media objects to play.")
+    @example(#[#{ type: PlayMediaType.audio, params: #{ url: "https://example.com/audio.mp3" } }])
+    play: PlayMediaItem[];
+
+    @doc("Volume adjustment in dB (-40 to 40).")
+    @example(0)
+    @minValue(-40)
+    @maxValue(40)
+    volume?: float64 = 0;
+
+    @doc("The direction of audio playback.")
+    @example(PlayDirection.both)
+    direction?: PlayDirection = PlayDirection.both;
+
+    @doc("Number of times to loop playback. 0 for infinite loop.")
+    @example(1)
+    loop?: int32;
+
+    @doc("A URL to receive status update callbacks for the play operation.")
+    @example("https://example.com/status_callback")
+    status_url?: url;
+  };
+}
+
+@summary("calling.play.pause")
+model CallPlayPauseRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.play.pause` command pauses an active play operation.")
+  @example("calling.play.pause")
+  command: "calling.play.pause";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the play operation to pause.")
+    @example("play-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.play.resume")
+model CallPlayResumeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.play.resume` command resumes a paused play operation.")
+  @example("calling.play.resume")
+  command: "calling.play.resume";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the play operation to resume.")
+    @example("play-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.play.stop")
+model CallPlayStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.play.stop` command stops an active play operation.")
+  @example("calling.play.stop")
+  command: "calling.play.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the play operation to stop.")
+    @example("play-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.play.volume")
+model CallPlayVolumeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.play.volume` command adjusts the volume of an active play operation.")
+  @example("calling.play.volume")
+  command: "calling.play.volume";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the play operation to adjust.")
+    @example("play-control-1")
+    control_id: string;
+
+    @doc("Volume adjustment in dB (-40 to 40).")
+    @example(5)
+    @minValue(-40)
+    @maxValue(40)
+    volume: float64;
+  };
+}
+
+// ============================================
+// Record Commands
+// ============================================
+
+@doc("The audio format for recording.")
+enum RecordFormat {
+  @doc("MP3 audio format.")
+  mp3,
+
+  @doc("WAV audio format.")
+  wav,
+}
+
+@doc("Audio recording parameters.")
+model RecordAudioParams {
+  @doc("Whether to play a beep before recording starts.")
+  @example(false)
+  beep?: boolean = false;
+
+  @doc("The audio format for the recording.")
+  @example(RecordFormat.mp3)
+  format?: RecordFormat = RecordFormat.mp3;
+
+  @doc("Whether to record in stereo (separate channels for each direction).")
+  @example(false)
+  stereo?: boolean = false;
+
+  @doc("The direction of audio to record.")
+  @example(PlayDirection.both)
+  direction?: PlayDirection = PlayDirection.both;
+
+  @doc("Maximum time in seconds to wait for speech before stopping.")
+  @example(5)
+  initial_timeout?: float64;
+
+  @doc("Time in seconds of silence after speech to stop recording.")
+  @example(3)
+  end_silence_timeout?: float64;
+
+  @doc("DTMF digits that will stop the recording when pressed.")
+  @example("#*")
+  terminators?: string;
+
+  @doc("Input sensitivity for voice detection (0-100).")
+  @example(50)
+  @minValue(0)
+  @maxValue(100)
+  input_sensitivity?: float64;
+}
+
+@summary("calling.record")
+model CallRecordRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.record` command starts recording an active call.")
+  @example("calling.record")
+  command: "calling.record";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this record operation, used to control it later.")
+    @example("record-control-1")
+    control_id?: string;
+
+    @doc("Audio recording configuration parameters.")
+    @example(#{ format: RecordFormat.mp3, direction: PlayDirection.both, stereo: false })
+    audio?: RecordAudioParams;
+
+    @doc("A URL to receive status update callbacks for the record operation.")
+    @example("https://example.com/status_callback")
+    status_url?: url;
+  };
+}
+
+@summary("calling.record.pause")
+model CallRecordPauseRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.record.pause` command pauses an active recording.")
+  @example("calling.record.pause")
+  command: "calling.record.pause";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the recording to pause.")
+    @example("record-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.record.resume")
+model CallRecordResumeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.record.resume` command resumes a paused recording.")
+  @example("calling.record.resume")
+  command: "calling.record.resume";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the recording to resume.")
+    @example("record-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.record.stop")
+model CallRecordStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.record.stop` command stops an active recording.")
+  @example("calling.record.stop")
+  command: "calling.record.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the recording to stop.")
+    @example("record-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Collect Commands
+// ============================================
+
+@doc("Parameters for collecting DTMF digit input.")
+model CollectDigitsParams {
+  @doc("Maximum number of digits to collect.")
+  @example(4)
+  max?: int32;
+
+  @doc("DTMF digits that signal the end of input.")
+  @example("#")
+  terminators?: string;
+
+  @doc("Time in seconds to wait between digit presses.")
+  @example(5)
+  digit_timeout?: float64;
+}
+
+@doc("Parameters for collecting speech input.")
+model CollectSpeechParams {
+  @doc("Time in seconds of silence after speech to consider input complete.")
+  @example(3)
+  end_silence_timeout?: float64;
+
+  @doc("Maximum time in seconds to wait for speech input.")
+  @example(30)
+  speech_timeout?: float64;
+
+  @doc("The language for speech recognition (e.g., 'en-US').")
+  @example("en-US")
+  language?: string;
+
+  @doc("Array of words or phrases to bias the speech recognition.")
+  @example(#["yes", "no", "maybe"])
+  hints?: string[];
+
+  @doc("The speech recognition engine to use.")
+  @example("default")
+  engine?: string;
+}
+
+@summary("calling.collect")
+model CallCollectRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.collect` command collects user input (digits or speech) during a call.")
+  @example("calling.collect")
+  command: "calling.collect";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this collect operation, used to control it later.")
+    @example("collect-control-1")
+    control_id?: string;
+
+    @doc("Maximum time in seconds to wait for initial input.")
+    @example(5)
+    initial_timeout?: float64;
+
+    @doc("Configuration for collecting DTMF digit input.")
+    @example(#{ max: 4, terminators: "#" })
+    digits?: CollectDigitsParams;
+
+    @doc("Configuration for collecting speech input.")
+    @example(#{ end_silence_timeout: 3, language: "en-US" })
+    speech?: CollectSpeechParams;
+
+    @doc("Whether to continuously collect input (restart after each result).")
+    @example(false)
+    continuous?: boolean;
+
+    @doc("Whether to send partial results as speech is recognized.")
+    @example(false)
+    partial_results?: boolean;
+  };
+}
+
+@summary("calling.collect.stop")
+model CallCollectStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.collect.stop` command stops an active collect operation.")
+  @example("calling.collect.stop")
+  command: "calling.collect.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the collect operation to stop.")
+    @example("collect-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.collect.start_input_timers")
+model CallCollectStartInputTimersRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.collect.start_input_timers` command starts input timers for an active collect operation.")
+  @example("calling.collect.start_input_timers")
+  command: "calling.collect.start_input_timers";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the collect operation to start input timers for.")
+    @example("collect-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Detect Commands
+// ============================================
+
+@doc("The type of detection to perform.")
+enum DetectType {
+  @doc("Detect answering machines vs. humans.")
+  machine,
+
+  @doc("Detect fax tones.")
+  fax,
+
+  @doc("Detect DTMF digits.")
+  digit,
+}
+
+@doc("Parameters for call detection configuration.")
+model DetectParams {
+  @doc("Maximum time in seconds to wait for initial detection.")
+  @example(5)
+  initial_timeout?: float64;
+
+  @doc("Time in seconds of silence after detection to finalize the result.")
+  @example(3)
+  end_silence_timeout?: float64;
+
+  @doc("Time in seconds to wait for the machine to be ready (machine detection only).")
+  @example(5)
+  machine_ready_timeout?: float64;
+
+  @doc("Voice duration threshold in seconds for machine vs. human detection.")
+  @example(1.25)
+  machine_voice_threshold?: float64;
+
+  @doc("Number of words threshold for machine vs. human detection.")
+  @example(6)
+  machine_words_threshold?: int32;
+
+  @doc("Whether to detect interruptions during machine greeting playback.")
+  @example(false)
+  detect_interruptions?: boolean;
+
+  @doc("Whether to detect the end of a machine message.")
+  @example(false)
+  detect_message_end?: boolean;
+
+  @doc("The DTMF tone to detect (digit detection only).")
+  @example("1")
+  tone?: string;
+
+  @doc("The DTMF digits to detect (digit detection only).")
+  @example("0123456789#*")
+  digits?: string;
+}
+
+@doc("Detection configuration specifying what to detect and how.")
+model DetectConfig {
+  @doc("The type of detection to perform.")
+  @example(DetectType.machine)
+  type: DetectType;
+
+  @doc("Type-specific detection parameters.")
+  @example(#{ initial_timeout: 5, end_silence_timeout: 3 })
+  params?: DetectParams;
+}
+
+@summary("calling.detect")
+model CallDetectRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.detect` command starts detection (machine, fax, or digit) on an active call.")
+  @example("calling.detect")
+  command: "calling.detect";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this detect operation, used to control it later.")
+    @example("detect-control-1")
+    control_id?: string;
+
+    @doc("Detection configuration specifying what to detect.")
+    @example(#{ type: DetectType.machine })
+    detect: DetectConfig;
+
+    @doc("Maximum time in seconds to run the detection.")
+    @example(30)
+    timeout?: float64;
+  };
+}
+
+@summary("calling.detect.stop")
+model CallDetectStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.detect.stop` command stops an active detection operation.")
+  @example("calling.detect.stop")
+  command: "calling.detect.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the detect operation to stop.")
+    @example("detect-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Tap Commands
+// ============================================
+
+@doc("The type of tap device to stream audio to.")
+enum TapDeviceType {
+  @doc("Stream audio via RTP protocol.")
+  rtp,
+
+  @doc("Stream audio via WebSocket.")
+  ws,
+}
+
+@doc("Tap configuration specifying what audio to capture.")
+model TapConfig {
+  @doc("The type of media to tap. Currently only 'audio' is supported.")
+  @example("audio")
+  type: "audio";
+
+  @doc("Tap parameters including audio direction.")
+  @example(#{ direction: PlayDirection.both })
+  params?: {
+    @doc("The direction of audio to tap.")
+    @example(PlayDirection.both)
+    direction?: PlayDirection;
+  };
+}
+
+@doc("Parameters for the tap device connection.")
+model TapDeviceParams {
+  @doc("The IP address or hostname of the device (RTP).")
+  @example("192.168.1.100")
+  addr?: string;
+
+  @doc("The port number of the device (RTP).")
+  @example(5060)
+  port?: int32;
+
+  @doc("The audio codec to use.")
+  @example("PCMU")
+  codec?: string;
+
+  @doc("The packetization time in milliseconds.")
+  @example(20)
+  ptime?: int32;
+
+  @doc("The WebSocket URI to stream audio to (WS).")
+  @example("wss://example.com/tap")
+  uri?: string;
+
+  @doc("The audio sample rate in Hz.")
+  @example(8000)
+  rate?: int32;
+}
+
+@doc("Tap device configuration specifying where to stream captured audio.")
+model TapDevice {
+  @doc("The type of tap device.")
+  @example(TapDeviceType.rtp)
+  type: TapDeviceType;
+
+  @doc("Device-specific connection parameters.")
+  @example(#{ addr: "192.168.1.100", port: 5060 })
+  params?: TapDeviceParams;
+}
+
+@summary("calling.tap")
+model CallTapRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.tap` command starts tapping (capturing audio) on an active call.")
+  @example("calling.tap")
+  command: "calling.tap";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this tap operation, used to control it later.")
+    @example("tap-control-1")
+    control_id?: string;
+
+    @doc("Tap configuration specifying what audio to capture.")
+    @example(#{ type: "audio", params: #{ direction: PlayDirection.both } })
+    tap: TapConfig;
+
+    @doc("Device configuration specifying where to stream captured audio.")
+    @example(#{ type: TapDeviceType.rtp, params: #{ addr: "192.168.1.100", port: 5060 } })
+    device: TapDevice;
+  };
+}
+
+@summary("calling.tap.stop")
+model CallTapStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.tap.stop` command stops an active tap operation.")
+  @example("calling.tap.stop")
+  command: "calling.tap.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the tap operation to stop.")
+    @example("tap-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Stream Commands
+// ============================================
+
+@doc("The audio track to stream.")
+enum StreamTrack {
+  @doc("Stream the inbound (caller) audio track.")
+  inbound_track,
+
+  @doc("Stream the outbound (called party) audio track.")
+  outbound_track,
+
+  @doc("Stream both audio tracks.")
+  both_tracks,
+}
+
+@summary("calling.stream")
+model CallStreamRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.stream` command starts streaming call audio to a WebSocket endpoint.")
+  @example("calling.stream")
+  command: "calling.stream";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this stream operation, used to control it later.")
+    @example("stream-control-1")
+    control_id?: string;
+
+    @doc("The WebSocket URL to stream audio to.")
+    @example("wss://example.com/stream")
+    @format("uri")
+    url: string;
+
+    @doc("The audio codec to use for streaming.")
+    @example("PCMU")
+    codec?: string;
+
+    @doc("The audio track to stream.")
+    @example(StreamTrack.both_tracks)
+    track?: StreamTrack;
+
+    @doc("Bearer token for WebSocket authentication.")
+    @example("my-secret-token")
+    authorization_bearer_token?: string;
+
+    @doc("Custom parameters to include in the WebSocket connection.")
+    @example(#{ session_id: "abc123" })
+    custom_parameters?: TypeSpec.Record<unknown>;
+  };
+}
+
+@summary("calling.stream.stop")
+model CallStreamStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.stream.stop` command stops an active audio stream.")
+  @example("calling.stream.stop")
+  command: "calling.stream.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the stream operation to stop.")
+    @example("stream-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Denoise Commands
+// ============================================
+
+@summary("calling.denoise")
+model CallDenoiseRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.denoise` command enables noise reduction on an active call.")
+  @example("calling.denoise")
+  command: "calling.denoise";
+
+  @doc(paramsDescription)
+  params: {};
+}
+
+@summary("calling.denoise.stop")
+model CallDenoiseStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.denoise.stop` command disables noise reduction on an active call.")
+  @example("calling.denoise.stop")
+  command: "calling.denoise.stop";
+
+  @doc(paramsDescription)
+  params: {};
+}
+
+// ============================================
+// Transcribe Commands (distinct from Live Transcribe)
+// ============================================
+
+@summary("calling.transcribe")
+model CallTranscribeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe` command starts transcription on an active call.")
+  @example("calling.transcribe")
+  command: "calling.transcribe";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this transcribe operation, used to control it later.")
+    @example("transcribe-control-1")
+    control_id?: string;
+
+    @doc("A URL to receive status update callbacks for the transcription.")
+    @example("https://example.com/status_callback")
+    status_url?: url;
+  };
+}
+
+@summary("calling.transcribe.stop")
+model CallTranscribeStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe.stop` command stops an active transcription.")
+  @example("calling.transcribe.stop")
+  command: "calling.transcribe.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the transcription to stop.")
+    @example("transcribe-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// AI Stop Command
+// ============================================
+
+@summary("calling.ai.stop")
+model CallAIStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.ai.stop` command stops an active AI session on the call.")
+  @example("calling.ai.stop")
+  command: "calling.ai.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the AI session to stop.")
+    @example("ai-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Fax Stop Commands
+// ============================================
+
+@summary("calling.send_fax.stop")
+model CallSendFaxStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.send_fax.stop` command stops an active fax send operation.")
+  @example("calling.send_fax.stop")
+  command: "calling.send_fax.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the fax send operation to stop.")
+    @example("fax-send-control-1")
+    control_id: string;
+  };
+}
+
+@summary("calling.receive_fax.stop")
+model CallReceiveFaxStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.receive_fax.stop` command stops an active fax receive operation.")
+  @example("calling.receive_fax.stop")
+  command: "calling.receive_fax.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the fax receive operation to stop.")
+    @example("fax-receive-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Refer (SIP) Command
+// ============================================
+
+@doc("SIP REFER device parameters.")
+model ReferSipParams {
+  @doc("The SIP URI to refer the call to.")
+  @example("sip:destination@example.com")
+  to: string;
+
+  @doc("Optional SIP authentication username.")
+  @example("user")
+  username?: string;
+
+  @doc("Optional SIP authentication password.")
+  @example("password")
+  password?: string;
+}
+
+@doc("Device configuration for SIP REFER.")
+model ReferDevice {
+  @doc("The device type. Currently only 'sip' is supported.")
+  @example("sip")
+  type: "sip";
+
+  @doc("SIP REFER parameters.")
+  @example(#{ to: "sip:destination@example.com" })
+  params: ReferSipParams;
+}
+
+@summary("calling.refer")
+model CallReferRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.refer` command performs a SIP REFER on an active call.")
+  @example("calling.refer")
+  command: "calling.refer";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The SIP device to refer the call to.")
+    @example(#{ type: "sip", params: #{ to: "sip:destination@example.com" } })
+    device: ReferDevice;
+
+    @doc("A URL to receive status update callbacks for the refer operation.")
+    @example("https://example.com/status_callback")
+    status_url?: url;
+  };
+}
+
+// ============================================
+// Transfer and User Event Commands
+// ============================================
+
 @summary("calling.transfer")
 model CallTransferRequest {
   @doc(uuidDescription)
@@ -550,37 +1461,45 @@ model CallUserEventRequest {
 
 @discriminated(#{ discriminatorPropertyName: "command", envelope: "none" })
 @doc("""
-  Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke:
-  
-  - **`dial`** - Create and initiate a new outbound call to a destination. Returns immediately with call details while the call is being established in the background.
-  
-  - **`update`** - Modify an active call's properties in real-time. Update call parameters such as routing, recording settings, or other call-specific configurations.
-  
-  - **`calling.end`** - Terminate an active call immediately. Disconnects all parties and ends the call session. Cannot be reversed once executed.
-  
-  - **`calling.ai_hold`** - Place an AI-powered call on hold. Pauses the AI conversation and typically plays hold music or a message to the caller. The AI agent becomes inactive until unhold.
-  
-  - **`calling.ai_unhold`** - Resume an AI call from hold state. Reactivates the AI agent and continues the conversation from where it was paused.
-  
-  - **`calling.ai_message`** - Inject a message into an active AI conversation. Allows you to dynamically add context, instructions, or system messages to guide the AI agent's behavior during the call.
-  
-  - **`calling.live_transcribe`** - Control live transcription on an active call. Start real-time speech-to-text transcription, stop transcription, or request an on-demand AI summary of the conversation.
-  
-  - **`calling.live_translate`** - Control live translation on an active call. Start real-time language translation between call participants, stop translation, request summaries, or inject messages to be translated and spoken.
-  
-  - **`calling.transfer`** - Transfer an active call to a new destination. The call is redirected to the specified SIP URI, phone number, or inline SWML application.
-  
-  - **`calling.user_event`** - Fire a custom user event on the call. Allows sending arbitrary JSON data as an event that can be handled by a client application using the SignalWire JS SDK.
+  Call request union for JSON-RPC style method dispatch. Use the `command` field to specify which call method to invoke.
+  All async-safe RELAY methods can be sent through this endpoint without a WebSocket connection.
   """)
 union CallRequest {
   dial: CallCreateRequest,
   update: CallUpdateCurrentCallRequest,
   `calling.end`: CallHangupRequest,
+  `calling.disconnect`: CallDisconnectRequest,
   `calling.ai_hold`: CallHoldRequest,
   `calling.ai_unhold`: CallUnholdRequest,
   `calling.ai_message`: CallAIMessageRequest,
+  `calling.ai.stop`: CallAIStopRequest,
+  `calling.play`: CallPlayRequest,
+  `calling.play.pause`: CallPlayPauseRequest,
+  `calling.play.resume`: CallPlayResumeRequest,
+  `calling.play.stop`: CallPlayStopRequest,
+  `calling.play.volume`: CallPlayVolumeRequest,
+  `calling.record`: CallRecordRequest,
+  `calling.record.pause`: CallRecordPauseRequest,
+  `calling.record.resume`: CallRecordResumeRequest,
+  `calling.record.stop`: CallRecordStopRequest,
+  `calling.collect`: CallCollectRequest,
+  `calling.collect.stop`: CallCollectStopRequest,
+  `calling.collect.start_input_timers`: CallCollectStartInputTimersRequest,
+  `calling.detect`: CallDetectRequest,
+  `calling.detect.stop`: CallDetectStopRequest,
+  `calling.tap`: CallTapRequest,
+  `calling.tap.stop`: CallTapStopRequest,
+  `calling.stream`: CallStreamRequest,
+  `calling.stream.stop`: CallStreamStopRequest,
+  `calling.denoise`: CallDenoiseRequest,
+  `calling.denoise.stop`: CallDenoiseStopRequest,
+  `calling.transcribe`: CallTranscribeRequest,
+  `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.live_transcribe`: CallLiveTranscribeRequest,
   `calling.live_translate`: CallLiveTranslateRequest,
   `calling.transfer`: CallTransferRequest,
+  `calling.send_fax.stop`: CallSendFaxStopRequest,
+  `calling.receive_fax.stop`: CallReceiveFaxStopRequest,
+  `calling.refer`: CallReferRequest,
   `calling.user_event`: CallUserEventRequest,
 }
