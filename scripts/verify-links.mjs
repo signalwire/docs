@@ -959,13 +959,14 @@ function render() {
 
   document.getElementById("note-input").value = result?.note || "";
 
-  let valid = 0, invalid = 0, skipped = 0;
-  for (const r of Object.values(results)) {
-    if (r.status === "valid") valid++;
+  let valid = 0, invalid = 0, skipped = 0, remaining = 0;
+  for (const l of vd.links) {
+    const r = results[l.url];
+    if (!r) remaining++;
+    else if (r.status === "valid") valid++;
     else if (r.status === "invalid") invalid++;
     else if (r.status === "skipped") skipped++;
   }
-  const remaining = total - Object.keys(results).length;
   document.getElementById("stats").textContent =
     valid + " valid \\u00b7 " + invalid + " invalid \\u00b7 " + remaining + " remaining \\u00b7 " + skipped + " skipped";
   document.getElementById("variant-progress").textContent =
