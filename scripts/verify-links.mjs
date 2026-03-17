@@ -1,20 +1,24 @@
 #!/usr/bin/env node
 
 /**
- * Link verification tool for Server SDK v2 documentation.
+ * Link verification tool for SignalWire documentation.
  *
- * Parses MDX files for each language variant, extracts all links,
+ * Parses MDX files from any product/version, extracts all links,
  * and serves a browser UI to visually verify each one via iframe.
  *
  * Usage:
- *   node scripts/verify-links.mjs                    # Start server
- *   node scripts/verify-links.mjs --port 4000         # Custom port
- *   node scripts/verify-links.mjs --variant python     # Single variant
- *   node scripts/verify-links.mjs --reset              # Clear progress
- *   node scripts/verify-links.mjs --report             # Report only
+ *   node scripts/verify-links.mjs                        # Interactive menu
+ *   node scripts/verify-links.mjs --all                   # All products
+ *   node scripts/verify-links.mjs --product server-sdk    # One product (all versions)
+ *   node scripts/verify-links.mjs --product server-sdk --version v2  # Specific version
+ *   node scripts/verify-links.mjs --dedup                  # Deduplicate URLs within each variant
+ *   node scripts/verify-links.mjs --port 4000             # Custom port
+ *   node scripts/verify-links.mjs --reset                 # Clear progress
+ *   node scripts/verify-links.mjs --report                # Report only
  */
 
 import { createServer } from "node:http";
+import { createInterface } from "node:readline";
 import {
   readFileSync,
   writeFileSync,
@@ -30,11 +34,7 @@ import remarkMdx from "remark-mdx";
 import { visit } from "unist-util-visit";
 
 const ROOT = join(import.meta.dirname, "..");
-const YAML_PATH = join(
-  ROOT,
-  "fern/products/realtime-sdk/versions/v2.yml"
-);
-const YAML_DIR = dirname(YAML_PATH);
+const DOCS_YML = join(ROOT, "fern/docs.yml");
 const PROGRESS_PATH = join(ROOT, "scripts/.link-verify-progress.json");
 const REPORT_PATH = join(ROOT, "scripts/.link-verify-report.md");
 const BASE_URL = "https://signalwire.com";
@@ -44,28 +44,32 @@ const BASE_URL = "https://signalwire.com";
 // ---------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
-const portArg = args.indexOf("--port");
-const PORT = portArg !== -1 ? parseInt(args[portArg + 1], 10) : 3456;
-const variantFilter = (() => {
-  const i = args.indexOf("--variant");
+function getArg(name) {
+  const i = args.indexOf(name);
   return i !== -1 ? args[i + 1] : null;
-})();
+}
+const PORT = parseInt(getArg("--port") || "3456", 10);
+const productFilter = getArg("--product");
+const versionFilter = getArg("--version");
+const variantFilter = getArg("--variant");
+const allMode = args.includes("--all");
+const dedup = args.includes("--dedup");
 const resetMode = args.includes("--reset");
 const reportMode = args.includes("--report");
 
 // ---------------------------------------------------------------------------
-// AST parser (reused from fix-stale-anchors.mjs)
+// AST parser
 // ---------------------------------------------------------------------------
 
-const parser = unified().use(remarkParse).use(remarkMdx);
-const fallbackParser = unified().use(remarkParse);
+const mdxParser = unified().use(remarkParse).use(remarkMdx);
+const mdParser = unified().use(remarkParse);
 
 function parseFile(content) {
   try {
-    return parser.parse(content);
+    return mdxParser.parse(content);
   } catch {
     try {
-      return fallbackParser.parse(content);
+      return mdParser.parse(content);
     } catch {
       return null;
     }
@@ -75,64 +79,211 @@ function parseFile(content) {
 function extractFrontmatter(content) {
   const match = content.match(/^---[\s\S]*?---/);
   if (!match) return { title: null, slug: null };
-  const titleMatch = match[0].match(/^title:\s*(.+)$/m);
-  const slugMatch = match[0].match(/^slug:\s*(.+)$/m);
+  const fm = match[0];
+  const titleMatch = fm.match(/^title:\s*(.+)$/m);
+  const slugMatch = fm.match(/^slug:\s*(.+)$/m);
   return {
-    title: titleMatch ? titleMatch[1].trim().replace(/^["']|["']$/g, "") : null,
+    title: titleMatch
+      ? titleMatch[1].trim().replace(/^["']|["']$/g, "")
+      : null,
     slug: slugMatch ? slugMatch[1].trim() : null,
   };
 }
 
 // ---------------------------------------------------------------------------
-// Navigation parser — reads v2.yml to get ordered file list per variant
+// Product/version discovery from docs.yml
 // ---------------------------------------------------------------------------
 
-function parseNavYaml() {
-  const raw = readFileSync(YAML_PATH, "utf-8");
-  const variants = [];
-  const lines = raw.split("\n").map((l) => l.replace(/\r$/, ""));
+function discoverProducts() {
+  const raw = readFileSync(DOCS_YML, "utf-8").replace(/\r\n/g, "\n");
+  const products = [];
 
-  let currentVariant = null;
-  let currentSection = null;
+  // Parse products section
+  const productsMatch = raw.match(/^products:\n([\s\S]*?)(?=\n\S|\Z)/m);
+  if (!productsMatch) return products;
+
+  const block = productsMatch[1];
+  const entries = block.split(/\n  - /).slice(1); // Split on top-level product entries
+
+  for (const entry of entries) {
+    const nameMatch = entry.match(/display-name:\s*(.+)/);
+    const slugMatch = entry.match(/^\s*slug:\s*(.+)/m);
+    const pathMatch = entry.match(/^\s*path:\s*(.+)/m);
+    if (!nameMatch || !slugMatch || !pathMatch) continue;
+
+    const name = nameMatch[1].trim();
+    const slug = slugMatch[1].trim().replace(/^\//, "");
+    const ymlPath = pathMatch[1].trim();
+
+    // Check for versions
+    const versionsBlock = entry.match(/versions:\n([\s\S]*?)(?=\n  \S|$)/);
+    if (versionsBlock) {
+      const vEntries = versionsBlock[1].split(/\n\s+- /).filter(Boolean);
+      for (const ve of vEntries) {
+        const vNameMatch = ve.match(/display-name:\s*(.+)/);
+        const vPathMatch = ve.match(/path:\s*(.+)/);
+        const vSlugMatch = ve.match(/slug:\s*(.+)/);
+        if (!vNameMatch || !vPathMatch) continue;
+        const vSlug = vSlugMatch ? vSlugMatch[1].trim() : "";
+        products.push({
+          name: `${name} ${vNameMatch[1].trim()}`,
+          productSlug: slug,
+          versionSlug: vSlug,
+          urlPrefix: `/docs/${slug}${vSlug ? "/" + vSlug : ""}`,
+          ymlPath: join(ROOT, "fern", vPathMatch[1].trim()),
+          product: name,
+          version: vNameMatch[1].trim(),
+        });
+      }
+    } else {
+      products.push({
+        name,
+        productSlug: slug,
+        versionSlug: "",
+        urlPrefix: slug ? `/docs/${slug}` : "/docs",
+        ymlPath: join(ROOT, "fern", ymlPath),
+        product: name,
+        version: null,
+      });
+    }
+  }
+
+  return products;
+}
+
+// ---------------------------------------------------------------------------
+// Generic YAML navigation parser
+// ---------------------------------------------------------------------------
+
+function parseNavYaml(ymlPath) {
+  if (!existsSync(ymlPath)) return [];
+  const raw = readFileSync(ymlPath, "utf-8");
+  const lines = raw.split("\n").map((l) => l.replace(/\r$/, ""));
+  const ymlDir = dirname(ymlPath);
+
+  const groups = []; // Each group = { title, pages: [{section,title,filePath}] }
+
+  // Detect if this YAML has variants (like v2.yml with language tabs)
+  const hasVariants = lines.some((l) => /^\s+variants:/.test(l));
+
+  if (hasVariants) {
+    return parseVariantYaml(lines, ymlDir);
+  }
+
+  // Non-variant: collect all pages into a single group
+  const pages = [];
+  let currentSection = "General";
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Variant title (6 spaces indent)
-    const variantMatch = line.match(/^\s{6}- title:\s*(.+)$/);
-    if (variantMatch) {
-      const title = variantMatch[1].trim().replace(/^["']|["']$/g, "");
-      if (title === "Node.js") {
-        currentVariant = null;
-        continue;
-      }
-      currentVariant = { title, sections: [] };
-      currentSection = null;
-      variants.push(currentVariant);
-      continue;
-    }
-
-    if (!currentVariant) continue;
-
-    // Section (10 spaces indent)
-    const sectionMatch = line.match(/^\s{10}- section:\s*(.+)$/);
+    // Section
+    const sectionMatch = line.match(/^\s+- section:\s*(.+)$/);
     if (sectionMatch) {
       currentSection = sectionMatch[1].trim();
       continue;
     }
 
-    // Explicit page entry (14 spaces indent)
-    const pageMatch = line.match(/^\s{14}- page:\s*(.+)$/);
+    // Explicit page
+    const pageMatch = line.match(/^\s+- page:\s*(.+)$/);
     if (pageMatch) {
       const pageTitle = pageMatch[1].trim();
-      // Next line should have the path
       const pathLine = lines[i + 1] || "";
       const pathMatch = pathLine.match(/^\s+path:\s*(.+)$/);
       if (pathMatch) {
-        const relPath = pathMatch[1].trim();
-        const absPath = resolve(YAML_DIR, relPath);
+        const absPath = resolve(ymlDir, pathMatch[1].trim());
         if (existsSync(absPath)) {
-          currentVariant.sections.push({
+          pages.push({
+            section: currentSection,
+            title: pageTitle,
+            filePath: absPath,
+          });
+        }
+      }
+      continue;
+    }
+
+    // Folder
+    const folderMatch = line.match(/^\s+- folder:\s*(.+)$/);
+    if (folderMatch) {
+      const folderAbs = resolve(ymlDir, folderMatch[1].trim());
+      const titleLine = lines[i + 1] || "";
+      const titleMatch = titleLine.match(/^\s+title:\s*(.+)$/);
+      const folderSection = titleMatch
+        ? titleMatch[1].trim()
+        : currentSection;
+
+      for (const filePath of walkFolderOrdered(folderAbs)) {
+        const content = readFileSync(filePath, "utf-8");
+        const fm = extractFrontmatter(content);
+        pages.push({
+          section: folderSection,
+          title: fm.title || fileToTitle(filePath),
+          filePath,
+        });
+      }
+      continue;
+    }
+  }
+
+  if (pages.length > 0) {
+    groups.push({ title: "All", pages });
+  }
+  return groups;
+}
+
+function parseVariantYaml(lines, ymlDir) {
+  const groups = [];
+  let currentVariant = null;
+  let currentSection = null;
+
+  // Find the indent of `variants:` to know what level `- title:` is at
+  let variantIndent = -1;
+  for (const line of lines) {
+    const m = line.match(/^(\s*)variants:\s*$/);
+    if (m) {
+      variantIndent = m[1].length + 2; // entries are 2 spaces deeper
+      break;
+    }
+  }
+  if (variantIndent < 0) return groups;
+
+  // Build regex for variant-level `- title:` (exact indent)
+  const variantRe = new RegExp(
+    `^\\s{${variantIndent}}- title:\\s*(.+)$`
+  );
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    const variantMatch = line.match(variantRe);
+    if (variantMatch) {
+      const title = variantMatch[1].trim().replace(/^["']|["']$/g, "");
+      currentVariant = { title, pages: [] };
+      currentSection = null;
+      groups.push(currentVariant);
+      continue;
+    }
+
+    if (!currentVariant) continue;
+
+    // Section
+    const sectionMatch = line.match(/^\s+- section:\s*(.+)$/);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1].trim();
+      continue;
+    }
+
+    // Explicit page
+    const pageMatch = line.match(/^\s+- page:\s*(.+)$/);
+    if (pageMatch) {
+      const pageTitle = pageMatch[1].trim();
+      const pathLine = lines[i + 1] || "";
+      const pathMatch = pathLine.match(/^\s+path:\s*(.+)$/);
+      if (pathMatch) {
+        const absPath = resolve(ymlDir, pathMatch[1].trim());
+        if (existsSync(absPath)) {
+          currentVariant.pages.push({
             section: currentSection || "Core",
             title: pageTitle,
             filePath: absPath,
@@ -142,26 +293,22 @@ function parseNavYaml() {
       continue;
     }
 
-    // Folder entry (10 spaces indent)
-    const folderMatch = line.match(/^\s{10}- folder:\s*(.+)$/);
+    // Folder
+    const folderMatch = line.match(/^\s+- folder:\s*(.+)$/);
     if (folderMatch) {
-      const folderRel = folderMatch[1].trim();
-      const folderAbs = resolve(YAML_DIR, folderRel);
-      // Next line might have title
+      const folderAbs = resolve(ymlDir, folderMatch[1].trim());
       const titleLine = lines[i + 1] || "";
       const titleMatch = titleLine.match(/^\s+title:\s*(.+)$/);
       const folderSection = titleMatch
         ? titleMatch[1].trim()
         : currentSection || "Other";
 
-      const files = walkFolderOrdered(folderAbs);
-      for (const filePath of files) {
+      for (const filePath of walkFolderOrdered(folderAbs)) {
         const content = readFileSync(filePath, "utf-8");
         const fm = extractFrontmatter(content);
-        const title = fm.title || fileToTitle(filePath);
-        currentVariant.sections.push({
+        currentVariant.pages.push({
           section: folderSection,
-          title,
+          title: fm.title || fileToTitle(filePath),
           filePath,
         });
       }
@@ -169,7 +316,7 @@ function parseNavYaml() {
     }
   }
 
-  return variants;
+  return groups;
 }
 
 function walkFolderOrdered(dir) {
@@ -177,21 +324,21 @@ function walkFolderOrdered(dir) {
   const results = [];
   const entries = readdirSync(dir, { withFileTypes: true });
 
-  // index.mdx first
   const indexFile = entries.find(
     (e) => !e.isDirectory() && e.name === "index.mdx"
   );
   if (indexFile) results.push(join(dir, indexFile.name));
 
-  // Other .mdx files alphabetically
   const mdxFiles = entries
     .filter(
-      (e) => !e.isDirectory() && e.name.endsWith(".mdx") && e.name !== "index.mdx"
+      (e) =>
+        !e.isDirectory() &&
+        e.name.endsWith(".mdx") &&
+        e.name !== "index.mdx"
     )
     .sort((a, b) => a.name.localeCompare(b.name));
   for (const f of mdxFiles) results.push(join(dir, f.name));
 
-  // Subdirectories alphabetically
   const dirs = entries
     .filter((e) => e.isDirectory())
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -212,7 +359,7 @@ function fileToTitle(filePath) {
 }
 
 // ---------------------------------------------------------------------------
-// Link extractor — extracts all links from an MDX file
+// Link extractor
 // ---------------------------------------------------------------------------
 
 function extractLinks(content) {
@@ -225,19 +372,24 @@ function extractLinks(content) {
     if (!node.position) return null;
     const { start, end } = node.position;
     if (start.line === end.line) {
-      return contentLines[start.line - 1]?.slice(start.column - 1, end.column - 1) || null;
+      return (
+        contentLines[start.line - 1]?.slice(
+          start.column - 1,
+          end.column - 1
+        ) || null
+      );
     }
-    // Multi-line: grab all lines
-    const lines = [];
+    const out = [];
     for (let i = start.line - 1; i < end.line; i++) {
-      if (i === start.line - 1) lines.push(contentLines[i]?.slice(start.column - 1));
-      else if (i === end.line - 1) lines.push(contentLines[i]?.slice(0, end.column - 1));
-      else lines.push(contentLines[i]);
+      if (i === start.line - 1)
+        out.push(contentLines[i]?.slice(start.column - 1));
+      else if (i === end.line - 1)
+        out.push(contentLines[i]?.slice(0, end.column - 1));
+      else out.push(contentLines[i]);
     }
-    return lines.join("\n") || null;
+    return out.join("\n") || null;
   }
 
-  // Reference definitions: [label]: url
   visit(tree, "definition", (node) => {
     if (node.url) {
       links.push({
@@ -248,18 +400,12 @@ function extractLinks(content) {
     }
   });
 
-  // Inline links: [text](url)
   visit(tree, "link", (node) => {
     if (node.url) {
-      links.push({
-        url: node.url,
-        label: "",
-        rawMarkdown: getSourceText(node),
-      });
+      links.push({ url: node.url, label: "", rawMarkdown: getSourceText(node) });
     }
   });
 
-  // JSX elements with href attributes
   const jsxTypes = ["mdxJsxFlowElement", "mdxJsxTextElement"];
   for (const type of jsxTypes) {
     visit(tree, type, (node) => {
@@ -283,7 +429,7 @@ function extractLinks(content) {
   return links;
 }
 
-function normalizeUrl(url, pageSlug) {
+function normalizeUrl(url, pageSlug, urlPrefix) {
   if (!url) return null;
   if (url.startsWith("mailto:") || url.startsWith("tel:")) return null;
   if (url.trim() === "") return null;
@@ -291,10 +437,10 @@ function normalizeUrl(url, pageSlug) {
   // Anchor-only → resolve against the page's own slug
   if (url.startsWith("#")) {
     if (!pageSlug) return null;
-    return BASE_URL + "/docs/server-sdk/v2" + pageSlug + url;
+    return BASE_URL + urlPrefix + pageSlug + url;
   }
 
-  // /docs/... or other absolute paths → full URL
+  // Absolute paths → full URL
   if (url.startsWith("/")) {
     return BASE_URL + url;
   }
@@ -308,73 +454,148 @@ function normalizeUrl(url, pageSlug) {
 }
 
 // ---------------------------------------------------------------------------
-// Build all link data
+// Build link data for selected products
 // ---------------------------------------------------------------------------
 
-function buildLinkData() {
-  const variants = parseNavYaml();
+function buildLinkData(selectedProducts) {
   const allData = [];
 
-  const filtered = variantFilter
-    ? variants.filter(
-        (v) => v.title.toLowerCase() === variantFilter.toLowerCase()
-      )
-    : variants;
+  for (const product of selectedProducts) {
+    const groups = parseNavYaml(product.ymlPath);
 
-  for (const variant of filtered) {
-    const seen = new Set();
-    const variantLinks = [];
-    let totalExtracted = 0;
+    for (const group of groups) {
+      const variantName =
+        groups.length === 1 && group.title === "All"
+          ? product.name
+          : `${product.name} — ${group.title}`;
 
-    for (const entry of variant.sections) {
-      const content = readFileSync(entry.filePath, "utf-8");
-      const fm = extractFrontmatter(content);
-      const rawLinks = extractLinks(content);
+      const seen = new Set();
+      const variantLinks = [];
+      let totalExtracted = 0;
 
-      for (const link of rawLinks) {
-        const url = normalizeUrl(link.url, fm.slug);
-        if (!url) continue;
-        totalExtracted++;
-        if (seen.has(url)) {
-          // Track additional source but don't add duplicate link entry
-          const existing = variantLinks.find((l) => l.url === url);
-          if (existing) {
-            existing.sources.push({
-              file: entry.filePath,
-              section: entry.section,
-              pageTitle: entry.title,
-              label: link.label,
-              rawMarkdown: link.rawMarkdown || null,
-            });
+      for (const entry of group.pages) {
+        const content = readFileSync(entry.filePath, "utf-8");
+        const fm = extractFrontmatter(content);
+        const rawLinks = extractLinks(content);
+
+        for (const link of rawLinks) {
+          const url = normalizeUrl(
+            link.url,
+            fm.slug,
+            product.urlPrefix
+          );
+          if (!url) continue;
+          totalExtracted++;
+          const source = {
+            file: entry.filePath,
+            section: entry.section,
+            pageTitle: entry.title,
+            label: link.label,
+            rawMarkdown: link.rawMarkdown || null,
+          };
+          if (dedup && seen.has(url)) {
+            const existing = variantLinks.find((l) => l.url === url);
+            if (existing) existing.sources.push(source);
+            continue;
           }
-          continue;
+          seen.add(url);
+          variantLinks.push({
+            url,
+            variant: variantName,
+            sources: [source],
+          });
         }
-        seen.add(url);
-        variantLinks.push({
-          url,
-          variant: variant.title,
-          sources: [
-            {
-              file: entry.filePath,
-              section: entry.section,
-              pageTitle: entry.title,
-              label: link.label,
-              rawMarkdown: link.rawMarkdown || null,
-            },
-          ],
+      }
+
+      if (variantLinks.length > 0) {
+        allData.push({
+          variant: variantName,
+          links: variantLinks,
+          totalExtracted,
+          deduped: totalExtracted - variantLinks.length,
         });
       }
     }
-
-    allData.push({
-      variant: variant.title,
-      links: variantLinks,
-      totalExtracted,
-      deduped: totalExtracted - variantLinks.length,
-    });
   }
 
   return allData;
+}
+
+// ---------------------------------------------------------------------------
+// Interactive product selection menu
+// ---------------------------------------------------------------------------
+
+async function selectProducts(allProducts) {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const ask = (q) => new Promise((res) => rl.question(q, res));
+
+  console.log("\nAvailable products:\n");
+
+  // Group by product name
+  const grouped = new Map();
+  for (const p of allProducts) {
+    const key = p.product;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(p);
+  }
+
+  const menuItems = [];
+  let idx = 1;
+  for (const [product, versions] of grouped) {
+    if (versions.length === 1 && !versions[0].version) {
+      menuItems.push({ idx, products: versions, label: product });
+      console.log(`  ${idx}. ${product}`);
+      idx++;
+    } else {
+      // Show product header then versions
+      const versionLabels = versions.map((v) => v.version).join(", ");
+      menuItems.push({
+        idx,
+        products: versions,
+        label: `${product} (all: ${versionLabels})`,
+      });
+      console.log(`  ${idx}. ${product} (all versions: ${versionLabels})`);
+      idx++;
+      for (const v of versions) {
+        menuItems.push({ idx, products: [v], label: `${product} ${v.version}` });
+        console.log(`     ${idx}. ${product} ${v.version}`);
+        idx++;
+      }
+    }
+  }
+
+  console.log(`\n  0. All products\n`);
+
+  const answer = await ask(
+    "Select products (comma-separated numbers, or 0 for all): "
+  );
+  rl.close();
+
+  const selections = answer
+    .split(",")
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => !isNaN(n));
+
+  if (selections.includes(0)) return allProducts;
+
+  const selected = [];
+  const seen = new Set();
+  for (const n of selections) {
+    const item = menuItems.find((m) => m.idx === n);
+    if (item) {
+      for (const p of item.products) {
+        if (!seen.has(p.name)) {
+          seen.add(p.name);
+          selected.push(p);
+        }
+      }
+    }
+  }
+
+  return selected.length > 0 ? selected : allProducts;
 }
 
 // ---------------------------------------------------------------------------
@@ -383,12 +604,12 @@ function buildLinkData() {
 
 function loadProgress() {
   if (resetMode || !existsSync(PROGRESS_PATH)) {
-    return { version: 1, results: {} };
+    return { version: 2, results: {} };
   }
   try {
     return JSON.parse(readFileSync(PROGRESS_PATH, "utf-8"));
   } catch {
-    return { version: 1, results: {} };
+    return { version: 2, results: {} };
   }
 }
 
@@ -398,9 +619,12 @@ function saveProgress(progress) {
   try {
     renameSync(tmp, PROGRESS_PATH);
   } catch {
-    // On Windows, rename may fail if target exists; overwrite directly
     writeFileSync(PROGRESS_PATH, JSON.stringify(progress, null, 2), "utf-8");
-    try { unlinkSync(tmp); } catch { /* ignore */ }
+    try {
+      unlinkSync(tmp);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -409,7 +633,7 @@ function saveProgress(progress) {
 // ---------------------------------------------------------------------------
 
 function generateReport(progress, allData) {
-  const lines = ["# Link Verification Report — Server SDK v2\n"];
+  const lines = ["# Link Verification Report\n"];
   lines.push(`Generated: ${new Date().toISOString()}\n`);
 
   let totalVerified = 0;
@@ -433,7 +657,11 @@ function generateReport(progress, allData) {
         verified++;
       } else if (result.status === "invalid") {
         invalid++;
-        invalidLinks.push({ url: link.url, note: result.note, sources: link.sources });
+        invalidLinks.push({
+          url: link.url,
+          note: result.note,
+          sources: link.sources,
+        });
       } else if (result.status === "skipped") {
         skipped++;
       }
@@ -469,7 +697,9 @@ function generateReport(progress, allData) {
   lines.push(`- **Invalid:** ${totalInvalid}`);
   lines.push(`- **Skipped:** ${totalSkipped}`);
   lines.push(`- **Remaining:** ${totalRemaining}`);
-  lines.push(`- **Total links:** ${totalVerified + totalInvalid + totalSkipped + totalRemaining}`);
+  lines.push(
+    `- **Total links:** ${totalVerified + totalInvalid + totalSkipped + totalRemaining}`
+  );
 
   const report = lines.join("\n");
   writeFileSync(REPORT_PATH, report, "utf-8");
@@ -480,13 +710,13 @@ function generateReport(progress, allData) {
 // HTML UI
 // ---------------------------------------------------------------------------
 
-function getHtmlPage() {
+function getHtmlPage(title) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Link Verifier — Server SDK v2</title>
+<title>Link Verifier — ${title}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f1117; color: #e1e4e8; }
@@ -518,12 +748,10 @@ function getHtmlPage() {
   .btn.skip:hover { background: #d29922; color: #000; }
   .btn:disabled { opacity: 0.4; cursor: default; }
   .status-bar { padding: 8px 20px; background: #0d1117; border-top: 1px solid #30363d; font-size: 12px; color: #8b949e; display: flex; justify-content: space-between; }
-  .variant-tabs { display: flex; gap: 2px; padding: 0 20px; background: #0d1117; border-bottom: 1px solid #30363d; }
+  .variant-tabs { display: flex; gap: 2px; padding: 0 20px; background: #0d1117; border-bottom: 1px solid #30363d; flex-wrap: wrap; }
   .variant-tab { padding: 8px 14px; font-size: 13px; color: #8b949e; cursor: pointer; border-bottom: 2px solid transparent; transition: 0.15s; }
   .variant-tab:hover { color: #c9d1d9; }
   .variant-tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
-  .done-message { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 65vh; color: #8b949e; }
-  .done-message h2 { font-size: 24px; margin-bottom: 8px; color: #3fb950; }
   kbd { background: #21262d; border: 1px solid #30363d; border-radius: 3px; padding: 1px 5px; font-size: 11px; font-family: monospace; }
   .header .header-actions { display: flex; align-items: center; gap: 12px; }
   .header .dedup-stat { font-size: 12px; color: #8b949e; }
@@ -561,7 +789,7 @@ function getHtmlPage() {
 </head>
 <body>
 <div class="header">
-  <h1>Link Verifier — Server SDK v2</h1>
+  <h1>Link Verifier — ${title}</h1>
   <div class="header-actions">
     <span class="dedup-stat" id="dedup-stat"></span>
     <button class="btn-sm" id="btn-link-list" title="View all links (L)">All links</button>
@@ -576,8 +804,8 @@ function getHtmlPage() {
     <div class="raw-md" id="raw-markdown" style="display:none"></div>
   </div>
   <div class="url-bar" id="url-bar">
-    <span class="url" id="current-url">—</span>
-    <a id="open-tab" href="#" target="_blank">Open in new tab ↗</a>
+    <span class="url" id="current-url">&mdash;</span>
+    <a id="open-tab" href="#" target="_blank">Open in new tab &#8599;</a>
   </div>
   <div class="iframe-container" id="iframe-container">
     <iframe id="viewer" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
@@ -588,19 +816,19 @@ function getHtmlPage() {
       <input type="text" id="note-input" placeholder="Optional note...">
     </div>
     <div class="btn-row">
-      <button class="btn" id="btn-prev" title="Previous (←)">← Prev</button>
+      <button class="btn" id="btn-prev" title="Previous">&#8592; Prev</button>
       <button class="btn valid" id="btn-valid" title="Valid (Y/Enter)">Valid (Y)</button>
       <button class="btn invalid" id="btn-invalid" title="Invalid (N)">Invalid (N)</button>
       <button class="btn skip" id="btn-skip" title="Skip (S)">Skip (S)</button>
-      <button class="btn" id="btn-next" title="Next (→)">Next →</button>
+      <button class="btn" id="btn-next" title="Next">Next &#8594;</button>
       <span style="margin-left: auto; font-size: 12px; color: #8b949e;">
-        <kbd>Y</kbd>/<kbd>Enter</kbd> valid · <kbd>N</kbd> invalid · <kbd>S</kbd> skip · <kbd>←</kbd><kbd>→</kbd> navigate · <kbd>O</kbd> open tab
+        <kbd>Y</kbd>/<kbd>Enter</kbd> valid &middot; <kbd>N</kbd> invalid &middot; <kbd>S</kbd> skip &middot; <kbd>&#8592;</kbd><kbd>&#8594;</kbd> navigate &middot; <kbd>O</kbd> open tab
       </span>
     </div>
   </div>
   <div class="status-bar" id="status-bar">
-    <span id="stats">—</span>
-    <span id="variant-progress">—</span>
+    <span id="stats">&mdash;</span>
+    <span id="variant-progress">&mdash;</span>
   </div>
 </div>
 
@@ -640,7 +868,6 @@ async function fetchState() {
   state = await res.json();
   renderVariantTabs();
   if (!currentVariant && state.variants.length > 0) {
-    // Find first variant with remaining links
     currentVariant = state.variants.find(v => {
       const results = state.progress[v.name] || {};
       return v.links.some(l => !results[l.url]);
@@ -658,7 +885,7 @@ function renderVariantTabs() {
     const remaining = v.links.filter(l => !results[l.url]).length;
     const tab = document.createElement("div");
     tab.className = "variant-tab" + (v.name === currentVariant ? " active" : "");
-    tab.textContent = v.name + (remaining > 0 ? " (" + remaining + ")" : " ✓");
+    tab.textContent = v.name + (remaining > 0 ? " (" + remaining + ")" : " \\u2713");
     tab.onclick = () => { currentVariant = v.name; currentIndex = 0; navigateToNextUnverified(); render(); };
     tabs.appendChild(tab);
   }
@@ -676,15 +903,12 @@ function navigateToNextUnverified() {
   const vd = getVariantData();
   if (!vd) return;
   const results = getResults();
-  // Find next unverified from current position
   for (let i = currentIndex; i < vd.links.length; i++) {
     if (!results[vd.links[i].url]) { currentIndex = i; return; }
   }
-  // Wrap around
   for (let i = 0; i < currentIndex; i++) {
     if (!results[vd.links[i].url]) { currentIndex = i; return; }
   }
-  // All verified — stay at current
 }
 
 function render() {
@@ -698,31 +922,24 @@ function render() {
   const link = vd.links[currentIndex];
   const result = results[link?.url];
 
-  // Counter + dedup stat
   const total = vd.links.length;
-  const verified = Object.keys(results).length;
-  document.getElementById("counter").textContent =
-    (currentIndex + 1) + " / " + total;
+  document.getElementById("counter").textContent = (currentIndex + 1) + " / " + total;
   document.getElementById("dedup-stat").innerHTML =
-    "<strong>" + (vd.totalExtracted || total) + "</strong> extracted · <strong>" + total + "</strong> unique · <strong>" + (vd.deduped || 0) + "</strong> deduped";
+    "<strong>" + (vd.totalExtracted || total) + "</strong> extracted \\u00b7 <strong>" + total + "</strong> unique \\u00b7 <strong>" + (vd.deduped || 0) + "</strong> deduped";
 
-  // Breadcrumb
   const src = link.sources[0];
   document.getElementById("breadcrumb").textContent =
     currentVariant + " > " + src.section + " > " + src.pageTitle;
   const uniqueLabels = [...new Set(link.sources.map(s => s.label).filter(Boolean))];
   document.getElementById("link-label").textContent = uniqueLabels.join(", ");
 
-  // Raw markdown source — show each unique definition with its source file
   const rawEl = document.getElementById("raw-markdown");
   const rawEntries = [];
   const seenRaw = new Set();
   for (const s of link.sources) {
     if (!s.rawMarkdown) continue;
-    const key = s.rawMarkdown;
-    if (seenRaw.has(key)) continue;
-    seenRaw.add(key);
-    // Extract short filename from path
+    if (seenRaw.has(s.rawMarkdown)) continue;
+    seenRaw.add(s.rawMarkdown);
     const parts = s.file.split("/");
     const shortFile = parts.slice(-2).join("/");
     rawEntries.push(shortFile + ":\\n  " + s.rawMarkdown);
@@ -734,20 +951,14 @@ function render() {
     rawEl.style.display = "none";
   }
 
-  // URL
   document.getElementById("current-url").textContent = link.url;
   document.getElementById("open-tab").href = link.url;
 
-  // Iframe
   const iframe = document.getElementById("viewer");
-  if (iframe.src !== link.url) {
-    iframe.src = link.url;
-  }
+  if (iframe.src !== link.url) iframe.src = link.url;
 
-  // Note
   document.getElementById("note-input").value = result?.note || "";
 
-  // Stats
   let valid = 0, invalid = 0, skipped = 0;
   for (const r of Object.values(results)) {
     if (r.status === "valid") valid++;
@@ -756,11 +967,10 @@ function render() {
   }
   const remaining = total - Object.keys(results).length;
   document.getElementById("stats").textContent =
-    valid + " valid · " + invalid + " invalid · " + remaining + " remaining · " + skipped + " skipped";
+    valid + " valid \\u00b7 " + invalid + " invalid \\u00b7 " + remaining + " remaining \\u00b7 " + skipped + " skipped";
   document.getElementById("variant-progress").textContent =
-    remaining === 0 ? "✓ Variant complete" : "";
+    remaining === 0 ? "\\u2713 Variant complete" : "";
 
-  // Update tab styling
   renderVariantTabs();
 }
 
@@ -771,7 +981,6 @@ async function submitVerification(status) {
   try {
     const vd = getVariantData();
     if (!vd) return;
-    // Snapshot variant and index at call time
     const submittedVariant = currentVariant;
     const submittedIndex = currentIndex;
     const link = vd.links[submittedIndex];
@@ -792,16 +1001,13 @@ async function submitVerification(status) {
     if (!state.progress[submittedVariant]) state.progress[submittedVariant] = {};
     state.progress[submittedVariant][link.url] = updated.result;
 
-    // Advance to next unverified — auto-switch variant if current is done
     currentIndex = submittedIndex + 1;
     if (currentIndex >= vd.links.length) currentIndex = 0;
     navigateToNextUnverified();
 
-    // Check if submitted variant is fully done (use snapshot, not live currentVariant)
     const variantProgress = state.progress[submittedVariant] || {};
     const allDone = vd.links.every(l => variantProgress[l.url]);
     if (allDone) {
-      // Try to advance to next variant with remaining links
       const nextVariant = state.variants.find(v => {
         if (v.name === submittedVariant) return false;
         const vr = state.progress[v.name] || {};
@@ -823,7 +1029,6 @@ function navigate(delta) {
   const vd = getVariantData();
   if (!vd) return;
 
-  // If current variant is complete, jump to next incomplete variant
   const results = getResults();
   const allDone = vd.links.every(l => results[l.url]);
   if (allDone) {
@@ -847,58 +1052,29 @@ function navigate(delta) {
   render();
 }
 
-// Button handlers
 document.getElementById("btn-valid").onclick = () => submitVerification("valid");
 document.getElementById("btn-invalid").onclick = () => submitVerification("invalid");
 document.getElementById("btn-skip").onclick = () => submitVerification("skipped");
 document.getElementById("btn-prev").onclick = () => navigate(-1);
 document.getElementById("btn-next").onclick = () => navigate(1);
 
-// Keyboard shortcuts
 document.addEventListener("keydown", (e) => {
-  // Don't trigger when typing in note field
   if (e.target.tagName === "INPUT") return;
-
   switch (e.key.toLowerCase()) {
-    case "y":
-    case "enter":
-      e.preventDefault();
-      submitVerification("valid");
-      break;
-    case "n":
-      e.preventDefault();
-      submitVerification("invalid");
-      break;
-    case "s":
-      e.preventDefault();
-      submitVerification("skipped");
-      break;
-    case "arrowleft":
-      e.preventDefault();
-      navigate(-1);
-      break;
-    case "arrowright":
-      e.preventDefault();
-      navigate(1);
-      break;
-    case "o":
-      e.preventDefault();
-      window.open(document.getElementById("open-tab").href, "_blank");
-      break;
-    case "l":
-      e.preventDefault();
+    case "y": case "enter": e.preventDefault(); submitVerification("valid"); break;
+    case "n": e.preventDefault(); submitVerification("invalid"); break;
+    case "s": e.preventDefault(); submitVerification("skipped"); break;
+    case "arrowleft": e.preventDefault(); navigate(-1); break;
+    case "arrowright": e.preventDefault(); navigate(1); break;
+    case "o": e.preventDefault(); window.open(document.getElementById("open-tab").href, "_blank"); break;
+    case "l": e.preventDefault();
       if (document.getElementById("link-list-overlay").classList.contains("open")) closeLinkList();
       else openLinkList();
       break;
-    case "escape":
-      closeLinkList();
-      break;
+    case "escape": closeLinkList(); break;
   }
 });
 
-// ---------------------------------------------------------------------------
-// Link list panel
-// ---------------------------------------------------------------------------
 let linkListFilter = "all";
 let linkListSearch = "";
 
@@ -906,7 +1082,6 @@ function openLinkList() {
   document.getElementById("link-list-overlay").classList.add("open");
   renderLinkList();
 }
-
 function closeLinkList() {
   document.getElementById("link-list-overlay").classList.remove("open");
 }
@@ -917,7 +1092,6 @@ document.getElementById("link-list-overlay").onclick = (e) => {
   if (e.target === document.getElementById("link-list-overlay")) closeLinkList();
 };
 
-// Filter buttons
 for (const btn of document.querySelectorAll(".filter-btn")) {
   btn.onclick = () => {
     linkListFilter = btn.dataset.filter;
@@ -927,7 +1101,6 @@ for (const btn of document.querySelectorAll(".filter-btn")) {
   };
 }
 
-// Search
 document.getElementById("link-list-search").oninput = (e) => {
   linkListSearch = e.target.value.toLowerCase();
   renderLinkList();
@@ -945,40 +1118,24 @@ function renderLinkList() {
   const dedupedCount = vd.deduped || 0;
   const totalExtracted = vd.totalExtracted || uniqueCount;
 
-  titleEl.textContent = currentVariant + " — All links";
-  summaryEl.innerHTML = "<strong>" + totalExtracted + "</strong> total extracted · <strong>" + uniqueCount + "</strong> unique · <strong>" + dedupedCount + "</strong> deduped";
+  titleEl.textContent = currentVariant + " \\u2014 All links";
+  summaryEl.innerHTML = "<strong>" + totalExtracted + "</strong> total extracted \\u00b7 <strong>" + uniqueCount + "</strong> unique \\u00b7 <strong>" + dedupedCount + "</strong> deduped";
 
-  // Build display list
   let rows = vd.links.map((link, idx) => ({
-    idx: idx + 1,
-    url: link.url,
-    sourceCount: link.sources.length,
-    isDeduped: link.sources.length > 1,
-    sources: link.sources,
+    idx: idx + 1, url: link.url, sourceCount: link.sources.length,
+    isDeduped: link.sources.length > 1, sources: link.sources,
   }));
 
-  // Apply filter
-  if (linkListFilter === "unique") {
-    rows = rows.filter(r => !r.isDeduped);
-  } else if (linkListFilter === "deduped") {
-    rows = rows.filter(r => r.isDeduped);
-  }
-
-  // Apply search
-  if (linkListSearch) {
-    rows = rows.filter(r => r.url.toLowerCase().includes(linkListSearch));
-  }
+  if (linkListFilter === "unique") rows = rows.filter(r => !r.isDeduped);
+  else if (linkListFilter === "deduped") rows = rows.filter(r => r.isDeduped);
+  if (linkListSearch) rows = rows.filter(r => r.url.toLowerCase().includes(linkListSearch));
 
   tbody.innerHTML = "";
   for (const row of rows) {
     const tr = document.createElement("tr");
     tr.className = "clickable";
     tr.onclick = () => { currentIndex = row.idx - 1; closeLinkList(); render(); };
-
-    const sourceSummary = row.sources
-      .map(s => s.pageTitle + (s.label ? " [" + s.label + "]" : ""))
-      .join(", ");
-
+    const sourceSummary = row.sources.map(s => s.pageTitle + (s.label ? " [" + s.label + "]" : "")).join(", ");
     tr.innerHTML =
       "<td>" + row.idx + "</td>" +
       '<td class="url-cell">' + escapeHtml(row.url) + "</td>" +
@@ -986,7 +1143,6 @@ function renderLinkList() {
       "<td>" + (row.isDeduped
         ? '<span class="count-badge deduped">' + row.sourceCount + "x</span>"
         : '<span class="count-badge unique">1x</span>') + "</td>";
-
     tbody.appendChild(tr);
   }
 }
@@ -1006,24 +1162,65 @@ fetchState();
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log("Building link data...");
-  const allData = buildLinkData();
+  const allProducts = discoverProducts();
+
+  // Filter by CLI args
+  let selected;
+  if (allMode) {
+    selected = allProducts;
+  } else if (productFilter) {
+    selected = allProducts.filter(
+      (p) =>
+        p.productSlug === productFilter ||
+        p.product.toLowerCase() === productFilter.toLowerCase()
+    );
+    if (versionFilter) {
+      selected = selected.filter(
+        (p) =>
+          p.versionSlug === versionFilter ||
+          (p.version && p.version.toLowerCase() === versionFilter.toLowerCase())
+      );
+    }
+    if (selected.length === 0) {
+      console.error(`No products found matching --product ${productFilter}`);
+      process.exit(1);
+    }
+  } else if (!reportMode) {
+    // Interactive menu
+    selected = await selectProducts(allProducts);
+  } else {
+    selected = allProducts;
+  }
+
+  console.log("\nBuilding link data...");
+  const allData = buildLinkData(selected);
+
+  // Apply variant filter if specified
+  let filteredData = allData;
+  if (variantFilter) {
+    filteredData = allData.filter(
+      (v) => v.variant.toLowerCase().includes(variantFilter.toLowerCase())
+    );
+  }
 
   let totalLinks = 0;
   let totalDeduped = 0;
-  for (const v of allData) {
-    console.log(`  ${v.variant}: ${v.totalExtracted} extracted, ${v.links.length} unique, ${v.deduped} deduped`);
+  for (const v of filteredData) {
+    console.log(
+      `  ${v.variant}: ${v.totalExtracted} extracted, ${v.links.length} unique, ${v.deduped} deduped`
+    );
     totalLinks += v.links.length;
     totalDeduped += v.deduped;
   }
-  console.log(`  Total: ${totalLinks} unique links, ${totalDeduped} deduped across ${allData.length} variants`);
+  console.log(
+    `  Total: ${totalLinks} unique links, ${totalDeduped} deduped across ${filteredData.length} groups`
+  );
 
   const progress = loadProgress();
 
-  // Report-only mode
   if (reportMode) {
     const { totalVerified, totalInvalid, totalSkipped, totalRemaining } =
-      generateReport(progress, allData);
+      generateReport(progress, filteredData);
     console.log("\nReport generated:", REPORT_PATH);
     console.log(
       `  ${totalVerified} valid · ${totalInvalid} invalid · ${totalSkipped} skipped · ${totalRemaining} remaining`
@@ -1031,9 +1228,15 @@ async function main() {
     process.exit(0);
   }
 
-  // Prepare state for API
+  // Build title from selected products
+  const productNames = [...new Set(selected.map((p) => p.name))];
+  const uiTitle =
+    productNames.length <= 3
+      ? productNames.join(", ")
+      : `${productNames.length} products`;
+
   const statePayload = {
-    variants: allData.map((v) => ({
+    variants: filteredData.map((v) => ({
       name: v.variant,
       totalExtracted: v.totalExtracted,
       deduped: v.deduped,
@@ -1051,14 +1254,9 @@ async function main() {
     progress: progress.results,
   };
 
-  function doSaveProgress() {
-    saveProgress(progress);
-  }
-
   const server = createServer((req, res) => {
     const url = new URL(req.url, `http://localhost:${PORT}`);
 
-    // CORS headers for local dev
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -1069,14 +1267,12 @@ async function main() {
       return;
     }
 
-    // Serve HTML UI
     if (url.pathname === "/" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      res.end(getHtmlPage());
+      res.end(getHtmlPage(uiTitle));
       return;
     }
 
-    // API: full state
     if (url.pathname === "/api/state" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
       statePayload.progress = progress.results;
@@ -1084,7 +1280,6 @@ async function main() {
       return;
     }
 
-    // API: submit verification
     if (url.pathname === "/api/verify" && req.method === "POST") {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
@@ -1092,9 +1287,7 @@ async function main() {
         try {
           const data = JSON.parse(body);
           const { url: linkUrl, variant, status, note, sources } = data;
-
           if (!progress.results[variant]) progress.results[variant] = {};
-
           const result = {
             status,
             note: note || "",
@@ -1102,9 +1295,7 @@ async function main() {
             verifiedAt: new Date().toISOString(),
           };
           progress.results[variant][linkUrl] = result;
-
-          doSaveProgress();
-
+          saveProgress(progress);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: true, result }));
         } catch (err) {
@@ -1115,15 +1306,13 @@ async function main() {
       return;
     }
 
-    // API: generate report
     if (url.pathname === "/api/report" && req.method === "GET") {
-      const result = generateReport(progress, allData);
+      const result = generateReport(progress, filteredData);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(result));
       return;
     }
 
-    // 404
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found" }));
   });
