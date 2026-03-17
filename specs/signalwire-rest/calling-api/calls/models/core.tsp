@@ -66,7 +66,8 @@ model CallBase {
   charge_details: ChargeDetails[];
 }
 
-@doc("A Call leg (PSTN, SIP, or WebRTC).")
+@summary("Call Leg")
+@doc("Returned when the call is a standard PSTN, SIP, or WebRTC call.")
 model CallLeg {
   ...CallBase;
 
@@ -95,7 +96,8 @@ model CallLeg {
   parent_id: uuid | null;
 }
 
-@doc("A Fabric subscriber device leg.")
+@summary("Fabric Subscriber Device Leg")
+@doc("Returned when the call is a Fabric subscriber device leg. The `status` field is always null for this type.")
 model FabricDeviceLeg {
   ...CallBase;
 

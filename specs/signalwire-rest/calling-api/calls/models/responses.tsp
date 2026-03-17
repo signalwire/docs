@@ -37,6 +37,8 @@ enum CallResponseStatus {
   completed,
 }
 
+@summary("Call Response")
+@doc("The response varies based on the type of call. A standard call returns a Call Leg, while a Fabric subscriber call returns a Fabric Device Leg.")
 union CallResponse {
   CallLeg,
   FabricDeviceLeg,
