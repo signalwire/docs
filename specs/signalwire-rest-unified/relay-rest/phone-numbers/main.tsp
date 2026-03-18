@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/phone_numbers")
-namespace RelayRestAPI.PhoneNumbers {
+namespace SignalWireAPI.RelayRest.PhoneNumbers {
   @tag(PHONE_NUMBERS_TAG)
   @friendlyName("Phone Numbers")
   interface PhoneNumbers {
@@ -145,7 +145,7 @@ namespace RelayRestAPI.PhoneNumbers {
 }
 
 @route("/imported_phone_numbers")
-namespace RelayRestAPI.ImportedPhoneNumbers {
+namespace SignalWireAPI.RelayRest.ImportedPhoneNumbers {
   @tag(IMPORTED_PHONE_NUMBERS_TAG)
   @friendlyName("Imported Phone Numbers")
   interface ImportedPhoneNumbers {
@@ -171,7 +171,7 @@ namespace RelayRestAPI.ImportedPhoneNumbers {
 }
 
 @route("/lookup/phone_number")
-namespace RelayRestAPI.PhoneNumberLookup {
+namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
   @tag(PHONE_NUMBER_LOOKUP_TAG)
   @friendlyName("Phone Number Lookup")
   interface PhoneNumberLookup {

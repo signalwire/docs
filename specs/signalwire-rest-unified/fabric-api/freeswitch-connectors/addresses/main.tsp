@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/freeswitch_connectors/{id}/addresses")
-namespace FabricAPI.FreeswitchConnectorAddresses {
+namespace SignalWireAPI.Fabric.FreeswitchConnectorAddresses {
   @tag(FREESWITCH_CONNECTOR_TAG)
   interface FreeswitchConnectorAddresses {
     @operationId("list_freeswitch_connector_addresses")

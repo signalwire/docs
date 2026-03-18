@@ -1,3 +1,5 @@
+namespace SignalWireAPI.Video;
+
 @doc("Join as type for room tokens.")
 enum JoinAsType {
   @doc("Join as audience participant (cannot send audio or video)")

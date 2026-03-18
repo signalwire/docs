@@ -4,6 +4,9 @@ import "../../room-sessions/models/core.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Room recording response.")
 model RoomRecordingResponse {
   @statusCode statusCode: 200;

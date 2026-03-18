@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/dialogflow_agents")
-namespace FabricAPI.DialogflowAgents {
+namespace SignalWireAPI.Fabric.DialogflowAgents {
   @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgents {
     @operationId("list_dialogflow_agents")

@@ -12,8 +12,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/endpoints/sip")
-namespace RelayRestAPI.SipEndpoints {
-  @tag(SIP_ENDPOINTS_TAG)
+namespace SignalWireAPI.RelayRest.SipEndpoints {
+  @tag(SPACE_SIP_ENDPOINTS_TAG)
   @friendlyName("SIP Endpoints")
   interface SipEndpoints {
     @operationId("list_sip_endpoints")

@@ -3,6 +3,9 @@ import "./enums.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Datasphere;
+
+
 @format("uuid")
 @doc("Unique ID of a Document.")
 scalar docid extends string;

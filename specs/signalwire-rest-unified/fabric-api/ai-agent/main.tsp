@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/ai_agents")
-namespace FabricAPI.AIAgents {
+namespace SignalWireAPI.Fabric.AIAgents {
   @tag(AI_CUSTOM_TAG)
   @friendlyName("AI Agent: Custom")
   interface AIAgents {

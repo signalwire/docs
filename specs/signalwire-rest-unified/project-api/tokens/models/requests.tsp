@@ -1,5 +1,8 @@
 import "./core.tsp";
 
+namespace SignalWireAPI.Project;
+
+
 @doc("Request body for creating a new API Token.")
 model CreateTokenRequest {
   @doc("The name representing the API token.")

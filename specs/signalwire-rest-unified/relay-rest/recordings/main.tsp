@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/recordings")
-namespace RelayRestAPI.Recordings {
+namespace SignalWireAPI.RelayRest.Recordings {
   @tag(RECORDINGS_TAG)
   @friendlyName("Recordings")
   interface Recordings {

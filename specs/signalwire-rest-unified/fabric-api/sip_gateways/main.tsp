@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_gateways")
-namespace FabricAPI.SipGateways {
+namespace SignalWireAPI.Fabric.SipGateways {
   @tag(SIP_GATEWAY_TAG)
   @friendlyName("SIP Gateway")
   interface SipGateways {

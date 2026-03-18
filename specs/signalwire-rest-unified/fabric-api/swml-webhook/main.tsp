@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/swml_webhooks")
-namespace FabricAPI.SWMLWebhooks {
+namespace SignalWireAPI.Fabric.SWMLWebhooks {
   @tag(SWML_WEBHOOK_TAG)
   @friendlyName("SWML Webhooks")
   interface SWMLWebhooks {

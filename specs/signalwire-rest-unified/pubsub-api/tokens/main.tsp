@@ -12,8 +12,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/tokens")
-namespace PubSubAPI.Tokens {
-  @tag(TOKENS_TAG)
+namespace SignalWireAPI.PubSub.Tokens {
+  @tag(PUBSUB_TOKENS_TAG)
   @friendlyName("Tokens")
   interface PubSubTokens {
     @summary("Generate a new PubSub Token")

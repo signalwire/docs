@@ -12,7 +12,7 @@ using Types.StatusCodes;
 
 @useAuth(SignalWireBearerAuth)
 @route("/addresses")
-namespace FabricAPI.FabricAddresses {
+namespace SignalWireAPI.Fabric.FabricAddresses {
   @tag(FABRIC_ADDRESS_TAG)
   @friendlyName("Fabric Address")
   interface FabricAddresses {

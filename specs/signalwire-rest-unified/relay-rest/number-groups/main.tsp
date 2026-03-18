@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/number_groups")
-namespace RelayRestAPI.NumberGroups {
+namespace SignalWireAPI.RelayRest.NumberGroups {
   @tag(NUMBER_GROUPS_TAG)
   @friendlyName("Number Groups")
   interface NumberGroups {
@@ -132,7 +132,7 @@ namespace RelayRestAPI.NumberGroups {
 }
 
 @route("/number_group_memberships")
-namespace RelayRestAPI.NumberGroupMemberships {
+namespace SignalWireAPI.RelayRest.NumberGroupMemberships {
   @tag(NUMBER_GROUP_MEMBERSHIP_TAG)
   @friendlyName("Number Group Membership")
   interface NumberGroupMemberships {

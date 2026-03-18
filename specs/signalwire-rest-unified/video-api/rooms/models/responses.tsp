@@ -1,6 +1,9 @@
 import "./core.tsp";
 import "../../_shared/models.tsp";
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Room response object.")
 model RoomResponse {
   @doc("A unique identifier for the room.")
@@ -78,7 +81,7 @@ model RoomResponse {
 
   @doc("User-defined metadata for the room.")
   @example(#{})
-  meta: Record<unknown> | null;
+  meta: TypeSpec.Record<unknown> | null;
 
   @doc("Whether hand raises are prioritized in the room layout.")
   @example(false)

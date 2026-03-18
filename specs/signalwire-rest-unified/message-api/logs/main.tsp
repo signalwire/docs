@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace MessageAPI.Logs {
+namespace SignalWireAPI.Message.Logs {
   @tag(MESSAGE_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {

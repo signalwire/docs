@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_tokens")
-namespace VideoAPI.RoomTokens {
+namespace SignalWireAPI.Video.RoomTokens {
   @tag(ROOM_TOKENS_TAG)
   @friendlyName("Room Tokens")
   interface RoomTokens {

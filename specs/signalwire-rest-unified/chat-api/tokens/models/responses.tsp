@@ -1,5 +1,8 @@
 import "../../../types/status-codes";
 
+namespace SignalWireAPI.Chat;
+
+
 @example(#{
   statusCode: 422,
   errors: #[

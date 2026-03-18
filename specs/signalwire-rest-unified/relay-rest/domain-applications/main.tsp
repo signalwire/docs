@@ -12,8 +12,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/domain_applications")
-namespace RelayRestAPI.DomainApplications {
-  @tag(DOMAIN_APPLICATIONS_TAG)
+namespace SignalWireAPI.RelayRest.DomainApplications {
+  @tag(SPACE_DOMAIN_APPLICATIONS_TAG)
   @friendlyName("Domain Applications")
   interface DomainApplications {
     @operationId("list_domain_applications")

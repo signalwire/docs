@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/subscribers/tokens")
-namespace FabricAPI.SubscriberTokens {
+namespace SignalWireAPI.Fabric.SubscriberTokens {
   @tag(SUBSCRIBERS_TAG)
   interface SubscriberTokens {
     @operationId("create_subscriber_token")

@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/conference_rooms")
-namespace FabricAPI.ConferenceRooms {
+namespace SignalWireAPI.Fabric.ConferenceRooms {
   @tag(CONFERENCE_ROOM_TAG)
   @friendlyName("Conference Rooms")
   interface ConferenceRooms {

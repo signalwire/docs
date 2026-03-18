@@ -15,8 +15,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_endpoints")
-namespace FabricAPI.SipEndpoints {
-  @tag(SIP_ENDPOINTS_TAG)
+namespace SignalWireAPI.Fabric.SipEndpoints {
+  @tag(FABRIC_SIP_ENDPOINTS_TAG)
   @friendlyName("SIP Endpoints")
   @doc("SIP Endpoints API category.")
   interface SipEndpoints {

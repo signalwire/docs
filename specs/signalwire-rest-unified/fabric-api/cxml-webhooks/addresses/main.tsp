@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/cxml_webhooks/{cxml_webhook_id}/addresses")
-namespace FabricAPI.CXMLWebhook.Addresses {
+namespace SignalWireAPI.Fabric.CXMLWebhook.Addresses {
   @tag(CXML_WEBHOOK_TAG)
   @friendlyName("cXML Webhooks")
   interface CXMLWebhookAddresses {

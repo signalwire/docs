@@ -1,5 +1,8 @@
 import "./core.tsp";
 
+namespace SignalWireAPI.Fax;
+
+
 model LogResponse {
   ...FaxLog;
 }

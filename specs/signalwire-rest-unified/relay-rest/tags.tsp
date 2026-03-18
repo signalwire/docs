@@ -16,8 +16,8 @@ const CAMPAIGN_REGISTRY_TAG_METADATA = #{
   },
 };
 
-const DOMAIN_APPLICATIONS_TAG = "Domain Applications";
-const DOMAIN_APPLICATIONS_TAG_METADATA = #{
+const SPACE_DOMAIN_APPLICATIONS_TAG = "Space Domain Applications";
+const SPACE_DOMAIN_APPLICATIONS_TAG_METADATA = #{
   description: "Manage domain applications for call handling configuration.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
@@ -79,14 +79,14 @@ const RECORDINGS_TAG_METADATA = #{
   },
 };
 
-const SIP_ENDPOINTS_TAG = "SIP Endpoints";
-const SIP_ENDPOINTS_TAG_METADATA = #{
+const SPACE_SIP_ENDPOINTS_TAG = "Space SIP Endpoints";
+const SPACE_SIP_ENDPOINTS_TAG_METADATA = #{
   description: "Manage SIP endpoints for voice communication.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
   },
-  `x-displayName`: "SIP Endpoints",
+  `x-displayName`: "Space SIP Endpoints",
 };
 
 const SIP_PROFILE_TAG = "SIP Profile";

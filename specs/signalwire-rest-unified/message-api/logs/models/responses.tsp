@@ -1,5 +1,8 @@
 import "./core.tsp";
 
+namespace SignalWireAPI.Message;
+
+
 model LogPaginationResponse {
   @doc("URL to current page")
   @example("https://example.signalwire.com/api/messaging/logs?page_number=0&page_size=50")

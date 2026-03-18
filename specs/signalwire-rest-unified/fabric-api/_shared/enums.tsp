@@ -52,7 +52,7 @@ enum FabricResponseType {
   CxmlScript: "cxml_script",
   CxmlWebhook: "cxml_webhook",
   RelayApplication: "relay_application",
-  SipEndpoint: "sip_endpoint",
+  FabricSipEndpoint: "sip_endpoint",
   SipGateway: "sip_gateway",
   Subscriber: "subscriber",
   SwmlScript: "swml_script",

@@ -16,8 +16,8 @@ using Types.StatusCodes;
   type: Http.AuthType.noAuth,
 })
 @route("/embeds/tokens")
-@server("https://embeds.signalwire.com/api/fabric", "Embeds Endpoint")
-namespace FabricAPI.EmbedsTokens {
+@server("https://embeds.signalwire.com", "Embeds Endpoint")
+namespace SignalWireAPI.Fabric.EmbedsTokens {
   @tag(EMBEDS_TOKENS_TAG)
   @friendlyName("Embeds Tokens")
   interface EmbedsTokens {

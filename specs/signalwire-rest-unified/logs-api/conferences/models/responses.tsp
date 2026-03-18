@@ -1,5 +1,8 @@
 import "./core.tsp";
 
+namespace SignalWireAPI.Logs;
+
+
 @doc("Pagination links for conference log list responses.")
 model ConferenceLogPaginationLinks {
   @doc("Link to the current page.")

@@ -2,11 +2,14 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SignalWireAPI.Chat;
+
+
 /* Model is used to work-around a bug in the rest api plugin, not a TypeSpec issue. Duplicate description must be present and usage of a model is required.
 Otherwise the property will render a additionalProperty with the exact same description as the top level property holding additionalProperties. */
 @doc("An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.")
 @example(#{ key: "value", key2: "value2" })
-model ChatState is Record<unknown>;
+model ChatState is TypeSpec.Record<unknown>;
 
 model NewChatToken {
   @minValue(1)
@@ -46,7 +49,7 @@ model NewChatToken {
   channel1: #{ read: true, write: true },
   channel2: #{ read: true, write: false },
 })
-model ChatChannel is Record<ChatPermission>;
+model ChatChannel is TypeSpec.Record<ChatPermission>;
 
 @summary("Read Permission")
 model ChatPermissionWithRead {

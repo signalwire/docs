@@ -127,15 +127,15 @@ const RESOURCES_TAG_METADATA = #{
   },
 };
 
-const SIP_ENDPOINTS_TAG = "SIP Endpoints";
+const FABRIC_SIP_ENDPOINTS_TAG = "Fabric SIP Endpoints";
 
-const SIP_ENDPOINTS_TAG_METADATA = #{
+const FABRIC_SIP_ENDPOINTS_TAG_METADATA = #{
   description: "Endpoints related to creating & managing SIP Endpoints",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SIP Endpoint, Fabric API endpoints",
   },
-  `x-displayName`: "SIP Endpoints",
+  `x-displayName`: "Fabric SIP Endpoints",
 };
 
 const SIP_GATEWAY_TAG = "SIP Gateway";
@@ -201,9 +201,9 @@ const CONFERENCE_ROOM_TAG_METADATA = #{
   },
 };
 
-const DOMAIN_APPLICATIONS_TAG = "Domain Applications";
+const FABRIC_DOMAIN_APPLICATIONS_TAG = "Fabric Domain Applications";
 
-const DOMAIN_APPLICATIONS_TAG_METADATA = #{
+const FABRIC_DOMAIN_APPLICATIONS_TAG_METADATA = #{
   description: "Endpoints related to managing Domain Applications",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

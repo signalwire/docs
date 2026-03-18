@@ -4,6 +4,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("List logs response.")
 model ListLogsResponse {
   @doc("Pagination links.")

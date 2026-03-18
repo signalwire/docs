@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/addresses")
-namespace RelayRestAPI.Addresses {
+namespace SignalWireAPI.RelayRest.Addresses {
   @tag(ADDRESSES_TAG)
   @friendlyName("Addresses")
   interface Addresses {

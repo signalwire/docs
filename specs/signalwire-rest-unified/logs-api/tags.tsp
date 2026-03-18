@@ -1,8 +1,8 @@
 import "@typespec/openapi3";
 
-const CONFERENCES_TAG = "Conferences";
+const CONFERENCE_LOGS_TAG = "Conference Logs";
 
-const CONFERENCES_TAG_METADATA = #{
+const CONFERENCE_LOGS_TAG_METADATA = #{
   description: "Manage and query conference log data.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources")
-namespace FabricAPI.Resources {
+namespace SignalWireAPI.Fabric.Resources {
   @tag(RESOURCES_TAG)
   @friendlyName("Resources")
   interface Resources {

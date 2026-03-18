@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/{fabric_subscriber_id}/sip_endpoints")
-namespace FabricAPI.Subscribers.SipEndpoints {
+namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
   @tag(SUBSCRIBER_SIP_ENDPOINT_TAG)
   @friendlyName("SIP Endpoints")
   interface SubscriberSipEndpoint {

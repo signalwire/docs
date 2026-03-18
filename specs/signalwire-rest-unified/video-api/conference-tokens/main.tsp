@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/conferences/{id}/conference_tokens")
-namespace VideoAPI.ConferenceTokensByConference {
+namespace SignalWireAPI.Video.ConferenceTokensByConference {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens by Conference")
   interface ConferenceTokensByConference {
@@ -31,7 +31,7 @@ namespace VideoAPI.ConferenceTokensByConference {
 }
 
 @route("/conference_tokens")
-namespace VideoAPI.ConferenceTokens {
+namespace SignalWireAPI.Video.ConferenceTokens {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens")
   interface ConferenceTokens {

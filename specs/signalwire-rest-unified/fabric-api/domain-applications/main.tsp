@@ -13,8 +13,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/domain_applications")
-namespace FabricAPI.DomainApplications {
-  @tag(DOMAIN_APPLICATIONS_TAG)
+namespace SignalWireAPI.Fabric.DomainApplications {
+  @tag(FABRIC_DOMAIN_APPLICATIONS_TAG)
   interface DomainApplications {
     @operationId("assign_resource_domain_application")
     @summary("Assign a resource as a call handler for a Domain Application.")

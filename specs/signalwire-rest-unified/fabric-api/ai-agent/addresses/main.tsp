@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/ai_agents/{ai_agent_id}/addresses")
-namespace FabricAPI.AIAgent.Addresses {
+namespace SignalWireAPI.Fabric.AIAgent.Addresses {
   @tag(AI_CUSTOM_TAG)
   interface AIAgentAddresses {
     @operationId("list_ai_agent_addresses")
