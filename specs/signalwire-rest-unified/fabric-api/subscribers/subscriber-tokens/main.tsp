@@ -14,7 +14,7 @@ using Types.StatusCodes;
 
 @route("/subscribers/tokens")
 namespace SignalWireAPI.Fabric.SubscriberTokens {
-  @tag(SUBSCRIBERS_TAG)
+  @tag(SUBSCRIBERS_TOKENS_TAG)
   interface SubscriberTokens {
     @operationId("create_subscriber_token")
     @summary("Create Subscriber Token")

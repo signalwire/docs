@@ -15,8 +15,8 @@ namespace SignalWireAPI.RelayRest.Recordings {
   @tag(RECORDINGS_TAG)
   @friendlyName("Recordings")
   interface Recordings {
-    @operationId("list_recordings")
-    @summary("List Relay Recordings")
+    @operationId("list_call_recordings")
+    @summary("List Call Recordings")
     @doc("""
       Returns a list of your recordings.
       
@@ -29,8 +29,8 @@ namespace SignalWireAPI.RelayRest.Recordings {
       | ValidationError
       | StatusCode500;
 
-    @operationId("get_recording")
-    @summary("Get Relay Recording")
+    @operationId("get_call_recording")
+    @summary("Get Call Recording")
     @doc("""
       Retrieves the details of a recording.
       
@@ -43,8 +43,8 @@ namespace SignalWireAPI.RelayRest.Recordings {
       | ValidationError
       | StatusCode500;
 
-    @operationId("delete_recording")
-    @summary("Delete Relay Recording")
+    @operationId("delete_call_recording")
+    @summary("Delete Call Recording")
     @doc("""
       Deletes a recording.
       

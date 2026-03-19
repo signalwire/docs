@@ -16,8 +16,8 @@ using Types.StatusCodes;
 namespace SignalWireAPI.Fabric.SipEndpoints.Resource {
   @tag(FABRIC_SIP_ENDPOINTS_TAG)
   interface ResourceSipEndpoints {
-    @operationId("assign_resource_sip_endpoint")
-    @summary("Assign a Resource to a SIP endpoint")
+    @operationId("assign_resource_to_sip_credential")
+    @summary("Assign a Resource to a SIP Credential")
     @doc("""
       This endpoint assigns a specific resource to a SIP endpoint, allowing inbound calls to be handled by the resource.
       <Note>

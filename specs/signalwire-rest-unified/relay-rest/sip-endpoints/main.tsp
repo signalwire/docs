@@ -20,7 +20,9 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @summary("List all SIP Endpoints.")
     @doc("""
       Returns a list of your SIP endpoints.
-      
+
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+
       ${tokenPermissions<"_Voice_">}
       """)
     list(...ListSipEndpointsQuery):
@@ -33,7 +35,9 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @summary("Create a SIP Endpoint")
     @doc("""
       Creates a new SIP endpoint.
-      
+
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+
       ${tokenPermissions<"_Voice_">}
       """)
     @post
@@ -47,7 +51,9 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @summary("Retrieve a SIP Endpoint")
     @doc("""
       Retrieves the details of a SIP endpoint.
-      
+
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+
       ${tokenPermissions<"_Voice_">}
       """)
     read(...SipEndpointPathID):
@@ -61,7 +67,9 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @summary("Update a SIP Endpoint")
     @doc("""
       Updates a SIP endpoint.
-      
+
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+
       ${tokenPermissions<"_Voice_">}
       """)
     @put
@@ -76,7 +84,9 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @summary("Delete a SIP Endpoint")
     @doc("""
       Permanently deletes a SIP endpoint.
-      
+
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+
       ${tokenPermissions<"_Voice_">}
       """)
     @delete

@@ -1,6 +1,6 @@
-const ADDRESSES_TAG = "Addresses";
+const ADDRESSES_TAG = "E911-Addresses";
 const ADDRESSES_TAG_METADATA = #{
-  description: "Manage addresses for regulatory compliance and phone number provisioning.",
+  description: "Manage E911 addresses for regulatory compliance and phone number provisioning.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
@@ -79,14 +79,14 @@ const RECORDINGS_TAG_METADATA = #{
   },
 };
 
-const SPACE_SIP_ENDPOINTS_TAG = "Space SIP Endpoints";
+const SPACE_SIP_ENDPOINTS_TAG = "SIP Endpoints (Legacy)";
 const SPACE_SIP_ENDPOINTS_TAG_METADATA = #{
-  description: "Manage SIP endpoints for voice communication.",
+  description: "Manage SIP endpoints for voice communication. Use SIP Credentials for new integrations.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
   },
-  `x-displayName`: "Space SIP Endpoints",
+  `x-displayName`: "SIP Endpoints (Legacy)",
 };
 
 const SIP_PROFILE_TAG = "SIP Profile";
