@@ -53,10 +53,10 @@ const SWML_WEBHOOK_TAG_METADATA = #{
   `x-displayName`: "SWML Webhook",
 };
 
-const FABRIC_ADDRESS_TAG = "Fabric Address";
+const FABRIC_ADDRESS_TAG = "Resource Addresses";
 
 const FABRIC_ADDRESS_TAG_METADATA = #{
-  description: "Endpoints related to creating & managing Fabric Addresses",
+  description: "Client-side endpoints for listing and retrieving resource addresses using subscriber access tokens (SAT). Intended for use with the Browser SDK to resolve addresses from the client.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Fabric Address, Fabric API endpoints",
@@ -127,15 +127,15 @@ const RESOURCES_TAG_METADATA = #{
   },
 };
 
-const SIP_ENDPOINTS_TAG = "SIP Endpoints";
+const FABRIC_SIP_ENDPOINTS_TAG = "SIP Credentials";
 
-const SIP_ENDPOINTS_TAG_METADATA = #{
-  description: "Endpoints related to creating & managing SIP Endpoints",
+const FABRIC_SIP_ENDPOINTS_TAG_METADATA = #{
+  description: "Manage SIP credentials for authenticating SIP endpoints.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
-    description: "Developer documentation on SIP Endpoint, Fabric API endpoints",
+    description: "Developer documentation on SIP Credentials, Fabric API endpoints",
   },
-  `x-displayName`: "SIP Endpoints",
+  `x-displayName`: "SIP Credentials",
 };
 
 const SIP_GATEWAY_TAG = "SIP Gateway";
@@ -201,9 +201,9 @@ const CONFERENCE_ROOM_TAG_METADATA = #{
   },
 };
 
-const DOMAIN_APPLICATIONS_TAG = "Domain Applications";
+const FABRIC_DOMAIN_APPLICATIONS_TAG = "Fabric Domain Applications";
 
-const DOMAIN_APPLICATIONS_TAG_METADATA = #{
+const FABRIC_DOMAIN_APPLICATIONS_TAG_METADATA = #{
   description: "Endpoints related to managing Domain Applications",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

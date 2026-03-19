@@ -5,6 +5,9 @@ import "../room-sessions/models/core.tsp";
 using TypeSpec.Http;
 using Types.StatusCodes;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Pagination links for list responses.")
 model PaginationLinks {
   @doc("Link to the current page.")

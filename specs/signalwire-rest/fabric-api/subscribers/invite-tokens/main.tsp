@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/subscriber/invites")
-namespace FabricAPI.SubscriberInviteTokens {
+namespace SignalWireAPI.Fabric.SubscriberInviteTokens {
   @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Invite Token")
   interface InviteTokens {

@@ -130,11 +130,11 @@ model ResourceResponseRelayApp is ResourceResponseBase {
 @summary("SIP Endpoint")
 model ResourceResponseSipEndpoint is ResourceResponseBase {
   @doc(RESPONSE_TYPE_DESC)
-  @example(FabricResponseType.SipEndpoint)
-  type: FabricResponseType.SipEndpoint;
+  @example(FabricResponseType.FabricSipEndpoint)
+  type: FabricResponseType.FabricSipEndpoint;
 
   @doc("An object containing the response data of the SIP Endpoint")
-  sip_endpoint: SipEndpoint;
+  sip_endpoint: FabricSipEndpoint;
 }
 
 @summary("SIP Gateway")

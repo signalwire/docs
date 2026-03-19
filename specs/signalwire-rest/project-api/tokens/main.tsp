@@ -12,8 +12,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/tokens")
-namespace ProjectAPI.Tokens {
-  @tag(TOKENS_TAG)
+namespace SignalWireAPI.Project.Tokens {
+  @tag(PROJECT_TOKENS_TAG)
   @friendlyName("Tokens")
   interface ProjectTokens {
     @operationId("create_token")

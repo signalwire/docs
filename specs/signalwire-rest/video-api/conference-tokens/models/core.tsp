@@ -3,6 +3,9 @@ import "../../conferences/models/core.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 model ConferenceTokenPathID {
   @path
   @format("uuid")

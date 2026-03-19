@@ -1,8 +1,8 @@
 import "@typespec/openapi3";
 
-const LOGS_TAG = "Logs";
+const FAX_LOGS_TAG = "Fax Logs";
 
-const LOGS_TAG_METADATA = #{
+const FAX_LOGS_TAG_METADATA = #{
   description: "Endpoints related to accessing fax logs",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

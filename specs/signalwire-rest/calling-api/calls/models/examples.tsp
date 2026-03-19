@@ -1,3 +1,5 @@
+namespace SignalWireAPI.Calling;
+
 /**
  * Operation examples for the Calling API
  *

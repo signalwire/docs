@@ -2,7 +2,7 @@ import "./core.tsp";
 import "../../_shared/const.tsp";
 import "../../_shared/enums.tsp";
 
-model SipEndpointResponse {
+model FabricSipEndpointResponse {
   @doc("Unique ID of the SIP Endpoint.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
   @format("uuid")
@@ -18,8 +18,8 @@ model SipEndpointResponse {
   display_name: string;
 
   @doc("Type of the Fabric Resource")
-  @example(FabricResponseType.SipEndpoint)
-  type: FabricResponseType.SipEndpoint;
+  @example(FabricResponseType.FabricSipEndpoint)
+  type: FabricResponseType.FabricSipEndpoint;
 
   @doc("Date and time when the resource was created.")
   @example(UTC_TIME_EXAMPLE)
@@ -30,12 +30,12 @@ model SipEndpointResponse {
   updated_at: utcDateTime;
 
   @doc("SIP Endpoint data.")
-  sip_endpoint: SipEndpoint;
+  sip_endpoint: FabricSipEndpoint;
 }
 
-model SipEndpointListResponse {
+model FabricSipEndpointListResponse {
   @doc("An array of objects that contain a list of SIP Endpoint data")
-  data: SipEndpointResponse[];
+  data: FabricSipEndpointResponse[];
 
   @doc("Object containing pagination links")
   links: SipEndpointPaginationResponse;

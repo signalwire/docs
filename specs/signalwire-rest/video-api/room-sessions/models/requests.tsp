@@ -3,6 +3,9 @@ import "./core.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Query parameters for listing room sessions.")
 model ListRoomSessionsRequest {
   @doc("Return Sessions started from this Room.")

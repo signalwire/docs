@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/guests/tokens")
-namespace FabricAPI.SubscriberGuestTokens {
+namespace SignalWireAPI.Fabric.SubscriberGuestTokens {
   @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Guest Token")
   interface GuestTokens {

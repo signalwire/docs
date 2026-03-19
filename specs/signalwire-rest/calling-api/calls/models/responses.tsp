@@ -4,6 +4,9 @@ import "../../../types/status-codes";
 using Types.StatusCodes;
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Calling;
+
+
 @doc("The status of the call throughout its lifecycle.")
 enum CallResponseStatus {
   @doc("The call has been queued for processing.")

@@ -1,3 +1,5 @@
+namespace SignalWireAPI.Logs;
+
 @doc("Core conference object.")
 model Conference {
   @doc("Unique identifier for the conference.")

@@ -3,6 +3,9 @@ import "./core.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Voice;
+
+
 @doc("Pagination links for voice log list responses")
 model LogPaginationResponse {
   @doc("URL of the current page.")

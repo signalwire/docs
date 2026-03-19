@@ -1,8 +1,8 @@
 import "@typespec/openapi3";
 
-const TOKENS_TAG = "Tokens";
+const CHAT_TOKENS_TAG = "Chat Tokens";
 
-const TOKENS_TAG_METADATA = #{
+const CHAT_TOKENS_TAG_METADATA = #{
   description: "Manage Chat tokens.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

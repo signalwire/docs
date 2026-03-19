@@ -1,5 +1,8 @@
 import "../../_shared/models.tsp";
 
+namespace SignalWireAPI.Video;
+
+
 @doc("The room's layout.")
 enum RoomLayout {
   @doc("Responsive grid layout")

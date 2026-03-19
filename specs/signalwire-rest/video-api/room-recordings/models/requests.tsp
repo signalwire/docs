@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Query parameters for listing room recordings.")
 model ListRoomRecordingsRequest {
   @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")

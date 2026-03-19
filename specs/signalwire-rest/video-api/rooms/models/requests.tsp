@@ -1,6 +1,9 @@
 import "./core.tsp";
 import "../../_shared/models.tsp";
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Common room properties shared between create and update requests.")
 model RoomRequestProperties {
   @doc("Display name of the room. Maximum of 200 characters. Defaults to the value of name.")
@@ -55,7 +58,7 @@ model RoomRequestProperties {
 
   @doc("User-defined metadata for the room. Must be a valid JSON object. Maximum of 2000 characters when serialized.")
   @example(#{})
-  meta?: Record<unknown>;
+  meta?: TypeSpec.Record<unknown>;
 
   @doc("Enable/disable jitter buffer audio-video sync.")
   @example(true)

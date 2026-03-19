@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/swml_webhooks/{swml_webhook_id}/addresses")
-namespace FabricAPI.SWMLWebhookAddresses {
+namespace SignalWireAPI.Fabric.SWMLWebhookAddresses {
   @tag(SWML_WEBHOOK_TAG)
   @friendlyName("SWML Webhooks")
   interface SWMLWebhookAddresses {

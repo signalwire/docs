@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/cxml_applications/{id}/addresses")
-namespace FabricAPI.CxmlApplication.Addresses {
+namespace SignalWireAPI.Fabric.CxmlApplication.Addresses {
   @tag(CXML_APPLICATIONS_TAG)
   interface CxmlApplicationAddresses {
     @operationId("list_cxml_application_addresses")

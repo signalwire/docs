@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/rooms/{id}/streams")
-namespace VideoAPI.RoomStreams {
+namespace SignalWireAPI.Video.RoomStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Room Streams")
   interface RoomStreams {
@@ -40,7 +40,7 @@ namespace VideoAPI.RoomStreams {
 }
 
 @route("/streams")
-namespace VideoAPI.Streams {
+namespace SignalWireAPI.Video.Streams {
   @tag(STREAMS_TAG)
   @friendlyName("Streams")
   interface Streams {

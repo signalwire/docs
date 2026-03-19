@@ -15,7 +15,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_recordings")
-namespace VideoAPI.RoomRecordings {
+namespace SignalWireAPI.Video.RoomRecordings {
   @tag(ROOM_RECORDINGS_TAG)
   @friendlyName("Room Recordings")
   interface RoomRecordings {

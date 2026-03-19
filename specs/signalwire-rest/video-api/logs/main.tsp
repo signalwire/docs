@@ -14,8 +14,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace VideoAPI.Logs {
-  @tag(LOGS_TAG)
+namespace SignalWireAPI.Video.Logs {
+  @tag(VIDEO_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_logs")

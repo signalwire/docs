@@ -15,16 +15,16 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_endpoints")
-namespace FabricAPI.SipEndpoints {
-  @tag(SIP_ENDPOINTS_TAG)
-  @friendlyName("SIP Endpoints")
-  @doc("SIP Endpoints API category.")
+namespace SignalWireAPI.Fabric.SipEndpoints {
+  @tag(FABRIC_SIP_ENDPOINTS_TAG)
+  @friendlyName("SIP Credentials")
+  @doc("SIP Credentials API category.")
   interface SipEndpoints {
-    @operationId("list_sip_endpoints")
-    @summary("List SIP Endpoints")
+    @operationId("list_sip_credentials")
+    @summary("List SIP Credentials")
     @doc("""
-      A list of SIP Endpoints
-      
+      A list of SIP Credentials
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
@@ -33,11 +33,11 @@ namespace FabricAPI.SipEndpoints {
       | StatusCode404
       | StatusCode500;
 
-    @operationId("get_sip_endpoint")
-    @summary("Get SIP Endpoint")
+    @operationId("get_sip_credential")
+    @summary("Get SIP Credential")
     @doc("""
-      Returns a SIP Endpoint by ID
-      
+      Returns a SIP Credential by ID
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...SipEndpointPathID):
@@ -49,11 +49,11 @@ namespace FabricAPI.SipEndpoints {
       | StatusCode404
       | StatusCode500;
 
-    @operationId("create_sip_endpoint")
-    @summary("Create SIP Endpoint")
+    @operationId("create_sip_credential")
+    @summary("Create SIP Credential")
     @doc("""
-      Creates a SIP Endpoint
-      
+      Creates a SIP Credential
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
@@ -67,11 +67,11 @@ namespace FabricAPI.SipEndpoints {
       | ResourceSipEndpointCreateStatusCode422
       | StatusCode500;
 
-    @operationId("update_sip_endpoint")
-    @summary("Update SIP Endpoint")
+    @operationId("update_sip_credential")
+    @summary("Update SIP Credential")
     @doc("""
-      Updates a SIP Endpoint by ID
-      
+      Updates a SIP Credential by ID
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @put
@@ -85,11 +85,11 @@ namespace FabricAPI.SipEndpoints {
       | ResourceSipEndpointUpdateStatusCode422
       | StatusCode500;
 
-    @operationId("delete_sip_endpoint")
-    @summary("Delete SIP Endpoint")
+    @operationId("delete_sip_credential")
+    @summary("Delete SIP Credential")
     @doc("""
-      Deletes a SIP Endpoint by ID
-      
+      Deletes a SIP Credential by ID
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete

@@ -1,5 +1,8 @@
 import "../_globally_shared/enums.tsp";
 
+namespace SignalWireAPI.Voice;
+
+
 enum VoiceLogStatus {
   queued,
   initiated,

@@ -4,6 +4,9 @@ import "@typespec/openapi3";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
+namespace SignalWireAPI.Datasphere;
+
+
 model DocumentSearchRequest {
   @doc("Document tags.")
   @example(#["sports", "football", "game"])

@@ -14,7 +14,7 @@ using Types.StatusCodes;
 
 @webhook("tenDlcStatusCallback", TenDlcStatusCallbackPayload, CAMPAIGN_REGISTRY_TAG)
 @route("/registry/beta")
-namespace RelayRestAPI.RegistryBeta {
+namespace SignalWireAPI.RelayRest.RegistryBeta {
   @route("/brands")
   @tag(CAMPAIGN_REGISTRY_TAG)
   @friendlyName("Brands")

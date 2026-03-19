@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/relay_applications/{id}/addresses")
-namespace FabricAPI.RelayApplication.Addresses {
+namespace SignalWireAPI.Fabric.RelayApplication.Addresses {
   @tag(RELAY_APPLICATION_TAG)
   interface RelayApplicationAddresses {
     @operationId("list_relay_application_addresses")

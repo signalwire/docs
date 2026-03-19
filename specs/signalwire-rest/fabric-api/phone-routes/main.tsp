@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/phone_routes")
-namespace FabricAPI.PhoneRoutes {
+namespace SignalWireAPI.Fabric.PhoneRoutes {
   @tag(PHONE_ROUTES_TAG)
   @friendlyName("Phone Routes")
   interface PhoneRoutes {

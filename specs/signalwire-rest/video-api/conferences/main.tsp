@@ -17,8 +17,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/conferences")
-namespace VideoAPI.Conferences {
-  @tag(CONFERENCES_TAG)
+namespace SignalWireAPI.Video.Conferences {
+  @tag(VIDEO_CONFERENCES_TAG)
   @friendlyName("Conferences")
   interface Conferences {
     @operationId("create_video_conference")
@@ -97,7 +97,7 @@ namespace VideoAPI.Conferences {
 }
 
 @route("/conferences/{id}/streams")
-namespace VideoAPI.ConferenceStreams {
+namespace SignalWireAPI.Video.ConferenceStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Conference Streams")
   interface ConferenceStreams {

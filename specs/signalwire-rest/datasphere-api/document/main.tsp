@@ -11,7 +11,7 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-namespace DatasphereAPI.Documents {
+namespace SignalWireAPI.Datasphere.Documents {
   @route("/documents")
   @tag(DOCUMENTS_TAG)
   interface Documents {
@@ -119,7 +119,7 @@ namespace DatasphereAPI.Documents {
   }
 }
 
-namespace DatasphereAPI.Chunks {
+namespace SignalWireAPI.Datasphere.Chunks {
   @route("/documents/{documentId}/chunks")
   @tag(CHUNKS_TAG)
   @friendlyName("Chunks")

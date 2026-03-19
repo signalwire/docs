@@ -2,11 +2,14 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SignalWireAPI.PubSub;
+
+
 /* Model is used to work-around a bug in the rest api plugin, not a TypeSpec issue. Duplicate description must be present and usage of a model is required.
 Otherwise the property will render a additionalProperty with the exact same description as the top level property holding additionalProperties. */
 @doc("An arbitrary JSON object available to store stateful application information in. Must be valid JSON and have a maximum size of 2,000 characters.")
 @example(#{ display_name: "Joe", an_array: #["foo", "bar", "baz"] })
-model PubSubState is Record<unknown>;
+model PubSubState is TypeSpec.Record<unknown>;
 
 model NewPubSubToken {
   @minValue(1)
@@ -49,7 +52,7 @@ model NewPubSubToken {
   channela: #{ read: true, write: false },
   channelb: #{ read: true },
 })
-model PubSubChannels is Record<PubSubPermission>;
+model PubSubChannels is TypeSpec.Record<PubSubPermission>;
 
 @summary("Read Permission")
 model PubSubPermissionWithRead {

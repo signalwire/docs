@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/dialogflow_agents/{id}/addresses")
-namespace FabricAPI.DialogflowAgent.Addresses {
+namespace SignalWireAPI.Fabric.DialogflowAgent.Addresses {
   @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgentAddresses {
     @operationId("list_dialogflow_agent_addresses")

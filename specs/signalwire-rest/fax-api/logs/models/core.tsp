@@ -3,6 +3,9 @@ import "../../const.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Fax;
+
+
 model LogPathID {
   @doc("Unique ID of the log")
   @format("uuid")

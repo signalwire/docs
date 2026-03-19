@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/call_flow/{id}/versions")
-namespace FabricAPI.CallFlow.Versions {
+namespace SignalWireAPI.Fabric.CallFlow.Versions {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowVersions {
     @operationId("list_call_flow_versions")

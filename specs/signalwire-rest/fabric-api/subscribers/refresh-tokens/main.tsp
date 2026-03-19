@@ -12,7 +12,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/subscribers/tokens/refresh")
-namespace FabricAPI.SubscriberRefreshTokens {
+namespace SignalWireAPI.Fabric.SubscriberRefreshTokens {
   @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Refresh Token")
   interface RefreshTokens {

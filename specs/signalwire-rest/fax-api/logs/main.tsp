@@ -13,8 +13,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace FaxAPI.Logs {
-  @tag(LOGS_TAG)
+namespace SignalWireAPI.Fax.Logs {
+  @tag(FAX_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_fax_logs")

@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/call_flow/{id}/addresses")
-namespace FabricAPI.CallFlow.Addresses {
+namespace SignalWireAPI.Fabric.CallFlow.Addresses {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowAddresses {
     @operationId("list_call_flow_addresses")

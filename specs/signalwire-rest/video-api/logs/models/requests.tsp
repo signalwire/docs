@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Query parameters for listing logs.")
 model ListLogsRequest {
   @query

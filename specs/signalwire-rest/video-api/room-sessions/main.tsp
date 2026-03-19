@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_sessions")
-namespace VideoAPI.RoomSessions {
+namespace SignalWireAPI.Video.RoomSessions {
   @tag(ROOM_SESSIONS_TAG)
   @friendlyName("Room Sessions")
   interface RoomSessions {

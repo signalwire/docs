@@ -14,8 +14,8 @@ using Types.StatusCodes;
 
 @useAuth(SignalWireBasicAuth)
 @route("/conferences")
-namespace LogsAPI.Conferences {
-  @tag(CONFERENCES_TAG)
+namespace SignalWireAPI.Logs.Conferences {
+  @tag(CONFERENCE_LOGS_TAG)
   @friendlyName("Conferences")
   interface Conferences {
     @operationId("list_conferences")

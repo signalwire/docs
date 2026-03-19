@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/swml_scripts")
-namespace FabricAPI.SwmlScripts {
+namespace SignalWireAPI.Fabric.SwmlScripts {
   @tag(SWML_SCRIPTS_TAG)
   @friendlyName("SWML Scripts")
   interface SwmlScripts {
