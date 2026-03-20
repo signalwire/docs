@@ -16,7 +16,7 @@ model Pay {
       The URL to make POST requests with all the gathered payment details.
       This URL is used to process the final payment transaction and return the results through the response.
       
-      Visit /docs/swml/reference/pay#payment_connector_url for more important information.
+      Visit [pay documentation](/docs/swml/reference/pay#payment_connector_url) for more important information.
       """)
     @example("https://example.com/payment-connector")
     payment_connector_url: url;
