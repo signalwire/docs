@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
   @friendlyName("FreeSWITCH Connectors")
   interface FreeswitchConnectors {
     @operationId("list_freeswitch_connectors")
-    @summary("List FreeSWITCH Connectors")
+    @summary("List FreeSWITCH connectors")
     @doc("""
       A list of FreeSWITCH Connectors
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
       | StatusCode500;
 
     @operationId("get_freeswitch_connector")
-    @summary("Get FreeSWITCH Connector")
+    @summary("Get FreeSWITCH connector")
     @doc("""
       Returns a FreeSWITCH Connector by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
       | StatusCode500;
 
     @operationId("create_freeswitch_connector")
-    @summary("Create FreeSWITCH Connector")
+    @summary("Create FreeSWITCH connector")
     @doc("""
       Creates a FreeSWITCH Connector
       
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
       | StatusCode500;
 
     @operationId("update_freeswitch_connector")
-    @summary("Update FreeSWITCH Connector")
+    @summary("Update FreeSWITCH connector")
     @doc("""
       Updates a FreeSWITCH Connector by ID
       
@@ -87,7 +87,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectors {
       | StatusCode500;
 
     @operationId("delete_freeswitch_connector")
-    @summary("Delete FreeSWITCH Connector")
+    @summary("Delete FreeSWITCH connector")
     @doc("""
       Deletes a FreeSWITCH Connector by ID
       

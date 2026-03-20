@@ -15,7 +15,7 @@ namespace SignalWireAPI.Fabric.SipEndpoint.Addresses {
   @tag(FABRIC_SIP_ENDPOINTS_TAG)
   interface SipEndpointAddresses {
     @operationId("list_sip_credential_addresses")
-    @summary("List SIP Credential addresses")
+    @summary("List SIP credential Addresses")
     @doc("""
       A list of addresses assigned to a SIP Credential.
       

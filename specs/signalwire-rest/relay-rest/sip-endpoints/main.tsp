@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
   @friendlyName("SIP Endpoints")
   interface SipEndpoints {
     @operationId("list_sip_endpoints")
-    @summary("List all SIP Endpoints.")
+    @summary("List SIP endpoints")
     @doc("""
       Returns a list of your SIP endpoints.
 
@@ -32,7 +32,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       | StatusCode500;
 
     @operationId("create_sip_endpoint")
-    @summary("Create a SIP Endpoint")
+    @summary("Create SIP endpoint")
     @doc("""
       Creates a new SIP endpoint.
 
@@ -48,7 +48,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       | StatusCode500;
 
     @operationId("retrieve_sip_endpoint")
-    @summary("Retrieve a SIP Endpoint")
+    @summary("Get SIP endpoint")
     @doc("""
       Retrieves the details of a SIP endpoint.
 
@@ -64,7 +64,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       | StatusCode500;
 
     @operationId("update_sip_endpoint")
-    @summary("Update a SIP Endpoint")
+    @summary("Update SIP endpoint")
     @doc("""
       Updates a SIP endpoint.
 
@@ -81,7 +81,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
       | StatusCode500;
 
     @operationId("delete_sip_endpoint")
-    @summary("Delete a SIP Endpoint")
+    @summary("Delete SIP endpoint")
     @doc("""
       Permanently deletes a SIP endpoint.
 

@@ -15,7 +15,7 @@ namespace SignalWireAPI.Fabric.CallFlow.Addresses {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowAddresses {
     @operationId("list_call_flow_addresses")
-    @summary("List Call Flow Addresses")
+    @summary("List call flow Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific Call Flow.
       

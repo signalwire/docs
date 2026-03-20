@@ -16,7 +16,7 @@ namespace SignalWireAPI.Fabric.CallFlow.Versions {
   @tag(CALL_FLOWS_TAG)
   interface CallFlowVersions {
     @operationId("list_call_flow_versions")
-    @summary("List Call Flow Versions")
+    @summary("List call flow versions")
     @doc("""
       Returns a list of versions of a Call Flow.
       
@@ -29,7 +29,7 @@ namespace SignalWireAPI.Fabric.CallFlow.Versions {
       | StatusCode500;
 
     @operationId("deploy_call_flow_version")
-    @summary("Deploy a Call Flow Version")
+    @summary("Deploy call flow version")
     @doc("""
       Deploys a specific version of a Call Flow.
       

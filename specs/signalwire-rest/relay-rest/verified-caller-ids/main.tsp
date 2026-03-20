@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
   @friendlyName("Verified Caller IDs")
   interface VerifiedCallerID {
     @operationId("list_verified_caller_ids")
-    @summary("List all Verified Caller IDs")
+    @summary("List verified caller IDs")
     @doc("""
       Returns a list of your Verified Caller IDs. The caller IDs are returned sorted by creation date, with the most recent caller IDs appearing first. The list is filterable by sending in any of the following parameters.
       
@@ -33,7 +33,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
     ): VerifiedCallerIDListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_verified_caller_id")
-    @summary("Create a new Verified Caller ID")
+    @summary("Create verified caller ID")
     @doc("""
       Creates a new verified caller ID. A verification code will be sent to the phone number.
       
@@ -50,7 +50,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | StatusCode500;
 
     @operationId("retrieve_verified_caller_id")
-    @summary("Retrieve a Verified Caller ID")
+    @summary("Get verified caller ID")
     @doc("""
       Retrieves the details of a verified caller ID.
       
@@ -63,7 +63,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | StatusCode500;
 
     @operationId("update_verified_caller_id")
-    @summary("Update a Verified Caller ID")
+    @summary("Update verified caller ID")
     @doc("""
       Updates a verified caller ID.
       
@@ -81,7 +81,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | StatusCode500;
 
     @operationId("redial_verification_call")
-    @summary("Redial Verification Call")
+    @summary("Redial verification call")
     @doc("""
       Redials the verification call for a verified caller ID.
       
@@ -96,7 +96,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | StatusCode500;
 
     @operationId("validate_verification_code")
-    @summary("Validate the Verification Code")
+    @summary("Validate verification code")
     @doc("""
       Validates the verification code for a verified caller ID.
       
@@ -115,7 +115,7 @@ namespace SignalWireAPI.RelayRest.VerifiedCallerID {
       | StatusCode500;
 
     @operationId("delete_verified_caller_id")
-    @summary("Delete a Verified Caller ID")
+    @summary("Delete verified caller ID")
     @doc("""
       Deletes a verified caller ID.
       

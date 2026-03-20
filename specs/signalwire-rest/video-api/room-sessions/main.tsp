@@ -18,7 +18,7 @@ namespace SignalWireAPI.Video.RoomSessions {
   @friendlyName("Room Sessions")
   interface RoomSessions {
     @operationId("list_room_sessions")
-    @summary("List Room Sessions")
+    @summary("List room sessions")
     @doc("A list of past and in-progress Room Sessions.\n\n${tokenPermissions<"_Video_">}")
     list(...ListRoomSessionsRequest):
       | ListRoomSessionsResponse
@@ -28,7 +28,7 @@ namespace SignalWireAPI.Video.RoomSessions {
       | StatusCode500;
 
     @operationId("get_room_session")
-    @summary("Find a Room Session by ID")
+    @summary("Get room session")
     @doc("Find a Room Session by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
@@ -36,7 +36,7 @@ namespace SignalWireAPI.Video.RoomSessions {
     ): RoomSessionResponse | StatusCode400 | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("list_room_session_recordings")
-    @summary("List a Room Session's Recordings")
+    @summary("List room session recordings")
     @doc("A list of Room Recordings for a particular Room Session.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/recordings")
     listRecordings(
@@ -50,7 +50,7 @@ namespace SignalWireAPI.Video.RoomSessions {
       | StatusCode500;
 
     @operationId("list_room_session_members")
-    @summary("List a Room Session's Members")
+    @summary("List room session members")
     @doc("A list of Members for a particular Room Session.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/members")
     listMembers(
@@ -64,7 +64,7 @@ namespace SignalWireAPI.Video.RoomSessions {
       | StatusCode500;
 
     @operationId("list_room_session_events")
-    @summary("List a Room Session's Events")
+    @summary("List room session events")
     @doc("A list of Events for a particular Room Session.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/events")
     listEvents(

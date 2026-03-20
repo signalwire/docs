@@ -19,7 +19,7 @@ namespace SignalWireAPI.Video.Logs {
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_logs")
-    @summary("List Logs")
+    @summary("List video logs")
     @doc("List the available logs.\n\n${tokenPermissions<"_Video_">}")
     list(...ListLogsRequest):
       | ListLogsResponse
@@ -30,7 +30,7 @@ namespace SignalWireAPI.Video.Logs {
       | StatusCode500;
 
     @operationId("get_log")
-    @summary("Find a Log by ID")
+    @summary("Get video log")
     @doc("Find a log by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(

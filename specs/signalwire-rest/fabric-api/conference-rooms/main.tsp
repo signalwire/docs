@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
   @friendlyName("Conference Rooms")
   interface ConferenceRooms {
     @operationId("list_conference_rooms")
-    @summary("List Conference Rooms")
+    @summary("List conference rooms")
     @doc("""
       Returns a list of conference rooms.
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
       | StatusCode500;
 
     @operationId("get_conference_room")
-    @summary("Get Conference Room")
+    @summary("Get conference room")
     @doc("""
       Returns a Conference Room by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
       | StatusCode500;
 
     @operationId("create_conference_room")
-    @summary("Create Conference Room")
+    @summary("Create conference room")
     @doc("""
       Creates a Conference Room
       
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
       | StatusCode500;
 
     @operationId("update_conference_room")
-    @summary("Update Conference Room")
+    @summary("Update conference room")
     @doc("""
       Updates a Conference Room by ID
       
@@ -87,7 +87,7 @@ namespace SignalWireAPI.Fabric.ConferenceRooms {
       | StatusCode500;
 
     @operationId("delete_conference_room")
-    @summary("Delete Conference Room")
+    @summary("Delete conference room")
     @doc("""
       Deletes a Conference Room by ID
       

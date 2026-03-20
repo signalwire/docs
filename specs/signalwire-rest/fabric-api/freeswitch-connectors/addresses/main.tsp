@@ -15,7 +15,7 @@ namespace SignalWireAPI.Fabric.FreeswitchConnectorAddresses {
   @tag(FREESWITCH_CONNECTOR_TAG)
   interface FreeswitchConnectorAddresses {
     @operationId("list_freeswitch_connector_addresses")
-    @summary("List FreeSWITCH Connector Addresses")
+    @summary("List FreeSWITCH connector Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific FreeSWITCH Connector.
       

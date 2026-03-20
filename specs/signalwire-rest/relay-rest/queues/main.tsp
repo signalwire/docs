@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.Queues {
   @friendlyName("Queues")
   interface Queues {
     @operationId("list_queues")
-    @summary("List all Queues")
+    @summary("List queues")
     @doc("""
       Returns a list of your queues.
       
@@ -26,7 +26,7 @@ namespace SignalWireAPI.RelayRest.Queues {
     list(): QueueListResponse | StatusCode401 | ValidationError | StatusCode500;
 
     @operationId("create_queue")
-    @summary("Create a Queue")
+    @summary("Create queue")
     @doc("""
       Creates a new queue.
       
@@ -43,7 +43,7 @@ namespace SignalWireAPI.RelayRest.Queues {
       | StatusCode500;
 
     @operationId("get_queue")
-    @summary("Retrieve a Queue")
+    @summary("Get queue")
     @doc("""
       Retrieves the details of a queue.
       
@@ -57,7 +57,7 @@ namespace SignalWireAPI.RelayRest.Queues {
       | StatusCode500;
 
     @operationId("update_queue")
-    @summary("Update a Queue")
+    @summary("Update queue")
     @doc("""
       Updates a queue.
       
@@ -75,7 +75,7 @@ namespace SignalWireAPI.RelayRest.Queues {
       | StatusCode500;
 
     @operationId("delete_queue")
-    @summary("Delete a Queue")
+    @summary("Delete queue")
     @doc("""
       Deletes a queue.
       
@@ -97,7 +97,7 @@ namespace SignalWireAPI.RelayRest.Queues {
   @route("/{queue_id}/members")
   interface QueueMembers {
     @operationId("list_queue_members")
-    @summary("List all members of a queue")
+    @summary("List queue members")
     @doc("""
       Returns a list of members in a queue.
       
@@ -111,7 +111,7 @@ namespace SignalWireAPI.RelayRest.Queues {
       | StatusCode500;
 
     @operationId("retrieve_next_queue_member")
-    @summary("Retrieve next member on the queue")
+    @summary("Get next queue member")
     @doc("""
       Retrieves the next member in the queue without dequeuing.
       
@@ -126,7 +126,7 @@ namespace SignalWireAPI.RelayRest.Queues {
       | StatusCode500;
 
     @operationId("retrieve_queue_member")
-    @summary("Retrieve a queue member")
+    @summary("Get queue member")
     @doc("""
       Retrieves the details of a queue member.
       

@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.SubscriberTokens {
   @tag(SUBSCRIBERS_TOKENS_TAG)
   interface SubscriberTokens {
     @operationId("create_subscriber_token")
-    @summary("Create Subscriber Token")
+    @summary("Create Subscriber token")
     @doc("""
       Create a Subscriber Token
       

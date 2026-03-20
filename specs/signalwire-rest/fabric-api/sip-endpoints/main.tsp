@@ -21,7 +21,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
   @doc("SIP Credentials API category.")
   interface SipEndpoints {
     @operationId("list_sip_credentials")
-    @summary("List SIP Credentials")
+    @summary("List SIP credentials")
     @doc("""
       A list of SIP Credentials
 
@@ -34,7 +34,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
       | StatusCode500;
 
     @operationId("get_sip_credential")
-    @summary("Get SIP Credential")
+    @summary("Get SIP credential")
     @doc("""
       Returns a SIP Credential by ID
 
@@ -50,7 +50,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
       | StatusCode500;
 
     @operationId("create_sip_credential")
-    @summary("Create SIP Credential")
+    @summary("Create SIP credential")
     @doc("""
       Creates a SIP Credential
 
@@ -68,7 +68,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
       | StatusCode500;
 
     @operationId("update_sip_credential")
-    @summary("Update SIP Credential")
+    @summary("Update SIP credential")
     @doc("""
       Updates a SIP Credential by ID
 
@@ -86,7 +86,7 @@ namespace SignalWireAPI.Fabric.SipEndpoints {
       | StatusCode500;
 
     @operationId("delete_sip_credential")
-    @summary("Delete SIP Credential")
+    @summary("Delete SIP credential")
     @doc("""
       Deletes a SIP Credential by ID
 

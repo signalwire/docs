@@ -18,7 +18,7 @@ namespace SignalWireAPI.Message.Logs {
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_message_logs")
-    @summary("List Logs")
+    @summary("List message logs")
     @doc("""
       List the available logs.
 
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Message.Logs {
       | StatusCode500;
 
     @operationId("get_message_log")
-    @summary("Find a Log by ID")
+    @summary("Get message log")
     @doc("""
       Find a log by ID.
 

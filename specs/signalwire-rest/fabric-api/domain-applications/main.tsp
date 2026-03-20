@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.DomainApplications {
   @tag(FABRIC_DOMAIN_APPLICATIONS_TAG)
   interface DomainApplications {
     @operationId("assign_resource_domain_application")
-    @summary("Assign a resource as a call handler for a Domain Application.")
+    @summary("Assign domain application handler")
     @doc("""
       This endpoint assigns a specific resource to a Domain Application, allowing inbound calls to be handled by the resource.
       <Note>

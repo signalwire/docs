@@ -18,7 +18,7 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
   @friendlyName("SIP Endpoints")
   interface SubscriberSipEndpoint {
     @operationId("list_subscriber_sip_credentials")
-    @summary("List Subscriber SIP Credentials")
+    @summary("List Subscriber SIP credentials")
     @doc("""
       A list of SIP Credentials for the Subscriber
       
@@ -31,7 +31,7 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
       | StatusCode500;
 
     @operationId("get_subscriber_sip_credential")
-    @summary("Get Subscriber SIP Credential")
+    @summary("Get Subscriber SIP credential")
     @doc("""
       Returns a Subscriber SIP Credential by ID
       
@@ -47,7 +47,7 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
       | StatusCode500;
 
     @operationId("create_subscriber_sip_credential")
-    @summary("Create Subscriber SIP Credential")
+    @summary("Create Subscriber SIP credential")
     @doc("""
       Creates a Subscriber SIP Credential
       
@@ -65,7 +65,7 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
       | StatusCode500;
 
     @operationId("update_subscriber_sip_credential")
-    @summary("Update Subscriber SIP Credential")
+    @summary("Update Subscriber SIP credential")
     @doc("""
       Updates a Subscriber SIP Credential by ID
       
@@ -87,7 +87,7 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
       | StatusCode500;
 
     @operationId("delete_subscriber_sip_credential")
-    @summary("Delete Subscriber SIP Credential")
+    @summary("Delete Subscriber SIP credential")
     @doc("""
       Deletes a Subscriber SIP Credential by ID
       

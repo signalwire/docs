@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.SipProfile {
   @friendlyName("SIP Profile")
   interface SipProfile {
     @operationId("retrieve_sip_profile")
-    @summary("Retrieve a SIP Profile")
+    @summary("Get SIP profile")
     @doc("""
       Retrieves the SIP profile settings for your project.
       
@@ -27,7 +27,7 @@ namespace SignalWireAPI.RelayRest.SipProfile {
     read(): SipProfileResponse | StatusCode401 | StatusCode500;
 
     @operationId("update_sip_profile")
-    @summary("Update a SIP Profile")
+    @summary("Update SIP profile")
     @doc("""
       Updates the SIP profile settings for your project.
       

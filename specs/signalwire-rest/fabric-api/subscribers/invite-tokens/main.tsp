@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.SubscriberInviteTokens {
   @friendlyName("Invite Token")
   interface InviteTokens {
     @operationId("create_subscriber_invite_token")
-    @summary("Create a Subscriber Invite Token")
+    @summary("Create Subscriber invite token")
     @doc("""
       Creates a Subscriber Invite Token to be used for client-side API calls. The token is authorized using a subscriber's SAT (Subscriber Access Token)
       

@@ -16,7 +16,7 @@ namespace SignalWireAPI.Fabric.SipGateways.Addresses {
   @friendlyName("SIP Gateway")
   interface RelayApplicationAddresses {
     @operationId("list_sip_gateway_addresses")
-    @summary("List Fabric Addresses assigned to a SIP Gateway")
+    @summary("List SIP gateway Addresses")
     @doc("""
       Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.
       

@@ -16,7 +16,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhook.Addresses {
   @friendlyName("cXML Webhooks")
   interface CXMLWebhookAddresses {
     @operationId("list_cxml_webhook_addresses")
-    @summary("List cXML Webhook Addresses")
+    @summary("List cXML webhook Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific cXML Webhook.
       

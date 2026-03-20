@@ -16,7 +16,7 @@ namespace SignalWireAPI.Chat.Tokens {
   @friendlyName("Tokens")
   interface ChatTokens {
     @operationId("create_chat_token")
-    @summary("Generate a new Chat Token")
+    @summary("Create chat token")
     @doc("""
       Generate a Chat Token to be used to authenticate clients to the Chat Service.
       

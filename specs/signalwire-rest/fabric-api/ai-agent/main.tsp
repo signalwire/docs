@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
   @friendlyName("AI Agent: Custom")
   interface AIAgents {
     @operationId("list_ai_agents")
-    @summary("List AI Agents")
+    @summary("List AI agents")
     @doc("""
       A list of AI Agents
       
@@ -28,7 +28,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
     list(): AIAgentListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("get_ai_agent")
-    @summary("Get AI Agent")
+    @summary("Get AI agent")
     @doc("""
       Returns an AI Agent by ID
       
@@ -44,7 +44,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
       | StatusCode500;
 
     @operationId("create_ai_agent")
-    @summary("Create AI Agent")
+    @summary("Create AI agent")
     @doc("""
       Creates an AI Agent
       
@@ -62,7 +62,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
       | StatusCode500;
 
     @operationId("update_ai_agent")
-    @summary("Update AI Agent")
+    @summary("Update AI agent")
     @doc("""
       Updates an AI Agent by ID
       
@@ -80,7 +80,7 @@ namespace SignalWireAPI.Fabric.AIAgents {
       | StatusCode500;
 
     @operationId("delete_ai_agent")
-    @summary("Delete AI Agent")
+    @summary("Delete AI agent")
     @doc("""
       Deletes an AI Agent by ID
       

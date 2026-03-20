@@ -16,7 +16,7 @@ namespace SignalWireAPI.PubSub.Tokens {
   @tag(PUBSUB_TOKENS_TAG)
   @friendlyName("Tokens")
   interface PubSubTokens {
-    @summary("Generate a new PubSub Token")
+    @summary("Create PubSub token")
     @doc("""
       Generate a PubSub Token to be used to authenticate clients to the PubSub Service.
       

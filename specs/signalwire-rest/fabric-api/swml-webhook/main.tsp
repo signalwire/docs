@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhooks {
   @friendlyName("SWML Webhooks")
   interface SWMLWebhooks {
     @operationId("list_swml_webhooks")
-    @summary("List SWML Webhooks")
+    @summary("List SWML webhooks")
     @doc("""
       A list of SWML Webhooks
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhooks {
       | StatusCode500;
 
     @operationId("get_swml_webhook")
-    @summary("Get SWML Webhook")
+    @summary("Get SWML webhook")
     @doc("""
       Returns an SWML Webhook by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhooks {
       | StatusCode500;
 
     @operationId("create_swml_webhook")
-    @summary("Create SWML Webhook")
+    @summary("Create SWML webhook")
     @doc("""
       Creates an SWML Webhook
       
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhooks {
       | StatusCode500;
 
     @operationId("update_swml_webhook")
-    @summary("Update SWML Webhook")
+    @summary("Update SWML webhook")
     @doc("""
       Updates an SWML Webhook by ID
       
@@ -84,7 +84,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhooks {
       | StatusCode500;
 
     @operationId("delete_swml_webhook")
-    @summary("Delete SWML Webhook")
+    @summary("Delete SWML webhook")
     @doc("""
       Deletes an SWML Webhook by ID
       

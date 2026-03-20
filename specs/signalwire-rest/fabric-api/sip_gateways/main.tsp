@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
   @friendlyName("SIP Gateway")
   interface SipGateways {
     @operationId("list_sip_gateways")
-    @summary("List SIP Gateways")
+    @summary("List SIP gateways")
     @doc("""
       Returns a paginated list of SIP Gateways for the authenticated project.
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
       | StatusCode500;
 
     @operationId("get_sip_gateway")
-    @summary("Get SIP Gateway")
+    @summary("Get SIP gateway")
     @doc("""
       Returns an SIP Gateway by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
       | StatusCode500;
 
     @operationId("create_sip_gateway")
-    @summary("Create SIP Gateway")
+    @summary("Create SIP gateway")
     @doc("""
       Creates a SIP Gateway that can be used to dial external SIP entities.
       
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
       | StatusCode500;
 
     @operationId("update_sip_gateway")
-    @summary("Update SIP Gateway")
+    @summary("Update SIP gateway")
     @doc("""
       Updates a SIP Gateway by ID
       
@@ -84,7 +84,7 @@ namespace SignalWireAPI.Fabric.SipGateways {
       | StatusCode500;
 
     @operationId("delete_sip_gateway")
-    @summary("Delete SIP Gateway")
+    @summary("Delete SIP gateway")
     @doc("""
       Deletes a SIP Gateway by ID
       

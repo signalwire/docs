@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
   @friendlyName("Short Codes")
   interface ShortCodes {
     @operationId("list_short_codes")
-    @summary("List all Short Codes")
+    @summary("List short codes")
     @doc("""
       Returns a list of your short codes. The short codes are returned sorted
       by creation date, with the most recent appearing first.
@@ -31,7 +31,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
       | StatusCode500;
 
     @operationId("retrieve_short_code")
-    @summary("Retrieve a Short Code")
+    @summary("Get short code")
     @doc("""
       Retrieves the details of a short code.
       
@@ -45,7 +45,7 @@ namespace SignalWireAPI.RelayRest.ShortCodes {
       | StatusCode500;
 
     @operationId("update_short_code")
-    @summary("Update a Short Code")
+    @summary("Update short code")
     @doc("""
       Updates a short code's configuration.
       

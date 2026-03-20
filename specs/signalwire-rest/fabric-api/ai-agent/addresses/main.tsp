@@ -15,7 +15,7 @@ namespace SignalWireAPI.Fabric.AIAgent.Addresses {
   @tag(AI_CUSTOM_TAG)
   interface AIAgentAddresses {
     @operationId("list_ai_agent_addresses")
-    @summary("List AI Agent Addresses")
+    @summary("List AI agent Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific AI Agent.
       

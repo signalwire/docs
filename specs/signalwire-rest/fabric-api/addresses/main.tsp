@@ -17,7 +17,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
   @friendlyName("Fabric Address")
   interface FabricAddresses {
     @operationId("list_fabric_addresses")
-    @summary("List resource addresses from a client")
+    @summary("List Resource Addresses")
     @doc("""
       Lists resource addresses visible to the authenticated subscriber. This endpoint uses bearer token authentication with a SAT (Subscriber Access Token),
       which can be generated using the [Create Subscriber Token endpoint](/docs/apis/fabric/subscribers/create-subscriber-token).
@@ -31,7 +31,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
       | StatusCode500;
 
     @operationId("get_fabric_address")
-    @summary("Get resource address from a client")
+    @summary("Get Resource Address")
     @doc("""
       Returns a resource address by ID. This endpoint uses bearer token authentication with a SAT (Subscriber Access Token),
       which can be generated using the [Create Subscriber Token endpoint](/docs/apis/fabric/subscribers/create-subscriber-token).

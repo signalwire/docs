@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
   @friendlyName("cXML Applications")
   interface CxmlApplications {
     @operationId("list_cxml_applications")
-    @summary("List cXML Applications")
+    @summary("List cXML applications")
     @doc("""
       A list of cXML Applications
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
       | StatusCode500;
 
     @operationId("get_cxml_application")
-    @summary("Get cXML Application")
+    @summary("Get cXML application")
     @doc("""
       Returns a cXML Application by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
       | StatusCode500;
 
     @operationId("update_cxml_application")
-    @summary("Update cXML Application")
+    @summary("Update cXML application")
     @doc("""
       Updates a cXML Application by ID
       
@@ -69,7 +69,7 @@ namespace SignalWireAPI.Fabric.CxmlApplications {
       | StatusCode500;
 
     @operationId("delete_cxml_application")
-    @summary("Delete LAML Application")
+    @summary("Delete cXML application")
     @doc("""
       Deletes a LAML Application by ID
       

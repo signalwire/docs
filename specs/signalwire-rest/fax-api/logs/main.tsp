@@ -18,7 +18,7 @@ namespace SignalWireAPI.Fax.Logs {
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_fax_logs")
-    @summary("List Logs")
+    @summary("List fax logs")
     @doc("""
       List the available logs.
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fax.Logs {
       | StatusCode500;
 
     @operationId("get_fax_log")
-    @summary("Find a Log by ID")
+    @summary("Get fax log")
     @doc("""
       Find a log by ID.
       

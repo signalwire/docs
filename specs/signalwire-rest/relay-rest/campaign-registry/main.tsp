@@ -20,7 +20,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
   @friendlyName("Brands")
   interface Brands {
     @operationId("list_brands")
-    @summary("List all Brands")
+    @summary("List brands")
     @doc("""
       Returns a list of your registered brands for 10DLC.
       
@@ -37,7 +37,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     ): BrandListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_brand")
-    @summary("Create a Brand")
+    @summary("Create brand")
     @doc("""
       Creates a new brand for 10DLC registration.
       
@@ -54,7 +54,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
       | StatusCode500;
 
     @operationId("retrieve_brand")
-    @summary("Retrieve a Brand")
+    @summary("Get brand")
     @doc("""
       Retrieves the details of a brand.
       
@@ -67,7 +67,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
       | StatusCode500;
 
     @operationId("list_campaigns")
-    @summary("List all Campaigns")
+    @summary("List campaigns")
     @doc("""
       Returns a list of campaigns for a brand.
       
@@ -88,7 +88,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     ): CampaignListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("create_campaign")
-    @summary("Create a Campaign")
+    @summary("Create campaign")
     @doc("""
       Creates a new campaign for 10DLC registration.
       
@@ -112,7 +112,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
   @friendlyName("Campaigns")
   interface Campaigns {
     @operationId("retrieve_campaign")
-    @summary("Retrieve a Campaign")
+    @summary("Get campaign")
     @doc("""
       Retrieves the details of a campaign.
       
@@ -125,7 +125,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
       | StatusCode500;
 
     @operationId("update_campaign")
-    @summary("Update a Campaign")
+    @summary("Update campaign")
     @doc("""
       Updates a campaign.
       
@@ -143,7 +143,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
       | StatusCode500;
 
     @operationId("list_number_assignments")
-    @summary("List all Phone Number Assignments")
+    @summary("List phone number assignments")
     @doc("""
       Returns a list of phone numbers assigned to a campaign.
       
@@ -164,7 +164,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
       | StatusCode500;
 
     @operationId("list_orders")
-    @summary("List all Phone Number Assignment Orders")
+    @summary("List phone number assignment orders")
     @doc("""
       Returns a list of orders for a campaign.
       
@@ -181,7 +181,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
     ): OrderListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("create_order")
-    @summary("Create a Phone Number Assignment Order")
+    @summary("Create phone number assignment order")
     @doc("""
       Creates a new order for a campaign.
       
@@ -205,7 +205,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
   @friendlyName("Assigned Numbers")
   interface AssignedNumbers {
     @operationId("delete_number_assignment")
-    @summary("Delete a Phone Number Assignment")
+    @summary("Delete phone number assignment")
     @doc("""
       Removes a phone number from a campaign.
       
@@ -226,7 +226,7 @@ namespace SignalWireAPI.RelayRest.RegistryBeta {
   @friendlyName("Orders")
   interface Orders {
     @operationId("retrieve_order")
-    @summary("Retrieve a Phone Number Assignment Order")
+    @summary("Get phone number assignment order")
     @doc("""
       Retrieves the details of an order.
       

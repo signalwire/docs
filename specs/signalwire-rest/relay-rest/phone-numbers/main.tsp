@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
   @friendlyName("Phone Numbers")
   interface PhoneNumbers {
     @operationId("list_phone_numbers")
-    @summary("List all Phone Numbers")
+    @summary("List phone numbers")
     @doc("""
       Returns a list of your Phone Numbers. The phone numbers are returned
       sorted by creation date, with the most recent phone numbers appearing
@@ -33,7 +33,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | StatusCode500;
 
     @operationId("purchase_phone_number")
-    @summary("Purchase a Phone Number")
+    @summary("Purchase phone number")
     @doc("""
       Purchases a phone number.
       
@@ -51,7 +51,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | StatusCode500;
 
     @operationId("retrieve_phone_number")
-    @summary("Retrieve a Phone Number")
+    @summary("Get phone number")
     @doc("""
       Retrieves the details of a phone number.
       
@@ -65,7 +65,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | StatusCode500;
 
     @operationId("update_phone_number")
-    @summary("Update a Phone Number")
+    @summary("Update phone number")
     @doc("""
       Updates a phone number.
       
@@ -83,7 +83,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | StatusCode500;
 
     @operationId("release_phone_number")
-    @summary("Release a Phone Number")
+    @summary("Release phone number")
     @doc("""
       Releases a phone number.
       
@@ -100,7 +100,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       | StatusCode500;
 
     @operationId("search_available_phone_numbers")
-    @summary("Search for available Phone Numbers to Purchase")
+    @summary("Search phone numbers")
     @doc("""
       Searches for available phone numbers to purchase.
       
@@ -150,7 +150,7 @@ namespace SignalWireAPI.RelayRest.ImportedPhoneNumbers {
   @friendlyName("Imported Phone Numbers")
   interface ImportedPhoneNumbers {
     @operationId("create_imported_phone_number")
-    @summary("Import a Phone Number")
+    @summary("Import phone number")
     @doc("""
       Import a phone number hosted elsewhere into your SignalWire Space.
       
@@ -176,7 +176,7 @@ namespace SignalWireAPI.RelayRest.PhoneNumberLookup {
   @friendlyName("Phone Number Lookup")
   interface PhoneNumberLookup {
     @operationId("lookup_phone_number")
-    @summary("Phone Number Lookup")
+    @summary("Look up phone number")
     @doc("""
       This endpoint allows you to look up validity and formatting
       information about a number. You can optionally lookup additional

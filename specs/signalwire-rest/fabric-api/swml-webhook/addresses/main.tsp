@@ -16,7 +16,7 @@ namespace SignalWireAPI.Fabric.SWMLWebhookAddresses {
   @friendlyName("SWML Webhooks")
   interface SWMLWebhookAddresses {
     @operationId("list_swml_webhook_addresses")
-    @summary("List SWML Webhook Addresses")
+    @summary("List SWML webhook Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific SWML webhook.
       

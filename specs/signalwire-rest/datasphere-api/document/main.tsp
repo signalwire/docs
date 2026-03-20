@@ -21,7 +21,7 @@ namespace SignalWireAPI.Datasphere.Documents {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("List Documents")
+    @summary("List documents")
     list(...DocumentListQuery):
       | DocumentListResponse
       | StatusCode400
@@ -35,7 +35,7 @@ namespace SignalWireAPI.Datasphere.Documents {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("Get a Document")
+    @summary("Get document")
     @route("/{id}")
     get(...PathID):
       | {
@@ -53,7 +53,7 @@ namespace SignalWireAPI.Datasphere.Documents {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("Create a Document")
+    @summary("Create document")
     @post
     create(@body body: DocumentCreateRequest):
       | {
@@ -71,7 +71,7 @@ namespace SignalWireAPI.Datasphere.Documents {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("Update a Document")
+    @summary("Update document")
     @patch
     update(...PathID, ...DocumentUpdateRequest):
       | {
@@ -90,7 +90,7 @@ namespace SignalWireAPI.Datasphere.Documents {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("Delete a Document")
+    @summary("Delete document")
     @delete
     delete(...PathID):
       | {
@@ -108,7 +108,7 @@ namespace SignalWireAPI.Datasphere.Documents {
       ${tokenPermissions<"_DataSphere_">}
       """)
     @route("/search")
-    @summary("Search Documents")
+    @summary("Search documents")
     @post
     search(...DocumentSearchRequest):
       | SearchResponse
@@ -130,7 +130,7 @@ namespace SignalWireAPI.Datasphere.Chunks {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("List Chunks")
+    @summary("List chunks")
     list(...DocumentPathID, ...ChunkListQuery):
       | ChunkListResponse
       | StatusCode400
@@ -145,7 +145,7 @@ namespace SignalWireAPI.Datasphere.Chunks {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("Retrieve Chunk")
+    @summary("Get chunk")
     @route("/{chunkId}")
     get(...ChunkPathID):
       | ChunkResponse
@@ -160,7 +160,7 @@ namespace SignalWireAPI.Datasphere.Chunks {
       
       ${tokenPermissions<"_DataSphere_">}
       """)
-    @summary("Delete Chunk")
+    @summary("Delete chunk")
     @route("/{chunkId}")
     @delete
     delete(...ChunkPathID):

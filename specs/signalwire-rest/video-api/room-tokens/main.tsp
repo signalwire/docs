@@ -19,7 +19,7 @@ namespace SignalWireAPI.Video.RoomTokens {
   @friendlyName("Room Tokens")
   interface RoomTokens {
     @operationId("create_room_token")
-    @summary("Generate a new Video Room Token")
+    @summary("Create room token")
     @doc("Generate a Room Token allowing a client to join a Room.\n\n${tokenPermissions<"_Video_">}")
     @post
     create(@body body: CreateRoomTokenRequest):

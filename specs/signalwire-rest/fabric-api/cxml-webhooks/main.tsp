@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
   @friendlyName("cXML Webhooks")
   interface CXMLWebhooks {
     @operationId("list_cxml_webhooks")
-    @summary("List cXML Webhooks")
+    @summary("List cXML webhooks")
     @doc("""
       A list of cXML Webhooks
       
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
       | StatusCode500;
 
     @operationId("get_cxml_webhook")
-    @summary("Get cXML Webhook")
+    @summary("Get cXML webhook")
     @doc("""
       Returns an cXML Webhook by ID
       
@@ -48,7 +48,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
       | StatusCode500;
 
     @operationId("create_cxml_webhook")
-    @summary("Create cXML Webhook")
+    @summary("Create cXML webhook")
     @doc("""
       Creates an cXML Webhook
       
@@ -66,7 +66,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
       | StatusCode500;
 
     @operationId("update_cxml_webhook")
-    @summary("Update cXML Webhook")
+    @summary("Update cXML webhook")
     @doc("""
       Updates an cXML Webhook by ID
       
@@ -84,7 +84,7 @@ namespace SignalWireAPI.Fabric.CXMLWebhooks {
       | StatusCode500;
 
     @operationId("delete_cxml_webhook")
-    @summary("Delete cXML Webhook")
+    @summary("Delete cXML webhook")
     @doc("""
       Deletes an cXML Webhook by ID
       

@@ -16,7 +16,7 @@ namespace SignalWireAPI.RelayRest.Recordings {
   @friendlyName("Recordings")
   interface Recordings {
     @operationId("list_call_recordings")
-    @summary("List Call Recordings")
+    @summary("List recordings")
     @doc("""
       Returns a list of your recordings.
       
@@ -30,7 +30,7 @@ namespace SignalWireAPI.RelayRest.Recordings {
       | StatusCode500;
 
     @operationId("get_call_recording")
-    @summary("Get Call Recording")
+    @summary("Get recording")
     @doc("""
       Retrieves the details of a recording.
       
@@ -44,7 +44,7 @@ namespace SignalWireAPI.RelayRest.Recordings {
       | StatusCode500;
 
     @operationId("delete_call_recording")
-    @summary("Delete Call Recording")
+    @summary("Delete recording")
     @doc("""
       Deletes a recording.
       

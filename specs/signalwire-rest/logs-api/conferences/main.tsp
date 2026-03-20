@@ -19,7 +19,7 @@ namespace SignalWireAPI.Logs.Conferences {
   @friendlyName("Conferences")
   interface Conferences {
     @operationId("list_conferences")
-    @summary("List Conferences")
+    @summary("List conference logs")
     @doc("""
       A list of Conferences.
       

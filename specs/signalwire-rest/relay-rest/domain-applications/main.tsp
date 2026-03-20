@@ -17,7 +17,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
   @friendlyName("Domain Applications")
   interface DomainApplications {
     @operationId("list_domain_applications")
-    @summary("List all Domain Applications")
+    @summary("List domain applications")
     @doc("""
       Returns a list of your domain applications. The domain applications are returned sorted by creation date, with the most recent domain applications appearing first.
       
@@ -30,7 +30,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
       | StatusCode500;
 
     @operationId("create_domain_application")
-    @summary("Create a Domain Application")
+    @summary("Create domain application")
     @doc("""
       Creates a new domain application.
       
@@ -47,7 +47,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
       | StatusCode500;
 
     @operationId("retrieve_domain_application")
-    @summary("Retrieve a Domain Application")
+    @summary("Get domain application")
     @doc("""
       Retrieves the details of a Domain Application that has been previously created.
       
@@ -61,7 +61,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
       | StatusCode500;
 
     @operationId("update_domain_application")
-    @summary("Update a Domain Application")
+    @summary("Update domain application")
     @doc("""
       Updates a Domain Application.
       
@@ -79,7 +79,7 @@ namespace SignalWireAPI.RelayRest.DomainApplications {
       | StatusCode500;
 
     @operationId("delete_domain_application")
-    @summary("Delete a Domain Application")
+    @summary("Delete domain application")
     @doc("""
       Permanently deletes a Domain Application. It cannot be undone.
       
