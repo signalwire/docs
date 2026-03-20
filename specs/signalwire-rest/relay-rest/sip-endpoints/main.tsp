@@ -21,7 +21,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Returns a list of your SIP endpoints.
 
-      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/resources/sip-credentials/create-sip-credential) instead.</Warning>
 
       ${tokenPermissions<"_Voice_">}
       """)
@@ -36,7 +36,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Creates a new SIP endpoint.
 
-      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/resources/sip-credentials/create-sip-credential) instead.</Warning>
 
       ${tokenPermissions<"_Voice_">}
       """)
@@ -52,7 +52,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Retrieves the details of a SIP endpoint.
 
-      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/resources/sip-credentials/create-sip-credential) instead.</Warning>
 
       ${tokenPermissions<"_Voice_">}
       """)
@@ -68,7 +68,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Updates a SIP endpoint.
 
-      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/resources/sip-credentials/create-sip-credential) instead.</Warning>
 
       ${tokenPermissions<"_Voice_">}
       """)
@@ -85,7 +85,7 @@ namespace SignalWireAPI.RelayRest.SipEndpoints {
     @doc("""
       Permanently deletes a SIP endpoint.
 
-      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/resources/sip-credentials) instead.</Warning>
+      <Warning>This endpoint is deprecated. Use [SIP Credentials](/docs/apis/rest/resources/sip-credentials/create-sip-credential) instead.</Warning>
 
       ${tokenPermissions<"_Voice_">}
       """)
