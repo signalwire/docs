@@ -12,7 +12,7 @@ using Types.StatusCodes;
 
 @route("/resources/{id}/addresses")
 namespace SignalWireAPI.Fabric.Resource.Addresses {
-  @tag(RESOURCES_TAG)
+  @tag(FABRIC_ADDRESS_TAG)
   interface ResourceAddresses {
     @operationId("list_resource_addresses")
     @summary("List Resource Addresses")

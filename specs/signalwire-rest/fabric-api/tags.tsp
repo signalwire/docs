@@ -8,7 +8,6 @@ const AI_CUSTOM_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire AI Agent, Fabric API endpoints",
   },
-  `x-displayName`: "AI Agents: Custom",
 };
 
 const AI_DIALOGFLOW_TAG = "AI Agents: Dialogflow";
@@ -19,7 +18,6 @@ const AI_DIALOGFLOW_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Dialogflow Agent, Fabric API endpoints",
   },
-  `x-displayName`: "AI Agents: Dialogflow",
 };
 
 const CALL_FLOWS_TAG = "Call Flows";
@@ -50,10 +48,9 @@ const SWML_WEBHOOK_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SWML Webhooks, Fabric API endpoints",
   },
-  `x-displayName`: "SWML Webhook",
 };
 
-const FABRIC_ADDRESS_TAG = "Resource Addresses";
+const FABRIC_ADDRESS_TAG = "Addresses";
 
 const FABRIC_ADDRESS_TAG_METADATA = #{
   description: "Client-side endpoints for listing and retrieving resource addresses using subscriber access tokens (SAT). Intended for use with the Browser SDK to resolve addresses from the client.",
@@ -63,7 +60,7 @@ const FABRIC_ADDRESS_TAG_METADATA = #{
   },
 };
 
-const FREESWITCH_CONNECTOR_TAG = "FREESWITCH Connector";
+const FREESWITCH_CONNECTOR_TAG = "FreeSWITCH Connector";
 
 const FREESWITCH_CONNECTOR_TAG_METADATA = #{
   description: "Endpoints related to creating & managing FreeSWITCH Connectors",
@@ -71,10 +68,9 @@ const FREESWITCH_CONNECTOR_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on FreeSWITCH Connector, Fabric API endpoints",
   },
-  `x-displayName`: "FreeSWITCH Connector",
 };
 
-const CXML_APPLICATIONS_TAG = "CXML Applications";
+const CXML_APPLICATIONS_TAG = "cXML Applications";
 
 const CXML_APPLICATIONS_TAG_METADATA = #{
   description: "Endpoints related to creating & managing cXML Applications",
@@ -82,10 +78,9 @@ const CXML_APPLICATIONS_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on cXML Application, Fabric API endpoints",
   },
-  `x-displayName`: "cXML Applications",
 };
 
-const CXML_SCRIPTS_TAG = "CXML Scripts";
+const CXML_SCRIPTS_TAG = "cXML Scripts";
 
 const CXML_SCRIPTS_TAG_METADATA = #{
   description: "Endpoints related to creating & managing cXML Scripts",
@@ -93,10 +88,9 @@ const CXML_SCRIPTS_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on cXML Scripts, Fabric API endpoints",
   },
-  `x-displayName`: "cXML Scripts",
 };
 
-const CXML_WEBHOOK_TAG = "CXML Webhook";
+const CXML_WEBHOOK_TAG = "cXML Webhook";
 
 const CXML_WEBHOOK_TAG_METADATA = #{
   description: "Endpoints related to creating & managing cXML Webhooks",
@@ -104,7 +98,6 @@ const CXML_WEBHOOK_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on cXML Webhook, Fabric API endpoints",
   },
-  `x-displayName`: "cXML Webhook",
 };
 
 const RELAY_APPLICATION_TAG = "Relay Application";
@@ -135,7 +128,6 @@ const FABRIC_SIP_ENDPOINTS_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SIP Credentials, Fabric API endpoints",
   },
-  `x-displayName`: "SIP Credentials",
 };
 
 const SIP_GATEWAY_TAG = "SIP Gateway";
@@ -146,7 +138,6 @@ const SIP_GATEWAY_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SIP Gateway, Fabric API endpoints",
   },
-  `x-displayName`: "SIP Gateway",
 };
 
 const SUBSCRIBERS_TAG = "Subscribers";
@@ -159,7 +150,7 @@ const SUBSCRIBERS_TAG_METADATA = #{
   },
 };
 
-const SUBSCRIBERS_TOKENS_TAG = "Subscribers: Tokens";
+const SUBSCRIBERS_TOKENS_TAG = "Subscriber Tokens";
 
 const SUBSCRIBERS_TOKENS_TAG_METADATA = #{
   description: "Endpoints related to creating & managing Subscriber tokens",
@@ -169,7 +160,7 @@ const SUBSCRIBERS_TOKENS_TAG_METADATA = #{
   },
 };
 
-const SUBSCRIBER_SIP_ENDPOINT_TAG = "Subscribers: SIP Endpoints";
+const SUBSCRIBER_SIP_ENDPOINT_TAG = "Subscriber SIP Credentials";
 
 const SUBSCRIBER_SIP_ENDPOINT_TAG_METADATA = #{
   description: "Endpoints related to creating & managing Subscriber SIP Endpoints",
@@ -177,7 +168,6 @@ const SUBSCRIBER_SIP_ENDPOINT_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Subscriber SIP Endpoint, Fabric API endpoints",
   },
-  `x-displayName`: "Subscribers: SIP Endpoints",
 };
 
 const SWML_SCRIPTS_TAG = "SWML Scripts";
@@ -188,7 +178,6 @@ const SWML_SCRIPTS_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SWML Script, Fabric API endpoints",
   },
-  `x-displayName`: "SWML Scripts",
 };
 
 const CONFERENCE_ROOM_TAG = "Conference Rooms";
@@ -201,7 +190,7 @@ const CONFERENCE_ROOM_TAG_METADATA = #{
   },
 };
 
-const FABRIC_DOMAIN_APPLICATIONS_TAG = "Fabric Domain Applications";
+const FABRIC_DOMAIN_APPLICATIONS_TAG = "Domain Applications";
 
 const FABRIC_DOMAIN_APPLICATIONS_TAG_METADATA = #{
   description: "Endpoints related to managing Domain Applications",

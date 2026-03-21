@@ -1,4 +1,4 @@
-const ADDRESSES_TAG = "E911-Addresses";
+const ADDRESSES_TAG = "E911 Addresses";
 const ADDRESSES_TAG_METADATA = #{
   description: "Manage E911 addresses for regulatory compliance and phone number provisioning.",
   externalDocs: #{
@@ -10,6 +10,33 @@ const ADDRESSES_TAG_METADATA = #{
 const CAMPAIGN_REGISTRY_TAG = "Campaign Registry";
 const CAMPAIGN_REGISTRY_TAG_METADATA = #{
   description: "Manage 10DLC campaign registration for A2P messaging compliance.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
+const CAMPAIGN_REGISTRY_BRANDS_TAG = "Campaign Registry: Brands";
+const CAMPAIGN_REGISTRY_BRANDS_TAG_METADATA = #{
+  description: "Register and manage brands for 10DLC campaign registration.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
+const CAMPAIGN_REGISTRY_CAMPAIGNS_TAG = "Campaign Registry: Campaigns";
+const CAMPAIGN_REGISTRY_CAMPAIGNS_TAG_METADATA = #{
+  description: "Create and manage 10DLC campaigns for A2P messaging compliance.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
+const CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG = "Campaign Registry: Phone Number Assignments";
+const CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG_METADATA = #{
+  description: "Assign and manage phone numbers within 10DLC campaigns.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
@@ -86,7 +113,6 @@ const SPACE_SIP_ENDPOINTS_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
   },
-  `x-displayName`: "SIP Endpoints (Legacy)",
 };
 
 const SIP_PROFILE_TAG = "SIP Profile";
@@ -96,7 +122,6 @@ const SIP_PROFILE_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
   },
-  `x-displayName`: "SIP Profile",
 };
 
 const MFA_TAG = "Multi-Factor Authentication";
