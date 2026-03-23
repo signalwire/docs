@@ -1,5 +1,8 @@
 import "../../../types/status-codes";
 
+namespace SignalWireAPI.PubSub;
+
+
 @example(#{
   statusCode: 422,
   errors: #[

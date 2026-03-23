@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Path parameter for log ID.")
 model LogPathID {
   @path

@@ -12,12 +12,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/addresses")
-namespace RelayRestAPI.Addresses {
+namespace SignalWireAPI.RelayRest.Addresses {
   @tag(ADDRESSES_TAG)
   @friendlyName("Addresses")
   interface Addresses {
     @operationId("list_addresses")
-    @summary("List all Addresses.")
+    @summary("List E911 addresses")
     @doc("""
       Returns a list of your Addresses. The addresses are returned sorted by creation date, with the most recent appearing first.
       
@@ -30,7 +30,7 @@ namespace RelayRestAPI.Addresses {
       | StatusCode500;
 
     @operationId("create_address")
-    @summary("Create an address")
+    @summary("Create E911 address")
     @doc("""
       To create a new Address, make a POST request to the Address resource.
       
@@ -47,7 +47,7 @@ namespace RelayRestAPI.Addresses {
       | StatusCode500;
 
     @operationId("get_address")
-    @summary("Retrieve an Address")
+    @summary("Get E911 address")
     @doc("""
       Retrieves the details of an Address that has been previously created.
       Use the unique ID that was returned from your previous request to identify the specific instance.
@@ -62,7 +62,7 @@ namespace RelayRestAPI.Addresses {
       | StatusCode500;
 
     @operationId("delete_address")
-    @summary("Delete an Address")
+    @summary("Delete E911 address")
     @doc("""
       Permanently deletes an Address. It cannot be undone.
       

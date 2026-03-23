@@ -3,6 +3,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Status of a room session.")
 enum RoomSessionStatus {
   @doc("The room session is currently active.")
@@ -283,7 +286,7 @@ model RoomSessionEvent {
   name: string;
 
   @doc("Event-specific payload data.")
-  payload: Record<unknown>;
+  payload: TypeSpec.Record<unknown>;
 
   @doc("Timestamp when the event was created.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))

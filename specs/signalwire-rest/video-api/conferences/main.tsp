@@ -17,12 +17,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/conferences")
-namespace VideoAPI.Conferences {
-  @tag(CONFERENCES_TAG)
+namespace SignalWireAPI.Video.Conferences {
+  @tag(VIDEO_CONFERENCES_TAG)
   @friendlyName("Conferences")
   interface Conferences {
     @operationId("create_video_conference")
-    @summary("Create a Video Conference")
+    @summary("Create video conference")
     @doc("Create a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @post
     create(@body body: CreateConferenceRequest):
@@ -33,7 +33,7 @@ namespace VideoAPI.Conferences {
       | StatusCode500;
 
     @operationId("list_video_conferences")
-    @summary("List Video Conferences")
+    @summary("List video conferences")
     @doc("List Video Conferences.\n\n${tokenPermissions<"_Video_">}")
     list(...ListConferencesRequest):
       | ListConferencesResponse
@@ -43,7 +43,7 @@ namespace VideoAPI.Conferences {
       | StatusCode500;
 
     @operationId("get_video_conference")
-    @summary("Find a Video Conference by ID")
+    @summary("Get video conference")
     @doc("Find a Video Conference by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
@@ -62,7 +62,7 @@ namespace VideoAPI.Conferences {
       | StatusCode500;
 
     @operationId("update_video_conference")
-    @summary("Update a Video Conference")
+    @summary("Update video conference")
     @doc("Update a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @put
@@ -79,7 +79,7 @@ namespace VideoAPI.Conferences {
       | StatusCode500;
 
     @operationId("delete_video_conference")
-    @summary("Delete a Video Conference")
+    @summary("Delete video conference")
     @doc("Delete a Video Conference.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
@@ -97,12 +97,12 @@ namespace VideoAPI.Conferences {
 }
 
 @route("/conferences/{id}/streams")
-namespace VideoAPI.ConferenceStreams {
+namespace SignalWireAPI.Video.ConferenceStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Conference Streams")
   interface ConferenceStreams {
     @operationId("list_conference_streams")
-    @summary("List Streams by Conference")
+    @summary("List conference streams")
     @doc("${tokenPermissions<"_Video_">}")
     list(
       @path
@@ -112,7 +112,7 @@ namespace VideoAPI.ConferenceStreams {
     ): ListStreamsResponse | StatusCode401 | VideoStatusCode422 | StatusCode500;
 
     @operationId("create_conference_stream")
-    @summary("Create a Stream for a Conference")
+    @summary("Create conference stream")
     @doc("${tokenPermissions<"_Video_">}")
     @post
     create(

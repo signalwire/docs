@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Voice;
+
+
 @doc("Request parameters for listing voice logs")
 model LogListRequest {
   @doc("Include logs for deleted activity.")

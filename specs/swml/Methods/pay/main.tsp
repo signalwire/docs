@@ -16,7 +16,7 @@ model Pay {
       The URL to make POST requests with all the gathered payment details.
       This URL is used to process the final payment transaction and return the results through the response.
       
-      Visit https://signalwire.com/docs/swml/methods/pay/payment_connector_url for more important information.
+      Visit [pay documentation](/docs/swml/reference/pay#payment_connector_url) for more important information.
       """)
     @example("https://example.com/payment-connector")
     payment_connector_url: url;
@@ -70,7 +70,7 @@ model Pay {
     @doc("""
       The URL to send requests for each status change during the payment process.
       
-      See https://signalwire.com/docs/swml/methods/pay#status_url_request_body for more important information.
+      Visit [pay documentation](/docs/swml/reference/pay#status_url-request-body) for more important information.
       """)
     @example("https://example.com/payment-status")
     status_url?: url;
@@ -104,7 +104,7 @@ model Pay {
     @example("visa mastercard amex")
     valid_card_types?: string = "visa mastercard amex";
 
-    @doc("Text-to-speech voice to use. Please refer to https://signalwire.com/docs/voice/getting-started/voice-and-languages for more information.")
+    @doc("Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.")
     @example("woman")
     voice?: string = "woman";
   };

@@ -1,3 +1,5 @@
+namespace SignalWireAPI.Video;
+
 @doc("Room token response object.")
 model RoomTokenResponse {
   @doc("A Room Token to be used by clients to connect to the Room.")

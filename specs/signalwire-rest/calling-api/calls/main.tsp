@@ -11,11 +11,11 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/calls")
-namespace CallingAPI.Calls {
+namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
   interface Calls {
-    @summary("Send Call Commands")
+    @summary("Send call commands")
     @doc("""
       Unified JSON-RPC style endpoint for executing call methods through command-based dispatch.
       Send a request with the appropriate `command` field to invoke the desired call operation.

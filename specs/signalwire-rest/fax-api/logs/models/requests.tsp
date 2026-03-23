@@ -1,5 +1,8 @@
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Fax;
+
+
 model LogListRequest {
   @doc("Include logs for deleted activity.")
   @example(false)

@@ -13,12 +13,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace MessageAPI.Logs {
+namespace SignalWireAPI.Message.Logs {
   @tag(MESSAGE_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_message_logs")
-    @summary("List Logs")
+    @summary("List message logs")
     @doc("""
       List the available logs.
 
@@ -32,7 +32,7 @@ namespace MessageAPI.Logs {
       | StatusCode500;
 
     @operationId("get_message_log")
-    @summary("Find a Log by ID")
+    @summary("Get message log")
     @doc("""
       Find a log by ID.
 

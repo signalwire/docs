@@ -1,8 +1,8 @@
 import "@typespec/openapi3";
 
-const TOKENS_TAG = "Tokens";
+const PUBSUB_TOKENS_TAG = "PubSub Tokens";
 
-const TOKENS_TAG_METADATA = #{
+const PUBSUB_TOKENS_TAG_METADATA = #{
   description: "Endpoints related to creating & managing PubSub Tokens",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

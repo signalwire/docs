@@ -16,16 +16,16 @@ using Types.StatusCodes;
   type: Http.AuthType.noAuth,
 })
 @route("/embeds/tokens")
-@server("https://embeds.signalwire.com/api/fabric", "Embeds Endpoint")
-namespace FabricAPI.EmbedsTokens {
-  @tag(EMBEDS_TOKENS_TAG)
+@server("https://embeds.signalwire.com", "Embeds Endpoint")
+namespace SignalWireAPI.Fabric.EmbedsTokens {
+  @tag(SUBSCRIBERS_TOKENS_TAG)
   @friendlyName("Embeds Tokens")
   interface EmbedsTokens {
-    @operationId("create_embeds_token")
-    @summary("Create Embeds Tokens")
+    @operationId("create_guest_embed_token")
+    @summary("Create guest embed token")
     @doc("""
-      Exchanges a public Click-to-Call (C2C) token for a short-lived, private embed guest token used to authorize a call. This allows secure activation of the C2C widget without exposing sensitive credentials.
-      
+      Creates a guest subscriber token from a public Click-to-Call (C2C) token. The returned short-lived token authorizes a guest subscriber to place a call through the C2C embed widget without exposing sensitive credentials or requiring a full subscriber account.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

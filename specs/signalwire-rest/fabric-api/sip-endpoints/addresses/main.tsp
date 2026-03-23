@@ -11,13 +11,13 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_endpoints/{id}/addresses")
-namespace FabricAPI.SipEndpoint.Addresses {
-  @tag(SIP_ENDPOINTS_TAG)
+namespace SignalWireAPI.Fabric.SipEndpoint.Addresses {
+  @tag(FABRIC_SIP_ENDPOINTS_TAG)
   interface SipEndpointAddresses {
-    @operationId("list_sip_endpoint_addresses")
-    @summary("List SIP Endpoint Addresses")
+    @operationId("list_sip_credential_addresses")
+    @summary("List SIP credential Addresses")
     @doc("""
-      A list of SIP Endpoint Addresses.
+      A list of addresses assigned to a SIP Credential.
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

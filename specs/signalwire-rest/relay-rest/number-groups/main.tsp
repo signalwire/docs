@@ -12,12 +12,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/number_groups")
-namespace RelayRestAPI.NumberGroups {
+namespace SignalWireAPI.RelayRest.NumberGroups {
   @tag(NUMBER_GROUPS_TAG)
   @friendlyName("Number Groups")
   interface NumberGroups {
     @operationId("list_number_groups")
-    @summary("List all Number Groups")
+    @summary("List number groups")
     @doc("""
       Returns a list of your Number Groups. The groups are returned sorted
       by creation date, with the most recent appearing first. The list is
@@ -32,7 +32,7 @@ namespace RelayRestAPI.NumberGroups {
       | StatusCode500;
 
     @operationId("create_number_group")
-    @summary("Create a Number Group")
+    @summary("Create number group")
     @doc("""
       Creates a new number group.
       
@@ -46,7 +46,7 @@ namespace RelayRestAPI.NumberGroups {
       | StatusCode500;
 
     @operationId("retrieve_number_group")
-    @summary("Retrieve a Number Group")
+    @summary("Get number group")
     @doc("""
       Retrieves the details of a number group.
       
@@ -60,7 +60,7 @@ namespace RelayRestAPI.NumberGroups {
       | StatusCode500;
 
     @operationId("update_number_group")
-    @summary("Update a Number Group")
+    @summary("Update number group")
     @doc("""
       Updates a number group.
       
@@ -75,7 +75,7 @@ namespace RelayRestAPI.NumberGroups {
       | StatusCode500;
 
     @operationId("delete_number_group")
-    @summary("Delete a Number Group")
+    @summary("Delete number group")
     @doc("""
       Deletes a number group.
       
@@ -97,7 +97,7 @@ namespace RelayRestAPI.NumberGroups {
   @route("/{NumberGroupId}/number_group_memberships")
   interface NumberGroupMembershipsNested {
     @operationId("list_number_group_memberships")
-    @summary("List all Number Group Memberships")
+    @summary("List number group memberships")
     @doc("""
       Returns a list of phone numbers in a number group.
       
@@ -112,7 +112,7 @@ namespace RelayRestAPI.NumberGroups {
       | StatusCode500;
 
     @operationId("create_number_group_membership")
-    @summary("Create a Number Group Membership")
+    @summary("Create number group membership")
     @doc("""
       Adds a phone number to a number group.
       
@@ -132,12 +132,12 @@ namespace RelayRestAPI.NumberGroups {
 }
 
 @route("/number_group_memberships")
-namespace RelayRestAPI.NumberGroupMemberships {
+namespace SignalWireAPI.RelayRest.NumberGroupMemberships {
   @tag(NUMBER_GROUP_MEMBERSHIP_TAG)
   @friendlyName("Number Group Membership")
   interface NumberGroupMemberships {
     @operationId("retrieve_number_group_membership")
-    @summary("Retrieve a Number Group Membership")
+    @summary("Get number group membership")
     @doc("""
       Retrieves the details of a number group membership.
       
@@ -151,7 +151,7 @@ namespace RelayRestAPI.NumberGroupMemberships {
       | StatusCode500;
 
     @operationId("delete_number_group_membership")
-    @summary("Remove Phone Number from Number Group")
+    @summary("Delete number group membership")
     @doc("""
       Removes a phone number from a number group.
       

@@ -1,6 +1,6 @@
-const ADDRESSES_TAG = "Addresses";
+const ADDRESSES_TAG = "E911 Addresses";
 const ADDRESSES_TAG_METADATA = #{
-  description: "Manage addresses for regulatory compliance and phone number provisioning.",
+  description: "Manage E911 addresses for regulatory compliance and phone number provisioning.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
@@ -16,8 +16,35 @@ const CAMPAIGN_REGISTRY_TAG_METADATA = #{
   },
 };
 
-const DOMAIN_APPLICATIONS_TAG = "Domain Applications";
-const DOMAIN_APPLICATIONS_TAG_METADATA = #{
+const CAMPAIGN_REGISTRY_BRANDS_TAG = "Campaign Registry: Brands";
+const CAMPAIGN_REGISTRY_BRANDS_TAG_METADATA = #{
+  description: "Register and manage brands for 10DLC campaign registration.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
+const CAMPAIGN_REGISTRY_CAMPAIGNS_TAG = "Campaign Registry: Campaigns";
+const CAMPAIGN_REGISTRY_CAMPAIGNS_TAG_METADATA = #{
+  description: "Create and manage 10DLC campaigns for A2P messaging compliance.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
+const CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG = "Campaign Registry: Phone Number Assignments";
+const CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG_METADATA = #{
+  description: "Assign and manage phone numbers within 10DLC campaigns.",
+  externalDocs: #{
+    url: "https://signalwire.com/docs/apis",
+    description: "Developer documentation on SignalWire REST APIs",
+  },
+};
+
+const SPACE_DOMAIN_APPLICATIONS_TAG = "Space Domain Applications";
+const SPACE_DOMAIN_APPLICATIONS_TAG_METADATA = #{
   description: "Manage domain applications for call handling configuration.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
@@ -79,14 +106,13 @@ const RECORDINGS_TAG_METADATA = #{
   },
 };
 
-const SIP_ENDPOINTS_TAG = "SIP Endpoints";
-const SIP_ENDPOINTS_TAG_METADATA = #{
-  description: "Manage SIP endpoints for voice communication.",
+const SPACE_SIP_ENDPOINTS_TAG = "SIP Endpoints (Legacy)";
+const SPACE_SIP_ENDPOINTS_TAG_METADATA = #{
+  description: "Manage SIP endpoints for voice communication. Use SIP Credentials for new integrations.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
   },
-  `x-displayName`: "SIP Endpoints",
 };
 
 const SIP_PROFILE_TAG = "SIP Profile";
@@ -96,7 +122,6 @@ const SIP_PROFILE_TAG_METADATA = #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on SignalWire REST APIs",
   },
-  `x-displayName`: "SIP Profile",
 };
 
 const MFA_TAG = "Multi-Factor Authentication";

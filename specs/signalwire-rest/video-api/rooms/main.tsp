@@ -14,12 +14,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/rooms")
-namespace VideoAPI.Rooms {
+namespace SignalWireAPI.Video.Rooms {
   @tag(ROOMS_TAG)
   @friendlyName("Rooms")
   interface Rooms {
     @operationId("create_room")
-    @summary("Create a Room")
+    @summary("Create room")
     @doc("Create a room.\n\n${tokenPermissions<"_Video_">}")
     @post
     create(@body body: CreateRoomRequest):
@@ -30,7 +30,7 @@ namespace VideoAPI.Rooms {
       | StatusCode500;
 
     @operationId("list_rooms")
-    @summary("List Rooms")
+    @summary("List rooms")
     @doc("List rooms.\n\n${tokenPermissions<"_Video_">}")
     list(
       @query
@@ -73,7 +73,7 @@ namespace VideoAPI.Rooms {
       | StatusCode500;
 
     @operationId("get_room_by_name")
-    @summary("Find a Room by Name")
+    @summary("Get room by name")
     @doc("Find a room by name.\n\n${tokenPermissions<"_Video_">}")
     @route("/{name}")
     getByName(
@@ -95,7 +95,7 @@ namespace VideoAPI.Rooms {
       | StatusCode500;
 
     @operationId("get_room")
-    @summary("Find a Room by ID")
+    @summary("Get room")
     @doc("Find a room by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
@@ -118,7 +118,7 @@ namespace VideoAPI.Rooms {
       | StatusCode500;
 
     @operationId("update_room")
-    @summary("Update a Room")
+    @summary("Update room")
     @doc("Update a room.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @put
@@ -139,7 +139,7 @@ namespace VideoAPI.Rooms {
       | StatusCode500;
 
     @operationId("delete_room")
-    @summary("Delete a Room")
+    @summary("Delete room")
     @doc("Delete a room.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete

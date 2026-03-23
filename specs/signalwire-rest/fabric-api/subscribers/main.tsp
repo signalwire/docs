@@ -20,7 +20,7 @@ using Types.StatusCodes;
 
 // Define the API path for subscribers
 @route("/resources/subscribers")
-namespace FabricAPI.Subscribers {
+namespace SignalWireAPI.Fabric.Subscribers {
   @tag(SUBSCRIBERS_TAG)
   @friendlyName("Subscribers")
   interface Subscribers {

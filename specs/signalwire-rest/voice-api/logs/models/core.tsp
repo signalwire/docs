@@ -5,6 +5,9 @@ import "../../enums.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Voice;
+
+
 model LogPathID {
   @format("uuid")
   @path

@@ -3,6 +3,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Conference size options.")
 enum ConferenceSize {
   @doc("Small conference (up to 10 members)")
@@ -133,7 +136,7 @@ model Conference {
 
   @doc("User-defined metadata for the conference.")
   @example(null)
-  meta: Record<unknown> | null;
+  meta: TypeSpec.Record<unknown> | null;
 
   @doc("Timestamp when the conference was created.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))

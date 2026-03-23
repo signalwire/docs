@@ -2,7 +2,7 @@ import "./core.tsp";
 import "../../../_globally_shared/enums.tsp";
 
 model SipEndpointCreateRequest {
-  ...SipEndpoint;
+  ...FabricSipEndpoint;
 }
 
 model SipEndpointUpdateRequest {

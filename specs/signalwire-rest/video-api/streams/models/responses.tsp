@@ -4,6 +4,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Stream response object.")
 model StreamResponse {
   @statusCode statusCode: 200;

@@ -12,12 +12,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/sip_profile")
-namespace RelayRestAPI.SipProfile {
+namespace SignalWireAPI.RelayRest.SipProfile {
   @tag(SIP_PROFILE_TAG)
   @friendlyName("SIP Profile")
   interface SipProfile {
     @operationId("retrieve_sip_profile")
-    @summary("Retrieve a SIP Profile")
+    @summary("Get SIP profile")
     @doc("""
       Retrieves the SIP profile settings for your project.
       
@@ -27,7 +27,7 @@ namespace RelayRestAPI.SipProfile {
     read(): SipProfileResponse | StatusCode401 | StatusCode500;
 
     @operationId("update_sip_profile")
-    @summary("Update a SIP Profile")
+    @summary("Update SIP profile")
     @doc("""
       Updates the SIP profile settings for your project.
       

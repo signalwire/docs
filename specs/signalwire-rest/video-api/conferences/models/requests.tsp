@@ -4,6 +4,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Theme color properties for creating a conference.")
 model CreateConferenceThemeColors {
   @doc("CTA buttons and selected items color (dark theme).")

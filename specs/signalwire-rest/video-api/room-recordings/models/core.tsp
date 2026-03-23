@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 model RoomRecordingPathID {
   @path
   @format("uuid")
