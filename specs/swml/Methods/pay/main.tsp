@@ -70,7 +70,7 @@ model Pay {
     @doc("""
       The URL to send requests for each status change during the payment process.
       
-      See /docs/swml/reference/pay#status_url-request-body for more important information.
+      Visit [pay documentation](/docs/swml/reference/pay#status_url-request-body) for more important information.
       """)
     @example("https://example.com/payment-status")
     status_url?: url;
@@ -104,7 +104,7 @@ model Pay {
     @example("visa mastercard amex")
     valid_card_types?: string = "visa mastercard amex";
 
-    @doc("Text-to-speech voice to use. Please refer to /docs/platform/voice/tts for more information.")
+    @doc("Text-to-speech voice to use. Please refer to [TTS documentation](/docs/platform/voice/tts) for more information.")
     @example("woman")
     voice?: string = "woman";
   };
