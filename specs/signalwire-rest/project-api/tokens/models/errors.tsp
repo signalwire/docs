@@ -2,6 +2,9 @@ import "../../../types/status-codes";
 
 using Types.StatusCodes;
 
+namespace SignalWireAPI.Project;
+
+
 @example(#{
   statusCode: 422,
   errors: #[

@@ -14,7 +14,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/cxml_scripts")
-namespace FabricAPI.CXMLScripts {
+namespace SignalWireAPI.Fabric.CXMLScripts {
   @tag(CXML_SCRIPTS_TAG)
   @friendlyName("CXML Scripts")
   @summary("CXML Scripts")

@@ -13,14 +13,14 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/{fabric_subscriber_id}/sip_endpoints")
-namespace FabricAPI.Subscribers.SipEndpoints {
+namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
   @tag(SUBSCRIBER_SIP_ENDPOINT_TAG)
   @friendlyName("SIP Endpoints")
   interface SubscriberSipEndpoint {
-    @operationId("list_subscriber_sip_endpoints")
-    @summary("List Subscriber SIP Endpoints")
+    @operationId("list_subscriber_sip_credentials")
+    @summary("List Subscriber SIP credentials")
     @doc("""
-      A list of Sip Endpoints of the Subscriber
+      A list of SIP Credentials for the Subscriber
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -30,10 +30,10 @@ namespace FabricAPI.Subscribers.SipEndpoints {
       | StatusCode404
       | StatusCode500;
 
-    @operationId("get_subscriber_sip_endpoint")
-    @summary("Get Subscriber SIP Endpoint")
+    @operationId("get_subscriber_sip_credential")
+    @summary("Get Subscriber SIP credential")
     @doc("""
-      Returns a Subscriber Sip Endpoint by ID
+      Returns a Subscriber SIP Credential by ID
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -46,10 +46,10 @@ namespace FabricAPI.Subscribers.SipEndpoints {
       | StatusCode404
       | StatusCode500;
 
-    @operationId("create_subscriber_sip_endpoint")
-    @summary("Create Subscriber SIP Endpoint")
+    @operationId("create_subscriber_sip_credential")
+    @summary("Create Subscriber SIP credential")
     @doc("""
-      Creates a Subscriber Sip Endpoint
+      Creates a Subscriber SIP Credential
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -64,10 +64,10 @@ namespace FabricAPI.Subscribers.SipEndpoints {
       | SipEndpointCreateStatusCode422
       | StatusCode500;
 
-    @operationId("update_subscriber_sip_endpoint")
-    @summary("Update Subscriber SIP Endpoint")
+    @operationId("update_subscriber_sip_credential")
+    @summary("Update Subscriber SIP credential")
     @doc("""
-      Updates a Subscriber Sip Endpoint by ID
+      Updates a Subscriber SIP Credential by ID
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -86,10 +86,10 @@ namespace FabricAPI.Subscribers.SipEndpoints {
       | SipEndpointUpdateStatusCode422
       | StatusCode500;
 
-    @operationId("delete_subscriber_sip_endpoint")
-    @summary("Delete Subscriber SIP Endpoint")
+    @operationId("delete_subscriber_sip_credential")
+    @summary("Delete Subscriber SIP credential")
     @doc("""
-      Deletes a Subscriber Sip Endpoint by ID
+      Deletes a Subscriber SIP Credential by ID
       
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

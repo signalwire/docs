@@ -12,12 +12,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/tokens")
-namespace ProjectAPI.Tokens {
-  @tag(TOKENS_TAG)
+namespace SignalWireAPI.Project.Tokens {
+  @tag(PROJECT_TOKENS_TAG)
   @friendlyName("Tokens")
   interface ProjectTokens {
     @operationId("create_token")
-    @summary("Generate a new API Token")
+    @summary("Create API token")
     @doc("""
       Generate an API Token for a project to be used to authenticate requests within the project.
       
@@ -40,7 +40,7 @@ namespace ProjectAPI.Tokens {
       | StatusCode500;
 
     @operationId("update_token")
-    @summary("Update an API Token")
+    @summary("Update API token")
     @doc("""
       Update an API Token's name or permissions.
       
@@ -72,7 +72,7 @@ namespace ProjectAPI.Tokens {
       | StatusCode500;
 
     @operationId("delete_token")
-    @summary("Delete an API Token")
+    @summary("Delete API token")
     @doc("""
       Delete an API Token. This action cannot be undone.
       

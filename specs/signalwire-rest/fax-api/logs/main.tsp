@@ -13,12 +13,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace FaxAPI.Logs {
-  @tag(LOGS_TAG)
+namespace SignalWireAPI.Fax.Logs {
+  @tag(FAX_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_fax_logs")
-    @summary("List Logs")
+    @summary("List fax logs")
     @doc("""
       List the available logs.
       
@@ -32,7 +32,7 @@ namespace FaxAPI.Logs {
       | StatusCode500;
 
     @operationId("get_fax_log")
-    @summary("Find a Log by ID")
+    @summary("Get fax log")
     @doc("""
       Find a log by ID.
       

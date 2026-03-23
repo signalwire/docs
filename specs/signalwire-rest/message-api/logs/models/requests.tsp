@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Message;
+
+
 @doc("Request parameters for listing message logs")
 model LogListRequest {
   @doc("Include logs for deleted activity.")

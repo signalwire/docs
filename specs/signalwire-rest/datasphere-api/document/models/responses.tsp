@@ -1,5 +1,8 @@
 import "./enums.tsp";
 
+namespace SignalWireAPI.Datasphere;
+
+
 model DocumentListResponse {
   @doc("A list of documents.")
   data: Document[];

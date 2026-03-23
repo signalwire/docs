@@ -1,3 +1,5 @@
+namespace SignalWireAPI.Datasphere;
+
 @doc("Strategy to use when chunking the document.")
 enum ChunkingStrategy {
   Sentence: "sentence",

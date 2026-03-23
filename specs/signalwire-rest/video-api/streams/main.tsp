@@ -13,12 +13,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/rooms/{id}/streams")
-namespace VideoAPI.RoomStreams {
+namespace SignalWireAPI.Video.RoomStreams {
   @tag(STREAMS_TAG)
   @friendlyName("Room Streams")
   interface RoomStreams {
     @operationId("list_room_streams")
-    @summary("List Streams by Room")
+    @summary("List room streams")
     @doc("${tokenPermissions<"_Video_">}")
     list(...RoomPathID):
       | ListStreamsResponse
@@ -27,7 +27,7 @@ namespace VideoAPI.RoomStreams {
       | StatusCode500;
 
     @operationId("create_room_stream")
-    @summary("Create a Stream for a Room")
+    @summary("Create room stream")
     @doc("${tokenPermissions<"_Video_">}")
     @post
     create(...RoomPathID, @body body: CreateStreamRequest):
@@ -40,12 +40,12 @@ namespace VideoAPI.RoomStreams {
 }
 
 @route("/streams")
-namespace VideoAPI.Streams {
+namespace SignalWireAPI.Video.Streams {
   @tag(STREAMS_TAG)
   @friendlyName("Streams")
   interface Streams {
     @operationId("get_stream")
-    @summary("Find a Stream by ID")
+    @summary("Get stream")
     @doc("${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(...StreamPathID):
@@ -55,7 +55,7 @@ namespace VideoAPI.Streams {
       | StatusCode500;
 
     @operationId("update_stream")
-    @summary("Update a Stream")
+    @summary("Update stream")
     @doc("${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @put
@@ -67,7 +67,7 @@ namespace VideoAPI.Streams {
       | StatusCode500;
 
     @operationId("delete_stream")
-    @summary("Delete a Stream")
+    @summary("Delete stream")
     @doc("${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete

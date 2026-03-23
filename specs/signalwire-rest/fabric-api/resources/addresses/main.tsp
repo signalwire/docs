@@ -11,8 +11,8 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/addresses")
-namespace FabricAPI.Resource.Addresses {
-  @tag(RESOURCES_TAG)
+namespace SignalWireAPI.Fabric.Resource.Addresses {
+  @tag(FABRIC_ADDRESS_TAG)
   interface ResourceAddresses {
     @operationId("list_resource_addresses")
     @summary("List Resource Addresses")

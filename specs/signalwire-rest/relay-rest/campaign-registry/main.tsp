@@ -14,16 +14,16 @@ using Types.StatusCodes;
 
 @webhook("tenDlcStatusCallback", TenDlcStatusCallbackPayload, CAMPAIGN_REGISTRY_TAG)
 @route("/registry/beta")
-namespace RelayRestAPI.RegistryBeta {
+namespace SignalWireAPI.RelayRest.RegistryBeta {
   @route("/brands")
-  @tag(CAMPAIGN_REGISTRY_TAG)
+  @tag(CAMPAIGN_REGISTRY_BRANDS_TAG)
   @friendlyName("Brands")
   interface Brands {
     @operationId("list_brands")
-    @summary("List all Brands")
+    @summary("List brands")
     @doc("""
       Returns a list of your registered brands for 10DLC.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     list(
@@ -37,10 +37,10 @@ namespace RelayRestAPI.RegistryBeta {
     ): BrandListResponse | StatusCode401 | StatusCode500;
 
     @operationId("create_brand")
-    @summary("Create a Brand")
+    @summary("Create brand")
     @doc("""
       Creates a new brand for 10DLC registration.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @post
@@ -54,10 +54,10 @@ namespace RelayRestAPI.RegistryBeta {
       | StatusCode500;
 
     @operationId("retrieve_brand")
-    @summary("Retrieve a Brand")
+    @summary("Get brand")
     @doc("""
       Retrieves the details of a brand.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     read(...BrandPathID):
@@ -65,15 +65,19 @@ namespace RelayRestAPI.RegistryBeta {
       | StatusCode401
       | StatusCode404
       | StatusCode500;
+  }
 
+  @route("/brands/{id}/campaigns")
+  @tag(CAMPAIGN_REGISTRY_CAMPAIGNS_TAG)
+  @friendlyName("Brand Campaigns")
+  interface BrandCampaigns {
     @operationId("list_campaigns")
-    @summary("List all Campaigns")
+    @summary("List campaigns")
     @doc("""
       Returns a list of campaigns for a brand.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
-    @route("/{id}/campaigns")
     @get
     listCampaigns(
       ...BrandPathID,
@@ -88,13 +92,12 @@ namespace RelayRestAPI.RegistryBeta {
     ): CampaignListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("create_campaign")
-    @summary("Create a Campaign")
+    @summary("Create campaign")
     @doc("""
       Creates a new campaign for 10DLC registration.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
-    @route("/{id}/campaigns")
     @post
     createCampaign(...BrandPathID, @body body: CreateCampaignRequest):
       | {
@@ -108,14 +111,14 @@ namespace RelayRestAPI.RegistryBeta {
   }
 
   @route("/campaigns")
-  @tag(CAMPAIGN_REGISTRY_TAG)
+  @tag(CAMPAIGN_REGISTRY_CAMPAIGNS_TAG)
   @friendlyName("Campaigns")
   interface Campaigns {
     @operationId("retrieve_campaign")
-    @summary("Retrieve a Campaign")
+    @summary("Get campaign")
     @doc("""
       Retrieves the details of a campaign.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     read(...CampaignPathID):
@@ -125,10 +128,10 @@ namespace RelayRestAPI.RegistryBeta {
       | StatusCode500;
 
     @operationId("update_campaign")
-    @summary("Update a Campaign")
+    @summary("Update campaign")
     @doc("""
       Updates a campaign.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @put
@@ -141,15 +144,19 @@ namespace RelayRestAPI.RegistryBeta {
       | StatusCode404
       | ValidationError
       | StatusCode500;
+  }
 
+  @route("/campaigns/{id}/numbers")
+  @tag(CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG)
+  @friendlyName("Campaign Numbers")
+  interface CampaignNumbers {
     @operationId("list_number_assignments")
-    @summary("List all Phone Number Assignments")
+    @summary("List phone number assignments")
     @doc("""
       Returns a list of phone numbers assigned to a campaign.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
-    @route("/{id}/numbers")
     @get
     listNumbers(
       ...CampaignPathID,
@@ -162,15 +169,19 @@ namespace RelayRestAPI.RegistryBeta {
       | StatusCode401
       | StatusCode404
       | StatusCode500;
+  }
 
+  @route("/campaigns/{id}/orders")
+  @tag(CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG)
+  @friendlyName("Campaign Orders")
+  interface CampaignOrders {
     @operationId("list_orders")
-    @summary("List all Phone Number Assignment Orders")
+    @summary("List phone number assignment orders")
     @doc("""
       Returns a list of orders for a campaign.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
-    @route("/{id}/orders")
     @get
     listOrders(
       ...CampaignPathID,
@@ -181,13 +192,12 @@ namespace RelayRestAPI.RegistryBeta {
     ): OrderListResponse | StatusCode401 | StatusCode404 | StatusCode500;
 
     @operationId("create_order")
-    @summary("Create a Phone Number Assignment Order")
+    @summary("Create phone number assignment order")
     @doc("""
       Creates a new order for a campaign.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
-    @route("/{id}/orders")
     @post
     createOrder(...CampaignPathID, @body body: CreateOrderRequest):
       | {
@@ -201,14 +211,14 @@ namespace RelayRestAPI.RegistryBeta {
   }
 
   @route("/numbers")
-  @tag(CAMPAIGN_REGISTRY_TAG)
+  @tag(CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG)
   @friendlyName("Assigned Numbers")
   interface AssignedNumbers {
     @operationId("delete_number_assignment")
-    @summary("Delete a Phone Number Assignment")
+    @summary("Delete phone number assignment")
     @doc("""
       Removes a phone number from a campaign.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     @delete
@@ -222,14 +232,14 @@ namespace RelayRestAPI.RegistryBeta {
   }
 
   @route("/orders")
-  @tag(CAMPAIGN_REGISTRY_TAG)
+  @tag(CAMPAIGN_REGISTRY_ASSIGNMENTS_TAG)
   @friendlyName("Orders")
   interface Orders {
     @operationId("retrieve_order")
-    @summary("Retrieve a Phone Number Assignment Order")
+    @summary("Get phone number assignment order")
     @doc("""
       Retrieves the details of an order.
-      
+
       ${tokenPermissions<"_Numbers_">}
       """)
     read(...OrderPathID):

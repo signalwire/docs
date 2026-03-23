@@ -4,6 +4,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Conference token response object.")
 model ConferenceTokenResponse {
   @statusCode statusCode: 200;

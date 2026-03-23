@@ -2,6 +2,9 @@ import "../../../types/status-codes";
 
 using Types.StatusCodes;
 
+namespace SignalWireAPI.Datasphere;
+
+
 @example(#{
   statusCode: 422,
   errors: #[

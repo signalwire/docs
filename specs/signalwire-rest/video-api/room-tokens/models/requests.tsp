@@ -1,5 +1,8 @@
 import "./core.tsp";
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Request body for creating a room token.")
 model CreateRoomTokenRequest {
   @doc("Room's unique named identifier. Allowed characters: A-Za-z0-9_-. Up to 100 characters. The room does not have to exist when the token is created, but must exist prior to joining, or ensure auto_create_room is set to true.")
@@ -92,11 +95,11 @@ model CreateRoomTokenRequest {
 
   @doc("Set the room meta. Maximum of 2000 characters when serialized to JSON.")
   @example(#{ topic: "team-meeting" })
-  room_meta?: Record<unknown>;
+  room_meta?: TypeSpec.Record<unknown>;
 
   @doc("Set the member meta. Maximum of 2000 characters when serialized to JSON.")
   @example(#{ name: "John Smith" })
-  meta?: Record<unknown>;
+  meta?: TypeSpec.Record<unknown>;
 
   @doc("Enable/disable jitter buffer audio-video sync.")
   @example(true)

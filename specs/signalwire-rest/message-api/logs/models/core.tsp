@@ -4,6 +4,9 @@ import "../../../_globally_shared/const.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Message;
+
+
 @doc("Unique ID of the log.")
 model LogPathID {
   @format("uuid")

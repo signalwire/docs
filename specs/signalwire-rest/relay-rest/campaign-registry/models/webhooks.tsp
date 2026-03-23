@@ -7,9 +7,9 @@ import "../../../../_shared/webhook/decorator.tsp";
   assignment orders, and number assignments in real time.
 
   Configure `status_callback_url` when
-  [creating a brand](/docs/apis/relay-rest/campaign-registry/create-brand),
-  [creating a campaign](/docs/apis/relay-rest/campaign-registry/create-campaign), or
-  [creating a number assignment order](/docs/apis/relay-rest/campaign-registry/create-order).
+  [creating a brand](/docs/apis/rest/messaging/campaign-registry/brands/create-brand),
+  [creating a campaign](/docs/apis/rest/messaging/campaign-registry/campaigns/create-campaign), or
+  [creating a number assignment order](/docs/apis/rest/messaging/campaign-registry/phone-number-assignments/create-order).
 
   ### Brand event types
 

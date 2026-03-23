@@ -11,12 +11,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/sip_gateways/{resource_id}/addresses")
-namespace FabricAPI.SipGateways.Addresses {
+namespace SignalWireAPI.Fabric.SipGateways.Addresses {
   @tag(SIP_GATEWAY_TAG)
   @friendlyName("SIP Gateway")
   interface RelayApplicationAddresses {
     @operationId("list_sip_gateway_addresses")
-    @summary("List Fabric Addresses assigned to a SIP Gateway")
+    @summary("List SIP gateway Addresses")
     @doc("""
       Returns a paginated list of Fabric Addresses associated with the specified SIP Gateway.
       

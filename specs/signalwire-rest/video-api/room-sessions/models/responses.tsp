@@ -4,6 +4,9 @@ import "../../_shared/models.tsp";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Room session summary, returned by the show endpoint. Omits list-only fields.")
 model RoomSessionSummary
   is OmitProperties<RoomSession, "cost_in_dollars" | "enable_room_previews" | "locked_cover">;

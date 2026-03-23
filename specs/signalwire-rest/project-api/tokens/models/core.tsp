@@ -1,3 +1,5 @@
+namespace SignalWireAPI.Project;
+
 @doc("Valid permission types for API tokens.")
 enum TokenPermission {
   calling,

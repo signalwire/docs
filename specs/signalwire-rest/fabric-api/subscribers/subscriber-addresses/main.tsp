@@ -10,7 +10,7 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-namespace FabricAPI.Subscribers.Addresses {
+namespace SignalWireAPI.Fabric.Subscribers.Addresses {
   @route("/{id}/addresses")
   @tag(SUBSCRIBERS_TAG)
   @friendlyName("Subscriber Addresses")

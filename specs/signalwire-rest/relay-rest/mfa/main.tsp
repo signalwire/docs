@@ -10,12 +10,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/mfa")
-namespace RelayRestAPI.Mfa {
+namespace SignalWireAPI.RelayRest.Mfa {
   @tag(MFA_TAG)
   @friendlyName("Multi-Factor Authentication")
   interface Mfa {
     @operationId("request_mfa_sms")
-    @summary("Request a MFA token via text message")
+    @summary("Request MFA token via SMS")
     @doc("""
       Sends a multi-factor authentication code via SMS.
       
@@ -30,7 +30,7 @@ namespace RelayRestAPI.Mfa {
       | StatusCode500;
 
     @operationId("request_mfa_call")
-    @summary("Request a MFA token via phone call")
+    @summary("Request MFA token via call")
     @doc("""
       Sends a multi-factor authentication code via voice call.
       
@@ -45,7 +45,7 @@ namespace RelayRestAPI.Mfa {
       | StatusCode500;
 
     @operationId("verify_mfa_token")
-    @summary("Verify a token")
+    @summary("Verify MFA token")
     @doc("""
       Verifies a multi-factor authentication code.
       

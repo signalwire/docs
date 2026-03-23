@@ -2,6 +2,9 @@ import "../../../types/status-codes/main.tsp";
 
 using Types.StatusCodes;
 
+namespace SignalWireAPI.Voice;
+
+
 @example(#{
   statusCode: 422,
   errors: #[

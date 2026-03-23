@@ -11,12 +11,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/tokens")
-namespace ChatAPI.Tokens {
-  @tag(TOKENS_TAG)
+namespace SignalWireAPI.Chat.Tokens {
+  @tag(CHAT_TOKENS_TAG)
   @friendlyName("Tokens")
   interface ChatTokens {
     @operationId("create_chat_token")
-    @summary("Generate a new Chat Token")
+    @summary("Create chat token")
     @doc("""
       Generate a Chat Token to be used to authenticate clients to the Chat Service.
       

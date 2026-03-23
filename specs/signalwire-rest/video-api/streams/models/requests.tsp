@@ -2,6 +2,9 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Video;
+
+
 @doc("Request body for creating a stream.")
 model CreateStreamRequest {
   @doc("RTMP or RTMPS URL. This must be the address of a server accepting incoming RTMP/RTMPS streams.")

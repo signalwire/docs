@@ -13,12 +13,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/conferences/{id}/conference_tokens")
-namespace VideoAPI.ConferenceTokensByConference {
+namespace SignalWireAPI.Video.ConferenceTokensByConference {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens by Conference")
   interface ConferenceTokensByConference {
     @operationId("list_conference_tokens")
-    @summary("List Conference Tokens")
+    @summary("List conference tokens")
     @doc("List conference tokens.\n\n${tokenPermissions<"_Video_">}")
     list(...ConferencePathID, ...ListConferenceTokensRequest):
       | ListConferenceTokensResponse
@@ -31,12 +31,12 @@ namespace VideoAPI.ConferenceTokensByConference {
 }
 
 @route("/conference_tokens")
-namespace VideoAPI.ConferenceTokens {
+namespace SignalWireAPI.Video.ConferenceTokens {
   @tag(CONFERENCE_TOKENS_TAG)
   @friendlyName("Conference Tokens")
   interface ConferenceTokens {
     @operationId("get_conference_token")
-    @summary("Find a Conference Token by ID")
+    @summary("Get conference token")
     @doc("Find a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(...ConferenceTokenPathID):
@@ -47,7 +47,7 @@ namespace VideoAPI.ConferenceTokens {
       | StatusCode500;
 
     @operationId("reset_conference_token")
-    @summary("Reset a Conference Token by ID")
+    @summary("Reset conference token")
     @doc("Reset a conference token by ID.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/reset")
     @post

@@ -14,12 +14,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/relay_applications")
-namespace FabricAPI.RelayApplications {
+namespace SignalWireAPI.Fabric.RelayApplications {
   @tag(RELAY_APPLICATION_TAG)
   @friendlyName("Relay Applications")
   interface RelayApplications {
     @operationId("list_relay_applications")
-    @summary("List Relay Applications")
+    @summary("List RELAY applications")
     @doc("""
       A list of Relay Applications
       
@@ -32,7 +32,7 @@ namespace FabricAPI.RelayApplications {
       | StatusCode500;
 
     @operationId("get_relay_application")
-    @summary("Get Relay Application")
+    @summary("Get RELAY application")
     @doc("""
       Returns a Relay Application by ID
       
@@ -48,7 +48,7 @@ namespace FabricAPI.RelayApplications {
       | StatusCode500;
 
     @operationId("create_relay_application")
-    @summary("Create Relay Application")
+    @summary("Create RELAY application")
     @doc("""
       Creates a Relay Application
       
@@ -66,7 +66,7 @@ namespace FabricAPI.RelayApplications {
       | StatusCode500;
 
     @operationId("update_relay_application")
-    @summary("Update Relay Application")
+    @summary("Update RELAY application")
     @doc("""
       Updates a Relay Application by ID
       
@@ -87,7 +87,7 @@ namespace FabricAPI.RelayApplications {
       | StatusCode500;
 
     @operationId("delete_relay_application")
-    @summary("Delete Relay Application")
+    @summary("Delete RELAY application")
     @doc("""
       Deletes a Relay Application by ID
       

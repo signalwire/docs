@@ -47,8 +47,8 @@ const ROOM_RECORDINGS_TAG_METADATA = #{
   },
 };
 
-const CONFERENCES_TAG = "Conferences";
-const CONFERENCES_TAG_METADATA = #{
+const VIDEO_CONFERENCES_TAG = "Video Conferences";
+const VIDEO_CONFERENCES_TAG_METADATA = #{
   description: "Manage video conferences",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
@@ -65,8 +65,8 @@ const CONFERENCE_TOKENS_TAG_METADATA = #{
   },
 };
 
-const LOGS_TAG = "Logs";
-const LOGS_TAG_METADATA = #{
+const VIDEO_LOGS_TAG = "Video Logs";
+const VIDEO_LOGS_TAG_METADATA = #{
   description: "View video logs",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",

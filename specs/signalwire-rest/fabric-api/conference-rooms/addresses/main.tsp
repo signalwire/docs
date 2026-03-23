@@ -11,11 +11,11 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/conference_room/{id}/addresses")
-namespace FabricAPI.ConferenceRoom.Addresses {
+namespace SignalWireAPI.Fabric.ConferenceRoom.Addresses {
   @tag(CONFERENCE_ROOM_TAG)
   interface ConferenceRoomAddresses {
     @operationId("list_conference_room_addresses")
-    @summary("List Conference Room Addresses")
+    @summary("List conference room Addresses")
     @doc("""
       This endpoint returns a list of addresses associated with a specific Conference Room.
       

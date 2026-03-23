@@ -13,12 +13,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/logs")
-namespace VoiceAPI.Logs {
+namespace SignalWireAPI.Voice.Logs {
   @tag(VOICE_LOGS_TAG)
   @friendlyName("Logs")
   interface Logs {
     @operationId("list_voice_logs")
-    @summary("List Logs")
+    @summary("List voice logs")
     @doc("""
       List the available logs.
       
@@ -32,7 +32,7 @@ namespace VoiceAPI.Logs {
       | StatusCode500;
 
     @operationId("get_voice_log")
-    @summary("Find a Log by ID")
+    @summary("Get voice log")
     @doc("""
       Find a log by ID.
       
@@ -47,7 +47,7 @@ namespace VoiceAPI.Logs {
       | StatusCode500;
 
     @operationId("list_voice_log_events")
-    @summary("List Log Events")
+    @summary("List voice log events")
     @doc("""
       List all events for a specific log.
       

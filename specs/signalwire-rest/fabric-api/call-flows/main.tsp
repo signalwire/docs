@@ -15,12 +15,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/call_flows")
-namespace FabricAPI.CallFlows {
+namespace SignalWireAPI.Fabric.CallFlows {
   @tag(CALL_FLOWS_TAG)
   @friendlyName("Call Flows")
   interface CallFlows {
     @operationId("list_call_flows")
-    @summary("List Call Flows")
+    @summary("List call flows")
     @doc("""
       A list of Call Flows
       
@@ -33,7 +33,7 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @operationId("get_call_flow")
-    @summary("Get Call Flow")
+    @summary("Get call flow")
     @doc("""
       Returns a Call Flow by ID
       
@@ -49,7 +49,7 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @operationId("create_call_flow")
-    @summary("Create Call Flow")
+    @summary("Create call flow")
     @doc("""
       Creates a Call Flow
       
@@ -67,7 +67,7 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @operationId("update_call_flow")
-    @summary("Update Call Flow")
+    @summary("Update call flow")
     @doc("""
       Updates a Call Flow by ID
       
@@ -85,7 +85,7 @@ namespace FabricAPI.CallFlows {
       | StatusCode500;
 
     @operationId("delete_call_flow")
-    @summary("Delete Call Flow")
+    @summary("Delete call flow")
     @doc("""
       Deletes a Call Flow by ID
       

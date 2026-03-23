@@ -14,11 +14,11 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/dialogflow_agents")
-namespace FabricAPI.DialogflowAgents {
+namespace SignalWireAPI.Fabric.DialogflowAgents {
   @tag(AI_DIALOGFLOW_TAG)
   interface DialogflowAgents {
     @operationId("list_dialogflow_agents")
-    @summary("List Dialogflow Agents")
+    @summary("List Dialogflow agents")
     @doc("""
       A list of Dialogflow Agents
       
@@ -31,7 +31,7 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode500;
 
     @operationId("get_dialogflow_agent")
-    @summary("Get Dialogflow Agent")
+    @summary("Get Dialogflow agent")
     @doc("""
       Returns a Dialogflow Agent by ID
       
@@ -47,7 +47,7 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode500;
 
     @operationId("update_dialogflow_agent")
-    @summary("Update Dialogflow Agent")
+    @summary("Update Dialogflow agent")
     @doc("""
       Updates a Dialogflow Agent by ID
       
@@ -68,7 +68,7 @@ namespace FabricAPI.DialogflowAgents {
       | StatusCode500;
 
     @operationId("delete_dialogflow_agent")
-    @summary("Delete Dialogflow Agent")
+    @summary("Delete Dialogflow agent")
     @doc("""
       Deletes a Dialogflow Agent by ID
       

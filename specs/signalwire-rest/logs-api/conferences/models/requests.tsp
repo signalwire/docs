@@ -1,5 +1,8 @@
 using TypeSpec.Http;
 
+namespace SignalWireAPI.Logs;
+
+
 @doc("Query parameters for listing conference logs.")
 model ConferenceLogListRequest {
   @doc("Include logs for deleted activity.")

@@ -15,12 +15,12 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/room_recordings")
-namespace VideoAPI.RoomRecordings {
+namespace SignalWireAPI.Video.RoomRecordings {
   @tag(ROOM_RECORDINGS_TAG)
   @friendlyName("Room Recordings")
   interface RoomRecordings {
     @operationId("list_room_recordings")
-    @summary("List Room Recordings")
+    @summary("List room recordings")
     @doc("A list of all Room Recordings.\n\n${tokenPermissions<"_Video_">}")
     list(...ListRoomRecordingsRequest):
       | ListRoomRecordingsResponse
@@ -30,7 +30,7 @@ namespace VideoAPI.RoomRecordings {
       | StatusCode500;
 
     @operationId("get_room_recording")
-    @summary("Find a Room Recording by ID")
+    @summary("Get room recording")
     @doc("A detailed summary of a particular Room Recording.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     read(
@@ -50,7 +50,7 @@ namespace VideoAPI.RoomRecordings {
       | StatusCode500;
 
     @operationId("delete_room_recording")
-    @summary("Delete a Room Recording")
+    @summary("Delete room recording")
     @doc("Delete a Room Recording.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}")
     @delete
@@ -67,7 +67,7 @@ namespace VideoAPI.RoomRecordings {
       | StatusCode500;
 
     @operationId("list_room_recording_events")
-    @summary("List a Room Recording's Events")
+    @summary("List room recording events")
     @doc("A list of Events for a particular Room Recording.\n\n${tokenPermissions<"_Video_">}")
     @route("/{id}/events")
     listEvents(
