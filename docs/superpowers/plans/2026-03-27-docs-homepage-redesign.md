@@ -420,7 +420,7 @@ Replace everything from `/* ============= LANDING PAGE STYLING */` through the `
 
 /* --- Twilio Footer --- */
 
-.lp-page-container .twilio-footer {
+.lp-page-container .footer-callout {
   border-top: 1px solid var(--border-default);
   padding: 1.25rem 2rem;
   display: flex;
@@ -431,37 +431,37 @@ Replace everything from `/* ============= LANDING PAGE STYLING */` through the `
   animation: lp-fade-up 0.7s ease-out 0.45s both;
 }
 
-.lp-page-container .twilio-footer-text {
+.lp-page-container .footer-callout-text {
   font-size: 0.875rem;
   color: #737371; /* light: muted */
 }
 
-.dark .lp-page-container .twilio-footer-text {
+.dark .lp-page-container .footer-callout-text {
   color: #a0a0aa; /* dark: muted */
 }
 
-.lp-page-container .twilio-footer-link {
+.lp-page-container .footer-callout-link {
   font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none !important;
   color: #AB0A42; /* light: deep fuchsia */
 }
 
-.dark .lp-page-container .twilio-footer-link {
+.dark .lp-page-container .footer-callout-link {
   color: #40E0D0; /* dark: turquoise */
 }
 
-.lp-page-container .twilio-footer-link:hover {
+.lp-page-container .footer-callout-link:hover {
   text-decoration: underline !important;
 }
 
-.lp-page-container .twilio-trademark {
+.lp-page-container .footer-callout-disclaimer {
   font-size: 0.75rem;
   font-style: italic;
   color: #A8A8A6; /* light: subtle */
 }
 
-.dark .lp-page-container .twilio-trademark {
+.dark .lp-page-container .footer-callout-disclaimer {
   color: #73737e; /* dark: subtle */
 }
 
@@ -478,7 +478,7 @@ Replace everything from `/* ============= LANDING PAGE STYLING */` through the `
     padding: 2rem 1.25rem;
   }
 
-  .lp-page-container .twilio-footer {
+  .lp-page-container .footer-callout {
     padding: 1rem 1.25rem;
     flex-direction: column;
     align-items: flex-start;
@@ -492,7 +492,7 @@ Replace everything from `/* ============= LANDING PAGE STYLING */` through the `
   .lp-page-container .pathways-section,
   .lp-page-container .products-section,
   .lp-page-container .tools-section,
-  .lp-page-container .twilio-footer {
+  .lp-page-container .footer-callout {
     animation: none;
   }
 }
@@ -634,13 +634,13 @@ layout: custom
       </CardGroup>
     </div>
 
-    {/* ---- Twilio Migration Footer ---- */}
-    <div class="twilio-footer">
+    {/* ---- Migration Footer ---- */}
+    <div class="footer-callout">
       <div>
-        <span class="twilio-footer-text">Migrating from Twilio*? </span>
-        <a class="twilio-footer-link" href="/docs/compatibility-api">See Compatibility API &rarr;</a>
+        <span class="footer-callout-text">Migrating from Twilio*? </span>
+        <a class="footer-callout-link" href="/docs/compatibility-api">See Compatibility API &rarr;</a>
       </div>
-      <span class="twilio-trademark">*Twilio is a trademark of Twilio, Inc.</span>
+      <span class="footer-callout-disclaimer">*Twilio is a trademark of Twilio, Inc.</span>
     </div>
 
   </div>
