@@ -33,26 +33,29 @@ or [`define_tool()`](/docs/sdks/reference/python/agents/agent-base/define-tool) 
 
 ## **Example**
 
-```python
-from signalwire import FunctionResult
+```python {8-20}
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
 
-# Simple response
-return FunctionResult("Your order shipped yesterday.")
+agent = AgentBase(name="my-agent", route="/agent")
 
-# Response with a single action
-return FunctionResult("Transferring you now.").connect("+15551234567")
-
-# Multi-action chain with post-processing
-return (
-    FunctionResult("I'll transfer you to billing. Anything else first?", post_process=True)
-    .update_global_data({"transferred": True})
-    .send_sms(
-        to_number="+15551234567",
-        from_number="+15559876543",
-        body="You are being transferred to billing."
+@agent.tool(name="transfer_to_billing", description="Transfer the caller to billing")
+def transfer_to_billing(args, raw_data):
+    return (
+        SwaigFunctionResult(
+            "I'll transfer you to billing. Anything else first?",
+            post_process=True
+        )
+        .update_global_data({"transferred": True})
+        .send_sms(
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="You are being transferred to billing."
+        )
+        .connect("+15551234567", final=True)
     )
-    .connect("+15551234567", final=True)
-)
+
+agent.serve()
 ```
 
 ## **Fluent Chaining Pattern**
@@ -66,18 +69,27 @@ Place them **last** in the chain so that preceding actions (data updates, SMS, e
 have a chance to execute.
 </Warning>
 
-```python
-# Data update + SMS execute before the terminal transfer
-return (
-    FunctionResult("Transferring you now.")
-    .update_global_data({"transferred": True})
-    .send_sms(
-        to_number="+15551234567",
-        from_number="+15559876543",
-        body="Your call is being transferred."
+```python {9-18}
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="my-agent", route="/agent")
+
+@agent.tool(name="transfer_call", description="Transfer the call")
+def transfer_call(args, raw_data):
+    # Data update + SMS execute before the terminal transfer
+    return (
+        SwaigFunctionResult("Transferring you now.")
+        .update_global_data({"transferred": True})
+        .send_sms(
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Your call is being transferred."
+        )
+        .connect("+15551234567", final=True)  # terminal — goes last
     )
-    .connect("+15551234567", final=True)  # terminal — goes last
-)
+
+agent.serve()
 ```
 
 ## **Methods**
