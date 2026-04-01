@@ -15,10 +15,16 @@ All typed event classes inherit from [`RelayEvent`](#relayevent), which provides
 access to the raw `params` dictionary alongside the typed properties. You can also
 use the [`parse_event()`](#parse_event) helper to manually parse raw event payloads.
 
-```python
-from signalwire.relay import RelayClient, CallStateEvent
+```python {12-16}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import CallStateEvent
 
-client = RelayClient(contexts=["default"])
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
 
 @client.on_call
 async def on_call(call):
@@ -27,6 +33,8 @@ async def on_call(call):
 
     call.on("calling.call.state", handle_state)
     await call.answer()
+
+client.run()
 ```
 
 ## RelayEvent
@@ -72,10 +80,13 @@ Class method. Parse a raw event dict into a `RelayEvent` instance.
 
 #### Example
 
-```python
+```python {3-7}
 from signalwire.relay.event import RelayEvent
 
-event = RelayEvent.from_payload({"event_type": "calling.call.state", "params": {"call_state": "answered"}})
+event = RelayEvent.from_payload({
+    "event_type": "calling.call.state",
+    "params": {"call_state": "answered"},
+})
 print(event.event_type)  # "calling.call.state"
 ```
 
@@ -105,11 +116,15 @@ for unrecognized event types.
 
 #### Example
 
-```python
+```python {3-6}
 from signalwire.relay.event import parse_event
 
-event = parse_event({"event_type": "calling.call.play", "params": {...}})
+event = parse_event({
+    "event_type": "calling.call.play",
+    "params": {"control_id": "abc-123", "state": "playing"},
+})
 # Returns a PlayEvent instance
+print(event.state)  # "playing"
 ```
 
 ---
@@ -162,11 +177,26 @@ Handlers for this event receive a `CallStateEvent` with the following properties
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.state", handle_state)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import CallStateEvent
 
-def handle_state(event: CallStateEvent):
-    print(f"State: {event.call_state}, reason: {event.end_reason}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_state(event: CallStateEvent):
+        print(f"State: {event.call_state}, reason: {event.end_reason}")
+
+    call.on("calling.call.state", handle_state)
+    await call.answer()
+
+client.run()
 ```
 
 ---
@@ -238,11 +268,27 @@ Handlers for this event receive a `PlayEvent` with the following properties:
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.play", handle_play)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import PlayEvent
 
-def handle_play(event: PlayEvent):
-    print(f"Playback: {event.state}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_play(event: PlayEvent):
+        print(f"Playback: {event.state}")
+
+    call.on("calling.call.play", handle_play)
+    await call.answer()
+    await call.play([{"type": "tts", "text": "Hello!"}])
+
+client.run()
 ```
 
 ---
@@ -286,11 +332,27 @@ Handlers for this event receive a `RecordEvent` with the following properties:
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.record", handle_record)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import RecordEvent
 
-def handle_record(event: RecordEvent):
-    print(f"Recording {event.state}: {event.url}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_record(event: RecordEvent):
+        print(f"Recording {event.state}: {event.url}")
+
+    call.on("calling.call.record", handle_record)
+    await call.answer()
+    await call.record({"direction": "both"})
+
+client.run()
 ```
 
 ---
@@ -332,11 +394,30 @@ Handlers for this event receive a `CollectEvent` with the following properties:
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.collect", handle_collect)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import CollectEvent
 
-def handle_collect(event: CollectEvent):
-    print(f"Collected: {event.result}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_collect(event: CollectEvent):
+        print(f"Collected: {event.result}")
+
+    call.on("calling.call.collect", handle_collect)
+    await call.answer()
+    await call.play_and_collect(
+        media=[{"type": "tts", "text": "Press 1 or 2."}],
+        collect={"digits": {"max": 1}},
+    )
+
+client.run()
 ```
 
 ---
@@ -364,11 +445,29 @@ Handlers for this event receive a `ConnectEvent` with the following properties:
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.connect", handle_connect)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import ConnectEvent
 
-def handle_connect(event: ConnectEvent):
-    print(f"Connection: {event.connect_state}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_connect(event: ConnectEvent):
+        print(f"Connection: {event.connect_state}")
+
+    call.on("calling.call.connect", handle_connect)
+    await call.answer()
+    await call.connect(
+        devices=[[{"type": "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"}}]]
+    )
+
+client.run()
 ```
 
 ---
@@ -395,11 +494,27 @@ Handlers for this event receive a `DetectEvent` with the following properties:
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.detect", handle_detect)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import DetectEvent
 
-def handle_detect(event: DetectEvent):
-    print(f"Detected: {event.detect}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_detect(event: DetectEvent):
+        print(f"Detected: {event.detect}")
+
+    call.on("calling.call.detect", handle_detect)
+    await call.answer()
+    await call.detect({"type": "machine", "params": {"initial_timeout": 5.0}})
+
+client.run()
 ```
 
 ---
@@ -424,11 +539,27 @@ Handlers for this event receive a `FaxEvent` with the following properties:
 
 #### Example
 
-```python focus={1,3,4}
-call.on("calling.call.fax", handle_fax)
+```python {13-17}
+from signalwire.relay import RelayClient
+from signalwire.relay.event import FaxEvent
 
-def handle_fax(event: FaxEvent):
-    print(f"Fax: {event.fax}")
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    def handle_fax(event: FaxEvent):
+        print(f"Fax: {event.fax}")
+
+    call.on("calling.call.fax", handle_fax)
+    await call.answer()
+    await call.send_fax(document="https://example.com/invoice.pdf")
+
+client.run()
 ```
 
 ---
