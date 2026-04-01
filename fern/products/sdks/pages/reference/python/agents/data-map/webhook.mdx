@@ -47,8 +47,9 @@ if earlier webhooks fail, later ones act as fallbacks.
 
 ## **Example**
 
-```python
-from signalwire.core.data_map import DataMap
+```python {6-11}
+from signalwire import DataMap
+from signalwire.core.function_result import FunctionResult
 
 weather = (
     DataMap("get_weather")
@@ -60,9 +61,18 @@ weather = (
         "?key=YOUR_API_KEY&q=${enc:args.city}",
         headers={"Accept": "application/json"}
     )
+    .output(FunctionResult("Weather: ${response.current.condition.text}"))
 )
 
-# Chained webhooks act as fallbacks
+print(weather.to_swaig_function())
+```
+
+Chained webhooks act as fallbacks -- if the first webhook fails, the second is tried:
+
+```python {6-9}
+from signalwire import DataMap
+from signalwire.core.function_result import FunctionResult
+
 search = (
     DataMap("search")
     .purpose("Search across multiple providers")
@@ -71,5 +81,6 @@ search = (
     .output(FunctionResult("Primary: ${response.result}"))
     .webhook("GET", "https://backup-api.example.com/search?q=${enc:args.query}")
     .output(FunctionResult("Backup: ${response.result}"))
+    .fallback_output(FunctionResult("All search providers are unavailable."))
 )
 ```

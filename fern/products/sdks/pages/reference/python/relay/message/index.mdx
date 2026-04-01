@@ -14,20 +14,27 @@ messages arrive fully formed with state `received`.
 Obtain a `Message` instance from [`RelayClient.send_message()`](/docs/sdks/reference/python/relay/client/send-message)
 or from the `@client.on_message` handler for inbound messages.
 
-```python
+```python {10-17}
 from signalwire.relay import RelayClient
 
-client = RelayClient(contexts=["default"])
-
-message = await client.send_message(
-    to_number="+15551234567",
-    from_number="+15559876543",
-    body="Hello from SignalWire!",
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
 )
 
-# Wait for delivery confirmation
-result = await message.wait(timeout=30)
-print(f"Final state: {message.state}")
+async def send_sms():
+    async with client:
+        message = await client.send_message(
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Hello from SignalWire!",
+        )
+
+        # Wait for delivery confirmation
+        result = await message.wait(timeout=30)
+        print(f"Final state: {message.state}")
 ```
 
 ## **Properties**
@@ -150,35 +157,58 @@ reach its terminal state. Inspect `message.state` for the final state value.
 
 ### Listening for state changes
 
-```python
-message = await client.send_message(
-    to_number="+15551234567",
-    from_number="+15559876543",
-    body="Order confirmed",
+```python {10-18}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
 )
 
-def on_state_change(event):
-    print(f"Message {message.message_id} -> {message.state}")
+async def track_state():
+    async with client:
+        message = await client.send_message(
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Order confirmed",
+        )
 
-message.on(on_state_change)
-await message.wait()
+        def on_state_change(event):
+            print(f"Message {message.message_id} -> {message.state}")
+
+        message.on(on_state_change)
+        await message.wait()
 ```
 
 ### Waiting for delivery with timeout
 
-```python
-message = await client.send_message(
-    to_number="+15551234567",
-    from_number="+15559876543",
-    body="Your verification code is 123456",
+```python {11-21}
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
 )
 
-try:
-    event = await message.wait(timeout=30)
-    if message.state == "delivered":
-        print("Message delivered successfully")
-    else:
-        print(f"Message failed: {message.reason}")
-except asyncio.TimeoutError:
-    print("Timed out waiting for delivery confirmation")
+async def send_with_timeout():
+    async with client:
+        message = await client.send_message(
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Your verification code is 123456",
+        )
+
+        try:
+            event = await message.wait(timeout=30)
+            if message.state == "delivered":
+                print("Message delivered successfully")
+            else:
+                print(f"Message failed: {message.reason}")
+        except asyncio.TimeoutError:
+            print("Timed out waiting for delivery confirmation")
 ```
