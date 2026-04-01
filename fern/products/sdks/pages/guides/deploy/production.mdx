@@ -1,0 +1,548 @@
+---
+title: "Production Deployment"
+description: Deploy agents to production with SSL, authentication, monitoring, and scaling using uvicorn workers, nginx reverse proxy, and systemd.
+slug: /guides/production
+max-toc-depth: 3
+---
+
+## Production checklist
+
+### Security
+
+- [ ] HTTPS enabled with valid certificates
+- [ ] `SWML_BASIC_AUTH_PASSWORD` configured (username defaults to `signalwire`)
+- [ ] Firewall rules in place
+- [ ] No secrets in code or logs (SDK masks credentials in startup output automatically)
+
+### Reliability
+
+- [ ] Process manager (systemd/supervisor)
+- [ ] Health checks configured
+- [ ] Logging to persistent storage
+- [ ] Error monitoring/alerting
+
+### Performance
+
+- [ ] Multiple workers for concurrency
+- [ ] Reverse proxy (nginx) for SSL termination
+- [ ] Load balancing if needed
+
+## Environment variables
+
+```bash
+## Authentication (password required; username defaults to 'signalwire')
+export SWML_BASIC_AUTH_PASSWORD="your-secure-password"
+# export SWML_BASIC_AUTH_USER="signalwire"  # optional, defaults to 'signalwire'
+
+## SSL Configuration
+export SWML_SSL_ENABLED="true"
+export SWML_SSL_CERT_PATH="/etc/ssl/certs/agent.crt"
+export SWML_SSL_KEY_PATH="/etc/ssl/private/agent.key"
+
+## Domain configuration
+export SWML_DOMAIN="agent.example.com"
+
+## Proxy URL (if behind load balancer/reverse proxy)
+export SWML_PROXY_URL_BASE="https://agent.example.com"
+# APP_URL is accepted as a fallback for SWML_PROXY_URL_BASE
+```
+
+## Running in production
+
+Production deployment differs significantly by language. Each SDK provides its own HTTP server or integrates with language-specific production servers.
+
+<Tabs>
+<Tab title="Python">
+Use uvicorn with multiple workers:
+
+```bash
+## Run with 4 workers
+uvicorn my_agent:app --host 0.0.0.0 --port 3000 --workers 4
+```
+
+Create an entry point module:
+
+```python
+#!/usr/bin/env python3
+# my_agent.py
+from signalwire_agents import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+
+if __name__ == "__main__":
+    agent = MyAgent()
+    agent.run(host="0.0.0.0", port=3000)
+```
+</Tab>
+{/*
+<Tab title="TypeScript">
+Use Node.js with clustering or a process manager like PM2:
+
+```typescript
+// app.ts
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: "my-agent" });
+agent.addLanguage("English", "en-US", "rime.spore");
+agent.promptAddSection("Role", "You are a helpful assistant.");
+
+agent.run({ host: "0.0.0.0", port: 3000 });
+```
+
+```bash
+## Run with PM2 for process management
+npm install -g pm2
+pm2 start app.js -i 4 --name signalwire-agent
+```
+</Tab>
+<Tab title="Go">
+Compile and run as a static binary:
+
+```go
+package main
+
+import "github.com/signalwire/signalwire-agents-go/pkg/agent"
+
+func main() {
+    a := agent.NewAgentBase(
+        agent.WithName("my-agent"),
+    )
+    a.AddLanguage("English", "en-US", "rime.spore")
+    a.PromptAddSection("Role", "You are a helpful assistant.")
+
+    a.Run(agent.WithHost("0.0.0.0"), agent.WithPort(3000))
+}
+```
+
+```bash
+## Build and run
+go build -o signalwire-agent .
+./signalwire-agent
+```
+</Tab>
+<Tab title="Ruby">
+Use Puma for production:
+
+```ruby
+require 'signalwire_agents'
+
+agent = SignalWireAgents::AgentBase.new(name: "my-agent")
+agent.add_language("English", "en-US", "rime.spore")
+agent.prompt_add_section("Role", "You are a helpful assistant.")
+
+agent.run(host: "0.0.0.0", port: 3000)
+```
+
+```bash
+## Run with Puma
+gem install puma
+puma -w 4 -b tcp://0.0.0.0:3000
+```
+</Tab>
+<Tab title="Java">
+Run with the built-in HTTP server (Java 21 virtual threads):
+
+```java
+import com.signalwire.agents.agent.AgentBase;
+
+public class MyAgent {
+    public static void main(String[] args) {
+        AgentBase agent = AgentBase.builder()
+            .name("my-agent")
+            .build();
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.promptAddSection("Role", "You are a helpful assistant.");
+
+        agent.run("0.0.0.0", 3000);
+    }
+}
+```
+
+```bash
+## Build and run with Maven
+mvn package
+java -jar target/my-agent.jar
+```
+</Tab>
+<Tab title="Perl">
+Use Plack/PSGI with Starman for production:
+
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+
+my $agent = AgentBase->new(name => "my-agent");
+$agent->add_language("English", "en-US", "rime.spore");
+$agent->prompt_add_section("Role", "You are a helpful assistant.");
+
+$agent->run(host => "0.0.0.0", port => 3000);
+```
+
+```bash
+## Run with Starman
+cpanm Starman
+starman --workers 4 --port 3000 app.psgi
+```
+</Tab>
+<Tab title="C++">
+Compile and run as a binary with embedded HTTP server:
+
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+
+int main() {
+    agent::AgentBase agent("my-agent");
+    agent.addLanguage("English", "en-US", "rime.spore");
+    agent.promptAddSection("Role", "You are a helpful assistant.");
+
+    agent.run("0.0.0.0", 3000);
+    return 0;
+}
+```
+
+```bash
+## Build and run
+cmake --build build --config Release
+./build/signalwire-agent
+```
+</Tab>
+<Tab title="PHP">
+Use PHP built-in server, nginx + PHP-FPM, or Apache + mod_php:
+
+```php
+<?php
+// agent.php
+use SignalWire\Agent\AgentBase;
+
+$agent = new AgentBase(name: 'my-agent');
+$agent->addLanguage('English', 'en-US', 'rime.spore');
+$agent->promptAddSection('Role', 'You are a helpful assistant.');
+
+$agent->run(host: '0.0.0.0', port: 3000);
+```
+
+```bash
+## Run with PHP built-in server
+php agent.php
+
+## Or use nginx + PHP-FPM for production
+## Configure PHP-FPM pool and nginx fastcgi_pass
+```
+</Tab>
+<Tab title="C#">
+Use Kestrel (the built-in .NET web server):
+
+```csharp
+// agent.cs
+using SignalWire.Agent;
+
+var agent = new AgentBase(new AgentOptions
+{
+    Name = "my-agent",
+    Host = "0.0.0.0",
+    Port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "3000"),
+});
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.PromptAddSection("Role", "You are a helpful assistant.");
+
+agent.Run();
+```
+
+```bash
+## Build and run
+dotnet publish -c Release -o out
+dotnet out/MyAgent.dll
+```
+</Tab>
+*/}
+</Tabs>
+
+## Systemd service
+
+Create `/etc/systemd/system/signalwire-agent.service`. Adjust `ExecStart` for your language:
+
+| Language | ExecStart Example |
+|----------|-------------------|
+| Python | `/opt/agent/venv/bin/uvicorn app:app --host 127.0.0.1 --port 3000 --workers 4` |
+| TypeScript | `/usr/bin/node /opt/agent/app.js` |
+| Go | `/opt/agent/signalwire-agent` |
+| Ruby | `/usr/local/bin/puma -w 4 -b tcp://127.0.0.1:3000` |
+| Java | `/usr/bin/java -jar /opt/agent/my-agent.jar` |
+| Perl | `/usr/local/bin/starman --workers 4 --port 3000 /opt/agent/app.psgi` |
+| C++ | `/opt/agent/signalwire-agent` |
+| PHP | `/usr/bin/php /opt/agent/agent.php` |
+| C# | `/opt/agent/MyAgent` (self-contained) or `dotnet /opt/agent/MyAgent.dll` |
+
+```ini
+[Unit]
+Description=SignalWire AI Agent
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/agent
+Environment="SWML_BASIC_AUTH_USER=your-username"
+Environment="SWML_BASIC_AUTH_PASSWORD=your-password"
+ExecStart=/opt/agent/venv/bin/uvicorn app:app --host 127.0.0.1 --port 3000 --workers 4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl enable signalwire-agent
+sudo systemctl start signalwire-agent
+sudo systemctl status signalwire-agent
+```
+
+## Nginx reverse proxy
+
+```nginx
+## /etc/nginx/sites-available/agent
+server {
+    listen 443 ssl http2;
+    server_name agent.example.com;
+
+    ssl_certificate /etc/ssl/certs/agent.crt;
+    ssl_certificate_key /etc/ssl/private/agent.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+    }
+}
+
+server {
+    listen 80;
+    server_name agent.example.com;
+    return 301 https://$server_name$request_uri;
+}
+```
+
+Enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/agent /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+## Production architecture
+
+<Frame caption="Production Architecture">
+  <img class="diagram" src="/assets/images/sdks/diagrams/07_02_production_diagram1.webp" alt="Production architecture diagram showing nginx, uvicorn workers, and SignalWire Cloud." />
+</Frame>
+
+## SSL configuration
+
+### Using environment variables
+
+```bash
+export SWML_SSL_ENABLED="true"
+export SWML_SSL_CERT_PATH="/path/to/cert.pem"
+export SWML_SSL_KEY_PATH="/path/to/key.pem"
+```
+
+### Let's Encrypt with Certbot
+
+```bash
+## Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+## Get certificate
+sudo certbot --nginx -d agent.example.com
+
+## Auto-renewal is configured automatically
+```
+
+## Health checks
+
+For AgentServer deployments:
+
+```bash
+## Health check endpoint
+curl https://agent.example.com/health
+```
+
+Response:
+
+```json
+{
+    "status": "ok",
+    "agents": 1,
+    "routes": ["/"]
+}
+```
+
+For load balancers, use this endpoint to verify agent availability.
+
+## Logging configuration
+
+```python
+import logging
+
+## Configure logging for production
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('/var/log/agent/agent.log'),
+        logging.StreamHandler()
+    ]
+)
+```
+
+Or use environment variable:
+
+```bash
+export SIGNALWIRE_LOG_MODE=default
+```
+
+## Monitoring
+
+### Prometheus metrics
+
+Add custom metrics to your agent:
+
+```python
+from prometheus_client import Counter, Histogram, start_http_server
+
+## Start metrics server on port 9090
+start_http_server(9090)
+
+## Define metrics
+call_counter = Counter('agent_calls_total', 'Total calls handled')
+call_duration = Histogram('agent_call_duration_seconds', 'Call duration')
+```
+
+### External monitoring
+
+- **Uptime monitoring**: Monitor the health endpoint
+- **Log aggregation**: Ship logs to ELK, Datadog, or similar
+- **APM**: Use Application Performance Monitoring tools
+
+## Scaling considerations
+
+### Vertical scaling
+
+| Language | Scaling Approach |
+|----------|-----------------|
+| Python | Increase uvicorn workers (`--workers N`) |
+| TypeScript | Increase PM2 instances (`pm2 scale agent 8`) |
+| Go | Built-in goroutines handle concurrency; increase `GOMAXPROCS` |
+| Ruby | Increase Puma workers (`-w N`) |
+| Java | Virtual threads scale automatically (Java 21+) |
+| Perl | Increase Starman workers (`--workers N`) |
+| C++ | Built-in thread pool; configure thread count |
+| PHP | Use nginx + PHP-FPM with multiple workers (`pm.max_children`) |
+| C# | Kestrel scales with async I/O; increase thread pool or use multiple instances |
+
+- Use larger server instances
+- Optimize agent code and external calls
+
+### Horizontal scaling
+
+- Multiple server instances behind load balancer
+- Stateless agent design
+- Shared session storage (Redis) if needed
+
+### Serverless
+
+- Auto-scaling with Lambda/Cloud Functions
+- Pay per invocation
+- No server management
+
+## Built-in security features
+
+The SDK includes several security hardening features enabled by default.
+
+### Security headers
+
+All HTTP responses automatically include security headers:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Content-Type-Options` | `nosniff` | Prevent MIME-type sniffing |
+| `X-Frame-Options` | `DENY` | Prevent clickjacking |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limit referrer information |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | Force HTTPS (when SSL enabled) |
+
+No configuration is needed -- these headers are added automatically by middleware on AgentBase, AgentServer, and SWMLService.
+
+### SSRF protection
+
+DataMap HTTP requests, skill remote URLs, and MCP gateway URLs are validated against private IP ranges to prevent Server-Side Request Forgery attacks. By default, requests to internal networks (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`, `169.254.0.0/16`, and IPv6 equivalents) are blocked.
+
+To allow private URLs (e.g., when your backend services are on a private network):
+
+```bash
+export SWML_ALLOW_PRIVATE_URLS=true
+```
+
+### Timing-safe authentication
+
+Basic auth credential comparison uses `hmac.compare_digest()` to prevent timing side-channel attacks. SWAIG token validation also uses constant-time comparison.
+
+### Credential masking
+
+Startup log output shows `(credentials configured)` instead of the actual password:
+
+```text
+Agent 'my-agent' is available at:
+URL: http://0.0.0.0:3000
+Basic Auth: signalwire:(credentials configured) (source: environment)
+```
+
+### Default authentication username
+
+`SWML_BASIC_AUTH_USER` defaults to `signalwire` when not explicitly set. You only need to configure `SWML_BASIC_AUTH_PASSWORD`:
+
+```bash
+export SWML_BASIC_AUTH_PASSWORD="your-secure-password"
+# Username defaults to 'signalwire' — no need to set SWML_BASIC_AUTH_USER
+```
+
+### Proxy header validation
+
+X-Forwarded headers (`X-Forwarded-Host`, `X-Forwarded-Proto`) are only trusted when explicitly configured. Set `SWML_TRUST_PROXY_HEADERS=true` if your agent runs behind a reverse proxy and you want the SDK to auto-detect the public URL from forwarded headers:
+
+```bash
+export SWML_TRUST_PROXY_HEADERS=true
+```
+
+When `SWML_PROXY_URL_BASE` is set via environment variable, proxy headers are automatically trusted for URL construction.
+
+## Security best practices
+
+**DO:**
+
+- Use HTTPS everywhere
+- Set strong basic auth credentials
+- Use environment variables for secrets
+- Enable firewall and limit access
+- Regularly update dependencies
+- Monitor for suspicious activity
+
+**DON'T:**
+
+- Expose debug endpoints in production
+- Log sensitive data
+- Use default credentials
+- Disable SSL verification
+- Run as root user

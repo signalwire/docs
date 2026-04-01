@@ -1,0 +1,716 @@
+---
+title: "Call Flow Customization"
+description: Control call flow with verb insertion points for pre-answer, post-answer, and post-AI actions.
+slug: /guides/call-flow
+max-toc-depth: 3
+---
+
+### Understanding Call Flow
+
+By default, `AgentBase` generates a simple call flow:
+
+```text
+answer -> ai
+```
+
+The SDK provides three insertion points to customize this flow:
+
+<Frame caption="Call flow insertion points">
+  <img class="diagram" src="/assets/images/sdks/diagrams/03_07_call-flow_diagram1.webp" alt="Call flow insertion points for pre-answer, post-answer, and post-AI verbs." />
+</Frame>
+
+### Verb Insertion Methods
+
+| Method | Purpose | Common Uses |
+|--------|---------|-------------|
+| `add_pre_answer_verb()` | Before answering | Ringback, screening, routing |
+| `add_post_answer_verb()` | After answer, before AI | Announcements, disclaimers |
+| `add_post_ai_verb()` | After AI ends | Cleanup, transfers, surveys |
+
+The verb insertion methods are available in all languages:
+
+| Language | Pre-Answer | Post-Answer | Post-AI |
+|----------|------------|-------------|---------|
+| Python | `add_pre_answer_verb(verb, params)` | `add_post_answer_verb(verb, params)` | `add_post_ai_verb(verb, params)` |
+| TypeScript | `addPreAnswerVerb(verb, params)` | `addPostAnswerVerb(verb, params)` | `addPostAiVerb(verb, params)` |
+| Go | `AddPreAnswerVerb(verb, params)` | `AddPostAnswerVerb(verb, params)` | `AddPostAiVerb(verb, params)` |
+| Ruby | `add_pre_answer_verb(verb, params)` | `add_post_answer_verb(verb, params)` | `add_post_ai_verb(verb, params)` |
+| Java | `addPreAnswerVerb(verb, params)` | `addPostAnswerVerb(verb, params)` | `addPostAiVerb(verb, params)` |
+| Perl | `$a->add_pre_answer_verb(verb, params)` | `$a->add_post_answer_verb(verb, params)` | `$a->add_post_ai_verb(verb, params)` |
+| C++ | `add_pre_answer_verb(verb, params)` | `add_post_answer_verb(verb, params)` | `add_post_ai_verb(verb, params)` |
+| PHP | `$a->addPreAnswerVerb(verb, params)` | `$a->addPostAnswerVerb(verb, params)` | `$a->addPostAiVerb(verb, params)` |
+| C# | `agent.AddPreAnswerVerb(verb, params)` | `agent.AddPostAnswerVerb(verb, params)` | `agent.AddPostAiVerb(verb, params)` |
+
+### Pre-Answer Verbs
+
+Pre-answer verbs run while the call is still ringing. Use them for:
+
+- **Ringback tones**: Play audio before answering
+- **Call screening**: Check caller ID or time
+- **Conditional routing**: Route based on variables
+
+<Tabs>
+<Tab title="Python">
+```python
+#!/usr/bin/env python3
+from signalwire_agents import AgentBase
+
+
+class RingbackAgent(AgentBase):
+    """Agent that plays ringback tone before answering."""
+
+    def __init__(self):
+        super().__init__(name="ringback", port=3000)
+
+        # Play US ringback tone before answering
+        # IMPORTANT: auto_answer=False prevents play from answering the call
+        self.add_pre_answer_verb("play", {
+            "urls": ["ring:us"],
+            "auto_answer": False
+        })
+
+        # Configure AI
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+
+
+if __name__ == "__main__":
+    agent = RingbackAgent()
+    agent.run()
+```
+</Tab>
+{/*
+<Tab title="TypeScript">
+```typescript
+import { AgentBase } from 'signalwire-agents';
+const agent = new AgentBase({ name: "ringback", port: 3000 });
+agent.addPreAnswerVerb('play', { urls: ['ring:us'], auto_answer: false });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.promptAddSection('Role', 'You are a helpful assistant.');
+agent.run();
+```
+</Tab>
+<Tab title="Go">
+```go
+package main
+import "github.com/signalwire/signalwire-agents-go/pkg/agent"
+func main() {
+    a := agent.NewAgentBase(agent.WithName("ringback"), agent.WithPort(3000))
+    a.AddPreAnswerVerb("play", map[string]any{"urls": []string{"ring:us"}, "auto_answer": false})
+    a.AddLanguage(map[string]any{"name": "English", "code": "en-US", "voice": "rime.spore"})
+    a.PromptAddSection("Role", "You are a helpful assistant.")
+    a.Run("0.0.0.0", 3000)
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire_agents'
+agent = AgentBase.new(name: "ringback", port: 3000)
+agent.add_pre_answer_verb('play', { urls: ['ring:us'], auto_answer: false })
+agent.add_language(name: 'English', code: 'en-US', voice: 'rime.spore')
+agent.prompt_add_section('Role', 'You are a helpful assistant.')
+agent.run
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.agent.AgentBase; import java.util.List; import java.util.Map;
+public class RingbackAgent {
+    public static void main(String[] args) {
+        AgentBase agent = AgentBase.builder().name("ringback").port(3000).build();
+        agent.addPreAnswerVerb("play", Map.of("urls", List.of("ring:us"), "auto_answer", false));
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.promptAddSection("Role", "You are a helpful assistant.");
+        agent.run("0.0.0.0", 3000);
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+my $agent = AgentBase->new(name => "ringback", port => 3000);
+$agent->add_pre_answer_verb('play', { urls => ['ring:us'], auto_answer => 0 });
+$agent->add_language(name => 'English', code => 'en-US', voice => 'rime.spore');
+$agent->prompt_add_section('Role', 'You are a helpful assistant.');
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+int main() {
+    agent::AgentBase a("ringback"); a.set_port(3000);
+    a.add_pre_answer_verb("play", {{"urls", {"ring:us"}}, {"auto_answer", false}});
+    a.add_language({"English", "en-US", "rime.spore"});
+    a.prompt_add_section("Role", "You are a helpful assistant.");
+    a.run("0.0.0.0", 3000);
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+$agent = new AgentBase(name: 'ringback', port: 3000);
+$agent->addPreAnswerVerb('play', ['urls' => ['ring:us'], 'auto_answer' => false]);
+$agent->addLanguage(name: 'English', code: 'en-US', voice: 'rime.spore');
+$agent->promptAddSection('Role', 'You are a helpful assistant.');
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+var agent = new AgentBase(new AgentOptions { Name = "ringback", Port = 3000 });
+agent.AddPreAnswerVerb("play", new { urls = new[] { "ring:us" }, auto_answer = false });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.PromptAddSection("Role", "You are a helpful assistant.");
+agent.Run();
+```
+</Tab>
+*/}
+</Tabs>
+
+**Generated SWML:**
+
+```json
+{
+  "sections": {
+    "main": [
+      {"play": {"urls": ["ring:us"], "auto_answer": false}},
+      {"answer": {}},
+      {"ai": {...}}
+    ]
+  }
+}
+```
+
+#### Pre-Answer Safe Verbs
+
+Only certain verbs can run before the call is answered:
+
+| Verb | Pre-Answer Safe | Notes |
+|------|-----------------|-------|
+| `play` | Yes* | Requires `auto_answer: false` |
+| `connect` | Yes* | Requires `auto_answer: false` |
+| `sleep` | Yes | Wait for duration |
+| `set` | Yes | Set variables |
+| `request` | Yes | HTTP request |
+| `switch` | Yes | Variable-based branching |
+| `cond` | Yes | Conditional branching |
+| `if` | Yes | If/then/else |
+| `eval` | Yes | Evaluate expressions |
+| `goto` | Yes | Jump to label |
+| `label` | Yes | Define jump target |
+| `hangup` | Yes | Reject call |
+| `transfer` | Yes | Route elsewhere |
+
+*These verbs auto-answer by default. Set `auto_answer: false` for pre-answer use.
+
+#### Available Ringback Tones
+
+| Tone | Description |
+|------|-------------|
+| `ring:us` | US ringback tone |
+| `ring:uk` | UK ringback tone |
+| `ring:it` | Italian ringback tone |
+| `ring:at` | Austrian ringback tone |
+
+### Post-Answer Verbs
+
+Post-answer verbs run after the call is connected but before the AI speaks:
+
+<Tabs>
+<Tab title="Python">
+```python
+#!/usr/bin/env python3
+from signalwire_agents import AgentBase
+
+
+class WelcomeAgent(AgentBase):
+    """Agent that plays welcome message before AI."""
+
+    def __init__(self):
+        super().__init__(name="welcome", port=3000)
+
+        # Play welcome announcement
+        self.add_post_answer_verb("play", {
+            "url": "say:Thank you for calling Acme Corporation. "
+                   "Your call may be recorded for quality assurance."
+        })
+
+        # Brief pause before AI speaks
+        self.add_post_answer_verb("sleep", {"time": 500})
+
+        # Configure AI
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section(
+            "Role",
+            "You are a customer service representative. "
+            "The caller has just heard the welcome message."
+        )
+
+
+if __name__ == "__main__":
+    agent = WelcomeAgent()
+    agent.run()
+```
+</Tab>
+{/*
+<Tab title="TypeScript">
+```typescript
+import { AgentBase } from 'signalwire-agents';
+const agent = new AgentBase({ name: "welcome", port: 3000 });
+agent.addPostAnswerVerb('play', { url: 'say:Thank you for calling Acme Corporation. ' + 'Your call may be recorded for quality assurance.' });
+agent.addPostAnswerVerb('sleep', { time: 500 });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.promptAddSection('Role', 'You are a customer service representative. ' + 'The caller has just heard the welcome message.');
+agent.run();
+```
+</Tab>
+<Tab title="Go">
+```go
+package main
+import "github.com/signalwire/signalwire-agents-go/pkg/agent"
+func main() {
+    a := agent.NewAgentBase(agent.WithName("welcome"), agent.WithPort(3000))
+    a.AddPostAnswerVerb("play", map[string]any{"url": "say:Thank you for calling Acme Corporation. " + "Your call may be recorded for quality assurance."})
+    a.AddPostAnswerVerb("sleep", map[string]any{"time": 500})
+    a.AddLanguage(map[string]any{"name": "English", "code": "en-US", "voice": "rime.spore"})
+    a.PromptAddSection("Role", "You are a customer service representative. " + "The caller has just heard the welcome message.")
+    a.Run("0.0.0.0", 3000)
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire_agents'
+agent = AgentBase.new(name: "welcome", port: 3000)
+agent.add_post_answer_verb('play', { url: 'say:Thank you for calling Acme Corporation. ' \ 'Your call may be recorded for quality assurance.' })
+agent.add_post_answer_verb('sleep', { time: 500 })
+agent.add_language(name: 'English', code: 'en-US', voice: 'rime.spore')
+agent.prompt_add_section('Role', 'You are a customer service representative. ' \ 'The caller has just heard the welcome message.')
+agent.run
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.agent.AgentBase; import java.util.Map;
+public class WelcomeAgent {
+    public static void main(String[] args) {
+        AgentBase agent = AgentBase.builder().name("welcome").port(3000).build();
+        agent.addPostAnswerVerb("play", Map.of("url", "say:Thank you for calling Acme Corporation. " + "Your call may be recorded for quality assurance."));
+        agent.addPostAnswerVerb("sleep", Map.of("time", 500));
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.promptAddSection("Role", "You are a customer service representative. " + "The caller has just heard the welcome message.");
+        agent.run("0.0.0.0", 3000);
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+my $agent = AgentBase->new(name => "welcome", port => 3000);
+$agent->add_post_answer_verb('play', { url => 'say:Thank you for calling Acme Corporation. ' . 'Your call may be recorded for quality assurance.' });
+$agent->add_post_answer_verb('sleep', { time => 500 });
+$agent->add_language(name => 'English', code => 'en-US', voice => 'rime.spore');
+$agent->prompt_add_section('Role', 'You are a customer service representative. ' . 'The caller has just heard the welcome message.');
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+int main() {
+    agent::AgentBase a("welcome"); a.set_port(3000);
+    a.add_post_answer_verb("play", {{"url", "say:Thank you for calling Acme Corporation. " "Your call may be recorded for quality assurance."}});
+    a.add_post_answer_verb("sleep", {{"time", 500}});
+    a.add_language({"English", "en-US", "rime.spore"});
+    a.prompt_add_section("Role", "You are a customer service representative. " "The caller has just heard the welcome message.");
+    a.run("0.0.0.0", 3000);
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+$agent = new AgentBase(name: 'welcome', port: 3000);
+$agent->addPostAnswerVerb('play', ['url' => 'say:Thank you for calling Acme Corporation. ' . 'Your call may be recorded for quality assurance.']);
+$agent->addPostAnswerVerb('sleep', ['time' => 500]);
+$agent->addLanguage(name: 'English', code: 'en-US', voice: 'rime.spore');
+$agent->promptAddSection('Role', 'You are a customer service representative. ' . 'The caller has just heard the welcome message.');
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+var agent = new AgentBase(new AgentOptions { Name = "welcome", Port = 3000 });
+agent.AddPostAnswerVerb("play", new { url = "say:Thank you for calling Acme Corporation. " + "Your call may be recorded for quality assurance." });
+agent.AddPostAnswerVerb("sleep", new { time = 500 });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.PromptAddSection("Role", "You are a customer service representative. " + "The caller has just heard the welcome message.");
+agent.Run();
+```
+</Tab>
+*/}
+</Tabs>
+
+**Generated SWML:**
+
+```json
+{
+  "sections": {
+    "main": [
+      {"answer": {}},
+      {"play": {"url": "say:Thank you for calling..."}},
+      {"sleep": {"time": 500}},
+      {"ai": {...}}
+    ]
+  }
+}
+```
+
+#### Common Post-Answer Uses
+
+| Use Case | Example |
+|----------|---------|
+| Welcome message | `{"url": "say:Thank you for calling..."}` |
+| Legal disclaimer | `{"url": "say:This call may be recorded..."}` |
+| Hold music | `{"url": "https://example.com/hold.mp3"}` |
+| Pause | `{"time": 500}` (milliseconds) |
+| Recording | Use `record_call=True` in constructor |
+
+### Post-AI Verbs
+
+Post-AI verbs run after the AI conversation ends:
+
+```python
+#!/usr/bin/env python3
+from signalwire_agents import AgentBase
+
+
+class SurveyAgent(AgentBase):
+    """Agent that logs call outcome after conversation."""
+
+    def __init__(self):
+        super().__init__(name="survey", port=3000)
+
+        # Configure AI
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a support agent.")
+
+        # After AI ends, log the call and hang up
+        self.add_post_ai_verb("request", {
+            "url": "https://api.example.com/call-complete",
+            "method": "POST"
+        })
+        self.add_post_ai_verb("hangup", {})
+
+
+if __name__ == "__main__":
+    agent = SurveyAgent()
+    agent.run()
+```
+
+#### Common Post-AI Uses
+
+| Use Case | Verb | Example |
+|----------|------|---------|
+| Clean disconnect | `hangup` | `{}` |
+| Transfer to human | `transfer` | `{"dest": "tel:+15551234567"}` |
+| Post-call survey | `prompt` | DTMF collection |
+| Log outcome | `request` | HTTP POST to API |
+| Connect to queue | `enter_queue` | `{"name": "support"}` |
+
+### Complete Example
+
+Here's an agent with all three insertion points:
+
+<Tabs>
+<Tab title="Python">
+```python
+#!/usr/bin/env python3
+from signalwire_agents import AgentBase
+
+
+class CallFlowAgent(AgentBase):
+    """Agent demonstrating complete call flow customization."""
+
+    def __init__(self):
+        super().__init__(name="call-flow", port=3000)
+
+        # PRE-ANSWER: Ringback tone
+        self.add_pre_answer_verb("play", {
+            "urls": ["ring:us"],
+            "auto_answer": False
+        })
+
+        # POST-ANSWER: Welcome and disclaimer
+        self.add_post_answer_verb("play", {
+            "url": "say:Welcome to Acme Corporation."
+        })
+        self.add_post_answer_verb("play", {
+            "url": "say:This call may be recorded for quality assurance."
+        })
+        self.add_post_answer_verb("sleep", {"time": 500})
+
+        # Configure AI
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section(
+            "Role",
+            "You are a friendly customer service representative. "
+            "The caller has just heard the welcome message."
+        )
+        self.set_params({
+            "end_of_speech_timeout": 1000,
+            "attention_timeout": 10000
+        })
+
+        # POST-AI: Clean disconnect
+        self.add_post_ai_verb("hangup", {})
+
+
+if __name__ == "__main__":
+    agent = CallFlowAgent()
+    agent.run()
+```
+</Tab>
+{/*
+<Tab title="TypeScript">
+```typescript
+import { AgentBase } from 'signalwire-agents';
+const agent = new AgentBase({ name: "call-flow", port: 3000 });
+agent.addPreAnswerVerb('play', { urls: ['ring:us'], auto_answer: false });
+agent.addPostAnswerVerb('play', { url: 'say:Welcome to Acme Corporation.' });
+agent.addPostAnswerVerb('play', { url: 'say:This call may be recorded for quality assurance.' });
+agent.addPostAnswerVerb('sleep', { time: 500 });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.promptAddSection('Role', 'You are a friendly customer service representative. ' + 'The caller has just heard the welcome message.');
+agent.setParams({ end_of_speech_timeout: 1000, attention_timeout: 10000 });
+agent.addPostAiVerb('hangup', {});
+agent.run();
+```
+</Tab>
+<Tab title="Go">
+```go
+package main
+import "github.com/signalwire/signalwire-agents-go/pkg/agent"
+func main() {
+    a := agent.NewAgentBase(agent.WithName("call-flow"), agent.WithPort(3000))
+    a.AddPreAnswerVerb("play", map[string]any{"urls": []string{"ring:us"}, "auto_answer": false})
+    a.AddPostAnswerVerb("play", map[string]any{"url": "say:Welcome to Acme Corporation."})
+    a.AddPostAnswerVerb("play", map[string]any{"url": "say:This call may be recorded for quality assurance."})
+    a.AddPostAnswerVerb("sleep", map[string]any{"time": 500})
+    a.AddLanguage(map[string]any{"name": "English", "code": "en-US", "voice": "rime.spore"})
+    a.PromptAddSection("Role", "You are a friendly customer service representative. " + "The caller has just heard the welcome message.")
+    a.SetParam("end_of_speech_timeout", 1000)
+    a.SetParam("attention_timeout", 10000)
+    a.AddPostAiVerb("hangup", map[string]any{})
+    a.Run("0.0.0.0", 3000)
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire_agents'
+agent = AgentBase.new(name: "call-flow", port: 3000)
+agent.add_pre_answer_verb('play', { urls: ['ring:us'], auto_answer: false })
+agent.add_post_answer_verb('play', { url: 'say:Welcome to Acme Corporation.' })
+agent.add_post_answer_verb('play', { url: 'say:This call may be recorded for quality assurance.' })
+agent.add_post_answer_verb('sleep', { time: 500 })
+agent.add_language(name: 'English', code: 'en-US', voice: 'rime.spore')
+agent.prompt_add_section('Role', 'You are a friendly customer service representative. ' \ 'The caller has just heard the welcome message.')
+agent.set_params({ end_of_speech_timeout: 1000, attention_timeout: 10000 })
+agent.add_post_ai_verb('hangup', {})
+agent.run
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.agent.AgentBase; import java.util.List; import java.util.Map;
+public class CallFlowAgent {
+    public static void main(String[] args) {
+        AgentBase agent = AgentBase.builder().name("call-flow").port(3000).build();
+        agent.addPreAnswerVerb("play", Map.of("urls", List.of("ring:us"), "auto_answer", false));
+        agent.addPostAnswerVerb("play", Map.of("url", "say:Welcome to Acme Corporation."));
+        agent.addPostAnswerVerb("play", Map.of("url", "say:This call may be recorded for quality assurance."));
+        agent.addPostAnswerVerb("sleep", Map.of("time", 500));
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.promptAddSection("Role", "You are a friendly customer service representative. " + "The caller has just heard the welcome message.");
+        agent.setParams(Map.of("end_of_speech_timeout", 1000, "attention_timeout", 10000));
+        agent.addPostAiVerb("hangup", Map.of());
+        agent.run("0.0.0.0", 3000);
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+my $agent = AgentBase->new(name => "call-flow", port => 3000);
+$agent->add_pre_answer_verb('play', { urls => ['ring:us'], auto_answer => 0 });
+$agent->add_post_answer_verb('play', { url => 'say:Welcome to Acme Corporation.' });
+$agent->add_post_answer_verb('play', { url => 'say:This call may be recorded for quality assurance.' });
+$agent->add_post_answer_verb('sleep', { time => 500 });
+$agent->add_language(name => 'English', code => 'en-US', voice => 'rime.spore');
+$agent->prompt_add_section('Role', 'You are a friendly customer service representative. ' . 'The caller has just heard the welcome message.');
+$agent->set_params({ end_of_speech_timeout => 1000, attention_timeout => 10000 });
+$agent->add_post_ai_verb('hangup', {});
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+int main() {
+    agent::AgentBase a("call-flow"); a.set_port(3000);
+    a.add_pre_answer_verb("play", {{"urls", {"ring:us"}}, {"auto_answer", false}});
+    a.add_post_answer_verb("play", {{"url", "say:Welcome to Acme Corporation."}});
+    a.add_post_answer_verb("play", {{"url", "say:This call may be recorded for quality assurance."}});
+    a.add_post_answer_verb("sleep", {{"time", 500}});
+    a.add_language({"English", "en-US", "rime.spore"});
+    a.prompt_add_section("Role", "You are a friendly customer service representative. " "The caller has just heard the welcome message.");
+    a.set_params({{"end_of_speech_timeout", 1000}, {"attention_timeout", 10000}});
+    a.add_post_ai_verb("hangup", {});
+    a.run("0.0.0.0", 3000);
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+$agent = new AgentBase(name: 'call-flow', port: 3000);
+$agent->addPreAnswerVerb('play', ['urls' => ['ring:us'], 'auto_answer' => false]);
+$agent->addPostAnswerVerb('play', ['url' => 'say:Welcome to Acme Corporation.']);
+$agent->addPostAnswerVerb('play', ['url' => 'say:This call may be recorded for quality assurance.']);
+$agent->addPostAnswerVerb('sleep', ['time' => 500]);
+$agent->addLanguage(name: 'English', code: 'en-US', voice: 'rime.spore');
+$agent->promptAddSection('Role', 'You are a friendly customer service representative. ' . 'The caller has just heard the welcome message.');
+$agent->setParams(['end_of_speech_timeout' => 1000, 'attention_timeout' => 10000]);
+$agent->addPostAiVerb('hangup', []);
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+var agent = new AgentBase(new AgentOptions { Name = "call-flow", Port = 3000 });
+agent.AddPreAnswerVerb("play", new { urls = new[] { "ring:us" }, auto_answer = false });
+agent.AddPostAnswerVerb("play", new { url = "say:Welcome to Acme Corporation." });
+agent.AddPostAnswerVerb("play", new { url = "say:This call may be recorded for quality assurance." });
+agent.AddPostAnswerVerb("sleep", new { time = 500 });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.PromptAddSection("Role", "You are a friendly customer service representative. " + "The caller has just heard the welcome message.");
+agent.SetParams(new Dictionary<string, object> { ["end_of_speech_timeout"] = 1000, ["attention_timeout"] = 10000 });
+agent.AddPostAiVerb("hangup", new { });
+agent.Run();
+```
+</Tab>
+*/}
+</Tabs>
+
+**Generated SWML:**
+
+```json
+{
+  "sections": {
+    "main": [
+      {"play": {"urls": ["ring:us"], "auto_answer": false}},
+      {"answer": {}},
+      {"play": {"url": "say:Welcome to Acme Corporation."}},
+      {"play": {"url": "say:This call may be recorded..."}},
+      {"sleep": {"time": 500}},
+      {"ai": {...}},
+      {"hangup": {}}
+    ]
+  }
+}
+```
+
+### Controlling Answer Behavior
+
+#### Disable Auto-Answer
+
+Set `auto_answer=False` to prevent automatic answering:
+
+```python
+class ManualAnswerAgent(AgentBase):
+    def __init__(self):
+        # Disable auto-answer
+        super().__init__(name="manual", port=3000, auto_answer=False)
+
+        # Pre-answer: Play ringback
+        self.add_pre_answer_verb("play", {
+            "urls": ["ring:us"],
+            "auto_answer": False
+        })
+```
+
+#### Customize Answer Verb
+
+Use `add_answer_verb()` to configure the answer verb:
+
+```python
+# Set max call duration to 1 hour
+agent.add_answer_verb({"max_duration": 3600})
+```
+
+### Dynamic Call Flow
+
+Modify call flow based on caller information using `on_swml_request()`:
+
+```python
+class DynamicFlowAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="dynamic", port=3000)
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a receptionist.")
+
+        # VIP numbers get special treatment
+        self.vip_numbers = ["+15551234567", "+15559876543"]
+
+    def on_swml_request(self, request_data=None, callback_path=None, request=None):
+        call_data = (request_data or {}).get("call", {})
+        caller = call_data.get("from", "")
+
+        if caller in self.vip_numbers:
+            # VIP: No ringback, immediate welcome
+            self.clear_pre_answer_verbs()
+            self.add_post_answer_verb("play", {
+                "url": "say:Welcome back, valued customer!"
+            })
+        else:
+            # Regular caller: Ringback tone
+            self.add_pre_answer_verb("play", {
+                "urls": ["ring:us"],
+                "auto_answer": False
+            })
+```
+
+### Clear Methods
+
+Remove verbs from insertion points:
+
+```python
+agent.clear_pre_answer_verbs()   # Remove all pre-answer verbs
+agent.clear_post_answer_verbs()  # Remove all post-answer verbs
+agent.clear_post_ai_verbs()      # Remove all post-AI verbs
+```
+
+### Method Chaining
+
+All verb insertion methods return `self` for chaining:
+
+```python
+agent = AgentBase(name="chained", port=3000)
+agent.add_pre_answer_verb("play", {"urls": ["ring:us"], "auto_answer": False}) \
+     .add_post_answer_verb("play", {"url": "say:Welcome"}) \
+     .add_post_answer_verb("sleep", {"time": 500}) \
+     .add_post_ai_verb("hangup", {})
+```
