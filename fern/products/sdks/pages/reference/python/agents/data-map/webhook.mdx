@@ -1,0 +1,75 @@
+---
+title: "webhook"
+slug: /reference/python/agents/data-map/webhook
+description: Add an API call to the DataMap.
+max-toc-depth: 3
+---
+
+Add an API call. Multiple webhooks can be chained -- they execute in order, and
+if earlier webhooks fail, later ones act as fallbacks.
+
+## **Parameters**
+
+<ParamField path="method" type="str" required={true} toc={true}>
+  HTTP method for the request.
+
+  - `"GET"` -- retrieve a resource
+  - `"POST"` -- create a resource or submit data
+  - `"PUT"` -- replace a resource
+  - `"DELETE"` -- remove a resource
+  - `"PATCH"` -- partially update a resource
+</ParamField>
+
+<ParamField path="url" type="str" required={true} toc={true}>
+  API endpoint URL. Supports `${variable}` substitutions (use `${enc:args.param}`
+  for URL-encoded values).
+</ParamField>
+
+<ParamField path="headers" type="dict[str, str]" toc={true}>
+  HTTP headers to include in the request.
+</ParamField>
+
+<ParamField path="form_param" type="str" toc={true}>
+  Send the JSON body as a single form parameter with this name.
+</ParamField>
+
+<ParamField path="input_args_as_params" type="bool" default="false" toc={true}>
+  Merge function arguments into the request parameters automatically.
+</ParamField>
+
+<ParamField path="require_args" type="list[str]" toc={true}>
+  Only execute this webhook if all listed arguments are present.
+</ParamField>
+
+## **Returns**
+
+`DataMap` -- Self for method chaining.
+
+## **Example**
+
+```python
+from signalwire.core.data_map import DataMap
+
+weather = (
+    DataMap("get_weather")
+    .purpose("Get current weather for a city")
+    .parameter("city", "string", "City name", required=True)
+    .webhook(
+        "GET",
+        "https://api.weatherapi.com/v1/current.json"
+        "?key=YOUR_API_KEY&q=${enc:args.city}",
+        headers={"Accept": "application/json"}
+    )
+)
+
+# Chained webhooks act as fallbacks
+search = (
+    DataMap("search")
+    .purpose("Search across multiple providers")
+    .parameter("query", "string", "Search query", required=True)
+    .webhook("GET", "https://primary-api.example.com/search?q=${enc:args.query}")
+    .output(FunctionResult("Primary: ${response.result}"))
+    .webhook("GET", "https://backup-api.example.com/search?q=${enc:args.query}")
+    .output(FunctionResult("Backup: ${response.result}"))
+)
+```

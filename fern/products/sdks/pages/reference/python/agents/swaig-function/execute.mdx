@@ -1,0 +1,58 @@
+---
+title: "execute"
+slug: /reference/python/agents/swaig-function/execute
+description: Execute the function with the given arguments.
+max-toc-depth: 3
+---
+
+Execute the function with the given arguments. Calls the handler and normalizes
+the return value into a FunctionResult dictionary.
+
+## **Parameters**
+
+<ParamField path="args" type="dict[str, Any]" required={true} toc={true}>
+  Parsed arguments for the function, matching the parameter schema.
+</ParamField>
+
+<ParamField path="raw_data" type="dict[str, Any]" toc={true}>
+  Full raw request data including `global_data`, `call_id`, `caller_id_number`,
+  `meta_data`, and `ai_session_id`.
+</ParamField>
+
+## **Returns**
+
+`dict[str, Any]` -- The function result as a dictionary (from
+`FunctionResult.to_dict()`). If the handler raises an exception, returns a
+generic error message rather than exposing internal details.
+
+<Note>
+The handler can return a `FunctionResult`, a `dict` with a `"response"` key,
+or a plain string. All formats are normalized to a FunctionResult dictionary.
+</Note>
+
+## **Example**
+
+```python
+from signalwire.core.swaig_function import SWAIGFunction
+from signalwire.core.function_result import FunctionResult
+
+def handle_lookup(args, raw_data):
+    account_id = args.get("account_id", "")
+    return FunctionResult(f"Account {account_id} is active.")
+
+func = SWAIGFunction(
+    name="lookup_account",
+    handler=handle_lookup,
+    description="Look up account status",
+    parameters={
+        "type": "object",
+        "properties": {
+            "account_id": {"type": "string", "description": "Account ID"}
+        },
+        "required": ["account_id"]
+    }
+)
+
+result = func.execute({"account_id": "12345"})
+# Returns: {"response": "Account 12345 is active."}
+```

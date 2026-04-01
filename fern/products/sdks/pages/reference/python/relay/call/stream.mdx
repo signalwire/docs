@@ -1,0 +1,92 @@
+---
+title: "stream"
+slug: /reference/python/relay/call/stream
+description: "Stream call audio to a WebSocket endpoint."
+max-toc-depth: 3
+---
+
+Start streaming call audio to a WebSocket endpoint. Returns a
+[`StreamAction`](/docs/sdks/reference/python/relay/actions) that you can use to
+stop the stream or wait for it to finish.
+
+<Info>
+This method emits [`calling.call.stream`](/docs/sdks/reference/python/relay/call#events) events. See [Call Events](/docs/sdks/reference/python/relay/call#events) for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="url" type="str" required={true} toc={true}>
+  WebSocket URL to stream audio to (e.g., `"wss://example.com/stream"`).
+</ParamField>
+
+<ParamField path="name" type="Optional[str]" toc={true}>
+  A name for this stream, useful for identifying multiple concurrent streams.
+</ParamField>
+
+<ParamField path="codec" type="Optional[str]" toc={true}>
+  Audio codec for the stream.
+
+  - `"PCMU"` -- G.711 mu-law (default for North America)
+  - `"PCMA"` -- G.711 A-law (default for international)
+  - `"OPUS"` -- Opus codec (higher quality, variable bitrate)
+</ParamField>
+
+<ParamField path="track" type="Optional[str]" toc={true}>
+  Which audio track to stream.
+
+  - `"inbound"` -- audio received from the caller
+  - `"outbound"` -- audio sent to the caller
+  - `"both"` -- audio in both directions
+</ParamField>
+
+<ParamField path="status_url" type="Optional[str]" toc={true}>
+  URL to receive stream status webhooks.
+</ParamField>
+
+<ParamField path="status_url_method" type="Optional[str]" toc={true}>
+  HTTP method for status webhooks.
+
+  - `"GET"` -- send status updates via GET request
+  - `"POST"` -- send status updates via POST request
+</ParamField>
+
+<ParamField path="authorization_bearer_token" type="Optional[str]" toc={true}>
+  Bearer token for authenticating with the WebSocket server.
+</ParamField>
+
+<ParamField path="custom_parameters" type="Optional[dict]" toc={true}>
+  Custom key-value pairs sent with the stream start message.
+</ParamField>
+
+<ParamField path="control_id" type="Optional[str]" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable[[RelayEvent], Any]]" toc={true}>
+  Callback invoked when the stream ends.
+</ParamField>
+
+## **Returns**
+
+[`StreamAction`](/docs/sdks/reference/python/relay/actions) -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```python
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Stream audio to an external service for real-time processing
+    action = await call.stream(
+        url="wss://example.com/audio-stream",
+        track="inbound",
+        codec="PCMU",
+        custom_parameters={"session_id": "abc123"},
+    )
+
+    # The stream runs until stopped or the call ends
+    await call.wait_for_ended()
+```
+

@@ -1,0 +1,184 @@
+---
+title: "Message"
+slug: /reference/python/relay/message
+description: "SMS/MMS message tracking and state management."
+max-toc-depth: 3
+---
+
+The `Message` class represents a single SMS/MMS message in the RELAY messaging
+namespace. It tracks the lifecycle of a sent or received message through state
+events. Outbound messages progress through `queued`, `initiated`, `sent`, and
+then reach a terminal state (`delivered`, `undelivered`, or `failed`). Inbound
+messages arrive fully formed with state `received`.
+
+Obtain a `Message` instance from [`RelayClient.send_message()`](/docs/sdks/reference/python/relay/client/send-message)
+or from the `@client.on_message` handler for inbound messages.
+
+```python
+from signalwire.relay import RelayClient
+
+client = RelayClient(contexts=["default"])
+
+message = await client.send_message(
+    to_number="+15551234567",
+    from_number="+15559876543",
+    body="Hello from SignalWire!",
+)
+
+# Wait for delivery confirmation
+result = await message.wait(timeout=30)
+print(f"Final state: {message.state}")
+```
+
+## **Properties**
+
+<ParamField path="message_id" type="str" toc={true}>
+  Unique identifier for this message, assigned by SignalWire.
+</ParamField>
+
+<ParamField path="context" type="str" toc={true}>
+  The messaging context this message belongs to.
+</ParamField>
+
+<ParamField path="direction" type="str" toc={true}>
+  Message direction. Valid values:
+  - `"inbound"` -- incoming message
+  - `"outbound"` -- outgoing message
+</ParamField>
+
+<ParamField path="from_number" type="str" toc={true}>
+  Sender phone number in E.164 format.
+</ParamField>
+
+<ParamField path="to_number" type="str" toc={true}>
+  Recipient phone number in E.164 format.
+</ParamField>
+
+<ParamField path="body" type="str" toc={true}>
+  Text content of the message.
+</ParamField>
+
+<ParamField path="media" type="list[str]" toc={true}>
+  List of media URLs for MMS messages. Empty list for SMS-only messages.
+</ParamField>
+
+<ParamField path="segments" type="int" toc={true}>
+  Number of SMS segments required for this message.
+</ParamField>
+
+<ParamField path="state" type="str" toc={true}>
+  Current message state. See [`Message Constants`](/docs/sdks/reference/python/relay/constants) for valid values.
+
+  - `"queued"` -- message has been accepted and is waiting to be processed
+  - `"initiated"` -- message processing has started
+  - `"sent"` -- message has been dispatched to the carrier
+  - `"delivered"` -- message was successfully delivered to the recipient
+  - `"undelivered"` -- carrier was unable to deliver the message
+  - `"failed"` -- message could not be sent
+  - `"received"` -- inbound message received from the network
+</ParamField>
+
+<ParamField path="reason" type="str" toc={true}>
+  Failure reason when the message reaches an error state. Empty string if no failure has occurred.
+</ParamField>
+
+<ParamField path="tags" type="list[str]" toc={true}>
+  Optional tags associated with this message.
+</ParamField>
+
+<ParamField path="is_done" type="bool" toc={true}>
+  `True` if the message has reached a terminal state (`delivered`, `undelivered`, or `failed`).
+  Read-only property.
+</ParamField>
+
+<ParamField path="result" type="Optional[RelayEvent]" toc={true}>
+  The terminal [`RelayEvent`](/docs/sdks/reference/python/relay/events) that resolved this message,
+  or `None` if the message has not yet completed.
+</ParamField>
+
+## **Events**
+
+Events are emitted during the lifecycle of a message. Register handlers using
+[`message.on()`](#on) to react to state changes on outbound messages.
+
+See the [Events](/docs/sdks/reference/python/relay/events#messaging-events) reference
+for the full list of messaging events, their parameters, and typed event classes.
+
+---
+
+## on
+
+Register an event listener for state changes on this message. The handler is
+called each time a `messaging.state` event is received for this message, allowing
+you to react to intermediate states before the terminal state is reached.
+
+## **Parameters**
+
+<ParamField path="handler" type="Callable[[RelayEvent], None]" required={true} toc={true}>
+  A function or coroutine that receives a [`RelayEvent`](/docs/sdks/reference/python/relay/events)
+  on each state change. Both synchronous and async handlers are supported.
+</ParamField>
+
+## **Returns**
+
+`None`
+
+---
+
+## wait
+
+Block until the message reaches a terminal state (`delivered`, `undelivered`, or
+`failed`). Returns the terminal [`RelayEvent`](/docs/sdks/reference/python/relay/events).
+
+<Warning>
+Raises `asyncio.TimeoutError` if `timeout` is specified and the message does not
+reach a terminal state within the given duration.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="timeout" type="Optional[float]" toc={true}>
+  Maximum number of seconds to wait. `None` waits indefinitely.
+</ParamField>
+
+## **Returns**
+
+[`RelayEvent`](/docs/sdks/reference/python/relay/events) -- The event that caused the message to
+reach its terminal state. Inspect `message.state` for the final state value.
+
+## **Examples**
+
+### Listening for state changes
+
+```python
+message = await client.send_message(
+    to_number="+15551234567",
+    from_number="+15559876543",
+    body="Order confirmed",
+)
+
+def on_state_change(event):
+    print(f"Message {message.message_id} -> {message.state}")
+
+message.on(on_state_change)
+await message.wait()
+```
+
+### Waiting for delivery with timeout
+
+```python
+message = await client.send_message(
+    to_number="+15551234567",
+    from_number="+15559876543",
+    body="Your verification code is 123456",
+)
+
+try:
+    event = await message.wait(timeout=30)
+    if message.state == "delivered":
+        print("Message delivered successfully")
+    else:
+        print(f"Message failed: {message.reason}")
+except asyncio.TimeoutError:
+    print("Timed out waiting for delivery confirmation")
+```

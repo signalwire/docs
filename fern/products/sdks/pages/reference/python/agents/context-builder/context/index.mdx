@@ -1,0 +1,64 @@
+---
+title: "Context"
+slug: /reference/python/agents/context-builder/context
+description: "A named conversation workflow containing steps, prompts, and navigation rules."
+max-toc-depth: 3
+---
+
+A Context represents a distinct conversation mode -- like "sales", "support", or
+"billing" -- within a [`ContextBuilder`](/docs/sdks/reference/python/agents/context-builder).
+Each context holds an ordered sequence of
+[`Step`](/docs/sdks/reference/python/agents/context-builder/step) objects and
+configures its own prompt, system prompt, fillers, and navigation rules.
+
+You obtain a Context by calling `add_context()` on a ContextBuilder or by calling
+`get_context()` to retrieve one that already exists.
+
+## **Properties**
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  Unique context name. When using a single context inside a ContextBuilder, this
+  must be `"default"`.
+</ParamField>
+
+## **Example**
+
+```python
+contexts = self.define_contexts()
+
+support = contexts.add_context("support")
+
+# System prompt for this context
+support.set_system_prompt("You are a patient technical support engineer.")
+support.set_consolidate(True)
+
+# Fillers for smooth transitions
+support.add_enter_filler("en-US", [
+    "Let me connect you with support...",
+    "Transferring you now..."
+])
+support.add_exit_filler("en-US", [
+    "Thank you for contacting support.",
+    "Glad I could help."
+])
+
+# Navigation
+support.set_valid_contexts(["default", "billing"])
+
+# Steps
+support.add_step("diagnose",
+    task="Understand the customer's issue and gather relevant details.",
+    criteria="Issue is clearly identified",
+    functions=["lookup_account", "check_status"],
+    valid_steps=["resolve"]
+)
+support.add_step("resolve",
+    task="Resolve the issue or escalate to a specialist.",
+    functions=["create_ticket", "transfer_call"],
+    valid_steps=["farewell"]
+)
+support.add_step("farewell") \
+    .set_text("Thank the caller and end the conversation.") \
+    .set_functions("none") \
+    .set_end(True)
+```

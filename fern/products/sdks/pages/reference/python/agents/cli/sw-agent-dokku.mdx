@@ -1,0 +1,212 @@
+---
+title: "sw-agent-dokku"
+slug: /reference/python/agents/cli/sw-agent-dokku
+description: "Deploy and manage SignalWire agents on Dokku hosting."
+max-toc-depth: 3
+---
+
+The `sw-agent-dokku` command scaffolds, deploys, and manages SignalWire agent
+projects on Dokku. It generates Dokku-ready project structures with Procfile,
+runtime configuration, health checks, and optional GitHub Actions CI/CD workflows.
+
+```bash
+sw-agent-dokku <command> [options]
+```
+
+## Commands
+
+---
+
+Create a new Dokku-ready agent project.
+
+```bash
+sw-agent-dokku init <name> [options]
+```
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Project/app name. Used as the Dokku app name and directory name.
+</ParamField>
+
+<ParamField path="--cicd" type="flag" toc={true}>
+  Include GitHub Actions CI/CD workflows for automated deployment on push
+  and preview environments for pull requests.
+</ParamField>
+
+<ParamField path="--web" type="flag" toc={true}>
+  Include a web interface with static file serving at the root route.
+  Adds WebRTC calling support with dynamic token generation.
+</ParamField>
+
+<ParamField path="--host" type="string" toc={true}>
+  Dokku server hostname. If provided, configures the git remote during init.
+</ParamField>
+
+<ParamField path="--dir" type="string" toc={true}>
+  Parent directory for the project.
+</ParamField>
+
+<ParamField path="--force, -f" type="flag" toc={true}>
+  Overwrite an existing directory.
+</ParamField>
+
+#### Generated Structure
+
+```text
+myagent/
+  app.py              # Agent entry point (gunicorn-compatible)
+  Procfile            # Dokku process definition
+  runtime.txt         # Python version (3.11)
+  requirements.txt    # Dependencies
+  CHECKS              # Health check configuration
+  .env.example        # Example environment variables
+  .gitignore
+  README.md
+```
+
+When `--web` is specified, the project includes a `web/` directory with static
+files and WebRTC calling support. When `--cicd` is specified, a `.github/workflows/`
+directory is added with deployment and preview environment workflows.
+
+---
+
+Deploy the current directory to Dokku via git push.
+
+```bash
+sw-agent-dokku deploy [options]
+```
+
+<ParamField path="--app, -a" type="string" toc={true}>
+  App name on the Dokku server. Auto-detected from the git remote if not specified.
+</ParamField>
+
+<ParamField path="--host, -H" type="string" toc={true}>
+  Dokku server hostname.
+</ParamField>
+
+---
+
+View application logs from Dokku.
+
+```bash
+sw-agent-dokku logs [options]
+```
+
+<ParamField path="--app, -a" type="string" toc={true}>
+  App name.
+</ParamField>
+
+<ParamField path="--host, -H" type="string" toc={true}>
+  Dokku server hostname.
+</ParamField>
+
+<ParamField path="--tail, -t" type="flag" toc={true}>
+  Tail logs in real time.
+</ParamField>
+
+<ParamField path="--num, -n" type="int" toc={true}>
+  Number of log lines to display.
+</ParamField>
+
+---
+
+Manage environment variables on the Dokku app.
+
+```bash
+sw-agent-dokku config <action> [vars...] [options]
+```
+
+<ParamField path="config_action" type="string" required={true} toc={true}>
+  Config action. Valid values:
+  - `"show"` -- Display all config variables
+  - `"set"` -- Set one or more variables (`KEY=value`)
+  - `"unset"` -- Remove one or more variables
+</ParamField>
+
+<ParamField path="vars" type="string" toc={true}>
+  Variables in `KEY=value` format (for `set`) or variable names (for `unset`).
+</ParamField>
+
+<ParamField path="--app, -a" type="string" toc={true}>
+  App name.
+</ParamField>
+
+<ParamField path="--host, -H" type="string" toc={true}>
+  Dokku server hostname.
+</ParamField>
+
+---
+
+Scale Dokku process types.
+
+```bash
+sw-agent-dokku scale [scale_args...] [options]
+```
+
+<ParamField path="scale_args" type="string" toc={true}>
+  Scale arguments in `process=count` format (e.g., `web=2`).
+</ParamField>
+
+<ParamField path="--app, -a" type="string" toc={true}>
+  App name.
+</ParamField>
+
+<ParamField path="--host, -H" type="string" toc={true}>
+  Dokku server hostname.
+</ParamField>
+
+---
+
+## **Examples**
+
+### Initialize a project
+
+```bash
+sw-agent-dokku init my-agent --web --cicd --host dokku.example.com
+```
+
+### Deploy
+
+```bash
+cd my-agent
+sw-agent-dokku deploy
+```
+
+### View logs
+
+```bash
+sw-agent-dokku logs -t
+```
+
+### Manage config variables
+
+```bash
+sw-agent-dokku config set SWML_BASIC_AUTH_PASSWORD=secret123 PORT=3000
+sw-agent-dokku config show
+```
+
+### Scale processes
+
+```bash
+sw-agent-dokku scale web=2
+```
+
+### Full workflow
+
+```bash
+# 1. Create a Dokku-ready project with web UI and CI/CD
+sw-agent-dokku init my-agent --web --cicd --host dokku.example.com
+
+# 2. Configure environment variables
+cd my-agent
+sw-agent-dokku config set \
+  SWML_BASIC_AUTH_PASSWORD=secure-password \
+  SIGNALWIRE_SPACE_NAME=my-space \
+  SIGNALWIRE_PROJECT_ID=my-project-id \
+  SIGNALWIRE_TOKEN=my-token
+
+# 3. Deploy
+sw-agent-dokku deploy
+
+# 4. Monitor
+sw-agent-dokku logs -t
+```

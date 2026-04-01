@@ -1,0 +1,91 @@
+---
+title: "register_routing_callback"
+slug: /reference/python/agents/swml-service/register-routing-callback
+description: "Register routing callbacks for dynamic request handling and SIP routing."
+max-toc-depth: 3
+---
+
+Register a callback function for dynamic request routing. When a request arrives at
+the specified path, the callback inspects the POST body and decides whether to route
+the request to a different endpoint or let normal processing continue. This is primarily
+used for SIP-based routing where the destination depends on the incoming SIP URI.
+
+An HTTP endpoint is automatically created at the specified path when the service starts.
+The callback receives the raw FastAPI `Request` object and the parsed request body as
+a dictionary.
+
+<Note>
+The callback path is registered at the time of calling this method but the actual
+FastAPI route is created when [`serve()`](/docs/sdks/reference/python/agents/swml-service/serve)
+is called or when `as_router()` generates the router. Register all callbacks before
+starting the server.
+</Note>
+
+## **Parameters**
+
+<ParamField path="callback_fn" type="Callable[[Request, dict[str, Any]], Optional[str]]" required={true} toc={true}>
+  A function that receives a FastAPI `Request` and the parsed JSON body as a `dict`.
+  Return a route string to redirect the request (using HTTP 307 to preserve the POST
+  method and body), or return `None` to continue with normal SWML document serving.
+</ParamField>
+
+<ParamField path="path" type="str" default="/sip" toc={true}>
+  The URL path where this routing endpoint is created. The path is normalized to start
+  with `/` and trailing slashes are stripped.
+</ParamField>
+
+## **Returns**
+
+`None`
+
+---
+
+Static utility method that extracts the username portion from a SIP URI in the request
+body. Handles `sip:username@domain`, `tel:+1234567890`, and plain string formats in
+the `call.to` field.
+
+## **Parameters**
+
+<ParamField path="request_body" type="dict[str, Any]" required={true} toc={true}>
+  The parsed JSON body from an incoming request. Expected to contain a `call.to`
+  field with a SIP URI, TEL URI, or phone number string.
+</ParamField>
+
+## **Returns**
+
+`Optional[str]` — The extracted username or phone number, or `None` if the `call.to`
+field is missing or cannot be parsed.
+
+## **Examples**
+
+### Routing callback with SIP username
+
+```python
+from signalwire.core.swml_service import SWMLService
+
+service = SWMLService(name="sip-router", route="/")
+
+def route_sip_call(request, body):
+    """Route calls based on the SIP username in the request."""
+    username = SWMLService.extract_sip_username(body)
+    if username == "sales":
+        return "/agents/sales"
+    elif username == "support":
+        return "/agents/support"
+    return None  # Default handling
+
+service.register_routing_callback(route_sip_call, path="/sip")
+service.serve()
+```
+
+### Extracting SIP usernames
+
+```python
+body = {"call": {"to": "sip:sales@example.sip.signalwire.com"}}
+username = SWMLService.extract_sip_username(body)
+# "sales"
+
+body = {"call": {"to": "tel:+15551234567"}}
+number = SWMLService.extract_sip_username(body)
+# "+15551234567"
+```

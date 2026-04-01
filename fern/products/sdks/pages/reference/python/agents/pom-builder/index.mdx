@@ -1,0 +1,101 @@
+---
+title: "PomBuilder"
+slug: /reference/python/agents/pom-builder
+description: "Build structured Prompt Object Model prompts with sections, subsections, and bullets."
+max-toc-depth: 3
+---
+
+PomBuilder provides a fluent interface for creating structured prompts using
+the Prompt Object Model (POM). POM organizes prompt content into titled sections,
+subsections, and bullet lists -- producing consistent, well-structured prompts
+that the AI can follow reliably.
+
+Use PomBuilder when you need fine-grained control over prompt structure beyond
+what `set_prompt_text()` and `prompt_add_section()` on
+[`AgentBase`](/docs/sdks/reference/python/agents/agent-base) provide. The builder
+can render to Markdown or XML format.
+
+<Note>
+PomBuilder requires the `signalwire-pom` package. Install it with:
+`pip install signalwire-pom`
+</Note>
+
+## **Examples**
+
+### Building a structured prompt
+
+```python
+from signalwire.core.pom_builder import PomBuilder
+
+pom = PomBuilder()
+
+pom.add_section(
+    "Role",
+    body="You are a customer service representative for Acme Corp."
+)
+
+pom.add_section(
+    "Guidelines",
+    bullets=[
+        "Always greet the customer by name when available",
+        "Be concise and professional",
+        "Never make promises about timelines you cannot keep"
+    ]
+)
+
+pom.add_section(
+    "Product Knowledge",
+    body="You have access to the product catalog.",
+    subsections=[
+        {
+            "title": "Pricing",
+            "body": "Always quote current prices from the catalog."
+        },
+        {
+            "title": "Returns",
+            "body": "30-day return policy for all items."
+        }
+    ]
+)
+
+# Render as Markdown for use in a prompt
+prompt_text = pom.render_markdown()
+print(prompt_text)
+```
+
+### Incremental construction
+
+```python
+pom = PomBuilder()
+
+# Start with a basic section
+pom.add_section("Capabilities", body="You can help with the following:")
+
+# Add bullets incrementally as skills are loaded
+pom.add_to_section("Capabilities", bullet="Weather lookups")
+pom.add_to_section("Capabilities", bullet="Calendar scheduling")
+pom.add_to_section("Capabilities", bullets=[
+    "Order tracking",
+    "Account management"
+])
+
+# Add a subsection
+pom.add_subsection(
+    "Capabilities",
+    "Limitations",
+    body="You cannot process payments directly."
+)
+```
+
+### Reconstructing from data
+
+```python
+# Rebuild a PomBuilder from serialized data
+sections = [
+    {"title": "Role", "body": "You are a helpful assistant."},
+    {"title": "Rules", "bullets": ["Be concise", "Be accurate"]}
+]
+
+pom = PomBuilder.from_sections(sections)
+xml_prompt = pom.render_xml()
+```

@@ -1,0 +1,72 @@
+---
+title: "AgentServer"
+slug: /reference/python/agents/agent-server
+description: Host multiple AI agents on a single FastAPI server with shared routing and health checks.
+max-toc-depth: 3
+---
+
+AgentServer hosts multiple [`AgentBase`](/docs/sdks/reference/python/agents/agent-base) instances
+on a single FastAPI process. Each agent registers at its own URL route, and the server provides
+unified health monitoring, SIP-based routing, and static file serving. Use AgentServer when you
+have several related agents (sales, support, billing) that share the same deployment environment.
+
+For a single agent, use [`AgentBase.serve()`](/docs/sdks/reference/python/agents/agent-base/serve)
+or [`AgentBase.run()`](/docs/sdks/reference/python/agents/agent-base/run) instead.
+
+## **Properties**
+
+<ParamField path="app" type="FastAPI" toc={true}>
+  The underlying FastAPI application. Use this to add custom routes, middleware, or to run
+  the server with an external ASGI server like gunicorn.
+</ParamField>
+
+<ParamField path="agents" type="dict[str, AgentBase]" toc={true}>
+  Dictionary mapping route strings to registered [`AgentBase`](/docs/sdks/reference/python/agents/agent-base) instances.
+</ParamField>
+
+<ParamField path="host" type="str" toc={true}>
+  The host address the server binds to.
+</ParamField>
+
+<ParamField path="port" type="int" toc={true}>
+  The port the server listens on.
+</ParamField>
+
+<ParamField path="log_level" type="str" toc={true}>
+  The logging level for the server.
+</ParamField>
+
+## **Example**
+
+```python
+from signalwire_agents import AgentBase, AgentServer
+
+class SalesAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="sales-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a sales representative.")
+
+class SupportAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="support-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a support specialist.")
+
+if __name__ == "__main__":
+    server = AgentServer(host="0.0.0.0", port=3000)
+
+    server.register(SalesAgent(), "/sales")
+    server.register(SupportAgent(), "/support")
+
+    server.run()
+```
+
+After starting, agents are available at:
+
+| Endpoint | Description |
+|----------|-------------|
+| `http://localhost:3000/sales` | Sales agent |
+| `http://localhost:3000/support` | Support agent |
+| `http://localhost:3000/health` | Health check |
+| `http://localhost:3000/ready` | Readiness check |

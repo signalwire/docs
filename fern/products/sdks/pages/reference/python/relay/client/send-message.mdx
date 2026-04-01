@@ -1,0 +1,108 @@
+---
+title: "send_message"
+slug: /reference/python/relay/client/send-message
+description: "Send an outbound SMS or MMS message."
+max-toc-depth: 3
+---
+
+Send an outbound SMS or MMS message. Returns a
+[`Message`](/docs/sdks/reference/python/relay/message) object that tracks delivery
+state changes. Use `await message.wait()` to block until the message reaches a
+terminal state (delivered, undelivered, or failed).
+
+All parameters are keyword-only.
+
+<Note>
+At least one of `body` or `media` must be provided. Providing both sends an MMS
+with text and attached media.
+</Note>
+
+## **Parameters**
+
+<ParamField path="to_number" type="str" required={true} toc={true}>
+  Destination phone number in E.164 format (e.g., `"+15559876543"`).
+</ParamField>
+
+<ParamField path="from_number" type="str" required={true} toc={true}>
+  Sender phone number in E.164 format. Must be a number owned by your SignalWire project.
+</ParamField>
+
+<ParamField path="context" type="Optional[str]" toc={true}>
+  Context for receiving state-change events for this message. Defaults to the
+  server-assigned relay protocol string.
+</ParamField>
+
+<ParamField path="body" type="Optional[str]" toc={true}>
+  Text body of the message. Required for SMS. Optional for MMS if `media` is provided.
+</ParamField>
+
+<ParamField path="media" type="Optional[list[str]]" toc={true}>
+  List of publicly accessible media URLs for MMS attachments (e.g., images, audio files).
+</ParamField>
+
+<ParamField path="tags" type="Optional[list[str]]" toc={true}>
+  Optional tags to attach to the message for filtering or tracking.
+</ParamField>
+
+<ParamField path="region" type="Optional[str]" toc={true}>
+  Origination region for the message.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable]" toc={true}>
+  Callback function invoked when the message reaches a terminal state
+  (`delivered`, `undelivered`, or `failed`). Receives the terminal
+  event as its argument.
+</ParamField>
+
+## **Returns**
+
+[`Message`](/docs/sdks/reference/python/relay/message) -- A message object in the `"queued"` state. Use `await message.wait()` to block until delivery confirmation.
+
+## **Examples**
+
+### Send SMS
+
+```python
+from signalwire.relay import RelayClient
+
+client = RelayClient(contexts=["default"])
+
+async def send_sms():
+    async with client:
+        message = await client.send_message(
+            to_number="+15559876543",
+            from_number="+15551234567",
+            body="Hello from SignalWire RELAY!",
+        )
+        print(f"Message ID: {message.message_id}")
+
+        # Wait for delivery confirmation
+        result = await message.wait(timeout=30.0)
+        print(f"Final state: {message.state}")
+```
+
+### Send MMS with media
+
+```python
+message = await client.send_message(
+    to_number="+15559876543",
+    from_number="+15551234567",
+    body="Check out this image!",
+    media=["https://example.com/photo.jpg"],
+)
+```
+
+### With completion callback
+
+```python
+async def on_delivered(event):
+    print(f"Message delivered: {event.params}")
+
+message = await client.send_message(
+    to_number="+15559876543",
+    from_number="+15551234567",
+    body="Important notification",
+    on_completed=on_delivered,
+)
+# No need to await — callback fires automatically
+```

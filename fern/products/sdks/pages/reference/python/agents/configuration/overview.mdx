@@ -1,0 +1,114 @@
+---
+title: "Configuration"
+sidebar-title: Overview
+slug: /reference/python/agents/configuration
+description: "Environment variables, config files, and security settings."
+max-toc-depth: 3
+position: 0
+---
+
+The SignalWire Agents SDK uses a layered configuration system. Settings can come
+from constructor parameters, environment variables, JSON/YAML config files, or
+sensible defaults. The layers are resolved in priority order:
+
+1. **Constructor parameters** -- highest priority
+2. **Environment variables** -- override config file values
+3. **Config file values** -- loaded from JSON or YAML
+4. **Defaults** -- built-in fallback values
+
+```python
+from signalwire import AgentBase
+
+# Constructor parameters take precedence over everything else
+agent = AgentBase(
+    name="my-agent",
+    port=9000,                    # Overrides PORT env var and config file
+    config_file="config.yaml",    # Explicit config file path
+)
+```
+
+## Config File Discovery
+
+When no explicit `config_file` is provided, the SDK searches for config files
+in this order:
+
+1. `{agent_name}.yaml` / `{agent_name}.json`
+2. `config.yaml` / `config.json`
+3. `swml.yaml` / `swml.json`
+
+See [`ConfigLoader`](/docs/sdks/reference/python/agents/configuration/config-loader) for
+the full file discovery logic and environment variable substitution syntax.
+
+## Key Configuration Areas
+
+| Area | Configured Via | Reference |
+|------|---------------|-----------|
+| Server port, host, route | Constructor, `PORT` env var, config file | [Environment Variables](/docs/sdks/reference/python/agents/configuration/environment-variables) |
+| Authentication | `SWML_BASIC_AUTH_*` env vars, config file | [AuthHandler](/docs/sdks/reference/python/agents/configuration/auth-handler) |
+| SSL/HTTPS | `SWML_SSL_*` env vars, config file | [SecurityConfig](/docs/sdks/reference/python/agents/configuration/security-config) |
+| CORS and host allowlists | `SWML_CORS_ORIGINS`, `SWML_ALLOWED_HOSTS` env vars | [SecurityConfig](/docs/sdks/reference/python/agents/configuration/security-config) |
+| Logging | `SIGNALWIRE_LOG_MODE`, `SIGNALWIRE_LOG_LEVEL` env vars | [Environment Variables](/docs/sdks/reference/python/agents/configuration/environment-variables) |
+| RELAY / REST auth | `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, `SIGNALWIRE_SPACE` | [Environment Variables](/docs/sdks/reference/python/agents/configuration/environment-variables) |
+
+## Quick Example
+
+```yaml
+# config.yaml
+service:
+  name: support-agent
+  host: 0.0.0.0
+  port: 8080
+  route: /support
+
+security:
+  basic_auth:
+    username: ${AUTH_USER:-support_agent}
+    password: ${AUTH_PASSWORD}
+  ssl:
+    enabled: true
+    domain: support.example.com
+    cert_path: /etc/ssl/certs/support.crt
+    key_path: /etc/ssl/private/support.key
+
+agent:
+  auto_answer: true
+  record_call: false
+
+skills:
+  - name: datetime
+  - name: native_vector_search
+    params:
+      index_path: ./support_docs.swsearch
+      tool_name: search_support
+```
+
+<CardGroup cols={2}>
+  <Card
+    title="Environment Variables"
+    icon="fa-regular fa-sliders"
+    href="/docs/sdks/reference/python/agents/configuration/environment-variables"
+  >
+    Complete reference for all environment variables used by the SDK.
+  </Card>
+  <Card
+    title="ConfigLoader"
+    icon="fa-regular fa-file-import"
+    href="/docs/sdks/reference/python/agents/configuration/config-loader"
+  >
+    JSON config file loading with environment variable substitution.
+  </Card>
+  <Card
+    title="SecurityConfig"
+    icon="fa-regular fa-shield-halved"
+    href="/docs/sdks/reference/python/agents/configuration/security-config"
+  >
+    SSL, CORS, host allowlists, rate limiting, and HSTS configuration.
+  </Card>
+  <Card
+    title="AuthHandler"
+    icon="fa-regular fa-lock"
+    href="/docs/sdks/reference/python/agents/configuration/auth-handler"
+  >
+    HTTP Basic Auth, Bearer tokens, and API key authentication for FastAPI and Flask.
+  </Card>
+</CardGroup>

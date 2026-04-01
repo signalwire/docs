@@ -1,0 +1,104 @@
+---
+title: "setup_sip_routing"
+slug: /reference/python/agents/agent-server/sip-routing
+description: Configure SIP-based routing to direct calls to specific agents by username.
+max-toc-depth: 3
+---
+
+Enable SIP-based routing across all registered agents. When a SIP call arrives, the server
+extracts the username from the SIP address and routes the request to the matching agent.
+
+With `auto_map` enabled, the server automatically creates username-to-route mappings from
+each agent's name and route path. You can add explicit mappings with
+[`register_sip_username()`](#register_sip_username).
+
+<Note>
+Call this method **after** registering agents. Agents registered after `setup_sip_routing()`
+also receive the routing callback automatically.
+</Note>
+
+## **Parameters**
+
+<ParamField path="route" type="str" default="/sip" toc={true}>
+  The URL path where SIP routing requests are handled. Each registered agent receives a
+  routing callback at this path.
+</ParamField>
+
+<ParamField path="auto_map" type="bool" default="True" toc={true}>
+  Automatically generate SIP username mappings from agent names and route paths. For example,
+  an agent named `"sales-agent"` at route `"/sales"` gets two mappings:
+  - `"salesagent"` (agent name, alphanumeric only)
+  - `"sales"` (route path without leading slash)
+</ParamField>
+
+## **Returns**
+
+`None`
+
+<Warning>
+Calling `setup_sip_routing()` more than once logs a warning and returns early.
+SIP routing can only be configured once per server.
+</Warning>
+
+---
+
+Create an explicit mapping from a SIP username to an agent route. The username is
+stored lowercase for case-insensitive matching.
+
+<Note>
+SIP routing must be enabled via `setup_sip_routing()` before calling this method.
+If routing is not enabled, a warning is logged and the call is a no-op.
+</Note>
+
+## **Parameters**
+
+<ParamField path="username" type="str" required={true} toc={true}>
+  The SIP username to map (e.g., `"sales-team"`). Matched case-insensitively.
+</ParamField>
+
+<ParamField path="route" type="str" required={true} toc={true}>
+  The target agent route (e.g., `"/sales"`). A warning is logged if the route
+  does not correspond to a registered agent.
+</ParamField>
+
+## **Returns**
+
+`None`
+
+## **Examples**
+
+### SIP routing with auto-mapping
+
+```python
+from signalwire_agents import AgentBase, AgentServer
+
+server = AgentServer()
+server.register(SalesAgent(), "/sales")
+server.register(SupportAgent(), "/support")
+
+# Enable SIP routing with auto-mapping
+server.setup_sip_routing("/sip", auto_map=True)
+
+# Add a custom mapping
+server.register_sip_username("help-desk", "/support")
+
+server.run()
+```
+
+With this configuration, SIP calls are routed as follows:
+
+| SIP Address | Resolves To |
+|-------------|-------------|
+| `sip:sales@example.com` | `/sales` (auto-mapped from route) |
+| `sip:salesagent@example.com` | `/sales` (auto-mapped from agent name) |
+| `sip:help-desk@example.com` | `/support` (manual mapping) |
+
+### Manual username registration
+
+```python
+server.setup_sip_routing("/sip")
+
+server.register_sip_username("sales-team", "/sales")
+server.register_sip_username("tech-support", "/support")
+server.register_sip_username("accounts", "/billing")
+```

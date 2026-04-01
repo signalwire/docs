@@ -1,0 +1,138 @@
+---
+title: "DataMap"
+slug: /reference/python/agents/data-map
+description: "Fluent builder for server-side API tools that execute without webhooks."
+max-toc-depth: 3
+---
+
+DataMap builds SWAIG function definitions that execute REST API calls directly on
+SignalWire's infrastructure -- no webhook endpoint required on your server. This
+reduces latency, simplifies deployment, and is ideal for straightforward
+API-to-response integrations.
+
+Use DataMap when you need to call an external REST API and format the response
+with simple variable substitution. For complex business logic, database access,
+or multi-step processing, use a standard SWAIG function with a handler instead.
+
+<Info>
+See [`SWAIGFunction`](/docs/sdks/reference/python/agents/swaig-function) for
+handler-based tool definitions, and
+[`FunctionResult`](/docs/sdks/reference/python/agents/function-result) for the
+response builder used in DataMap outputs.
+</Info>
+
+## **Properties**
+
+<ParamField path="function_name" type="str" required={true} toc={true}>
+  Name of the SWAIG function this DataMap will create.
+</ParamField>
+
+## **Variable Substitution Patterns**
+
+| Pattern | Description |
+|---------|-------------|
+| `${args.param}` | Function argument value |
+| `${enc:args.param}` | URL-encoded argument (use in webhook URLs) |
+| `${lc:args.param}` | Lowercase argument value |
+| `${fmt_ph:args.phone}` | Format as phone number |
+| `${response.field}` | API response field |
+| `${response.arr[0]}` | Array element in response |
+| `${global_data.key}` | Global session data |
+| `${meta_data.key}` | Call metadata |
+| `${this.field}` | Current item in foreach |
+
+Modifiers are applied right-to-left: `${enc:lc:args.param}` lowercases first,
+then URL-encodes.
+
+---
+
+## **Examples**
+
+### Weather lookup
+
+```python
+from signalwire import AgentBase
+from signalwire.core.data_map import DataMap
+from signalwire.core.function_result import FunctionResult
+
+class WeatherAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="weather-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You help users check the weather.")
+
+        weather = (
+            DataMap("get_weather")
+            .description("Get current weather for a city")
+            .parameter("city", "string", "City name", required=True)
+            .webhook(
+                "GET",
+                "https://api.weatherapi.com/v1/current.json"
+                "?key=YOUR_API_KEY&q=${enc:args.city}"
+            )
+            .output(FunctionResult(
+                "Current weather in ${args.city}: "
+                "${response.current.condition.text}, "
+                "${response.current.temp_f} degrees Fahrenheit"
+            ))
+            .fallback_output(FunctionResult(
+                "Sorry, I couldn't get weather data for ${args.city}"
+            ))
+        )
+
+        self.register_swaig_function(weather.to_swaig_function())
+
+if __name__ == "__main__":
+    WeatherAgent().run()
+```
+
+### Expression-based control
+
+```python
+from signalwire.core.data_map import DataMap
+from signalwire.core.function_result import FunctionResult
+
+volume_control = (
+    DataMap("set_volume")
+    .purpose("Control audio volume")
+    .parameter("level", "string", "Volume level", required=True)
+    .expression(
+        "${args.level}", r"high|loud|up",
+        FunctionResult("Volume increased")
+    )
+    .expression(
+        "${args.level}", r"low|quiet|down",
+        FunctionResult("Volume decreased")
+    )
+    .expression(
+        "${args.level}", r"mute|off",
+        FunctionResult("Audio muted")
+    )
+)
+
+agent.register_swaig_function(volume_control.to_swaig_function())
+```
+
+### POST with body and foreach
+
+```python
+search_docs = (
+    DataMap("search_docs")
+    .purpose("Search documentation")
+    .parameter("query", "string", "Search query", required=True)
+    .webhook(
+        "POST",
+        "https://api.docs.example.com/search",
+        headers={"Authorization": "Bearer TOKEN"}
+    )
+    .body({"query": "${args.query}", "limit": 3})
+    .foreach({
+        "input_key": "results",
+        "output_key": "formatted_results",
+        "max": 3,
+        "append": "- ${this.title}: ${this.summary}\n"
+    })
+    .output(FunctionResult("Found:\n${formatted_results}"))
+    .fallback_output(FunctionResult("Search is currently unavailable."))
+)
+```

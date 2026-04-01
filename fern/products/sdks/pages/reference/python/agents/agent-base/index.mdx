@@ -1,0 +1,192 @@
+---
+title: "AgentBase"
+slug: /reference/python/agents/agent-base
+description: The central class for building AI-powered voice agents with SignalWire.
+max-toc-depth: 3
+---
+
+`AgentBase` is the central class in the SignalWire AI Agents SDK. It provides a
+complete framework for building AI-powered voice agents, combining prompt management,
+tool definitions, skill loading, speech configuration, and web serving into a single
+composable interface.
+
+Extends [`SWMLService`](/docs/sdks/reference/python/agents/swml-service) and composes
+functionality from nine mixins: `PromptMixin`, `ToolMixin`, `SkillMixin`, `AIConfigMixin`,
+`WebMixin`, `AuthMixin`, `ServerlessMixin`, `StateMixin`, and `MCPServerMixin`.
+
+All setter methods return `self` for fluent method chaining.
+
+## **Properties**
+
+<ParamField path="name" type="str" toc={true}>
+  The agent's display name. Set at construction time. Used in logging, SIP username
+  mapping, and the default prompt fallback.
+</ParamField>
+
+<ParamField path="route" type="str" default="/" toc={true}>
+  HTTP route path where this agent is served. Used by
+  [`AgentServer`](/docs/sdks/reference/python/agents/agent-server) when hosting
+  multiple agents on one process.
+</ParamField>
+
+<ParamField path="host" type="str" default="0.0.0.0" toc={true}>
+  Network interface the web server binds to.
+</ParamField>
+
+<ParamField path="port" type="int" toc={true}>
+  Port the web server listens on. Defaults to the `PORT` environment variable, falling
+  back to `3000`.
+</ParamField>
+
+<ParamField path="agent_id" type="str" toc={true}>
+  Unique identifier for this agent instance. Auto-generated as a UUID if not provided.
+</ParamField>
+
+<ParamField path="pom" type="PromptObjectModel | None" toc={true}>
+  The Prompt Object Model instance used for structured prompt building. `None` when
+  `use_pom=False`.
+</ParamField>
+
+<ParamField path="skill_manager" type="SkillManager" toc={true}>
+  Manager instance for loading and unloading skills. Access via
+  [`add_skill()`](/docs/sdks/reference/python/agents/agent-base/add-skill) and
+  [`list_skills()`](/docs/sdks/reference/python/agents/agent-base/list-skills) rather
+  than directly.
+</ParamField>
+
+<ParamField path="PROMPT_SECTIONS" type="dict | list | None" default="None" toc={true}>
+  Class-level attribute. Subclasses can set this to declaratively define prompt sections
+  instead of calling `prompt_add_section()` in the constructor.
+</ParamField>
+
+## **Decorators**
+
+### tool
+
+```python
+@agent.tool(name=None, description=None, parameters=None, secure=True, fillers=None, webhook_url=None, required=None, **swaig_fields)
+```
+
+The `@tool` decorator is the recommended way to define SWAIG functions. Use
+`@agent.tool()` on a standalone function, or `@AgentBase.tool()` on a method
+inside a subclass. Both forms accept the same parameters.
+
+When parameters are not explicitly provided, the decorator automatically infers the
+JSON Schema from Python type hints on the function signature.
+
+#### Parameters
+
+<ParamField path="name" type="Optional[str]" toc={true}>
+  Function name exposed to the AI. Defaults to the decorated function's `__name__`.
+</ParamField>
+
+<ParamField path="description" type="Optional[str]" toc={true}>
+  What the function does. The AI reads this to decide when to call it. Defaults to the
+  function's docstring, or `"Function {name}"` as a fallback.
+</ParamField>
+
+<ParamField path="parameters" type="Optional[dict[str, Any]]" toc={true}>
+  Explicit JSON Schema for function parameters. If omitted, the schema is
+  automatically inferred from Python type hints on the decorated function.
+</ParamField>
+
+<ParamField path="secure" type="bool" default="True" toc={true}>
+  Require token validation on tool calls.
+</ParamField>
+
+<ParamField path="fillers" type="Optional[dict[str, list[str]]]" toc={true}>
+  Filler phrases by language code, spoken while the function runs.
+</ParamField>
+
+<ParamField path="webhook_url" type="Optional[str]" toc={true}>
+  External webhook URL. If set, SignalWire calls this URL instead of executing locally.
+</ParamField>
+
+<ParamField path="required" type="Optional[list[str]]" toc={true}>
+  Required parameter names. Auto-inferred from type hints when not specified.
+</ParamField>
+
+<ParamField path="**swaig_fields" type="Any" toc={true}>
+  Additional SWAIG fields (e.g., `wait_file`, `meta_data`).
+</ParamField>
+
+## **Examples**
+
+### Instance decorator with type inference
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+agent = AgentBase(name="assistant")
+
+@agent.tool(description="Look up a customer's order status")
+def check_order(args, raw_data=None):
+    order_id = args.get("order_id")
+    return SwaigFunctionResult(f"Order {order_id} shipped March 28.")
+```
+
+### With explicit parameters
+
+```python
+@agent.tool(
+    name="search_products",
+    description="Search the product catalog",
+    parameters={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query"},
+            "category": {"type": "string", "description": "Product category"}
+        }
+    },
+    required=["query"],
+    fillers={"en-US": ["Searching...", "Let me find that..."]}
+)
+def search_products(args, raw_data=None):
+    query = args.get("query")
+    return SwaigFunctionResult(f"Found 3 results for '{query}'.")
+```
+
+### Class decorator (subclass)
+
+```python
+from signalwire_agents import AgentBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+class SupportAgent(AgentBase):
+    @AgentBase.tool(description="Transfer to a human agent")
+    def transfer_to_human(self, args, raw_data=None):
+        return SwaigFunctionResult("Transferring now.").connect("+15551234567")
+
+agent = SupportAgent(name="support")
+```
+
+### Typed parameters (auto-inferred schema)
+
+```python
+@agent.tool(description="Calculate shipping cost")
+def calculate_shipping(weight_kg: float, destination: str, express: bool = False):
+    cost = weight_kg * 2.50 if not express else weight_kg * 5.00
+    return SwaigFunctionResult(f"Shipping to {destination}: ${cost:.2f}")
+```
+
+### Basic agent with a tool
+
+```python
+from signalwire_agents import AgentBase
+
+agent = AgentBase(name="support-agent", route="/support")
+
+agent.add_language("English", "en-US", "rime.spore")
+agent.set_prompt_text("You are a friendly customer support agent.")
+agent.add_hints(["SignalWire", "SWML", "SWAIG"])
+agent.set_params({"temperature": 0.7, "end_of_speech_timeout": 1000})
+
+@agent.tool(description="Look up an order by ID")
+def lookup_order(args, raw_data=None):
+    order_id = args.get("order_id")
+    from signalwire_agents.core.function_result import SwaigFunctionResult
+    return SwaigFunctionResult(f"Order {order_id} shipped on March 28.")
+
+agent.run()
+```
