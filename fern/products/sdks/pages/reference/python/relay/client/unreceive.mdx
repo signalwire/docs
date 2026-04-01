@@ -27,7 +27,7 @@ on this client.
 
 ## **Example**
 
-```python {11-12}
+```python {14-16}
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -37,9 +37,15 @@ client = RelayClient(
     contexts=["sales", "support", "billing"],
 )
 
-async def narrow_contexts():
-    async with client:
-        # Stop receiving calls on "billing"
-        await client.unreceive(["billing"])
-        # Now only "sales" and "support" are active
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Dynamically unsubscribe from "billing" after the first call
+    await client.unreceive(["billing"])
+    print("Unsubscribed from billing context")
+
+    await call.hangup()
+
+client.run()
 ```

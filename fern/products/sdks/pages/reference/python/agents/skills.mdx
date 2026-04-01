@@ -17,6 +17,7 @@ from signalwire import AgentBase
 class MyAgent(AgentBase):
     def __init__(self):
         super().__init__(name="my-agent")
+        self.set_prompt_text("You are a helpful assistant.")
 
         # No-config skill
         self.add_skill("datetime")
@@ -40,8 +41,8 @@ if __name__ == "__main__":
 | [`web_search`](#web_search) | 1 | Yes | Yes |
 | [`wikipedia_search`](#wikipedia_search) | 1 | No | No |
 | [`weather_api`](#weather_api) | 1 | Yes | No |
-| [`joke`](#joke) | 1 | No | No |
-| [`play_background_file`](#play_background_file) | 2 | No | No |
+| [`joke`](#joke) | 1 | Yes | No |
+| [`play_background_file`](#play_background_file) | 1 | No | Yes |
 | [`swml_transfer`](#swml_transfer) | 1 | No | Yes |
 | [`datasphere`](#datasphere) | 1 | Yes | Yes |
 | [`datasphere_serverless`](#datasphere_serverless) | 1 | Yes | Yes |
@@ -50,7 +51,7 @@ if __name__ == "__main__":
 | [`google_maps`](#google_maps) | 2 | Yes | No |
 | [`info_gatherer`](#info_gatherer) | 2 | No | Yes |
 | [`claude_skills`](#claude_skills) | Dynamic | No | Yes |
-| [`spider`](#spider) | 1 | No | Yes |
+| [`spider`](#spider) | 3 | No | Yes |
 | [`api_ninjas_trivia`](#api_ninjas_trivia) | 1 | Yes | Yes |
 
 ## Configuration
@@ -90,11 +91,11 @@ Skills that support multiple instances require unique `tool_name` values:
 ```python {1-4,5-8}
 self.add_skill("native_vector_search", {
     "tool_name": "search_products",
-    "index_path": "/data/products.swsearch"
+    "index_file": "/data/products.swsearch"
 })
 self.add_skill("native_vector_search", {
     "tool_name": "search_faqs",
-    "index_path": "/data/faqs.swsearch"
+    "index_file": "/data/faqs.swsearch"
 })
 ```
 
@@ -108,21 +109,10 @@ Get current date and time information with timezone support.
 
 **Requirements:** `pytz`
 
-<ParamField path="default_timezone" type="str" default="UTC" toc={true}>
-  Default timezone when none is specified by the caller. Must be a valid timezone
-  name (e.g., `"America/New_York"`, not `"EST"`).
-</ParamField>
-
-<ParamField path="tool_name_time" type="str" default="get_current_time" toc={true}>
-  Custom name for the time function.
-</ParamField>
-
-<ParamField path="tool_name_date" type="str" default="get_current_date" toc={true}>
-  Custom name for the date function.
-</ParamField>
+No custom parameters. This skill inherits only the base parameters (`swaig_fields`, `skip_prompt`).
 
 ```python {1}
-self.add_skill("datetime", {"default_timezone": "America/New_York"})
+self.add_skill("datetime")
 ```
 
 ---
@@ -174,16 +164,30 @@ summarized for voice delivery.
   Number of search results to return (1-10).
 </ParamField>
 
+<ParamField path="delay" type="float" default="0.5" toc={true}>
+  Delay between scraping pages in seconds.
+</ParamField>
+
+<ParamField path="max_content_length" type="int" default="32768" toc={true}>
+  Maximum total response size in characters.
+</ParamField>
+
+<ParamField path="oversample_factor" type="float" default="2.5" toc={true}>
+  How many extra results to fetch for quality filtering (e.g., `2.5` fetches 2.5x the
+  requested number). Range: 1.0-3.5.
+</ParamField>
+
 <ParamField path="min_quality_score" type="float" default="0.3" toc={true}>
   Quality threshold for filtering results (0.0-1.0).
 </ParamField>
 
-<ParamField path="tool_name" type="str" default="web_search" toc={true}>
-  Custom function name.
+<ParamField path="no_results_message" type="str" toc={true}>
+  Message to show when no quality results are found. Use `{query}` as a placeholder
+  for the search query.
 </ParamField>
 
-<ParamField path="tool_description" type="str" default="Search the web" toc={true}>
-  Custom function description.
+<ParamField path="tool_name" type="str" default="web_search" toc={true}>
+  Custom function name.
 </ParamField>
 
 ```python {1-5}
@@ -250,65 +254,60 @@ self.add_skill("weather_api", {"api_key": "YOUR_WEATHER_API_KEY"})
 
 ## joke
 
-Tell jokes from a curated database. No configuration required.
+Tell jokes using the API Ninjas joke API. Uses a DataMap for serverless execution.
 
-**Tools:** `tell_joke`
+**Tools:** `get_joke` (default, customizable via `tool_name`)
 
-**Requirements:** None
+**Requirements:** API Ninjas API key
 
-<ParamField path="category" type="str" toc={true}>
-  Joke category filter. If omitted, returns random jokes.
+<ParamField path="api_key" type="str" required={true} toc={true}>
+  API Ninjas API key for the joke service. Can also be set via the `API_NINJAS_KEY`
+  environment variable.
 </ParamField>
 
-<ParamField path="tool_name" type="str" default="tell_joke" toc={true}>
+<ParamField path="tool_name" type="str" default="get_joke" toc={true}>
   Custom function name.
 </ParamField>
 
-```python {1}
-self.add_skill("joke")
+```python {1-3}
+self.add_skill("joke", {
+    "api_key": "YOUR_API_NINJAS_KEY"
+})
 ```
 
 ---
 
 ## play_background_file
 
-Play audio files in the background during calls. Audio plays while the conversation
-continues, useful for hold music, ambient sound, or audio cues.
+Control background file playback during calls. A single tool handles both starting and
+stopping playback via an `action` parameter with dynamic enum values generated from the
+configured file list. Supports audio and video files.
 
-**Tools:** `play_background_file`, `stop_background_file`
+**Tools:** `play_background_file` (default, customizable via `tool_name`)
 
-**Requirements:** None (audio file must be accessible via URL)
+**Requirements:** None (files must be accessible via URL)
 
-<ParamField path="audio_url" type="str" required={true} toc={true}>
-  URL of the audio file to play. Supported formats: MP3, WAV, OGG.
+**Multi-instance:** Yes (use different `tool_name` per instance)
+
+<ParamField path="files" type="list[dict]" required={true} toc={true}>
+  Array of file configurations to make available for playback. Each object must include:
+  - `key` (str, required) -- Unique identifier for the file (alphanumeric, underscores, hyphens).
+  - `description` (str, required) -- Human-readable description of the file.
+  - `url` (str, required) -- URL of the audio/video file to play.
+  - `wait` (bool, optional, default `False`) -- Whether to wait for the file to finish playing.
 </ParamField>
 
-<ParamField path="volume" type="float" default="0.5" toc={true}>
-  Playback volume (0.0-1.0).
-</ParamField>
-
-<ParamField path="loop" type="bool" default="False" toc={true}>
-  Whether to loop the audio.
-</ParamField>
-
-<ParamField path="tool_name_play" type="str" default="play_background_file" toc={true}>
-  Custom name for the play function.
-</ParamField>
-
-<ParamField path="tool_name_stop" type="str" default="stop_background_file" toc={true}>
-  Custom name for the stop function.
-</ParamField>
-
-<Warning>
-Background audio may interfere with speech recognition at higher volumes.
-Use a low volume (0.2-0.3) for background music during active conversations.
-</Warning>
-
-```python {1-5}
+```python {1-11}
 self.add_skill("play_background_file", {
-    "audio_url": "https://example.com/hold-music.mp3",
-    "volume": 0.3,
-    "loop": True
+    "tool_name": "play_testimonial",
+    "files": [
+        {
+            "key": "massey",
+            "description": "Customer success story from Massey Energy",
+            "url": "https://example.com/massey.mp4",
+            "wait": True
+        }
+    ]
 })
 ```
 
@@ -316,26 +315,66 @@ self.add_skill("play_background_file", {
 
 ## swml_transfer
 
-Transfer a call to another SWML endpoint.
+Transfer calls between agents using SWML or direct connect, with regex pattern matching
+to route to different destinations from a single tool. Each transfer destination can use
+either a SWML endpoint URL or a phone number / SIP address.
 
-**Tools:** `transfer_to_swml`
+**Tools:** `transfer_call` (default, customizable via `tool_name`)
 
 **Requirements:** None
 
 **Multi-instance:** Yes
 
-<ParamField path="swml_url" type="str" required={true} toc={true}>
-  URL of the SWML endpoint to transfer to.
+<ParamField path="transfers" type="dict" required={true} toc={true}>
+  Transfer configurations mapping regex patterns to destinations. Each key is a regex
+  pattern (e.g., `/sales/i`) and each value is an object with:
+  - `url` (str) -- SWML endpoint URL for agent transfer. Mutually exclusive with `address`.
+  - `address` (str) -- Phone number or SIP address for direct connect. Mutually exclusive with `url`.
+  - `message` (str, default `"Transferring you now..."`) -- Message to say before transferring.
+  - `return_message` (str, default `"The transfer is complete. How else can I help you?"`) -- Message when returning from transfer.
+  - `post_process` (bool, default `True`) -- Whether to process message with AI before saying.
+  - `final` (bool, default `True`) -- Whether transfer is permanent (`True`) or temporary (`False`).
+  - `from_addr` (str, optional) -- Caller ID for connect action.
 </ParamField>
 
-<ParamField path="description" type="str" toc={true}>
-  Description of the transfer destination for the AI to understand when to use it.
+<ParamField path="description" type="str" default="Transfer call based on pattern matching" toc={true}>
+  Description for the transfer tool.
 </ParamField>
 
-```python {1-4}
+<ParamField path="parameter_name" type="str" default="transfer_type" toc={true}>
+  Name of the parameter that accepts the transfer type.
+</ParamField>
+
+<ParamField path="parameter_description" type="str" default="The type of transfer to perform" toc={true}>
+  Description for the transfer type parameter.
+</ParamField>
+
+<ParamField path="default_message" type="str" default="Please specify a valid transfer type." toc={true}>
+  Message when no pattern matches.
+</ParamField>
+
+<ParamField path="default_post_process" type="bool" default="False" toc={true}>
+  Whether to process the default (no-match) message with AI.
+</ParamField>
+
+<ParamField path="required_fields" type="dict" default="{}" toc={true}>
+  Additional required fields to collect before transfer. Keys are field names, values
+  are descriptions. Collected values are saved under `call_data` in global data.
+</ParamField>
+
+```python {1-13}
 self.add_skill("swml_transfer", {
-    "swml_url": "https://your-server.com/other-agent",
-    "description": "Transfer to specialist"
+    "tool_name": "route_call",
+    "transfers": {
+        "/sales/i": {
+            "url": "https://your-server.com/sales-agent",
+            "message": "Let me connect you with our sales team."
+        },
+        "/support/i": {
+            "address": "+15551234567",
+            "final": False
+        }
+    }
 })
 ```
 
@@ -429,7 +468,7 @@ Search local `.swsearch` vector index files built with the
 
 **Multi-instance:** Yes
 
-<ParamField path="index_path" type="str" required={true} toc={true}>
+<ParamField path="index_file" type="str" required={true} toc={true}>
   Path to the `.swsearch` index file.
 </ParamField>
 
@@ -439,7 +478,7 @@ Search local `.swsearch` vector index files built with the
 
 ```python {1-4}
 self.add_skill("native_vector_search", {
-    "index_path": "/path/to/knowledge.swsearch",
+    "index_file": "/path/to/knowledge.swsearch",
     "tool_name": "search_docs"
 })
 ```
@@ -617,7 +656,7 @@ self.add_skill("claude_skills", {
 Fast web scraping and crawling. Fetches web pages and extracts content optimized
 for token efficiency.
 
-**Tools:** `scrape_page` (default, customizable)
+**Tools:** `scrape_url`, `crawl_site`, `extract_structured_data` (each prefixed with `tool_name` + `_` when set)
 
 **Requirements:** `lxml`
 
@@ -635,10 +674,15 @@ for token efficiency.
   Request timeout in seconds.
 </ParamField>
 
-```python {1-4}
+<ParamField path="max_pages" type="int" default="1" toc={true}>
+  Maximum number of pages to scrape (1-100).
+</ParamField>
+
+```python {1-5}
 self.add_skill("spider", {
     "timeout": 10,
-    "concurrent_requests": 3
+    "concurrent_requests": 3,
+    "max_pages": 5
 })
 ```
 
@@ -686,7 +730,7 @@ You can create custom skills and register them from external directories or via 
 ### External Directory
 
 ```python {3}
-from signalwire_agents.skills.registry import skill_registry
+from signalwire.skills.registry import skill_registry
 
 skill_registry.add_skill_directory("/opt/custom_skills")
 ```
@@ -722,7 +766,7 @@ same `SKILL_NAME` as a built-in skill, it is skipped with an error log.
 ### Listing Available Skills
 
 ```python {4-6,9}
-from signalwire_agents.skills.registry import skill_registry
+from signalwire.skills.registry import skill_registry
 
 # List all available skills
 skills = skill_registry.list_skills()

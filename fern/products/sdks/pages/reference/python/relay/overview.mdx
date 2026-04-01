@@ -20,7 +20,31 @@ authenticates once, subscribes to contexts for inbound events, and processes
 call and message events in an async event loop. Automatic reconnection with
 exponential backoff ensures resilience against transient network failures.
 
-```python {10-16}
+## Context Routing
+
+Contexts are routing labels that control which inbound calls and messages are
+delivered to your application. When you assign a phone number to a context in
+the SignalWire dashboard, all calls to that number are routed to RELAY clients
+subscribed to that context.
+
+```python
+# Subscribe to specific contexts
+client = RelayClient(contexts=["support", "sales"])
+
+# Or subscribe/unsubscribe dynamically
+await client.receive(["billing"])     # Add a context
+await client.unreceive(["sales"])     # Remove a context
+```
+
+A client only receives events for its subscribed contexts. This enables multiple
+applications or workers to handle different call flows on the same project by
+subscribing to different contexts.
+
+## Example
+
+An IVR that answers calls, plays a menu, collects a digit, and routes accordingly:
+
+```python
 from signalwire.relay import RelayClient
 
 client = RelayClient(
@@ -33,52 +57,64 @@ client = RelayClient(
 @client.on_call
 async def handle_call(call):
     await call.answer()
-    action = await call.play([{"type": "tts", "text": "Hello from RELAY!"}])
-    await action.wait()
-    await call.hangup()
+
+    # Play a menu and collect one digit
+    action = await call.play_and_collect(
+        media=[{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
+        collect={"digits": {"max": 1, "digit_timeout": 5.0}},
+    )
+    event = await action.wait()
+
+    digit = event.params.get("result", {}).get("digits", "")
+
+    if digit == "1":
+        await call.play([{"type": "tts", "text": "Transferring to sales."}])
+        await call.transfer(dest="+15551234567")
+    elif digit == "2":
+        await call.play([{"type": "tts", "text": "Transferring to support."}])
+        await call.transfer(dest="+15559876543")
+    else:
+        await call.play([{"type": "tts", "text": "Goodbye."}])
+        await call.hangup()
 
 client.run()
 ```
 
+## Classes
+
 <CardGroup cols={2}>
   <Card
     title="RelayClient"
-    icon="fa-regular fa-plug"
     href="/docs/sdks/reference/python/relay/client"
   >
     WebSocket client for connecting, authenticating, dialing calls, and sending messages.
   </Card>
   <Card
     title="Call"
-    icon="fa-regular fa-phone"
     href="/docs/sdks/reference/python/relay/call"
   >
     Call object with methods for answer, hangup, play, record, collect, connect, and more.
   </Card>
   <Card
     title="Message"
-    icon="fa-regular fa-comment-sms"
     href="/docs/sdks/reference/python/relay/message"
   >
     Message object for tracking SMS/MMS state and waiting for delivery confirmation.
   </Card>
   <Card
     title="Actions"
-    icon="fa-regular fa-circle-play"
     href="/docs/sdks/reference/python/relay/actions"
   >
     Async action handles returned from call control methods like play, record, and detect.
   </Card>
   <Card
     title="Events"
-    icon="fa-regular fa-bell"
     href="/docs/sdks/reference/python/relay/events"
   >
     Typed event dataclasses for call state changes, playback, recording, and messaging.
   </Card>
   <Card
     title="Constants"
-    icon="fa-regular fa-list"
     href="/docs/sdks/reference/python/relay/constants"
   >
     Call states, connect states, message states, and event type string constants.
