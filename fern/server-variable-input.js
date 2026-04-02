@@ -212,23 +212,37 @@
   // ---------------------------------------------------------------------------
 
   function updateViaDoubleClick(newUrl) {
-    // Find the clickable URL element
+    // Find the outer URL container
     var baseUrlContainer = document.querySelector(
       ".playground-endpoint-baseurl"
     );
     if (!baseUrlContainer) return false;
 
-    // The double-click target: a <span> or <button> inside the baseurl area
-    // For single environment: span with pointer-events style or the direct text span
-    // For dropdown: a .fern-button
+    // IMPORTANT: The onDoubleClick handler in Fern's MaybeEnvironmentDropdown
+    // is on an INNER element, not the outer container. React's event delegation
+    // only fires handlers from the event target UPWARD, so we must target
+    // the correct element or one of its descendants.
+    //
+    // Single-environment: inner <span class="playground-endpoint-baseurl ...">
+    // Dropdown: <button> element (FernButton)
     var target =
+      // Inner span with same class as container (has onDoubleClick)
       baseUrlContainer.querySelector(
-        'span[style*="pointer-events"]'
+        "span.playground-endpoint-baseurl"
       ) ||
-      baseUrlContainer.querySelector(".fern-button") ||
-      baseUrlContainer.querySelector("span.whitespace-nowrap") ||
-      baseUrlContainer.querySelector("span.max-sm\\:hidden > span") ||
-      baseUrlContainer.querySelector("span.max-sm\\:hidden");
+      // Dropdown button (FernButton with onDoubleClick)
+      baseUrlContainer.querySelector("button") ||
+      // Fallback: deepest span containing URL text
+      (function () {
+        var spans = baseUrlContainer.querySelectorAll("span");
+        for (var i = spans.length - 1; i >= 0; i--) {
+          var t = (spans[i].textContent || "").trim();
+          if (t.indexOf("://") !== -1 && spans[i].children.length === 0) {
+            return spans[i];
+          }
+        }
+        return null;
+      })();
 
     if (!target) target = baseUrlContainer;
 
@@ -247,6 +261,12 @@
         baseUrlContainer.querySelector("input") ||
         document.querySelector(
           ".playground-endpoint-baseurl input"
+        ) ||
+        document.querySelector(
+          ".playground-endpoint-url input"
+        ) ||
+        document.querySelector(
+          ".playground-endpoint-url-with-switcher input"
         );
       if (!input) {
         // Retry after a longer delay
@@ -257,11 +277,11 @@
               ".playground-endpoint-baseurl input"
             );
           if (input) commitInputValue(input, newUrl);
-        }, 300);
+        }, 500);
         return;
       }
       commitInputValue(input, newUrl);
-    }, 250);
+    }, 300);
 
     return true;
   }
@@ -270,6 +290,9 @@
    * Set a React-controlled input's value and commit it.
    */
   function commitInputValue(input, newUrl) {
+    // Focus the input first
+    input.focus();
+
     // Use the native value setter to bypass React's synthetic tracking
     var nativeSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
@@ -278,11 +301,14 @@
     nativeSetter.call(input, newUrl);
 
     // Dispatch input event so React's onChange fires
+    // This triggers FernInput's onValueChange -> setInputValue(newUrl)
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
 
-    // Wait for React to process the state update, then commit via Enter
+    // Wait for React to process the state update and recalculate
+    // isValidInput before committing via Enter key
     setTimeout(function () {
+      // FernInput uses onKeyDownCapture which fires in capture phase
       input.dispatchEvent(
         new KeyboardEvent("keydown", {
           key: "Enter",
@@ -294,11 +320,11 @@
         })
       );
 
-      // Fallback: blur to commit
+      // Fallback: blur also commits in MaybeEnvironmentDropdown
       setTimeout(function () {
         input.blur();
-      }, 100);
-    }, 200);
+      }, 150);
+    }, 300);
   }
 
   // ---------------------------------------------------------------------------
@@ -307,30 +333,28 @@
 
   function updateFernEnvironmentUrl(newUrl) {
     // Strategy 1: Jotai storage event (instant, no UI flicker)
-    var storageOk = updateViaStorage(newUrl);
+    updateViaStorage(newUrl);
 
-    // Strategy 2: Double-click fallback
-    // Always attempt this as well in case the storage event doesn't
-    // propagate within the same tab in this browser/Jotai version.
-    // The double-click approach is idempotent - if the URL is already
-    // correct from strategy 1, the commit will be a no-op.
+    // Strategy 2: Double-click fallback (always attempt after a delay)
+    // The StorageEvent approach may not work within the same tab in all
+    // browsers. The double-click approach directly uses Fern's editing
+    // UI to commit the URL. We check after a delay whether strategy 1
+    // succeeded before invoking strategy 2.
     setTimeout(function () {
-      // Check if the URL already updated (strategy 1 worked)
       var baseUrlEl = document.querySelector(
         ".playground-endpoint-baseurl"
       );
       if (baseUrlEl) {
         var currentText = (baseUrlEl.textContent || "").trim();
-        // If the URL already contains our target (no placeholder), skip
+        // If the URL no longer contains a placeholder, strategy 1 worked
         var hasPlaceholder = detectVariable(currentText);
         if (!hasPlaceholder && currentText.indexOf("://") !== -1) {
-          // URL already resolved - strategy 1 worked or was already set
           return;
         }
       }
-      // Strategy 1 didn't visibly update the URL, try double-click
+      // Strategy 1 didn't visibly update - try double-click simulation
       updateViaDoubleClick(newUrl);
-    }, 600);
+    }, 800);
   }
 
   // ---------------------------------------------------------------------------
