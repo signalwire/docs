@@ -3,15 +3,19 @@
  *
  * Injects a labeled input field for OpenAPI server variables (e.g. space_name)
  * into the API Explorer ("Try It") panel. When the user fills in their space name,
- * the script programmatically updates the base URL via Fern's double-click-to-edit
- * mechanism.
+ * the script updates the base URL through Fern's Jotai atomWithStorage mechanism
+ * (writing to localStorage and dispatching a storage event so React re-reads it).
  *
  * How it works:
  *   1. A MutationObserver watches for `.playground-endpoint-baseurl` elements.
- *   2. If the displayed URL contains a known placeholder, an input field is injected
- *      into the explorer form (`.fern-explorer-form`).
- *   3. On input change, the script double-clicks the URL to enter edit mode,
- *      replaces the placeholder with the user's value, and triggers a save (Enter key).
+ *   2. If the displayed URL contains a known placeholder, a single input field is
+ *      injected into the explorer form (`.fern-explorer-form`).
+ *   3. On input change the script:
+ *      a. Computes the resolved URL by replacing the placeholder.
+ *      b. Writes the resolved URL to all `selected-environment-url*` localStorage
+ *         keys that Fern's Jotai atoms read from.
+ *      c. Dispatches a synthetic `storage` event so Jotai re-reads the value and
+ *         React re-renders the URL bar + code samples.
  */
 (function () {
   "use strict";
@@ -20,10 +24,8 @@
   // Configuration
   // ---------------------------------------------------------------------------
 
-  /** Known server-variable placeholders and their display metadata. */
   var VARIABLES = [
     {
-      // Matches the default values from both OpenAPI specs
       patterns: [
         "{Your_Space_Name}",
         "YOUR_SPACE",
@@ -33,21 +35,18 @@
       label: "Space name",
       placeholder: "e.g. example",
       description:
-        "Your SignalWire Space name — found in your SignalWire Dashboard.",
+        "Your SignalWire Space name \u2014 found in your SignalWire Dashboard.",
       storageKey: "sw_space_name",
     },
   ];
 
-  // Flag to prevent duplicate injection
-  var INJECTED_ATTR = "data-sw-server-var-injected";
+  // Unique ID for our injected section to prevent duplicates
+  var SECTION_ID = "sw-server-var-section";
 
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 
-  /**
-   * Return the first variable config whose placeholder appears inside `url`.
-   */
   function detectVariable(url) {
     if (!url) return null;
     var lower = url.toLowerCase();
@@ -62,9 +61,6 @@
     return null;
   }
 
-  /**
-   * Replace a placeholder inside a URL string, case-insensitively.
-   */
   function replaceVariable(url, variable, value) {
     var result = url;
     for (var i = 0; i < variable.patterns.length; i++) {
@@ -72,15 +68,14 @@
       var idx = result.toLowerCase().indexOf(pattern.toLowerCase());
       if (idx !== -1) {
         result =
-          result.substring(0, idx) + value + result.substring(idx + pattern.length);
+          result.substring(0, idx) +
+          value +
+          result.substring(idx + pattern.length);
       }
     }
     return result;
   }
 
-  /**
-   * Read a saved value from localStorage (best-effort).
-   */
   function loadSaved(key) {
     try {
       return localStorage.getItem(key) || "";
@@ -89,14 +84,78 @@
     }
   }
 
-  /**
-   * Persist a value to localStorage (best-effort).
-   */
   function savePersistent(key, value) {
     try {
       localStorage.setItem(key, value);
+    } catch (_e) {}
+  }
+
+  // ---------------------------------------------------------------------------
+  // Core: update the Fern playground base URL via Jotai atomWithStorage
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Fern stores the selected environment URL in localStorage keys like:
+   *   "selected-environment-url"           (global fallback)
+   *   "selected-environment-url:<apiId>"   (per-API)
+   *
+   * Jotai's atomWithStorage listens for the `storage` event to sync across
+   * tabs/components, so we:
+   *   1. Write the resolved URL into every matching localStorage key.
+   *   2. Dispatch a `storage` event for each key so Jotai re-reads it.
+   *
+   * This causes React to re-render the URL bar AND the code samples.
+   */
+  function updateFernEnvironmentUrl(newUrl) {
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf("selected-environment-url") === 0) {
+          keys.push(key);
+        }
+      }
+
+      // Always include the global key
+      if (keys.indexOf("selected-environment-url") === -1) {
+        keys.push("selected-environment-url");
+      }
+
+      // Write + dispatch for each key
+      var encodedValue = JSON.stringify(newUrl);
+      for (var k = 0; k < keys.length; k++) {
+        var storageKey = keys[k];
+        var oldValue = localStorage.getItem(storageKey);
+        localStorage.setItem(storageKey, encodedValue);
+
+        // Jotai listens for the native storage event
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: storageKey,
+            oldValue: oldValue,
+            newValue: encodedValue,
+            storageArea: localStorage,
+          })
+        );
+      }
+
+      // Also clear the selected environment ID so Fern does not override
+      // our custom URL with the environment default
+      var envIdKey = "selected-environment-id";
+      var oldEnvId = localStorage.getItem(envIdKey);
+      localStorage.setItem(envIdKey, JSON.stringify(undefined));
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: envIdKey,
+          oldValue: oldEnvId,
+          newValue: JSON.stringify(undefined),
+          storageArea: localStorage,
+        })
+      );
+
+      return true;
     } catch (_e) {
-      // storage unavailable — silently ignore
+      return false;
     }
   }
 
@@ -104,22 +163,16 @@
   // DOM Injection
   // ---------------------------------------------------------------------------
 
-  /**
-   * Build the "Server variables" section and prepend it to the explorer form.
-   * Returns the <input> element so we can wire up the update logic.
-   */
   function createVariableSection(variable) {
-    // Outer wrapper — mirrors Fern's form section styling
     var section = document.createElement("div");
+    section.id = SECTION_ID;
     section.className = "sw-server-var-section";
 
-    // Title
     var title = document.createElement("div");
     title.className = "sw-server-var-title";
     title.textContent = "Server variables";
     section.appendChild(title);
 
-    // Row: label + input
     var row = document.createElement("div");
     row.className = "sw-server-var-row";
 
@@ -137,13 +190,11 @@
 
     section.appendChild(row);
 
-    // Description
     var desc = document.createElement("div");
     desc.className = "sw-server-var-desc";
     desc.textContent = variable.description;
     section.appendChild(desc);
 
-    // Computed URL preview
     var preview = document.createElement("div");
     preview.className = "sw-server-var-preview";
     preview.textContent = "";
@@ -153,125 +204,58 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Core: update the Fern playground base URL
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Programmatically update the base URL in Fern's playground by:
-   *   1. Double-clicking the URL element to enter edit mode.
-   *   2. Finding the resulting <input>, setting its value.
-   *   3. Dispatching Enter to commit the change.
-   */
-  function updateBaseUrl(newUrl) {
-    // Find the base URL element (non-editing state)
-    var baseUrlEl = document.querySelector(
-      ".playground-endpoint-baseurl span[style*='pointer-events']," +
-      ".playground-endpoint-baseurl .fern-button," +
-      ".playground-endpoint-baseurl span.whitespace-nowrap," +
-      ".playground-endpoint-baseurl > span"
-    );
-
-    if (!baseUrlEl) {
-      // Try a broader selector
-      baseUrlEl = document.querySelector(".playground-endpoint-baseurl");
-    }
-
-    if (!baseUrlEl) return false;
-
-    // Trigger double-click to enter edit mode
-    var dblClickEvent = new MouseEvent("dblclick", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    });
-    baseUrlEl.dispatchEvent(dblClickEvent);
-
-    // Wait a tick for React to re-render with the input
-    setTimeout(function () {
-      var input = document.querySelector(
-        ".playground-endpoint-baseurl input"
-      );
-      if (!input) {
-        // Try broader — any input that appeared in the endpoint area
-        input = document.querySelector(".playground-endpoint input[type='text']");
-      }
-      if (!input) return;
-
-      // Set the value using native input value setter to trigger React's onChange
-      var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLInputElement.prototype,
-        "value"
-      ).set;
-      nativeInputValueSetter.call(input, newUrl);
-
-      // Dispatch input event so React picks up the change
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-
-      // Small delay then trigger Enter to commit
-      setTimeout(function () {
-        input.dispatchEvent(
-          new KeyboardEvent("keydown", {
-            key: "Enter",
-            code: "Enter",
-            keyCode: 13,
-            which: 13,
-            bubbles: true,
-            cancelable: true,
-          })
-        );
-
-        // Also try blur as fallback
-        setTimeout(function () {
-          input.blur();
-        }, 50);
-      }, 50);
-    }, 100);
-
-    return true;
-  }
-
-  // ---------------------------------------------------------------------------
   // Main: observe the DOM and inject when the explorer appears
   // ---------------------------------------------------------------------------
 
+  // Keep a reference to the original (template) URL so we can always
+  // re-derive the resolved URL even after it has been replaced.
+  var originalTemplateUrl = null;
+
   function processExplorer() {
-    // Look for the explorer form area
     var form = document.querySelector(".fern-explorer-form");
     if (!form) return;
 
-    // Already injected?
-    if (form.getAttribute(INJECTED_ATTR)) return;
+    // Strict duplicate check: if our section already exists anywhere in the
+    // document, do nothing.
+    if (document.getElementById(SECTION_ID)) return;
 
-    // Look for the base URL to detect if it contains a variable
-    var baseUrlEl = document.querySelector(
-      ".playground-endpoint-baseurl"
-    );
+    var baseUrlEl = document.querySelector(".playground-endpoint-baseurl");
     if (!baseUrlEl) return;
 
-    var urlText = baseUrlEl.textContent || "";
+    var urlText = (baseUrlEl.textContent || "").trim();
     var variable = detectVariable(urlText);
-    if (!variable) return;
 
-    // Mark as injected
-    form.setAttribute(INJECTED_ATTR, "true");
-
-    // Build and inject the UI
-    var ui = createVariableSection(variable);
-
-    // Insert before the auth form (first child of .fern-explorer-form)
-    var authForm = form.querySelector(".fern-explorer-auth-form");
-    if (authForm) {
-      form.insertBefore(ui.section, authForm);
-    } else {
-      form.prepend(ui.section);
+    // If no variable placeholder is detected but we have a saved template URL,
+    // it means the URL was already resolved. Still inject the input so the user
+    // can change it.
+    if (!variable && originalTemplateUrl) {
+      variable = detectVariable(originalTemplateUrl);
+      if (variable) {
+        urlText = originalTemplateUrl;
+      }
     }
 
-    // Update the preview
+    if (!variable) return;
+
+    // Remember the template URL
+    if (!originalTemplateUrl || detectVariable(urlText)) {
+      originalTemplateUrl = urlText;
+    }
+
+    var ui = createVariableSection(variable);
+
+    // Insert at the top of the form
+    form.prepend(ui.section);
+
+    // Preview helper
     function updatePreview(value) {
       if (value) {
-        var resolvedUrl = replaceVariable(urlText, variable, value);
-        ui.preview.textContent = "Computed URL: " + resolvedUrl;
+        var resolvedUrl = replaceVariable(
+          originalTemplateUrl || urlText,
+          variable,
+          value
+        );
+        ui.preview.textContent = resolvedUrl;
         ui.preview.style.display = "block";
       } else {
         ui.preview.textContent = "";
@@ -279,16 +263,18 @@
       }
     }
 
-    // Initialize preview with saved value
     updatePreview(ui.input.value);
 
-    // If there's a saved value, apply it immediately
+    // If there is a saved value, apply it immediately
     if (ui.input.value) {
-      var resolvedUrl = replaceVariable(urlText, variable, ui.input.value);
-      // Small delay to ensure playground is fully initialized
+      var resolvedUrl = replaceVariable(
+        originalTemplateUrl || urlText,
+        variable,
+        ui.input.value
+      );
       setTimeout(function () {
-        updateBaseUrl(resolvedUrl);
-      }, 500);
+        updateFernEnvironmentUrl(resolvedUrl);
+      }, 300);
     }
 
     // Wire up input handler
@@ -298,28 +284,20 @@
       savePersistent(variable.storageKey, value);
       updatePreview(value);
 
-      // Debounce the actual URL update
       clearTimeout(debounceTimer);
-      if (value) {
-        debounceTimer = setTimeout(function () {
-          // Re-read the current URL text in case it changed
-          var currentUrlEl = document.querySelector(
-            ".playground-endpoint-baseurl"
+      debounceTimer = setTimeout(function () {
+        if (value) {
+          var targetUrl = replaceVariable(
+            originalTemplateUrl || urlText,
+            variable,
+            value
           );
-          var currentUrl = currentUrlEl ? currentUrlEl.textContent || "" : urlText;
-
-          // If the current URL still has a placeholder, replace it
-          var detected = detectVariable(currentUrl);
-          var targetUrl;
-          if (detected) {
-            targetUrl = replaceVariable(currentUrl, detected, value);
-          } else {
-            // URL was already replaced — reconstruct from the original template
-            targetUrl = replaceVariable(urlText, variable, value);
-          }
-          updateBaseUrl(targetUrl);
-        }, 600);
-      }
+          updateFernEnvironmentUrl(targetUrl);
+        } else {
+          // If cleared, restore the original template URL
+          updateFernEnvironmentUrl(originalTemplateUrl || urlText);
+        }
+      }, 400);
     });
   }
 
@@ -328,7 +306,9 @@
   // ---------------------------------------------------------------------------
 
   function injectStyles() {
+    if (document.getElementById("sw-server-var-styles")) return;
     var style = document.createElement("style");
+    style.id = "sw-server-var-styles";
     style.textContent = [
       ".sw-server-var-section {",
       "  border: 1px solid var(--border, #e2e2e5);",
@@ -418,13 +398,13 @@
 
   function init() {
     injectStyles();
-
-    // Process immediately in case the explorer is already rendered
     processExplorer();
 
-    // Observe DOM mutations to catch when the explorer is opened/navigated
+    // Observe DOM mutations - debounced to avoid rapid re-processing
+    var mutationTimer = null;
     var observer = new MutationObserver(function () {
-      processExplorer();
+      clearTimeout(mutationTimer);
+      mutationTimer = setTimeout(processExplorer, 150);
     });
 
     observer.observe(document.body, {
@@ -432,25 +412,19 @@
       subtree: true,
     });
 
-    // Also re-process on URL changes (SPA navigation)
+    // Re-process on SPA navigation
     var lastUrl = location.href;
-    var urlCheckInterval = setInterval(function () {
+    setInterval(function () {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
-        // Reset injection flag so the next explorer view gets processed
-        var forms = document.querySelectorAll(
-          ".fern-explorer-form[" + INJECTED_ATTR + "]"
-        );
-        forms.forEach(function (f) {
-          f.removeAttribute(INJECTED_ATTR);
-        });
-        // Allow DOM to settle before processing
+        // Remove old section so processExplorer re-creates if needed
+        var old = document.getElementById(SECTION_ID);
+        if (old) old.remove();
         setTimeout(processExplorer, 500);
       }
     }, 300);
   }
 
-  // Start when DOM is ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
