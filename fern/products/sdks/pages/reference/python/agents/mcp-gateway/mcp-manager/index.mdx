@@ -1,0 +1,119 @@
+---
+title: "MCPService, MCPClient & MCPManager"
+slug: /reference/python/agents/mcp-gateway/mcp-manager
+description: Spawn, communicate with, and manage MCP server processes.
+max-toc-depth: 3
+---
+
+These classes handle the low-level lifecycle of MCP server processes: defining
+service configurations, spawning sandboxed subprocesses, communicating over
+JSON-RPC, and managing multiple services.
+
+```python {1}
+from signalwire.mcp_gateway import MCPService, MCPClient, MCPManager
+```
+
+---
+
+## MCPService
+
+A dataclass that holds the configuration for a single MCP service. Loaded
+automatically from the gateway configuration file by
+[`MCPManager`](#mcpmanager).
+
+### Properties
+
+<ParamField path="name" type="str" toc={true}>
+  Unique name identifying this MCP service.
+</ParamField>
+
+<ParamField path="command" type="list[str]" toc={true}>
+  The command and arguments used to spawn the MCP server process (e.g.,
+  `["python3", "my_server.py"]`).
+</ParamField>
+
+<ParamField path="description" type="str" toc={true}>
+  Human-readable description of what this service provides.
+</ParamField>
+
+<ParamField path="enabled" type="bool" default="True" toc={true}>
+  Whether this service is enabled. Disabled services are skipped during loading.
+</ParamField>
+
+<ParamField path="sandbox_config" type="dict[str, Any]" toc={true}>
+  Sandbox configuration controlling process isolation. Defaults to:
+  ```python {1}
+  {"enabled": True, "resource_limits": True, "restricted_env": True}
+  ```
+</ParamField>
+
+<Indent>
+<ParamField path="sandbox_config.enabled" type="bool" default="True" toc={true}>
+  Enable process sandboxing. When `False`, the MCP server runs with full
+  environment access.
+</ParamField>
+
+<ParamField path="sandbox_config.resource_limits" type="bool" default="True" toc={true}>
+  Apply CPU, memory, process count, and file size limits to the spawned process.
+</ParamField>
+
+<ParamField path="sandbox_config.restricted_env" type="bool" default="True" toc={true}>
+  Run with a minimal environment (PATH, HOME, TMPDIR only). When `False`, the
+  full parent environment is inherited.
+</ParamField>
+
+<ParamField path="sandbox_config.drop_privileges" type="bool" default="False" toc={true}>
+  Drop to the `nobody` user when running as root.
+</ParamField>
+
+<ParamField path="sandbox_config.working_dir" type="str" toc={true}>
+  Working directory for the spawned process. Defaults to the current directory.
+</ParamField>
+</Indent>
+
+---
+
+## MCPManager
+
+Manages multiple MCP services and their client lifecycles. Loads service
+definitions from the gateway configuration, creates clients on demand, and
+handles bulk shutdown.
+
+### Constructor
+
+```python {1}
+manager = MCPManager(config)
+```
+
+<ParamField path="config" type="dict[str, Any]" required={true} toc={true}>
+  Gateway configuration dictionary. The `services` key defines available MCP
+  services, and `session.sandbox_dir` sets the sandbox base directory.
+</ParamField>
+
+### Properties
+
+<ParamField path="services" type="dict[str, MCPService]" toc={true}>
+  Dictionary mapping service names to their [`MCPService`](#mcpservice) definitions.
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={2}>
+  <Card title="create_client" href="/docs/sdks/reference/python/agents/mcp-gateway/mcp-manager/create-client">
+    Create and start a new MCP client for a service.
+  </Card>
+  <Card title="get_service_tools" href="/docs/sdks/reference/python/agents/mcp-gateway/mcp-manager/get-service-tools">
+    Discover a service's available tools.
+  </Card>
+  <Card title="validate_services" href="/docs/sdks/reference/python/agents/mcp-gateway/mcp-manager/validate-services">
+    Validate that all configured services can start.
+  </Card>
+  <Card title="shutdown" href="/docs/sdks/reference/python/agents/mcp-gateway/mcp-manager/shutdown">
+    Stop all active MCP clients.
+  </Card>
+</CardGroup>
+
+<Info>
+For the MCPClient class (created by `create_client()`), see the
+[MCPClient reference](/docs/sdks/reference/python/agents/mcp-gateway/mcp-client).
+</Info>

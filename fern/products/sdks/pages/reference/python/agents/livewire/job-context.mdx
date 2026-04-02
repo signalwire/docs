@@ -1,0 +1,159 @@
+---
+title: "Infrastructure"
+slug: /reference/python/agents/livewire/job-context
+description: "JobContext, JobProcess, and Room stubs for connection lifecycle."
+max-toc-depth: 3
+---
+
+These classes mirror the LiveKit infrastructure types used in agent entrypoints.
+On SignalWire, connection lifecycle and room management are handled automatically
+by the control plane, so these are lightweight stubs that maintain API compatibility.
+
+## JobContext
+
+Mirrors a LiveKit `JobContext`. Provides access to the room and process objects,
+and lifecycle methods that the entrypoint calls before starting a session.
+
+```python {3}
+from signalwire.livewire import JobContext
+
+async def entrypoint(ctx: JobContext):
+    await ctx.connect()
+    await ctx.wait_for_participant()
+    # ctx.room and ctx.proc are available
+```
+
+### Properties
+
+<ParamField path="room" type="Room" toc={true}>
+  A [`Room`](#room) stub instance.
+</ParamField>
+
+<ParamField path="proc" type="JobProcess" toc={true}>
+  A [`JobProcess`](#jobprocess) instance with a `userdata` dict, populated by the
+  setup function if one was registered on
+  [`AgentServer`](/docs/sdks/reference/python/agents/livewire/agent-server).
+</ParamField>
+
+### Constructor
+
+```python {1}
+ctx = JobContext()
+```
+
+No parameters. A `JobContext` is created automatically by
+[`run_app()`](/docs/sdks/reference/python/agents/livewire/run-app) and passed to the
+entrypoint function.
+
+### Methods
+
+#### connect
+
+**connect**() -> `None`
+
+<Note>
+No-op. SignalWire's control plane handles connection lifecycle automatically. The
+agent connects when the platform invokes the SWML endpoint.
+</Note>
+
+---
+
+#### wait_for_participant
+
+**wait_for_participant**(`identity=None`) -> `None`
+
+<Note>
+No-op. SignalWire handles participant management automatically.
+</Note>
+
+<ParamField path="identity" type="Optional[str]" default="None" toc={true}>
+  Participant identity to wait for. Accepted for API compatibility.
+</ParamField>
+
+---
+
+## JobProcess
+
+Mirrors a LiveKit `JobProcess`. Used for prewarm and setup tasks. The setup
+function registered on
+[`AgentServer.setup_fnc`](/docs/sdks/reference/python/agents/livewire/agent-server)
+receives a `JobProcess` instance.
+
+```python {3-4}
+from signalwire.livewire import JobProcess
+
+def on_setup(proc: JobProcess):
+    proc.userdata["db_connection"] = connect_to_db()
+```
+
+### Properties
+
+<ParamField path="userdata" type="dict[str, Any]" toc={true}>
+  Arbitrary data dict for sharing state between the setup function and the
+  entrypoint. Defaults to an empty dict.
+</ParamField>
+
+### Constructor
+
+```python {1}
+proc = JobProcess()
+```
+
+No parameters.
+
+---
+
+## Room
+
+A stub representing the LiveKit room abstraction. On SignalWire, rooms are
+managed by the control plane and this object is a placeholder for API
+compatibility.
+
+### Properties
+
+<ParamField path="name" type="str" default='"livewire-room"' toc={true}>
+  The room name. Always `"livewire-room"` in the current implementation.
+</ParamField>
+
+### Constructor
+
+```python {1}
+room = Room()
+```
+
+No parameters.
+
+#### Example
+
+```python {2-7}
+from signalwire.livewire import (
+    Agent,
+    AgentSession,
+    AgentServer,
+    JobContext,
+    JobProcess,
+    run_app,
+)
+
+server = AgentServer()
+
+def setup(proc: JobProcess):
+    # Pre-warm: load config, connect to databases, etc.
+    proc.userdata["greeting"] = "Welcome to Acme Corp!"
+
+server.setup_fnc = setup
+
+@server.rtc_session()
+async def entrypoint(ctx: JobContext):
+    await ctx.connect()
+    await ctx.wait_for_participant()
+
+    greeting = ctx.proc.userdata.get("greeting", "Hello!")
+
+    agent = Agent(instructions="You are a helpful assistant.")
+    session = AgentSession()
+    await session.start(agent, room=ctx.room)
+    session.say(greeting)
+
+run_app(server)
+```

@@ -1,0 +1,79 @@
+---
+title: "run_app"
+slug: /reference/python/agents/livewire/run-app
+description: "Main entry point that starts a LiveWire agent server."
+max-toc-depth: 3
+---
+
+### run_app
+
+**run_app**(`server`) -> `None`
+
+The main entry point for a LiveWire application. It prints the ASCII banner,
+runs the setup function (if registered on the server), creates a
+[`JobContext`](/docs/sdks/reference/python/agents/livewire/job-context), invokes the
+registered entrypoint, prints a random tip, and starts the underlying SignalWire agent.
+
+This mirrors `livekit.agents.cli.run_app`. It is also available as `cli_ns.run_app`.
+
+#### Parameters
+
+<ParamField path="server" type="AgentServer" required={true} toc={true}>
+  The [`AgentServer`](/docs/sdks/reference/python/agents/livewire/agent-server) instance
+  with a registered entrypoint.
+</ParamField>
+
+#### Returns
+
+`None` -- This function blocks while the agent is running.
+
+#### Lifecycle
+
+1. Prints the LiveWire ASCII banner to stderr.
+2. If `server.setup_fnc` is set, calls it with a fresh
+   [`JobProcess`](/docs/sdks/reference/python/agents/livewire/job-context) instance.
+3. Creates a [`JobContext`](/docs/sdks/reference/python/agents/livewire/job-context).
+4. Calls the entrypoint registered via
+   [`@server.rtc_session()`](/docs/sdks/reference/python/agents/livewire/agent-server).
+   If the entrypoint is a coroutine, it is awaited.
+5. Prints a random "Did you know?" tip to stderr.
+6. Starts the underlying SignalWire agent (blocking).
+
+#### Example
+
+```python {34}
+from signalwire.livewire import (
+    Agent,
+    AgentSession,
+    AgentServer,
+    JobContext,
+    JobProcess,
+    function_tool,
+    run_app,
+)
+
+@function_tool
+def lookup_order(order_id: str) -> str:
+    """Look up an order by ID."""
+    return f"Order {order_id} shipped yesterday."
+
+server = AgentServer()
+
+def on_setup(proc: JobProcess):
+    proc.userdata["db_url"] = "postgres://localhost/orders"
+
+server.setup_fnc = on_setup
+
+@server.rtc_session()
+async def entrypoint(ctx: JobContext):
+    await ctx.connect()
+    agent = Agent(
+        instructions="You are an order tracking assistant.",
+        tools=[lookup_order],
+    )
+    session = AgentSession()
+    await session.start(agent, room=ctx.room)
+    session.say("Hello! I can help you track your orders.")
+
+run_app(server)
+```

@@ -1,0 +1,121 @@
+---
+title: "MCPGateway"
+slug: /reference/python/agents/mcp-gateway/mcp-gateway
+description: The main HTTP gateway service bridging MCP servers with SignalWire SWAIG functions.
+max-toc-depth: 3
+---
+
+MCPGateway is the main service class for the MCP-SWAIG gateway. It loads
+configuration from a JSON file, initializes an
+[`MCPManager`](/docs/sdks/reference/python/agents/mcp-gateway/mcp-manager) and
+[`SessionManager`](/docs/sdks/reference/python/agents/mcp-gateway/session-manager),
+sets up authenticated HTTP routes, and runs a Flask server that translates
+between MCP tool calls and SignalWire SWAIG requests.
+
+The gateway supports Basic auth and Bearer token authentication, rate limiting,
+SSL/TLS, and automatic session cleanup.
+
+## **Properties**
+
+<ParamField path="app" type="Flask" toc={true}>
+  The underlying Flask application instance.
+</ParamField>
+
+<ParamField path="config" type="dict[str, Any]" toc={true}>
+  The loaded and environment-variable-substituted configuration dictionary.
+</ParamField>
+
+<ParamField path="mcp_manager" type="MCPManager" toc={true}>
+  The [`MCPManager`](/docs/sdks/reference/python/agents/mcp-gateway/mcp-manager) instance
+  that manages MCP service definitions and client lifecycles.
+</ParamField>
+
+<ParamField path="session_manager" type="SessionManager" toc={true}>
+  The [`SessionManager`](/docs/sdks/reference/python/agents/mcp-gateway/session-manager) instance
+  that tracks active MCP sessions.
+</ParamField>
+
+<ParamField path="security" type="SecurityConfig" toc={true}>
+  The [`SecurityConfig`](/docs/sdks/reference/python/agents/configuration/security-config) instance
+  for authentication and security headers.
+</ParamField>
+
+## **Constructor**
+
+```python {1}
+gateway = MCPGateway(config_path="config.json")
+```
+
+<ParamField path="config_path" type="str" default="config.json" toc={true}>
+  Path to the JSON configuration file. Supports environment variable substitution
+  using `${VAR_NAME|default}` syntax. If the file does not exist, a default
+  configuration is created automatically.
+</ParamField>
+
+The configuration file defines server settings, MCP service definitions, session
+limits, rate limiting, and logging. A minimal configuration looks like:
+
+```json
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "auth_user": "admin",
+    "auth_password": "${MCP_AUTH_PASSWORD|changeme}"
+  },
+  "services": {
+    "my_service": {
+      "command": ["python3", "my_mcp_server.py"],
+      "description": "My custom MCP service",
+      "enabled": true
+    }
+  },
+  "session": {
+    "default_timeout": 300,
+    "max_sessions_per_service": 100,
+    "cleanup_interval": 60
+  }
+}
+```
+
+## **HTTP Endpoints**
+
+The gateway exposes the following REST endpoints. All endpoints except `/health`
+require authentication.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check (no auth required) |
+| `/services` | GET | List available MCP services |
+| `/services/<name>/tools` | GET | Get tools for a specific service |
+| `/services/<name>/call` | POST | Call a tool on a service |
+| `/sessions` | GET | List active sessions |
+| `/sessions/<id>` | DELETE | Close a specific session |
+
+## **`main` Function**
+
+```python {1}
+from signalwire.mcp_gateway import main
+```
+
+**main**() -> `None`
+
+CLI entry point that parses command-line arguments and starts the gateway. Accepts
+a `-c` / `--config` flag to specify the configuration file path (defaults to
+`config.json`).
+
+<Tip>
+Use the [`mcp-gateway` CLI command](/docs/sdks/reference/python/agents/cli/mcp-gateway)
+to run the gateway from the command line without writing any Python code.
+</Tip>
+
+## **Methods**
+
+<CardGroup cols={2}>
+  <Card title="run" href="/docs/sdks/reference/python/agents/mcp-gateway/mcp-gateway/run">
+    Start the gateway HTTP server, blocking until shutdown.
+  </Card>
+  <Card title="shutdown" href="/docs/sdks/reference/python/agents/mcp-gateway/mcp-gateway/shutdown">
+    Gracefully shut down the gateway and all active sessions.
+  </Card>
+</CardGroup>
