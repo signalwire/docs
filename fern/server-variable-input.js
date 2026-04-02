@@ -1,21 +1,16 @@
 /**
- * Server Variable Input — Custom JS for SignalWire Fern Docs
+ * Server Variable Input - Custom JS for SignalWire Fern Docs
  *
  * Injects a labeled input field for OpenAPI server variables (e.g. space_name)
  * into the API Explorer ("Try It") panel. When the user fills in their space name,
- * the script updates the base URL through Fern's Jotai atomWithStorage mechanism
- * (writing to localStorage and dispatching a storage event so React re-reads it).
+ * the script updates the base URL so Fern uses it for requests and code samples.
  *
- * How it works:
- *   1. A MutationObserver watches for `.playground-endpoint-baseurl` elements.
- *   2. If the displayed URL contains a known placeholder, a single input field is
- *      injected into the explorer form (`.fern-explorer-form`).
- *   3. On input change the script:
- *      a. Computes the resolved URL by replacing the placeholder.
- *      b. Writes the resolved URL to all `selected-environment-url*` localStorage
- *         keys that Fern's Jotai atoms read from.
- *      c. Dispatches a synthetic `storage` event so Jotai re-reads the value and
- *         React re-renders the URL bar + code samples.
+ * Strategy for updating the URL (tried in order):
+ *   1. React fiber: walk the React component tree from the DOM to find the
+ *      apiDefinitionId, then write the resolved URL to the correct
+ *      localStorage key and dispatch a StorageEvent so Jotai re-reads.
+ *   2. Double-click simulation: programmatically enter edit mode on the URL
+ *      bar, set the value, and commit via Enter key.
  */
 (function () {
   "use strict";
@@ -91,35 +86,87 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Core: update the Fern playground base URL via Jotai atomWithStorage
+  // Strategy 1: Jotai atomWithStorage via React fiber
+  //
+  // Fern stores the selected environment URL in localStorage keys:
+  //   "selected-environment-url"                (global fallback)
+  //   "selected-environment-url:<apiDefId>"     (per-API, used by playground)
+  //
+  // Jotai's atomWithStorage subscribes to `window` "storage" events.
+  // We find the apiDefinitionId from the React fiber tree, then write to
+  // the correct key and dispatch a StorageEvent.
   // ---------------------------------------------------------------------------
 
   /**
-   * Fern stores the selected environment URL in localStorage keys like:
-   *   "selected-environment-url"           (global fallback)
-   *   "selected-environment-url:<apiId>"   (per-API)
-   *
-   * Jotai's atomWithStorage listens for the `storage` event to sync across
-   * tabs/components, so we:
-   *   1. Write the resolved URL into every matching localStorage key.
-   *   2. Dispatch a `storage` event for each key so Jotai re-reads it.
-   *
-   * This causes React to re-render the URL bar AND the code samples.
+   * Walk the React fiber tree starting from a DOM element to find the
+   * apiDefinitionId prop on MaybeEnvironmentDropdown or its ancestors.
    */
-  function updateFernEnvironmentUrl(newUrl) {
+  function findApiDefinitionId() {
+    var el = document.querySelector(".playground-endpoint-baseurl");
+    if (!el) return null;
+
+    // Find the React fiber key
+    var fiberKey = null;
+    var keys = Object.keys(el);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].indexOf("__reactFiber$") === 0) {
+        fiberKey = keys[i];
+        break;
+      }
+    }
+    if (!fiberKey) return null;
+
+    var fiber = el[fiberKey];
+    var current = fiber;
+    var depth = 0;
+
+    while (current && depth < 60) {
+      // Check memoizedProps for apiDefinitionId
+      var props = current.memoizedProps;
+      if (props && props.apiDefinitionId) {
+        return props.apiDefinitionId;
+      }
+      // Also check pendingProps
+      if (current.pendingProps && current.pendingProps.apiDefinitionId) {
+        return current.pendingProps.apiDefinitionId;
+      }
+      current = current.return;
+      depth++;
+    }
+    return null;
+  }
+
+  /**
+   * Write a URL to the Jotai atomWithStorage key and dispatch a StorageEvent
+   * so that React re-renders the URL bar and code samples.
+   */
+  function updateViaStorage(newUrl) {
     try {
+      var apiDefId = findApiDefinitionId();
+
       var keys = [];
+
+      // Always add the per-API key if we found the ID
+      if (apiDefId) {
+        keys.push("selected-environment-url:" + apiDefId);
+      }
+
+      // Also find any existing keys in localStorage
       for (var i = 0; i < localStorage.length; i++) {
-        var key = localStorage.key(i);
-        if (key && key.indexOf("selected-environment-url") === 0) {
-          keys.push(key);
+        var lsKey = localStorage.key(i);
+        if (lsKey && lsKey.indexOf("selected-environment-url") === 0) {
+          if (keys.indexOf(lsKey) === -1) {
+            keys.push(lsKey);
+          }
         }
       }
 
-      // Always include the global key
+      // Always include the global key as fallback
       if (keys.indexOf("selected-environment-url") === -1) {
         keys.push("selected-environment-url");
       }
+
+      if (keys.length === 0) return false;
 
       // Write + dispatch for each key
       var encodedValue = JSON.stringify(newUrl);
@@ -128,7 +175,6 @@
         var oldValue = localStorage.getItem(storageKey);
         localStorage.setItem(storageKey, encodedValue);
 
-        // Jotai listens for the native storage event
         window.dispatchEvent(
           new StorageEvent("storage", {
             key: storageKey,
@@ -139,8 +185,7 @@
         );
       }
 
-      // Also clear the selected environment ID so Fern does not override
-      // our custom URL with the environment default
+      // Clear selected-environment-id so Fern does not override our URL
       var envIdKey = "selected-environment-id";
       var oldEnvId = localStorage.getItem(envIdKey);
       localStorage.setItem(envIdKey, JSON.stringify(undefined));
@@ -157,6 +202,135 @@
     } catch (_e) {
       return false;
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Strategy 2: Double-click simulation
+  //
+  // Programmatically enter edit mode on the URL bar, set the value via
+  // React's native input setter, and commit via Enter key.
+  // ---------------------------------------------------------------------------
+
+  function updateViaDoubleClick(newUrl) {
+    // Find the clickable URL element
+    var baseUrlContainer = document.querySelector(
+      ".playground-endpoint-baseurl"
+    );
+    if (!baseUrlContainer) return false;
+
+    // The double-click target: a <span> or <button> inside the baseurl area
+    // For single environment: span with pointer-events style or the direct text span
+    // For dropdown: a .fern-button
+    var target =
+      baseUrlContainer.querySelector(
+        'span[style*="pointer-events"]'
+      ) ||
+      baseUrlContainer.querySelector(".fern-button") ||
+      baseUrlContainer.querySelector("span.whitespace-nowrap") ||
+      baseUrlContainer.querySelector("span.max-sm\\:hidden > span") ||
+      baseUrlContainer.querySelector("span.max-sm\\:hidden");
+
+    if (!target) target = baseUrlContainer;
+
+    // Dispatch double-click to enter edit mode
+    target.dispatchEvent(
+      new MouseEvent("dblclick", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      })
+    );
+
+    // Wait for React to re-render with the FernInput
+    setTimeout(function () {
+      var input =
+        baseUrlContainer.querySelector("input") ||
+        document.querySelector(
+          ".playground-endpoint-baseurl input"
+        );
+      if (!input) {
+        // Retry after a longer delay
+        setTimeout(function () {
+          input =
+            baseUrlContainer.querySelector("input") ||
+            document.querySelector(
+              ".playground-endpoint-baseurl input"
+            );
+          if (input) commitInputValue(input, newUrl);
+        }, 300);
+        return;
+      }
+      commitInputValue(input, newUrl);
+    }, 250);
+
+    return true;
+  }
+
+  /**
+   * Set a React-controlled input's value and commit it.
+   */
+  function commitInputValue(input, newUrl) {
+    // Use the native value setter to bypass React's synthetic tracking
+    var nativeSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value"
+    ).set;
+    nativeSetter.call(input, newUrl);
+
+    // Dispatch input event so React's onChange fires
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // Wait for React to process the state update, then commit via Enter
+    setTimeout(function () {
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          code: "Enter",
+          keyCode: 13,
+          which: 13,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+
+      // Fallback: blur to commit
+      setTimeout(function () {
+        input.blur();
+      }, 100);
+    }, 200);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Combined URL updater - tries both strategies
+  // ---------------------------------------------------------------------------
+
+  function updateFernEnvironmentUrl(newUrl) {
+    // Strategy 1: Jotai storage event (instant, no UI flicker)
+    var storageOk = updateViaStorage(newUrl);
+
+    // Strategy 2: Double-click fallback
+    // Always attempt this as well in case the storage event doesn't
+    // propagate within the same tab in this browser/Jotai version.
+    // The double-click approach is idempotent - if the URL is already
+    // correct from strategy 1, the commit will be a no-op.
+    setTimeout(function () {
+      // Check if the URL already updated (strategy 1 worked)
+      var baseUrlEl = document.querySelector(
+        ".playground-endpoint-baseurl"
+      );
+      if (baseUrlEl) {
+        var currentText = (baseUrlEl.textContent || "").trim();
+        // If the URL already contains our target (no placeholder), skip
+        var hasPlaceholder = detectVariable(currentText);
+        if (!hasPlaceholder && currentText.indexOf("://") !== -1) {
+          // URL already resolved - strategy 1 worked or was already set
+          return;
+        }
+      }
+      // Strategy 1 didn't visibly update the URL, try double-click
+      updateViaDoubleClick(newUrl);
+    }, 600);
   }
 
   // ---------------------------------------------------------------------------
@@ -215,8 +389,7 @@
     var form = document.querySelector(".fern-explorer-form");
     if (!form) return;
 
-    // Strict duplicate check: if our section already exists anywhere in the
-    // document, do nothing.
+    // Strict duplicate check
     if (document.getElementById(SECTION_ID)) return;
 
     var baseUrlEl = document.querySelector(".playground-endpoint-baseurl");
@@ -226,8 +399,7 @@
     var variable = detectVariable(urlText);
 
     // If no variable placeholder is detected but we have a saved template URL,
-    // it means the URL was already resolved. Still inject the input so the user
-    // can change it.
+    // it means the URL was already resolved. Still inject the input.
     if (!variable && originalTemplateUrl) {
       variable = detectVariable(originalTemplateUrl);
       if (variable) {
@@ -243,8 +415,6 @@
     }
 
     var ui = createVariableSection(variable);
-
-    // Insert at the top of the form
     form.prepend(ui.section);
 
     // Preview helper
@@ -274,7 +444,7 @@
       );
       setTimeout(function () {
         updateFernEnvironmentUrl(resolvedUrl);
-      }, 300);
+      }, 500);
     }
 
     // Wire up input handler
@@ -294,7 +464,6 @@
           );
           updateFernEnvironmentUrl(targetUrl);
         } else {
-          // If cleared, restore the original template URL
           updateFernEnvironmentUrl(originalTemplateUrl || urlText);
         }
       }, 400);
@@ -417,7 +586,7 @@
     setInterval(function () {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
-        // Remove old section so processExplorer re-creates if needed
+        originalTemplateUrl = null;
         var old = document.getElementById(SECTION_ID);
         if (old) old.remove();
         setTimeout(processExplorer, 500);
