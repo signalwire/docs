@@ -1,0 +1,85 @@
+---
+title: "addDynamicHints"
+slug: /reference/php/agents/function-result/add-dynamic-hints
+description: Add speech recognition hints dynamically during a call.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/sdks/reference/php/agents/function-result
+
+Add speech recognition hints dynamically during a call. Hints improve recognition
+accuracy for domain-specific vocabulary, product names, or uncommon words. Each
+hint can be a simple string or a pronunciation pattern object that maps
+misrecognized speech to the correct text.
+
+## **Parameters**
+
+<ParamField path="hints" type="array" required={true} toc={true}>
+  List of hints. Each entry is either:
+  - A `string` — a word or phrase to boost recognition (e.g., `"SignalWire"`)
+  - A `dict` with pronunciation pattern fields:
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `pattern` | `string` | Regex pattern to match in recognized speech |
+  | `replace` | `string` | Replacement text when the pattern matches |
+  | `ignore_case` | `bool` | Case-insensitive matching (optional) |
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Simple Word Hints
+
+```php {11}
+<?php
+use SignalWire\Agent\AgentBase;
+use SignalWire\SWAIG\FunctionResult;
+
+$agent = new AgentBase(name: "my-agent", route: "/agent");
+$agent->setPromptText("You are a helpful assistant.");
+
+// Tool decorator: @agent.tool(name="set_medical_context", description="Add medical speech hints")
+function setMedicalContext($args, $raw_data)
+{
+    return (;
+        new FunctionResult("Switching to medical context.")
+        .addDynamicHints(["prescription", "dosage", "milligrams", "refill"])
+    );
+}
+
+$agent->serve();
+
+
+```
+
+### Pronunciation Patterns
+
+```php {12}
+<?php
+use SignalWire\Agent\AgentBase;
+use SignalWire\SWAIG\FunctionResult;
+
+$agent = new AgentBase(name: "my-agent", route: "/agent");
+$agent->setPromptText("You are a helpful assistant.");
+
+// Tool decorator: @agent.tool(name="set_name_hints", description="Add name pronunciation hints")
+function setNameHints($args, $raw_data)
+{
+    $name = $args["customer_name"] ?? "";
+    return (;
+        new FunctionResult("I'll listen for {$name}.")
+        .addDynamicHints([
+            $name,
+            ["pattern" => "cab bee", "replace": "Cabby", "ignore_case": true]
+        ])
+    );
+}
+
+$agent->serve();
+
+
+```

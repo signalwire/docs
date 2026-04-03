@@ -1,0 +1,120 @@
+---
+title: "record"
+slug: /reference/php/relay/call/record
+description: "Record audio from a call."
+max-toc-depth: 3
+---
+
+[recordaction]: /docs/sdks/reference/php/relay/actions
+[calling-call-record]: /docs/sdks/reference/php/relay/call#events
+[call-events]: /docs/sdks/reference/php/relay/call#events
+[record]: /docs/swml/reference/record
+[swml-record-reference]: /docs/swml/reference/record
+
+Start recording audio from the call. Returns a
+[`RecordAction`][recordaction] that you can use to
+pause, resume, stop, or wait for the recording to complete.
+
+<Info>
+This method emits [`calling.call.record`][calling-call-record] events. See [Call Events][call-events] for payload details.
+</Info>
+
+<Info>
+This method corresponds to the SWML [`record`][record] verb. See the
+[SWML record reference][swml-record-reference] for the full specification.
+</Info>
+
+## **Parameters**
+
+<ParamField path="audio" type="?dict" toc={true}>
+  Audio recording configuration object.
+</ParamField>
+
+<Indent>
+<ParamField path="audio.direction" type="string" toc={true}>
+  Which audio to record.
+
+  - `"listen"` -- record audio heard by the caller
+  - `"speak"` -- record audio spoken by the caller
+  - `"both"` -- record audio in both directions
+</ParamField>
+
+<ParamField path="audio.format" type="string" toc={true}>
+  Recording file format.
+
+  - `"mp3"` -- compressed MP3 format
+  - `"wav"` -- uncompressed WAV format
+</ParamField>
+
+<ParamField path="audio.stereo" type="bool" toc={true}>
+  Record in stereo (each side on a separate channel).
+</ParamField>
+
+<ParamField path="audio.initial_timeout" type="float" toc={true}>
+  Seconds to wait for audio before ending with `no_input`.
+</ParamField>
+
+<ParamField path="audio.end_silence_timeout" type="float" toc={true}>
+  Seconds of silence before stopping automatically.
+</ParamField>
+
+<ParamField path="audio.terminators" type="string" toc={true}>
+  DTMF digits that stop recording (e.g., `"#"`).
+</ParamField>
+
+<ParamField path="audio.beep" type="bool" toc={true}>
+  Play a beep before recording starts.
+</ParamField>
+
+<ParamField path="audio.input_sensitivity" type="float" toc={true}>
+  Sensitivity threshold for detecting audio input.
+</ParamField>
+</Indent>
+
+<ParamField path="control_id" type="?string" toc={true}>
+  Custom control ID for this operation. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="?callable" toc={true}>
+  Callback invoked when recording reaches a terminal state (`finished` or
+  `no_input`). The event contains the recording `url`, `duration`, and `size`.
+</ParamField>
+
+## **Returns**
+
+[`RecordAction`][recordaction] -- An action handle with
+`stop()`, `pause()`, `resume()`, and `wait()` methods.
+
+## **Example**
+
+```php {15}
+<?php
+use SignalWire\Relay\Client;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    $call->answer();
+    $call->play([["type" => "tts", "text": "Leave a message after the beep."]]);
+}
+
+    $action = $await $call->record(
+        audio: ["beep" => true, "end_silence_timeout": 3, "terminators": "#"],
+    );
+    $event = $await $action->wait();
+
+    $url = $event->params["record"] ?? {}["url"] ?? "";
+    echo "Recording saved: {$url}";
+    $call->hangup();
+
+$client->run();
+
+
+```

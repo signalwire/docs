@@ -1,0 +1,69 @@
+---
+title: "expression"
+slug: /reference/php/agents/data-map/expression
+description: Add a pattern-based response without an API call.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/php/agents/data-map
+[ref-functionresult]: /docs/sdks/reference/php/agents/function-result
+
+Add a pattern-based response that does not require an API call. Expressions are
+evaluated in order; the first matching pattern wins.
+
+## **Parameters**
+
+<ParamField path="test_value" type="string" required={true} toc={true}>
+  Template string to test (e.g., `"${args.command}"`).
+</ParamField>
+
+<ParamField path="pattern" type="string|re.Pattern" required={true} toc={true}>
+  Regex pattern to match against the test value.
+</ParamField>
+
+<ParamField path="output" type="FunctionResult" required={true} toc={true}>
+  [FunctionResult][ref-functionresult] to return when the pattern matches.
+</ParamField>
+
+<ParamField path="nomatch_output" type="FunctionResult" toc={true}>
+  Optional FunctionResult to return when the pattern does not match.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- Self for method chaining.
+
+## **Example**
+
+```php {8,12,16}
+<?php
+use SignalWire\AgentBase;
+use SignalWire\DataMap;
+use SignalWire\SWAIG\FunctionResult;
+
+$volume_control = (
+    new DataMap("set_volume")
+    .$purpose("Control audio volume")
+    .$parameter("level", "string", "Volume level", required: true)
+    .$expression(
+        "${args.level}", $r"high|loud|up",
+        new FunctionResult("Volume increased")
+    )
+    .$expression(
+        "${args.level}", $r"low|quiet|down",
+        new FunctionResult("Volume decreased")
+    )
+    .$expression(
+        "${args.level}", $r"mute|off",
+        new FunctionResult("Audio muted")
+    )
+);
+
+$agent = new AgentBase(name: "media-agent");
+$agent->setPromptText("You are a helpful assistant.");
+$agent->registerSwaigFunction($volume_control->toSwaigFunction());
+
+    $agent->run();
+
+
+```

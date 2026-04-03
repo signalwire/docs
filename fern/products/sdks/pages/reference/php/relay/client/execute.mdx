@@ -1,0 +1,77 @@
+---
+title: "execute"
+slug: /reference/php/relay/client/execute
+description: "Send a raw JSON-RPC request to RELAY."
+max-toc-depth: 3
+---
+
+[dial]: /docs/sdks/reference/php/relay/client/dial
+[send-message]: /docs/sdks/reference/php/relay/client/send-message
+[call]: /docs/sdks/reference/php/relay/call
+
+Send a raw JSON-RPC 2.0 request to the RELAY server and return the parsed
+response. This is the low-level RPC method that all other client and call
+control methods are built on.
+
+If the client is not currently connected (e.g., during a reconnect cycle),
+the request is automatically queued and sent after re-authentication completes.
+
+<Warning>
+This method has a default timeout of 10 seconds. If no response is received
+within that window, it raises `RelayError` and forces a reconnection attempt,
+as the timeout may indicate a half-open WebSocket connection.
+</Warning>
+
+<Note>
+Most developers should use the higher-level methods like
+[`dial()`][dial],
+[`sendMessage()`][send-message],
+and the [`Call`][call] control methods
+instead of calling `execute()` directly. Use `execute()` only for custom
+or unsupported RPC methods.
+</Note>
+
+## **Parameters**
+
+<ParamField path="method" type="string" required={true} toc={true}>
+  Full JSON-RPC method name (e.g., `"calling.answer"`, `"calling.play"`,
+  `"messaging.send"`). The method name must include the namespace prefix.
+</ParamField>
+
+<ParamField path="params" type="array" required={true} toc={true}>
+  Parameters for the RPC call. Typically includes `node_id` and `call_id`
+  for calling methods, along with method-specific parameters.
+</ParamField>
+
+## **Returns**
+
+`dict` -- The `result` object from the JSON-RPC response. Structure depends on the method called.
+
+## **Example**
+
+```php {13}
+<?php
+use SignalWire\Relay\Client;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    // Send a custom RPC request using the call's identifiers
+    $result = $await $client->execute("calling.answer", {;
+        "node_id": call.$node_id,
+        "call_id": call.$call_id,
+    });
+    echo "Answer result: {$result}";
+}
+
+$client->run();
+
+
+```

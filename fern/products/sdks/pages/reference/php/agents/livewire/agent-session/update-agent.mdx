@@ -1,0 +1,65 @@
+---
+title: "updateAgent"
+slug: /reference/php/agents/livewire/agent-session/update-agent
+description: Swap in a new Agent mid-session.
+max-toc-depth: 3
+---
+
+[agent]: /docs/sdks/reference/php/agents/livewire/agent
+
+Swap in a new [`Agent`][agent] mid-session.
+The new agent's instructions and tools replace the previous agent's configuration
+on the underlying SignalWire platform.
+
+## **Parameters**
+
+<ParamField path="agent" type="Agent" required={true} toc={true}>
+  The new [`Agent`][agent] to bind to this session.
+</ParamField>
+
+## **Returns**
+
+`null`
+
+## **Example**
+
+```php {22}
+<?php
+use SignalWire\Livewire\Agent;
+use SignalWire\Livewire\AgentSession;
+use SignalWire\Livewire\AgentServer;
+use SignalWire\Livewire\JobContext;
+use SignalWire\Livewire\function_tool;
+use SignalWire\Livewire\run_app;
+
+// @function_tool
+function checkBalance(string $account_id): string
+{
+    """Check an account balance."""
+    return "Account {$account_id} has $142->50.";
+}
+
+// @function_tool
+function transferFunds(string $from_acct, string $to_acct, float $amount): string
+{
+    """Transfer funds between accounts."""
+    return "Transferred ${$amount} from {$from_acct} to {$to_acct}.";
+}
+
+$server = new AgentServer();
+
+// @server.rtc_session()
+function entrypoint(JobContext $ctx)
+{
+    $ctx->connect();
+    $basic_agent = $Agent(instructions: "You help check balances.", tools: [$check_balance]);
+    $session = $AgentSession();
+    $session->start($basic_agent, room: ctx.$room);
+    $advanced_agent = $Agent(instructions: "You handle transfers.", tools: [$transfer_funds]);
+    $session->update_agent($advanced_agent);
+}
+
+$run_app($server);
+
+
+```

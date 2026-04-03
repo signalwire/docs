@@ -1,0 +1,108 @@
+---
+title: "registerRoutingCallback"
+slug: /reference/php/agents/swml-service/register-routing-callback
+description: "Register routing callbacks for dynamic request handling and SIP routing."
+max-toc-depth: 3
+---
+
+[serve]: /docs/sdks/reference/php/agents/swml-service/serve
+
+Register a callback function for dynamic request routing. When a request arrives at
+the specified path, the callback inspects the POST body and decides whether to route
+the request to a different endpoint or let normal processing continue. This is primarily
+used for SIP-based routing where the destination depends on the incoming SIP URI.
+
+An HTTP endpoint is automatically created at the specified path when the service starts.
+The callback receives the raw FastAPI `Request` object and the parsed request body as
+a dictionary.
+
+<Note>
+The callback path is registered at the time of calling this method but the actual
+FastAPI route is created when [`serve()`][serve]
+is called or when `as_router()` generates the router. Register all callbacks before
+starting the server.
+</Note>
+
+## **Parameters**
+
+<ParamField path="callback_fn" type="callable" required={true} toc={true}>
+  A function that receives a FastAPI `Request` and the parsed JSON body as a `dict`.
+  Return a route string to redirect the request (using HTTP 307 to preserve the POST
+  method and body), or return `null` to continue with normal SWML document serving.
+</ParamField>
+
+<ParamField path="path" type="string" default="/sip" toc={true}>
+  The URL path where this routing endpoint is created. The path is normalized to start
+  with `/` and trailing slashes are stripped.
+</ParamField>
+
+## **Returns**
+
+`null`
+
+---
+
+## **extract_sip_username** (static method)
+
+Static utility method that extracts the username portion from a SIP URI in the request
+body. Handles `sip:username@domain`, `tel:+1234567890`, and plain string formats in
+the `call.to` field.
+
+### **Parameters**
+
+<ParamField path="request_body" type="array" required={true} toc={true}>
+  The parsed JSON body from an incoming request. Expected to contain a `call.to`
+  field with a SIP URI, TEL URI, or phone number string.
+</ParamField>
+
+### **Returns**
+
+`?string` — The extracted username or phone number, or `null` if the `call.to`
+field is missing or cannot be parsed.
+
+### **Examples**
+
+### Routing callback with SIP username
+
+```php {15}
+<?php
+use SignalWire\Core\SwmlService\SWMLService;
+
+$service = new Service(name: "sip-router", route: "/");
+
+function routeSipCall($request, $body)
+{
+    """Route calls based on the SIP username in the request."""
+    $username = $SWMLService->extractSipUsername($body);
+    if ($username == "sales") {
+        return "/agents/sales";
+    }
+    } elseif ($username == "support") {
+        return "/agents/support";
+    }
+    return null  # $Default $handling;
+}
+
+$service->add_verb("answer", {});
+$service->registerRoutingCallback($route_sip_call, path: "/sip");
+$service->serve();
+
+
+```
+
+### Extracting SIP usernames
+
+```php
+<?php
+use SignalWire\Core\SwmlService\SWMLService;
+
+$body = ["call" => {"to": "sip:sales@example.sip.signalwire.com"]};
+$username = $SWMLService->extractSipUsername($body);
+// "sales"
+
+$body = ["call" => {"to": "tel:+15551234567"]};
+$number = $SWMLService->extractSipUsername($body);
+// "+15551234567"
+
+
+```

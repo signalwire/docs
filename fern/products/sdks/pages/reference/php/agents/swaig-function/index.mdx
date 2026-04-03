@@ -1,0 +1,206 @@
+---
+title: "SWAIGFunction"
+slug: /reference/php/agents/swaig-function
+description: "Wrapper class for SWAIG function definitions with execution and validation."
+max-toc-depth: 3
+---
+
+[agent-tool-decorator]: /docs/sdks/reference/php/agents/agent-base#tool
+[define-tool]: /docs/sdks/reference/php/agents/agent-base/define-tool
+[agentbase]: /docs/sdks/reference/php/agents/agent-base
+[datamap]: /docs/sdks/reference/php/agents/data-map
+[functionresult]: /docs/sdks/reference/php/agents/function-result
+[swaig-function-definition]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[execute]: /docs/sdks/reference/php/agents/swaig-function/execute
+
+SWAIGFunction wraps a Python callable as a SWAIG (SignalWire AI Gateway) tool
+that the AI can invoke during a conversation. It manages the function's name,
+description, parameter schema, security settings, and serialization to SWML.
+
+In most cases you do not create SWAIGFunction instances directly. The
+[`@agent.tool()` decorator][agent-tool-decorator]
+and [`defineTool()`][define-tool] method
+on [`AgentBase`][agentbase] handle construction
+internally. This class is documented for advanced use cases such as custom
+registration via `registerSwaigFunction()`.
+
+<Info>
+For server-side API tools without a Python handler, see
+[`DataMap`][datamap]. For building the
+response returned from a handler, see
+[`FunctionResult`][functionresult].
+</Info>
+
+<Info>
+SWAIGFunction serializes to a SWML [SWAIG function definition][swaig-function-definition].
+See the [SWML SWAIG functions reference][swml-swaig-functions-reference] for the
+full specification.
+</Info>
+
+## **Properties**
+
+<ParamField path="name" type="string" toc={true}>
+  The function name.
+</ParamField>
+
+<ParamField path="handler" type="callable" toc={true}>
+  The underlying Python handler function.
+</ParamField>
+
+<ParamField path="description" type="string" toc={true}>
+  The function description.
+</ParamField>
+
+<ParamField path="parameters" type="dict" toc={true}>
+  The parameter schema dictionary.
+</ParamField>
+
+<ParamField path="secure" type="bool" toc={true}>
+  Whether token authentication is required.
+</ParamField>
+
+<ParamField path="fillers" type="?array" toc={true}>
+  Filler phrases by language code to speak while the function executes
+  (e.g., `{"en-US": ["Let me check on that..."]}`).
+</ParamField>
+
+<ParamField path="wait_file" type="?string" toc={true}>
+  URL of an audio file to play while the function executes. Preferred over `fillers`.
+</ParamField>
+
+<ParamField path="wait_file_loops" type="?int" toc={true}>
+  Number of times to loop `wait_file`. Defaults to playing once.
+</ParamField>
+
+<ParamField path="webhook_url" type="?string" toc={true}>
+  External webhook URL. When set, the function call is forwarded to this URL instead
+  of being handled locally.
+</ParamField>
+
+<ParamField path="required" type="array" toc={true}>
+  List of required parameter names. Merged into the parameter schema's `required` array.
+</ParamField>
+
+<ParamField path="is_typed_handler" type="bool" toc={true}>
+  Whether the handler uses type-hinted parameters (auto-wrapped by the `@tool` decorator).
+</ParamField>
+
+<ParamField path="is_external" type="bool" toc={true}>
+  `True` when `webhook_url` is set, indicating the function is handled externally.
+</ParamField>
+
+### \_\_call\_\_
+
+The SWAIGFunction object is callable. Calling it directly delegates to the
+underlying handler:
+
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+use SignalWire\Core\SwaigFunction\SWAIGFunction;
+use SignalWire\SWAIG\FunctionResult;
+
+$agent = new AgentBase(name: "assistant", route: "/assistant");
+$agent->setPromptText("You are a helpful assistant.");
+
+// Tool decorator: @agent.tool(description="Look up order status")
+function checkOrder($args, raw_data: null)
+{
+    $order_id = $args["order_id"] ?? null;
+    return new FunctionResult("Order {$order_id} shipped March 28.");
+}
+
+$agent->serve();
+
+```
+
+This is equivalent to `func.handler(args, raw_data)`.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="execute" href="/docs/sdks/reference/php/agents/swaig-function/execute">
+    Execute the function with the given arguments.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Manual registration
+
+```php {10}
+<?php
+use SignalWire\AgentBase;
+use SignalWire\SWAIGFunction;
+use SignalWire\SWAIG\FunctionResult;
+
+function handleLookup($args, $raw_data)
+{
+    $account_id = $args["account_id"] ?? "";
+    return new FunctionResult("Account {$account_id} is active.");
+}
+
+$agent = new AgentBase(name: "my-agent");
+
+$func = new SWAIGFunction(
+    name: "lookup_account",
+    handler: $handle_lookup,
+    description: "Look up account status by ID",
+    parameters: {
+        "type": "object",
+        "properties": {
+            "account_id": {
+                "type": "string",
+                "description": "The account ID to look up"
+            }
+        },
+        "required": ["account_id"]
+    },
+    secure: true,
+    fillers: ["en-US" => ["Let me check on that..."]]
+);
+
+// Validate before registering
+$is_valid, $errors = $func->validate_args(["account_id" => "12345"]);
+echo "Valid: {$is_valid}, Errors: {$errors}";
+// Valid: True, Errors: []
+
+```
+
+### Using the decorator (preferred)
+
+In most cases, use the `@agent.tool()` decorator instead of constructing
+SWAIGFunction directly:
+
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+use SignalWire\SWAIG\FunctionResult;
+
+$agent = new AgentBase(name: "my-agent");
+$agent->setPromptText("You are a helpful assistant.");
+
+// @agent.tool(
+    description: "Look up account status by ID",
+    parameters: {
+        "type": "object",
+        "properties": {
+            "account_id": ["type" => "string", "description": "Account ID"]
+        },
+        "required": ["account_id"]
+    },
+    secure: true,
+    fillers: ["Let me check on that..."]
+);
+function lookupAccount($args, $raw_data)
+{
+    $account_id = $args["account_id"] ?? "";
+    return new FunctionResult("Account {$account_id} is active.");
+}
+
+    $agent->run();
+
+```

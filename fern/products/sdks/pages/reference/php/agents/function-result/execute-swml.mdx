@@ -1,0 +1,75 @@
+---
+title: "executeSwml"
+slug: /reference/php/agents/function-result/execute-swml
+description: Execute a raw SWML document as an action.
+max-toc-depth: 3
+---
+
+[connect]: /docs/sdks/reference/php/agents/function-result/connect
+[record-call]: /docs/sdks/reference/php/agents/function-result/record-call
+[send-sms]: /docs/sdks/reference/php/agents/function-result/send-sms
+[functionresult]: /docs/sdks/reference/php/agents/function-result
+[ref-swmlbuilder]: /docs/sdks/reference/php/agents/swml-builder
+
+Execute a raw SWML document as an action. This is the escape hatch for advanced
+use cases that are not covered by the named convenience methods.
+
+<Note>
+Most use cases are covered by the specific action methods
+([`connect()`][connect],
+[`recordCall()`][record-call],
+[`sendSms()`][send-sms], etc.).
+Use `executeSwml()` only when you need SWML features not available through
+convenience methods.
+</Note>
+
+## **Parameters**
+
+<ParamField path="swml_content" type="string|dict|SWML object" required={true} toc={true}>
+  SWML content in one of three formats:
+  - `string` — raw SWML JSON text (parsed internally)
+  - `dict` — SWML data structure
+  - SWML object — any object with a `.to_dict()` method (e.g., a [`Document`][ref-swmlbuilder] instance)
+</ParamField>
+
+<ParamField path="transfer" type="bool" default="False" toc={true}>
+  When `True`, the call exits the agent after the SWML executes. When `False`,
+  the SWML executes inline and the agent continues.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```php {20}
+<?php
+use SignalWire\Agent\AgentBase;
+use SignalWire\SWAIG\FunctionResult;
+
+$agent = new AgentBase(name: "my-agent", route: "/agent");
+$agent->setPromptText("You are a helpful assistant.");
+
+// Tool decorator: @agent.tool(name="play_announcement", description="Play an announcement")
+function playAnnouncement($args, $raw_data)
+{
+    $swml_doc = {;
+        "version": "1.0.0",
+        "sections": {
+            "main": [;
+                ["play" => {"url": "https://example.com/announcement.mp3"]},
+                ["hangup" => {]}
+            ];
+        }
+    }
+    return (;
+        new FunctionResult()
+        .executeSwml($swml_doc, transfer: false)
+    );
+}
+
+$agent->serve();
+
+
+```

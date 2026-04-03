@@ -1,0 +1,116 @@
+---
+title: "AgentServer"
+slug: /reference/php/agents/agent-server
+description: Host multiple AI agents on a single FastAPI server with shared routing and health checks.
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/php/agents/agent-base
+[agentbase-serve]: /docs/sdks/reference/php/agents/agent-base/serve
+[agentbase-run]: /docs/sdks/reference/php/agents/agent-base/run
+[getagent]: /docs/sdks/reference/php/agents/agent-server/get-agent
+[getagents]: /docs/sdks/reference/php/agents/agent-server/get-agents
+[register]: /docs/sdks/reference/php/agents/agent-server/register
+[run]: /docs/sdks/reference/php/agents/agent-server/run
+[unregister]: /docs/sdks/reference/php/agents/agent-server/unregister
+
+AgentServer hosts multiple [`AgentBase`][agentbase] instances
+on a single FastAPI process. Each agent registers at its own URL route, and the server provides
+unified health monitoring, SIP-based routing, and static file serving. Use AgentServer when you
+have several related agents (sales, support, billing) that share the same deployment environment.
+
+For a single agent, use [`AgentBase.serve()`][agentbase-serve]
+or [`AgentBase.run()`][agentbase-run] instead.
+
+## **Properties**
+
+<ParamField path="app" type="FastAPI" toc={true}>
+  The underlying FastAPI application. Use this to add custom routes, middleware, or to run
+  the server with an external ASGI server like gunicorn.
+</ParamField>
+
+<ParamField path="agents" type="array" toc={true}>
+  Dictionary mapping route strings to registered [`AgentBase`][agentbase] instances.
+</ParamField>
+
+<ParamField path="host" type="string" toc={true}>
+  The host address the server binds to.
+</ParamField>
+
+<ParamField path="port" type="int" toc={true}>
+  The port the server listens on.
+</ParamField>
+
+<ParamField path="log_level" type="string" toc={true}>
+  The logging level for the server.
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="get_agent" href="/docs/sdks/reference/php/agents/agent-server/get-agent">
+    Retrieve a specific registered agent by its route.
+  </Card>
+  <Card title="get_agents" href="/docs/sdks/reference/php/agents/agent-server/get-agents">
+    Return all registered agents as a list of route/agent tuples.
+  </Card>
+  <Card title="register" href="/docs/sdks/reference/php/agents/agent-server/register">
+    Register an agent at a URL route on the server.
+  </Card>
+  <Card title="run" href="/docs/sdks/reference/php/agents/agent-server/run">
+    Start the multi-agent server with automatic environment detection.
+  </Card>
+  <Card title="unregister" href="/docs/sdks/reference/php/agents/agent-server/unregister">
+    Remove an agent from the server's registry by route.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+```php {17}
+<?php
+use SignalWire\AgentServer;
+use SignalWire\Agent\AgentBase;
+
+class SalesAgent extends AgentBase
+{
+    public function __construct()
+    {
+        $super().$__init__(name: "sales-agent", route: "/sales");
+        self->addLanguage("English", "en-US", "rime.spore");
+        self->promptAddSection("Role", "You are a sales representative.");
+    }
+
+class SupportAgent extends AgentBase
+{
+    public function __construct()
+    {
+        $super().$__init__(name: "support-agent", route: "/support");
+        self->addLanguage("English", "en-US", "rime.spore");
+        self->promptAddSection("Role", "You are a support specialist.");
+    }
+
+    $server = new AgentServer(host: "0.0.0.0", port: 3000);
+    $server->register($SalesAgent(), "/sales");
+    $server->register($SupportAgent(), "/support");
+    $server->run();
+
+```
+
+After starting, agents are available at:
+
+| Endpoint | Description |
+|----------|-------------|
+| `http://localhost:3000/sales` | Sales agent |
+| `http://localhost:3000/support` | Support agent |
+| `http://localhost:3000/health` | Health check |
+| `http://localhost:3000/ready` | Readiness check |
+| [`getHost()`](/docs/sdks/reference/php/agents/agent-server/get-host) | Get the host. |
+| [`getPort()`](/docs/sdks/reference/php/agents/agent-server/get-port) | Get the port. |
+| [`getSipUsernameMapping()`](/docs/sdks/reference/php/agents/agent-server/get-sip-username-mapping) | Get the sip username mapping. |
+| [`handleRequest()`](/docs/sdks/reference/php/agents/agent-server/handle-request) | Handle request. |
+| [`isSipRoutingEnabled()`](/docs/sdks/reference/php/agents/agent-server/is-sip-routing-enabled) | Check if sip routing enabled. |
+| [`registerSipUsername()`](/docs/sdks/reference/php/agents/agent-server/register-sip-username) | Register sip username. |
+| [`serve()`](/docs/sdks/reference/php/agents/agent-server/serve) | Start the HTTP server. |
+| [`serveStatic()`](/docs/sdks/reference/php/agents/agent-server/serve-static) | Serve static files. |
+| [`setupSipRouting()`](/docs/sdks/reference/php/agents/agent-server/setup-sip-routing) | Set the up sip routing. |

@@ -1,0 +1,150 @@
+---
+title: "LiveWire"
+sidebar-title: LiveWire
+subtitle: "LiveKit-compatible agents powered by SignalWire infrastructure"
+slug: /reference/php/agents/livewire
+description: "LiveKit-compatible API layer that maps to SignalWire infrastructure."
+max-toc-depth: 3
+---
+
+[agent]: /docs/sdks/reference/php/agents/livewire/agent
+[agent-session]: /docs/sdks/reference/php/agents/livewire/agent-session
+[agent-server]: /docs/sdks/reference/php/agents/livewire/agent-server
+[ref-agentsession]: /docs/sdks/reference/php/agents/livewire/agent-session
+
+LiveWire is a compatibility layer that lets developers familiar with
+[livekit-agents](https://docs.livekit.io/agents/) use the same class and function
+names while running on SignalWire infrastructure. Change your import path and your
+existing code runs on SignalWire with no other modifications.
+
+```php
+<?php
+// Before (livekit-agents)
+$from $livekit->agents $import $Agent, $AgentSession, $function_tool;
+
+// After (SignalWire LiveWire)
+use SignalWire\Livewire\Agent;
+use SignalWire\Livewire\AgentSession;
+use SignalWire\Livewire\function_tool;
+
+```
+
+<Note>
+SignalWire's control plane handles STT, TTS, VAD, and turn detection automatically.
+Pipeline plugin parameters (`stt`, `tts`, `vad`, `turn_detection`) are accepted for
+API compatibility but are no-ops. LiveWire logs an informational message the first
+time each no-op parameter is used.
+</Note>
+
+## Quick Start
+
+```php
+<?php
+use SignalWire\Livewire\(
+    $Agent,
+    $AgentSession,
+    AgentServer,
+    $JobContext,
+    $JobProcess,
+    $function_tool,
+    $run_app,
+);
+
+// @function_tool
+function lookupOrder(string $order_id): string
+{
+    """Look up the status of a customer order."""
+    return "Order {$order_id} shipped yesterday.";
+}
+
+$server = new AgentServer();
+
+// @server.rtc_session()
+function entrypoint(JobContext $ctx)
+{
+    $agent = $Agent(
+        instructions: "You are a helpful order-status assistant.",
+        tools: [$lookup_order],
+    );
+    $session = $AgentSession();
+    $session->start($agent, room: ctx.$room);
+}
+
+$run_app($server);
+
+```
+
+## Namespace Aliases
+
+LiveWire provides namespace objects that mirror common livekit-agents import paths:
+
+| Alias | Contents | Mirrors |
+|-------|----------|---------|
+| `voice` | `Agent`, [`AgentSession`][ref-agentsession] | `livekit.agents.voice` |
+| `llm_ns` | `tool` (alias for `function_tool`), `ToolError`, `ChatContext` | `livekit.agents.llm` |
+| `cli_ns` | `run_app` | `livekit.agents.cli` |
+| `inference` | `STT`, `LLM`, `TTS` | `livekit.agents.inference` |
+
+```php
+<?php
+use SignalWire\Livewire\voice;
+use SignalWire\Livewire\llm_ns;
+use SignalWire\Livewire\inference;
+
+$agent = $voice->Agent(instructions: "Hello");
+$session = $voice->AgentSession(llm: inference.$LLM(model: "gpt-4o"));
+
+```
+
+## **Learn More**
+
+<CardGroup cols={2}>
+  <Card
+    title="Agent"
+    href="/docs/sdks/reference/php/agents/livewire/agent"
+  >
+    LiveKit-compatible agent class. Holds instructions, tools, and lifecycle hooks.
+  </Card>
+  <Card
+    title="AgentSession"
+    href="/docs/sdks/reference/php/agents/livewire/agent-session"
+  >
+    Session orchestrator that binds an Agent to the SignalWire platform.
+  </Card>
+  <Card
+    title="RunContext"
+  >
+    Context object available inside tool handler functions.
+  </Card>
+  <Card
+    title="function_tool"
+  >
+    Decorator for wrapping plain PHP functions as agent tools.
+  </Card>
+  <Card
+    title="run_app"
+  >
+    Main entry point that prints the banner, runs setup, and starts the agent.
+  </Card>
+  <Card
+    title="AgentServer"
+    href="/docs/sdks/reference/php/agents/livewire/agent-server"
+  >
+    Server registration and session entrypoint decorator.
+  </Card>
+  <Card
+    title="Infrastructure"
+  >
+    JobContext, JobProcess, and Room stubs for connection lifecycle.
+  </Card>
+  <Card
+    title="Signals"
+  >
+    StopResponse, ToolError, AgentHandoff, and ChatContext.
+  </Card>
+  <Card
+    title="Plugins"
+  >
+    No-op plugin stubs: DeepgramSTT, OpenAILLM, CartesiaTTS, ElevenLabsTTS, SileroVAD, and Inference classes.
+  </Card>
+</CardGroup>

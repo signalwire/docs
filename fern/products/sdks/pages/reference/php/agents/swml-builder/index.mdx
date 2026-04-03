@@ -1,0 +1,232 @@
+---
+title: "SWMLBuilder"
+slug: /reference/php/agents/swml-builder
+description: "Fluent builder API for constructing SWML documents with method chaining."
+max-toc-depth: 3
+---
+
+[swmlservice]: /docs/sdks/reference/php/agents/swml-service
+[swml]: /docs/swml/reference/ai
+[swml-reference]: /docs/swml/reference/ai
+[addsection]: /docs/sdks/reference/php/agents/swml-builder/add-section
+[ai]: /docs/sdks/reference/php/agents/swml-builder/ai
+[answer]: /docs/sdks/reference/php/agents/swml-builder/answer
+[hangup]: /docs/sdks/reference/php/agents/swml-builder/hangup
+[play]: /docs/sdks/reference/php/agents/swml-builder/play
+[render]: /docs/sdks/reference/php/agents/swml-builder/render
+[reset]: /docs/sdks/reference/php/agents/swml-builder/reset
+[say]: /docs/sdks/reference/php/agents/swml-builder/say
+
+SWMLBuilder provides a fluent interface for constructing SWML documents by chaining
+method calls. It wraps a [`Service`][swmlservice]
+instance and delegates all document operations to it, while returning `self` from every
+verb method to enable chaining. Use SWMLBuilder when you want concise, readable document
+construction in a single expression.
+
+In addition to the explicitly defined methods below, SWMLBuilder automatically generates
+methods for every SWML verb in the schema (e.g., `connect()`, `record()`, `denoise()`,
+`goto()`). These dynamic methods accept keyword arguments matching the verb's SWML
+parameters and return `self` for chaining.
+
+<Info>
+SWMLBuilder constructs [SWML][swml] documents programmatically. See the
+[SWML reference][swml-reference] for the full specification of all supported verbs.
+</Info>
+
+## **Properties**
+
+<ParamField path="service" type="Service" required={true} toc={true}>
+  The [`Service`][swmlservice] instance that
+  handles actual document storage, validation, and rendering. The builder delegates
+  all operations to this service.
+</ParamField>
+
+## **Dynamic Verb Methods**
+
+SWMLBuilder auto-generates chaining methods for every verb defined in the SWML schema
+that does not already have an explicit method. These dynamic methods accept keyword
+arguments matching the verb's SWML parameters and return `Self`.
+
+Examples of dynamic verbs: `connect()`, `record()`, `recordCall()`, `denoise()`,
+`transfer()`, `goto()`, `cond()`, `execute()`, `tap()`, and many more.
+
+```php {5}
+<?php
+use SignalWire\Core\SwmlService\SWMLService;
+use SignalWire\Core\SwmlBuilder\SWMLBuilder;
+
+$service = new Service(name: "dynamic-demo");
+$builder = new Document($service);
+
+$builder->connect(to: "+15551234567", from_: "+15559876543");
+$builder->recordCall(format: "mp4", stereo: true);
+$builder->denoise();
+
+echo $builder->build();
+
+```
+
+The `sleep` verb is a special case -- it accepts a positional `duration` argument
+(milliseconds) instead of keyword arguments:
+
+```php
+<?php
+use SignalWire\SWMLBuilder;
+
+$builder = new Document();
+$builder->addSection("main");
+$builder->sleep(duration: 2000);
+
+echo $builder->render();
+
+```
+
+<Info>
+If a verb name is not found in the SWML schema, calling it raises an `AttributeError`.
+</Info>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="add_section" href="/docs/sdks/reference/php/agents/swml-builder/add-section">
+    Add a new named section to the SWML document.
+  </Card>
+  <Card title="ai" href="/docs/sdks/reference/php/agents/swml-builder/ai">
+    Add an AI verb to start an AI-powered conversation.
+  </Card>
+  <Card title="answer" href="/docs/sdks/reference/php/agents/swml-builder/answer">
+    Add an answer verb to the SWML document.
+  </Card>
+  <Card title="hangup" href="/docs/sdks/reference/php/agents/swml-builder/hangup">
+    Add a hangup verb to end the current call.
+  </Card>
+  <Card title="play" href="/docs/sdks/reference/php/agents/swml-builder/play">
+    Add a play verb to play audio or text-to-speech.
+  </Card>
+  <Card title="render" href="/docs/sdks/reference/php/agents/swml-builder/render">
+    Build and render the complete SWML document as a JSON string.
+  </Card>
+  <Card title="reset" href="/docs/sdks/reference/php/agents/swml-builder/reset">
+    Reset the SWML document to an empty state.
+  </Card>
+  <Card title="say" href="/docs/sdks/reference/php/agents/swml-builder/say">
+    Add text-to-speech playback to the SWML document.
+  </Card>
+  <Card title="addRawVerb" href="/docs/sdks/reference/php/agents/swml-builder/add-raw-verb">
+    Add a raw verb to the SWML document.
+  </Card>
+  <Card title="addVerb" href="/docs/sdks/reference/php/agents/swml-builder/add-verb">
+    Add a verb to the SWML document.
+  </Card>
+  <Card title="addVerbToSection" href="/docs/sdks/reference/php/agents/swml-builder/add-verb-to-section">
+    Add a verb to a specific section.
+  </Card>
+  <Card title="clearSection" href="/docs/sdks/reference/php/agents/swml-builder/clear-section">
+    Clear all verbs from a section.
+  </Card>
+  <Card title="getVerbs" href="/docs/sdks/reference/php/agents/swml-builder/get-verbs">
+    Get all verbs in the document.
+  </Card>
+  <Card title="getVersion" href="/docs/sdks/reference/php/agents/swml-builder/get-version">
+    Get the SWML version string.
+  </Card>
+  <Card title="hasSection" href="/docs/sdks/reference/php/agents/swml-builder/has-section">
+    Check if a section exists.
+  </Card>
+  <Card title="renderPretty" href="/docs/sdks/reference/php/agents/swml-builder/render-pretty">
+    Render the document as formatted JSON.
+  </Card>
+  <Card title="toArray" href="/docs/sdks/reference/php/agents/swml-builder/to-array">
+    Convert the document to an array.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Basic IVR Flow
+
+```php {5}
+<?php
+use SignalWire\Core\SwmlService\SWMLService;
+use SignalWire\Core\SwmlBuilder\SWMLBuilder;
+
+$service = new Service(name: "ivr");
+$builder = new Document($service);
+
+$doc = (
+    $builder
+    .$answer()
+    .$play(url: "https://example.com/welcome.mp3")
+    .$sleep(duration: 1000)
+    .$hangup()
+    .$build()
+);
+echo $doc;
+
+```
+
+### AI Agent with SWAIG
+
+```php {5}
+<?php
+use SignalWire\Core\SwmlService\SWMLService;
+use SignalWire\Core\SwmlBuilder\SWMLBuilder;
+
+$service = new Service(name: "ai-agent");
+$builder = new Document($service);
+
+$swml_json = (
+    $builder
+    .$answer()
+    .$ai(
+        prompt_text: "You are a helpful customer service assistant.",
+        post_prompt: "Summarize what was discussed.",
+        post_prompt_url: "https://example.com/post_prompt",
+        swaig: {
+            "defaults": ["web_hook_url" => "https://example.com/swaig"],
+            "functions": [
+                {
+                    "function": "check_order",
+                    "description": "Check order status",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "order_id": ["type" => "string", "description": "The order ID"]
+                        },
+                        "required": ["order_id"]
+                    }
+                }
+            ]
+        },
+        hints: ["order", "tracking", "refund"],
+        params: ["end_of_speech_timeout" => 500]
+    )
+    .render()
+);
+echo $swml_json;
+
+```
+
+### Text-to-Speech Greeting
+
+```php {5}
+<?php
+use SignalWire\Core\SwmlService\SWMLService;
+use SignalWire\Core\SwmlBuilder\SWMLBuilder;
+
+$service = new Service(name: "greeting");
+$builder = new Document($service);
+
+$doc = (
+    $builder
+    .$answer()
+    .$say("Welcome to our service. Please hold.", voice: "rime.spore")
+    .$sleep(duration: 500)
+    .$say("Connecting you now.", voice: "rime.spore")
+    .$build()
+);
+echo $doc;
+
+```
