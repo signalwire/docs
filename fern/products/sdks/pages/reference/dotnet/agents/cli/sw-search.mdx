@@ -1,0 +1,358 @@
+---
+title: "sw-search"
+slug: /reference/dotnet/agents/cli/sw-search
+description: "Build, search, and validate vector search indexes for AI agent knowledge bases."
+max-toc-depth: 3
+---
+
+The `sw-search` command builds vector search indexes from documents, searches
+existing indexes, validates index integrity, migrates between storage backends,
+and queries remote search servers. Built indexes are used with the
+`native_vector_search` skill to give agents searchable knowledge bases.
+
+<Note>
+Requires the search extras: `dotnet add package SignalWire.Sdk"[search]"`.
+For PDF/DOCX support use `[search-full]`. For advanced NLP use `[search-nlp]`.
+</Note>
+
+## Command Modes
+
+`sw-search` operates in five modes based on the first argument:
+
+```bash
+sw-search <sources...> [build-options]           # Build mode (default)
+sw-search search <file> <query> [search-options] # Search mode
+sw-search validate <file> [--verbose]            # Validate mode
+sw-search migrate <file> [migrate-options]       # Migrate mode
+sw-search remote <url> <query> [remote-options]  # Remote search mode
+```
+
+---
+
+## Build Mode
+
+Build a vector search index from files and directories.
+
+```bash
+sw-search ./docs --output knowledge.swsearch
+sw-search ./docs ./examples README.md --file-types md,txt,py
+```
+
+### Build Options
+
+<ParamField path="sources" type="string" required={true} toc={true}>
+  One or more source files or directories to index.
+</ParamField>
+
+<ParamField path="--output" type="string" toc={true}>
+  Output file path (`.swsearch`) or collection name for pgvector. Defaults to
+  `sources.swsearch` for single-source builds.
+</ParamField>
+
+<ParamField path="--output-dir" type="string" toc={true}>
+  Output directory. For `--output-format json`, creates one file per source document.
+  Mutually exclusive with `--output`.
+</ParamField>
+
+<ParamField path="--output-format" type="string" default="index" toc={true}>
+  Output format. Valid values:
+  - `"index"` -- Create a searchable `.swsearch` index (default)
+  - `"json"` -- Export chunks as JSON for review or external processing
+</ParamField>
+
+<ParamField path="--backend" type="string" default="sqlite" toc={true}>
+  Storage backend. Valid values:
+  - `"sqlite"` -- Portable `.swsearch` file (default)
+  - `"pgvector"` -- PostgreSQL with pgvector extension
+</ParamField>
+
+<ParamField path="--connection-string" type="string" toc={true}>
+  PostgreSQL connection string. Required when `--backend pgvector`.
+</ParamField>
+
+<ParamField path="--overwrite" type="flag" toc={true}>
+  Overwrite an existing pgvector collection.
+</ParamField>
+
+<ParamField path="--file-types" type="string" default="md,txt,rst" toc={true}>
+  Comma-separated file extensions to include when indexing directories.
+</ParamField>
+
+<ParamField path="--exclude" type="string" toc={true}>
+  Comma-separated glob patterns to exclude (e.g., `"**/test/**,**/__pycache__/**"`).
+</ParamField>
+
+<ParamField path="--languages" type="string" default="en" toc={true}>
+  Comma-separated language codes for the indexed content.
+</ParamField>
+
+<ParamField path="--model" type="string" default="mini" toc={true}>
+  Embedding model name or alias. Valid aliases:
+  - `"mini"` -- `all-MiniLM-L6-v2` (384 dims, fastest, default)
+  - `"base"` -- `all-mpnet-base-v2` (768 dims, balanced)
+  - `"large"` -- `all-mpnet-base-v2` (768 dims, highest quality)
+
+  You can also pass a full model name (e.g., `"sentence-transformers/all-mpnet-base-v2"`).
+</ParamField>
+
+<ParamField path="--tags" type="string" toc={true}>
+  Comma-separated tags added to all chunks. Tags can be used to filter search results.
+</ParamField>
+
+<ParamField path="--index-nlp-backend" type="string" default="nltk" toc={true}>
+  NLP backend for document processing. Valid values:
+  - `"nltk"` -- Fast, good quality (default)
+  - `"spacy"` -- Better quality, slower. Requires `[search-nlp]` extras.
+</ParamField>
+
+<ParamField path="--validate" type="flag" toc={true}>
+  Validate the index after building.
+</ParamField>
+
+<ParamField path="--verbose" type="flag" toc={true}>
+  Enable detailed output during build.
+</ParamField>
+
+## Chunking Strategies
+
+<ParamField path="--chunking-strategy" type="string" default="sentence" toc={true}>
+  How documents are split into searchable chunks. Valid values:
+  - `"sentence"` -- Groups sentences together (default)
+  - `"sliding"` -- Fixed-size word windows with overlap
+  - `"paragraph"` -- Splits on double newlines
+  - `"page"` -- One chunk per page (best for PDFs)
+  - `"semantic"` -- Groups semantically similar sentences
+  - `"topic"` -- Detects topic boundaries
+  - `"qa"` -- Optimized for question-answering
+  - `"markdown"` -- Header-aware chunking with code block detection
+  - `"json"` -- Pre-chunked JSON input
+</ParamField>
+
+### Strategy-Specific Options
+
+<ParamField path="--max-sentences-per-chunk" type="int" default="5" toc={true}>
+  Maximum sentences per chunk. Used with `sentence` strategy.
+</ParamField>
+
+<ParamField path="--split-newlines" type="int" toc={true}>
+  Split on this many consecutive newlines. Used with `sentence` strategy.
+</ParamField>
+
+<ParamField path="--chunk-size" type="int" default="50" toc={true}>
+  Chunk size in words. Used with `sliding` strategy.
+</ParamField>
+
+<ParamField path="--overlap-size" type="int" default="10" toc={true}>
+  Overlap size in words between consecutive chunks. Used with `sliding` strategy.
+</ParamField>
+
+<ParamField path="--semantic-threshold" type="double" default="0.5" toc={true}>
+  Similarity threshold for grouping sentences. Used with `semantic` strategy.
+  Lower values produce larger chunks.
+</ParamField>
+
+<ParamField path="--topic-threshold" type="double" default="0.3" toc={true}>
+  Similarity threshold for detecting topic changes. Used with `topic` strategy.
+  Lower values produce more fine-grained topic boundaries.
+</ParamField>
+
+<Tip>
+Use the `markdown` strategy for documentation with code blocks. It preserves
+header hierarchy, detects fenced code blocks, and adds language-specific tags
+for better search relevance.
+</Tip>
+
+---
+
+## Search Mode
+
+Search an existing index with a natural language query.
+
+```bash
+sw-search search knowledge.swsearch "how to create an agent"
+sw-search search knowledge.swsearch "API reference" --count 3 --verbose
+```
+
+### Search Options
+
+<ParamField path="--count" type="int" default="5" toc={true}>
+  Number of results to return.
+</ParamField>
+
+<ParamField path="--distance-threshold" type="double" default="0.0" toc={true}>
+  Minimum similarity score. Results below this threshold are excluded.
+</ParamField>
+
+<ParamField path="--tags" type="string" toc={true}>
+  Comma-separated tags to filter results.
+</ParamField>
+
+<ParamField path="--query-nlp-backend" type="string" default="nltk" toc={true}>
+  NLP backend for query processing.
+
+  - `"nltk"` -- Fast, good quality (default)
+  - `"spacy"` -- Better quality, slower. Requires `[search-nlp]` extras.
+</ParamField>
+
+<ParamField path="--json" type="flag" toc={true}>
+  Output results as JSON.
+</ParamField>
+
+<ParamField path="--no-content" type="flag" toc={true}>
+  Show metadata only, hide chunk content.
+</ParamField>
+
+<ParamField path="--shell" type="flag" toc={true}>
+  Start an interactive search shell. Load the index once and run multiple queries.
+</ParamField>
+
+## Validate Mode
+
+Verify index integrity and display index metadata.
+
+```bash
+sw-search validate knowledge.swsearch
+sw-search validate knowledge.swsearch --verbose
+```
+
+Output includes chunk count, file count, embedding model, dimensions, chunking
+strategy, and creation timestamp.
+
+---
+
+## Migrate Mode
+
+Migrate indexes between storage backends.
+
+```bash
+sw-search migrate --info ./docs.swsearch
+sw-search migrate ./docs.swsearch --to-pgvector \
+  --connection-string "postgresql://user:pass@localhost/db" \
+  --collection-name docs_collection
+```
+
+### Migrate Options
+
+<ParamField path="--info" type="flag" toc={true}>
+  Show index information without migrating.
+</ParamField>
+
+<ParamField path="--to-pgvector" type="flag" toc={true}>
+  Migrate a SQLite index to PostgreSQL pgvector.
+</ParamField>
+
+<ParamField path="--collection-name" type="string" toc={true}>
+  Target collection name in PostgreSQL.
+</ParamField>
+
+<ParamField path="--batch-size" type="int" default="100" toc={true}>
+  Number of chunks per migration batch.
+</ParamField>
+
+## Remote Mode
+
+Search via a remote search API endpoint.
+
+```bash
+sw-search remote http://localhost:8001 "how to create an agent" --index-name docs
+```
+
+### Remote Options
+
+<ParamField path="--index-name" type="string" required={true} toc={true}>
+  Name of the index to search on the remote server.
+</ParamField>
+
+<ParamField path="--timeout" type="int" default="30" toc={true}>
+  Request timeout in seconds.
+</ParamField>
+
+The `--count`, `--distance-threshold`, `--tags`, `--json`, `--no-content`, and
+`--verbose` options from search mode also apply to remote searches.
+
+---
+
+## Examples
+
+### Build and Search Workflow
+
+```bash
+# Build from documentation with markdown-aware chunking
+sw-search ./docs \
+  --chunking-strategy markdown \
+  --file-types md \
+  --output knowledge.swsearch \
+  --verbose
+
+# Validate the index
+sw-search validate knowledge.swsearch
+
+# Search interactively
+sw-search search knowledge.swsearch --shell
+```
+
+### Full Configuration Build
+
+```bash
+sw-search ./docs ./examples README.md \
+  --output ./knowledge.swsearch \
+  --chunking-strategy sentence \
+  --max-sentences-per-chunk 8 \
+  --file-types md,txt,rst,py \
+  --exclude "**/test/**,**/__pycache__/**" \
+  --languages en,es,fr \
+  --model base \
+  --tags documentation,api \
+  --index-nlp-backend nltk \
+  --validate \
+  --verbose
+```
+
+### PostgreSQL pgvector Backend
+
+```bash
+# Build directly to pgvector
+sw-search ./docs \
+  --backend pgvector \
+  --connection-string "postgresql://user:pass@localhost:5432/knowledge" \
+  --output docs_collection \
+  --chunking-strategy markdown
+
+# Search in pgvector collection
+sw-search search docs_collection "how to create an agent" \
+  --backend pgvector \
+  --connection-string "postgresql://user:pass@localhost/knowledge"
+```
+
+### JSON Export and Re-import
+
+```bash
+# Export chunks for review
+sw-search ./docs --output-format json --output all_chunks.json
+
+# Build index from exported JSON
+sw-search ./chunks/ \
+  --chunking-strategy json \
+  --file-types json \
+  --output final.swsearch
+```
+
+### Using with an Agent
+
+After building an index, add it to an agent via the `native_vector_search` skill:
+
+```csharp
+using SignalWire.Agent;
+
+var agent = new AgentBase(name: "search-agent", route: "/");
+agent.SetPromptText("You are a helpful assistant.")
+agent.AddSkill("native_vector_search", {
+    "index_path": "./knowledge.swsearch",
+    "tool_name": "search_docs",
+    "tool_description": "Search the documentation",
+})
+
+// Entry point
+    await agent.RunAsync();
+
+```

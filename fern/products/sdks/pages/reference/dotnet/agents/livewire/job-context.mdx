@@ -1,0 +1,144 @@
+---
+title: "Infrastructure"
+slug: /reference/dotnet/agents/livewire/job-context
+description: "JobContext, JobProcess, and Room stubs for connection lifecycle."
+max-toc-depth: 3
+---
+
+[agentserver]: /docs/sdks/reference/dotnet/agents/livewire/agent-server
+[runapp]: /docs/sdks/reference/dotnet/agents/livewire/run-app
+[agentserver-setupfnc]: /docs/sdks/reference/dotnet/agents/livewire/agent-server
+
+These classes mirror the LiveKit infrastructure types used in agent entrypoints.
+On SignalWire, connection lifecycle and room management are handled automatically
+by the control plane, so these are lightweight stubs that maintain API compatibility.
+
+## JobContext
+
+Mirrors a LiveKit `JobContext`. Provides access to the room and process objects,
+and lifecycle methods that the entrypoint calls before starting a session.
+
+```csharp
+using SignalWire;
+
+async Task Entrypoint(JobContext ctx)
+{
+    await ctx.connect();
+    await ctx.wait_for_participant();
+    // ctx.room and ctx.proc are available
+
+
+```
+
+### Properties
+
+<ParamField path="room" type="Room" toc={true}>
+  A [`Room`](#room) stub instance.
+</ParamField>
+
+<ParamField path="proc" type="JobProcess" toc={true}>
+  A [`JobProcess`](#jobprocess) instance with a `userdata` dict, populated by the
+  setup function if one was registered on
+  [`AgentServer`][agentserver].
+</ParamField>
+
+### Methods
+
+#### connect
+
+**connect**() -> `None`
+
+<Note>
+No-op. SignalWire's control plane handles connection lifecycle automatically. The
+agent connects when the platform invokes the SWML endpoint.
+</Note>
+
+---
+
+#### wait_for_participant
+
+**wait_for_participant**(`identity=None`) -> `None`
+
+<Note>
+No-op. SignalWire handles participant management automatically.
+</Note>
+
+<ParamField path="identity" type="string?" default="None" toc={true}>
+  Participant identity to wait for. Accepted for API compatibility.
+</ParamField>
+
+---
+
+## JobProcess
+
+Mirrors a LiveKit `JobProcess`. Used for prewarm and setup tasks. The setup
+function registered on
+[`AgentServer.setup_fnc`][agentserver-setupfnc]
+receives a `JobProcess` instance.
+
+```csharp
+using SignalWire;
+
+FunctionResult OnSetup(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    proc.userdata["db_connection"] = connect_to_db();
+
+
+```
+
+### Properties
+
+<ParamField path="userdata" type="Dictionary<string, object>" toc={true}>
+  Arbitrary data dict for sharing state between the setup function and the
+  entrypoint. Defaults to an empty dict.
+</ParamField>
+
+---
+
+## Room
+
+A stub representing the LiveKit room abstraction. On SignalWire, rooms are
+managed by the control plane and this object is a placeholder for API
+compatibility.
+
+### Properties
+
+<ParamField path="name" type="string" default='"livewire-room"' toc={true}>
+  The room name. Always `"livewire-room"` in the current implementation.
+</ParamField>
+
+#### Example
+
+```csharp
+using SignalWire;
+    Agent,
+    AgentSession,
+    AgentServer,
+    JobContext,
+    JobProcess,
+    run_app,
+)
+
+var server = new AgentServer();
+
+FunctionResult setup(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    // Pre-warm: load config, connect to databases, etc.
+    proc.userdata["greeting"] = "Welcome to Acme Corp!";
+
+server.setup_fnc = setup;
+
+async Task Entrypoint(JobContext ctx)
+{
+    await ctx.connect();
+    await ctx.wait_for_participant();
+
+    greeting = ctx.proc.userdata["greeting"] ?? "Hello!";
+
+    var agent = new Agent(instructions: "You are a helpful assistant.");
+    var session = new AgentSession();
+    await session.start(agent, room=ctx.room);
+    session.say(greeting);
+
+server.Run();
+
+
+```

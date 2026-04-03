@@ -1,0 +1,154 @@
+---
+title: "pay"
+slug: /reference/dotnet/relay/call/pay
+description: "Collect payment information on a call."
+max-toc-depth: 3
+---
+
+[payaction]: /docs/sdks/reference/dotnet/relay/actions
+[calling-call-pay]: /docs/sdks/reference/dotnet/relay/call#events
+[call-events]: /docs/sdks/reference/dotnet/relay/call#events
+
+Start a payment collection session on the call. Collects credit card or other
+payment information from the caller via DTMF. Returns a
+[`PayAction`][payaction] that you can use to stop
+the payment flow or wait for it to complete.
+
+<Info>
+This method emits [`calling.call.pay`][calling-call-pay] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="payment_connector_url" type="string" required={true} toc={true}>
+  URL of the payment connector service that processes the payment.
+</ParamField>
+
+<ParamField path="control_id" type="string?" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="input_method" type="string?" toc={true}>
+  How the caller provides payment info.
+
+  - `"dtmf"` -- caller enters digits on the keypad
+  - `"speech"` -- caller speaks the payment information
+</ParamField>
+
+<ParamField path="status_url" type="string?" toc={true}>
+  URL to receive payment status webhooks.
+</ParamField>
+
+<ParamField path="payment_method" type="string?" toc={true}>
+  Payment method type. Valid values: `"credit-card"`.
+</ParamField>
+
+<ParamField path="timeout" type="string?" toc={true}>
+  Timeout for the payment session.
+</ParamField>
+
+<ParamField path="max_attempts" type="string?" toc={true}>
+  Maximum number of input attempts before failing.
+</ParamField>
+
+<ParamField path="security_code" type="string?" toc={true}>
+  Whether to collect CVV.
+
+  - `"true"` -- prompt the caller for the security code
+  - `"false"` -- skip security code collection
+</ParamField>
+
+<ParamField path="postal_code" type="string?" toc={true}>
+  Whether to collect postal code.
+
+  - `"true"` -- prompt the caller for the postal code
+  - `"false"` -- skip postal code collection
+</ParamField>
+
+<ParamField path="min_postal_code_length" type="string?" toc={true}>
+  Minimum length for the postal code.
+</ParamField>
+
+<ParamField path="token_type" type="string?" toc={true}>
+  Tokenization type for the payment data.
+</ParamField>
+
+<ParamField path="charge_amount" type="string?" toc={true}>
+  Amount to charge (e.g., `"29.99"`).
+</ParamField>
+
+<ParamField path="currency" type="string?" toc={true}>
+  Currency code (e.g., `"USD"`, `"EUR"`).
+</ParamField>
+
+<ParamField path="language" type="string?" toc={true}>
+  Language for payment prompts (e.g., `"en"`).
+</ParamField>
+
+<ParamField path="voice" type="string?" toc={true}>
+  Voice for TTS prompts during the payment flow.
+</ParamField>
+
+<ParamField path="description" type="string?" toc={true}>
+  Description of the payment/charge.
+</ParamField>
+
+<ParamField path="valid_card_types" type="string?" toc={true}>
+  Comma-separated list of accepted card types (e.g., `"visa,mastercard,amex"`).
+</ParamField>
+
+<ParamField path="parameters" type="List<dict>?" toc={true}>
+  Additional parameters to pass to the payment connector.
+</ParamField>
+
+<ParamField path="prompts" type="List<dict>?" toc={true}>
+  Custom prompts for the payment flow.
+</ParamField>
+
+<ParamField path="on_completed" type="Func<RelayEvent, object>?" toc={true}>
+  Callback invoked when the payment operation completes.
+</ParamField>
+
+## **Returns**
+
+[`PayAction`][payaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```csharp
+using SignalWire.Relay;
+
+var client = new RelayClient(;
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],;
+)
+
+async Task HandleCall(call)
+{
+    await call.answer();
+    await call.play([{"type": "tts", "text": "We will now collect your payment."}]);
+
+    var action = await call.pay(;
+        payment_connector_url: "https://example.com/payment-connector",
+        charge_amount: "29.99",
+        currency: "USD",
+        security_code: "true",
+        postal_code: "true",
+    )
+    var event = await action.wait();
+
+    state = event.params["state"] ?? "";
+    if state == "finished":
+        await call.play([{"type": "tts", "text": "Payment processed successfully."}]);
+    else:
+        await call.play([{"type": "tts", "text": "Payment failed. Please try again later."}]);
+
+    await call.hangup();
+
+await client.RunAsync();
+
+
+```

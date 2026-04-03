@@ -1,0 +1,115 @@
+---
+title: "DefineTool"
+slug: /reference/dotnet/agents/agent-base/define-tool
+description: Programmatically define a SWAIG tool that the AI can invoke during conversations.
+max-toc-depth: 3
+---
+
+[tool-decorator]: /docs/sdks/reference/dotnet/agents/agent-base#tool
+[swaig-function]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[functionresult]: /docs/sdks/reference/dotnet/agents/function-result
+[ref-agentbase]: /docs/sdks/reference/dotnet/agents/agent-base
+
+Programmatically define a SWAIG function (tool) that the AI can invoke during a
+conversation. This is the imperative alternative to the
+[`@tool` decorator][tool-decorator].
+
+<Info>
+Tool definitions map to SWML [SWAIG function][swaig-function]
+entries. See the [SWML SWAIG functions reference][swml-swaig-functions-reference]
+for the full specification.
+</Info>
+
+<Tip>
+For most cases, the [`@tool` decorator][tool-decorator]
+is simpler and supports automatic parameter inference from type annotations. Use
+`DefineTool()` when you need dynamic tool registration or when the tool definition
+comes from external configuration.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Function name. Must be unique within the agent. The AI uses this name to invoke the
+  function.
+</ParamField>
+
+<ParamField path="description" type="string" required={true} toc={true}>
+  Human-readable description of what the function does. The AI reads this to decide
+  when to call the function.
+</ParamField>
+
+<ParamField path="parameters" type="Dictionary<string, object>" required={true} toc={true}>
+  JSON Schema describing the function's parameters. The AI generates arguments
+  conforming to this schema.
+</ParamField>
+
+<ParamField path="handler" type="Delegate" required={true} toc={true}>
+  C# method to call when the AI invokes this tool. Receives `(args: dict, raw_data: dict)`
+  and should return a [`FunctionResult`][functionresult].
+</ParamField>
+
+<ParamField path="secure" type="bool" default="true" toc={true}>
+  Whether to require token validation on tool calls. Recommended for production.
+</ParamField>
+
+<ParamField path="fillers" type="Dictionary<string, List<string>>?" toc={true}>
+  Language-specific filler phrases spoken while the function executes.
+  Format: `{"en-US": ["Looking that up...", "One moment..."]}`.
+</ParamField>
+
+<ParamField path="webhook_url" type="string?" toc={true}>
+  External URL to forward the tool call to instead of executing locally.
+</ParamField>
+
+<ParamField path="required" type="List<string>?" toc={true}>
+  List of required parameter names from the JSON Schema.
+</ParamField>
+
+<ParamField path="is_typed_handler" type="bool" default="false" toc={true}>
+  Set to `true` if the handler uses type-hinted parameters instead of the standard
+  `(args, raw_data)` signature.
+</ParamField>
+
+<ParamField path="**swaig_fields" type="object" toc={true}>
+  Additional SWAIG fields to include in the function definition
+  (e.g., `wait_file`, `meta_data`).
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## **Example**
+
+```csharp {11}
+using SignalWire.Agent;
+using SignalWire.SWAIG;
+
+var agent = new AgentBase(name: "weather-agent", route: "/weather");
+agent.SetPromptText("You are a helpful assistant.")
+
+FunctionResult GetWeather(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    city = args["city"] ?? "unknown";
+    return new FunctionResult($"The weather in {city} is 72F and sunny.");
+
+agent.DefineTool(
+    name: "get_weather",
+    description: "Get the current weather for a city",
+    parameters={
+        "type": "object",
+        "properties": {
+            "city": {
+                "type": "string",
+                "description": "City name"
+            }
+        }
+    },
+    handler: get_weather,
+    required: ["city"],;
+    fillers: {"en-US": ["Checking the weather...", "Let me look that up..."]}
+)
+agent.Serve();
+
+```

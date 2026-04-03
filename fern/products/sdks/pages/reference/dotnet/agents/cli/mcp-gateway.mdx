@@ -1,0 +1,214 @@
+---
+title: "mcp-gateway"
+slug: /reference/dotnet/agents/cli/mcp-gateway
+description: "HTTP bridge between MCP servers and SignalWire SWAIG functions."
+max-toc-depth: 3
+---
+
+[configloader]: /docs/sdks/reference/dotnet/agents/configuration/config-loader
+[securityconfig]: /docs/sdks/reference/dotnet/agents/configuration/security-config
+
+The `mcp-gateway` command starts an HTTP/HTTPS server that bridges
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers with
+SignalWire SWAIG functions. It manages sessions, handles authentication, translates
+between MCP tool calls and SWAIG format, and provides rate limiting and security headers.
+
+```bash
+mcp-gateway [-c CONFIG_PATH]
+```
+
+<ParamField path="-c, --config" type="string" default="config.json" toc={true}>
+  Path to the JSON configuration file.
+</ParamField>
+
+## Configuration
+
+The gateway is configured via a JSON file. All settings support environment variable
+substitution using `${VAR_NAME|default}` syntax via
+[`ConfigLoader`][configloader].
+
+### Minimal Configuration
+
+```json
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "auth_user": "admin",
+    "auth_password": "${MCP_AUTH_PASSWORD|changeme}"
+  },
+  "services": {
+    "my-service": {
+      "command": ["python3", "./my_mcp_server.py"],
+      "description": "My MCP service",
+      "enabled": true
+    }
+  }
+}
+```
+
+### Full Configuration Reference
+
+```json
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "auth_user": "admin",
+    "auth_password": "${MCP_AUTH_PASSWORD}",
+    "auth_token": "${MCP_BEARER_TOKEN}"
+  },
+  "services": {
+    "service-name": {
+      "command": ["python3", "./server.py"],
+      "description": "Service description",
+      "enabled": true,
+      "sandbox_config": {
+        "enabled": true,
+        "resource_limits": true,
+        "restricted_env": true
+      }
+    }
+  },
+  "session": {
+    "default_timeout": 300,
+    "max_sessions_per_service": 100,
+    "cleanup_interval": 60
+  },
+  "rate_limiting": {
+    "default_limits": ["200 per day", "50 per hour"],
+    "tools_limit": "30 per minute",
+    "call_limit": "10 per minute",
+    "session_delete_limit": "20 per minute",
+    "storage_uri": "memory://"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "/var/log/mcp-gateway.log"
+  }
+}
+```
+
+## Configuration Sections
+
+### server
+
+<ParamField path="server.host" type="string" default="0.0.0.0" toc={true}>
+  Bind address for the gateway server.
+</ParamField>
+
+<ParamField path="server.port" type="int" default="8080" toc={true}>
+  Port for the gateway server.
+</ParamField>
+
+<ParamField path="server.auth_user" type="string" toc={true}>
+  Username for HTTP Basic Authentication on all protected endpoints.
+</ParamField>
+
+<ParamField path="server.auth_password" type="string" toc={true}>
+  Password for HTTP Basic Authentication.
+</ParamField>
+
+<ParamField path="server.auth_token" type="string" toc={true}>
+  Bearer token for token-based authentication. If set, clients can authenticate
+  with `Authorization: Bearer <token>` as an alternative to Basic Auth.
+</ParamField>
+
+### services
+
+Each key in the `services` object defines an MCP server that the gateway can spawn and manage.
+
+<ParamField path="services.<name>.command" type="list[str]" required={true} toc={true}>
+  The command and arguments to start the MCP server process.
+</ParamField>
+
+<ParamField path="services.<name>.description" type="string" toc={true}>
+  Human-readable description of the service.
+</ParamField>
+
+<ParamField path="services.<name>.enabled" type="bool" default="true" toc={true}>
+  Whether the service is active. Disabled services are not started or listed.
+</ParamField>
+
+<ParamField path="services.<name>.sandbox_config" type="object" toc={true}>
+  Sandbox configuration for process isolation. Controls resource limits and
+  environment restrictions for the spawned MCP process.
+</ParamField>
+
+### session
+
+<ParamField path="session.default_timeout" type="int" default="300" toc={true}>
+  Default session timeout in seconds. Sessions are cleaned up after this duration
+  of inactivity.
+</ParamField>
+
+<ParamField path="session.max_sessions_per_service" type="int" default="100" toc={true}>
+  Maximum concurrent sessions per MCP service.
+</ParamField>
+
+<ParamField path="session.cleanup_interval" type="int" default="60" toc={true}>
+  Interval in seconds between session cleanup sweeps.
+</ParamField>
+
+### rate_limiting
+
+<ParamField path="rate_limiting.default_limits" type="List<string>" default='["200 per day", "50 per hour"]' toc={true}>
+  Default rate limits applied to all endpoints.
+</ParamField>
+
+<ParamField path="rate_limiting.tools_limit" type="string" default="30 per minute" toc={true}>
+  Rate limit for the tool listing endpoint.
+</ParamField>
+
+<ParamField path="rate_limiting.call_limit" type="string" default="10 per minute" toc={true}>
+  Rate limit for tool call endpoints.
+</ParamField>
+
+<ParamField path="rate_limiting.storage_uri" type="string" default="memory://" toc={true}>
+  Storage backend for rate limit counters. Use `memory://` for in-process
+  storage or a Redis URI for distributed deployments.
+</ParamField>
+
+## API Endpoints
+
+The gateway exposes the following HTTP endpoints:
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/health` | GET | No | Health check with status and timestamp |
+| `/services` | GET | Yes | List available MCP services |
+| `/services/<name>/tools` | GET | Yes | List tools for a specific service |
+| `/services/<name>/call` | POST | Yes | Call a tool on a service |
+| `/sessions` | GET | Yes | List active sessions |
+| `/sessions/<id>` | DELETE | Yes | Terminate a specific session |
+
+### Calling a Tool
+
+```bash
+curl -X POST "http://localhost:8080/services/my-service/call" \
+  -u admin:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool": "my_tool",
+    "session_id": "call-123",
+    "arguments": {"param": "value"},
+    "timeout": 300
+  }'
+```
+
+## SSL Support
+
+If a certificate file exists at `certs/server.pem`, the gateway automatically
+enables HTTPS. The gateway also uses
+[`SecurityConfig`][securityconfig]
+for security headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).
+
+## Example
+
+```bash
+# Start with default config.json
+mcp-gateway
+
+# Start with custom config path
+mcp-gateway -c /etc/mcp-gateway/config.json
+```

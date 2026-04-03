@@ -1,0 +1,52 @@
+---
+title: "SetDynamicConfigCallback"
+slug: /reference/dotnet/agents/agent-base/set-dynamic-config-callback
+description: Set a callback for per-request dynamic agent configuration.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/sdks/reference/dotnet/agents/agent-base
+
+Set a callback function that runs on every incoming request, receiving the actual agent
+instance so you can dynamically configure **any** aspect of it -- skills, prompts,
+parameters, languages, tools, global data, etc. -- based on the request's query
+parameters, body, or headers.
+
+This is the primary mechanism for multi-tenant or per-caller customization.
+
+## **Parameters**
+
+<ParamField path="callback" type="Func<dict, dict, dict, AgentBase, void>" required={true} toc={true}>
+  A function with the signature `(query_params, body_params, headers, agent)`.
+  Use the `agent` argument to call any configuration method:
+  - `agent.add_skill(...)`
+  - `agent.add_language(...)`
+  - `agent.prompt_add_section(...)`
+  - `agent.set_params(...)`
+  - `agent.set_global_data(...)`
+  - `agent.define_tool(...)`
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## **Example**
+
+```csharp {13}
+using SignalWire.Agent;
+
+var agent = new AgentBase(name: "assistant", route: "/assistant");
+agent.SetPromptText("You are a helpful assistant.")
+
+FunctionResult ConfigurePerRequest(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    tier = query_params["tier"] ?? "standard";
+    if tier == "premium":
+        agent.AddSkill("web_search")
+        agent.SetParams({"end_of_speech_timeout": 500})
+    agent.SetGlobalData({"tier": tier})
+
+agent.SetDynamicConfigCallback(configure_per_request)
+agent.Serve();
+
+```

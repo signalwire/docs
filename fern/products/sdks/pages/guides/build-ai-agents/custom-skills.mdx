@@ -1,0 +1,661 @@
+---
+title: "Custom Skills"
+description: Create your own skills by inheriting from SkillBase for reuse across agents and sharing with others.
+slug: /guides/custom
+max-toc-depth: 3
+---
+
+[ref-skillbase]: /docs/sdks/reference/python/agents/skill-base
+
+Creating custom skills is worthwhile when you have functionality you want to reuse across multiple agents or share with your team. A skill packages a capability -- functions, prompts, hints, and configuration -- into a single reusable unit.
+
+### When to Create a Custom Skill
+
+**Create a skill when:**
+
+- You'll use the same functionality in multiple agents
+- You want to share a capability with your team
+- The functionality is complex enough to benefit from encapsulation
+- You want version-controlled, tested components
+
+**Just use define_tool() when:**
+
+- The function is specific to one agent
+- You need quick iteration during development
+- The logic is simple and unlikely to be reused
+
+### Skill Structure
+
+Create a directory with these files:
+
+```text
+my_custom_skill/
+     __init__.py          # Empty or exports skill class
+     skill.py             # Skill implementation
+     requirements.txt     # Optional dependencies
+```
+
+**What each file does:**
+
+| File | Purpose |
+|------|---------|
+| `__init__.py` | Makes the directory a Python package. Can be empty or export the skill class |
+| `skill.py` | Contains the skill class that inherits from [SkillBase][ref-skillbase] |
+| `requirements.txt` | Lists Python packages the skill needs (pip format) |
+
+### Basic Custom Skill
+
+
+```python
+## my_custom_skill/skill.py
+
+from typing import List, Dict, Any
+from signalwire_agents.skills import SkillBase
+from signalwire_agents.core.function_result import SwaigFunctionResult
+
+class GreetingSkill(SkillBase):
+    """A skill that provides personalized greetings"""
+
+    # Required class attributes
+    SKILL_NAME = "greeting"
+    SKILL_DESCRIPTION = "Provides personalized greetings"
+    SKILL_VERSION = "1.0.0"
+
+    # Optional requirements
+    REQUIRED_PACKAGES = []
+    REQUIRED_ENV_VARS = []
+
+    def setup(self) -> bool:
+        """Initialize the skill. Return True if successful."""
+        # Get configuration parameter with default
+        self.greeting_style = self.params.get("style", "friendly")
+        return True
+
+    def register_tools(self) -> None:
+        """Register SWAIG tools with the agent."""
+        self.define_tool(
+            name="greet_user",
+            description="Generate a personalized greeting",
+            parameters={
+                "name": {
+                    "type": "string",
+                    "description": "Name of the person to greet"
+                }
+            },
+            handler=self.greet_handler
+        )
+
+    def greet_handler(self, args, raw_data):
+        """Handle greeting requests."""
+        name = args.get("name", "friend")
+
+        if self.greeting_style == "formal":
+            greeting = f"Good day, {name}. How may I assist you?"
+        else:
+            greeting = f"Hey {name}! Great to hear from you!"
+
+        return SwaigFunctionResult(greeting)
+```
+
+{/*
+<Tab title="TypeScript">
+```typescript
+import { SkillBase, SwaigFunctionResult, AgentBase } from 'signalwire-agents';
+
+class GreetingSkill extends SkillBase {
+  static SKILL_NAME = 'greeting';
+  static SKILL_DESCRIPTION = 'Provides personalized greetings';
+  static SKILL_VERSION = '1.0.0';
+
+  private greetingStyle: string = 'friendly';
+
+  setup(agent: AgentBase): boolean {
+    this.greetingStyle = this.params.style || 'friendly';
+    return true;
+  }
+
+  registerTools(): void {
+    this.defineTool({
+      name: 'greet_user',
+      description: 'Generate a personalized greeting',
+      parameters: {
+        name: { type: 'string', description: 'Name of the person to greet' },
+      },
+      handler: this.greetHandler.bind(this),
+    });
+  }
+
+  greetHandler(args: Record<string, any>, rawData: any): SwaigFunctionResult {
+    const name = args.name || 'friend';
+    const greeting = this.greetingStyle === 'formal'
+        ? `Good day, ${name}. How may I assist you?`
+        : `Hey ${name}! Great to hear from you!`;
+    return new SwaigFunctionResult(greeting);
+  }
+}
+```
+</Tab>
+<Tab title="Go">
+```go
+package greeting
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-agents-go/pkg/agent"
+    "github.com/signalwire/signalwire-agents-go/pkg/skills"
+)
+
+type GreetingSkill struct {
+    skills.SkillBase
+    greetingStyle string
+}
+
+func (s *GreetingSkill) Name() string        { return "greeting" }
+func (s *GreetingSkill) Description() string  { return "Provides personalized greetings" }
+func (s *GreetingSkill) Version() string      { return "1.0.0" }
+
+func (s *GreetingSkill) Setup(a *agent.AgentBase) bool {
+    s.greetingStyle = s.ParamString("style", "friendly")
+    return true
+}
+
+func (s *GreetingSkill) RegisterTools() {
+    s.DefineTool(skills.ToolDef{
+        Name:        "greet_user",
+        Description: "Generate a personalized greeting",
+        Parameters: map[string]any{
+            "name": map[string]any{"type": "string", "description": "Name of the person to greet"},
+        },
+        Handler: s.greetHandler,
+    })
+}
+
+func (s *GreetingSkill) greetHandler(args map[string]any, rawData map[string]any) *agent.SwaigFunctionResult {
+    name, _ := args["name"].(string)
+    if name == "" { name = "friend" }
+    var greeting string
+    if s.greetingStyle == "formal" {
+        greeting = fmt.Sprintf("Good day, %s. How may I assist you?", name)
+    } else {
+        greeting = fmt.Sprintf("Hey %s! Great to hear from you!", name)
+    }
+    return agent.NewSwaigFunctionResult(greeting)
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire_agents'
+
+class GreetingSkill < SignalWireAgents::SkillBase
+  SKILL_NAME = 'greeting'
+  SKILL_DESCRIPTION = 'Provides personalized greetings'
+  SKILL_VERSION = '1.0.0'
+
+  def setup(agent)
+    @greeting_style = params.fetch('style', 'friendly')
+    true
+  end
+
+  def register_tools
+    define_tool(
+      name: 'greet_user',
+      description: 'Generate a personalized greeting',
+      parameters: { name: { type: 'string', description: 'Name of the person to greet' } },
+      handler: method(:greet_handler)
+    )
+  end
+
+  def greet_handler(args, raw_data)
+    name = args.fetch('name', 'friend')
+    greeting = @greeting_style == 'formal' ?
+      "Good day, #{name}. How may I assist you?" :
+      "Hey #{name}! Great to hear from you!"
+    SwaigFunctionResult.new(greeting)
+  end
+end
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.skills.SkillBase;
+import com.signalwire.agents.AgentBase;
+import com.signalwire.agents.SwaigFunctionResult;
+import java.util.Map;
+
+public class GreetingSkill extends SkillBase {
+    private String greetingStyle = "friendly";
+
+    @Override
+    public boolean setup(AgentBase agent) {
+        greetingStyle = getParam("style", "friendly");
+        return true;
+    }
+
+    @Override
+    public void registerTools() {
+        defineTool("greet_user", "Generate a personalized greeting",
+            Map.of("name", Map.of("type", "string", "description", "Name of the person to greet")),
+            this::greetHandler);
+    }
+
+    private SwaigFunctionResult greetHandler(Map<String, Object> args, Map<String, Object> rawData) {
+        String name = (String) args.getOrDefault("name", "friend");
+        String greeting = greetingStyle.equals("formal")
+            ? "Good day, " + name + ". How may I assist you?"
+            : "Hey " + name + "! Great to hear from you!";
+        return new SwaigFunctionResult(greeting);
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+package GreetingSkill;
+use parent 'SignalWire::Agents::SkillBase';
+
+sub setup {
+    my ($self, $agent) = @_;
+    $self->{greeting_style} = $self->param('style') // 'friendly';
+    return 1;
+}
+
+sub register_tools {
+    my ($self) = @_;
+    $self->define_tool(
+        name => 'greet_user', description => 'Generate a personalized greeting',
+        parameters => { name => { type => 'string', description => 'Name of the person to greet' } },
+        handler => sub { $self->greet_handler(@_) },
+    );
+}
+
+sub greet_handler {
+    my ($self, $args, $raw_data) = @_;
+    my $name = $args->{name} // 'friend';
+    my $greeting = $self->{greeting_style} eq 'formal'
+        ? "Good day, $name. How may I assist you?"
+        : "Hey $name! Great to hear from you!";
+    return SignalWire::Agents::SwaigFunctionResult->new($greeting);
+}
+1;
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agents/skills/skill_base.h>
+#include <signalwire/agents/swaig_function_result.h>
+
+class GreetingSkill : public signalwire::agents::skills::SkillBase {
+public:
+    bool setup(signalwire::agents::AgentBase& agent) override {
+        greeting_style_ = param_string("style", "friendly");
+        return true;
+    }
+    void register_tools() override {
+        define_tool({ .name = "greet_user", .description = "Generate a personalized greeting",
+            .parameters = {{"name", {{"type", "string"}, {"description", "Name of the person to greet"}}}},
+            .handler = [this](auto& args, auto& raw) { return greet_handler(args, raw); } });
+    }
+private:
+    std::string greeting_style_ = "friendly";
+    signalwire::agents::SwaigFunctionResult greet_handler(const nlohmann::json& args, const nlohmann::json& raw) {
+        std::string name = args.value("name", "friend");
+        std::string greeting = (greeting_style_ == "formal")
+            ? "Good day, " + name + ". How may I assist you?"
+            : "Hey " + name + "! Great to hear from you!";
+        return signalwire::agents::SwaigFunctionResult(greeting);
+    }
+};
+```
+</Tab>
+<Tab title="PHP">
+```php
+use SignalWire\Skills\SkillBase;
+use SignalWire\Agent\SwaigFunctionResult;
+
+class GreetingSkill extends SkillBase {
+    private string $greetingStyle = 'friendly';
+
+    public function setup($agent): bool {
+        $this->greetingStyle = $this->params['style'] ?? 'friendly';
+        return true;
+    }
+    public function registerTools(): void {
+        $this->defineTool(name: 'greet_user', description: 'Generate a personalized greeting',
+            parameters: ['name' => ['type' => 'string', 'description' => 'Name of the person to greet']],
+            handler: fn($args, $raw) => $this->greetHandler($args, $raw));
+    }
+    private function greetHandler(array $args, array $rawData): SwaigFunctionResult {
+        $name = $args['name'] ?? 'friend';
+        $greeting = $this->greetingStyle === 'formal'
+            ? "Good day, {$name}. How may I assist you?"
+            : "Hey {$name}! Great to hear from you!";
+        return new SwaigFunctionResult($greeting);
+    }
+}
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Skills;
+using SignalWire.SWAIG;
+
+class GreetingSkill : SkillBase {
+    private string greetingStyle = "friendly";
+    public override bool Setup(AgentBase agent) {
+        greetingStyle = Params.GetValueOrDefault("style", "friendly")?.ToString() ?? "friendly";
+        return true;
+    }
+    public override void RegisterTools() {
+        DefineTool(name: "greet_user", description: "Generate a personalized greeting",
+            parameters: new Dictionary<string, object> {
+                ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "Name of the person to greet" }
+            }, handler: GreetHandler);
+    }
+    private FunctionResult GreetHandler(Dictionary<string, object> args, Dictionary<string, object> rawData) {
+        var name = args.GetValueOrDefault("name", "friend")?.ToString() ?? "friend";
+        var greeting = greetingStyle == "formal" ? $"Good day, {name}. How may I assist you?" : $"Hey {name}! Great to hear from you!";
+        return new FunctionResult(greeting);
+    }
+}
+```
+</Tab>
+*/}
+
+### Required Class Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `SKILL_NAME` | `str` | Unique identifier for the skill |
+| `SKILL_DESCRIPTION` | `str` | Human-readable description |
+| `SKILL_VERSION` | `str` | Semantic version (default: "1.0.0") |
+
+**Optional Attributes:**
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `REQUIRED_PACKAGES` | `List[str]` | Python packages needed |
+| `REQUIRED_ENV_VARS` | `List[str]` | Environment variables needed |
+| `SUPPORTS_MULTIPLE` | `bool` | Allow multiple instances |
+
+### Required Methods
+
+#### setup()
+
+Initialize the skill and validate requirements:
+
+```python
+def setup(self) -> bool:
+    if not self.validate_packages():
+        return False
+    if not self.validate_env_vars():
+        return False
+    self.api_url = self.params.get("api_url", "https://api.example.com")
+    self.timeout = self.params.get("timeout", 30)
+    return True
+```
+
+#### register_tools()
+
+Register SWAIG functions:
+
+```python
+def register_tools(self) -> None:
+    self.define_tool(
+        name="my_function",
+        description="Does something useful",
+        parameters={
+            "param1": {"type": "string", "description": "First parameter"},
+            "param2": {"type": "integer", "description": "Second parameter"}
+        },
+        handler=self.my_handler
+    )
+```
+
+### Optional Methods
+
+#### get_hints()
+
+```python
+def get_hints(self) -> List[str]:
+    return ["greeting", "hello", "hi", "welcome"]
+```
+
+#### get_prompt_sections()
+
+```python
+def get_prompt_sections(self) -> List[Dict[str, Any]]:
+    return [{
+        "title": "Greeting Capability",
+        "body": "You can greet users by name.",
+        "bullets": ["Use greet_user when someone introduces themselves",
+                    "Match the greeting style to the conversation tone"]
+    }]
+```
+
+#### get_global_data()
+
+```python
+def get_global_data(self) -> Dict[str, Any]:
+    return {"greeting_skill_enabled": True, "greeting_style": self.greeting_style}
+```
+
+#### cleanup()
+
+```python
+def cleanup(self) -> None:
+    if hasattr(self, "connection"):
+        self.connection.close()
+```
+
+### Suppressing Prompt Injection
+
+By default, skills inject POM sections into the agent's prompt via `get_prompt_sections()`. To suppress this behavior, set `skip_prompt` in the skill parameters:
+
+```python
+agent.add_skill("my_skill", {"skip_prompt": True, "api_key": "..."})
+```
+
+When building custom skills, override `_get_prompt_sections()` instead of `get_prompt_sections()`:
+
+```python
+class MySkill(SkillBase):
+    def _get_prompt_sections(self) -> List[Dict[str, Any]]:
+        return [{"title": "My Skill", "body": "Usage instructions..."}]
+```
+
+### Namespaced Global Data Helpers
+
+When building skills that store state in `global_data`, use the namespaced helper methods to avoid collisions between skill instances:
+
+```python
+class StatefulSkill(SkillBase):
+    SKILL_NAME = "stateful_skill"
+    SUPPORTS_MULTIPLE_INSTANCES = True
+
+    def my_handler(self, args, raw_data):
+        state = self.get_skill_data(raw_data)
+        count = state.get("call_count", 0)
+        result = SwaigFunctionResult(f"Call #{count + 1}")
+        self.update_skill_data(result, {"call_count": count + 1})
+        return result
+```
+
+**Available methods:**
+
+| Method | Description |
+|--------|-------------|
+| `get_skill_data(raw_data)` | Read this skill's namespaced state from `raw_data["global_data"]` |
+| `update_skill_data(result, data)` | Write state under the skill's namespace via `result.update_global_data()` |
+| `_get_skill_namespace()` | Get the namespace key (e.g., `"skill:my_prefix"` or `"skill:instance_key"`) |
+
+### Parameter Schema
+
+Define parameters your skill accepts:
+
+```python
+@classmethod
+def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
+    schema = super().get_parameter_schema()
+    schema.update({
+        "style": {"type": "string", "description": "Greeting style", "default": "friendly",
+                  "enum": ["friendly", "formal", "casual"], "required": False},
+        "api_key": {"type": "string", "description": "API key for external service",
+                   "required": True, "hidden": True, "env_var": "MY_SKILL_API_KEY"}
+    })
+    return schema
+```
+
+### Multi-Instance Skills
+
+Support multiple instances with different configurations:
+
+```python
+class MultiInstanceSkill(SkillBase):
+    SKILL_NAME = "multi_search"
+    SUPPORTS_MULTIPLE_INSTANCES = True
+
+    def get_instance_key(self) -> str:
+        tool_name = self.params.get("tool_name", self.SKILL_NAME)
+        return f"{self.SKILL_NAME}_{tool_name}"
+
+    def setup(self) -> bool:
+        self.tool_name = self.params.get("tool_name", "search")
+        return True
+
+    def register_tools(self) -> None:
+        self.define_tool(
+            name=self.tool_name,
+            description="Search function",
+            parameters={"query": {"type": "string", "description": "Search query"}},
+            handler=self.search_handler
+        )
+```
+
+### Using Custom Skills
+
+Register the skill directory and use the custom skill in your agent:
+
+| Language | Register & use custom skill |
+|----------|----------------------------|
+| Python | `skill_registry.add_skill_directory("/path/to/skills")` then `agent.add_skill("product_search", {...})` |
+{/*
+| TypeScript | `skillRegistry.addSkillDirectory('/path/to/skills')` then `agent.addSkill('product_search', {...})` |
+| Go | `skills.AddSkillDirectory("/path/to/skills")` then `a.AddSkill("product_search", map[string]any{...})` |
+| Ruby | `SkillRegistry.add_skill_directory('/path/to/skills')` then `agent.add_skill('product_search', ...)` |
+| Java | `SkillRegistry.addSkillDirectory("/path/to/skills")` then `agent.addSkill("product_search", Map.of(...))` |
+| Perl | `$registry->add_skill_directory('/path/to/skills')` then `$agent->add_skill('product_search', {...})` |
+| C++ | `skill_registry.add_skill_directory("/path/to/skills")` then `agent.add_skill("product_search", {...})` |
+| PHP | `SkillRegistry::addSkillDirectory('/path/to/skills')` then `$agent->addSkill('product_search', [...])` |
+| C# | `SkillRegistry.AddSkillDirectory("/path/to/skills")` then `agent.AddSkill("product_search", ...)` |
+*/}
+
+```python
+from signalwire_agents.skills.registry import skill_registry
+
+## Add your skills directory
+skill_registry.add_skill_directory("/path/to/my_skills")
+
+## Now use in agent
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.add_skill("product_search", {
+            "api_url": "https://api.mystore.com",
+            "api_key": "secret"
+        })
+```
+
+### Testing Custom Skills
+
+**1. Test the skill class directly:**
+```python
+from my_skills.product_search.skill import ProductSearchSkill
+
+class MockAgent:
+    def define_tool(self, **kwargs):
+        print(f"Registered tool: {kwargs['name']}")
+
+skill = ProductSearchSkill(MockAgent())
+skill.params = {"api_url": "http://test", "api_key": "test"}
+assert skill.setup() == True
+skill.register_tools()
+```
+
+**2. Test with a real agent using swaig-test:**
+```bash
+swaig-test test_agent.py --dump-swml
+swaig-test test_agent.py --exec search_products --query "test"
+```
+
+**3. Validate skill structure:**
+```python
+from signalwire_agents.skills.registry import skill_registry
+skill_registry.add_skill_directory("/path/to/my_skills")
+available = skill_registry.list_available_skills()
+print(f"Available skills: {available}")
+```
+
+### Publishing and Sharing Skills
+
+**Option 1: Git Repository**
+
+```text
+my_company_skills/
+    README.md
+    product_search/
+        __init__.py
+        skill.py
+    crm_integration/
+        __init__.py
+        skill.py
+        requirements.txt
+```
+
+Users clone and register:
+```python
+skill_registry.add_skill_directory("/path/to/my_company_skills")
+```
+
+**Option 2: Python Package**
+
+```python
+setup(
+    name="my_company_skills",
+    entry_points={
+        "signalwire_agents.skills": [
+            "product_search = my_company_skills.product_search.skill:ProductSearchSkill",
+            "crm_integration = my_company_skills.crm_integration.skill:CRMSkill",
+        ]
+    }
+)
+```
+
+**Option 3: Environment Variable**
+
+```bash
+export SIGNALWIRE_SKILL_PATHS="/opt/company_skills:/home/user/my_skills"
+```
+
+### Skill Development Best Practices
+
+**DO:**
+
+- Use descriptive SKILL_NAME and SKILL_DESCRIPTION
+- Validate all parameters in setup()
+- Return user-friendly error messages
+- Log technical errors for debugging
+- Include speech hints for better recognition
+- Write clear prompt sections explaining usage
+- Handle network/API failures gracefully
+- Version your skills meaningfully
+
+**DON'T:**
+
+- Hard-code configuration values
+- Expose internal errors to users
+- Skip parameter validation
+- Forget to handle edge cases
+- Make setup() do heavy work (defer to first use)
+- Use global state between instances

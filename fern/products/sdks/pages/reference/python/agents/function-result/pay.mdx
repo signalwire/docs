@@ -1,0 +1,133 @@
+---
+title: "pay"
+slug: /reference/python/agents/function-result/pay
+description: Collect and process a credit card payment during a call.
+max-toc-depth: 3
+---
+
+[create-payment-parameter]: /docs/sdks/reference/python/agents/function-result/create-payment-parameter
+[create-payment-prompt]: /docs/sdks/reference/python/agents/function-result/create-payment-prompt
+[functionresult]: /docs/sdks/reference/python/agents/function-result
+
+Collect and process a credit card payment during the call. Generates a SWML
+`pay` verb that walks the caller through entering card details via DTMF or
+voice, then submits to your payment connector endpoint.
+
+## **Parameters**
+
+<ParamField path="payment_connector_url" type="str" required={true} toc={true}>
+  URL of your payment processing endpoint. SignalWire sends the collected card
+  data to this URL for processing.
+</ParamField>
+
+<ParamField path="input_method" type="str" default="dtmf" toc={true}>
+  How the caller provides card details.
+
+  - `"dtmf"` -- caller enters digits on the keypad
+  - `"voice"` -- caller speaks the numbers
+</ParamField>
+
+<ParamField path="status_url" type="Optional[str]" default="None" toc={true}>
+  URL to receive payment status change webhook notifications.
+</ParamField>
+
+<ParamField path="payment_method" type="str" default="credit-card" toc={true}>
+  Payment method type. Currently only `"credit-card"` is supported.
+</ParamField>
+
+<ParamField path="timeout" type="int" default="5" toc={true}>
+  Seconds to wait for the next DTMF digit before timing out.
+</ParamField>
+
+<ParamField path="max_attempts" type="int" default="1" toc={true}>
+  Number of retry attempts if payment collection fails.
+</ParamField>
+
+<ParamField path="security_code" type="bool" default="True" toc={true}>
+  Whether to prompt the caller for the card's security code (CVV).
+</ParamField>
+
+<ParamField path="postal_code" type="bool | str" default="True" toc={true}>
+  Whether to prompt for the billing postal code. Pass `True` to prompt, `False`
+  to skip, or a string with the actual postal code to use without prompting.
+</ParamField>
+
+<ParamField path="min_postal_code_length" type="int" default="0" toc={true}>
+  Minimum number of digits required for the postal code.
+</ParamField>
+
+<ParamField path="token_type" type="str" default="reusable" toc={true}>
+  Payment token type.
+
+  - `"one-time"` -- single-use token
+  - `"reusable"` -- token can be charged again later
+</ParamField>
+
+<ParamField path="charge_amount" type="Optional[str]" default="None" toc={true}>
+  Amount to charge as a decimal string (e.g., `"49.99"`).
+</ParamField>
+
+<ParamField path="currency" type="str" default="usd" toc={true}>
+  ISO 4217 currency code (e.g., `"usd"`, `"eur"`).
+</ParamField>
+
+<ParamField path="language" type="str" default="en-US" toc={true}>
+  Language for TTS payment prompts (e.g., `"en-US"`, `"es-MX"`).
+</ParamField>
+
+<ParamField path="voice" type="str" default="woman" toc={true}>
+  TTS voice for payment prompts (e.g., `"woman"`, `"man"`).
+</ParamField>
+
+<ParamField path="description" type="Optional[str]" default="None" toc={true}>
+  Custom description for the payment transaction.
+</ParamField>
+
+<ParamField path="valid_card_types" type="str" default="visa mastercard amex" toc={true}>
+  Space-separated list of accepted card types.
+</ParamField>
+
+<ParamField path="parameters" type="Optional[list[dict[str, str]]]" default="None" toc={true}>
+  Additional name/value pairs to send to the payment connector.
+  Use [`create_payment_parameter()`][create-payment-parameter] to build entries.
+</ParamField>
+
+<ParamField path="prompts" type="Optional[list[dict[str, Any]]]" default="None" toc={true}>
+  Custom prompt configurations to override default payment prompts.
+  Use [`create_payment_prompt()`][create-payment-prompt] to build entries.
+</ParamField>
+
+<ParamField path="ai_response" type="Optional[str]" default="'The payment status is ${pay_result}...'" toc={true}>
+  AI response template after payment completes. The `${pay_result}` variable
+  is substituted with the payment outcome. Set to `None` to disable.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```python {7,12}
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
+
+agent = AgentBase(name="my-agent", route="/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+@agent.tool(name="collect_payment", description="Collect a credit card payment")
+def collect_payment(args, raw_data):
+    amount = args.get("amount")
+    return (
+        FunctionResult("I'll collect your payment information now.")
+        .pay(
+            payment_connector_url="https://api.example.com/payment",
+            charge_amount=amount,
+            currency="usd",
+            security_code=True,
+            postal_code=True
+        )
+    )
+
+agent.serve()
+```

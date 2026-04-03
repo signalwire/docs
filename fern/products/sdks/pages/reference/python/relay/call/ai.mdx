@@ -1,0 +1,149 @@
+---
+title: "ai"
+slug: /reference/python/relay/call/ai
+description: Start an AI agent session on a call.
+max-toc-depth: 3
+---
+
+[aiaction]: /docs/sdks/reference/python/relay/actions
+[agentbase]: /docs/sdks/reference/python/agents/agent-base
+[amazon-bedrock]: /docs/sdks/reference/python/relay/call/amazon-bedrock
+[ai]: /docs/swml/reference/ai
+[swml-ai-reference]: /docs/swml/reference/ai
+
+Start an AI agent session on the call. The AI agent handles the conversation
+using the provided prompt, tools, and configuration. Returns an
+[`AIAction`][aiaction] that you can use to stop
+the AI session or wait for it to complete.
+
+<Tip>
+For building AI agents with the full framework (prompts, tools, skills, contexts),
+use [`AgentBase`][agentbase]. The `ai()` method
+is for lower-level RELAY control where you configure the AI inline.
+</Tip>
+
+<Info>
+See also [`amazon_bedrock()`][amazon-bedrock] for using Amazon Bedrock as the LLM backend.
+</Info>
+
+<Info>
+This method executes the SWML [`ai`][ai] verb on the call. See the
+[SWML AI reference][swml-ai-reference] for the full specification of all supported
+parameters and behaviors.
+</Info>
+
+## **Parameters**
+
+<ParamField path="control_id" type="Optional[str]" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="agent" type="Optional[str]" toc={true}>
+  Fabric agent resource ID. When set, the AI uses a pre-configured agent
+  from SignalWire Fabric instead of inline configuration.
+</ParamField>
+
+<ParamField path="prompt" type="Optional[dict]" toc={true}>
+  The main prompt configuration.
+</ParamField>
+
+<Indent>
+<ParamField path="prompt.text" type="str" toc={true}>
+  The system prompt text that defines the AI agent's behavior.
+</ParamField>
+
+<ParamField path="prompt.temperature" type="float" toc={true}>
+  LLM temperature for the main prompt.
+</ParamField>
+
+<ParamField path="prompt.top_p" type="float" toc={true}>
+  LLM top_p sampling parameter.
+</ParamField>
+</Indent>
+
+<ParamField path="post_prompt" type="Optional[dict]" toc={true}>
+  Post-prompt configuration for summarization or analysis after the
+  conversation ends.
+</ParamField>
+
+<Indent>
+<ParamField path="post_prompt.text" type="str" toc={true}>
+  The post-prompt text.
+</ParamField>
+</Indent>
+
+<ParamField path="post_prompt_url" type="Optional[str]" toc={true}>
+  URL to receive the post-prompt result via webhook.
+</ParamField>
+
+<ParamField path="post_prompt_auth_user" type="Optional[str]" toc={true}>
+  Username for basic auth on the post-prompt webhook.
+</ParamField>
+
+<ParamField path="post_prompt_auth_password" type="Optional[str]" toc={true}>
+  Password for basic auth on the post-prompt webhook.
+</ParamField>
+
+<ParamField path="global_data" type="Optional[dict]" toc={true}>
+  Data accessible to the AI agent and SWAIG functions throughout the session.
+</ParamField>
+
+<ParamField path="pronounce" type="Optional[list[dict]]" toc={true}>
+  Pronunciation rules for words or phrases the TTS engine should handle
+  specially.
+</ParamField>
+
+<ParamField path="hints" type="Optional[list[str]]" toc={true}>
+  Speech recognition hints to improve accuracy for domain-specific terms.
+</ParamField>
+
+<ParamField path="languages" type="Optional[list[dict]]" toc={true}>
+  Language configurations for multilingual support.
+</ParamField>
+
+<ParamField path="SWAIG" type="Optional[dict]" toc={true}>
+  SWAIG (SignalWire AI Gateway) configuration for tool/function definitions.
+</ParamField>
+
+<ParamField path="ai_params" type="Optional[dict]" toc={true}>
+  Additional AI parameters such as `barge_confidence`, `end_of_speech_timeout`,
+  `attention_timeout`, and other LLM tuning settings.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable[[RelayEvent], Any]]" toc={true}>
+  Callback invoked when the AI session ends.
+</ParamField>
+
+## **Returns**
+
+[`AIAction`][aiaction] -- An action handle with `stop()` and `wait()` methods.
+
+## **Example**
+
+```python {15}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Start an AI agent on the call
+    action = await call.ai(
+        prompt={"text": "You are a helpful customer support agent for Acme Corp."},
+        hints=["Acme", "support", "billing"],
+        ai_params={"barge_confidence": 0.02},
+    )
+
+    # Wait for the AI session to end (caller hangs up or AI stops)
+    await action.wait()
+    print("AI session ended")
+
+client.run()
+```
