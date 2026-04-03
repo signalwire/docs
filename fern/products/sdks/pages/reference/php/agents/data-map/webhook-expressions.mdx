@@ -1,0 +1,57 @@
+---
+title: "webhookExpressions"
+slug: /reference/php/agents/data-map/webhook-expressions
+description: Add post-processing expressions for a webhook response.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/php/agents/data-map
+
+Add expressions that run after the most recently added webhook completes.
+Allows conditional output based on the API response.
+
+## **Parameters**
+
+<ParamField path="expressions" type="array" required={true} toc={true}>
+  List of expression definitions to evaluate against the webhook response.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- Self for method chaining. Raises `ValueError` if no webhook has been
+added yet.
+
+## **Example**
+
+```php {8}
+<?php
+use SignalWire\AgentBase;
+use SignalWire\DataMap;
+
+$status_check = (
+    new DataMap("check_status")
+    .$purpose("Check service status")
+    .$parameter("service", "string", "Service name", required: true)
+    .$webhook("GET", "https://api.example.com/status/${enc:args.service}")
+    .webhookExpressions([
+        {
+            "test": "${response.status}",
+            "pattern": "healthy",
+            "output": ["response" => "Service ${args.service] is running normally."}
+        },
+        {
+            "test": "${response.status}",
+            "pattern": "degraded|down",
+            "output": ["response" => "Service ${args.service] is experiencing issues."}
+        }
+    ])
+);
+
+$agent = new AgentBase(name: "status-agent");
+$agent->setPromptText("You are a helpful assistant.");
+$agent->registerSwaigFunction($status_check->toSwaigFunction());
+
+    $agent->run();
+
+
+```

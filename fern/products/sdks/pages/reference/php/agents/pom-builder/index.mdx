@@ -1,0 +1,141 @@
+---
+title: "PomBuilder"
+slug: /reference/php/agents/pom-builder
+description: "Build structured Prompt Object Model prompts with sections, subsections, and bullets."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/php/agents/agent-base
+[addsection]: /docs/sdks/reference/php/agents/pom-builder/add-section
+[getsection]: /docs/sdks/reference/php/agents/pom-builder/has-section
+[hassection]: /docs/sdks/reference/php/agents/pom-builder/has-section
+[render]: /docs/sdks/reference/php/agents/pom-builder/render
+[tojson]: /docs/sdks/reference/php/agents/pom-builder/to-json
+
+PomBuilder provides a fluent interface for creating structured prompts using
+the Prompt Object Model (POM). POM organizes prompt content into titled sections,
+subsections, and bullet lists -- producing consistent, well-structured prompts
+that the AI can follow reliably.
+
+Use PomBuilder when you need fine-grained control over prompt structure beyond
+what `setPromptText()` and `promptAddSection()` on
+[`AgentBase`][agentbase] provide. The builder
+can render to Markdown or XML format.
+
+<Note>
+PomBuilder requires the `signalwire-pom` package. Install it with:
+`composer require signalwire/sdk-pom`
+</Note>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="add_section" href="/docs/sdks/reference/php/agents/pom-builder/add-section">
+    Add a new top-level section to the POM.
+  </Card>
+  <Card title="get_section" href="/docs/sdks/reference/php/agents/pom-builder/has-section">
+    Get a section by title for direct manipulation.
+  </Card>
+  <Card title="has_section" href="/docs/sdks/reference/php/agents/pom-builder/has-section">
+    Check if a section with a given title exists.
+  </Card>
+  <Card title="render" href="/docs/sdks/reference/php/agents/pom-builder/render">
+    Render the POM as Markdown or XML.
+  </Card>
+  <Card title="to_json" href="/docs/sdks/reference/php/agents/pom-builder/to-json">
+    Convert the POM to a JSON string.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Building a structured prompt
+
+```php {3}
+<?php
+use SignalWire\Core\PomBuilder\PomBuilder;
+
+$pom = new PomBuilder();
+
+$pom->addSection(
+    "Role",
+    body: "You are a customer service representative for Acme Corp."
+);
+
+$pom->addSection(
+    "Guidelines",
+    bullets: [
+        "Always greet the customer by name when available",
+        "Be concise and professional",
+        "Never make promises about timelines you cannot keep"
+    ]
+);
+
+$pom->addSection(
+    "Product Knowledge",
+    body: "You have access to the product catalog.",
+    subsections: [
+        {
+            "title": "Pricing",
+            "body": "Always quote current prices from the catalog."
+        },
+        {
+            "title": "Returns",
+            "body": "30-day return policy for all items."
+        }
+    ]
+);
+
+// Render as Markdown for use in a prompt
+$prompt_text = $pom->render_markdown();
+echo $prompt_text;
+
+```
+
+### Incremental construction
+
+```php {3}
+<?php
+use SignalWire\Core\PomBuilder\PomBuilder;
+
+$pom = new PomBuilder();
+
+// Start with a basic section
+$pom->addSection("Capabilities", body: "You can help with the following:");
+
+// Add bullets incrementally as skills are loaded
+$pom->add_to_section("Capabilities", bullet: "Weather lookups");
+$pom->add_to_section("Capabilities", bullet: "Calendar scheduling");
+$pom->add_to_section("Capabilities", bullets: [;
+    "Order tracking",
+    "Account management"
+]);
+
+// Add a subsection
+$pom->add_subsection(
+    "Capabilities",
+    "Limitations",
+    body: "You cannot process payments directly."
+);
+
+echo $pom->render_markdown();
+
+```
+
+### Reconstructing from data
+
+```php
+<?php
+use SignalWire\Core\PomBuilder\PomBuilder;
+
+// Rebuild a PomBuilder from serialized data
+$sections = [;
+    ["title" => "Role", "body": "You are a helpful assistant."],
+    ["title" => "Rules", "bullets": ["Be concise", "Be accurate"]]
+];
+
+$pom = PomBuilder.$from_sections($sections);
+$xml_prompt = $pom->render_xml();
+echo $xml_prompt;
+
+```

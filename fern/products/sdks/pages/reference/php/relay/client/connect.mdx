@@ -1,0 +1,95 @@
+---
+title: "connect"
+slug: /reference/php/relay/client/connect
+description: "Establish the WebSocket connection and authenticate."
+max-toc-depth: 3
+---
+
+[run]: /docs/sdks/reference/php/relay/client/run
+[ref-relayclient]: /docs/sdks/reference/php/relay/client
+
+Establish a WebSocket connection to SignalWire RELAY and authenticate. This method
+connects to `wss://<host>`, sends a `signalwire.connect` authentication request,
+subscribes to the configured contexts, and starts the internal receive loop.
+
+<Note>
+For most use cases, prefer [`run()`][run]
+which calls `connect()` internally and adds automatic reconnection. Use `connect()`
+directly only when you need manual control over the event loop or are using the
+async context manager.
+</Note>
+
+<Warning>
+By default, only one [`Client`][ref-relayclient] connection is allowed per process. Calling
+`connect()` on a second instance without disconnecting the first raises
+`RuntimeError`. Set the `RELAY_MAX_CONNECTIONS` environment variable to allow
+multiple concurrent connections.
+</Warning>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`null`
+
+## **Examples**
+
+### Manual connect/disconnect
+
+```php {12}
+<?php
+// import asyncio
+use SignalWire\Relay\Client;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+function main()
+{
+    $client->connect();
+    // Connected and authenticated -- do work here
+    $call = $await $client->dial(
+        devices: [[["type" => "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"]}]]
+    );
+    $call->hangup();
+    $client->disconnect();
+}
+
+$asyncio->run($main());
+
+
+```
+
+### Async context manager
+
+```php
+<?php
+// import asyncio
+use SignalWire\Relay\Client;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+function main()
+{
+    $async $with $client:;
+        $call = $await $client->dial(
+            devices: [[["type" => "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"]}]]
+        );
+        $call->hangup();
+}
+
+$asyncio->run($main());
+
+
+```

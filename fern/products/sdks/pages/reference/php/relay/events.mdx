@@ -1,0 +1,1483 @@
+---
+title: "Events"
+slug: /reference/php/relay/events
+description: "Typed event classes for all RELAY events."
+max-toc-depth: 3
+---
+
+[call-on]: /docs/sdks/reference/php/relay/call/on
+[message-on]: /docs/sdks/reference/php/relay/message
+[constants]: /docs/sdks/reference/php/relay/constants
+[playaction]: /docs/sdks/reference/php/relay/actions
+[collect]: /docs/sdks/reference/php/relay/call/collect
+[playandcollect]: /docs/sdks/reference/php/relay/call/play-and-collect
+[sendfax]: /docs/sdks/reference/php/relay/call/send-fax
+[receivefax]: /docs/sdks/reference/php/relay/call/receive-fax
+[hold]: /docs/sdks/reference/php/relay/call/hold
+[unhold]: /docs/sdks/reference/php/relay/call/unhold
+[queueenter]: /docs/sdks/reference/php/relay/call/queue-enter
+[queueleave]: /docs/sdks/reference/php/relay/call/queue-leave
+
+RELAY events are delivered as typed dataclass instances that wrap the raw JSON-RPC
+event payloads from the SignalWire WebSocket connection. When you register a handler
+with [`Call.on()`][call-on] or
+[`Message.on()`][message-on], the handler
+automatically receives a typed event object with named properties for each field.
+
+All typed event classes inherit from [`RelayEvent`](#relayevent), which provides
+access to the raw `params` dictionary alongside the typed properties. You can also
+use the [`parse_event()`](#parse_event) helper to manually parse raw event payloads.
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\CallStateEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function onCall($call)
+{
+    function handleState(CallStateEvent $event)
+    {
+        echo "Call state: {$event->call_state}";
+    }
+
+    $call->on("calling.call.state", $handle_state);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+## RelayEvent
+
+Base event class. All other event classes inherit from this. Every handler receives
+at minimum a `RelayEvent` instance, which provides access to the raw event data.
+
+<ParamField path="event_type" type="string" toc={true}>
+  The event type string (e.g., `"calling.call.state"`, `"messaging.receive"`).
+  See [`Constants`][constants] for the full list.
+</ParamField>
+
+<ParamField path="params" type="array" toc={true}>
+  The raw parameters dictionary from the event payload. Contains all event-specific
+  fields, including those not surfaced as typed attributes on subclasses.
+</ParamField>
+
+<ParamField path="call_id" type="string" default="" toc={true}>
+  The call identifier associated with this event, if applicable.
+</ParamField>
+
+<ParamField path="timestamp" type="float" default="0.0" toc={true}>
+  Server timestamp of the event.
+</ParamField>
+
+## **Methods**
+
+### from_payload
+
+**from_payload**(`payload`) -> `RelayEvent`
+
+Class method. Parse a raw event dict into a `RelayEvent` instance.
+
+#### Parameters
+
+<ParamField path="payload" type="array" required={true} toc={true}>
+  Raw event payload dictionary.
+</ParamField>
+
+<Indent>
+<ParamField path="payload.event_type" type="string" required={true} toc={true}>
+  The event type string (e.g., `"calling.call.state"`).
+</ParamField>
+
+<ParamField path="payload.params" type="array" required={true} toc={true}>
+  Event-specific parameters.
+</ParamField>
+</Indent>
+
+#### Returns
+
+`RelayEvent` -- A new event instance with typed properties.
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Event\RelayEvent;
+
+$event = $RelayEvent->from_payload({
+    "event_type": "calling.call.state",
+    "params": ["call_state" => "answered"],
+});
+echo $event->event_type;
+
+
+```
+
+---
+
+### parse_event
+
+**parse_event**(`payload`) -> `RelayEvent`
+
+Module-level helper function. Parses a raw event dict and returns the appropriate
+typed event subclass based on the `event_type` field. Falls back to `RelayEvent`
+for unrecognized event types.
+
+#### Parameters
+
+<ParamField path="payload" type="array" required={true} toc={true}>
+  Raw event payload dictionary.
+</ParamField>
+
+<Indent>
+<ParamField path="payload.event_type" type="string" required={true} toc={true}>
+  The event type string (e.g., `"calling.call.state"`, `"calling.call.play"`).
+  Determines which typed subclass is returned.
+</ParamField>
+
+<ParamField path="payload.params" type="array" required={true} toc={true}>
+  Event-specific parameters. Contents vary by event type.
+</ParamField>
+</Indent>
+
+#### Returns
+
+[`RelayEvent`](#relayevent) -- The appropriate typed subclass based on the
+`event_type` field, or a base `RelayEvent` for unrecognized types.
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Event\parse_event;
+
+$event = $parse_event({
+    "event_type": "calling.call.play",
+    "params": ["control_id" => "abc-123", "state": "playing"],
+});
+// Returns a PlayEvent instance
+echo $event->state;
+
+
+```
+
+---
+
+## Calling Events
+
+### calling.call.state
+
+Emitted when the call state changes through its lifecycle: `created` ->
+`ringing` -> `answered` -> `ending` -> `ended`.
+
+#### CallStateEvent
+
+Handlers for this event receive a `CallStateEvent` with the following properties:
+
+<ParamField path="call_state" type="string" default="" toc={true}>
+  The new call state.
+
+  - `"created"` -- call object has been initialized
+  - `"ringing"` -- call is ringing at the destination
+  - `"answered"` -- call has been answered and is active
+  - `"ending"` -- hangup is in progress
+  - `"ended"` -- call has been fully terminated
+</ParamField>
+
+<ParamField path="end_reason" type="string" default="" toc={true}>
+  Reason the call ended. Only present when `call_state` is `"ended"`.
+
+  - `"hangup"` -- normal disconnect by a party on the call
+  - `"cancel"` -- call was cancelled before being answered
+  - `"busy"` -- destination signaled busy
+  - `"noAnswer"` -- call rang but was not answered within the timeout
+  - `"decline"` -- destination actively declined the call
+  - `"error"` -- an error occurred during call processing
+  - `"abandoned"` -- caller hung up before the call was answered
+  - `"max_duration"` -- call reached the maximum allowed duration
+  - `"not_found"` -- destination could not be found or routed
+</ParamField>
+
+<ParamField path="direction" type="string" default="" toc={true}>
+  Call direction.
+
+  - `"inbound"` -- incoming call
+  - `"outbound"` -- outgoing call
+</ParamField>
+
+<ParamField path="device" type="array" toc={true}>
+  Device information for the call endpoint.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\CallStateEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleState(CallStateEvent $event)
+    {
+        echo "State: {$event->call_state}, reason: {$event->end_reason}";
+    }
+
+    $call->on("calling.call.state", $handle_state);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.receive
+
+Emitted when an inbound call is received on a subscribed context. This event is
+dispatched at the client level via the `@client.onCall` decorator rather than
+through `call.on()`.
+
+#### CallReceiveEvent
+
+Handlers for this event receive a `CallReceiveEvent` with the following properties:
+
+<ParamField path="call_state" type="string" default="" toc={true}>
+  Initial call state (typically `"ringing"`).
+</ParamField>
+
+<ParamField path="direction" type="string" default="" toc={true}>
+  Always `"inbound"` for receive events.
+</ParamField>
+
+<ParamField path="device" type="array" toc={true}>
+  Device information for the caller.
+</ParamField>
+
+
+<ParamField path="node_id" type="string" default="" toc={true}>
+  RELAY node handling this call.
+</ParamField>
+
+<ParamField path="project_id" type="string" default="" toc={true}>
+  SignalWire project ID.
+</ParamField>
+
+<ParamField path="context" type="string" default="" toc={true}>
+  The context the call was received on.
+</ParamField>
+
+<ParamField path="segment_id" type="string" default="" toc={true}>
+  Call segment identifier.
+</ParamField>
+
+<ParamField path="tag" type="string" default="" toc={true}>
+  Correlation tag for the call.
+</ParamField>
+
+### calling.call.play
+
+Emitted when playback state changes on a play operation.
+
+#### PlayEvent
+
+Handlers for this event receive a `PlayEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the play operation. Matches the `control_id` on the
+  [`PlayAction`][playaction].
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Playback state.
+
+  - `"playing"` -- audio is actively playing
+  - `"paused"` -- playback has been paused
+  - `"finished"` -- playback completed successfully
+  - `"error"` -- an error occurred during playback
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\PlayEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handlePlay(PlayEvent $event)
+    {
+        echo "Playback: {$event->state}";
+    }
+
+    $call->on("calling.call.play", $handle_play);
+    $call->answer();
+    $call->play([["type" => "tts", "text": "Hello!"]]);
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.record
+
+Emitted when recording state changes on a record operation.
+
+#### RecordEvent
+
+Handlers for this event receive a `RecordEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the record operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Recording state.
+
+  - `"recording"` -- audio recording is in progress
+  - `"paused"` -- recording has been paused
+  - `"finished"` -- recording completed successfully
+  - `"no_input"` -- recording ended due to no audio input detected
+</ParamField>
+
+<ParamField path="url" type="string" default="" toc={true}>
+  URL of the recording file (available when `state` is `"finished"`).
+</ParamField>
+
+<ParamField path="duration" type="float" default="0.0" toc={true}>
+  Recording duration in seconds.
+</ParamField>
+
+<ParamField path="size" type="int" default="0" toc={true}>
+  Recording file size in bytes.
+</ParamField>
+
+<ParamField path="record" type="array" toc={true}>
+  Full record metadata object containing `url`, `duration`, `size`, and other fields.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\RecordEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleRecord(RecordEvent $event)
+    {
+        echo "Recording {$event->state}: {$event->url}";
+    }
+
+    $call->on("calling.call.record", $handle_record);
+    $call->answer();
+    $call->record(["direction" => "both"]);
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.collect
+
+Emitted when input collection state changes on a
+[`collect()`][collect] or
+[`playAndCollect()`][playandcollect]
+operation.
+
+#### CollectEvent
+
+Handlers for this event receive a `CollectEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the collect operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Collection state.
+
+  - `"finished"` -- input was collected successfully
+  - `"error"` -- an error occurred during collection
+  - `"no_input"` -- no input was detected within the timeout
+  - `"no_match"` -- collected input did not match any configured patterns
+</ParamField>
+
+<ParamField path="result" type="array" toc={true}>
+  The collected input result. Contains `type` and the collected value.
+
+  - `"digit"` -- DTMF digit input was collected
+  - `"speech"` -- speech input was collected
+</ParamField>
+
+<ParamField path="final" type="?bool" toc={true}>
+  Whether this is the final result. May be `null` for non-continuous collect operations.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\CollectEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleCollect(CollectEvent $event)
+    {
+        echo "Collected: {$event->result}";
+    }
+
+    $call->on("calling.call.collect", $handle_collect);
+    $call->answer();
+    $call->playAndCollect(
+        media: [["type" => "tts", "text": "Press 1 or 2."]],
+        collect: ["digits" => {"max": 1]},
+    );
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.connect
+
+Emitted when a connect operation changes state.
+
+#### ConnectEvent
+
+Handlers for this event receive a `ConnectEvent` with the following properties:
+
+<ParamField path="connect_state" type="string" default="" toc={true}>
+  Connection state.
+
+  - `"connecting"` -- bridge is being established to the destination
+  - `"connected"` -- bridge has been successfully established
+  - `"disconnected"` -- bridge has been disconnected
+  - `"failed"` -- connection attempt failed
+</ParamField>
+
+<ParamField path="peer" type="array" toc={true}>
+  Information about the connected peer call.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\ConnectEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleConnect(ConnectEvent $event)
+    {
+        echo "Connection: {$event->connect_state}";
+    }
+
+    $call->on("calling.call.connect", $handle_connect);
+    $call->answer();
+    $call->connect(
+        devices: [[["type" => "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"]}]]
+    );
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.detect
+
+Emitted when detection results arrive from a detect operation.
+
+#### DetectEvent
+
+Handlers for this event receive a `DetectEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the detect operation.
+</ParamField>
+
+<ParamField path="detect" type="array" toc={true}>
+  Detection result. Structure depends on the detection type.
+
+  - `"machine"` -- voicemail or answering machine detection
+  - `"fax"` -- fax tone detection
+  - `"digit"` -- DTMF digit detection
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\DetectEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleDetect(DetectEvent $event)
+    {
+        echo "Detected: {$event->detect}";
+    }
+
+    $call->on("calling.call.detect", $handle_detect);
+    $call->answer();
+    $call->detect(["type" => "machine", "params": {"initial_timeout": 5.0]});
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.fax
+
+Emitted when a [`send_fax()`][sendfax] or
+[`receive_fax()`][receivefax] operation
+changes state.
+
+#### FaxEvent
+
+Handlers for this event receive a `FaxEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the fax operation.
+</ParamField>
+
+<ParamField path="fax" type="array" toc={true}>
+  Fax result data including pages, status, and document URL.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\FaxEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleFax(FaxEvent $event)
+    {
+        echo "Fax: {$event->fax}";
+    }
+
+    $call->on("calling.call.fax", $handle_fax);
+    $call->answer();
+    $call->send_fax(document: "https://example.com/invoice.pdf");
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.tap
+
+Emitted when a tap operation changes state.
+
+#### TapEvent
+
+Handlers for this event receive a `TapEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the tap operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Tap state.
+
+  - `"finished"` -- tap operation completed
+</ParamField>
+
+<ParamField path="tap" type="array" toc={true}>
+  Tap configuration details.
+</ParamField>
+
+<ParamField path="device" type="array" toc={true}>
+  The device receiving the tapped media.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\TapEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleTap(TapEvent $event)
+    {
+        echo "Tap {$event->state}: {$event->tap}";
+    }
+
+    $call->on("calling.call.tap", $handle_tap);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.stream
+
+Emitted when a stream operation changes state.
+
+#### StreamEvent
+
+Handlers for this event receive a `StreamEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the stream operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Stream state.
+
+  - `"finished"` -- stream operation completed
+</ParamField>
+
+<ParamField path="url" type="string" default="" toc={true}>
+  The WebSocket URL the stream is connected to.
+</ParamField>
+
+<ParamField path="name" type="string" default="" toc={true}>
+  The stream name.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\StreamEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleStream(StreamEvent $event)
+    {
+        echo "Stream {$event->state}: {$event->url}";
+    }
+
+    $call->on("calling.call.stream", $handle_stream);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.send_digits
+
+Emitted when a send_digits operation changes state.
+
+#### SendDigitsEvent
+
+Handlers for this event receive a `SendDigitsEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the send_digits operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Send digits state.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\SendDigitsEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleDigits(SendDigitsEvent $event)
+    {
+        echo "Send digits: {$event->state}";
+    }
+
+    $call->on("calling.call.send_digits", $handle_digits);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.dial
+
+Emitted during outbound dial state changes. This event is dispatched at the
+client level rather than through `call.on()`.
+
+#### DialEvent
+
+Handlers for this event receive a `DialEvent` with the following properties:
+
+<ParamField path="tag" type="string" default="" toc={true}>
+  Correlation tag for the dial operation.
+</ParamField>
+
+<ParamField path="dial_state" type="string" default="" toc={true}>
+  Dial state.
+
+  - `"answered"` -- outbound call was answered
+  - `"failed"` -- outbound call failed to connect
+</ParamField>
+
+<ParamField path="call" type="array" toc={true}>
+  Call information for the dialed leg.
+</ParamField>
+
+### calling.call.refer
+
+Emitted when a SIP REFER operation changes state.
+
+#### ReferEvent
+
+Handlers for this event receive a `ReferEvent` with the following properties:
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Refer state.
+</ParamField>
+
+<ParamField path="sip_refer_to" type="string" default="" toc={true}>
+  The SIP URI the call was referred to.
+</ParamField>
+
+<ParamField path="sip_refer_response_code" type="string" default="" toc={true}>
+  SIP response code from the REFER request.
+</ParamField>
+
+<ParamField path="sip_notify_response_code" type="string" default="" toc={true}>
+  SIP response code from the NOTIFY message.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\ReferEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleRefer(ReferEvent $event)
+    {
+        echo "Refer to {$event->sip_refer_to}: {$event->state}";
+    }
+
+    $call->on("calling.call.refer", $handle_refer);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.hold
+
+Emitted when hold state changes via
+[`hold()`][hold] or
+[`unhold()`][unhold].
+
+#### HoldEvent
+
+Handlers for this event receive a `HoldEvent` with the following properties:
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Hold state.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\HoldEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleHold(HoldEvent $event)
+    {
+        echo "Hold: {$event->state}";
+    }
+
+    $call->on("calling.call.hold", $handle_hold);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.denoise
+
+Emitted when noise reduction state changes.
+
+#### DenoiseEvent
+
+Handlers for this event receive a `DenoiseEvent` with the following properties:
+
+<ParamField path="denoised" type="bool" default="false" toc={true}>
+  Whether noise reduction is currently active.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\DenoiseEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleDenoise(DenoiseEvent $event)
+    {
+        echo "Denoise active: {$event->denoised}";
+    }
+
+    $call->on("calling.call.denoise", $handle_denoise);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.pay
+
+Emitted when a pay operation changes state.
+
+#### PayEvent
+
+Handlers for this event receive a `PayEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the pay operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Payment state.
+
+  - `"finished"` -- payment collection completed
+  - `"error"` -- payment operation failed
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\PayEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handlePay(PayEvent $event)
+    {
+        echo "Payment: {$event->state}";
+    }
+
+    $call->on("calling.call.pay", $handle_pay);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.echo
+
+Emitted when an echo operation changes state.
+
+#### EchoEvent
+
+Handlers for this event receive an `EchoEvent` with the following properties:
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Echo state.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\EchoEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleEcho(EchoEvent $event)
+    {
+        echo "Echo: {$event->state}";
+    }
+
+    $call->on("calling.call.echo", $handle_echo);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.queue
+
+Emitted when queue state changes via
+[`queue_enter()`][queueenter] or
+[`queue_leave()`][queueleave].
+
+#### QueueEvent
+
+Handlers for this event receive a `QueueEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the queue operation.
+</ParamField>
+
+<ParamField path="status" type="string" default="" toc={true}>
+  Queue status.
+</ParamField>
+
+<ParamField path="queue_id" type="string" default="" toc={true}>
+  The queue identifier.
+</ParamField>
+
+<ParamField path="queue_name" type="string" default="" toc={true}>
+  The queue name.
+</ParamField>
+
+<ParamField path="position" type="int" default="0" toc={true}>
+  Current position in the queue.
+</ParamField>
+
+<ParamField path="size" type="int" default="0" toc={true}>
+  Total number of calls in the queue.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\QueueEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleQueue(QueueEvent $event)
+    {
+        echo "Queue {$event->queue_name}: position {$event->position}/{$event->size}";
+    }
+
+    $call->on("calling.call.queue", $handle_queue);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.conference
+
+Emitted when conference state changes.
+
+#### ConferenceEvent
+
+Handlers for this event receive a `ConferenceEvent` with the following properties:
+
+<ParamField path="conference_id" type="string" default="" toc={true}>
+  The conference identifier.
+</ParamField>
+
+<ParamField path="name" type="string" default="" toc={true}>
+  The conference name.
+</ParamField>
+
+<ParamField path="status" type="string" default="" toc={true}>
+  Conference status.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\ConferenceEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleConference(ConferenceEvent $event)
+    {
+        echo "Conference {$event->name}: {$event->status}";
+    }
+
+    $call->on("calling.conference", $handle_conference);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.call.transcribe
+
+Emitted when a transcribe operation changes state.
+
+#### TranscribeEvent
+
+Handlers for this event receive a `TranscribeEvent` with the following properties:
+
+<ParamField path="control_id" type="string" default="" toc={true}>
+  The control ID of the transcribe operation.
+</ParamField>
+
+<ParamField path="state" type="string" default="" toc={true}>
+  Transcription state.
+
+  - `"finished"` -- transcription completed successfully
+</ParamField>
+
+<ParamField path="url" type="string" default="" toc={true}>
+  URL of the transcription result.
+</ParamField>
+
+<ParamField path="recording_id" type="string" default="" toc={true}>
+  Associated recording ID.
+</ParamField>
+
+<ParamField path="duration" type="float" default="0.0" toc={true}>
+  Duration of the transcribed audio in seconds.
+</ParamField>
+
+<ParamField path="size" type="int" default="0" toc={true}>
+  Size of the transcription data in bytes.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\TranscribeEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleTranscribe(TranscribeEvent $event)
+    {
+        echo "Transcription {$event->state}: {$event->url}";
+    }
+
+    $call->on("calling.call.transcribe", $handle_transcribe);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+### calling.error
+
+Emitted when an error occurs on the call.
+
+#### CallingErrorEvent
+
+Handlers for this event receive a `CallingErrorEvent` with the following properties:
+
+<ParamField path="code" type="string" default="" toc={true}>
+  Error code.
+</ParamField>
+
+<ParamField path="message" type="string" default="" toc={true}>
+  Human-readable error description.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\CallingErrorEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onCall()
+function handleCall($call)
+{
+    function handleError(CallingErrorEvent $event)
+    {
+        echo "Error {$event->code}: {$event->message}";
+    }
+
+    $call->on("calling.error", $handle_error);
+    $call->answer();
+
+$client->run();
+
+
+```
+
+---
+
+## Messaging Events
+
+### messaging.receive
+
+Emitted when an inbound SMS/MMS message is received on a subscribed context.
+This event is dispatched at the client level via the `@client.onMessage`
+decorator.
+
+#### MessageReceiveEvent
+
+Handlers for this event receive a `MessageReceiveEvent` with the following properties:
+
+<ParamField path="message_id" type="string" default="" toc={true}>
+  Unique identifier for the message.
+</ParamField>
+
+<ParamField path="context" type="string" default="" toc={true}>
+  The messaging context the message was received on.
+</ParamField>
+
+<ParamField path="direction" type="string" default="" toc={true}>
+  Always `"inbound"` for receive events.
+</ParamField>
+
+<ParamField path="from_number" type="string" default="" toc={true}>
+  Sender phone number in E.164 format.
+</ParamField>
+
+<ParamField path="to_number" type="string" default="" toc={true}>
+  Recipient phone number in E.164 format.
+</ParamField>
+
+<ParamField path="body" type="string" default="" toc={true}>
+  Text content of the message.
+</ParamField>
+
+<ParamField path="media" type="array" toc={true}>
+  Media URLs for MMS messages.
+</ParamField>
+
+<ParamField path="segments" type="int" default="0" toc={true}>
+  Number of SMS segments.
+</ParamField>
+
+<ParamField path="message_state" type="string" default="" toc={true}>
+  State of the message (typically `"received"`).
+</ParamField>
+
+<ParamField path="tags" type="array" toc={true}>
+  Tags associated with the message.
+</ParamField>
+
+### messaging.state
+
+Emitted when an outbound message's state changes (e.g., `queued` -> `sent` -> `delivered`).
+
+#### MessageStateEvent
+
+Handlers for this event receive a `MessageStateEvent` with the following properties:
+
+<ParamField path="message_id" type="string" default="" toc={true}>
+  Unique identifier for the message.
+</ParamField>
+
+<ParamField path="context" type="string" default="" toc={true}>
+  The messaging context.
+</ParamField>
+
+<ParamField path="direction" type="string" default="" toc={true}>
+  Always `"outbound"` for state events.
+</ParamField>
+
+<ParamField path="from_number" type="string" default="" toc={true}>
+  Sender phone number in E.164 format.
+</ParamField>
+
+<ParamField path="to_number" type="string" default="" toc={true}>
+  Recipient phone number in E.164 format.
+</ParamField>
+
+<ParamField path="body" type="string" default="" toc={true}>
+  Text content of the message.
+</ParamField>
+
+<ParamField path="media" type="array" toc={true}>
+  Media URLs for MMS messages.
+</ParamField>
+
+<ParamField path="segments" type="int" default="0" toc={true}>
+  Number of SMS segments.
+</ParamField>
+
+<ParamField path="message_state" type="string" default="" toc={true}>
+  Current message state.
+
+  - `"queued"` -- message accepted by the platform, waiting to be sent
+  - `"initiated"` -- message sending has been initiated
+  - `"sent"` -- message has been sent to the carrier
+  - `"delivered"` -- message has been delivered to the recipient
+  - `"undelivered"` -- message could not be delivered
+  - `"failed"` -- message sending failed
+</ParamField>
+
+<ParamField path="reason" type="string" default="" toc={true}>
+  Failure reason if the message failed or was undelivered.
+</ParamField>
+
+<ParamField path="tags" type="array" toc={true}>
+  Tags associated with the message.
+</ParamField>
+
+#### Example
+
+```php
+<?php
+use SignalWire\Relay\Client;
+use SignalWire\Relay\Event\MessageStateEvent;
+
+$client = new Client(
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],
+);
+
+// Handler: $client->onMessage()
+function handleMessage($message)
+{
+    function handleState(MessageStateEvent $event)
+    {
+        echo "Message {$event->message_id}: {$event->message_state}";
+    }
+
+    $message->on($handle_state);
+
+$client->run();
+
+
+```
+
+---
+
+## Event Type Mapping
+
+Reference table mapping `event_type` strings to their typed event classes.
+
+| Event Type | Class |
+|-----------|-------|
+| `calling.call.state` | `CallStateEvent` |
+| `calling.call.receive` | `CallReceiveEvent` |
+| `calling.call.play` | `PlayEvent` |
+| `calling.call.record` | `RecordEvent` |
+| `calling.call.collect` | `CollectEvent` |
+| `calling.call.connect` | `ConnectEvent` |
+| `calling.call.detect` | `DetectEvent` |
+| `calling.call.fax` | `FaxEvent` |
+| `calling.call.tap` | `TapEvent` |
+| `calling.call.stream` | `StreamEvent` |
+| `calling.call.send_digits` | `SendDigitsEvent` |
+| `calling.call.dial` | `DialEvent` |
+| `calling.call.refer` | `ReferEvent` |
+| `calling.call.denoise` | `DenoiseEvent` |
+| `calling.call.pay` | `PayEvent` |
+| `calling.call.queue` | `QueueEvent` |
+| `calling.call.echo` | `EchoEvent` |
+| `calling.call.transcribe` | `TranscribeEvent` |
+| `calling.call.hold` | `HoldEvent` |
+| `calling.conference` | `ConferenceEvent` |
+| `calling.error` | `CallingErrorEvent` |
+| `messaging.receive` | `MessageReceiveEvent` |
+| `messaging.state` | `MessageStateEvent` |

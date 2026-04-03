@@ -1,0 +1,57 @@
+---
+title: "setDynamicConfigCallback"
+slug: /reference/php/agents/agent-base/set-dynamic-config-callback
+description: Set a callback for per-request dynamic agent configuration.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/sdks/reference/php/agents/agent-base
+
+Set a callback function that runs on every incoming request, receiving the actual agent
+instance so you can dynamically configure **any** aspect of it -- skills, prompts,
+parameters, languages, tools, global data, etc. -- based on the request's query
+parameters, body, or headers.
+
+This is the primary mechanism for multi-tenant or per-caller customization.
+
+## **Parameters**
+
+<ParamField path="callback" type="callable" required={true} toc={true}>
+  A function with the signature `(query_params, body_params, headers, agent)`.
+  Use the `agent` argument to call any configuration method:
+  - `agent.addSkill(...)`
+  - `agent.addLanguage(...)`
+  - `agent.promptAddSection(...)`
+  - `agent.setParams(...)`
+  - `agent.setGlobalData(...)`
+  - `agent.defineTool(...)`
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## **Example**
+
+```php {13}
+<?php
+use SignalWire\Agent\AgentBase;
+
+$agent = new AgentBase(name: "assistant", route: "/assistant");
+$agent->setPromptText("You are a helpful assistant.");
+
+function configurePerRequest($query_params, $body_params, $headers, $agent)
+{
+    $tier = $query_params["tier"] ?? "standard";
+    if ($tier == "premium") {
+        $agent->addSkill("web_search");
+        $agent->setParams(["end_of_speech_timeout" => 500]);
+    }
+    $agent->setGlobalData(["tier" => tier]);
+}
+
+$agent->setDynamicConfigCallback($configure_per_request);
+$agent->serve();
+
+
+```

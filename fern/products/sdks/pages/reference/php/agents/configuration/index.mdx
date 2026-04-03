@@ -1,0 +1,126 @@
+---
+title: "Configuration"
+slug: /reference/php/agents/configuration
+description: "Environment variables, config files, and security settings."
+max-toc-depth: 3
+---
+
+[configloader]: /docs/sdks/reference/php/agents/configuration/config-loader
+[authhandler]: /docs/sdks/reference/php/agents/configuration/auth-handler
+[securityconfig]: /docs/sdks/reference/php/agents/configuration/security-config
+[config-loader]: /docs/sdks/reference/php/agents/configuration/config-loader
+[security-config]: /docs/sdks/reference/php/agents/configuration/security-config
+[auth-handler]: /docs/sdks/reference/php/agents/configuration/auth-handler
+
+The SignalWire Agents SDK uses a layered configuration system. Settings can come
+from constructor parameters, environment variables, JSON config files, or
+sensible defaults. The layers are resolved in priority order:
+
+1. **Constructor parameters** -- highest priority
+2. **Environment variables** -- override config file values
+3. **Config file values** -- loaded from JSON
+4. **Defaults** -- built-in fallback values
+
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+
+// Constructor parameters take precedence over everything else
+$agent = new AgentBase(
+    name: "my-agent",
+    port: 9000,                        # $Overrides $PORT $env var && $config $file
+    config_file: "my_config.json",     # $Explicit $config $file $path
+);
+
+```
+
+## Config File Discovery
+
+When no explicit `config_file` is provided, the SDK searches for JSON config
+files in this order:
+
+1. `config.json`
+2. `agent_config.json`
+3. `swml_config.json`
+4. `.swml/config.json`
+5. `~/.swml/config.json`
+6. `/etc/swml/config.json`
+
+See [`ConfigLoader`][configloader] for
+the full file discovery logic and environment variable substitution syntax.
+
+## Key Configuration Areas
+
+| Area | Configured Via | Reference |
+|------|---------------|-----------|
+| Server port, host, route | Constructor, `PORT` env var, config file | [Environment Variables][environment-variables] |
+| Authentication | `SWML_BASIC_AUTH_*` env vars, config file | [AuthHandler][authhandler] |
+| SSL/HTTPS | `SWML_SSL_*` env vars, config file | [SecurityConfig][securityconfig] |
+| CORS and host allowlists | `SWML_CORS_ORIGINS`, `SWML_ALLOWED_HOSTS` env vars | [SecurityConfig][securityconfig] |
+| Logging | `SIGNALWIRE_LOG_MODE`, `SIGNALWIRE_LOG_LEVEL` env vars | [Environment Variables][environment-variables] |
+| RELAY / REST auth | `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, `SIGNALWIRE_SPACE` | [Environment Variables][environment-variables] |
+
+## Quick Example
+
+```json
+{
+  "service": {
+    "name": "support-agent",
+    "host": "0.0.0.0",
+    "port": 8080,
+    "route": "/support"
+  },
+  "security": {
+    "basic_auth": {
+      "username": "${AUTH_USER|support_agent}",
+      "password": "${AUTH_PASSWORD}"
+    },
+    "ssl": {
+      "enabled": true,
+      "domain": "support.example.com",
+      "cert_path": "/etc/ssl/certs/support.crt",
+      "key_path": "/etc/ssl/private/support.key"
+    }
+  },
+  "agent": {
+    "auto_answer": true,
+    "record_call": false
+  },
+  "skills": [
+    { "name": "datetime" },
+    {
+      "name": "native_vector_search",
+      "params": {
+        "index_file": "./support_docs.swsearch",
+        "tool_name": "search_support"
+      }
+    }
+  ]
+}
+```
+
+<CardGroup cols={2}>
+  <Card
+    title="Environment Variables"
+  >
+    Complete reference for all environment variables used by the SDK.
+  </Card>
+  <Card
+    title="ConfigLoader"
+    href="/docs/sdks/reference/php/agents/configuration/config-loader"
+  >
+    JSON config file loading with environment variable substitution.
+  </Card>
+  <Card
+    title="SecurityConfig"
+    href="/docs/sdks/reference/php/agents/configuration/security-config"
+  >
+    SSL, CORS, host allowlists, rate limiting, and HSTS configuration.
+  </Card>
+  <Card
+    title="AuthHandler"
+    href="/docs/sdks/reference/php/agents/configuration/auth-handler"
+  >
+    HTTP Basic Auth, Bearer tokens, and API key authentication for FastAPI and Flask.
+  </Card>
+</CardGroup>
