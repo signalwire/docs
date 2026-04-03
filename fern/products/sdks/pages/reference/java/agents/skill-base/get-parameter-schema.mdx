@@ -1,0 +1,76 @@
+---
+title: "getParameterSchema"
+slug: /reference/java/agents/skill-base/get-parameter-schema
+description: Return metadata about all parameters the skill accepts.
+max-toc-depth: 3
+---
+
+Class method that returns metadata about all parameters the skill accepts.
+Subclasses should call `super.getParameterSchema()` and merge their own
+parameters.
+
+## **Returns**
+
+`Map<String, Map<String, Object>>` -- Parameter schema where keys are parameter names
+and values describe the parameter.
+
+**Built-in parameters** (inherited by all skills):
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `swaigFields` | object | `{}` | Additional SWAIG metadata merged into tool definitions |
+| `skipPrompt` | bool | `false` | Suppress default prompt section injection |
+| `toolName` | str | `SKILL_NAME` | Custom name for this instance (multi-instance skills only) |
+
+**Schema value fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | str | `"string"`, `"integer"`, `"number"`, `"boolean"`, `"object"`, `"array"` |
+| `description` | str | Human-readable description |
+| `default` | Any | Default value |
+| `required` | bool | Whether the parameter is required |
+| `hidden` | bool | Hide in UIs (for secrets like API keys) |
+| `envVar` | str | Environment variable that can provide this value |
+| `enum` | list | Allowed values |
+| `min` / `max` | number | Bounds for numeric types |
+
+## **Example**
+
+```java {8-9,34}
+public class WeatherSkill extends SkillBase {
+    public static final String SKILL_NAME = "weather";
+    public static final String SKILL_DESCRIPTION = "Provides weather information";
+
+    @Override
+    public Map<String, Map<String, Object>> getParameterSchema() {
+        var schema = new HashMap<>(super.getParameterSchema());
+        schema.put("units", Map.of(
+                "type", "string",
+                "description", "Temperature units",
+                "default", "fahrenheit",
+                "enum", List.of("fahrenheit", "celsius")));
+        schema.put("apiKey", Map.of(
+                "type", "string",
+                "description", "Weather API key",
+                "required", true,
+                "hidden", true,
+                "envVar", "WEATHER_API_KEY"));
+        return schema;
+    }
+
+    @Override
+    public boolean setup() {
+        return true;
+    }
+
+    @Override
+    public void registerTools() {
+        // ...
+    }
+}
+
+// Inspect the schema
+System.out.println(WeatherSkill.getParameterSchema());
+// {swaigFields: {...}, skipPrompt: {...}, units: {...}, apiKey: {...}}
+```

@@ -1,0 +1,65 @@
+---
+title: "setGatherInfo"
+slug: /reference/java/agents/context-builder/step/set-gather-info
+description: Enable structured info gathering for this step.
+max-toc-depth: 3
+---
+
+[add-gather-question]: /docs/sdks/reference/java/agents/context-builder/step/add-gather-question
+[ref-step]: /docs/sdks/reference/java/agents/context-builder/step
+
+Enable info gathering for this step. Call
+[`addGatherQuestion()`][add-gather-question]
+after this method to define the questions.
+
+The gather_info system collects structured information from the caller by
+presenting questions one at a time. It uses dynamic step instruction re-injection
+rather than tool calls, producing zero `toolCall`/`toolResult` entries in
+LLM-visible history.
+
+## **Parameters**
+
+<ParamField path="outputKey" type="String" toc={true}>
+  Key in `globalData` to store collected answers under. When `null`, answers are
+  stored at the top level of `globalData`.
+</ParamField>
+
+<ParamField path="completionAction" type="String" toc={true}>
+  Where to go when all questions are answered.
+
+  - `"next_step"` -- auto-advance to the next sequential step
+  - A step name (e.g., `"process_results"`) -- jump to that specific step
+  - `null` -- return to normal step mode after gathering
+</ParamField>
+
+<ParamField path="prompt" type="String" toc={true}>
+  Preamble text injected once when entering the gather step, giving the AI
+  personality and context for asking the questions.
+</ParamField>
+
+## **Returns**
+
+[`Step`][ref-step] -- Self for method chaining.
+
+## **Example**
+
+```java {9}
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .build();
+
+var contexts = agent.defineContexts();
+var ctx = contexts.addContext("default");
+var intake = ctx.addStep("intake");
+intake.setText("Collect patient information.");
+intake.setGatherInfo("patient_info", "next_step", "Be friendly and professional when collecting information.");
+intake.addGatherQuestion("full_name", "What is your full name?", true);
+ctx.addStep("review").setText("Review the collected information with the patient.");
+
+agent.serve();
+
+
+```

@@ -1,0 +1,135 @@
+---
+title: "play"
+slug: /reference/java/relay/call/play
+description: "Play audio content on a call."
+max-toc-depth: 3
+---
+
+[playaction]: /docs/sdks/reference/java/relay/actions
+[calling-call-play]: /docs/sdks/reference/java/relay/call#events
+[call-events]: /docs/sdks/reference/java/relay/call#events
+[play]: /docs/swml/reference/play
+[swml-play-reference]: /docs/swml/reference/play
+
+Play audio content on the call. Supports TTS (text-to-speech), audio file URLs,
+silence, and ringtone. Returns a [`PlayAction`][playaction]
+that you can use to pause, resume, stop, adjust volume, or wait for completion.
+
+<Info>
+This method emits [`calling.call.play`][calling-call-play] events. See [Call Events][call-events] for payload details.
+</Info>
+
+<Info>
+This method corresponds to the SWML [`play`][play] verb. See the
+[SWML play reference][swml-play-reference] for the full specification.
+</Info>
+
+## **Parameters**
+
+<ParamField path="media" type="List<Map<String, Object>>" required={true} toc={true}>
+  List of media items to play. Each item is a dict with a `type` key and
+  type-specific fields:
+  - `{"type": "tts", "text": "Hello", "language": "en-US", "gender": "female"}` -- text-to-speech
+  - `{"type": "audio", "url": "https://example.com/audio.mp3"}` -- audio file URL
+  - `{"type": "silence", "duration": 2}` -- silence for a duration in seconds
+  - `{"type": "ringtone", "name": "us"}` -- play a standard ringtone
+</ParamField>
+
+<ParamField path="volume" type="@Nullable double" toc={true}>
+  Volume adjustment in dB, from `-40.0` to `40.0`.
+</ParamField>
+
+<ParamField path="direction" type="@Nullable String" toc={true}>
+  Audio direction. Valid values:
+  - `"listen"` -- play to the caller only
+  - `"speak"` -- play to the remote party only
+  - `"both"` -- play to both sides
+</ParamField>
+
+<ParamField path="loop" type="@Nullable int" toc={true}>
+  Number of times to repeat the media. `0` loops indefinitely.
+</ParamField>
+
+<ParamField path="controlId" type="@Nullable String" toc={true}>
+  Custom control ID for this operation. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="@Nullable Function[[RelayEvent, Object]]" toc={true}>
+  Callback invoked when playback reaches a terminal state. Can be a regular
+  function or async coroutine.
+</ParamField>
+
+## **Returns**
+
+[`PlayAction`][playaction] -- An action handle with
+`stop()`, `pause()`, `resume()`, `volume()`, and `wait()` methods.
+
+## **Examples**
+
+### Text-to-Speech
+
+```java {13}
+import com.signalwire.sdk.relay.RelayClient;
+
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .host("your-space.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
+
+async def handle_call(call):
+    await call.answer()
+    var action = await call.play([{"type": "tts", "text": "Welcome to SignalWire!"}]);
+    await action.wait()
+
+client.run();
+
+
+```
+
+### Audio File with Loop
+
+```java {14}
+import com.signalwire.sdk.relay.RelayClient;
+
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .host("your-space.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
+
+async def handle_call(call):
+    await call.answer()
+    // Play hold music on loop
+    var action = await call.play( [{"type": "audio", "url": "https://example.com/hold-music.mp3"}], 0, "listen", );
+    // Later, stop the music
+    await action.stop()
+
+client.run();
+
+
+```
+
+### Multiple Media Items
+
+```java {13}
+import com.signalwire.sdk.relay.RelayClient;
+
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .host("your-space.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
+
+async def handle_call(call):
+    await call.answer()
+    var action = await call.play([ {"type": "tts", "text": "Please hold while we connect you."}, {"type": "silence", "duration": 1}, {"type": "audio", "url": "https://example.com/hold-music.mp3"}, ]);
+    await action.wait()
+
+client.run();
+
+
+```

@@ -1,0 +1,87 @@
+---
+title: "connect"
+slug: /reference/java/relay/call/connect
+description: "Bridge a call to one or more destinations."
+max-toc-depth: 3
+---
+
+[calling-call-connect]: /docs/sdks/reference/java/relay/call#events
+[call-events]: /docs/sdks/reference/java/relay/call#events
+[connect]: /docs/swml/reference/connect
+[swml-connect-reference]: /docs/swml/reference/connect
+[play]: /docs/sdks/reference/java/relay/call/play
+
+Bridge the call to one or more destinations. The `devices` parameter supports
+both serial (try one at a time) and parallel (ring simultaneously) dialing
+strategies.
+
+<Info>
+This method emits [`calling.call.connect`][calling-call-connect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+<Info>
+This method corresponds to the SWML [`connect`][connect] verb. See the
+[SWML connect reference][swml-connect-reference] for the full specification.
+</Info>
+
+## **Parameters**
+
+<ParamField path="devices" type="List<List[Map<String, Object>>]" required={true} toc={true}>
+  A list of device groups for serial/parallel dialing. The outer list is tried
+  serially (one group at a time). Each inner list is dialed in parallel
+  (all devices in the group ring simultaneously).
+
+  Each device dict contains:
+  - `"type"` -- Device type (`"phone"`, `"sip"`)
+  - `"params"` -- Type-specific parameters (`toNumber`, `fromNumber`, etc.)
+</ParamField>
+
+<ParamField path="ringback" type="@Nullable List<Map<String, Object>>" toc={true}>
+  Media items to play to the caller while the destination is ringing. Same
+  format as [`play()`][play] media items.
+</ParamField>
+
+<ParamField path="tag" type="@Nullable String" toc={true}>
+  Correlation tag for the connected call.
+</ParamField>
+
+<ParamField path="maxDuration" type="@Nullable int" toc={true}>
+  Maximum duration of the connected call in minutes.
+</ParamField>
+
+<ParamField path="maxPricePerMinute" type="@Nullable double" toc={true}>
+  Maximum price per minute for the connected call.
+</ParamField>
+
+<ParamField path="statusUrl" type="@Nullable String" toc={true}>
+  URL to receive connection status webhooks.
+</ParamField>
+
+## **Returns**
+
+`Map<String, Object>` -- Server response confirming the connect operation.
+
+## **Example**
+
+```java {16}
+import com.signalwire.sdk.relay.RelayClient;
+
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .host("your-space.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
+
+async def handle_call(call):
+    await call.answer()
+    await call.play([{"type": "tts", "text": "Connecting you now..."}])
+
+    // Serial dialing: try first number, then second if no answer
+    var result = await call.connect([ [{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}], [{"type": "phone", "params": {"to_number": "+15559999999", "from_number": "+15559876543"}}], ]);
+    System.out.println("Connect result: " + result);
+
+client.run();
+
+
+```

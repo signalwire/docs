@@ -1,0 +1,93 @@
+---
+title: "detect"
+slug: /reference/java/relay/call/detect
+description: "Detect answering machines, fax tones, or digits on a call."
+max-toc-depth: 3
+---
+
+[detectaction]: /docs/sdks/reference/java/relay/actions
+[calling-call-detect]: /docs/sdks/reference/java/relay/call#events
+[call-events]: /docs/sdks/reference/java/relay/call#events
+
+Start audio detection on the call. Detects answering machines, fax tones, or
+DTMF digits. Returns a [`DetectAction`][detectaction]
+that resolves on the first detection result or when the operation finishes.
+
+<Note>
+The `DetectAction` resolves on the **first detection result**, not when the
+detect operation finishes. This means `await action.wait()` returns as soon as
+a result is available.
+</Note>
+
+<Info>
+This method emits [`calling.call.detect`][calling-call-detect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="detect" type="Map<String, Object>" required={true} toc={true}>
+  Detection configuration object.
+</ParamField>
+
+<Indent>
+<ParamField path="detect.type" type="String" required={true} toc={true}>
+  Detection type. Valid values:
+  - `"machine"` -- answering machine detection (AMD)
+  - `"fax"` -- fax tone detection (CNG/CED)
+  - `"digit"` -- DTMF digit detection
+</ParamField>
+
+<ParamField path="detect.params" type="Map<String, Object>" toc={true}>
+  Type-specific detection parameters.
+</ParamField>
+</Indent>
+
+<ParamField path="timeout" type="@Nullable double" toc={true}>
+  Maximum seconds to run the detector before stopping.
+</ParamField>
+
+<ParamField path="controlId" type="@Nullable String" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="@Nullable Function[[RelayEvent, Object]]" toc={true}>
+  Callback invoked when detection completes.
+</ParamField>
+
+## **Returns**
+
+[`DetectAction`][detectaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```java {15}
+import com.signalwire.sdk.relay.RelayClient;
+
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .host("your-space.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
+
+async def handle_call(call):
+    await call.answer()
+
+    // Answering machine detection
+    var action = await call.detect( {"type": "machine", "params": {}}, 30, );
+    var event = await action.wait();
+
+    var detect_result = event.params.get("detect", {});
+    if detect_result.get("type") == "machine":
+        System.out.println("Answering machine detected");
+        await call.hangup()
+    else:
+        System.out.println("Human answered");
+        var action = await call.play([{"type": "tts", "text": "Hello! This is a call from..."}]);
+        await action.wait()
+
+client.run();
+
+
+```

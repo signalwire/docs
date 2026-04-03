@@ -1,0 +1,204 @@
+---
+title: "SkillBase"
+slug: /reference/java/agents/skill-base
+description: "Abstract base class for creating reusable, pluggable agent skills."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/java/agents/agent-base
+[cleanup]: /docs/sdks/reference/java/agents/skill-base/cleanup
+[definetool]: /docs/sdks/reference/java/agents/skill-base/define-tool
+[getglobaldata]: /docs/sdks/reference/java/agents/skill-base/get-global-data
+[gethints]: /docs/sdks/reference/java/agents/skill-base/get-hints
+[getinstancekey]: /docs/sdks/reference/java/agents/skill-base/get-instance-key
+[getparameterschema]: /docs/sdks/reference/java/agents/skill-base/get-parameter-schema
+[getpromptsections]: /docs/sdks/reference/java/agents/skill-base/get-prompt-sections
+[registertools]: /docs/sdks/reference/java/agents/skill-base/register-tools
+[setup]: /docs/sdks/reference/java/agents/skill-base/setup
+[skill-data]: /docs/sdks/reference/java/agents/skill-base/skill-data
+[validate]: /docs/sdks/reference/java/agents/skill-base/validate
+
+SkillBase is the abstract base class for all agent skills. Skills are modular,
+reusable capabilities -- such as weather lookup, web search, or calendar access --
+that can be added to any [`AgentBase`][agentbase]
+agent with a single call to `agent.addSkill()`.
+
+Extend SkillBase to create custom skills. The SDK discovers skills automatically
+from the `signalwire/skills/` directory and validates dependencies on load.
+
+<Info>
+For the catalog of 17+ built-in skills and their configuration parameters, see
+the [Skills][skills] page.
+</Info>
+
+## **Class Attributes**
+
+Define these on your subclass to configure the skill:
+
+<ParamField path="SKILL_NAME" type="String" required={true} toc={true}>
+  Unique identifier for the skill (e.g., `"weather"`, `"web_search"`). Used as
+  the key when calling `agent.addSkill()`.
+</ParamField>
+
+<ParamField path="SKILL_DESCRIPTION" type="String" required={true} toc={true}>
+  Human-readable description of the skill.
+</ParamField>
+
+<ParamField path="SKILL_VERSION" type="String" default="1.0.0" toc={true}>
+  Semantic version string.
+</ParamField>
+
+<ParamField path="REQUIRED_PACKAGES" type="List<String>" default="[]" toc={true}>
+  Dependencies the skill needs. Checked on setup with `validatePackages()`.
+</ParamField>
+
+<ParamField path="REQUIRED_ENV_VARS" type="List<String>" default="[]" toc={true}>
+  Environment variables the skill needs. Checked on setup with `validateEnvVars()`.
+</ParamField>
+
+<ParamField path="SUPPORTS_MULTIPLE_INSTANCES" type="boolean" default="false" toc={true}>
+  When `true`, the same skill can be added to an agent multiple times with
+  different configurations (distinguished by a `toolName` parameter).
+</ParamField>
+
+## **Instance Properties**
+
+<ParamField path="agent" type="AgentBase" toc={true}>
+  Reference to the parent agent.
+</ParamField>
+
+<ParamField path="params" type="Map<String, Object>" toc={true}>
+  Configuration parameters (with `swaigFields` removed).
+</ParamField>
+
+<ParamField path="logger" type="Logger" toc={true}>
+  Skill-specific logger namespaced as `signalwire.skills.<SKILL_NAME>`.
+</ParamField>
+
+<ParamField path="swaigFields" type="Map<String, Object>" toc={true}>
+  SWAIG metadata extracted from params, automatically merged into tool
+  definitions when using `defineTool()`.
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="cleanup" href="/docs/sdks/reference/java/agents/skill-base/cleanup">
+    Release resources when the skill is removed or the agent shuts down.
+  </Card>
+  <Card title="defineTool" href="/docs/sdks/reference/java/agents/skill-base/define-tool">
+    Register a tool with automatic swaig_fields merging.
+  </Card>
+  <Card title="getGlobalData" href="/docs/sdks/reference/java/agents/skill-base/get-global-data">
+    Return data to merge into the agent's global_data dictionary.
+  </Card>
+  <Card title="getHints" href="/docs/sdks/reference/java/agents/skill-base/get-hints">
+    Return speech recognition hints for this skill.
+  </Card>
+  <Card title="getInstanceKey" href="/docs/sdks/reference/java/agents/skill-base/get-instance-key">
+    Get the unique key used to track this skill instance.
+  </Card>
+  <Card title="getParameterSchema" href="/docs/sdks/reference/java/agents/skill-base/get-parameter-schema">
+    Return metadata about all parameters the skill accepts.
+  </Card>
+  <Card title="getPromptSections" href="/docs/sdks/reference/java/agents/skill-base/get-prompt-sections">
+    Return POM prompt sections for the agent.
+  </Card>
+  <Card title="registerTools" href="/docs/sdks/reference/java/agents/skill-base/register-tools">
+    Register SWAIG tools with the parent agent.
+  </Card>
+  <Card title="setup" href="/docs/sdks/reference/java/agents/skill-base/setup">
+    Initialize the skill and validate dependencies.
+  </Card>
+  <Card title="skill data" href="/docs/sdks/reference/java/agents/skill-base/skill-data">
+    Read and write namespaced skill state.
+  </Card>
+  <Card title="validate" href="/docs/sdks/reference/java/agents/skill-base/validate">
+    Validate environment variables and package dependencies.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Custom skill
+
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+
+public class WeatherSkill extends SkillBase {
+    public static final String SKILL_NAME = "weather";
+    public static final String SKILL_DESCRIPTION = "Provides weather information";
+    public static final String SKILL_VERSION = "1.0.0";
+    public static final List<String> REQUIRED_PACKAGES = List.of("requests");
+    public static final List<String> REQUIRED_ENV_VARS = List.of("WEATHER_API_KEY");
+
+    private String apiKey;
+
+    @Override
+    public boolean setup() {
+        if (!validatePackages()) {
+            return false;
+        }
+        if (!validateEnvVars()) {
+            return false;
+        }
+        this.apiKey = System.getenv("WEATHER_API_KEY");
+        return true;
+    }
+
+    @Override
+    public void registerTools() {
+        defineTool("get_weather", "Get current weather for a location",
+                this::getWeather,
+                Map.of("type", "object",
+                       "properties", Map.of("location", Map.of("type", "string", "description", "City name or zip code")),
+                       "required", List.of("location")));
+    }
+
+    private FunctionResult getWeather(Map<String, Object> args) {
+        var location = args.get("location");
+        // Call weather API and parse response
+        return new FunctionResult("Weather in " + location + ": sunny, 72F");
+    }
+
+    @Override
+    public List<String> getHints() {
+        return List.of("weather", "temperature", "forecast");
+    }
+
+    @Override
+    protected List<Map<String, Object>> getPromptSectionsInternal() {
+        return List.of(
+                Map.of("title", "Weather Information",
+                       "body", "You can check weather for any location."));
+    }
+
+    @Override
+    public Map<String, Map<String, Object>> getParameterSchema() {
+        var schema = new HashMap<>(super.getParameterSchema());
+        schema.put("units", Map.of(
+                "type", "string",
+                "description", "Temperature units",
+                "default", "fahrenheit",
+                "enum", List.of("fahrenheit", "celsius")));
+        return schema;
+    }
+}
+```
+
+### Using a skill
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("weather-agent")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("weather");
+
+// Or with custom configuration
+agent.addSkill("weather", Map.of("units", "celsius"));
+
+agent.run();
+```

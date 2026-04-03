@@ -1,0 +1,267 @@
+---
+title: "swaig-test"
+slug: /reference/java/agents/cli/swaig-test
+description: "Test SWAIG functions and generate SWML documents locally without deploying."
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/java/agents/data-map
+
+The `swaig-test` command loads an agent file and allows you to test SWAIG functions,
+generate SWML output, and simulate serverless environments -- all without deploying
+to production. It supports both webhook and [DataMap][ref-datamap] functions.
+
+```bash
+swaig-test <agent_path> [options]
+```
+
+<Note>
+If no action flag is specified, `swaig-test` defaults to `--list-tools`.
+</Note>
+
+## Actions
+
+Choose one action per invocation:
+
+<ParamField path="--list-tools" type="flag" toc={true}>
+  List all SWAIG functions registered on the agent.
+</ParamField>
+
+<ParamField path="--list-agents" type="flag" toc={true}>
+  List all agent classes discovered in the file. Useful for multi-agent files.
+</ParamField>
+
+<ParamField path="--dump-swml" type="flag" toc={true}>
+  Generate and output the full SWML document. Combine with `--raw` for machine-readable JSON.
+</ParamField>
+
+<ParamField path="--exec FUNCTION" type="string" toc={true}>
+  Execute a SWAIG function by name. Pass function arguments as `--key value` pairs
+  after the function name.
+</ParamField>
+
+## Common Options
+
+<ParamField path="-v, --verbose" type="flag" toc={true}>
+  Enable verbose output with debug information, including raw result types and
+  detailed post data.
+</ParamField>
+
+<ParamField path="--raw" type="flag" toc={true}>
+  Output raw JSON only, suppressing all logs. Designed for piping to `jq` or
+  other JSON processors.
+</ParamField>
+
+<ParamField path="--agent-class" type="string" toc={true}>
+  Specify which agent class to load when the file contains multiple agents.
+  Mutually exclusive with `--route`.
+</ParamField>
+
+<ParamField path="--route" type="string" toc={true}>
+  Specify which agent to load by its registered route (e.g., `/healthcare`).
+  Mutually exclusive with `--agent-class`.
+</ParamField>
+
+## Function Execution Options
+
+<ParamField path="--minimal" type="flag" toc={true}>
+  Use minimal `postData` containing only the function arguments. This is the default behavior.
+</ParamField>
+
+<ParamField path="--fake-full-data" type="flag" toc={true}>
+  Use comprehensive fake call data including `callId`, `from`, `to`, and other
+  fields that would normally be present in a real SignalWire request.
+</ParamField>
+
+<ParamField path="--custom-data" type="string" default="{}" toc={true}>
+  JSON string with custom `postData` overrides merged into the request payload.
+</ParamField>
+
+## SWML Generation Options
+
+<ParamField path="--call-type" type="string" default="webrtc" toc={true}>
+  Simulated call type. Valid values:
+  - `"sip"` -- SIP-originated call
+  - `"webrtc"` -- WebRTC-originated call
+</ParamField>
+
+<ParamField path="--call-direction" type="string" default="inbound" toc={true}>
+  Simulated call direction. Valid values:
+  - `"inbound"` -- incoming call
+  - `"outbound"` -- outgoing call
+</ParamField>
+
+<ParamField path="--call-state" type="string" default="created" toc={true}>
+  Simulated call state value.
+</ParamField>
+
+<ParamField path="--from-number" type="string" toc={true}>
+  Override the caller/from phone number in mock data.
+</ParamField>
+
+<ParamField path="--to-extension" type="string" toc={true}>
+  Override the destination/to extension in mock data.
+</ParamField>
+
+## Data Customization
+
+<ParamField path="--user-vars" type="string" toc={true}>
+  JSON string injected as `userVariables` in the mock request. Used to test
+  agents that customize behavior based on user variables.
+</ParamField>
+
+<ParamField path="--query-params" type="string" toc={true}>
+  JSON string injected as query parameters in the mock request. Used to test
+  dynamic agents that read query parameters.
+</ParamField>
+
+<ParamField path="--header" type="string" toc={true}>
+  Add an HTTP header in `KEY=VALUE` format. Can be specified multiple times.
+</ParamField>
+
+<ParamField path="--override" type="string" toc={true}>
+  Override a specific value using dot-path notation (e.g., `--override call.state=answered`).
+  Can be specified multiple times.
+</ParamField>
+
+## Serverless Simulation
+
+<ParamField path="--simulate-serverless" type="string" toc={true}>
+  Simulate a serverless platform environment. Valid values:
+  - `"lambda"` -- AWS Lambda
+  - `"cgi"` -- CGI deployment
+  - `"cloud_function"` -- Google Cloud Functions
+  - `"azure_function"` -- Azure Functions
+
+  The simulator sets platform-specific environment variables so the agent
+  generates correct webhook URLs for the target platform.
+</ParamField>
+
+<ParamField path="--env" type="string" toc={true}>
+  Set an environment variable in `KEY=VALUE` format. Can be specified multiple
+  times. Applied after `--env-file`.
+</ParamField>
+
+<ParamField path="--env-file" type="string" toc={true}>
+  Load environment variables from a file (one `KEY=VALUE` per line).
+</ParamField>
+
+### Platform-Specific Options
+
+Run `swaig-test agent.py --help-platforms` for the full list. Key options per platform:
+
+**AWS Lambda**: `--aws-function-name`, `--aws-function-url`, `--aws-region`, `--aws-api-gateway-id`, `--aws-stage`
+
+**CGI**: `--cgi-host` (required), `--cgi-script-name`, `--cgi-https`, `--cgi-path-info`
+
+**Google Cloud**: `--gcp-project`, `--gcp-function-url`, `--gcp-region`, `--gcp-service`
+
+**Azure**: `--azure-env`, `--azure-function-url`
+
+## Extended Help
+
+<ParamField path="--help-platforms" type="flag" toc={true}>
+  Show detailed documentation for all serverless platform options.
+</ParamField>
+
+<ParamField path="--help-examples" type="flag" toc={true}>
+  Show comprehensive usage examples covering all features.
+</ParamField>
+
+## Examples
+
+### List Tools and Generate SWML
+
+```bash
+# List all registered SWAIG functions
+swaig-test agent.py --list-tools
+
+# Generate SWML document (pretty-printed)
+swaig-test agent.py --dump-swml
+
+# Generate raw JSON for piping
+swaig-test agent.py --dump-swml --raw | jq '.'
+
+# Extract just the SWAIG functions from SWML
+swaig-test agent.py --dump-swml --raw | jq '.sections.main[1].ai.SWAIG.functions'
+```
+
+### Execute Functions
+
+```bash
+# Execute with CLI-style arguments
+swaig-test agent.py --exec search --query "AI agents" --limit 5
+
+# Execute with verbose debug output
+swaig-test agent.py --verbose --exec search --query "test"
+
+# Execute with fake call data for realistic testing
+swaig-test agent.py --exec book_appointment \
+  --name "John" --date "2025-01-20" \
+  --fake-full-data --verbose
+```
+
+<Tip>
+Arguments are automatically type-converted: numeric values become integers or
+floats, `true`/`false` become booleans, and everything else stays as a string.
+</Tip>
+
+### Multi-Agent Files
+
+```bash
+# Discover agents in the file
+swaig-test multi_agent.py --list-agents
+
+# Target a specific agent by class name
+swaig-test multi_agent.py --agent-class SalesAgent --list-tools
+
+# Target a specific agent by route
+swaig-test multi_agent.py --route /support --exec create_ticket --issue "Login problem"
+```
+
+### Dynamic Agent Testing
+
+```bash
+# Test with query parameters
+swaig-test dynamic_agent.py --dump-swml --query-params '{"tier":"premium"}'
+
+# Test with headers and user variables
+swaig-test dynamic_agent.py --dump-swml \
+  --query-params '{"tier":"premium","region":"eu"}' \
+  --header "X-Customer-ID=12345" \
+  --user-vars '{"preferences":{"language":"es"}}'
+```
+
+### Serverless Simulation
+
+```bash
+# AWS Lambda
+swaig-test agent.py --simulate-serverless lambda \
+  --aws-function-name prod-agent \
+  --aws-region us-west-2 \
+  --dump-swml
+
+# CGI with HTTPS
+swaig-test agent.py --simulate-serverless cgi \
+  --cgi-host example.com \
+  --cgi-https \
+  --dump-swml
+
+# Google Cloud Functions
+swaig-test agent.py --simulate-serverless cloud_function \
+  --gcp-project my-project \
+  --dump-swml
+
+# With environment variables
+swaig-test agent.py --simulate-serverless lambda \
+  --env API_KEY=secret123 \
+  --env-file .env \
+  --exec my_function
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Error (file not found, invalid arguments, execution failure) |

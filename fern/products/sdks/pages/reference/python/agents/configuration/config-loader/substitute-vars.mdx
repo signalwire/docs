@@ -1,0 +1,53 @@
+---
+title: "substitute_vars"
+slug: /reference/python/agents/configuration/config-loader/substitute-vars
+description: Recursively substitute environment variables in configuration values.
+max-toc-depth: 3
+---
+
+Recursively substitute environment variables in a configuration value. Supports
+`${VAR}` and `${VAR|default}` syntax.
+
+## **Parameters**
+
+<ParamField path="value" type="Any" required={true} toc={true}>
+  The value to process. Can be a string, dict, list, or any other type.
+  Strings are scanned for `${VAR|default}` patterns. Dicts and lists are
+  processed recursively.
+</ParamField>
+
+<ParamField path="max_depth" type="int" default="10" toc={true}>
+  Maximum recursion depth to prevent infinite substitution loops.
+</ParamField>
+
+## **Returns**
+
+`Any` -- The value with all `${VAR|default}` patterns replaced by the corresponding
+environment variable values. Strings that resolve to `"true"`/`"false"` are converted
+to booleans. Numeric strings are converted to `int` or `float`.
+
+## **Example**
+
+```python {8,12,20}
+import os
+from signalwire.core.config_loader import ConfigLoader
+
+os.environ["API_KEY"] = "secret123"
+loader = ConfigLoader()
+
+# Simple substitution
+result = loader.substitute_vars("${API_KEY}")
+print(result)  # "secret123"
+
+# With default value
+result = loader.substitute_vars("${MISSING_VAR|fallback}")
+print(result)  # "fallback"
+
+# Nested structure
+config = {
+    "auth": {"token": "${API_KEY}"},
+    "timeout": "${TIMEOUT|30}",
+}
+result = loader.substitute_vars(config)
+print(result)  # {"auth": {"token": "secret123"}, "timeout": 30}
+```
