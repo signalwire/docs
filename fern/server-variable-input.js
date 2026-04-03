@@ -420,26 +420,25 @@
     if (!baseUrlEl) return;
 
     var urlText = (baseUrlEl.textContent || "").trim();
-    var variable = detectVariable(urlText);
 
-    // If no variable placeholder is detected but we have a saved template URL,
-    // it means the URL was already resolved. Still inject the input.
-    if (!variable && originalTemplateUrl) {
-      variable = detectVariable(originalTemplateUrl);
-      if (variable) {
-        urlText = originalTemplateUrl;
-      }
-    }
+    // Always render server variable input using the first configured variable.
+    // We no longer gate on detecting a specific placeholder in the URL.
+    var variable = VARIABLES[0];
 
-    if (!variable) return;
-
-    // Remember the template URL
+    // Remember the template URL (the original URL before any replacement)
     if (!originalTemplateUrl || detectVariable(urlText)) {
       originalTemplateUrl = urlText;
     }
 
     var ui = createVariableSection(variable);
-    form.prepend(ui.section);
+
+    // Inject inside the auth form box if possible, otherwise prepend to form
+    var authBox = form.querySelector(".fern-explorer-auth-form");
+    if (authBox) {
+      authBox.appendChild(ui.section);
+    } else {
+      form.prepend(ui.section);
+    }
 
     // Preview helper
     function updatePreview(value) {
