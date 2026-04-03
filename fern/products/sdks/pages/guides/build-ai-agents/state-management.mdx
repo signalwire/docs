@@ -21,7 +21,7 @@ If you need data to persist across calls (like customer profiles or order histor
 
 1. Agent initialization sets initial `global_data`
 2. AI uses state in prompts via `${global_data.key}` substitution
-3. SWAIG functions can read state from `raw_data` and update it via `SwaigFunctionResult`
+3. SWAIG functions can read state from `raw_data` and update it via `FunctionResult`
 4. Updated state becomes available to subsequent prompts and function calls
 5. When the call ends, `post_prompt` runs to extract structured data
 6. All in-memory state is cleared
@@ -64,7 +64,7 @@ Global data persists throughout the entire call session and is available to all 
 */}
 
 ```python
-from signalwire_agents import AgentBase
+from signalwire import AgentBase
 
 class CustomerAgent(AgentBase):
     def __init__(self):
@@ -135,7 +135,7 @@ Updating state from within a SWAIG function handler:
 
 | Language | Syntax |
 |----------|--------|
-| Python | `SwaigFunctionResult("Done").update_global_data({"key": "val"})` |
+| Python | `FunctionResult("Done").update_global_data({"key": "val"})` |
 {/*
 | TypeScript | `result.updateGlobalData({ key: 'val' })` |
 | Go | `result.UpdateGlobalData(map[string]any{"key": "val"})` |
@@ -143,13 +143,13 @@ Updating state from within a SWAIG function handler:
 | Java | `result.updateGlobalData(Map.of("key", "val"))` |
 | Perl | `$result->update_global_data({ key => 'val' })` |
 | C++ | `result.update_global_data({{"key", "val"}})` |
-| PHP | `(new SwaigFunctionResult('Done'))->updateGlobalData(['key' => 'val'])` |
+| PHP | `(new FunctionResult('Done'))->updateGlobalData(['key' => 'val'])` |
 | C# | `new FunctionResult("Done").UpdateGlobalData(new Dictionary<string, object> { ["key"] = "val" })` |
 */}
 
 ```python
-from signalwire_agents import AgentBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
 
 class StateAgent(AgentBase):
     def __init__(self):
@@ -173,7 +173,7 @@ class StateAgent(AgentBase):
         name = args.get("name", "")
 
         return (
-            SwaigFunctionResult(f"Stored name: {name}")
+            FunctionResult(f"Stored name: {name}")
             .update_global_data({"customer_name": name})
         )
 
@@ -222,7 +222,7 @@ def process_order(self, args, raw_data):
     order_id = create_order()
 
     return (
-        SwaigFunctionResult(f"Created order {order_id}")
+        FunctionResult(f"Created order {order_id}")
         .set_metadata({"order_id": order_id, "status": "pending"})
     )
 ```
@@ -246,7 +246,7 @@ def process_order(self, args, raw_data):
 ```python
 def cancel_order(self, args, raw_data):
     return (
-        SwaigFunctionResult("Order cancelled")
+        FunctionResult("Order cancelled")
         .remove_metadata(["order_id", "status"])
     )
 ```
@@ -258,7 +258,7 @@ The post-prompt runs after the call ends and generates structured data from the 
 #### Setting Post-Prompt
 
 ```python
-from signalwire_agents import AgentBase
+from signalwire import AgentBase
 
 class SurveyAgent(AgentBase):
     def __init__(self):
@@ -317,7 +317,7 @@ def my_handler(self, args, raw_data):
 
     self.log.info(f"Call from {caller_id_number}")
 
-    return SwaigFunctionResult("Processing...")
+    return FunctionResult("Processing...")
 ```
 
 ### Complete Example
@@ -326,8 +326,8 @@ def my_handler(self, args, raw_data):
 ```python
 #!/usr/bin/env python3
 ## order_agent.py - Order management with state
-from signalwire_agents import AgentBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
 
 class OrderAgent(AgentBase):
     def __init__(self):
@@ -388,7 +388,7 @@ class OrderAgent(AgentBase):
         # Note: In real implementation, maintain state server-side
         # This example shows the pattern
         return (
-            SwaigFunctionResult(f"Added {item} (${price}) to your order")
+            FunctionResult(f"Added {item} (${price}) to your order")
             .update_global_data({
                 "last_item_added": item,
                 "last_item_price": price
@@ -403,7 +403,7 @@ if __name__ == "__main__":
 {/*
 <Tab title="TypeScript">
 ```typescript
-import { AgentBase, SwaigFunctionResult } from 'signalwire-agents';
+import { AgentBase, FunctionResult } from 'signalwire-agents';
 
 const agent = new AgentBase({ name: 'order-agent' });
 agent.addLanguage('English', 'en-US', 'rime.spore');
@@ -433,7 +433,7 @@ agent.defineTool({
     required: ['item', 'price'],
   },
   handler: (args) => {
-    return new SwaigFunctionResult(`Added ${args.item} ($${args.price}) to your order`)
+    return new FunctionResult(`Added ${args.item} ($${args.price}) to your order`)
       .updateGlobalData({ last_item_added: args.item, last_item_price: args.price });
   },
 });
@@ -467,10 +467,10 @@ func main() {
 
     a.DefineTool("add_item", "Add an item to the order",
         agents.Params("item", "string", "Item name", "price", "number", "Item price"),
-        func(args map[string]any, rawData map[string]any) *agents.SwaigFunctionResult {
+        func(args map[string]any, rawData map[string]any) *agents.FunctionResult {
             item := args["item"].(string)
             price := args["price"].(float64)
-            return agents.NewSwaigFunctionResult(fmt.Sprintf("Added %s ($%.2f) to your order", item, price)).
+            return agents.NewFunctionResult(fmt.Sprintf("Added %s ($%.2f) to your order", item, price)).
                 UpdateGlobalData(map[string]any{"last_item_added": item, "last_item_price": price})
         })
 
@@ -480,7 +480,7 @@ func main() {
 </Tab>
 <Tab title="Ruby">
 ```ruby
-require 'signalwire_agents'
+require 'signalwire'
 
 agent = AgentBase.new(name: 'order-agent')
 agent.add_language('English', 'en-US', 'rime.spore')
@@ -501,7 +501,7 @@ agent.define_tool(
   description: 'Add an item to the order',
   parameters: { item: { type: 'string' }, price: { type: 'number' } }
 ) do |args, raw_data|
-  SwaigFunctionResult.new("Added #{args['item']} ($#{args['price']}) to your order")
+  FunctionResult.new("Added #{args['item']} ($#{args['price']}) to your order")
     .update_global_data('last_item_added' => args['item'], 'last_item_price' => args['price'])
 end
 
@@ -511,7 +511,7 @@ agent.run
 <Tab title="Java">
 ```java
 import com.signalwire.agents.AgentBase;
-import com.signalwire.agents.SwaigFunctionResult;
+import com.signalwire.agents.FunctionResult;
 
 public class OrderAgent {
     public static void main(String[] args) {
@@ -534,7 +534,7 @@ public class OrderAgent {
             (fnArgs, rawData) -> {
                 String item = (String) fnArgs.get("item");
                 double price = (double) fnArgs.get("price");
-                return new SwaigFunctionResult("Added " + item + " to your order")
+                return new FunctionResult("Added " + item + " to your order")
                     .updateGlobalData(Map.of("last_item_added", item, "last_item_price", price));
             });
 
@@ -567,7 +567,7 @@ $agent->define_tool(
     parameters  => { item => { type => 'string' }, price => { type => 'number' } },
     handler     => sub {
         my ($args, $raw_data) = @_;
-        return SignalWire::Agents::SwaigFunctionResult
+        return SignalWire::Agents::FunctionResult
             ->new("Added $args->{item} to your order")
             ->update_global_data({ last_item_added => $args->{item} });
     },
@@ -599,7 +599,7 @@ int main() {
         {{"item", "string", "Item name"}, {"price", "number", "Item price"}},
         [](auto args, auto raw_data) {
             auto item = args["item"].get<std::string>();
-            return SwaigFunctionResult("Added " + item + " to your order")
+            return FunctionResult("Added " + item + " to your order")
                 .update_global_data({{"last_item_added", item}});
         });
 
@@ -611,7 +611,7 @@ int main() {
 ```php
 <?php
 use SignalWire\Agent\AgentBase;
-use SignalWire\Agent\SwaigFunctionResult;
+use SignalWire\Agent\FunctionResult;
 
 $agent = new AgentBase(name: 'order-agent');
 $agent->addLanguage('English', 'en-US', 'rime.spore');
@@ -637,7 +637,7 @@ $agent->defineTool('add_item', 'Add an item to the order', [
     ],
     'required' => ['item', 'price'],
 ], function ($args, $rawData) {
-    return (new SwaigFunctionResult("Added {$args['item']} to your order"))
+    return (new FunctionResult("Added {$args['item']} to your order"))
         ->updateGlobalData(['last_item_added' => $args['item'], 'last_item_price' => $args['price']]);
 });
 
@@ -691,8 +691,8 @@ agent.Run();
 In DataMap functions, use variable substitution:
 
 ```python
-from signalwire_agents.core.data_map import DataMap
-from signalwire_agents.core.function_result import SwaigFunctionResult
+from signalwire.core.data_map import DataMap
+from signalwire.core.function_result import FunctionResult
 
 lookup_dm = (
     DataMap("lookup_customer")
@@ -703,7 +703,7 @@ lookup_dm = (
         "https://api.example.com/customers/${enc:args.customer_id}"
         "?store=${enc:global_data.store_id}"
     )
-    .output(SwaigFunctionResult(
+    .output(FunctionResult(
         "Customer: ${response.name}, Tier: ${response.tier}"
     ))
 )
@@ -715,9 +715,9 @@ lookup_dm = (
 |--------|-------|---------|
 | `set_global_data()` | Agent | Merge data into global state |
 | `update_global_data()` | Agent | Update global state at runtime |
-| `SwaigFunctionResult.update_global_data()` | Function | Update state from function |
-| `SwaigFunctionResult.set_metadata()` | Function | Set function-scoped data |
-| `SwaigFunctionResult.remove_metadata()` | Function | Remove function-scoped data |
+| `FunctionResult.update_global_data()` | Function | Update state from function |
+| `FunctionResult.set_metadata()` | Function | Set function-scoped data |
+| `FunctionResult.remove_metadata()` | Function | Remove function-scoped data |
 | `set_post_prompt()` | Agent | Set post-call data extraction |
 | `set_post_prompt_url()` | Agent | Set webhook for post-prompt data |
 | `set_post_prompt_llm_params()` | Agent | Configure post-prompt model |
