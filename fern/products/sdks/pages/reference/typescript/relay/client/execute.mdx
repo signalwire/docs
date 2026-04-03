@@ -1,0 +1,71 @@
+---
+title: "execute"
+slug: /reference/typescript/relay/client/execute
+description: "Send a raw JSON-RPC request to RELAY."
+max-toc-depth: 3
+---
+
+[dial]: /docs/sdks/reference/typescript/relay/client/dial
+[send-message]: /docs/sdks/reference/typescript/relay/client/send-message
+[call]: /docs/sdks/reference/typescript/relay/call
+
+Send a raw JSON-RPC 2.0 request to the RELAY server and return the parsed
+response. This is the low-level RPC method that all other client and call
+control methods are built on.
+
+If the client is not currently connected (e.g., during a reconnect cycle),
+the request is automatically queued and sent after re-authentication completes.
+
+<Warning>
+This method has a default timeout of 30 seconds. If no response is received
+within that window, it throws `RelayError` and forces a reconnection attempt,
+as the timeout may indicate a half-open WebSocket connection.
+</Warning>
+
+<Note>
+Most developers should use the higher-level methods like
+[`dial()`][dial],
+[`sendMessage()`][send-message],
+and the [`Call`][call] control methods
+instead of calling `execute()` directly. Use `execute()` only for custom
+or unsupported RPC methods.
+</Note>
+
+## **Parameters**
+
+<ParamField path="method" type="string" required={true} toc={true}>
+  Full JSON-RPC method name (e.g., `"calling.answer"`, `"calling.play"`,
+  `"messaging.send"`). The method name must include the namespace prefix.
+</ParamField>
+
+<ParamField path="params" type={"Record<string, unknown>"} required={true} toc={true}>
+  Parameters for the RPC call. Typically includes `node_id` and `call_id`
+  for calling methods, along with method-specific parameters.
+</ParamField>
+
+## **Returns**
+
+`Promise<Record<string, unknown>>` -- The `result` object from the JSON-RPC response. Structure depends on the method called.
+
+## **Example**
+
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  // Send a custom RPC request using the call's identifiers
+  const result = await client.execute('calling.answer', {
+    node_id: call.nodeId,
+    call_id: call.callId,
+  });
+  console.log(`Answer result: ${JSON.stringify(result)}`);
+});
+
+await client.run();
+```

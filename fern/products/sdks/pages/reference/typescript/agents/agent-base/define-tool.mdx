@@ -1,0 +1,100 @@
+---
+title: "defineTool"
+slug: /reference/typescript/agents/agent-base/define-tool
+description: Programmatically define a SWAIG tool that the AI can invoke during conversations.
+max-toc-depth: 3
+---
+
+[swaig-function]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[functionresult]: /docs/sdks/reference/typescript/agents/function-result
+[ref-agentbase]: /docs/sdks/reference/typescript/agents/agent-base
+
+Programmatically define a SWAIG function (tool) that the AI can invoke during a
+conversation.
+
+<Info>
+Tool definitions map to SWML [SWAIG function][swaig-function]
+entries. See the [SWML SWAIG functions reference][swml-swaig-functions-reference]
+for the full specification.
+</Info>
+
+## **Parameters**
+
+<ParamField path="opts" type="object" required={true} toc={true}>
+  Tool definition object.
+
+  <ParamField path="opts.name" type="string" required={true}>
+    Tool name. Must be unique within the agent. The AI uses this name to invoke the
+    function.
+  </ParamField>
+
+  <ParamField path="opts.description" type="string" required={true}>
+    Human-readable description of what the tool does. The AI reads this to decide
+    when to call the tool.
+  </ParamField>
+
+  <ParamField path="opts.parameters" type={"Record<string, unknown>"}>
+    JSON Schema describing the tool's parameters. The AI generates arguments
+    conforming to this schema.
+  </ParamField>
+
+  <ParamField path="opts.handler" type="SwaigHandler" required={true}>
+    Callback invoked when the AI calls this tool. Receives
+    `(args: Record<string, unknown>, rawData: Record<string, unknown>)` and should
+    return a [`FunctionResult`][functionresult].
+  </ParamField>
+
+  <ParamField path="opts.secure" type="boolean">
+    Whether to require token validation on tool calls.
+  </ParamField>
+
+  <ParamField path="opts.fillers" type={"Record<string, string[]>"}>
+    Language-specific filler phrases spoken while the tool executes.
+    Format: `{ 'en-US': ['Looking that up...', 'One moment...'] }`.
+  </ParamField>
+
+  <ParamField path="opts.waitFile" type="string">
+    URL of an audio file to play while the tool executes.
+  </ParamField>
+
+  <ParamField path="opts.waitFileLoops" type="number">
+    Number of times to loop the wait file.
+  </ParamField>
+
+  <ParamField path="opts.required" type="string[]">
+    List of required parameter names from the JSON Schema.
+  </ParamField>
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
+
+## **Example**
+
+```typescript
+import { AgentBase, FunctionResult } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'weather-agent', route: '/weather' });
+agent.setPromptText('You are a helpful assistant.');
+
+agent.defineTool({
+  name: 'get_weather',
+  description: 'Get the current weather for a city',
+  parameters: {
+    type: 'object',
+    properties: {
+      city: { type: 'string', description: 'City name' },
+    },
+  },
+  handler: async (args) => {
+    const city = (args.city as string) ?? 'unknown';
+    const result = FunctionResult.create(`The weather in ${city} is 72F and sunny.`);
+    return result;
+  },
+  required: ['city'],
+  fillers: { 'en-US': ['Checking the weather...', 'Let me look that up...'] },
+});
+await agent.serve();
+```

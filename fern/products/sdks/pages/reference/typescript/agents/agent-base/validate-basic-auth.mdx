@@ -1,0 +1,55 @@
+---
+title: "validateBasicAuth"
+slug: /reference/typescript/agents/agent-base/validate-basic-auth
+description: Override to add custom basic-auth validation logic.
+max-toc-depth: 3
+---
+
+Override to add custom basic-auth validation logic beyond credential matching.
+The default implementation returns `true` (allowing all requests that pass the
+built-in credential check). Subclasses can replace it with custom authentication
+logic (e.g., database lookups, external identity providers).
+
+## **Parameters**
+
+<ParamField path="username" type="string" required={true} toc={true}>
+  Username extracted from the incoming request's `Authorization` header.
+</ParamField>
+
+<ParamField path="password" type="string" required={true} toc={true}>
+  Password extracted from the incoming request's `Authorization` header.
+</ParamField>
+
+## **Returns**
+
+`boolean | Promise<boolean>` -- `true` if the credentials are valid, `false` to
+reject the request.
+
+## **Example**
+
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+class SecureAgent extends AgentBase {
+  constructor() {
+    super({ name: 'assistant', route: '/assistant' });
+    this.setPromptText('You are a helpful assistant.');
+  }
+
+  override async validateBasicAuth(
+    username: string,
+    password: string,
+  ): Promise<boolean> {
+    // Custom validation against an external user store
+    const response = await fetch('https://auth.example.com/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    return response.ok;
+  }
+}
+
+const agent = new SecureAgent();
+await agent.serve();
+```

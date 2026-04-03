@@ -1,0 +1,130 @@
+---
+title: "playAndCollect"
+slug: /reference/typescript/relay/call/play-and-collect
+description: "Play audio and collect DTMF or speech input."
+max-toc-depth: 3
+---
+
+[collectaction]: /docs/sdks/reference/typescript/relay/actions
+[calling-call-collect]: /docs/sdks/reference/typescript/relay/call#events
+[call-events]: /docs/sdks/reference/typescript/relay/call#events
+[play]: /docs/sdks/reference/typescript/relay/call/play
+
+Play audio content as a prompt and simultaneously collect user input via DTMF
+digits or speech recognition. Returns a
+[`CollectAction`][collectaction] that resolves when
+input is collected, the operation times out, or an error occurs.
+
+<Note>
+The `CollectAction` resolves only on collect events, not on play events. This
+means `await action.wait()` blocks until the user provides input (or the
+operation terminates), not when the audio finishes playing.
+</Note>
+
+<Info>
+This method emits [`calling.call.collect`][calling-call-collect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="media" type={"Record<string, unknown>[]"} required={true} toc={true}>
+  Array of media items to play as the prompt. Same format as
+  [`play()`][play] media items.
+</ParamField>
+
+<ParamField path="collect" type="Record&lt;string, unknown&gt;" required={true} toc={true}>
+  Input collection configuration.
+</ParamField>
+
+<Indent>
+<ParamField path="collect.digits" type="Record&lt;string, unknown&gt;" toc={true}>
+  DTMF digit collection settings.
+</ParamField>
+
+<Indent>
+<ParamField path="collect.digits.max" type="number" toc={true}>
+  Maximum number of digits to collect.
+</ParamField>
+
+<ParamField path="collect.digits.digit_timeout" type="number" toc={true}>
+  Seconds to wait between digits before completing.
+</ParamField>
+
+<ParamField path="collect.digits.terminators" type="string" toc={true}>
+  Characters that terminate digit collection (e.g., `"#"`).
+</ParamField>
+</Indent>
+
+<ParamField path="collect.speech" type="Record&lt;string, unknown&gt;" toc={true}>
+  Speech recognition settings.
+</ParamField>
+
+<Indent>
+<ParamField path="collect.speech.end_silence_timeout" type="number" toc={true}>
+  Seconds of silence to wait before finalizing speech input.
+</ParamField>
+
+<ParamField path="collect.speech.speech_timeout" type="number" toc={true}>
+  Maximum seconds to listen for speech.
+</ParamField>
+
+<ParamField path="collect.speech.language" type="string" toc={true}>
+  Speech recognition language code (e.g., `"en-US"`).
+</ParamField>
+
+<ParamField path="collect.speech.hints" type="string[]" toc={true}>
+  Words or phrases to boost recognition accuracy.
+</ParamField>
+</Indent>
+</Indent>
+
+<ParamField path="volume" type="number | undefined" toc={true}>
+  Volume adjustment in dB for the prompt audio.
+</ParamField>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
+  Callback invoked when collection completes.
+</ParamField>
+
+## **Returns**
+
+`Promise<`[`CollectAction`][collectaction]`>` -- An action handle with
+`stop()`, `volume()`, `startInputTimers()`, and `wait()` methods.
+
+## **Example**
+
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  const action = await call.playAndCollect(
+    [{ type: 'tts', text: 'Press 1 for sales, 2 for support.' }],
+    { digits: { max: 1, digit_timeout: 5, terminators: '#' } }
+  );
+  const event = await action.wait();
+
+  const result = event.params.result as Record<string, unknown> ?? {};
+  const digits = (result.digits ?? '') as string;
+  if (digits === '1') {
+    await call.transfer('sales');
+  } else if (digits === '2') {
+    await call.transfer('support');
+  } else {
+    await call.hangup();
+  }
+});
+
+await client.run();
+```

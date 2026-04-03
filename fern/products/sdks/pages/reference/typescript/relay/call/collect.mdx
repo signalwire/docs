@@ -1,0 +1,125 @@
+---
+title: "collect"
+slug: /reference/typescript/relay/call/collect
+description: "Collect DTMF or speech input without playing media."
+max-toc-depth: 3
+---
+
+[play-and-collect]: /docs/sdks/reference/typescript/relay/call/play-and-collect
+[calling-call-collect]: /docs/sdks/reference/typescript/relay/call#events
+[call-events]: /docs/sdks/reference/typescript/relay/call#events
+[standalonecollectaction]: /docs/sdks/reference/typescript/relay/actions
+
+Collect DTMF digit or speech input without playing a prompt. Use this when you
+want to listen for input silently or after a prompt has already been played
+separately. For collecting input with a prompt, use
+[`playAndCollect()`][play-and-collect].
+
+<Info>
+This method emits [`calling.call.collect`][calling-call-collect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="digits" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
+  DTMF digit collection settings.
+</ParamField>
+
+<Indent>
+<ParamField path="digits.max" type="number" toc={true}>
+  Maximum number of digits to collect.
+</ParamField>
+
+<ParamField path="digits.digit_timeout" type="number" toc={true}>
+  Seconds to wait between digits before completing.
+</ParamField>
+
+<ParamField path="digits.terminators" type="string" toc={true}>
+  Characters that terminate digit collection (e.g., `"#"`).
+</ParamField>
+</Indent>
+
+<ParamField path="speech" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
+  Speech recognition settings.
+</ParamField>
+
+<Indent>
+<ParamField path="speech.end_silence_timeout" type="number" toc={true}>
+  Seconds of silence to wait before finalizing speech input.
+</ParamField>
+
+<ParamField path="speech.speech_timeout" type="number" toc={true}>
+  Maximum seconds to listen for speech.
+</ParamField>
+
+<ParamField path="speech.language" type="string" toc={true}>
+  Speech recognition language code (e.g., `"en-US"`).
+</ParamField>
+
+<ParamField path="speech.hints" type="string[]" toc={true}>
+  Words or phrases to boost recognition accuracy.
+</ParamField>
+</Indent>
+
+<ParamField path="initialTimeout" type="number | undefined" toc={true}>
+  Seconds to wait for the first input before ending with `no_input`.
+</ParamField>
+
+<ParamField path="partialResults" type="boolean | undefined" toc={true}>
+  Enable partial speech recognition results.
+</ParamField>
+
+<ParamField path="continuous" type="boolean | undefined" toc={true}>
+  Keep collecting after each result instead of stopping.
+</ParamField>
+
+<ParamField path="sendStartOfInput" type="boolean | undefined" toc={true}>
+  Send an event when input is first detected.
+</ParamField>
+
+<ParamField path="startInputTimers" type="boolean | undefined" toc={true}>
+  Start input timers immediately. If `false`, call
+  `action.startInputTimers()` to start them manually.
+</ParamField>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
+  Callback invoked when collection completes.
+</ParamField>
+
+## **Returns**
+
+`Promise<`[`StandaloneCollectAction`][standalonecollectaction]`>` -- An action
+handle with `stop()`, `startInputTimers()`, and `wait()` methods.
+
+## **Example**
+
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  // Collect digits silently (e.g., extension entry)
+  const action = await call.collect({
+    digits: { max: 4, digit_timeout: 3, terminators: '#' },
+    initialTimeout: 10,
+  });
+  const event = await action.wait();
+
+  const result = event.params.result as Record<string, unknown> ?? {};
+  const extension = (result.digits ?? '') as string;
+  console.log(`Extension entered: ${extension}`);
+});
+
+await client.run();
+```

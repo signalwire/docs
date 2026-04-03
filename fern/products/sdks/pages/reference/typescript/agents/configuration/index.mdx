@@ -1,0 +1,131 @@
+---
+title: "Configuration"
+slug: /reference/typescript/agents/configuration
+description: "Environment variables, config files, and security settings."
+max-toc-depth: 3
+---
+
+[configloader]: /docs/sdks/reference/typescript/agents/configuration/config-loader
+[environment-variables]: /docs/sdks/reference/typescript/agents/configuration/environment-variables
+[authhandler]: /docs/sdks/reference/typescript/agents/configuration/auth-handler
+[promptmanager]: /docs/sdks/reference/typescript/agents/configuration/prompt-manager
+[schemautils]: /docs/sdks/reference/typescript/agents/configuration/schema-utils
+[serverlessadapter]: /docs/sdks/reference/typescript/agents/configuration/serverless-adapter
+[sessionmanager]: /docs/sdks/reference/typescript/agents/configuration/session-manager
+
+The SignalWire Agents SDK uses a layered configuration system. Settings can come
+from constructor parameters, environment variables, JSON config files, or
+sensible defaults. The layers are resolved in priority order:
+
+1. **Constructor parameters** -- highest priority
+2. **Environment variables** -- override config file values
+3. **Config file values** -- loaded from JSON
+4. **Defaults** -- built-in fallback values
+
+```typescript
+import { ConfigLoader } from 'signalwire-agents';
+
+// Constructor parameters take precedence over everything else
+const config = new ConfigLoader('./my_config.json');
+const port = config.get<number>('server.port', 3000);
+```
+
+## Config File Discovery
+
+When no explicit config file path is provided, the SDK searches for JSON config
+files using `ConfigLoader.search()`, which checks these locations in order:
+
+1. Current working directory
+2. `./config/`
+3. `~/.signalwire/`
+
+See [`ConfigLoader`][configloader] for
+the full file discovery logic and environment variable substitution syntax.
+
+## Key Configuration Areas
+
+| Area | Configured Via | Reference |
+|------|---------------|-----------|
+| Server port, host, route | Constructor, `PORT` env var, config file | [Environment Variables][environment-variables] |
+| Authentication | `SWML_BASIC_AUTH_*` env vars, config file | [AuthHandler][authhandler] |
+| CORS and host allowlists | `SWML_CORS_ORIGINS`, `SWML_ALLOWED_HOSTS` env vars | [Environment Variables][environment-variables] |
+| Logging | `SIGNALWIRE_LOG_MODE`, `SIGNALWIRE_LOG_LEVEL` env vars | [Environment Variables][environment-variables] |
+| RELAY / REST auth | `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, `SIGNALWIRE_SPACE` | [Environment Variables][environment-variables] |
+
+## Quick Example
+
+```json
+{
+  "service": {
+    "name": "support-agent",
+    "host": "0.0.0.0",
+    "port": 8080,
+    "route": "/support"
+  },
+  "security": {
+    "basic_auth": {
+      "username": "${AUTH_USER|support_agent}",
+      "password": "${AUTH_PASSWORD}"
+    }
+  },
+  "agent": {
+    "auto_answer": true,
+    "record_call": false
+  },
+  "skills": [
+    { "name": "datetime" },
+    {
+      "name": "native_vector_search",
+      "params": {
+        "index_file": "./support_docs.swsearch",
+        "tool_name": "search_support"
+      }
+    }
+  ]
+}
+```
+
+<CardGroup cols={2}>
+  <Card
+    title="Environment Variables"
+    href="/docs/sdks/reference/typescript/agents/configuration/environment-variables"
+  >
+    Complete reference for all environment variables used by the SDK.
+  </Card>
+  <Card
+    title="ConfigLoader"
+    href="/docs/sdks/reference/typescript/agents/configuration/config-loader"
+  >
+    JSON config file loading with environment variable substitution.
+  </Card>
+  <Card
+    title="AuthHandler"
+    href="/docs/sdks/reference/typescript/agents/configuration/auth-handler"
+  >
+    HTTP Basic Auth, Bearer tokens, and API key authentication for Hono middleware.
+  </Card>
+  <Card
+    title="PromptManager"
+    href="/docs/sdks/reference/typescript/agents/configuration/prompt-manager"
+  >
+    Manages agent prompt text with raw text and structured POM-based prompts.
+  </Card>
+  <Card
+    title="SchemaUtils"
+    href="/docs/sdks/reference/typescript/agents/configuration/schema-utils"
+  >
+    SWML document validation against structural rules with result caching.
+  </Card>
+  <Card
+    title="ServerlessAdapter"
+    href="/docs/sdks/reference/typescript/agents/configuration/serverless-adapter"
+  >
+    Adapts Hono apps for AWS Lambda, Google Cloud Functions, and Azure Functions.
+  </Card>
+  <Card
+    title="SessionManager"
+    href="/docs/sdks/reference/typescript/agents/configuration/session-manager"
+  >
+    Stateless HMAC-SHA256 token generation and validation for SWAIG function calls.
+  </Card>
+</CardGroup>

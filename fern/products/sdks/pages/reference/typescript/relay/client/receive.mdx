@@ -1,0 +1,78 @@
+---
+title: "receive"
+slug: /reference/typescript/relay/client/receive
+description: "Subscribe to additional contexts for inbound events."
+max-toc-depth: 3
+---
+
+[relayclient-constructor]: /docs/sdks/reference/typescript/relay/client
+
+Subscribe to additional contexts for inbound call and message events. Sends a
+`signalwire.receive` request on the assigned protocol to start receiving events
+on the specified contexts without reconnecting.
+
+Use this to dynamically expand the set of contexts after the initial connection.
+Contexts passed to the [`RelayClient` constructor][relayclient-constructor]
+are subscribed automatically at connect time -- this method is for adding more
+at runtime.
+
+<Tip>
+Contexts are strings that act as routing labels. A phone number configured in
+your SignalWire dashboard sends calls to a specific context. Subscribe to that
+context to receive those calls.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="contexts" type="string[]" required={true} toc={true}>
+  List of context names to subscribe to. If the list is empty, the method
+  returns immediately without sending a request.
+</ParamField>
+
+## **Returns**
+
+`Promise<void>`
+
+## **Examples**
+
+### Add contexts at runtime
+
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['sales']
+});
+
+await client.connect();
+
+// Dynamically subscribe to additional contexts after connecting
+await client.receive(['support', 'billing']);
+console.log('Now receiving calls on sales, support, and billing');
+
+await client.disconnect();
+```
+
+### With inbound call handler
+
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['sales']
+});
+
+client.onCall(async (call) => {
+  console.log(`Call on context: ${call.context}`);
+  await call.answer();
+  await call.hangup();
+});
+
+// Subscribe to additional contexts at startup via constructor
+// For runtime subscription after connect, use await client.receive(['support'])
+await client.run();
+```

@@ -1,0 +1,80 @@
+---
+title: "defineContexts"
+slug: /reference/typescript/agents/agent-base/define-contexts
+description: Define multi-step conversation contexts and workflows for complex agent interactions.
+max-toc-depth: 3
+---
+
+[contextbuilder]: /docs/sdks/reference/typescript/agents/context-builder
+[ref-agentbase]: /docs/sdks/reference/typescript/agents/agent-base
+
+Define contexts and steps for multi-step conversation workflows. Contexts allow an
+agent to guide the caller through a structured sequence of interactions -- such as
+gathering information, verifying identity, and then performing an action.
+
+Returns a [`ContextBuilder`][contextbuilder] for fluent context definition. If a
+`ContextBuilder` or plain object is passed, it is used directly.
+
+<Note>
+Contexts can coexist with traditional prompts. The only restriction is that POM
+sections and raw text cannot be mixed in the main prompt.
+</Note>
+
+## **Parameters**
+
+<ParamField path="contexts" type="ContextBuilder | Record<string, unknown> | undefined" toc={true}>
+  Context configuration. Pass a `ContextBuilder` or plain object to set contexts
+  directly. Omit to receive a new `ContextBuilder` for fluent definition.
+</ParamField>
+
+## **Returns**
+
+[`ContextBuilder`][contextbuilder] -- The active `ContextBuilder` for further configuration.
+
+## **Examples**
+
+### Fluent ContextBuilder
+
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'intake', route: '/intake' });
+agent.defineContexts()
+  .addContext('default')
+    .addStep('greeting')
+      .setText('Greet the caller and ask for their name.')
+      .setStepCriteria('The caller has provided their name.')
+      .setFunctions(['lookup_account'])
+      .setValidSteps(['verify'])
+    .addStep('verify')
+      .setText('Verify the caller\'s identity.')
+      .setStepCriteria('Identity verified.')
+      .setValidSteps(['assist'])
+    .addStep('assist')
+      .setText('Help the caller with their request.')
+      .setFunctions(['search_orders', 'process_return']);
+await agent.serve();
+```
+
+### Direct object configuration
+
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'intake', route: '/intake' });
+agent.defineContexts({
+  default: {
+    steps: {
+      greeting: {
+        text: 'Greet the caller.',
+        valid_steps: ['verify'],
+      },
+      verify: {
+        text: 'Verify identity.',
+        valid_steps: ['assist'],
+      },
+    },
+  },
+});
+await agent.serve();
+```

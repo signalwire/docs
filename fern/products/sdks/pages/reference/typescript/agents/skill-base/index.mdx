@@ -1,0 +1,163 @@
+---
+title: "SkillBase"
+slug: /reference/typescript/agents/skill-base
+description: "Abstract base class for creating reusable, pluggable agent skills."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/typescript/agents/agent-base
+[skills]: /docs/sdks/reference/typescript/agents/skills
+[cleanup]: /docs/sdks/reference/typescript/agents/skill-base/cleanup
+[definetool]: /docs/sdks/reference/typescript/agents/skill-base/define-tool
+[getglobaldata]: /docs/sdks/reference/typescript/agents/skill-base/get-global-data
+[gethints]: /docs/sdks/reference/typescript/agents/skill-base/get-hints
+[getinstancekey]: /docs/sdks/reference/typescript/agents/skill-base/get-instance-key
+[getparameterschema]: /docs/sdks/reference/typescript/agents/skill-base/get-parameter-schema
+[getpromptsections]: /docs/sdks/reference/typescript/agents/skill-base/get-prompt-sections
+[registertools]: /docs/sdks/reference/typescript/agents/skill-base/register-tools
+[setup]: /docs/sdks/reference/typescript/agents/skill-base/setup
+[skill-data]: /docs/sdks/reference/typescript/agents/skill-base/skill-data
+[validate]: /docs/sdks/reference/typescript/agents/skill-base/validate
+
+SkillBase is the abstract base class for all agent skills. Skills are modular,
+reusable capabilities -- such as weather lookup, web search, or calendar access --
+that can be added to any [`AgentBase`][agentbase]
+agent with a single call to `agent.add_skill()`.
+
+Extend SkillBase to create custom skills. The SDK discovers skills automatically
+from the `signalwire/skills/` directory and validates dependencies on load.
+
+<Info>
+For the catalog of 17+ built-in skills and their configuration parameters, see
+the [Skills][skills] page.
+</Info>
+
+## **Class Attributes**
+
+Define these on your subclass to configure the skill:
+
+<ParamField path="SKILLName" type="string" required={true} toc={true}>
+  Unique identifier for the skill (e.g., `"weather"`, `"web_search"`). Used as
+  the key when calling `agent.add_skill()`.
+</ParamField>
+
+<ParamField path="SKILLDescription" type="string" required={true} toc={true}>
+  Human-readable description of the skill.
+</ParamField>
+
+<ParamField path="SKILLVersion" type="string" default="1.0.0" toc={true}>
+  Semantic version string.
+</ParamField>
+
+<ParamField path="REQUIREDPackages" type="string[]" default="[]" toc={true}>
+  Python packages the skill needs. Checked on setup with `validatePackages()`.
+</ParamField>
+
+<ParamField path="REQUIREDEnvVars" type="string[]" default="[]" toc={true}>
+  Environment variables the skill needs. Checked on setup with `validateEnvVars()`.
+</ParamField>
+
+<ParamField path="SUPPORTSMultipleInstances" type="boolean" default="false" toc={true}>
+  When `true`, the same skill can be added to an agent multiple times with
+  different configurations (distinguished by a `tool_name` parameter).
+</ParamField>
+
+## **Instance Properties**
+
+<ParamField path="agent" type="AgentBase" toc={true}>
+  Reference to the parent agent.
+</ParamField>
+
+<ParamField path="params" type={"Record<string, unknown>"} toc={true}>
+  Configuration parameters (with `swaig_fields` removed).
+</ParamField>
+
+<ParamField path="logger" type="Logger" toc={true}>
+  Skill-specific logger namespaced as `signalwire.skills.<SKILL_NAME>`.
+</ParamField>
+
+<ParamField path="swaigFields" type={"Record<string, unknown>"} toc={true}>
+  SWAIG metadata extracted from params, automatically merged into tool
+  definitions when using `defineTool()`.
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="cleanup" href="/docs/sdks/reference/typescript/agents/skill-base/cleanup">
+    Release resources when the skill is removed or the agent shuts down.
+  </Card>
+  <Card title="defineTool" href="/docs/sdks/reference/typescript/agents/skill-base/define-tool">
+    Register a tool with automatic swaig_fields merging.
+  </Card>
+  <Card title="getGlobalData" href="/docs/sdks/reference/typescript/agents/skill-base/get-global-data">
+    Return data to merge into the agent's global_data dictionary.
+  </Card>
+  <Card title="getHints" href="/docs/sdks/reference/typescript/agents/skill-base/get-hints">
+    Return speech recognition hints for this skill.
+  </Card>
+  <Card title="getInstanceKey" href="/docs/sdks/reference/typescript/agents/skill-base/get-instance-key">
+    Get the unique key used to track this skill instance.
+  </Card>
+  <Card title="getParameterSchema" href="/docs/sdks/reference/typescript/agents/skill-base/get-parameter-schema">
+    Return metadata about all parameters the skill accepts.
+  </Card>
+  <Card title="getPromptSections" href="/docs/sdks/reference/typescript/agents/skill-base/get-prompt-sections">
+    Return POM prompt sections for the agent.
+  </Card>
+  <Card title="registerTools" href="/docs/sdks/reference/typescript/agents/skill-base/register-tools">
+    Register SWAIG tools with the parent agent.
+  </Card>
+  <Card title="setup" href="/docs/sdks/reference/typescript/agents/skill-base/setup">
+    Initialize the skill and validate dependencies.
+  </Card>
+  <Card title="skill data" href="/docs/sdks/reference/typescript/agents/skill-base/skill-data">
+    Read and write namespaced skill state.
+  </Card>
+  <Card title="validate" href="/docs/sdks/reference/typescript/agents/skill-base/validate">
+    Validate environment variables and package dependencies.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Custom skill
+
+```typescript
+import { SkillBase, SkillManifest, SkillToolDefinition } from 'signalwire-agents';
+
+class MyWeatherSkill extends SkillBase {
+  constructor(config?: Record<string, unknown>) {
+    super('my_weather', config);
+  }
+
+  getManifest(): SkillManifest {
+    return { name: 'my_weather', description: 'Look up weather', version: '1.0.0' };
+  }
+
+  getTools(): SkillToolDefinition[] {
+    return [{
+      name: 'get_weather',
+      description: 'Get current weather for a city',
+      parameters: { city: { type: 'string', description: 'City name' } },
+      handler: async (args) => ({ response: 'Sunny, 72F' }),
+    }];
+  }
+}
+```
+
+### Using a skill
+
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'weather-agent' });
+agent.setPromptText("You are a helpful assistant.")
+agent.addSkill("weather")
+
+// Or with custom configuration
+agent.addSkill("weather", {"units": "celsius"})
+
+// Entry point
+    agent.run()
+```

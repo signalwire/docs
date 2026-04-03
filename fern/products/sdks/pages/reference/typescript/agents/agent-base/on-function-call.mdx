@@ -1,0 +1,72 @@
+---
+title: "onFunctionCall"
+slug: /reference/typescript/agents/agent-base/on-function-call
+description: Pre-execution hook called before each SWAIG function invocation.
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/sdks/reference/typescript/agents/agent-base/define-tool
+
+Pre-execution hook called before each SWAIG function is executed. The default
+implementation is a no-op. Override this method in a subclass to intercept tool
+calls for logging, metrics, or custom dispatch logic.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Name of the SWAIG function about to execute.
+</ParamField>
+
+<ParamField path="args" type={"Record<string, unknown>"} required={true} toc={true}>
+  Parsed arguments for the function, conforming to the function's parameter schema.
+</ParamField>
+
+<ParamField path="rawData" type={"Record<string, unknown>"} required={true} toc={true}>
+  The full raw SWAIG request payload, including metadata such as
+  `call_id`, `caller_id_number`, and `global_data`.
+</ParamField>
+
+## **Returns**
+
+`void | Promise<void>`
+
+## **Example**
+
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+class LoggingAgent extends AgentBase {
+  constructor() {
+    super({ name: 'logging-agent', route: '/logging' });
+    this.setPromptText('You are a helpful assistant.');
+    this.defineTools();
+  }
+
+  protected override defineTools(): void {
+    this.defineTool({
+      name: 'lookup_order',
+      description: 'Look up an order',
+      parameters: {
+        type: 'object',
+        properties: { order_id: { type: 'string' } },
+        required: ['order_id'],
+      },
+      handler: async (args) => {
+        return { response: `Order ${args.order_id} is in transit.` };
+      },
+    });
+  }
+
+  override async onFunctionCall(
+    name: string,
+    args: Record<string, unknown>,
+    rawData: Record<string, unknown>,
+  ): Promise<void> {
+    const callId = (rawData.call_id as string) ?? 'unknown';
+    console.log(`[${callId}] Tool called: ${name}(${JSON.stringify(args)})`);
+  }
+}
+
+const agent = new LoggingAgent();
+await agent.serve();
+```

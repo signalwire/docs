@@ -1,0 +1,114 @@
+---
+title: "Signals"
+slug: /reference/typescript/agents/livewire/signals
+description: "Exception and signal classes for controlling tool behavior and multi-agent handoffs."
+max-toc-depth: 3
+---
+
+[agent]: /docs/sdks/reference/typescript/agents/livewire/agent
+
+LiveWire provides exception and signal classes that tool handlers can throw or
+return to control agent behavior.
+
+## StopResponse
+
+An error that, when thrown inside a tool handler, signals that the tool
+should **not** trigger another LLM reply. Use this when the tool's side effect
+is the final action and no further conversation is needed.
+
+```typescript
+import { StopResponse } from 'signalwire-agents/livewire';
+
+function endCall(reason: string): never {
+  // Perform cleanup...
+  throw new StopResponse();
+}
+```
+
+---
+
+## ToolError
+
+An error that signals a tool execution failure. Throw this when a tool
+encounters a problem that should be reported back to the LLM so it can
+communicate the issue to the user or retry.
+
+```typescript
+import { ToolError } from 'signalwire-agents/livewire';
+
+function transferFunds(amount: number, toAccount: string): string {
+  if (amount <= 0) {
+    throw new ToolError('Amount must be positive.');
+  }
+  return `Transferred $${amount} to ${toAccount}.`;
+}
+```
+
+---
+
+## AgentHandoff
+
+A signal object for handing off a conversation to a different agent in
+multi-agent scenarios. Return an `AgentHandoff` from a tool handler to
+indicate that a different agent should take over.
+
+```typescript
+import { Agent, AgentHandoff } from 'signalwire-agents/livewire';
+
+const billingAgent = new Agent({ instructions: 'You handle billing questions.' });
+
+function transferToBilling(): AgentHandoff {
+  return new AgentHandoff(billingAgent);
+}
+```
+
+### Properties
+
+<ParamField path="agent" type="Agent" toc={true}>
+  The target agent for the handoff.
+</ParamField>
+
+<ParamField path="returns" type="unknown" toc={true}>
+  The return value, if any.
+</ParamField>
+
+---
+
+## ChatContext
+
+A minimal stub mirroring the LiveKit `ChatContext`. Holds a list of chat
+messages that can be used to seed conversation history.
+
+```typescript
+import { ChatContext } from 'signalwire-agents/livewire';
+
+const chat = new ChatContext();
+chat.append({ role: 'user', text: 'What is the weather?' });
+chat.append({ role: 'assistant', text: 'It is sunny today.' });
+```
+
+### Properties
+
+<ParamField path="messages" type={"Record<string, string>[]"} toc={true}>
+  List of message objects, each with `"role"` and `"content"` keys.
+</ParamField>
+
+### Methods
+
+#### append
+
+**append**(`opts: { role?: string; text?: string }`) -> `ChatContext`
+
+Add a message to the context. Returns `this` for chaining.
+
+<ParamField path="role" type="string" default='"user"' toc={true}>
+  The message role (`"user"`, `"assistant"`, `"system"`).
+</ParamField>
+
+<ParamField path="text" type="string" default='""' toc={true}>
+  The message content.
+</ParamField>
+
+#### Returns
+
+[`ChatContext`](#chatcontext) -- The same instance, for method chaining.

@@ -1,0 +1,101 @@
+---
+title: "functionTool"
+slug: /reference/typescript/agents/livewire/function-tool
+description: "Decorator for wrapping plain TypeScript functions as agent tools."
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/sdks/reference/typescript/agents/agent-base/define-tool
+[runcontext]: /docs/sdks/reference/typescript/agents/livewire/run-context
+
+### function_tool
+
+**function_tool**(`func=None`, `name=None`, `description=None`) -> `Callable`
+
+Wraps a plain TypeScript function so it can be passed into
+[`Agent(tools=[...])`](/docs/sdks/reference/typescript/agents/livewire/agent). The decorator
+extracts parameter information from type hints and builds a JSON-Schema-style
+parameter dict. The function's docstring is used as the tool description unless
+`description` is provided explicitly.
+
+When the underlying SignalWire agent is built, each defined function is registered
+as a SWAIG function via
+[`defineTool()`][define-tool].
+
+<Note>
+Parameters annotated with [`RunContext`][runcontext]
+are automatically excluded from the generated JSON schema and injected at call time.
+</Note>
+
+#### Parameters
+
+<ParamField path="func" type="Function | undefined" default="undefined" toc={true}>
+  The function to decorate. When `@function_tool` is used without parentheses, the
+  defined function is passed here directly.
+</ParamField>
+
+<ParamField path="name" type="string | undefined" default="undefined" toc={true}>
+  Override the tool name. Defaults to the function's `function name`.
+</ParamField>
+
+<ParamField path="description" type="string | undefined" default="undefined" toc={true}>
+  Override the tool description. Defaults to the function's JSDoc comment.
+</ParamField>
+
+#### Returns
+
+`Callable` -- The original function with metadata attributes attached:
+- `_livewire_tool` (`bool`) -- Always `true`.
+- `_tool_name` (`str`) -- The resolved tool name.
+- `_tool_description` (`str`) -- The resolved description.
+- `_tool_parameters` (`dict`) -- JSON-Schema-style parameter definition.
+- `_tool_handler` (`Callable`) -- Reference to the original function.
+
+#### Type Mapping
+
+The decorator maps Python type annotations to JSON Schema types:
+
+| Python type | JSON Schema type |
+|-------------|-----------------|
+| `str` | `"string"` |
+| `int` | `"integer"` |
+| `float` | `"number"` |
+| `bool` | `"boolean"` |
+| *(other / missing)* | `"string"` |
+
+Parameters without a default value are marked as `required` in the schema.
+
+#### Examples
+
+<CodeBlocks>
+<CodeBlock title="Without arguments">
+```typescript {3}
+import { AgentBase } from 'signalwire-agents';
+
+@function_tool
+function getWeather(city: string): string {
+    `Get the current weather for a city.`
+    return `Sunny in ${city}.`
+```
+</CodeBlock>
+<CodeBlock title="With explicit name and description">
+```typescript {3}
+import { AgentBase } from 'signalwire-agents';
+
+@function_tool(name="weather_lookup", description="Look up weather by city name")
+function getWeather(city: string): string {
+    return `Sunny in ${city}.`
+```
+</CodeBlock>
+<CodeBlock title="With RunContext">
+```typescript {3}
+import { AgentBase } from 'signalwire-agents';
+
+@function_tool
+function savePreference(ctx: RunContext, key: string, value: string): string {
+    `Save a user preference.`
+    ctx.userdata[key] = value
+    return `Saved ${key}=${value}.`
+```
+</CodeBlock>
+</CodeBlocks>

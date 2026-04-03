@@ -1,0 +1,62 @@
+---
+title: "queueEnter"
+slug: /reference/typescript/relay/call/queue-enter
+description: Place a call into a named queue.
+max-toc-depth: 3
+---
+
+[queue-leave]: /docs/sdks/reference/typescript/relay/call/queue-leave
+[calling-call-queue]: /docs/sdks/reference/typescript/relay/call#events
+[call-events]: /docs/sdks/reference/typescript/relay/call#events
+
+Place the call into a named queue. The caller waits in the queue until they are
+dequeued by another operation (such as an agent picking up) or removed via
+[`queueLeave()`][queue-leave].
+
+<Info>
+This method emits [`calling.call.queue`][calling-call-queue] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="queueName" type="string" required={true} toc={true}>
+  Name of the queue to enter.
+</ParamField>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="statusUrl" type="string | undefined" toc={true}>
+  URL to receive queue status webhooks (position updates, dequeue events).
+</ParamField>
+
+## **Returns**
+
+`Promise<Record<string, unknown>>` -- Server response confirming the call entered the queue.
+
+## **Example**
+
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'You are being placed in the support queue.' }]);
+
+  // Enter the queue
+  await call.queueEnter('support', {
+    statusUrl: 'https://example.com/queue-status',
+  });
+
+  // The call stays in the queue until an agent dequeues it
+});
+
+await client.run();
+```

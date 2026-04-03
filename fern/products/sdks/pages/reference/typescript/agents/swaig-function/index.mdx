@@ -1,0 +1,197 @@
+---
+title: "SwaigFunction"
+slug: /reference/typescript/agents/swaig-function
+description: "Wrapper class for SWAIG function definitions with execution and validation."
+max-toc-depth: 3
+---
+
+[agent-tool-decorator]: /docs/sdks/reference/typescript/agents/agent-base#tool
+[define-tool]: /docs/sdks/reference/typescript/agents/agent-base/define-tool
+[agentbase]: /docs/sdks/reference/typescript/agents/agent-base
+[datamap]: /docs/sdks/reference/typescript/agents/data-map
+[functionresult]: /docs/sdks/reference/typescript/agents/function-result
+[swaig-function-definition]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[execute]: /docs/sdks/reference/typescript/agents/swaig-function/execute
+[toswaig]: /docs/sdks/reference/typescript/agents/swaig-function/to-swaig
+[validateargs]: /docs/sdks/reference/typescript/agents/swaig-function/validate-args
+
+SwaigFunction wraps a function as a SWAIG (SignalWire AI Gateway) tool
+that the AI can invoke during a conversation. It manages the function's name,
+description, parameter schema, security settings, and serialization to SWML.
+
+In most cases you do not create SwaigFunction instances directly. The
+[`@agent.tool()` decorator][agent-tool-decorator]
+and [`defineTool()`][define-tool] method
+on [`AgentBase`][agentbase] handle construction
+internally. This class is documented for advanced use cases such as custom
+registration via `registerSwaigFunction()`.
+
+<Info>
+For server-side API tools without a Python handler, see
+[`DataMap`][datamap]. For building the
+response returned from a handler, see
+[`FunctionResult`][functionresult].
+</Info>
+
+<Info>
+SwaigFunction serializes to a SWML [SWAIG function definition][swaig-function-definition].
+See the [SWML SWAIG functions reference][swml-swaig-functions-reference] for the
+full specification.
+</Info>
+
+## **Properties**
+
+<ParamField path="name" type="string" toc={true}>
+  The function name.
+</ParamField>
+
+<ParamField path="handler" type="Function" toc={true}>
+  The underlying Python handler function.
+</ParamField>
+
+<ParamField path="description" type="string" toc={true}>
+  The function description.
+</ParamField>
+
+<ParamField path="parameters" type="Record<string, unknown>" toc={true}>
+  The parameter schema dictionary.
+</ParamField>
+
+<ParamField path="secure" type="boolean" toc={true}>
+  Whether token authentication is required.
+</ParamField>
+
+<ParamField path="fillers" type={"Record<string, string[]> | undefined"} toc={true}>
+  Filler phrases by language code to speak while the function executes
+  (e.g., `{"en-US": ["Let me check on that..."]}`).
+</ParamField>
+
+<ParamField path="waitFile" type="string | undefined" toc={true}>
+  URL of an audio file to play while the function executes. Preferred over `fillers`.
+</ParamField>
+
+<ParamField path="waitFileLoops" type="number | undefined" toc={true}>
+  Number of times to loop `wait_file`. Defaults to playing once.
+</ParamField>
+
+<ParamField path="webhookUrl" type="string | undefined" toc={true}>
+  External webhook URL. When set, the function call is forwarded to this URL instead
+  of being handled locally.
+</ParamField>
+
+<ParamField path="required" type="string[]" toc={true}>
+  List of required parameter names. Merged into the parameter schema's `required` array.
+</ParamField>
+
+<ParamField path="isTypedHandler" type="boolean" toc={true}>
+  Whether the handler uses type-hinted parameters (auto-wrapped by the `@tool` decorator).
+</ParamField>
+
+<ParamField path="isExternal" type="boolean" toc={true}>
+  `true` when `webhook_url` is set, indicating the function is handled externally.
+</ParamField>
+
+### \_\_call\_\_
+
+The SwaigFunction object is callable. Calling it directly delegates to the
+underlying handler:
+
+```typescript
+import { SwaigFunction, FunctionResult } from 'signalwire-agents';
+
+const fn = new SwaigFunction({
+  name: 'check_order',
+  description: 'Check order status by ID',
+  parameters: {
+    order_id: { type: 'string', description: 'The order ID' },
+  },
+  handler: async (args) => {
+    return new FunctionResult(`Order ${args.order_id} is shipped.`);
+  },
+});
+```
+
+This is equivalent to `func.handler(args, raw_data)`.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="execute" href="/docs/sdks/reference/typescript/agents/swaig-function/execute">
+    Execute the function with the given arguments.
+  </Card>
+  <Card title="toSwaig" href="/docs/sdks/reference/typescript/agents/swaig-function/to-swaig">
+    Convert the function to a SWAIG-compatible dictionary for SWML.
+  </Card>
+  <Card title="validateArgs" href="/docs/sdks/reference/typescript/agents/swaig-function/validate-args">
+    Validate arguments against the parameter JSON Schema.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Manual registration
+
+```typescript
+import { AgentBase, FunctionResult } from 'signalwire-agents';
+
+function handleLookup(args, rawData) {
+    account_id = args.get("account_id", "")
+    return FunctionResult(`Account ${account_id} is active.`)
+
+const agent = new AgentBase({ name: 'my-agent' });
+
+func = SWAIGFunction(
+    name="lookup_account",
+    handler=handle_lookup,
+    description="Look up account status by ID",
+    parameters={
+        "type": "object",
+        "properties": {
+            "account_id": {
+                "type": "string",
+                "description": "The account ID to look up"
+            }
+        },
+        "required": ["account_id"]
+    },
+    secure= true,
+    fillers={"en-US": ["Let me check on that..."]}
+)
+
+// Validate before registering
+is_valid, errors = func.validateArgs({"account_id": "12345"})
+console.log(`Valid: ${is_valid}, Errors: ${errors}`)
+// Valid: true, Errors: []
+```
+
+### Using the decorator (preferred)
+
+In most cases, use the `@agent.tool()` decorator instead of constructing
+SwaigFunction directly:
+
+```typescript
+import { AgentBase, FunctionResult } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'my-agent' });
+agent.setPromptText("You are a helpful assistant.")
+
+    description="Look up account status by ID",
+    parameters={
+        "type": "object",
+        "properties": {
+            "account_id": {"type": "string", "description": "Account ID"}
+        },
+        "required": ["account_id"]
+    },
+    secure= true,
+    fillers=["Let me check on that..."]
+)
+    account_id = args.get("account_id", "")
+    return FunctionResult(`Account ${account_id} is active.`)
+
+// Entry point
+    agent.run()
+```
