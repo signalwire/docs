@@ -1,0 +1,166 @@
+---
+title: "PomBuilder"
+slug: /reference/go/agents/pom-builder
+description: "Build structured Prompt Object Model prompts with sections, subsections, and bullets."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/go/agents/agent-base
+[addsection]: /docs/sdks/reference/go/agents/pom-builder/add-section
+[addsubsection]: /docs/sdks/reference/go/agents/pom-builder/add-subsection
+[addtosection]: /docs/sdks/reference/go/agents/pom-builder/add-to-section
+[fromsections]: /docs/sdks/reference/go/agents/pom-builder/from-sections
+[getsection]: /docs/sdks/reference/go/agents/pom-builder/has-section
+[hassection]: /docs/sdks/reference/go/agents/pom-builder/has-section
+[render]: /docs/sdks/reference/go/agents/pom-builder/render
+[todict]: /docs/sdks/reference/go/agents/pom-builder/to-dict
+[tojson]: /docs/sdks/reference/go/agents/pom-builder/to-json
+
+PomBuilder provides a fluent interface for creating structured prompts using
+the Prompt Object Model (POM). POM organizes prompt content into titled sections,
+subsections, and bullet lists -- producing consistent, well-structured prompts
+that the AI can follow reliably.
+
+Use PomBuilder when you need fine-grained control over prompt structure beyond
+what `SetPromptText()` and `PromptAddSection()` on
+[`AgentBase`][agentbase] provide. The builder
+can render to Markdown or XML format.
+
+<Note>
+PomBuilder requires the `signalwire-pom` package. Install it with:
+`go get github.com/signalwire/signalwire-go-pom`
+</Note>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="add_section" href="/docs/sdks/reference/go/agents/pom-builder/add-section">
+    Add a new top-level section to the POM.
+  </Card>
+  <Card title="add_subsection" href="/docs/sdks/reference/go/agents/pom-builder/add-subsection">
+    Add a subsection to an existing section.
+  </Card>
+  <Card title="add_to_section" href="/docs/sdks/reference/go/agents/pom-builder/add-to-section">
+    Add content to an existing section.
+  </Card>
+  <Card title="from_sections" href="/docs/sdks/reference/go/agents/pom-builder/from-sections">
+    Create a PomBuilder from a list of section dictionaries.
+  </Card>
+  <Card title="get_section" href="/docs/sdks/reference/go/agents/pom-builder/has-section">
+    Get a section by title for direct manipulation.
+  </Card>
+  <Card title="has_section" href="/docs/sdks/reference/go/agents/pom-builder/has-section">
+    Check if a section with a given title exists.
+  </Card>
+  <Card title="render" href="/docs/sdks/reference/go/agents/pom-builder/render">
+    Render the POM as Markdown or XML.
+  </Card>
+  <Card title="to_dict" href="/docs/sdks/reference/go/agents/pom-builder/to-dict">
+    Convert the POM to a list of section dictionaries.
+  </Card>
+  <Card title="to_json" href="/docs/sdks/reference/go/agents/pom-builder/to-json">
+    Convert the POM to a JSON string.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Building a structured prompt
+
+```go {3}
+package main
+
+import "fmt"
+
+func main() {
+    pom := PomBuilder()
+
+    pom.add_section(
+        "Role",
+        body := "You are a customer service representative for Acme Corp."
+    )
+
+    pom.add_section(
+        "Guidelines",
+        bullets := [
+            "Always greet the customer by name when available",
+            "Be concise and professional",
+            "Never make promises about timelines you cannot keep"
+        ]
+    )
+
+    pom.add_section(
+        "Product Knowledge",
+        body := "You have access to the product catalog.",
+        subsections := [
+            {
+                "title": "Pricing",
+                "body": "Always quote current prices from the catalog."
+            },
+            {
+                "title": "Returns",
+                "body": "30-day return policy for all items."
+            }
+        ]
+    )
+
+    // Render as Markdown for use in a prompt
+    prompt_text := pom.render_markdown()
+    fmt.Println(prompt_text)
+}
+```
+
+### Incremental construction
+
+```go {3}
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    pom := PomBuilder()
+
+    // Start with a basic section
+    pom.AddSection("Capabilities", body="You can help with the following:")
+
+    // Add bullets incrementally as skills are loaded
+    pom.AddToSection("Capabilities", bullet="Weather lookups")
+    pom.AddToSection("Capabilities", bullet="Calendar scheduling")
+    pom.add_to_section("Capabilities", bullets=[
+        "Order tracking",
+        "Account management"
+    ])
+
+    // Add a subsection
+    pom.add_subsection(
+        "Capabilities",
+        "Limitations",
+        body := "You cannot process payments directly."
+    )
+
+    fmt.Println(pom.render_markdown())
+}
+```
+
+### Reconstructing from data
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // Rebuild a PomBuilder from serialized data
+    sections := [
+        {"title": "Role", "body": "You are a helpful assistant."},
+        {"title": "Rules", "bullets": []string{"Be concise", "Be accurate"}}
+    ]
+
+    pom := PomBuilder.from_sections(sections)
+    xml_prompt := pom.render_xml()
+    fmt.Println(xml_prompt)
+}
+```

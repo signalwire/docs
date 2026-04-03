@@ -1,0 +1,195 @@
+---
+title: "sw-agent-init"
+slug: /reference/go/agents/cli/sw-agent-init
+description: "Scaffold new SignalWire agent projects with configurable templates."
+max-toc-depth: 3
+---
+
+The `sw-agent-init` command creates new SignalWire agent projects with a
+pre-configured directory structure, agent class, environment configuration,
+test scaffolding, and optional virtual environment. It supports local,
+AWS Lambda, Google Cloud Functions, and Azure Functions deployment targets.
+
+```bash
+sw-agent-init [project_name] [options]
+```
+
+Running without a project name enters interactive mode with guided prompts.
+
+## Options
+
+<ParamField path="name" type="string" toc={true}>
+  Project name. If omitted, `sw-agent-init` runs in interactive mode and prompts
+  for all configuration values.
+</ParamField>
+
+<ParamField path="--type" type="string" default="basic" toc={true}>
+  Agent type. Valid values:
+  - `"basic"` -- Minimal agent with a single example tool, test scaffolding, and `.env` config
+  - `"full"` -- All features: debug webhooks, post-prompt summary, web UI, basic auth, tests
+</ParamField>
+
+<ParamField path="--platform, -p" type="string" default="local" toc={true}>
+  Target deployment platform. Valid values:
+  - `"local"` -- Standard HTTP/uvicorn server (default)
+  - `"aws"` -- AWS Lambda with handler and SAM template
+  - `"gcp"` -- Google Cloud Function with `main.py` entry point
+  - `"azure"` -- Azure Function with `function_app.py` and `host.json`
+</ParamField>
+
+<ParamField path="--region, -r" type="string" toc={true}>
+  Cloud region for serverless platforms. Defaults vary by platform:
+  - AWS: `us-east-1`
+  - GCP: `us-central1`
+  - Azure: `eastus`
+</ParamField>
+
+<ParamField path="--no-venv" type="flag" toc={true}>
+  Skip virtual environment creation. By default, a `.venv` directory is
+  created and dependencies are installed. Only applies to `local` platform.
+</ParamField>
+
+<ParamField path="--dir" type="string" toc={true}>
+  Parent directory for the project. The project is created as a subdirectory
+  of this path.
+</ParamField>
+
+## Interactive Mode
+
+When run without arguments, `sw-agent-init` prompts for:
+
+1. Project name
+2. Project directory
+3. Agent type (basic or full)
+4. Feature selection (toggle individual features)
+5. SignalWire credentials
+6. Virtual environment creation
+
+```bash
+sw-agent-init
+```
+
+Features available in interactive mode:
+
+| Feature | Description |
+|---------|-------------|
+| Debug webhooks | Real-time call data printed to console |
+| Post-prompt summary | Call summary handling after conversations |
+| Web UI | Static file serving with status page |
+| Example SWAIG tool | Sample `get_info` tool implementation |
+| Test scaffolding | pytest-based test suite |
+| Basic authentication | HTTP basic auth for SWML endpoints |
+
+## Generated Project Structure
+
+### Local Platform
+
+```text
+myagent/
+  agents/
+    __init__.py
+    main_agent.py        # Main agent implementation
+  skills/
+    __init__.py           # Reusable skills module
+  tests/
+    __init__.py
+    test_agent.py         # Test suite using swaig-test
+  web/                    # Static files (full type only)
+    index.html
+  app.py                  # Entry point
+  .env                    # Environment configuration
+  .env.example            # Example configuration
+  .gitignore
+  requirements.txt
+  README.md
+```
+
+### Serverless Platforms
+
+| Platform | Entry Point | Additional Files |
+|----------|-------------|------------------|
+| AWS Lambda | `handler.py` | `deploy.sh` |
+| GCP Cloud Functions | `main.py` | `deploy.sh` |
+| Azure Functions | `function_app/__init__.py` | `host.json`, `local.settings.json`, `deploy.sh` |
+
+## Environment Detection
+
+The generated project auto-detects SignalWire credentials from environment variables:
+
+| Variable | Description |
+|----------|-------------|
+| `SIGNALWIRE_SPACE_NAME` | Your SignalWire space |
+| `SIGNALWIRE_PROJECT_ID` | Project identifier |
+| `SIGNALWIRE_TOKEN` | API token |
+
+If these are set when running `sw-agent-init`, they are written into the
+generated `.env` file.
+
+## Examples
+
+### Basic Local Agent
+
+```bash
+sw-agent-init support-bot
+cd support-bot
+source .venv/bin/activate
+python app.py
+```
+
+### Full-Featured Agent
+
+```bash
+sw-agent-init customer-service --type full
+cd customer-service
+source .venv/bin/activate
+python app.py
+```
+
+### AWS Lambda Project
+
+```bash
+sw-agent-init my-lambda-agent -p aws -r us-west-2
+cd my-lambda-agent
+# Deploy with SAM CLI
+sam build && sam deploy --guided
+```
+
+### Google Cloud Function
+
+```bash
+sw-agent-init my-gcf-agent -p gcp -r us-central1
+cd my-gcf-agent
+gcloud functions deploy my-gcf-agent --runtime python311 --trigger-http
+```
+
+### Azure Function
+
+```bash
+sw-agent-init my-azure-agent -p azure -r eastus
+cd my-azure-agent
+func azure functionapp publish <app-name>
+```
+
+### Skip Virtual Environment
+
+```bash
+sw-agent-init myagent --no-venv
+cd myagent
+go get github.com/signalwire/signalwire-go
+python app.py
+```
+
+## Testing the Generated Agent
+
+```bash
+cd myagent
+source .venv/bin/activate
+
+# Run the test suite
+pytest tests/ -v
+
+# Or use swaig-test directly
+swaig-test agents/main_agent.py --dump-swml
+swaig-test agents/main_agent.py --list-tools
+swaig-test agents/main_agent.py --exec get_info --topic "SignalWire"
+```

@@ -1,0 +1,171 @@
+---
+title: "Actions"
+slug: /reference/go/relay/actions
+description: Action classes returned from call control methods.
+max-toc-depth: 3
+---
+
+[play]: /docs/sdks/reference/go/relay/call/play
+[record]: /docs/sdks/reference/go/relay/call/record
+[detect]: /docs/sdks/reference/go/relay/call/detect
+[call]: /docs/sdks/reference/go/relay/call
+[relayevent]: /docs/sdks/reference/go/relay/events
+[play-action]: /docs/sdks/reference/go/relay/actions/play-action
+[record-action]: /docs/sdks/reference/go/relay/actions/record-action
+[collect-action]: /docs/sdks/reference/go/relay/actions/collect-action
+[detect-action]: /docs/sdks/reference/go/relay/actions/detect-action
+[standalone-collect-action]: /docs/sdks/reference/go/relay/actions/standalone-collect-action
+[fax-action]: /docs/sdks/reference/go/relay/actions/fax-action
+[tap-action]: /docs/sdks/reference/go/relay/actions/tap-action
+[stream-action]: /docs/sdks/reference/go/relay/actions/stream-action
+[pay-action]: /docs/sdks/reference/go/relay/actions/pay-action
+[transcribe-action]: /docs/sdks/reference/go/relay/actions/transcribe-action
+[ai-action]: /docs/sdks/reference/go/relay/actions/ai-action
+[ref-playaction]: /docs/sdks/reference/go/relay/actions/play-action
+
+Action objects are returned from call control methods like
+[`Play()`][play],
+[`Record()`][record], and
+[`Detect()`][detect]. They provide a common
+interface for tracking and controlling in-progress operations on a
+[`Call`][call].
+
+All action classes extend a shared base that provides `is_done`, `completed`,
+`result`, `control_id`, and the `Wait()` method. Specific action types add
+methods relevant to their operation (e.g., `Pause()` and `Resume()` on
+[`PlayAction`][ref-playaction]).
+
+```go
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/relay"
+
+func main() {
+    client := RelayClient(
+        project := "your-project-id",
+        token := "your-api-token",
+        host := "your-space.signalwire.com",
+        contexts := []string{"default"},
+    )
+
+    async def on_call(call):
+        await call.answer()
+        play_action := await call.play([{"type": "tts", "text": "Hello!"}])
+
+        // Control the in-progress operation
+        await play_action.pause()
+        await play_action.resume()
+
+        // Wait for completion
+        event := await play_action.wait()
+
+    client.Run()
+}
+```
+
+## Action (Base Interface)
+
+All action classes share these properties and methods.
+
+### Properties
+
+<ParamField path="control_id" type="string" toc={true}>
+  Unique identifier for this operation, used to correlate commands and events.
+</ParamField>
+
+<ParamField path="is_done" type="bool" toc={true}>
+  `true` if the underlying future has resolved (the operation has reached a terminal state).
+</ParamField>
+
+<ParamField path="completed" type="bool" toc={true}>
+  `true` once the action has finished and the terminal event has been processed.
+</ParamField>
+
+<ParamField path="result" type="*RelayEvent" toc={true}>
+  The terminal [`RelayEvent`][relayevent] for this action,
+  or `nil` if the action has not yet completed.
+</ParamField>
+
+### Methods
+
+#### wait
+
+**wait**(`timeout=None`) -> [`RelayEvent`][relayevent]
+
+Block until the action completes and return the terminal event.
+
+<ParamField path="timeout" type="*float64" toc={true}>
+  Maximum seconds to wait. `nil` waits indefinitely. Raises `asyncio.TimeoutError`
+  if exceeded.
+</ParamField>
+
+## Subclasses
+
+<CardGroup cols={2}>
+  <Card
+    title="PlayAction"
+    href="/docs/sdks/reference/go/relay/actions/play-action"
+  >
+    Tracks audio playback. Supports pause, resume, volume, and stop.
+  </Card>
+  <Card
+    title="RecordAction"
+    href="/docs/sdks/reference/go/relay/actions/record-action"
+  >
+    Tracks recording. Supports pause, resume, and stop.
+  </Card>
+  <Card
+    title="CollectAction"
+    href="/docs/sdks/reference/go/relay/actions/collect-action"
+  >
+    Tracks play-and-collect. Supports stop, volume, and input timers.
+  </Card>
+  <Card
+    title="DetectAction"
+    href="/docs/sdks/reference/go/relay/actions/detect-action"
+  >
+    Tracks detection (answering machine, fax, digits). Stop only.
+  </Card>
+  <Card
+    title="StandaloneCollectAction"
+    href="/docs/sdks/reference/go/relay/actions/standalone-collect-action"
+  >
+    Tracks standalone input collection. Stop and input timers.
+  </Card>
+  <Card
+    title="FaxAction"
+    href="/docs/sdks/reference/go/relay/actions/fax-action"
+  >
+    Tracks fax send/receive. Stop only.
+  </Card>
+  <Card
+    title="TapAction"
+    href="/docs/sdks/reference/go/relay/actions/tap-action"
+  >
+    Tracks media interception. Stop only.
+  </Card>
+  <Card
+    title="StreamAction"
+    href="/docs/sdks/reference/go/relay/actions/stream-action"
+  >
+    Tracks audio streaming to WebSocket. Stop only.
+  </Card>
+  <Card
+    title="PayAction"
+    href="/docs/sdks/reference/go/relay/actions/pay-action"
+  >
+    Tracks payment collection. Stop only.
+  </Card>
+  <Card
+    title="TranscribeAction"
+    href="/docs/sdks/reference/go/relay/actions/transcribe-action"
+  >
+    Tracks transcription. Stop only.
+  </Card>
+  <Card
+    title="AIAction"
+    href="/docs/sdks/reference/go/relay/actions/ai-action"
+  >
+    Tracks an AI agent session. Stop only.
+  </Card>
+</CardGroup>

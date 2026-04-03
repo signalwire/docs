@@ -1,0 +1,56 @@
+---
+title: "OnDebugEvent"
+slug: /reference/go/agents/agent-base/on-debug-event
+description: Register a callback for debug events received at the /debug_events endpoint.
+max-toc-depth: 3
+---
+
+[enable-debug-events]: /docs/sdks/reference/go/agents/agent-base/enable-debug-events
+
+Register a callback for debug events received at the `/debug_events` endpoint.
+Use as a decorator. Both sync and async handlers are supported.
+
+<Note>
+[`EnableDebugEvents()`][enable-debug-events] must be called before events will be delivered.
+</Note>
+
+## **Parameters**
+
+<ParamField path="handler" type="func(str, dict) nil" required={true} toc={true}>
+  Callback function with signature `(event_type: str, data: dict)`.
+
+  - `event_type` -- Event label string (e.g., `"barge"`, `"llm_error"`, `"session_start"`, `"step_change"`)
+  - `data` -- Full event payload including `call_id`, `label`, and event-specific fields
+</ParamField>
+
+## **Returns**
+
+`Callable` -- The handler function, unchanged. This allows `on_debug_event` to be used as a
+decorator.
+
+## **Example**
+
+```go {7}
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("debug-agent"), agent.WithRoute("/debug"))
+    agent.SetPromptText("You are a helpful assistant.")
+    agent.EnableDebugEvents(level=1)
+
+    func HandleDebug(event_type any, data any) *swaig.FunctionResult {
+        if event_type == "llm_error":
+            fmt.Println(fmt.Sprintf("LLM error: %v", data))
+        elif event_type == "barge":
+            fmt.Println(fmt.Sprintf("Barge detected: %vms", data.get('barge_elapsed_ms')))
+        elif event_type == "step_change":
+            fmt.Println(fmt.Sprintf("Step changed to: %v", data.get('step')))
+
+    agent.Serve()
+}
+```

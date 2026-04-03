@@ -1,0 +1,223 @@
+---
+title: "SkillBase"
+slug: /reference/go/agents/skill-base
+description: "Abstract base class for creating reusable, pluggable agent skills."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/go/agents/agent-base
+[skills]: /docs/sdks/reference/go/agents/skills
+[cleanup]: /docs/sdks/reference/go/agents/skill-base/cleanup
+[definetool]: /docs/sdks/reference/go/agents/skill-base/define-tool
+[getglobaldata]: /docs/sdks/reference/go/agents/skill-base/get-global-data
+[gethints]: /docs/sdks/reference/go/agents/skill-base/get-hints
+[getinstancekey]: /docs/sdks/reference/go/agents/skill-base/get-instance-key
+[getparameterschema]: /docs/sdks/reference/go/agents/skill-base/get-parameter-schema
+[getpromptsections]: /docs/sdks/reference/go/agents/skill-base/get-prompt-sections
+[registertools]: /docs/sdks/reference/go/agents/skill-base/register-tools
+[setup]: /docs/sdks/reference/go/agents/skill-base/setup
+[skill-data]: /docs/sdks/reference/go/agents/skill-base/skill-data
+[validate]: /docs/sdks/reference/go/agents/skill-base/validate
+
+SkillBase is the abstract base class for all agent skills. Skills are modular,
+reusable capabilities -- such as weather lookup, web search, or calendar access --
+that can be added to any [`AgentBase`][agentbase]
+agent with a single call to `agent.add_skill()`.
+
+Extend SkillBase to create custom skills. The SDK discovers skills automatically
+from the `signalwire/skills/` directory and validates dependencies on load.
+
+<Info>
+For the catalog of 17+ built-in skills and their configuration parameters, see
+the [Skills][skills] page.
+</Info>
+
+## **Class Attributes**
+
+Define these on your subclass to configure the skill:
+
+<ParamField path="SKILL_NAME" type="string" required={true} toc={true}>
+  Unique identifier for the skill (e.g., `"weather"`, `"web_search"`). Used as
+  the key when calling `agent.add_skill()`.
+</ParamField>
+
+<ParamField path="SKILL_DESCRIPTION" type="string" required={true} toc={true}>
+  Human-readable description of the skill.
+</ParamField>
+
+<ParamField path="SKILL_VERSION" type="string" default="1.0.0" toc={true}>
+  Semantic version string.
+</ParamField>
+
+<ParamField path="REQUIRED_PACKAGES" type="[]string" default="[]" toc={true}>
+  Python packages the skill needs. Checked on setup with `ValidatePackages()`.
+</ParamField>
+
+<ParamField path="REQUIRED_ENV_VARS" type="[]string" default="[]" toc={true}>
+  Environment variables the skill needs. Checked on setup with `ValidateEnvVars()`.
+</ParamField>
+
+<ParamField path="SUPPORTS_MULTIPLE_INSTANCES" type="bool" default="false" toc={true}>
+  When `true`, the same skill can be added to an agent multiple times with
+  different configurations (distinguished by a `tool_name` parameter).
+</ParamField>
+
+## **Instance Properties**
+
+<ParamField path="agent" type="AgentBase" toc={true}>
+  Reference to the parent agent.
+</ParamField>
+
+<ParamField path="params" type="map[string]interface{}" toc={true}>
+  Configuration parameters (with `swaig_fields` removed).
+</ParamField>
+
+<ParamField path="logger" type="Logger" toc={true}>
+  Skill-specific logger namespaced as `signalwire.skills.<SKILL_NAME>`.
+</ParamField>
+
+<ParamField path="swaig_fields" type="map[string]interface{}" toc={true}>
+  SWAIG metadata extracted from params, automatically merged into tool
+  definitions when using `DefineTool()`.
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="cleanup" href="/docs/sdks/reference/go/agents/skill-base/cleanup">
+    Release resources when the skill is removed or the agent shuts down.
+  </Card>
+  <Card title="define_tool" href="/docs/sdks/reference/go/agents/skill-base/define-tool">
+    Register a tool with automatic swaig_fields merging.
+  </Card>
+  <Card title="get_global_data" href="/docs/sdks/reference/go/agents/skill-base/get-global-data">
+    Return data to merge into the agent's global_data dictionary.
+  </Card>
+  <Card title="get_hints" href="/docs/sdks/reference/go/agents/skill-base/get-hints">
+    Return speech recognition hints for this skill.
+  </Card>
+  <Card title="get_instance_key" href="/docs/sdks/reference/go/agents/skill-base/get-instance-key">
+    Get the unique key used to track this skill instance.
+  </Card>
+  <Card title="get_parameter_schema" href="/docs/sdks/reference/go/agents/skill-base/get-parameter-schema">
+    Return metadata about all parameters the skill accepts.
+  </Card>
+  <Card title="get_prompt_sections" href="/docs/sdks/reference/go/agents/skill-base/get-prompt-sections">
+    Return POM prompt sections for the agent.
+  </Card>
+  <Card title="register_tools" href="/docs/sdks/reference/go/agents/skill-base/register-tools">
+    Register SWAIG tools with the parent agent.
+  </Card>
+  <Card title="setup" href="/docs/sdks/reference/go/agents/skill-base/setup">
+    Initialize the skill and validate dependencies.
+  </Card>
+  <Card title="skill data" href="/docs/sdks/reference/go/agents/skill-base/skill-data">
+    Read and write namespaced skill state.
+  </Card>
+  <Card title="validate" href="/docs/sdks/reference/go/agents/skill-base/validate">
+    Validate environment variables and package dependencies.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Custom skill
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/skills"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    import os
+
+    // WeatherSkill embeds SkillBase
+        SKILL_NAME := "weather"
+        SKILL_DESCRIPTION := "Provides weather information"
+        SKILL_VERSION := "1.0.0"
+        REQUIRED_PACKAGES := []string{"requests"}
+        REQUIRED_ENV_VARS := []string{"WEATHER_API_KEY"}
+
+        func Setup() bool {
+            if not validate_packages():
+                return false
+            if not validate_env_vars():
+                return false
+            api_key = os.getenv("WEATHER_API_KEY")
+            return true
+
+        func RegisterTools() *swaig.FunctionResult {
+            define_tool(
+                name := "get_weather",
+                description := "Get current weather for a location",
+                handler := _get_weather,
+                parameters := {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "City name or zip code"
+                        }
+                    },
+                    "required": []string{"location"}
+                }
+            )
+
+        func GetWeather(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+            import requests
+            location := args[]string{"location"}
+            resp := requests.get(
+                f"https://api.weather.com/v1/current?q={location}&key={api_key}"
+            )
+            data := resp.json()
+            return FunctionResult(
+                f"Weather in {location}: {data['condition']}, {data['temp']}F"
+            )
+
+        func GetHints() *swaig.FunctionResult {
+            return []string{"weather", "temperature", "forecast"}
+
+        func GetPromptSections() *swaig.FunctionResult {
+            return [{
+                "title": "Weather Information",
+                "body": "You can check weather for any location."
+            }]
+
+        func GetParameterSchema(cls any) *swaig.FunctionResult {
+            schema := super().get_parameter_schema()
+            schema.update({
+                "units": {
+                    "type": "string",
+                    "description": "Temperature units",
+                    "default": "fahrenheit",
+                    "enum": []string{"fahrenheit", "celsius"}
+                }
+            })
+            return schema
+}
+```
+
+### Using a skill
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("weather-agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+    agent.AddSkill("weather")
+
+    // Or with custom configuration
+    agent.AddSkill("weather", {"units": "celsius"})
+
+        agent.Run()
+}
+```

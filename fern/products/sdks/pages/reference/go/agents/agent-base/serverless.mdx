@@ -1,0 +1,120 @@
+---
+title: "serverless"
+slug: /reference/go/agents/agent-base/serverless
+description: Handle requests in serverless environments like AWS Lambda, Google Cloud Functions, and Azure Functions.
+max-toc-depth: 3
+---
+
+[run]: /docs/sdks/reference/go/agents/agent-base/run
+
+Handle incoming requests in serverless environments. This method dispatches to the
+appropriate handler based on the detected (or forced) execution mode: CGI, Lambda,
+Google Cloud Functions, or Azure Functions.
+
+In most cases, use [`Run()`][run] instead,
+which auto-detects the environment and calls this method when appropriate. Call
+`HandleServerlessRequest()` directly only when you need explicit control over the
+serverless dispatch.
+
+The method automatically:
+- Parses the request body for SWAIG function calls
+- Routes to the correct SWAIG function handler
+- Returns the SWML document for root path requests
+- Validates authentication credentials
+
+<Note>
+Supported platforms: AWS Lambda (HTTP API v1 and v2), Google Cloud Functions (Flask),
+Azure Functions (HttpRequest/HttpResponse), and CGI.
+</Note>
+
+## **Parameters**
+
+<ParamField path="event" type="*interface{}" toc={true}>
+  Platform-specific event or request object:
+  - **Lambda**: The event dictionary from the Lambda handler
+  - **Google Cloud Functions**: The Flask `request` object
+  - **Azure Functions**: The `HttpRequest` object
+  - **CGI**: Not used (reads from `stdin` and environment variables)
+</ParamField>
+
+<ParamField path="context" type="*interface{}" toc={true}>
+  Platform-specific context object (Lambda context, etc.).
+</ParamField>
+
+<ParamField path="mode" type="*string" toc={true}>
+  Override the auto-detected execution mode.
+
+  - `"cgi"` -- CGI gateway interface
+  - `"lambda"` -- AWS Lambda
+  - `"google_cloud_function"` -- Google Cloud Functions
+  - `"azure_function"` -- Azure Functions
+</ParamField>
+
+## **Returns**
+
+Platform-specific response:
+- **Lambda**: `dict` with `statusCode`, `headers`, and `body`
+- **Google Cloud Functions**: Flask `Response` object
+- **Azure Functions**: `HttpResponse` object
+- **CGI**: Response string printed to stdout
+
+## **Examples**
+
+### AWS Lambda
+
+```go {11-12}
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("lambda-agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "say_hello",
+        Description: "Say hello",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        return swaig.NewFunctionResult("Hello!")
+
+    func Handler(event any, context any) *swaig.FunctionResult {
+        return agent.handle_serverless_request(event, context, mode="lambda")
+}
+```
+
+### Google Cloud Function
+
+```go {7}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("gcf-agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    func Main(request any) *swaig.FunctionResult {
+        return agent.handle_serverless_request(request, mode="google_cloud_function")
+}
+```
+
+### Azure Function
+
+```go {8}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+    import azure.functions as func
+
+    agent := agent.NewAgentBase(agent.WithName("azure-agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        return agent.handle_serverless_request(req, mode="azure_function")
+}
+```

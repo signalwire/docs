@@ -1,0 +1,238 @@
+---
+title: "Helper Functions & Constants"
+slug: /reference/go/agents/search/helpers
+description: "Query preprocessing, document preprocessing, model alias resolution, and constants."
+max-toc-depth: 3
+---
+
+[searchservice]: /docs/sdks/reference/go/agents/search/search-service
+[searchengine]: /docs/sdks/reference/go/agents/search/search-engine
+[searchengine-search]: /docs/sdks/reference/go/agents/search/search-engine/search
+[indexbuilder]: /docs/sdks/reference/go/agents/search/index-builder
+
+The Search module provides standalone helper functions for query preprocessing,
+document content preprocessing, and embedding model alias resolution, along with
+constants for model configuration.
+
+```go
+    preprocess_query,
+    preprocess_document_content,
+    resolve_model_alias,
+    MODEL_ALIASES,
+    DEFAULT_MODEL,
+)
+```
+
+<Warning>
+These functions require search dependencies. Install with
+`go get github.com/signalwire/signalwire-go[search]`.
+</Warning>
+
+---
+
+## Functions
+
+### preprocess_query
+
+**preprocess_query**(`query`, `language="en"`, `pos_to_expand=None`, `max_synonyms=5`, `debug=False`, `vector=False`, `query_nlp_backend="nltk"`, `model_name=None`, `preserve_original=True`) -> `dict[str, Any]`
+
+Preprocess a search query with language detection, tokenization, stop word removal,
+POS tagging, synonym expansion, stemming, and optional vectorization. This function
+is used internally by [`SearchService`][searchservice]
+and [`SearchEngine`][searchengine] but can
+also be called directly for custom search pipelines.
+
+#### Parameters
+
+<ParamField path="query" type="string" required={true} toc={true}>
+  Input query string.
+</ParamField>
+
+<ParamField path="language" type="string" default="en" toc={true}>
+  Language code (e.g., `"en"`, `"es"`, `"fr"`) or `"auto"` for automatic detection.
+</ParamField>
+
+<ParamField path="pos_to_expand" type="*[]string" toc={true}>
+  POS tags to expand with synonyms. Defaults to `["NOUN", "VERB", "ADJ"]`.
+</ParamField>
+
+<ParamField path="max_synonyms" type="int" default="5" toc={true}>
+  Maximum number of synonyms to add per word.
+</ParamField>
+
+<ParamField path="debug" type="bool" default="false" toc={true}>
+  Enable debug logging output.
+</ParamField>
+
+<ParamField path="vector" type="bool" default="false" toc={true}>
+  Include a vector embedding of the query in the output. Set to `true` when
+  passing the result to [`SearchEngine.search()`][searchengine-search].
+</ParamField>
+
+<ParamField path="query_nlp_backend" type="string" default="nltk" toc={true}>
+  NLP backend for query processing. Valid values:
+  - `"nltk"` -- fast, lightweight (default)
+  - `"spacy"` -- better quality, requires spaCy models
+</ParamField>
+
+<ParamField path="model_name" type="*string" toc={true}>
+  Sentence transformer model name for vectorization. Must match the model used
+  to build the index being searched. If not specified, uses the default model.
+</ParamField>
+
+<ParamField path="preserve_original" type="bool" default="true" toc={true}>
+  Keep the original query terms in the enhanced text alongside expanded synonyms
+  and stems.
+</ParamField>
+
+#### Returns
+
+`dict[str, Any]` -- A dictionary containing:
+- `input` (str) -- the enhanced query text with synonyms and stems
+- `enhanced_text` (str) -- same as `input`, the preprocessed query
+- `language` (str) -- detected or specified language code
+- `POS` (dict) -- POS tag analysis results
+- `vector` (list[float]) -- embedding vector (only when `vector=True`)
+
+#### Example
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    // Basic preprocessing
+    result := preprocess_query("How do I configure voice agents?")
+    fmt.Println(result[]string{"enhanced_text"})
+
+    // With vectorization for search
+    result := preprocess_query(
+        "How do I configure voice agents?",
+        vector := true,
+        language := "auto",
+    )
+    query_vector := result[]string{"vector"}
+    enhanced_text := result[]string{"enhanced_text"}
+}
+```
+
+---
+
+### preprocess_document_content
+
+**preprocess_document_content**(`content`, `language="en"`, `index_nlp_backend="nltk"`) -> `dict[str, Any]`
+
+Preprocess document content for indexing. Uses less aggressive synonym expansion
+than query preprocessing to keep document representations focused.
+
+This function is called internally by
+[`IndexBuilder`][indexbuilder] during
+index construction.
+
+#### Parameters
+
+<ParamField path="content" type="string" required={true} toc={true}>
+  Document text content to preprocess.
+</ParamField>
+
+<ParamField path="language" type="string" default="en" toc={true}>
+  Language code for processing.
+</ParamField>
+
+<ParamField path="index_nlp_backend" type="string" default="nltk" toc={true}>
+  NLP backend for processing. `"nltk"` or `"spacy"`.
+</ParamField>
+
+#### Returns
+
+`dict[str, Any]` -- A dictionary containing:
+- `enhanced_text` (str) -- the preprocessed document text
+- `keywords` (list[str]) -- up to 20 extracted keywords (stop words removed)
+- `language` (str) -- the language used for processing
+- `pos_analysis` (dict) -- POS tag analysis
+
+#### Example
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    result := preprocess_document_content(
+        "SignalWire agents can be configured with custom prompts and tools.",
+        language := "en",
+    )
+    fmt.Println(result[]string{"keywords"})
+    // ['signalwire', 'agents', 'configured', 'custom', 'prompts', 'tools']
+}
+```
+
+---
+
+### resolve_model_alias
+
+**resolve_model_alias**(`model_name`) -> `str`
+
+Resolve a short model alias to its full model name. If the input is not a known
+alias, it is returned unchanged.
+
+#### Parameters
+
+<ParamField path="model_name" type="string" required={true} toc={true}>
+  A model alias or full model name. Known aliases:
+  - `"mini"` -- `sentence-transformers/all-MiniLM-L6-v2` (384 dims, fastest)
+  - `"base"` -- `sentence-transformers/all-mpnet-base-v2` (768 dims, balanced)
+  - `"large"` -- `sentence-transformers/all-mpnet-base-v2` (768 dims, same as base)
+</ParamField>
+
+#### Returns
+
+`str` -- The full sentence transformer model name.
+
+#### Example
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println(resolve_model_alias("mini"))
+    // "sentence-transformers/all-MiniLM-L6-v2"
+
+    fmt.Println(resolve_model_alias("sentence-transformers/all-mpnet-base-v2"))
+    // "sentence-transformers/all-mpnet-base-v2"  (unchanged)
+}
+```
+
+---
+
+## Constants
+
+### MODEL_ALIASES
+
+```go
+fmt.Println(MODEL_ALIASES)
+```
+
+Dictionary mapping short model aliases to full sentence transformer model names.
+
+| Alias | Full Model Name | Dimensions |
+|-------|----------------|------------|
+| `"mini"` | `sentence-transformers/all-MiniLM-L6-v2` | 384 |
+| `"base"` | `sentence-transformers/all-mpnet-base-v2` | 768 |
+| `"large"` | `sentence-transformers/all-mpnet-base-v2` | 768 |
+
+---
+
+### DEFAULT_MODEL
+
+```go
+fmt.Println(DEFAULT_MODEL)
+```
+
+The default embedding model used for new indexes. This is the `"mini"` model,
+chosen for its smaller size and faster inference. Use the `"base"` alias or
+specify a full model name when higher embedding quality is needed.
