@@ -1,0 +1,554 @@
+---
+title: "Prefabs"
+slug: /reference/typescript/agents/prefabs
+description: Pre-built agent templates for common conversational patterns.
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/typescript/agents/agent-base
+[skill]: /docs/sdks/reference/typescript/agents/skills#native_vector_search
+
+Prefabs are ready-to-use agent classes that implement common conversational patterns.
+Each prefab extends [`AgentBase`][agentbase], so you can
+customize them with additional prompt sections, tools, skills, and languages. Use them
+directly for rapid prototyping or subclass them for production use.
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+    ConciergeAgent,
+    FAQBotAgent,
+    InfoGathererAgent,
+    ReceptionistAgent,
+    SurveyAgent,
+)
+```
+
+| Prefab | Purpose | Built-in Tools |
+|--------|---------|----------------|
+| [ConciergeAgent](#conciergeagent) | Venue information and booking assistance | `check_availability`, `getDirections` |
+| [FAQBotAgent](#faqbotagent) | Answer questions from a knowledge base | `search_faqs` |
+| [InfoGathererAgent](#infogathereragent) | Collect answers to a series of questions | `start_questions`, `submit_answer` |
+| [ReceptionistAgent](#receptionistagent) | Greet callers and transfer to departments | `collect_caller_info`, `transfer_call` |
+| [SurveyAgent](#surveyagent) | Conduct automated surveys with validation | `validateResponse`, `log_response` |
+
+<Tip>
+All prefabs can be extended by subclassing. Add custom tools with `defineTool()`, extra
+prompt sections with `promptAddSection()`, and skills with `addSkill()`.
+</Tip>
+
+---
+
+## ConciergeAgent
+
+A virtual concierge that provides venue information, answers questions about amenities and
+services, helps with bookings, and gives directions.
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+<ParamField path="venueName" type="string" required={true} toc={true}>
+  Name of the venue or business.
+</ParamField>
+
+<ParamField path="services" type="string[]" required={true} toc={true}>
+  List of services offered (e.g., `["room service", "spa bookings"]`).
+</ParamField>
+
+<ParamField path="amenities" type={"Record<str, Record<string, string>>"} required={true} toc={true}>
+  Dictionary of amenities. Each key is an amenity name, and the value is a dict of
+  details (typically `hours` and `location`, but any key-value pairs are accepted).
+</ParamField>
+
+<ParamField path="hoursOfOperation" type={"Record<string, string>"} toc={true}>
+  Dictionary of operating hours by department or service. Defaults to `{"default": "9 AM - 5 PM"}`.
+</ParamField>
+
+<ParamField path="specialInstructions" type="string[]" toc={true}>
+  Additional instructions appended to the agent's prompt (e.g., `["Mention the daily happy hour."]`).
+</ParamField>
+
+<ParamField path="welcomeMessage" type="string" toc={true}>
+  Custom greeting spoken when the call begins. When set, configures `static_greeting` with no-barge mode.
+</ParamField>
+
+<ParamField path="name" type="string" default="concierge" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="string" default="/concierge" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `check_availability` | Check service availability for a date and time | `service` (str), `date` (str, YYYY-MM-DD), `time` (str, HH:MM) |
+| `getDirections` | Get directions to an amenity or location | `location` (str) |
+
+### Example
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+agent = ConciergeAgent(
+    venue_name="The Riverside Resort",
+    services=["room service", "spa treatments", "restaurant reservations", "tours"],
+    amenities={
+        "pool": {"hours": "6 AM - 10 PM", "location": "Ground Floor, East Wing"},
+        "spa": {"hours": "9 AM - 9 PM", "location": "Level 3, East Wing"},
+        "restaurant": {"hours": "7 AM - 10 PM", "location": "Lobby Level"}
+    },
+    hours_of_operation={
+        "front desk": "24 hours",
+        "concierge": "7 AM - 11 PM"
+    },
+    special_instructions=["Mention the daily happy hour at the pool bar (4-6 PM)."],
+    welcome_message="Welcome to The Riverside Resort! How may I assist you today?"
+)
+
+// Entry point
+    agent.run()
+```
+
+---
+
+## FAQBotAgent
+
+Answers frequently asked questions by matching user queries against a provided knowledge base.
+Optionally suggests related questions from the database.
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+<ParamField path="faqs" type={"Record<string, string>[]"} required={true} toc={true}>
+  List of FAQ items. Each dict must have `question` and `answer` keys; an optional
+  `categories` key (list of strings) enables category-based filtering.
+</ParamField>
+
+<ParamField path="suggestRelated" type="boolean" default="True" toc={true}>
+  When `True`, the agent suggests related questions from the FAQ database after answering.
+</ParamField>
+
+<ParamField path="persona" type="string" toc={true}>
+  Custom personality description for the bot. Defaults to a generic helpful FAQ bot persona.
+</ParamField>
+
+<ParamField path="name" type="string" default="faq_bot" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="string" default="/faq" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `search_faqs` | Search FAQs by query or category | `query` (str), `category` (str, optional) |
+
+<Tip>
+FAQBot works best with up to 50 FAQs. For larger knowledge bases, use the
+`native_vector_search` [skill][skill] instead.
+</Tip>
+
+### Example
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+agent = FAQBotAgent(
+    faqs=[
+        {
+            "question": "What is the warranty period?",
+            "answer": "All products come with a 2-year warranty.",
+            "categories": ["warranty", "products"]
+        },
+        {
+            "question": "How do I return a product?",
+            "answer": "Start a return within 30 days at returns.example.com.",
+            "categories": ["returns", "products"]
+        },
+        {
+            "question": "Do you ship internationally?",
+            "answer": "Yes, we ship to over 50 countries.",
+            "categories": ["shipping"]
+        }
+    ],
+    suggest_related=true,
+    persona="You are a helpful product specialist for TechGadgets Inc."
+)
+
+// Entry point
+    agent.run()
+```
+
+---
+
+## InfoGathererAgent
+
+Collects answers to a series of questions in sequence, with optional confirmation for
+critical fields. Supports both static questions (defined at construction) and dynamic
+questions (determined at runtime via a callback).
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+<ParamField path="questions" type={"Record<string, unknown>[]"} toc={true}>
+  List of question dictionaries. If `undefined`, the agent operates in dynamic mode where
+  questions are determined by a callback at request time. Each question dict has:
+</ParamField>
+
+<Indent>
+<ParamField path="questions[].key_name" type="string" required={true} toc={true}>
+  Identifier for storing the answer (e.g., `"email"`).
+</ParamField>
+
+<ParamField path="questions[].question_text" type="string" required={true} toc={true}>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="questions[].confirm" type="boolean" default="False" toc={true}>
+  If `True`, the agent confirms the answer with the user before proceeding. Use for
+  critical data like email addresses and phone numbers.
+</ParamField>
+</Indent>
+
+<ParamField path="name" type="string" default="info_gatherer" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="string" default="/info_gatherer" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `start_questions` | Begin the question sequence | (none) |
+| `submit_answer` | Submit an answer and advance to the next question | `answer` (str) |
+
+### Dynamic Questions
+
+Instead of static questions, use `setQuestionCallback()` to determine questions at
+request time based on query parameters, headers, or request body:
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+function getQuestions(queryParams, bodyParams, headers) {
+    question_set = query_params.get("type", "default")
+    if question_set == "support":
+        return [
+            {"key_name": "name", "question_text": "What is your name?"},
+            {"key_name": "issue", "question_text": "Describe your issue."}
+        ]
+    return [
+        {"key_name": "name", "question_text": "What is your name?"},
+        {"key_name": "message", "question_text": "How can I help?"}
+    ]
+
+agent = InfoGathererAgent()  # No static questions
+agent.setQuestionCallback(get_questions)
+
+// Entry point
+    agent.run()
+```
+
+### set_question_callback
+
+<ParamField path="callback" type={"(arg0: Record<string, unknown>, arg1: dict, arg2: dict) => Record<string, unknown>[]"} required={true} toc={true}>
+  A function receiving `(query_params, body_params, headers)` that returns a list of
+  question dictionaries in the same format as the `questions` constructor parameter.
+</ParamField>
+
+### Accessing Collected Data
+
+Answers are stored in `global_data` and available in SWAIG function handlers:
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+import { FunctionResult } from "@signalwire/sdk";
+
+agent = AgentBase(name="assistant", route="/assistant")
+agent.setPromptText("You are a helpful assistant.")
+
+    # Inside a tool handler
+    global_data = raw_data.get("global_data", {})
+    answers = global_data.get("answers", [])
+    # [{"key_name": "name", "answer": "John Doe"}, ...]
+    return FunctionResult(`Processed ${len(answers)} answers.`)
+
+agent.run()
+```
+
+### Example
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+agent = InfoGathererAgent(
+    questions=[
+        {"key_name": "name", "question_text": "What is your name?"},
+        {"key_name": "phone", "question_text": "What is your phone number?", "confirm": true},
+        {"key_name": "date", "question_text": "What date would you like to schedule?"},
+        {"key_name": "time", "question_text": "What time works best for you?"}
+    ],
+    name="appointment-scheduler"
+)
+
+agent.addLanguage("English", "en-US", "rime.spore")
+agent.promptAddSection("Brand", "You are scheduling appointments for Dr. Smith's office.")
+
+// Entry point
+    agent.run()
+```
+
+---
+
+## ReceptionistAgent
+
+Greets callers, collects basic information about their needs, and transfers them to the
+appropriate department. Uses `FunctionResult.connect()` for call transfers.
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+<ParamField path="departments" type={"Record<string, string>[]"} required={true} toc={true}>
+  List of departments. At least one department is required. Each dict must have:
+</ParamField>
+
+<Indent>
+<ParamField path="departments[].name" type="string" required={true} toc={true}>
+  Department identifier (e.g., `"sales"`). Used in the transfer tool's enum.
+</ParamField>
+
+<ParamField path="departments[].description" type="string" required={true} toc={true}>
+  Description of what the department handles. Guides the AI in routing decisions.
+</ParamField>
+
+<ParamField path="departments[].number" type="string" required={true} toc={true}>
+  Phone number for call transfer (e.g., `"+15551234567"`).
+</ParamField>
+</Indent>
+
+<ParamField path="greeting" type="string" default="Thank you for calling. How can I help you today?" toc={true}>
+  Initial greeting spoken to the caller.
+</ParamField>
+
+<ParamField path="voice" type="string" default="rime.spore" toc={true}>
+  Voice ID for the agent's language configuration.
+</ParamField>
+
+<ParamField path="name" type="string" default="receptionist" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="string" default="/receptionist" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `collect_caller_info` | Record the caller's name and reason for calling | `name` (str), `reason` (str) |
+| `transfer_call` | Transfer the caller to a department | `department` (str, one of the registered department names) |
+
+<Note>
+The `transfer_call` tool uses `FunctionResult.connect()` with `final=True`, which
+permanently transfers the call out of the agent. The AI speaks a goodbye message
+before the transfer executes.
+</Note>
+
+### Example
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+agent = ReceptionistAgent(
+    departments=[
+        {"name": "sales", "description": "New orders, pricing, and product information", "number": "+15551001001"},
+        {"name": "support", "description": "Technical issues and troubleshooting", "number": "+15551001002"},
+        {"name": "billing", "description": "Invoices, payments, and refunds", "number": "+15551001003"},
+        {"name": "hr", "description": "Employment, careers, and benefits", "number": "+15551001004"}
+    ],
+    greeting="Thank you for calling Acme Corporation. How may I direct your call?",
+    voice="rime.spore",
+    name="acme-receptionist"
+)
+
+agent.promptAddSection("Company", "You are the receptionist for Acme Corporation.")
+
+// Entry point
+    agent.run()
+```
+
+---
+
+## SurveyAgent
+
+Conducts automated surveys with support for multiple question types, response validation,
+and structured result summaries. The agent guides users through each question in sequence,
+validates answers based on the question type, and retries on invalid responses.
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+<ParamField path="surveyName" type="string" required={true} toc={true}>
+  Name of the survey. Used in the agent's prompt and summary output.
+</ParamField>
+
+<ParamField path="questions" type={"Record<string, unknown>[]"} required={true} toc={true}>
+  List of survey questions. Each dict must have `id`, `text`, and `type`:
+</ParamField>
+
+<Indent>
+<ParamField path="questions[].id" type="string" required={true} toc={true}>
+  Unique identifier for the question (e.g., `"satisfaction"`). Auto-generated as
+  `question_N` if omitted.
+</ParamField>
+
+<ParamField path="questions[].text" type="string" required={true} toc={true}>
+  The question text to ask the user.
+</ParamField>
+
+<ParamField path="questions[].type" type="string" required={true} toc={true}>
+  Question type. Valid values:
+  - `"rating"` -- numeric scale (1 to `scale`)
+  - `"multiple_choice"` -- select from `options` list
+  - `"yes_no"` -- accepts yes/no/y/n
+  - `"open_ended"` -- free text response
+</ParamField>
+
+<ParamField path="questions[].options" type="string[]" toc={true}>
+  Required for `multiple_choice` questions. List of valid answer options.
+</ParamField>
+
+<ParamField path="questions[].scale" type="number" default="5" toc={true}>
+  For `rating` questions, the maximum value on the scale (e.g., `5` for 1-5).
+</ParamField>
+
+<ParamField path="questions[].required" type="boolean" default="True" toc={true}>
+  Whether the question requires an answer. Non-required `open_ended` questions accept
+  empty responses.
+</ParamField>
+</Indent>
+
+<ParamField path="introduction" type="string" toc={true}>
+  Custom introduction message. Defaults to `"Welcome to our {survey_name}."`.
+</ParamField>
+
+<ParamField path="conclusion" type="string" toc={true}>
+  Custom conclusion message. Defaults to `"Thank you for completing our survey."`.
+</ParamField>
+
+<ParamField path="brandName" type="string" default="Our Company" toc={true}>
+  Company or brand name used in the agent's persona.
+</ParamField>
+
+<ParamField path="maxRetries" type="number" default="2" toc={true}>
+  Maximum number of times to re-ask a question after an invalid response.
+</ParamField>
+
+<ParamField path="name" type="string" default="survey" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="string" default="/survey" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `validateResponse` | Check if a response meets the question's requirements | `question_id` (str), `response` (str) |
+| `log_response` | Record a validated response | `question_id` (str), `response` (str) |
+
+### Example
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+agent = SurveyAgent(
+    survey_name="Product Feedback Survey",
+    brand_name="TechGadgets Inc.",
+    introduction="Thank you for purchasing our product. We'd love your feedback!",
+    conclusion="Thank you for completing our survey. Your input helps us improve.",
+    questions=[
+        {
+            "id": "overall_rating",
+            "text": "How would you rate the product overall?",
+            "type": "rating",
+            "scale": 5
+        },
+        {
+            "id": "quality",
+            "text": "How would you rate the build quality?",
+            "type": "multiple_choice",
+            "options": ["Poor", "Fair", "Good", "Excellent"]
+        },
+        {
+            "id": "purchase_again",
+            "text": "Would you purchase from us again?",
+            "type": "yes_no"
+        },
+        {
+            "id": "improvements",
+            "text": "What could we improve?",
+            "type": "open_ended",
+            "required": false
+        }
+    ],
+    max_retries=2
+)
+
+agent.addLanguage("English", "en-US", "rime.spore")
+
+// Entry point
+    agent.run()
+```
+
+---
+
+## Extending Prefabs
+
+All prefabs inherit from [`AgentBase`][agentbase],
+so you can add custom tools, prompt sections, and skills:
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+import { FunctionResult } from "@signalwire/sdk";
+
+class MyFAQBot extends FAQBotAgent {
+    Init() {
+        super().__init__(
+            faqs=[
+                {"question": "What is your return policy?", "answer": "30-day returns."}
+            ]
+        )
+
+        self.promptAddSection("Brand", "You represent Acme Corp.")
+        self.addSkill("datetime")
+
+        self.defineTool(
+            name="escalate",
+            description="Escalate to human agent",
+            parameters={},
+            handler=self.escalate
+        )
+
+    escalate(args, rawData) {
+        return FunctionResult("Transferring to agent...").connect("+15551234567")
+
+// Entry point
+    MyFAQBot().run()
+```

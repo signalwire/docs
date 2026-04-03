@@ -1,0 +1,60 @@
+---
+title: "wait"
+slug: /reference/typescript/relay/message/wait
+description: "Block until the message reaches a terminal state."
+max-toc-depth: 3
+---
+
+[relayevent]: /docs/sdks/reference/typescript/relay/events
+
+Block until the message reaches a terminal state (`delivered`, `undelivered`, or
+`failed`). Returns the terminal [`RelayEvent`][relayevent].
+
+<Warning>
+Raises `asyncio.TimeoutError` if `timeout` is specified and the message does not
+reach a terminal state within the given duration.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="timeout" type="number | undefined" toc={true}>
+  Maximum number of seconds to wait. `undefined` waits indefinitely.
+</ParamField>
+
+## **Returns**
+
+[`RelayEvent`][relayevent] -- The event that caused the message to
+reach its terminal state. Inspect `message.state` for the final state value.
+
+## **Example**
+
+```typescript {20}
+import asyncio
+import { RelayClient } from "@signalwire/sdk";
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+async def send_with_timeout():
+    async with client:
+        message = await client.sendMessage(
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Your verification code is 123456",
+        )
+
+        try:
+            event = await message.wait(timeout=30)
+            if message.state == "delivered":
+                console.log("Message delivered successfully")
+            else:
+                console.log(`Message failed: ${message.reason}`)
+        except asyncio.TimeoutError:
+            console.log("Timed out waiting for delivery confirmation")
+
+asyncio.run(send_with_timeout())
+```

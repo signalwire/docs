@@ -1,0 +1,120 @@
+---
+title: "Helper Functions"
+sidebar-title: "helpers"
+slug: /reference/typescript/agents/data-map/helper-functions
+description: Convenience functions for creating common DataMap patterns.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/typescript/agents/data-map
+[ref-functionresult]: /docs/sdks/reference/typescript/agents/function-result
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+Create a DataMap for a straightforward single-endpoint API call with minimal
+configuration.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Function name.
+</ParamField>
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  API endpoint URL.
+</ParamField>
+
+<ParamField path="responseTemplate" type="string" required={true} toc={true}>
+  Template string for formatting the response.
+</ParamField>
+
+<ParamField path="parameters" type={"Record<string, dict>"} toc={true}>
+  Parameter definitions. Keys are parameter names, values are dicts with
+  `"type"`, `"description"`, and optional `"required"` keys.
+</ParamField>
+
+<ParamField path="method" type="string" default="GET" toc={true}>
+  HTTP method.
+</ParamField>
+
+<ParamField path="headers" type={"Record<string, string>"} toc={true}>
+  HTTP headers.
+</ParamField>
+
+<ParamField path="body" type={"Record<string, unknown>"} toc={true}>
+  Request body for POST/PUT.
+</ParamField>
+
+<ParamField path="errorKeys" type="string[]" toc={true}>
+  Keys indicating an error response.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- A fully configured DataMap ready for further chaining or conversion.
+
+---
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+```
+
+Create a DataMap for pattern-matching responses without API calls.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Function name.
+</ParamField>
+
+<ParamField path="patterns" type={"Record<str, [str, FunctionResult]>"} required={true} toc={true}>
+  Dictionary mapping test values to `(pattern, [FunctionResult][ref-functionresult])` tuples.
+</ParamField>
+
+<ParamField path="parameters" type={"Record<string, dict>"} toc={true}>
+  Parameter definitions (same format as `create_simple_api_tool`).
+</ParamField>
+
+## **Returns**
+
+`DataMap` -- A fully configured DataMap.
+
+## **Example**
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+import { AgentBase } from "@signalwire/sdk";
+import { FunctionResult } from "@signalwire/sdk";
+
+# Simple API tool -- one line instead of a full DataMap chain
+weather = create_simple_api_tool(
+    name="get_weather",
+    url="https://api.weatherapi.com/v1/current.json?key=KEY&q=${enc:args.city}",
+    response_template="Weather in ${args.city}: ${response.current.condition.text}",
+    parameters={
+        "city": {"type": "string", "description": "City name", "required": true}
+    },
+    error_keys=["error"]
+)
+
+# Expression tool -- pattern matching without API calls
+greeting = create_expression_tool(
+    name="greet",
+    patterns={
+        "${args.language}": (r"spanish|espanol", FunctionResult("Hola!")),
+    },
+    parameters={
+        "language": {"type": "string", "description": "Language to greet in"}
+    }
+)
+
+agent = AgentBase(name="helper-demo")
+agent.setPromptText("You are a helpful assistant.")
+agent.registerSwaigFunction(weather.to_swaig_function())
+agent.registerSwaigFunction(greeting.to_swaig_function())
+
+// Entry point
+    agent.run()
+```

@@ -1,0 +1,53 @@
+---
+title: "onSwmlRequest"
+slug: /reference/typescript/agents/agent-base/on-swml-request
+description: Lifecycle hook called on every SWML request before rendering.
+max-toc-depth: 3
+---
+
+[render-swml]: /docs/sdks/reference/typescript/agents/agent-base/render-swml
+
+Lifecycle hook called on every incoming SWML request before the SWML document is
+rendered. The default implementation is a no-op. Override this method in a
+subclass to inspect or modify agent state before each call is processed.
+
+Common uses include loading caller-specific data from a database, adjusting
+prompts based on request metadata, or logging request details.
+
+## **Parameters**
+
+<ParamField path="rawData" type={"Record<string, unknown>"} required={true} toc={true}>
+  The parsed request body. Contains call metadata such as `call_id`,
+  `caller_id_number`, `caller_id_name`, and any custom SIP headers.
+</ParamField>
+
+## **Returns**
+
+`void | Promise<void>`
+
+## **Example**
+
+```typescript {11-18}
+import { AgentBase } from "@signalwire/sdk";
+
+class PersonalizedAgent extends AgentBase {
+  constructor() {
+    super({ name: "personalized", route: "/personalized" });
+    this.setPromptText("You are a helpful assistant.");
+    this.defineTools();
+  }
+
+  override async onSwmlRequest(
+    rawData: Record<string, unknown>,
+  ): Promise<void> {
+    const callerId = (rawData.caller_id_number as string) ?? "unknown";
+    console.log(`Incoming call from ${callerId}`);
+
+    // Customize the agent per caller
+    this.updateGlobalData({ caller_number: callerId });
+  }
+}
+
+const agent = new PersonalizedAgent();
+agent.run();
+```

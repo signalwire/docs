@@ -1,0 +1,325 @@
+---
+title: "Environment Variables"
+slug: /reference/typescript/agents/configuration/environment-variables
+description: "Complete reference for all environment variables used by the SignalWire Agents SDK."
+max-toc-depth: 3
+---
+
+[ref-relayclient]: /docs/sdks/reference/typescript/relay/client
+
+The SignalWire Agents SDK reads environment variables for server configuration,
+authentication, SSL, logging, RELAY/REST client credentials, and serverless
+platform detection. Environment variables are overridden by constructor parameters
+but take precedence over config file values.
+
+<Tip>
+Use `python-dotenv` to load variables from a `.env` file during development:
+
+```typescript
+from dotenv import load_dotenv
+load_dotenv()
+
+import { AgentBase } from "@signalwire/sdk";
+agent = AgentBase(name="my-agent")
+```
+</Tip>
+
+---
+
+## Server
+
+<ParamField path="PORT" type="number" default="3000" toc={true}>
+  Server port. Used when no `port` argument is passed to the constructor.
+</ParamField>
+
+## Authentication
+
+<ParamField path="SWMLBasicAuthUser" type="string" default="signalwire" toc={true}>
+  Username for HTTP Basic Authentication on all agent webhook endpoints.
+</ParamField>
+
+<ParamField path="SWMLBasicAuthPassword" type="string" toc={true}>
+  Password for HTTP Basic Authentication. If not set, a random password is
+  auto-generated on each startup and printed to the console.
+</ParamField>
+
+<Warning>
+In production, always set `SWML_BASIC_AUTH_PASSWORD` explicitly. Auto-generated
+passwords change on every restart, which will break SignalWire webhook callbacks
+until you update the credentials in your SignalWire dashboard.
+</Warning>
+
+---
+
+## SSL / TLS
+
+<ParamField path="SWMLSslEnabled" type="boolean" default="false" toc={true}>
+  Enable HTTPS. Accepts `"true"`, `"1"`, or `"yes"`.
+</ParamField>
+
+<ParamField path="SWMLSslCertPath" type="string" toc={true}>
+  Path to the SSL certificate file (`.pem` or `.crt`). Required when
+  `SWML_SSL_ENABLED` is set.
+</ParamField>
+
+<ParamField path="SWMLSslKeyPath" type="string" toc={true}>
+  Path to the SSL private key file (`.key`). Required when
+  `SWML_SSL_ENABLED` is set.
+</ParamField>
+
+<ParamField path="SWMLDomain" type="string" toc={true}>
+  Domain name for SSL certificates and URL generation.
+</ParamField>
+
+<ParamField path="SWMLSslVerifyMode" type="string" default="CERT_REQUIRED" toc={true}>
+  SSL certificate verification mode.
+</ParamField>
+
+## Proxy
+
+<ParamField path="SWMLProxyUrlBase" type="string" toc={true}>
+  Base URL when running behind a reverse proxy (e.g., `https://my-agent.example.com`).
+  The agent uses this URL to generate correct webhook URLs in SWML documents.
+</ParamField>
+
+<ParamField path="APPUrl" type="string" toc={true}>
+  Fallback for `SWML_PROXY_URL_BASE` when that variable is not set.
+</ParamField>
+
+<ParamField path="SWMLProxyDebug" type="boolean" default="false" toc={true}>
+  Enable proxy request debug logging.
+</ParamField>
+
+<Warning>
+Setting `SWML_PROXY_URL_BASE` (or `APP_URL`) overrides SSL configuration and port
+settings for webhook URL generation.
+</Warning>
+
+---
+
+## Schema Validation
+
+<ParamField path="SWMLSkipSchemaValidation" type="boolean" default="false" toc={true}>
+  Disable SWML document schema validation. Accepts `"1"`, `"true"`, or `"yes"`.
+  Useful for performance in production when you trust your SWML output.
+</ParamField>
+
+## Security
+
+<ParamField path="SWMLAllowedHosts" type="string" default="*" toc={true}>
+  Comma-separated list of allowed hosts. Set to specific domain(s) in production
+  (e.g., `"agent.example.com,api.example.com"`).
+</ParamField>
+
+<ParamField path="SWMLCorsOrigins" type="string" default="*" toc={true}>
+  Comma-separated list of allowed CORS origins. Restrict to trusted origins in
+  production.
+</ParamField>
+
+<ParamField path="SWMLMaxRequestSize" type="number" default="10485760" toc={true}>
+  Maximum request body size in bytes. Default is 10 MB.
+</ParamField>
+
+<ParamField path="SWMLRateLimit" type="number" default="60" toc={true}>
+  Rate limit in requests per minute.
+</ParamField>
+
+<ParamField path="SWMLRequestTimeout" type="number" default="30" toc={true}>
+  Request timeout in seconds.
+</ParamField>
+
+<ParamField path="SWMLUseHsts" type="boolean" default="true" toc={true}>
+  Enable HTTP Strict Transport Security headers when serving over HTTPS.
+</ParamField>
+
+<ParamField path="SWMLHstsMaxAge" type="number" default="31536000" toc={true}>
+  HSTS `max-age` directive in seconds. Default is 1 year.
+</ParamField>
+
+## Logging
+
+<ParamField path="SIGNALWIRELogMode" type="string" default="auto" toc={true}>
+  Logging mode.
+
+  - `"auto"` -- automatic detection based on environment
+  - `"off"` -- disable all logging
+  - `"stderr"` -- log to stderr
+  - `"default"` -- standard logging output
+</ParamField>
+
+<ParamField path="SIGNALWIRELogLevel" type="string" default="info" toc={true}>
+  Log level.
+
+  - `"debug"` -- verbose output for development and troubleshooting
+  - `"info"` -- standard operational messages
+  - `"warning"` -- potential issues that do not prevent operation
+  - `"error"` -- failures that affect a specific operation
+  - `"critical"` -- severe failures that may prevent the service from running
+</ParamField>
+
+<ParamField path="SIGNALWIRELogFormat" type="string" default="console" toc={true}>
+  Log output format.
+
+  - `"console"` -- colored human-readable output (default)
+  - `"json"` -- structured JSON log lines for log aggregation systems
+</ParamField>
+
+## Skills
+
+<ParamField path="SIGNALWIRESkillPaths" type="string" default="" toc={true}>
+  Colon-separated paths to directories containing custom skills. The skill
+  registry scans these paths in addition to the built-in skills directory.
+</ParamField>
+
+## RELAY and REST Client
+
+These variables are shared between the RELAY WebSocket client and the REST HTTP client.
+
+<ParamField path="SIGNALWIREProjectId" type="string" toc={true}>
+  SignalWire project ID for authentication.
+</ParamField>
+
+<ParamField path="SIGNALWIREApiToken" type="string" toc={true}>
+  API token for authentication.
+</ParamField>
+
+<ParamField path="SIGNALWIREJwtToken" type="string" toc={true}>
+  JWT token for RELAY authentication. Alternative to project ID + API token.
+</ParamField>
+
+<ParamField path="SIGNALWIRESpace" type="string" default="relay.signalwire.com" toc={true}>
+  Space hostname used for RELAY WebSocket connections and as the REST API base URL.
+</ParamField>
+
+<ParamField path="RELAYMaxActiveCalls" type="number" default="1000" toc={true}>
+  Maximum concurrent calls per [`RelayClient`][ref-relayclient] instance.
+</ParamField>
+
+<ParamField path="RELAYMaxConnections" type="number" default="1" toc={true}>
+  Maximum concurrent `RelayClient` connections per process.
+</ParamField>
+
+## Serverless Platforms
+
+The SDK auto-detects the execution environment from platform-specific variables.
+You typically do not set these manually -- they are provided by the platform runtime.
+
+### AWS Lambda
+
+<ParamField path="AWSLambdaFunctionName" type="string" default="unknown" toc={true}>
+  Lambda function name. Used for URL construction and logging.
+</ParamField>
+
+<ParamField path="AWSLambdaFunctionUrl" type="string" toc={true}>
+  Lambda function URL. If not set, constructed from region and function name.
+</ParamField>
+
+<ParamField path="AWSRegion" type="string" default="us-east-1" toc={true}>
+  AWS region for Lambda execution.
+</ParamField>
+
+<ParamField path="LAMBDATaskRoot" type="string" toc={true}>
+  Lambda environment detection variable. Set automatically by the Lambda runtime.
+</ParamField>
+
+### Google Cloud Functions
+
+<ParamField path="GOOGLECloudProject" type="string" toc={true}>
+  Google Cloud project ID.
+</ParamField>
+
+<ParamField path="GCPProject" type="string" toc={true}>
+  Alternative to `GOOGLE_CLOUD_PROJECT`.
+</ParamField>
+
+<ParamField path="GOOGLECloudRegion" type="string" default="us-central1" toc={true}>
+  Google Cloud region.
+</ParamField>
+
+<ParamField path="FUNCTIONTarget" type="string" default="unknown" toc={true}>
+  Cloud Function entry point name.
+</ParamField>
+
+<ParamField path="KService" type="string" default="unknown" toc={true}>
+  Knative/Cloud Run service name.
+</ParamField>
+
+### Azure Functions
+
+<ParamField path="AZUREFunctionsEnvironment" type="string" toc={true}>
+  Azure Functions environment detection variable.
+</ParamField>
+
+<ParamField path="WEBSITESiteName" type="string" toc={true}>
+  Azure App Service site name. Used to construct function URLs.
+</ParamField>
+
+<ParamField path="AZUREFunctionName" type="string" default="unknown" toc={true}>
+  Azure Function name.
+</ParamField>
+
+### CGI
+
+<ParamField path="GATEWAYInterface" type="string" toc={true}>
+  CGI environment detection variable.
+</ParamField>
+
+<ParamField path="HTTPHost" type="string" toc={true}>
+  HTTP Host header value. Falls back to `SERVER_NAME`.
+</ParamField>
+
+<ParamField path="SERVERName" type="string" default="localhost" toc={true}>
+  Server hostname.
+</ParamField>
+
+<ParamField path="SCRIPTName" type="string" default="" toc={true}>
+  CGI script path.
+</ParamField>
+
+## Example .env File
+
+```bash
+# Server
+PORT=3000
+
+# Authentication
+SWML_BASIC_AUTH_USER=agent_user
+SWML_BASIC_AUTH_PASSWORD=secret_password_123
+
+# SSL Configuration
+SWML_SSL_ENABLED=true
+SWML_DOMAIN=agent.example.com
+SWML_SSL_CERT_PATH=/etc/ssl/certs/agent.crt
+SWML_SSL_KEY_PATH=/etc/ssl/private/agent.key
+
+# Security
+SWML_ALLOWED_HOSTS=agent.example.com
+SWML_CORS_ORIGINS=https://app.example.com
+SWML_RATE_LIMIT=100
+
+# Logging
+SIGNALWIRE_LOG_MODE=default
+SIGNALWIRE_LOG_LEVEL=info
+
+# RELAY / REST
+SIGNALWIRE_PROJECT_ID=your-project-id
+SIGNALWIRE_API_TOKEN=your-api-token
+SIGNALWIRE_SPACE=your-space.signalwire.com
+
+# Custom Skills
+SIGNALWIRE_SKILL_PATHS=/opt/custom_skills
+```
+
+## Loading .env in Python
+
+```typescript
+from dotenv import load_dotenv
+load_dotenv()
+
+import { AgentBase } from "@signalwire/sdk";
+agent = AgentBase(name="my-agent")
+
+# Environment variables are now available to the SDK
+username, password, source = agent.getBasicAuthCredentials(include_source=true)
+console.log(`Auth: ${username}:${password} (source: ${source})`)
+```

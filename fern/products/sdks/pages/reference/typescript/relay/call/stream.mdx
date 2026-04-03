@@ -1,0 +1,106 @@
+---
+title: "stream"
+slug: /reference/typescript/relay/call/stream
+description: "Stream call audio to a WebSocket endpoint."
+max-toc-depth: 3
+---
+
+[streamaction]: /docs/sdks/reference/typescript/relay/actions
+[calling-call-stream]: /docs/sdks/reference/typescript/relay/call#events
+[call-events]: /docs/sdks/reference/typescript/relay/call#events
+
+Start streaming call audio to a WebSocket endpoint. Returns a
+[`StreamAction`][streamaction] that you can use to
+stop the stream or wait for it to finish.
+
+<Info>
+This method emits [`calling.call.stream`][calling-call-stream] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  WebSocket URL to stream audio to (e.g., `"wss://example.com/stream"`).
+</ParamField>
+
+<ParamField path="name" type="string | undefined" toc={true}>
+  A name for this stream, useful for identifying multiple concurrent streams.
+</ParamField>
+
+<ParamField path="codec" type="string | undefined" toc={true}>
+  Audio codec for the stream.
+
+  - `"PCMU"` -- G.711 mu-law (default for North America)
+  - `"PCMA"` -- G.711 A-law (default for international)
+  - `"OPUS"` -- Opus codec (higher quality, variable bitrate)
+</ParamField>
+
+<ParamField path="track" type="string | undefined" toc={true}>
+  Which audio track to stream.
+
+  - `"inbound"` -- audio received from the caller
+  - `"outbound"` -- audio sent to the caller
+  - `"both"` -- audio in both directions
+</ParamField>
+
+<ParamField path="statusUrl" type="string | undefined" toc={true}>
+  URL to receive stream status webhooks.
+</ParamField>
+
+<ParamField path="statusUrlMethod" type="string | undefined" toc={true}>
+  HTTP method for status webhooks.
+
+  - `"GET"` -- send status updates via GET request
+  - `"POST"` -- send status updates via POST request
+</ParamField>
+
+<ParamField path="authorizationBearerToken" type="string | undefined" toc={true}>
+  Bearer token for authenticating with the WebSocket server.
+</ParamField>
+
+<ParamField path="customParameters" type="dict | undefined" toc={true}>
+  Custom key-value pairs sent with the stream start message.
+</ParamField>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+  Callback invoked when the stream ends.
+</ParamField>
+
+## **Returns**
+
+[`StreamAction`][streamaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```typescript {15}
+import { RelayClient } from "@signalwire/sdk";
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Stream audio to an external service for real-time processing
+    action = await call.stream(
+        url="wss://example.com/audio-stream",
+        track="inbound",
+        codec="PCMU",
+        custom_parameters={"session_id": "abc123"},
+    )
+
+    # The stream runs until stopped or the call ends
+    await call.waitForEnded()
+
+client.run()
+```

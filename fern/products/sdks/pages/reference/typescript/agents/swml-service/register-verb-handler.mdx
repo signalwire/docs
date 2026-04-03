@@ -1,0 +1,61 @@
+---
+title: "registerVerbHandler"
+slug: /reference/typescript/agents/swml-service/register-verb-handler
+description: "Register custom verb handlers for specialized SWML verb processing."
+max-toc-depth: 3
+---
+
+[add-verb]: /docs/sdks/reference/typescript/agents/swml-service/add-verb
+
+Register a custom verb handler for specialized validation and configuration of a
+SWML verb. When a verb with a registered handler is added via
+[`addVerb()`][add-verb], the handler's
+`validateConfig()` method is used instead of generic schema validation.
+
+The SDK ships with a built-in `AIVerbHandler` for the `ai` verb. Register your own
+handlers for custom verbs or to override default validation behavior.
+
+<Tip>
+Custom verb handlers are useful when a verb has complex validation rules that go beyond
+JSON Schema checks — for example, mutually exclusive parameters or conditional requirements.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="handler" type="SWMLVerbHandler" required={true} toc={true}>
+  An instance of a class that extends `SWMLVerbHandler`. Must implement three methods:
+  - `getVerbName()` — returns the verb name string this handler manages
+  - `validate_config(config)` — returns a `(bool, string[])` tuple of `(is_valid, errors)`
+  - `build_config(**kwargs)` — returns a configuration dictionary for the verb
+</ParamField>
+
+## **Returns**
+
+`undefined`
+
+## **Example**
+
+```typescript {18}
+import { AgentBase } from "@signalwire/sdk";
+import { AgentBase } from "@signalwire/sdk";
+
+class CustomVerbHandler extends SWMLVerbHandler {
+    getVerbName() {
+        return "my_verb"
+
+    validateConfig(config) {
+        errors = []
+        if "target" not in config:
+            errors.append("Missing required field 'target'")
+        return len(errors) == 0, errors
+
+    buildConfig(**kwargs) {
+        return {"target": kwargs["target"]}
+
+service = SWMLService(name="custom-service")
+service.register_verb_handler(CustomVerbHandler())
+
+# Now add_verb will use the custom handler for validation
+service.add_verb("my_verb", {"target": "https://example.com"})
+console.log(service.render_document())
+```

@@ -1,0 +1,75 @@
+---
+title: "sendFax"
+slug: /reference/typescript/relay/call/send-fax
+description: "Send a fax document on a call."
+max-toc-depth: 3
+---
+
+[faxaction]: /docs/sdks/reference/typescript/relay/actions
+[calling-call-fax]: /docs/sdks/reference/typescript/relay/call#events
+[call-events]: /docs/sdks/reference/typescript/relay/call#events
+
+Send a fax document on the call. The document must be accessible via URL.
+Returns a [`FaxAction`][faxaction] that you can
+use to stop the fax or wait for it to complete.
+
+<Info>
+This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="document" type="string" required={true} toc={true}>
+  URL of the document to fax (PDF or TIFF format).
+</ParamField>
+
+<ParamField path="identity" type="string | undefined" toc={true}>
+  Caller identity string (TSI) transmitted with the fax.
+</ParamField>
+
+<ParamField path="headerInfo" type="string | undefined" toc={true}>
+  Header text printed at the top of each fax page.
+</ParamField>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+  Callback invoked when the fax operation completes.
+</ParamField>
+
+## **Returns**
+
+[`FaxAction`][faxaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```typescript {14}
+import { RelayClient } from "@signalwire/sdk";
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    action = await call.sendFax(
+        document="https://example.com/invoice.pdf",
+        identity="+15559876543",
+        header_info="Invoice #12345",
+    )
+    event = await action.wait()
+
+    fax_result = event.params.get("fax", {})
+    console.log(`Fax sent: ${fax_result.get('pages', 0)} pages`)
+    await call.hangup()
+
+client.run()
+```

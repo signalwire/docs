@@ -1,0 +1,49 @@
+---
+title: "getFastapiDependency"
+slug: /reference/typescript/agents/configuration/auth-handler/get-fastapi-dependency
+description: Get a FastAPI dependency function for protecting routes.
+max-toc-depth: 3
+---
+
+Get a Hono dependency function that can be used with `Depends()` to protect
+routes. The dependency tries each enabled auth method in order: Bearer token,
+Basic Auth, API key.
+
+## **Parameters**
+
+<ParamField path="optional" type="boolean" default="false" toc={true}>
+  When `True`, unauthenticated requests pass through with
+  `{"authenticated": False}` instead of raising a 401 error.
+</ParamField>
+
+## **Returns**
+
+`Callable` -- An async function suitable for use as a Hono dependency.
+Returns a dict with `authenticated` (bool) and `method` (str or None) keys.
+
+## **Example**
+
+```typescript {9,16}
+from fastapi import FastAPI, Depends
+import { AgentBase } from "@signalwire/sdk";
+import { AgentBase } from "@signalwire/sdk";
+
+security = SecurityConfig()
+auth = AuthHandler(security)
+
+app = FastAPI()
+auth_dep = auth.get_fastapi_dependency()
+
+@app.get("/protected")
+async def protected_route(auth_result=Depends(auth_dep)):
+    return {"method": auth_result["method"]}
+
+# Optional auth -- don't reject unauthenticated requests
+optional_dep = auth.get_fastapi_dependency(optional=true)
+
+@app.get("/public")
+async def public_route(auth_result=Depends(optional_dep)):
+    if auth_result["authenticated"]:
+        return {"user": "authenticated"}
+    return {"user": "anonymous"}
+```

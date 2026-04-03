@@ -1,0 +1,75 @@
+---
+title: "foreach"
+slug: /reference/typescript/agents/data-map/foreach
+description: Process an array from the webhook response.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/typescript/agents/data-map
+
+Process an array from the webhook response, building a formatted string from
+each element.
+
+## **Parameters**
+
+<ParamField path="foreachConfig" type="dict" required={true} toc={true}>
+  Configuration dictionary with the following keys:
+</ParamField>
+
+<Indent>
+<ParamField path="foreach_config.input_key" type="string" required={true} toc={true}>
+  Key in the API response containing the array.
+</ParamField>
+
+<ParamField path="foreach_config.output_key" type="string" required={true} toc={true}>
+  Variable name for the built string (reference as `${output_key}` in output).
+</ParamField>
+
+<ParamField path="foreach_config.max" type="number" toc={true}>
+  Maximum number of items to process.
+</ParamField>
+
+<ParamField path="foreach_config.append" type="string" required={true} toc={true}>
+  Template string to append for each item. Use `${this.field}` to reference
+  fields on the current array element.
+</ParamField>
+</Indent>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- Self for method chaining. Raises `ValueError` if no webhook has been
+added yet.
+
+## **Example**
+
+```typescript {14}
+import { AgentBase } from "@signalwire/sdk";
+import { FunctionResult } from "@signalwire/sdk";
+
+search_docs = (
+    DataMap("search_docs")
+    .purpose("Search documentation")
+    .parameter("query", "string", "Search query", required=true)
+    .webhook(
+        "POST",
+        "https://api.docs.example.com/search",
+        headers={"Authorization": "Bearer TOKEN"}
+    )
+    .body({"query": "${args.query}", "limit": 3})
+    .foreach({
+        "input_key": "results",
+        "output_key": "formatted_results",
+        "max": 3,
+        "append": "- ${this.title}: ${this.summary}\n"
+    })
+    .output(FunctionResult("Found:\n${formatted_results}"))
+    .fallback_output(FunctionResult("Search is currently unavailable."))
+)
+
+agent = AgentBase(name="docs-agent")
+agent.setPromptText("You are a helpful assistant.")
+agent.registerSwaigFunction(search_docs.to_swaig_function())
+
+// Entry point
+    agent.run()
+```

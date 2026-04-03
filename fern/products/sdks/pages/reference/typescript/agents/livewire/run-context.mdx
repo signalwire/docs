@@ -1,0 +1,71 @@
+---
+title: "RunContext"
+slug: /reference/typescript/agents/livewire/run-context
+description: "Context object available inside tool handler functions."
+max-toc-depth: 3
+---
+
+[agentsession]: /docs/sdks/reference/typescript/agents/livewire/agent-session
+[functiontool]: /docs/sdks/reference/typescript/agents/livewire/function-tool
+
+`RunContext` is passed to tool handler functions that declare a parameter with a
+`RunContext` type annotation. It provides access to the current
+[`AgentSession`][agentsession] and its
+user data, letting tools read and modify session state.
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+@function_tool
+function savePreference(ctx: RunContext, color: string): string {
+    `Save the user's favorite color.`
+    ctx.userdata["favorite_color"] = color
+    return `Got it, your favorite color is ${color}.`
+```
+
+<Note>
+The `RunContext` parameter is automatically detected by
+[`@function_tool`][functiontool] via its
+type annotation and excluded from the tool's JSON schema. You do not need to pass it
+when the tool is called by the LLM.
+</Note>
+
+## **Properties**
+
+<ParamField path="session" type="AgentSession | undefined" toc={true}>
+  The [`AgentSession`][agentsession]
+  that owns this context. May be `undefined` if the tool is invoked outside a session.
+</ParamField>
+
+<ParamField path="userdata" type="unknown" toc={true}>
+  Shortcut for `session.userdata`. Returns an empty dict if no session is bound.
+</ParamField>
+
+<ParamField path="speechHandle" type="unknown" toc={true}>
+  Handle to the current speech output. Accepted for API compatibility.
+</ParamField>
+
+<ParamField path="functionCall" type="unknown" toc={true}>
+  Metadata about the function call that triggered this context. Accepted for API
+  compatibility.
+</ParamField>
+
+## **Example**
+
+```typescript
+import { AgentBase } from "@signalwire/sdk";
+
+@function_tool
+function addNote(ctx: RunContext, note: string): string {
+    `Add a note to the session.`
+    notes = ctx.userdata.setdefault("notes", [])
+    notes.append(note)
+    return `Note saved. You have ${len(notes)} note(s).`
+
+agent = Agent(
+    instructions="You are a note-taking assistant.",
+    tools=[add_note],
+)
+session = AgentSession(userdata={"notes": []})
+await session.start(agent)
+```

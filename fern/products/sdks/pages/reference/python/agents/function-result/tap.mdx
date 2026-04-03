@@ -1,0 +1,75 @@
+---
+title: "tap"
+slug: /reference/python/agents/function-result/tap
+description: Stream call audio to an external endpoint via WebSocket or RTP.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/sdks/reference/python/agents/function-result
+
+Start a media tap that streams call audio to an external endpoint. Supports
+WebSocket (`wss://`, `ws://`) and RTP (`rtp://`) destinations.
+
+## **Parameters**
+
+<ParamField path="uri" type="str" required={true} toc={true}>
+  Destination URI for the media stream. Supported formats:
+  - `"rtp://IP:port"` — RTP stream
+  - `"ws://example.com"` — WebSocket stream
+  - `"wss://example.com"` — Secure WebSocket stream
+</ParamField>
+
+<ParamField path="control_id" type="Optional[str]" default="None" toc={true}>
+  Identifier for this tap. Pass the same ID to `stop_tap()` to end this
+  specific tap. If omitted, a default ID is generated.
+</ParamField>
+
+<ParamField path="direction" type="str" default="both" toc={true}>
+  Audio direction to tap.
+
+  - `"speak"` -- what the party says
+  - `"hear"` -- what the party hears
+  - `"both"` -- both directions
+</ParamField>
+
+<ParamField path="codec" type="str" default="PCMU" toc={true}>
+  Audio codec for the stream.
+
+  - `"PCMU"` -- G.711 mu-law
+  - `"PCMA"` -- G.711 A-law
+</ParamField>
+
+<ParamField path="rtp_ptime" type="int" default="20" toc={true}>
+  Packetization time in milliseconds for RTP streams. Must be a positive integer.
+</ParamField>
+
+<ParamField path="status_url" type="Optional[str]" default="None" toc={true}>
+  URL to receive tap status change webhooks.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```python {11}
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
+
+agent = AgentBase(name="my-agent", route="/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+@agent.tool(name="start_monitoring", description="Start monitoring the call audio")
+def start_monitoring(args, raw_data):
+    return (
+        FunctionResult("Call monitoring started.")
+        .tap(
+            uri="wss://monitor.example.com/audio",
+            control_id="supervisor_tap",
+            direction="both"
+        )
+    )
+
+agent.serve()
+```

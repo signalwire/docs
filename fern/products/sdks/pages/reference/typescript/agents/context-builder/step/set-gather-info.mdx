@@ -1,0 +1,68 @@
+---
+title: "setGatherInfo"
+slug: /reference/typescript/agents/context-builder/step/set-gather-info
+description: Enable structured info gathering for this step.
+max-toc-depth: 3
+---
+
+[add-gather-question]: /docs/sdks/reference/typescript/agents/context-builder/step/add-gather-question
+[ref-step]: /docs/sdks/reference/typescript/agents/context-builder/step
+
+Enable info gathering for this step. Call
+[`addGatherQuestion()`][add-gather-question]
+after this method to define the questions.
+
+The gather_info system collects structured information from the caller by
+presenting questions one at a time. It uses dynamic step instruction re-injection
+rather than tool calls, producing zero `tool_call`/`tool_result` entries in
+LLM-visible history.
+
+## **Parameters**
+
+<ParamField path="outputKey" type="string" toc={true}>
+  Key in `global_data` to store collected answers under. When `undefined`, answers are
+  stored at the top level of `global_data`.
+</ParamField>
+
+<ParamField path="completionAction" type="string" toc={true}>
+  Where to go when all questions are answered.
+
+  - `"next_step"` -- auto-advance to the next sequential step
+  - A step name (e.g., `"process_results"`) -- jump to that specific step
+  - `undefined` -- return to normal step mode after gathering
+</ParamField>
+
+<ParamField path="prompt" type="string" toc={true}>
+  Preamble text injected once when entering the gather step, giving the AI
+  personality and context for asking the questions.
+</ParamField>
+
+## **Returns**
+
+[`Step`][ref-step] -- Self for method chaining.
+
+## **Example**
+
+```typescript {9}
+import { AgentBase } from "@signalwire/sdk";
+
+agent = AgentBase(name="my-agent", route="/agent")
+
+contexts = agent.defineContexts()
+ctx = contexts.add_context("default")
+intake = ctx.addStep("intake")
+intake.set_text("Collect patient information.")
+intake.set_gather_info(
+    output_key="patient_info",
+    completion_action="next_step",
+    prompt="Be friendly and professional when collecting information."
+)
+intake.add_gather_question(
+    key="full_name",
+    question="What is your full name?",
+    confirm=true
+)
+ctx.addStep("review").set_text("Review the collected information with the patient.")
+
+agent.run()
+```

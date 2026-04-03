@@ -1,0 +1,60 @@
+---
+title: "waitFor"
+slug: /reference/typescript/relay/call/wait-for
+description: Wait for a specific event on a call.
+max-toc-depth: 3
+---
+
+[relayevent]: /docs/sdks/reference/typescript/relay/events
+
+Wait for a specific event type on this call, optionally filtered by a predicate
+function. This is a one-shot listener -- it resolves on the first matching event
+and then removes itself.
+
+## **Parameters**
+
+<ParamField path="eventType" type="string" required={true} toc={true}>
+  The event type string to wait for.
+</ParamField>
+
+<ParamField path="predicate" type="(arg0: RelayEvent) => boolean | undefined" toc={true}>
+  Optional filter function. If provided, the wait only resolves when the
+  predicate returns `True` for a received event.
+</ParamField>
+
+<ParamField path="timeout" type="number | undefined" toc={true}>
+  Maximum seconds to wait. Raises `asyncio.TimeoutError` if exceeded. `undefined`
+  waits indefinitely.
+</ParamField>
+
+## **Returns**
+
+[`RelayEvent`][relayevent] -- The first event matching the type and optional predicate.
+
+## **Example**
+
+```typescript {16}
+import { RelayClient } from "@signalwire/sdk";
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Wait for a specific play event
+    action = await call.play([{"type": "tts", "text": "Hello!"}])
+    event = await call.waitFor(
+        "calling.call.play",
+        predicate=lambda e: e.params["state"] == "finished",
+        timeout=30,
+    )
+    console.log(`Play finished: ${event.params}`)
+
+client.run()
+```
