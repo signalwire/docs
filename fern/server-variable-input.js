@@ -72,6 +72,35 @@
     return result;
   }
 
+  /**
+   * Given a template URL (with placeholder) and a current URL (with the
+   * placeholder replaced), extract the value that replaced the placeholder.
+   * For example:
+   *   template: "https://{Your_Space_Name}.signalwire.com/api/rest"
+   *   current:  "https://myspace.signalwire.com/api/rest"
+   *   => "myspace"
+   */
+  function extractVariableValue(templateUrl, currentUrl, variable) {
+    if (!templateUrl || !currentUrl) return null;
+    for (var i = 0; i < variable.patterns.length; i++) {
+      var pattern = variable.patterns[i];
+      var idx = templateUrl.toLowerCase().indexOf(pattern.toLowerCase());
+      if (idx === -1) continue;
+      var prefix = templateUrl.substring(0, idx);
+      var suffix = templateUrl.substring(idx + pattern.length);
+      // Check that the current URL starts with the same prefix
+      if (currentUrl.substring(0, prefix.length) !== prefix) continue;
+      // Check that the current URL ends with the same suffix
+      if (suffix.length > 0) {
+        var suffixIdx = currentUrl.indexOf(suffix, prefix.length);
+        if (suffixIdx === -1) continue;
+        return currentUrl.substring(prefix.length, suffixIdx);
+      }
+      return currentUrl.substring(prefix.length);
+    }
+    return null;
+  }
+
   function loadSaved(key) {
     try {
       return localStorage.getItem(key) || "";
@@ -517,6 +546,7 @@
 
     // Wire up input handler
     var debounceTimer = null;
+    var updatingFromInput = false;
     ui.input.addEventListener("input", function () {
       var value = ui.input.value.trim();
       savePersistent(variable.storageKey, value);
@@ -524,6 +554,7 @@
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(function () {
+        updatingFromInput = true;
         if (value) {
           var targetUrl = replaceVariable(
             originalTemplateUrl || urlText,
@@ -534,8 +565,57 @@
         } else {
           updateFernEnvironmentUrl(originalTemplateUrl || urlText);
         }
+        // Reset the flag after a generous delay so our own URL-bar
+        // mutation doesn't trigger reverse sync.
+        setTimeout(function () {
+          updatingFromInput = false;
+        }, 2000);
       }, 400);
     });
+
+    // -----------------------------------------------------------------------
+    // Reverse sync: URL bar → input field
+    // When the user edits the URL bar directly (via double-click),
+    // extract the space name and update our input field to match.
+    // -----------------------------------------------------------------------
+    var urlBarObserver = new MutationObserver(function () {
+      if (updatingFromInput) return;
+      var baseUrl = document.querySelector(
+        ".playground-endpoint-baseurl"
+      );
+      if (!baseUrl) return;
+      var currentText = (baseUrl.textContent || "").trim();
+      if (!currentText || currentText.indexOf("://") === -1) return;
+
+      // If the URL still has a placeholder, nothing to extract
+      if (detectVariable(currentText)) return;
+
+      var template = originalTemplateUrl || urlText;
+      if (!template) return;
+
+      var extracted = extractVariableValue(
+        template,
+        currentText,
+        variable
+      );
+      if (
+        extracted !== null &&
+        extracted !== ui.input.value.trim()
+      ) {
+        ui.input.value = extracted;
+        savePersistent(variable.storageKey, extracted);
+        updatePreview(extracted);
+      }
+    });
+
+    // Observe the URL bar element for text changes
+    if (baseUrlEl) {
+      urlBarObserver.observe(baseUrlEl, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
