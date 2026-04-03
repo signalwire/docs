@@ -1,0 +1,102 @@
+---
+title: "stream"
+slug: /reference/java/relay/call/stream
+description: "Stream call audio to a WebSocket endpoint."
+max-toc-depth: 3
+---
+
+[streamaction]: /docs/sdks/reference/java/relay/actions
+[calling-call-stream]: /docs/sdks/reference/java/relay/call#events
+[call-events]: /docs/sdks/reference/java/relay/call#events
+
+Start streaming call audio to a WebSocket endpoint. Returns a
+[`StreamAction`][streamaction] that you can use to
+stop the stream or wait for it to finish.
+
+<Info>
+This method emits [`calling.call.stream`][calling-call-stream] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="url" type="String" required={true} toc={true}>
+  WebSocket URL to stream audio to (e.g., `"wss://example.com/stream"`).
+</ParamField>
+
+<ParamField path="name" type="@Nullable String" toc={true}>
+  A name for this stream, useful for identifying multiple concurrent streams.
+</ParamField>
+
+<ParamField path="codec" type="@Nullable String" toc={true}>
+  Audio codec for the stream.
+
+  - `"PCMU"` -- G.711 mu-law (default for North America)
+  - `"PCMA"` -- G.711 A-law (default for international)
+  - `"OPUS"` -- Opus codec (higher quality, variable bitrate)
+</ParamField>
+
+<ParamField path="track" type="@Nullable String" toc={true}>
+  Which audio track to stream.
+
+  - `"inbound"` -- audio received from the caller
+  - `"outbound"` -- audio sent to the caller
+  - `"both"` -- audio in both directions
+</ParamField>
+
+<ParamField path="statusUrl" type="@Nullable String" toc={true}>
+  URL to receive stream status webhooks.
+</ParamField>
+
+<ParamField path="statusUrlMethod" type="@Nullable String" toc={true}>
+  HTTP method for status webhooks.
+
+  - `"GET"` -- send status updates via GET request
+  - `"POST"` -- send status updates via POST request
+</ParamField>
+
+<ParamField path="authorizationBearerToken" type="@Nullable String" toc={true}>
+  Bearer token for authenticating with the WebSocket server.
+</ParamField>
+
+<ParamField path="customParameters" type="@Nullable Map<String, Object>" toc={true}>
+  Custom key-value pairs sent with the stream start message.
+</ParamField>
+
+<ParamField path="controlId" type="@Nullable String" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="@Nullable Function[[RelayEvent, Object]]" toc={true}>
+  Callback invoked when the stream ends.
+</ParamField>
+
+## **Returns**
+
+[`StreamAction`][streamaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```java {15}
+import com.signalwire.sdk.relay.RelayClient;
+
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .host("your-space.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
+
+async def handle_call(call):
+    await call.answer()
+
+    // Stream audio to an external service for real-time processing
+    var action = await call.stream( "wss://example.com/audio-stream", "inbound", "PCMU", {"session_id": "abc123"}, );
+
+    // The stream runs until stopped or the call ends
+    await call.wait_for_ended()
+
+client.run();
+
+
+```

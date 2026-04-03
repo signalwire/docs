@@ -1,0 +1,77 @@
+---
+title: "transcribe"
+slug: /reference/python/relay/call/transcribe
+description: "Start transcribing call audio."
+max-toc-depth: 3
+---
+
+[transcribeaction]: /docs/sdks/reference/python/relay/actions
+[live-transcribe]: /docs/sdks/reference/python/relay/call/live-transcribe
+[calling-call-transcribe]: /docs/sdks/reference/python/relay/call#events
+[call-events]: /docs/sdks/reference/python/relay/call#events
+
+Start transcribing call audio. Returns a
+[`TranscribeAction`][transcribeaction] that you can use
+to stop the transcription or wait for it to complete.
+
+<Info>
+For real-time transcription with immediate text output, see
+[`live_transcribe()`][live-transcribe].
+The `transcribe()` method provides a post-call transcription result.
+</Info>
+
+<Info>
+This method emits [`calling.call.transcribe`][calling-call-transcribe] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="control_id" type="Optional[str]" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="status_url" type="Optional[str]" toc={true}>
+  URL to receive transcription status webhooks.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable[[RelayEvent], Any]]" toc={true}>
+  Callback invoked when transcription completes. The event contains the
+  transcription `url`, `duration`, and `size`.
+</ParamField>
+
+## **Returns**
+
+[`TranscribeAction`][transcribeaction] -- An action handle
+with `stop()` and `wait()` methods.
+
+## **Example**
+
+```python {15}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Start transcription
+    action = await call.transcribe(
+        status_url="https://example.com/transcription-status",
+    )
+
+    # Let the call proceed...
+    await call.wait_for_ended()
+
+    # The transcription result is available after the call ends
+    if action.result:
+        url = action.result.params.get("url", "")
+        print(f"Transcription available at: {url}")
+
+client.run()
+```

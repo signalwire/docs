@@ -1,0 +1,74 @@
+---
+title: "registerGlobalRoutingCallback"
+slug: /reference/java/agents/agent-server/routing-callback
+description: Register a routing callback across all agents for custom request routing.
+max-toc-depth: 3
+---
+
+[setup-sip-routing]: /docs/sdks/reference/java/agents/agent-server/sip-routing
+
+Register a custom routing callback on every registered agent at the specified path.
+When a request arrives at that path on any agent, the callback is invoked to determine
+whether to redirect the request to a different agent route.
+
+This is the low-level mechanism that powers [`setupSipRouting()`][setup-sip-routing].
+Use it directly when you need custom routing logic beyond SIP username matching --
+for example, routing based on HTTP headers, query parameters, or request body content.
+
+## **Parameters**
+
+<ParamField path="callbackFn" type="Function<Request, Map<String, Object>, @Nullable String>" required={true} toc={true}>
+  A function that receives a HTTP server `Request` object and the parsed request body as a `Map<String, Object>`.
+  Return a route string (e.g., `"/sales"`) to redirect, or `null` to let the current
+  agent handle the request.
+</ParamField>
+
+<ParamField path="path" type="String" required={true} toc={true}>
+  The URL path where the callback is triggered (e.g., `"/route"`). Leading slashes are
+  added and trailing slashes are stripped automatically.
+</ParamField>
+
+## **Returns**
+
+`null`
+
+## **Example**
+
+```java {24}
+import com.signalwire.sdk.server.AgentServer;
+import com.signalwire.sdk.agent.AgentBase;
+
+// Method: routeByLanguage
+    """Route to different agents based on Accept-Language header."""
+    var lang = request.headers.get("Accept-Language", "en");
+    if lang.startswith("es"):
+        return "/spanish-agent";
+    elif lang.startswith("fr"):
+        return "/french-agent";
+    return null  # Default agent handles it;
+
+var english = AgentBase.builder()
+        .name("english")
+        .route("/english-agent")
+        .build();
+english.setPromptText("You are a helpful assistant. Respond in English.");
+var spanish = AgentBase.builder()
+        .name("spanish")
+        .route("/spanish-agent")
+        .build();
+spanish.setPromptText("You are a helpful assistant. Respond in Spanish.");
+var french = AgentBase.builder()
+        .name("french")
+        .route("/french-agent")
+        .build();
+french.setPromptText("You are a helpful assistant. Respond in French.");
+
+var server = new AgentServer(3000);
+server.register(english);
+server.register(spanish);
+server.register(french);
+server.registerGlobalRoutingCallback(route_by_language, "/route");
+server.run();
+
+
+```

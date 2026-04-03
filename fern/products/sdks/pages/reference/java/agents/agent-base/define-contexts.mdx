@@ -1,0 +1,69 @@
+---
+title: "defineContexts"
+slug: /reference/java/agents/agent-base/define-contexts
+description: Define multi-step conversation contexts and workflows for complex agent interactions.
+max-toc-depth: 3
+---
+
+[contextbuilder]: /docs/sdks/reference/java/agents/context-builder
+[ref-agentbase]: /docs/sdks/reference/java/agents/agent-base
+
+Define contexts and steps for multi-step conversation workflows. Contexts allow an
+agent to guide the caller through a structured sequence of interactions -- such as
+gathering information, verifying identity, and then performing an action.
+
+When called with an argument, sets the context configuration directly and returns
+`this`. When called without arguments, returns a
+[`ContextBuilder`][contextbuilder] for fluent
+context definition.
+
+<Note>
+Contexts can coexist with traditional prompts. The only restriction is that POM
+sections and raw text cannot be mixed in the main prompt.
+</Note>
+
+## **Parameters**
+
+<ParamField path="contexts" type="@Nullable Map<String, Object> | ContextBuilder" toc={true}>
+  Context configuration. Pass a dictionary or `ContextBuilder` to set contexts
+  directly. Omit to receive a `ContextBuilder` for fluent definition.
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- When `contexts` is provided.
+
+[`ContextBuilder`][contextbuilder] -- When called
+with no arguments.
+
+## **Examples**
+
+### Fluent ContextBuilder
+
+```java {4}
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("intake")
+        .route("/intake")
+        .build();
+(agent.define_contexts() .add_context("default") .add_step("greeting") .set_text("Greet the caller and ask for their name.") .set_step_criteria("The caller has provided their name.") .set_functions(["lookup_account"]) .set_valid_steps(["verify"]) .add_step("verify") .set_text("Verify the caller's identity.") .set_step_criteria("Identity verified.") .set_valid_steps(["assist"]) .add_step("assist") .set_text("Help the caller with their request.") .set_functions(["search_orders", "process_return"]) )
+agent.serve();
+
+
+```
+
+### Direct dict configuration
+
+```java {4}
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("intake")
+        .route("/intake")
+        .build();
+agent.defineContexts(Map.of("default", Map.of("steps", Map.of("greeting", Map.of("text", "Greet the caller.", "valid_steps", List.of("verify")), "verify", Map.of("text", "Verify identity.", "valid_steps", List.of("assist"))))));
+agent.serve();
+
+
+```

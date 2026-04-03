@@ -1,0 +1,61 @@
+---
+title: "register_verb_handler"
+slug: /reference/python/agents/swml-service/register-verb-handler
+description: "Register custom verb handlers for specialized SWML verb processing."
+max-toc-depth: 3
+---
+
+[add-verb]: /docs/sdks/reference/python/agents/swml-service/add-verb
+
+Register a custom verb handler for specialized validation and configuration of a
+SWML verb. When a verb with a registered handler is added via
+[`add_verb()`][add-verb], the handler's
+`validate_config()` method is used instead of generic schema validation.
+
+The SDK ships with a built-in `AIVerbHandler` for the `ai` verb. Register your own
+handlers for custom verbs or to override default validation behavior.
+
+<Tip>
+Custom verb handlers are useful when a verb has complex validation rules that go beyond
+JSON Schema checks — for example, mutually exclusive parameters or conditional requirements.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="handler" type="SWMLVerbHandler" required={true} toc={true}>
+  An instance of a class that extends `SWMLVerbHandler`. Must implement three methods:
+  - `get_verb_name()` — returns the verb name string this handler manages
+  - `validate_config(config)` — returns a `(bool, list[str])` tuple of `(is_valid, errors)`
+  - `build_config(**kwargs)` — returns a configuration dictionary for the verb
+</ParamField>
+
+## **Returns**
+
+`None`
+
+## **Example**
+
+```python {18}
+from signalwire.core.swml_service import SWMLService
+from signalwire.core.swml_handler import SWMLVerbHandler
+
+class CustomVerbHandler(SWMLVerbHandler):
+    def get_verb_name(self):
+        return "my_verb"
+
+    def validate_config(self, config):
+        errors = []
+        if "target" not in config:
+            errors.append("Missing required field 'target'")
+        return len(errors) == 0, errors
+
+    def build_config(self, **kwargs):
+        return {"target": kwargs.get("target")}
+
+service = SWMLService(name="custom-service")
+service.register_verb_handler(CustomVerbHandler())
+
+# Now add_verb will use the custom handler for validation
+service.add_verb("my_verb", {"target": "https://example.com"})
+print(service.render_document())
+```

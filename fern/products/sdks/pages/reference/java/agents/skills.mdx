@@ -1,0 +1,917 @@
+---
+title: "Skills"
+slug: /reference/java/agents/skills
+description: Built-in skills catalog with configuration parameters and usage patterns.
+max-toc-depth: 3
+---
+
+[add-skill]: /docs/sdks/reference/java/agents/agent-base/add-skill
+[sw-search]: /docs/sdks/reference/java/agents/cli/sw-search
+[skillbase]: /docs/sdks/reference/java/agents/skill-base
+[ref-datamap]: /docs/sdks/reference/java/agents/data-map
+
+Skills are pluggable capabilities that add tools to your agent. Add a skill with
+[`addSkill()`][add-skill] and it registers
+one or more SWAIG functions automatically. Skills handle setup, parameter validation,
+and tool registration so you can add features like weather, search, or math with a
+single call.
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("my-agent")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+// No-config skill
+agent.addSkill("datetime");
+
+// Skill with parameters
+agent.addSkill("web_search", Map.of(
+        "apiKey", "YOUR_KEY",
+        "searchEngineId", "YOUR_ENGINE_ID"
+));
+agent.run();
+```
+
+## Skills Summary
+
+| Skill | Functions | API Required | Multi-Instance |
+|-------|-----------|--------------|----------------|
+| [`datetime`](#datetime) | 2 | No | No |
+| [`math`](#math) | 1 | No | No |
+| [`webSearch`](#web_search) | 1 | Yes | Yes |
+| [`wikipediaSearch`](#wikipedia_search) | 1 | No | No |
+| [`weatherApi`](#weather_api) | 1 | Yes | No |
+| [`joke`](#joke) | 1 | Yes | No |
+| [`playBackgroundFile`](#play_background_file) | 1 | No | Yes |
+| [`swmlTransfer`](#swml_transfer) | 1 | No | Yes |
+| [`datasphere`](#datasphere) | 1 | Yes | Yes |
+| [`datasphereServerless`](#datasphere_serverless) | 1 | Yes | Yes |
+| [`nativeVectorSearch`](#native_vector_search) | 1 | No | Yes |
+| [`mcpGateway`](#mcp_gateway) | Dynamic | No | Yes |
+| [`googleMaps`](#google_maps) | 2 | Yes | No |
+| [`infoGatherer`](#info_gatherer) | 2 | No | Yes |
+| [`claudeSkills`](#claude_skills) | Dynamic | No | Yes |
+| [`spider`](#spider) | 3 | No | Yes |
+| [`apiNinjasTrivia`](#api_ninjas_trivia) | 1 | Yes | Yes |
+
+## Configuration
+
+All skills accept configuration via a dictionary passed to `addSkill()`. Skills can also
+read values from environment variables when a parameter defines an `envVar` fallback.
+
+```java
+// Direct configuration
+agent.addSkill("web_search", Map.of("apiKey", "KEY", "searchEngineId", "ID"));
+
+// Environment variable fallback
+agent.addSkill("web_search", Map.of(
+        "apiKey", System.getenv("GOOGLE_API_KEY"),
+        "searchEngineId", System.getenv("GOOGLE_SEARCH_ENGINE_ID")
+));
+```
+
+### SWAIG Field Overrides
+
+Override SWAIG function metadata for any skill by including a `swaigFields` key:
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("datetime", Map.of(
+        "swaigFields", Map.of(
+                "fillers", Map.of("en-US", List.of("Let me check the time...", "One moment...")),
+                "secure", false
+        )
+));
+agent.serve();
+```
+
+### Multi-Instance Skills
+
+Skills that support multiple instances require unique `toolName` values:
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("native_vector_search", Map.of(
+        "toolName", "search_products",
+        "indexFile", "/data/products.swsearch"
+));
+agent.addSkill("native_vector_search", Map.of(
+        "toolName", "search_faqs",
+        "indexFile", "/data/faqs.swsearch"
+));
+agent.serve();
+```
+
+---
+
+## datetime
+
+Get current date and time information with timezone support.
+
+**Tools:** `getCurrentTime`, `getCurrentDate`
+
+**Requirements:** None (timezone support included with the SDK)
+
+No custom parameters. This skill inherits only the base parameters (`swaigFields`, `skipPrompt`).
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("datetime");
+agent.serve();
+```
+
+---
+
+## math
+
+Perform mathematical calculations using a secure expression evaluator. Supports basic
+arithmetic, common functions (`sqrt`, `sin`, `cos`, `log`, `abs`, `round`), and constants
+(`pi`, `e`).
+
+**Tools:** `calculate`
+
+**Requirements:** None
+
+<ParamField path="toolName" type="String" default="calculate" toc={true}>
+  Custom function name.
+</ParamField>
+
+<ParamField path="toolDescription" type="String" default="Perform calculations" toc={true}>
+  Custom function description.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("math");
+agent.serve();
+```
+
+---
+
+## web_search
+
+Search the web using the Google Custom Search API. Results are filtered for quality and
+summarized for voice delivery.
+
+**Tools:** `webSearch`
+
+**Requirements:** Google Custom Search API key + Search Engine ID
+
+**Multi-instance:** Yes (use different `toolName` and `searchEngineId` per instance)
+
+<ParamField path="apiKey" type="String" required={true} toc={true}>
+  Google API key with Custom Search JSON API enabled.
+</ParamField>
+
+<ParamField path="searchEngineId" type="String" required={true} toc={true}>
+  Programmable Search Engine ID from Google.
+</ParamField>
+
+<ParamField path="numResults" type="int" default="3" toc={true}>
+  Number of search results to return (1-10).
+</ParamField>
+
+<ParamField path="delay" type="double" default="0.5" toc={true}>
+  Delay between scraping pages in seconds.
+</ParamField>
+
+<ParamField path="maxContentLength" type="int" default="32768" toc={true}>
+  Maximum total response size in characters.
+</ParamField>
+
+<ParamField path="oversampleFactor" type="double" default="2.5" toc={true}>
+  How many extra results to fetch for quality filtering (e.g., `2.5` fetches 2.5x the
+  requested number). Range: 1.0-3.5.
+</ParamField>
+
+<ParamField path="minQualityScore" type="double" default="0.3" toc={true}>
+  Quality threshold for filtering results (0.0-1.0).
+</ParamField>
+
+<ParamField path="noResultsMessage" type="String" toc={true}>
+  Message to show when no quality results are found. Use `{query}` as a placeholder
+  for the search query.
+</ParamField>
+
+<ParamField path="toolName" type="String" default="web_search" toc={true}>
+  Custom function name.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("web_search", Map.of(
+        "apiKey", "YOUR_GOOGLE_API_KEY",
+        "searchEngineId", "YOUR_SEARCH_ENGINE_ID",
+        "numResults", 3
+));
+agent.serve();
+```
+
+---
+
+## wikipedia_search
+
+Search Wikipedia for factual information. No API key required.
+
+**Tools:** `searchWikipedia`
+
+**Requirements:** None (uses the public Wikipedia API)
+
+<ParamField path="language" type="String" default="en" toc={true}>
+  Wikipedia language code (e.g., `"en"`, `"es"`, `"fr"`).
+</ParamField>
+
+<ParamField path="sentences" type="int" default="3" toc={true}>
+  Number of sentences to return per result.
+</ParamField>
+
+<ParamField path="toolName" type="String" default="search_wikipedia" toc={true}>
+  Custom function name.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("wikipedia_search", Map.of("sentences", 5));
+agent.serve();
+```
+
+---
+
+## weather_api
+
+Get current weather conditions for locations worldwide using WeatherAPI.com.
+
+**Tools:** `getWeather`
+
+**Requirements:** WeatherAPI.com API key (free tier available at https://www.weatherapi.com/)
+
+<ParamField path="apiKey" type="String" required={true} toc={true}>
+  WeatherAPI.com API key.
+</ParamField>
+
+<ParamField path="toolName" type="String" default="get_weather" toc={true}>
+  Custom function name.
+</ParamField>
+
+<ParamField path="toolDescription" type="String" default="Get weather" toc={true}>
+  Custom function description.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("weather_api", Map.of("apiKey", "YOUR_WEATHER_API_KEY"));
+agent.serve();
+```
+
+---
+
+## joke
+
+Tell jokes using the API Ninjas joke API. Uses a [DataMap][ref-datamap] for serverless execution.
+
+**Tools:** `getJoke` (default, customizable via `toolName`)
+
+**Requirements:** API Ninjas API key
+
+<ParamField path="apiKey" type="String" required={true} toc={true}>
+  API Ninjas API key for the joke service. Can also be set via the `API_NINJAS_KEY`
+  environment variable.
+</ParamField>
+
+<ParamField path="toolName" type="String" default="get_joke" toc={true}>
+  Custom function name.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("joke", Map.of("apiKey", "YOUR_API_NINJAS_KEY"));
+agent.serve();
+```
+
+---
+
+## play_background_file
+
+Control background file playback during calls. A single tool handles both starting and
+stopping playback via an `action` parameter with dynamic enum values generated from the
+configured file list. Supports audio and video files.
+
+**Tools:** `playBackgroundFile` (default, customizable via `toolName`)
+
+**Requirements:** None (files must be accessible via URL)
+
+**Multi-instance:** Yes (use different `toolName` per instance)
+
+<ParamField path="files" type="List<Map<String, Object>>" required={true} toc={true}>
+  Array of file configurations to make available for playback. Each object must include:
+  - `key` (str, required) -- Unique identifier for the file (alphanumeric, underscores, hyphens).
+  - `description` (str, required) -- Human-readable description of the file.
+  - `url` (str, required) -- URL of the audio/video file to play.
+  - `wait` (bool, optional, default `false`) -- Whether to wait for the file to finish playing.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("play_background_file", Map.of(
+        "toolName", "play_testimonial",
+        "files", List.of(
+                Map.of("key", "massey",
+                       "description", "Customer success story from Massey Energy",
+                       "url", "https://example.com/massey.mp4",
+                       "wait", true)
+        )
+));
+agent.serve();
+```
+
+---
+
+## swml_transfer
+
+Transfer calls between agents using SWML or direct connect, with regex pattern matching
+to route to different destinations from a single tool. Each transfer destination can use
+either a SWML endpoint URL or a phone number / SIP address.
+
+**Tools:** `transferCall` (default, customizable via `toolName`)
+
+**Requirements:** None
+
+**Multi-instance:** Yes
+
+<ParamField path="transfers" type="Map<String, Object>" required={true} toc={true}>
+  Transfer configurations mapping regex patterns to destinations. Each key is a regex
+  pattern (e.g., `/sales/i`) and each value is an object with:
+  - `url` (str) -- SWML endpoint URL for agent transfer. Mutually exclusive with `address`.
+  - `address` (str) -- Phone number or SIP address for direct connect. Mutually exclusive with `url`.
+  - `message` (str, default `"Transferring you now..."`) -- Message to say before transferring.
+  - `returnMessage` (str, default `"The transfer is complete. How else can I help you?"`) -- Message when returning from transfer.
+  - `postProcess` (bool, default `true`) -- Whether to process message with AI before saying.
+  - `final` (bool, default `true`) -- Whether transfer is permanent (`true`) or temporary (`false`).
+  - `fromAddr` (str, optional) -- Caller ID for connect action.
+</ParamField>
+
+<ParamField path="description" type="String" default="Transfer call based on pattern matching" toc={true}>
+  Description for the transfer tool.
+</ParamField>
+
+<ParamField path="parameterName" type="String" default="transfer_type" toc={true}>
+  Name of the parameter that accepts the transfer type.
+</ParamField>
+
+<ParamField path="parameterDescription" type="String" default="The type of transfer to perform" toc={true}>
+  Description for the transfer type parameter.
+</ParamField>
+
+<ParamField path="defaultMessage" type="String" default="Please specify a valid transfer type." toc={true}>
+  Message when no pattern matches.
+</ParamField>
+
+<ParamField path="defaultPostProcess" type="boolean" default="false" toc={true}>
+  Whether to process the default (no-match) message with AI.
+</ParamField>
+
+<ParamField path="requiredFields" type="Map<String, Object>" default="{}" toc={true}>
+  Additional required fields to collect before transfer. Keys are field names, values
+  are descriptions. Collected values are saved under `callData` in global data.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("swml_transfer", Map.of(
+        "toolName", "route_call",
+        "transfers", Map.of(
+                "/sales/i", Map.of(
+                        "url", "https://your-server.com/sales-agent",
+                        "message", "Let me connect you with our sales team."),
+                "/support/i", Map.of(
+                        "address", "+15551234567",
+                        "final", false)
+        )
+));
+agent.serve();
+```
+
+---
+
+## datasphere
+
+Search documents uploaded to SignalWire DataSphere. This skill executes the search
+via a webhook call from the agent process.
+
+**Tools:** `searchDatasphere`
+
+**Requirements:** SignalWire DataSphere credentials
+
+**Multi-instance:** Yes
+
+<ParamField path="spaceName" type="String" required={true} toc={true}>
+  SignalWire space name (e.g., `"mycompany"` from `mycompany.signalwire.com`).
+</ParamField>
+
+<ParamField path="projectId" type="String" required={true} toc={true}>
+  SignalWire project ID.
+</ParamField>
+
+<ParamField path="apiToken" type="String" required={true} toc={true}>
+  SignalWire API token.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("datasphere", Map.of(
+        "spaceName", "your-space",
+        "projectId", "YOUR_PROJECT_ID",
+        "apiToken", "YOUR_API_TOKEN"
+));
+agent.serve();
+```
+
+---
+
+## datasphere_serverless
+
+Search SignalWire DataSphere documents using a DataMap for serverless execution.
+Unlike the standard `datasphere` skill, this version executes entirely server-side
+without a webhook round-trip, making it suitable for serverless deployments.
+
+**Tools:** `searchDatasphere` (default, customizable via `toolName`)
+
+**Requirements:** SignalWire DataSphere credentials
+
+**Multi-instance:** Yes
+
+<ParamField path="spaceName" type="String" required={true} toc={true}>
+  SignalWire space name.
+</ParamField>
+
+<ParamField path="projectId" type="String" required={true} toc={true}>
+  SignalWire project ID.
+</ParamField>
+
+<ParamField path="token" type="String" required={true} toc={true}>
+  SignalWire API token.
+</ParamField>
+
+<ParamField path="documentId" type="String" required={true} toc={true}>
+  DataSphere document ID to search within.
+</ParamField>
+
+<ParamField path="count" type="int" default="1" toc={true}>
+  Number of search results to return.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("datasphere_serverless", Map.of(
+        "spaceName", "your-space",
+        "projectId", "YOUR_PROJECT_ID",
+        "token", "YOUR_API_TOKEN",
+        "documentId", "YOUR_DOCUMENT_ID",
+        "count", 3
+));
+agent.serve();
+```
+
+---
+
+## native_vector_search
+
+Search local `.swsearch` vector index files built with the
+[`sw-search`][sw-search] CLI tool.
+
+**Tools:** `searchKnowledge` (default, customizable via `toolName`)
+
+**Requirements:** Search module (included with the SignalWire Java SDK)
+
+**Multi-instance:** Yes
+
+<ParamField path="indexFile" type="String" required={true} toc={true}>
+  Path to the `.swsearch` index file.
+</ParamField>
+
+<ParamField path="toolName" type="String" default="search_knowledge" toc={true}>
+  Custom function name. Required when using multiple instances.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("native_vector_search", Map.of(
+        "indexFile", "/path/to/knowledge.swsearch",
+        "toolName", "search_docs"
+));
+agent.serve();
+```
+
+---
+
+## mcp_gateway
+
+Connect to MCP (Model Context Protocol) servers via the MCP Gateway service. Each MCP
+tool is dynamically registered as a SWAIG function, enabling your agent to use any
+MCP-compatible tool.
+
+**Tools:** Dynamically created from connected MCP services
+
+**Requirements:** Running MCP Gateway service
+
+**Multi-instance:** Yes
+
+<ParamField path="gatewayUrl" type="String" required={true} toc={true}>
+  MCP Gateway service URL.
+</ParamField>
+
+<ParamField path="authUser" type="String" toc={true}>
+  Basic auth username for the gateway.
+</ParamField>
+
+<ParamField path="authPassword" type="String" toc={true}>
+  Basic auth password for the gateway.
+</ParamField>
+
+<ParamField path="authToken" type="String" toc={true}>
+  Bearer token (alternative to basic auth).
+</ParamField>
+
+<ParamField path="services" type="List<Map<String, Object>>" toc={true}>
+  Specific services and tools to enable. Each dict has `name` (str) and `tools` (str `"*"`
+  or list of tool names). If omitted, all available services are enabled.
+</ParamField>
+
+<ParamField path="sessionTimeout" type="int" default="300" toc={true}>
+  Session timeout in seconds.
+</ParamField>
+
+<ParamField path="toolPrefix" type="String" default="mcp_" toc={true}>
+  Prefix for generated function names (e.g., `mcpTodoAddTodo`).
+</ParamField>
+
+<ParamField path="retryAttempts" type="int" default="3" toc={true}>
+  Number of connection retry attempts.
+</ParamField>
+
+<ParamField path="requestTimeout" type="int" default="30" toc={true}>
+  Individual request timeout in seconds.
+</ParamField>
+
+<ParamField path="verifySsl" type="boolean" default="true" toc={true}>
+  Whether to verify SSL certificates.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("mcp_gateway", Map.of(
+        "gatewayUrl", "http://localhost:8080",
+        "authUser", "admin",
+        "authPassword", "secure-password",
+        "services", List.of(
+                Map.of("name", "todo", "tools", "*"),
+                Map.of("name", "calculator", "tools", List.of("add", "multiply"))
+        )
+));
+agent.serve();
+```
+
+---
+
+## google_maps
+
+Validate addresses and compute driving routes using Google Maps. Handles spoken number
+normalization (e.g., "seven one four" becomes "714") and location-biased search.
+
+**Tools:** `lookupAddress`, `computeRoute`
+
+**Requirements:** Google Maps API key with Geocoding and Routes APIs enabled
+
+<ParamField path="apiKey" type="String" required={true} toc={true}>
+  Google Maps API key.
+</ParamField>
+
+<ParamField path="lookupToolName" type="String" default="lookup_address" toc={true}>
+  Custom name for the address lookup function.
+</ParamField>
+
+<ParamField path="routeToolName" type="String" default="compute_route" toc={true}>
+  Custom name for the route computation function.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("google_maps", Map.of(
+        "apiKey", "YOUR_GOOGLE_MAPS_API_KEY"
+));
+agent.serve();
+```
+
+---
+
+## info_gatherer
+
+Skill version of the [`InfoGathererAgent`][infogathereragent]
+prefab. Collects answers to a configurable list of questions. Designed to be embedded
+within larger agents as a reusable capability.
+
+**Tools:** `startQuestions`, `submitAnswer` (prefixed when using `prefix` parameter)
+
+**Requirements:** None
+
+**Multi-instance:** Yes (use `prefix` for unique tool names and state namespacing)
+
+<ParamField path="questions" type="List<Map<String, Object>>" required={true} toc={true}>
+  List of question dictionaries with `keyName`, `questionText`, and optional `confirm`.
+</ParamField>
+
+<ParamField path="prefix" type="String" toc={true}>
+  Prefix for tool names and state namespace. With `prefix="intake"`, tools become
+  `intakeStartQuestions` and `intakeSubmitAnswer`, and state is stored under
+  `skill:intake` in global_data.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+// Two independent question sets on one agent
+agent.addSkill("info_gatherer", Map.of(
+        "prefix", "contact",
+        "questions", List.of(
+                Map.of("keyName", "name", "questionText", "What is your name?"),
+                Map.of("keyName", "email", "questionText", "What is your email?", "confirm", true)
+        )
+));
+agent.addSkill("info_gatherer", Map.of(
+        "prefix", "feedback",
+        "questions", List.of(
+                Map.of("keyName", "rating", "questionText", "How would you rate our service?"),
+                Map.of("keyName", "comments", "questionText", "Any additional comments?")
+        )
+));
+agent.serve();
+```
+
+---
+
+## claude_skills
+
+Load Claude Code-style SKILL.md files as agent tools. Each SKILL.md file in the
+configured directory becomes a SWAIG function, with YAML frontmatter parsed for
+metadata.
+
+**Tools:** Dynamically created from SKILL.md files
+
+**Requirements:** YAML parser (included with the SDK)
+
+**Multi-instance:** Yes
+
+<ParamField path="skillsPath" type="String" required={true} toc={true}>
+  Path to the directory containing SKILL.md files.
+</ParamField>
+
+<ParamField path="toolPrefix" type="String" default="claude_" toc={true}>
+  Prefix for generated function names.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("claude_skills", Map.of(
+        "skillsPath", "/path/to/skills/directory",
+        "toolPrefix", "skill_"
+));
+agent.serve();
+```
+
+---
+
+## spider
+
+Fast web scraping and crawling. Fetches web pages and extracts content optimized
+for token efficiency.
+
+**Tools:** `scrapeUrl`, `crawlSite`, `extractStructuredData` (each prefixed with `toolName` + `_` when set)
+
+**Requirements:** HTML parser (included with the SDK)
+
+**Multi-instance:** Yes
+
+<ParamField path="delay" type="double" default="0.1" toc={true}>
+  Delay between requests in seconds.
+</ParamField>
+
+<ParamField path="concurrentRequests" type="int" default="5" toc={true}>
+  Number of concurrent requests allowed (1-20).
+</ParamField>
+
+<ParamField path="timeout" type="int" default="5" toc={true}>
+  Request timeout in seconds.
+</ParamField>
+
+<ParamField path="maxPages" type="int" default="1" toc={true}>
+  Maximum number of pages to scrape (1-100).
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("spider", Map.of(
+        "timeout", 10,
+        "concurrentRequests", 3,
+        "maxPages", 5
+));
+agent.serve();
+```
+
+---
+
+## api_ninjas_trivia
+
+Get trivia questions from API Ninjas with configurable categories. Uses DataMap for
+serverless execution.
+
+**Tools:** Configurable via `toolName`
+
+**Requirements:** API Ninjas API key
+
+**Multi-instance:** Yes
+
+<ParamField path="apiKey" type="String" required={true} toc={true}>
+  API Ninjas API key.
+</ParamField>
+
+<ParamField path="toolName" type="String" toc={true}>
+  Custom name for the trivia function.
+</ParamField>
+
+<ParamField path="categories" type="List<String>" toc={true}>
+  List of trivia categories to enable. Available categories: `artliterature`, `language`,
+  `sciencenature`, `general`, `fooddrink`, `peopleplaces`, `geography`, `historyholidays`,
+  `entertainment`, `toysgames`, `music`, `mathematics`, `religionmythology`, `sportsleisure`.
+</ParamField>
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("api_ninjas_trivia", Map.of(
+        "toolName", "get_science_trivia",
+        "apiKey", "YOUR_API_NINJAS_KEY",
+        "categories", List.of("sciencenature", "mathematics", "general")
+));
+agent.serve();
+```
+
+---
+
+## Custom Skills
+
+You can create custom skills and register them from external directories or via pip packages.
+
+### External Directory
+
+```java
+SkillRegistry.addSkillDirectory("/opt/custom_skills");
+```
+
+Or set the `SIGNALWIRE_SKILL_PATHS` environment variable (colon-separated paths):
+
+```bash
+export SIGNALWIRE_SKILL_PATHS=/path/to/skills1:/path/to/skills2
+```
+
+### Service loader registration
+
+Register custom skills using Java's `ServiceLoader` mechanism:
+
+```java
+// In META-INF/services/com.signalwire.sdk.skills.SkillBase
+com.example.skills.WeatherSkill
+com.example.skills.StockSkill
+```
+
+<Note>
+Service-loaded skills cannot override built-in skills. If a service-loaded skill uses the
+same `SKILL_NAME` as a built-in skill, it is skipped with an error log.
+</Note>
+
+### Listing available skills
+
+```java
+// List all available skills
+Set<String> skills = SkillRegistry.list();
+for (String skill : skills) {
+    System.out.println(skill);
+}
+```
+
+For creating custom skills, see [`SkillBase`][skillbase].

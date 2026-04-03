@@ -1,0 +1,78 @@
+---
+title: "addDynamicHints"
+slug: /reference/java/agents/function-result/add-dynamic-hints
+description: Add speech recognition hints dynamically during a call.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/sdks/reference/java/agents/function-result
+
+Add speech recognition hints dynamically during a call. Hints improve recognition
+accuracy for domain-specific vocabulary, product names, or uncommon words. Each
+hint can be a simple string or a pronunciation pattern object that maps
+misrecognized speech to the correct text.
+
+## **Parameters**
+
+<ParamField path="hints" type="List<String | Map<String, Object>>" required={true} toc={true}>
+  List of hints. Each entry is either:
+  - A `String` — a word or phrase to boost recognition (e.g., `"SignalWire"`)
+  - A `Map<String, Object>` with pronunciation pattern fields:
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `pattern` | `String` | Regex pattern to match in recognized speech |
+  | `replace` | `String` | Replacement text when the pattern matches |
+  | `ignoreCase` | `boolean` | Case-insensitive matching (optional) |
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Simple Word Hints
+
+```java {11}
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+
+var agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+agent.defineTool("setMedicalContext",
+    "Add medical speech hints",
+    (args, rawData) -> {
+        return ( FunctionResult("Switching to medical context.") .add_dynamic_hints(["prescription", "dosage", "milligrams", "refill"]) );
+    });
+agent.serve();
+
+
+```
+
+### Pronunciation Patterns
+
+```java {12}
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+
+var agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+agent.defineTool("setNameHints",
+    "Add name pronunciation hints",
+    (args, rawData) -> {
+        var name = args.getOrDefault("customer_name", "");
+        return ( FunctionResult(f"I'll listen for {name}.") .add_dynamic_hints([ name, {"pattern": "cab bee", "replace": "Cabby", "ignore_case": true} ]) );
+    });
+agent.serve();
+
+
+```

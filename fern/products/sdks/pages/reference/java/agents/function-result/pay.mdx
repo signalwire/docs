@@ -1,0 +1,130 @@
+---
+title: "pay"
+slug: /reference/java/agents/function-result/pay
+description: Collect and process a credit card payment during a call.
+max-toc-depth: 3
+---
+
+[create-payment-parameter]: /docs/sdks/reference/java/agents/function-result/create-payment-parameter
+[create-payment-prompt]: /docs/sdks/reference/java/agents/function-result/create-payment-prompt
+[functionresult]: /docs/sdks/reference/java/agents/function-result
+
+Collect and process a credit card payment during the call. Generates a SWML
+`pay` verb that walks the caller through entering card details via DTMF or
+voice, then submits to your payment connector endpoint.
+
+## **Parameters**
+
+<ParamField path="paymentConnectorUrl" type="String" required={true} toc={true}>
+  URL of your payment processing endpoint. SignalWire sends the collected card
+  data to this URL for processing.
+</ParamField>
+
+<ParamField path="inputMethod" type="String" default="dtmf" toc={true}>
+  How the caller provides card details.
+
+  - `"dtmf"` -- caller enters digits on the keypad
+  - `"voice"` -- caller speaks the numbers
+</ParamField>
+
+<ParamField path="statusUrl" type="@Nullable String" default="null" toc={true}>
+  URL to receive payment status change webhook notifications.
+</ParamField>
+
+<ParamField path="paymentMethod" type="String" default="credit-card" toc={true}>
+  Payment method type. Currently only `"credit-card"` is supported.
+</ParamField>
+
+<ParamField path="timeout" type="int" default="5" toc={true}>
+  Seconds to wait for the next DTMF digit before timing out.
+</ParamField>
+
+<ParamField path="maxAttempts" type="int" default="1" toc={true}>
+  Number of retry attempts if payment collection fails.
+</ParamField>
+
+<ParamField path="securityCode" type="boolean" default="true" toc={true}>
+  Whether to prompt the caller for the card's security code (CVV).
+</ParamField>
+
+<ParamField path="postalCode" type="boolean | String" default="true" toc={true}>
+  Whether to prompt for the billing postal code. Pass `true` to prompt, `false`
+  to skip, or a string with the actual postal code to use without prompting.
+</ParamField>
+
+<ParamField path="minPostalCodeLength" type="int" default="0" toc={true}>
+  Minimum number of digits required for the postal code.
+</ParamField>
+
+<ParamField path="tokenType" type="String" default="reusable" toc={true}>
+  Payment token type.
+
+  - `"one-time"` -- single-use token
+  - `"reusable"` -- token can be charged again later
+</ParamField>
+
+<ParamField path="chargeAmount" type="@Nullable String" default="null" toc={true}>
+  Amount to charge as a decimal string (e.g., `"49.99"`).
+</ParamField>
+
+<ParamField path="currency" type="String" default="usd" toc={true}>
+  ISO 4217 currency code (e.g., `"usd"`, `"eur"`).
+</ParamField>
+
+<ParamField path="language" type="String" default="en-US" toc={true}>
+  Language for TTS payment prompts (e.g., `"en-US"`, `"es-MX"`).
+</ParamField>
+
+<ParamField path="voice" type="String" default="woman" toc={true}>
+  TTS voice for payment prompts (e.g., `"woman"`, `"man"`).
+</ParamField>
+
+<ParamField path="description" type="@Nullable String" default="null" toc={true}>
+  Custom description for the payment transaction.
+</ParamField>
+
+<ParamField path="validCardTypes" type="String" default="visa mastercard amex" toc={true}>
+  Space-separated list of accepted card types.
+</ParamField>
+
+<ParamField path="parameters" type="@Nullable List<Map<String, String>>" default="null" toc={true}>
+  Additional name/value pairs to send to the payment connector.
+  Use [`createPaymentParameter()`][create-payment-parameter] to build entries.
+</ParamField>
+
+<ParamField path="prompts" type="@Nullable List<Map<String, Object>>" default="null" toc={true}>
+  Custom prompt configurations to override default payment prompts.
+  Use [`createPaymentPrompt()`][create-payment-prompt] to build entries.
+</ParamField>
+
+<ParamField path="aiResponse" type="@Nullable String" default="'The payment status is ${pay_result}...'" toc={true}>
+  AI response template after payment completes. The `${pay_result}` variable
+  is substituted with the payment outcome. Set to `null` to disable.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```java {7,12}
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+
+var agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+agent.defineTool("collectPayment",
+    "Collect a credit card payment",
+    (args, rawData) -> {
+        var amount = args.get("amount");
+        return ( FunctionResult("I'll collect your payment information now.") .pay( "https://api.example.com/payment", amount, "usd", true, true ) );
+    });
+agent.serve();
+
+
+```

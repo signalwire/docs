@@ -1,0 +1,64 @@
+---
+title: "executeSwml"
+slug: /reference/java/agents/function-result/execute-swml
+description: Execute a raw SWML document as an action.
+max-toc-depth: 3
+---
+
+[connect]: /docs/sdks/reference/java/agents/function-result/connect
+[record-call]: /docs/sdks/reference/java/agents/function-result/record-call
+[send-sms]: /docs/sdks/reference/java/agents/function-result/send-sms
+[functionresult]: /docs/sdks/reference/java/agents/function-result
+
+Execute a raw SWML document as an action. This is the escape hatch for advanced
+use cases that are not covered by the named convenience methods.
+
+<Note>
+Most use cases are covered by the specific action methods
+([`connect()`][connect],
+[`recordCall()`][record-call],
+[`sendSms()`][send-sms], etc.).
+Use `executeSwml()` only when you need SWML features not available through
+convenience methods.
+</Note>
+
+## **Parameters**
+
+<ParamField path="swmlContent" type="String | Map<String, Object> | SWML object" required={true} toc={true}>
+  SWML content in one of three formats:
+  - `String` — raw SWML JSON text (parsed internally)
+  - `Map<String, Object>` — SWML data structure
+  - SWML object — any object with a `.to_dict()` method (e.g., a [`SWMLBuilder`][ref-swmlbuilder] instance)
+</ParamField>
+
+<ParamField path="transfer" type="boolean" default="false" toc={true}>
+  When `true`, the call exits the agent after the SWML executes. When `false`,
+  the SWML executes inline and the agent continues.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```java {20}
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+
+var agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+agent.defineTool("playAnnouncement",
+    "Play an announcement",
+    (args, rawData) -> {
+        var swml_doc = Map.of("version", "1.0.0", "sections", Map.of("main", List.of({"play": {"url": "https://example.com/announcement.mp3"}}, {"hangup": {}})));
+        return ( FunctionResult() .execute_swml(swml_doc, false) );
+    });
+agent.serve();
+
+
+```

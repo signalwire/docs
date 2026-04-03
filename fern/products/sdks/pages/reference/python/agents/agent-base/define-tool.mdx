@@ -1,0 +1,114 @@
+---
+title: "define_tool"
+slug: /reference/python/agents/agent-base/define-tool
+description: Programmatically define a SWAIG tool that the AI can invoke during conversations.
+max-toc-depth: 3
+---
+
+[tool-decorator]: /docs/sdks/reference/python/agents/agent-base#tool
+[swaig-function]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[functionresult]: /docs/sdks/reference/python/agents/function-result
+[ref-agentbase]: /docs/sdks/reference/python/agents/agent-base
+
+Programmatically define a SWAIG function (tool) that the AI can invoke during a
+conversation. This is the imperative alternative to the
+[`@tool` decorator][tool-decorator].
+
+<Info>
+Tool definitions map to SWML [SWAIG function][swaig-function]
+entries. See the [SWML SWAIG functions reference][swml-swaig-functions-reference]
+for the full specification.
+</Info>
+
+<Tip>
+For most cases, the [`@tool` decorator][tool-decorator]
+is simpler and supports automatic parameter inference from type hints. Use
+`define_tool()` when you need dynamic tool registration or when the tool definition
+comes from external configuration.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  Function name. Must be unique within the agent. The AI uses this name to invoke the
+  function.
+</ParamField>
+
+<ParamField path="description" type="str" required={true} toc={true}>
+  Human-readable description of what the function does. The AI reads this to decide
+  when to call the function.
+</ParamField>
+
+<ParamField path="parameters" type="dict[str, Any]" required={true} toc={true}>
+  JSON Schema describing the function's parameters. The AI generates arguments
+  conforming to this schema.
+</ParamField>
+
+<ParamField path="handler" type="Callable" required={true} toc={true}>
+  Python function to call when the AI invokes this tool. Receives `(args: dict, raw_data: dict)`
+  and should return a [`FunctionResult`][functionresult].
+</ParamField>
+
+<ParamField path="secure" type="bool" default="True" toc={true}>
+  Whether to require token validation on tool calls. Recommended for production.
+</ParamField>
+
+<ParamField path="fillers" type="Optional[dict[str, list[str]]]" toc={true}>
+  Language-specific filler phrases spoken while the function executes.
+  Format: `{"en-US": ["Looking that up...", "One moment..."]}`.
+</ParamField>
+
+<ParamField path="webhook_url" type="Optional[str]" toc={true}>
+  External URL to forward the tool call to instead of executing locally.
+</ParamField>
+
+<ParamField path="required" type="Optional[list[str]]" toc={true}>
+  List of required parameter names from the JSON Schema.
+</ParamField>
+
+<ParamField path="is_typed_handler" type="bool" default="False" toc={true}>
+  Set to `True` if the handler uses type-hinted parameters instead of the standard
+  `(args, raw_data)` signature.
+</ParamField>
+
+<ParamField path="**swaig_fields" type="Any" toc={true}>
+  Additional SWAIG fields to include in the function definition
+  (e.g., `wait_file`, `meta_data`).
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## **Example**
+
+```python {11}
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
+
+agent = AgentBase(name="weather-agent", route="/weather")
+agent.set_prompt_text("You are a helpful assistant.")
+
+def get_weather(args, raw_data=None):
+    city = args.get("city", "unknown")
+    return FunctionResult(f"The weather in {city} is 72F and sunny.")
+
+agent.define_tool(
+    name="get_weather",
+    description="Get the current weather for a city",
+    parameters={
+        "type": "object",
+        "properties": {
+            "city": {
+                "type": "string",
+                "description": "City name"
+            }
+        }
+    },
+    handler=get_weather,
+    required=["city"],
+    fillers={"en-US": ["Checking the weather...", "Let me look that up..."]}
+)
+agent.serve()
+```

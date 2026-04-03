@@ -1,0 +1,438 @@
+---
+title: "SWML (SignalWire Markup Language)"
+description: SWML is the JSON format that tells SignalWire how to handle calls, generated automatically by your agent configuration.
+slug: /guides/swml
+max-toc-depth: 3
+---
+
+[swaig]: /docs/sdks/guides/swaig
+[architecture]: /docs/sdks/guides/architecture
+
+### What is SWML?
+
+SWML (SignalWire Markup Language) is a document that instructs SignalWire how to handle a phone call. SWML can be written in JSON or YAML format -- **this guide uses JSON throughout**. When a call comes in, SignalWire requests SWML from your agent, then executes the instructions.
+
+<Frame caption="SWML Flow">
+  <img class="diagram" src="/assets/images/sdks/diagrams/02_02_swml_diagram1.webp" alt="SWML request and response flow." />
+</Frame>
+
+### SWML Document Structure
+
+Every SWML document has this structure:
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "verb1": { ...config } },
+      { "verb2": { ...config } },
+      { "verb3": { ...config } }
+    ]
+  }
+}
+```
+
+**Key parts:**
+
+- `version`: Always `"1.0.0"`
+- `sections`: Contains named sections (usually just `main`)
+- Each section is an array of **verbs** (instructions)
+
+### Common Verbs
+
+| Verb | Purpose | Example |
+|------|---------|---------|
+| `answer` | Answer the incoming call | `{"answer": {}}` |
+| `ai` | Start AI conversation | `{"ai": {...config}}` |
+| `connect` | Transfer to another number | `{"connect": {"to": "+1..."}}` |
+| `play` | Play audio file | `{"play": {"url": "..."}}` |
+| `record_call` | Record the call | `{"record_call": {"format": "mp4"}}` |
+| `hangup` | End the call | `{"hangup": {}}` |
+
+### A Complete SWML Example
+
+Here's what your agent generates:
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "answer": {}
+      },
+      {
+        "ai": {
+          "prompt": {
+            "text": "# Role\nYou are a helpful customer service agent.\n\n# Guidelines\n- Be professional\n- Be concise"
+          },
+          "post_prompt": "Summarize what was discussed",
+          "post_prompt_url": "https://your-agent.com/post_prompt",
+          "SWAIG": {
+            "defaults": {
+              "web_hook_url": "https://your-agent.com/swaig"
+            },
+            "functions": [
+              {
+                "function": "get_balance",
+                "description": "Get the customer's account balance",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string",
+                      "description": "The account ID"
+                    }
+                  },
+                  "required": ["account_id"]
+                }
+              }
+            ]
+          },
+          "hints": ["account", "balance", "payment"],
+          "languages": [
+            {
+              "name": "English",
+              "code": "en-US",
+              "voice": "rime.spore"
+            }
+          ],
+          "params": {
+            "end_of_speech_timeout": 500,
+            "attention_timeout": 15000
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+### The `ai` Verb in Detail
+
+The `ai` verb is the heart of voice AI agents. Here's what each part does:
+
+```json
+{
+  "ai": {
+    "prompt": {},            // What the AI should do (system prompt)
+    "post_prompt": "...",    // Instructions for summarizing the call
+    "post_prompt_url": "...",// Where to send the summary
+    "SWAIG": {},             // Functions the AI can call
+    "hints": [],             // Words to help speech recognition
+    "languages": [],         // Voice and language settings
+    "params": {},            // AI behavior parameters
+    "global_data": {}        // Data available throughout the call
+  }
+}
+```
+
+#### prompt
+
+The AI's system prompt -- its personality and instructions:
+
+```json
+{
+  "prompt": {
+    "text": "You are a helpful assistant..."
+  }
+}
+```
+
+Or using POM (Prompt Object Model):
+
+```json
+{
+  "prompt": {
+    "pom": [
+      {
+        "section": "Role",
+        "body": "You are a customer service agent"
+      },
+      {
+        "section": "Rules",
+        "bullets": ["Be concise", "Be helpful"]
+      }
+    ]
+  }
+}
+```
+
+#### SWAIG
+
+Defines functions the AI can call:
+
+```json
+{
+  "SWAIG": {
+    "defaults": {
+      "web_hook_url": "https://your-agent.com/swaig"
+    },
+    "functions": [
+      {
+        "function": "check_order",
+        "description": "Check order status",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "order_id": {"type": "string"}
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+#### hints
+
+Words that help speech recognition accuracy:
+
+```json
+{
+  "hints": ["SignalWire", "SWML", "account number", "order ID"]
+}
+```
+
+#### languages
+
+Voice and language configuration:
+
+```json
+{
+  "languages": [
+    {
+      "name": "English",
+      "code": "en-US",
+      "voice": "rime.spore"
+    }
+  ]
+}
+```
+
+#### params
+
+AI behavior settings:
+
+```json
+{
+  "params": {
+    "end_of_speech_timeout": 500,
+    "attention_timeout": 15000,
+    "barge_match_string": "stop|cancel|quit"
+  }
+}
+```
+
+### How Your Agent Generates SWML
+
+You don't write SWML by hand. Your agent configuration becomes SWML automatically. Each SDK method maps to a section of the SWML document:
+
+| Agent Method | SWML Output |
+|----------------|-------------|
+| `add_language(...)` | `ai.languages` array |
+| `prompt_add_section(...)` | `ai.prompt.text` or `ai.prompt.pom` |
+| `add_hints(...)` | `ai.hints` array |
+| `set_params(...)` | `ai.params` object |
+| `define_tool(...)` | `ai.SWAIG.functions` array |
+
+
+```python
+from signalwire_agents import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.add_language("English", "en-US", "rime.spore")  # -> languages
+        self.prompt_add_section("Role", "You are helpful.")   # -> prompt
+        self.add_hints(["help", "support"])                   # -> hints
+        self.set_params({"end_of_speech_timeout": 500})       # -> params
+        self.define_tool(name="get_help", description="Get help", parameters={}, handler=self.get_help)  # -> SWAIG
+```
+
+<Tab title="Java">
+```java
+var agent = AgentBase.builder().name("my-agent").build();
+agent.addLanguage("English", "en-US", "rime.spore");                    // -> languages
+agent.promptAddSection("Role", "You are helpful.");                      // -> prompt
+agent.addHints(List.of("help", "support"));                              // -> hints
+agent.setParams(Map.of("end_of_speech_timeout", 500));                   // -> params
+agent.defineTool("get_help", "Get help", Map.of(), (args, raw) -> result); // -> SWAIG
+```
+</Tab>
+{/*
+<Tab title="TypeScript">
+```typescript
+const agent = new AgentBase({ name: 'my-agent' });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });  // -> languages
+agent.promptAddSection('Role', { body: 'You are helpful.' });                 // -> prompt
+agent.addHints(['help', 'support']);                                           // -> hints
+agent.setParams({ end_of_speech_timeout: 500 });                              // -> params
+agent.defineTool({ name: 'get_help', description: 'Get help', parameters: {}, handler: fn });  // -> SWAIG
+```
+</Tab>
+<Tab title="Go">
+```go
+a := agent.NewAgentBase(agent.WithName("my-agent"))
+a.AddLanguage(map[string]any{"name": "English", "code": "en-US", "voice": "rime.spore"})
+a.PromptAddSection("Role", "You are helpful.", nil)
+a.AddHints([]string{"help", "support"})
+a.SetParam("end_of_speech_timeout", 500)
+a.DefineTool(agent.ToolDefinition{Name: "get_help", Description: "Get help", Handler: fn})
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire_agents'
+
+agent = SignalWireAgents::AgentBase.new(name: 'my-agent')
+agent.add_language(name: 'English', code: 'en-US', voice: 'rime.spore')  # -> languages
+agent.prompt_add_section('Role', 'You are helpful.')                      # -> prompt
+agent.add_hints(['help', 'support'])                                      # -> hints
+agent.set_params(end_of_speech_timeout: 500)                              # -> params
+agent.define_tool(name: 'get_help', description: 'Get help', parameters: {}) { |args, _raw| ... }  # -> SWAIG
+```
+</Tab>
+<Tab title="Perl">
+```perl
+my $agent = SignalWire::Agents::Agent::AgentBase->new(name => 'my-agent');
+$agent->add_language(name => 'English', code => 'en-US', voice => 'rime.spore');  # -> languages
+$agent->prompt_add_section('Role', 'You are helpful.');                            # -> prompt
+$agent->add_hints(['help', 'support']);                                            # -> hints
+$agent->set_params({ end_of_speech_timeout => 500 });                              # -> params
+$agent->define_tool(name => 'get_help', description => 'Get help', parameters => {}, handler => sub { ... }); # -> SWAIG
+```
+</Tab>
+<Tab title="C++">
+```cpp
+agent::AgentBase a("my-agent");
+a.add_language({"English", "en-US", "rime.spore"});                       // -> languages
+a.prompt_add_section("Role", "You are helpful.");                          // -> prompt
+a.add_hints({"help", "support"});                                          // -> hints
+a.set_params({{"end_of_speech_timeout", 500}});                            // -> params
+a.define_tool("get_help", "Get help", {}, [](const json& args, const json& raw) { ... }); // -> SWAIG
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+
+$agent = new AgentBase(name: 'my-agent');
+$agent->addLanguage(name: 'English', code: 'en-US', voice: 'rime.spore');  // -> languages
+$agent->promptAddSection('Role', 'You are helpful.');                       // -> prompt
+$agent->addHints(['help', 'support']);                                      // -> hints
+$agent->setParams(['end_of_speech_timeout' => 500]);                        // -> params
+$agent->defineTool('get_help', 'Get help', [], function ($args, $raw) { ... });  // -> SWAIG
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+
+var agent = new AgentBase(new AgentOptions { Name = "my-agent" });
+agent.AddLanguage(name: "English", code: "en-US", voice: "rime.spore");  // -> languages
+agent.PromptAddSection("Role", "You are helpful.");                       // -> prompt
+agent.AddHints(new[] { "help", "support" });                              // -> hints
+agent.SetParams(new Dictionary<string, object> { ["end_of_speech_timeout"] = 500 });  // -> params
+agent.DefineTool(name: "get_help", description: "Get help", parameters: new Dictionary<string, object>(), handler: (args, raw) => result);  // -> SWAIG
+```
+</Tab>
+*/}
+
+The above examples all produce identical SWML output. See the [Architecture][architecture] section for the full API comparison table.
+
+When SignalWire requests SWML, the agent's `_render_swml()` method:
+
+1. Collects all configuration (prompts, languages, hints, params)
+2. Builds the SWAIG functions array with webhook URLs
+3. Assembles the complete SWML document
+4. Returns JSON to SignalWire
+
+### SWML Rendering Pipeline
+
+<Frame caption="SWML Rendering Pipeline">
+  <img class="diagram" src="/assets/images/sdks/diagrams/02_02_swml_diagram2.webp" alt="SWML rendering pipeline." />
+</Frame>
+
+### Viewing Your SWML
+
+You can see the SWML your agent generates:
+
+```bash
+## Using curl (use credentials from agent startup output or env vars)
+curl -u "$SWML_BASIC_AUTH_USER:$SWML_BASIC_AUTH_PASSWORD" http://localhost:3000/
+
+## Using swaig-test CLI (no auth needed - loads agent directly)
+swaig-test my_agent.py --dump-swml
+
+## Pretty-printed
+swaig-test my_agent.py --dump-swml --raw | jq '.'
+```
+
+### SWML Schema Validation
+
+The SDK validates SWML against the official schema:
+
+- Located at `signalwire_agents/core/schema.json`
+- Catches invalid configurations before sending to SignalWire
+- Provides helpful error messages
+
+### Common SWML Patterns
+
+#### Auto-Answer with AI
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {"answer": {}},
+      {"ai": {...}}
+    ]
+  }
+}
+```
+
+#### Record the Call
+
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {"answer": {}},
+      {"record_call": {"format": "mp4", "stereo": true}},
+      {"ai": {...}}
+    ]
+  }
+}
+```
+
+#### Transfer After AI
+
+When a SWAIG function returns a transfer action, the SWML for transfer is embedded in the response:
+
+```json
+{
+  "response": "Transferring you now",
+  "action": [
+    {"transfer": true},
+    {
+      "swml": {
+        "version": "1.0.0",
+        "sections": {
+          "main": [
+            {"connect": {"to": "+15551234567", "from": "+15559876543"}}
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+### Next Steps
+
+Now that you understand SWML structure, let's look at [SWAIG][swaig] -- how AI calls your functions.

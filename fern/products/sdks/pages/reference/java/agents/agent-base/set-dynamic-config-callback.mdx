@@ -1,0 +1,56 @@
+---
+title: "setDynamicConfigCallback"
+slug: /reference/java/agents/agent-base/set-dynamic-config-callback
+description: Set a callback for per-request dynamic agent configuration.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/sdks/reference/java/agents/agent-base
+
+Set a callback function that runs on every incoming request, receiving the actual agent
+instance so you can dynamically configure **any** aspect of it -- skills, prompts,
+parameters, languages, tools, global data, etc. -- based on the request's query
+parameters, body, or headers.
+
+This is the primary mechanism for multi-tenant or per-caller customization.
+
+## **Parameters**
+
+<ParamField path="callback" type="Function<Map<String, Object>, Map<String, Object>, Map<String, Object>, AgentBase, void>" required={true} toc={true}>
+  A function with the signature `(query_params, body_params, headers, agent)`.
+  Use the `agent` argument to call any configuration method:
+  - `agent.add_skill(...)`
+  - `agent.add_language(...)`
+  - `agent.prompt_add_section(...)`
+  - `agent.set_params(...)`
+  - `agent.set_global_data(...)`
+  - `agent.define_tool(...)`
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
+
+## **Example**
+
+```java {13}
+import com.signalwire.sdk.agent.AgentBase;
+
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+agent.setPromptText("You are a helpful assistant.");
+
+// Method: configurePerRequest
+    var tier = query_params.get("tier", "standard");
+    if tier == "premium":
+        agent.addSkill("web_search");
+        agent.setParams(Map.of("end_of_speech_timeout", 500));
+    agent.setGlobalData(Map.of("tier", tier));
+
+agent.setDynamicConfigCallback(configure_per_request);
+agent.serve();
+
+
+```

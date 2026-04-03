@@ -1,0 +1,137 @@
+---
+title: "MCPClient"
+slug: /reference/java/agents/mcp-gateway/mcp-client
+description: Manage a single MCP server subprocess with JSON-RPC communication.
+max-toc-depth: 3
+---
+
+[mcpmanager-create-client]: /docs/sdks/reference/java/agents/mcp-gateway/mcp-manager/create-client
+[mcpservice]: /docs/sdks/reference/java/agents/mcp-gateway/mcp-manager
+
+MCPClient manages a single MCP server subprocess. It handles starting the process,
+initializing the MCP session via JSON-RPC, calling tools, and stopping the process
+with cleanup.
+
+<Warning>
+MCPClient instances are created internally by
+[`MCPManager.create_client()`][mcpmanager-create-client].
+You should not instantiate them directly in most cases.
+</Warning>
+
+```java
+
+
+```
+
+## **Properties**
+
+<ParamField path="process" type="subprocess.Popen" toc={true}>
+  The underlying subprocess object. `null` before `start()` is called.
+</ParamField>
+
+<ParamField path="tools" type="List<Map<String, Object>>" toc={true}>
+  List of tool definitions retrieved from the MCP server after initialization.
+</ParamField>
+
+---
+
+## **start**
+
+**start**() -> `boolean`
+
+Spawn the MCP server process, initialize the MCP session, and retrieve the list
+of available tools. Returns `true` on success, `false` if initialization fails.
+The process runs in a sandboxed environment according to the service's
+`sandboxConfig`.
+
+### Returns
+
+`boolean` -- `true` if the process started and initialized successfully.
+
+---
+
+## **stop**
+
+**stop**() -> `null`
+
+Stop the MCP server process. Attempts a graceful JSON-RPC shutdown first, then
+falls back to `SIGTERM`, and finally `SIGKILL` if needed. Cleans up the sandbox
+directory after the process stops.
+
+---
+
+## **callTool**
+
+**callTool**(`toolName`, `arguments`) -> `Map<String, Object>`
+
+Call a tool on the MCP server and return the result.
+
+### Parameters
+
+<ParamField path="toolName" type="String" required={true} toc={true}>
+  Name of the tool to invoke.
+</ParamField>
+
+<ParamField path="arguments" type="Map<String, Object>" required={true} toc={true}>
+  Arguments to pass to the tool.
+</ParamField>
+
+### Returns
+
+`Map<String, Object>` -- The tool result from the MCP server.
+
+---
+
+## **call_method**
+
+**call_method**(`method`, `params`) -> `Any`
+
+Send a JSON-RPC request to the MCP server and wait for the response. Raises
+`TimeoutError` after 30 seconds if no response is received. Raises
+`RuntimeError` if the client is shutting down.
+
+### Parameters
+
+<ParamField path="method" type="String" required={true} toc={true}>
+  The JSON-RPC method name (e.g., `"tools/call"`, `"tools/list"`).
+</ParamField>
+
+<ParamField path="params" type="Map<String, Object>" required={true} toc={true}>
+  Parameters for the JSON-RPC request.
+</ParamField>
+
+### Returns
+
+`Any` -- The `result` field from the JSON-RPC response.
+
+---
+
+## **getTools**
+
+**getTools**() -> `List<Map<String, Object>>`
+
+Return a copy of the tool definitions retrieved during initialization.
+
+### Returns
+
+`List<Map<String, Object>>`
+
+---
+
+## **Example**
+
+```java
+
+var config = Map.of("services", Map.of("todo", Map.of("command", List.of("python3", "todo_mcp.py"), "description", "Todo list", "enabled", true)));
+
+var manager = MCPManager(config);
+var client = manager.createClient("todo");
+var tools = client.getTools();
+System.out.println("Tools: " + [t['name'] for t in tools]);
+var result = client.callTool("add_todo", {"text": "Buy groceries"});
+System.out.println(result);
+client.stop();
+manager.shutdown();
+
+
+```

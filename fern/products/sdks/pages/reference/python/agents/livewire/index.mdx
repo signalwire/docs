@@ -1,0 +1,148 @@
+---
+title: "LiveWire"
+sidebar-title: LiveWire
+subtitle: "LiveKit-compatible agents powered by SignalWire infrastructure"
+slug: /reference/python/agents/livewire
+description: "LiveKit-compatible API layer that maps to SignalWire infrastructure."
+max-toc-depth: 3
+---
+
+[agent]: /docs/sdks/reference/python/agents/livewire/agent
+[agent-session]: /docs/sdks/reference/python/agents/livewire/agent-session
+[run-context]: /docs/sdks/reference/python/agents/livewire/run-context
+[function-tool]: /docs/sdks/reference/python/agents/livewire/function-tool
+[run-app]: /docs/sdks/reference/python/agents/livewire/run-app
+[agent-server]: /docs/sdks/reference/python/agents/livewire/agent-server
+[job-context]: /docs/sdks/reference/python/agents/livewire/job-context
+[signals]: /docs/sdks/reference/python/agents/livewire/signals
+[plugins]: /docs/sdks/reference/python/agents/livewire/plugins
+[ref-agentsession]: /docs/sdks/reference/python/agents/livewire/agent-session
+
+LiveWire is a compatibility layer that lets developers familiar with
+[livekit-agents](https://docs.livekit.io/agents/) use the same class and function
+names while running on SignalWire infrastructure. Change your import path and your
+existing code runs on SignalWire with no other modifications.
+
+```python
+# Before (livekit-agents)
+from livekit.agents import Agent, AgentSession, function_tool
+
+# After (SignalWire LiveWire)
+from signalwire.livewire import Agent, AgentSession, function_tool
+```
+
+<Note>
+SignalWire's control plane handles STT, TTS, VAD, and turn detection automatically.
+Pipeline plugin parameters (`stt`, `tts`, `vad`, `turn_detection`) are accepted for
+API compatibility but are no-ops. LiveWire logs an informational message the first
+time each no-op parameter is used.
+</Note>
+
+## Quick Start
+
+```python
+from signalwire.livewire import (
+    Agent,
+    AgentSession,
+    AgentServer,
+    JobContext,
+    JobProcess,
+    function_tool,
+    run_app,
+)
+
+@function_tool
+def lookup_order(order_id: str) -> str:
+    """Look up the status of a customer order."""
+    return f"Order {order_id} shipped yesterday."
+
+server = AgentServer()
+
+@server.rtc_session()
+async def entrypoint(ctx: JobContext):
+    agent = Agent(
+        instructions="You are a helpful order-status assistant.",
+        tools=[lookup_order],
+    )
+    session = AgentSession()
+    await session.start(agent, room=ctx.room)
+
+run_app(server)
+```
+
+## Namespace Aliases
+
+LiveWire provides namespace objects that mirror common livekit-agents import paths:
+
+| Alias | Contents | Mirrors |
+|-------|----------|---------|
+| `voice` | `Agent`, [`AgentSession`][ref-agentsession] | `livekit.agents.voice` |
+| `llm_ns` | `tool` (alias for `function_tool`), `ToolError`, `ChatContext` | `livekit.agents.llm` |
+| `cli_ns` | `run_app` | `livekit.agents.cli` |
+| `inference` | `STT`, `LLM`, `TTS` | `livekit.agents.inference` |
+
+```python
+from signalwire.livewire import voice, llm_ns, inference
+
+agent = voice.Agent(instructions="Hello")
+session = voice.AgentSession(llm=inference.LLM(model="gpt-4o"))
+```
+
+## **Learn More**
+
+<CardGroup cols={2}>
+  <Card
+    title="Agent"
+    href="/docs/sdks/reference/python/agents/livewire/agent"
+  >
+    LiveKit-compatible agent class. Holds instructions, tools, and lifecycle hooks.
+  </Card>
+  <Card
+    title="AgentSession"
+    href="/docs/sdks/reference/python/agents/livewire/agent-session"
+  >
+    Session orchestrator that binds an Agent to the SignalWire platform.
+  </Card>
+  <Card
+    title="RunContext"
+    href="/docs/sdks/reference/python/agents/livewire/run-context"
+  >
+    Context object available inside tool handler functions.
+  </Card>
+  <Card
+    title="function_tool"
+    href="/docs/sdks/reference/python/agents/livewire/function-tool"
+  >
+    Decorator for wrapping plain Python functions as agent tools.
+  </Card>
+  <Card
+    title="run_app"
+    href="/docs/sdks/reference/python/agents/livewire/run-app"
+  >
+    Main entry point that prints the banner, runs setup, and starts the agent.
+  </Card>
+  <Card
+    title="AgentServer"
+    href="/docs/sdks/reference/python/agents/livewire/agent-server"
+  >
+    Server registration and session entrypoint decorator.
+  </Card>
+  <Card
+    title="Infrastructure"
+    href="/docs/sdks/reference/python/agents/livewire/job-context"
+  >
+    JobContext, JobProcess, and Room stubs for connection lifecycle.
+  </Card>
+  <Card
+    title="Signals"
+    href="/docs/sdks/reference/python/agents/livewire/signals"
+  >
+    StopResponse, ToolError, AgentHandoff, and ChatContext.
+  </Card>
+  <Card
+    title="Plugins"
+    href="/docs/sdks/reference/python/agents/livewire/plugins"
+  >
+    No-op plugin stubs: DeepgramSTT, OpenAILLM, CartesiaTTS, ElevenLabsTTS, SileroVAD, and Inference classes.
+  </Card>
+</CardGroup>

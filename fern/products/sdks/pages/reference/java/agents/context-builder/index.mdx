@@ -1,0 +1,157 @@
+---
+title: "ContextBuilder"
+slug: /reference/java/agents/context-builder
+description: "Build multi-step conversation workflows with structured contexts and steps."
+max-toc-depth: 3
+---
+
+[context]: /docs/sdks/reference/java/agents/context-builder/context
+[step]: /docs/sdks/reference/java/agents/context-builder/step
+[agentbase]: /docs/sdks/reference/java/agents/agent-base
+[addcontext]: /docs/sdks/reference/java/agents/context-builder/add-context
+[getcontext]: /docs/sdks/reference/java/agents/context-builder/get-context
+[todict]: /docs/sdks/reference/java/agents/context-builder/to-dict
+[validate]: /docs/sdks/reference/java/agents/context-builder/validate
+
+ContextBuilder is the top-level container for defining structured conversation
+workflows. It holds one or more [`Context`][context]
+objects, each containing a sequence of [`Step`][step]
+objects. Use it when your agent needs guided, multi-step conversations instead of
+free-form prompting.
+
+Access the builder by calling `defineContexts()` on an
+[`AgentBase`][agentbase] instance. The builder
+validates the entire context tree when the SWML document is rendered.
+
+## **Properties**
+
+<ParamField path="agent" type="AgentBase" required={true} toc={true}>
+  The parent agent that owns these contexts. Typically called internally by
+  `AgentBase.defineContexts()` rather than instantiated directly.
+</ParamField>
+
+<Note>
+You rarely create a ContextBuilder directly. Override `defineContexts()` in
+your agent class, which creates the builder and wires it into SWML generation
+automatically.
+</Note>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="addContext" href="/docs/sdks/reference/java/agents/context-builder/add-context">
+    Create a new named context and add it to the builder.
+  </Card>
+  <Card title="getContext" href="/docs/sdks/reference/java/agents/context-builder/get-context">
+    Retrieve an existing context by name.
+  </Card>
+  <Card title="toDict" href="/docs/sdks/reference/java/agents/context-builder/to-dict">
+    Convert all contexts to a dictionary for SWML generation.
+  </Card>
+  <Card title="validate" href="/docs/sdks/reference/java/agents/context-builder/validate">
+    Validate the entire context configuration tree.
+  </Card>
+</CardGroup>
+
+---
+
+## **Limits**
+
+| Limit | Value |
+|-------|-------|
+| Maximum contexts per builder | 50 |
+| Maximum steps per context | 100 |
+
+---
+
+## **Examples**
+
+### Single context with sequential steps
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+public class OrderAgent extends AgentBase {
+    public OrderAgent() {
+        super("order-agent");
+        addLanguage("English", "en-US", "rime.spore");
+        promptAddSection("Role", "You help customers place orders.");
+    }
+
+    @Override
+    protected ContextBuilder defineContexts() {
+        var contexts = contexts();
+        var order = contexts.addContext("default");
+
+        order.addStep("get_item")
+            .setText("Ask what item they want to order.")
+            .setStepCriteria("Customer has specified an item")
+            .setValidSteps(List.of("get_quantity"));
+
+        order.addStep("get_quantity")
+            .setText("Ask how many they want.")
+            .setStepCriteria("Customer has specified a quantity")
+            .setValidSteps(List.of("confirm"));
+
+        order.addStep("confirm")
+            .setText("Confirm the order details and thank them.")
+            .setStepCriteria("Order has been confirmed")
+            .setEnd(true);
+
+        return contexts;
+    }
+}
+
+new OrderAgent().run();
+```
+
+### Multiple contexts
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+public class SupportAgent extends AgentBase {
+    public SupportAgent() {
+        super("support-agent");
+        addLanguage("English", "en-US", "rime.spore");
+        promptAddSection("Role", "You are a customer support assistant.");
+    }
+
+    @Override
+    protected ContextBuilder defineContexts() {
+        var contexts = contexts();
+
+        // Main menu
+        var main = contexts.addContext("default");
+        main.addStep("menu")
+            .setText("Ask whether they need sales, support, or billing help.")
+            .setFunctions("none")
+            .setValidContexts(List.of("sales", "support", "billing"));
+
+        // Sales context
+        var sales = contexts.addContext("sales");
+        sales.setSystemPrompt("You are a friendly sales representative.");
+        sales.addStep("qualify")
+            .setText("Understand what product the caller is interested in.")
+            .setFunctions(List.of("check_inventory", "get_pricing"))
+            .setValidSteps(List.of("close"));
+        sales.addStep("close")
+            .setText("Close the sale or schedule a follow-up.")
+            .setValidContexts(List.of("default"));
+
+        // Support context
+        var support = contexts.addContext("support");
+        support.setSystemPrompt("You are a patient support engineer.");
+        support.addStep("diagnose")
+            .setText("Understand the customer's issue.")
+            .setFunctions(List.of("lookup_account", "check_status"))
+            .setValidSteps(List.of("resolve"));
+        support.addStep("resolve")
+            .setText("Resolve the issue or escalate.")
+            .setFunctions(List.of("create_ticket", "transfer_call"))
+            .setValidContexts(List.of("default"));
+
+        return contexts;
+    }
+}
+```
