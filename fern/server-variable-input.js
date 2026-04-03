@@ -363,14 +363,16 @@
   // ---------------------------------------------------------------------------
 
   /**
-   * Create the server variable field as an <li> that matches Fern's auth
-   * field styling (same structure as project_id / api_token fields).
+   * Create the server variable field as a standalone <div> that sits between
+   * the auth trigger button and the collapsible auth content. Uses the same
+   * Fern auth-field classes (fern-input-group, fern-input, font-mono) so it
+   * looks like a native part of the auth card.
    */
   function createVariableField(variable) {
-    // <li class="-mx-4 space-y-2 p-4"> — matches Fern auth field items
-    var li = document.createElement("li");
-    li.id = SECTION_ID;
-    li.className = "-mx-4 space-y-2 p-4";
+    // Outer wrapper — uses the same padding / spacing as auth field <li> items
+    var wrapper = document.createElement("div");
+    wrapper.id = SECTION_ID;
+    wrapper.className = "space-y-2 px-4 pt-4";
 
     // Label: <label class="inline-flex flex-wrap items-baseline">
     //          <span class="font-mono text-sm">space_name</span>
@@ -381,9 +383,9 @@
     labelSpan.className = "font-mono text-sm";
     labelSpan.textContent = variable.fieldName || "space_name";
     label.appendChild(labelSpan);
-    li.appendChild(label);
+    wrapper.appendChild(label);
 
-    // Input wrapper: <div><div class="fern-input-group"><input class="fern-input" /></div></div>
+    // Input: <div><div class="fern-input-group"><input class="fern-input" /></div></div>
     var inputWrapper = document.createElement("div");
     var inputGroup = document.createElement("div");
     inputGroup.className = "fern-input-group";
@@ -394,21 +396,21 @@
     input.value = loadSaved(variable.storageKey);
     inputGroup.appendChild(input);
     inputWrapper.appendChild(inputGroup);
-    li.appendChild(inputWrapper);
+    wrapper.appendChild(inputWrapper);
 
     // Small description text below input
     var desc = document.createElement("p");
     desc.className = "t-muted text-xs mt-1";
     desc.textContent = variable.description;
-    li.appendChild(desc);
+    wrapper.appendChild(desc);
 
     // Preview of resolved URL (hidden when empty)
     var preview = document.createElement("div");
     preview.className = "sw-server-var-preview";
     preview.textContent = "";
-    li.appendChild(preview);
+    wrapper.appendChild(preview);
 
-    return { li: li, input: input, preview: preview };
+    return { wrapper: wrapper, input: input, preview: preview };
   }
 
   // ---------------------------------------------------------------------------
@@ -441,27 +443,46 @@
 
     var ui = createVariableField(variable);
 
-    // Inject as an <li> inside the auth form's <ul> so it looks like a native
-    // auth field (same level as project_id / api_token).
-    var authUl = form.querySelector(
-      ".fern-explorer-auth-form ul.list-none"
-    );
-    if (authUl) {
-      // Insert before the first existing <li> so it appears at the top
-      var firstLi = authUl.querySelector("li");
-      if (firstLi) {
-        authUl.insertBefore(ui.li, firstLi);
-      } else {
-        authUl.appendChild(ui.li);
+    // Inject between the auth trigger button and the collapsible content.
+    // DOM structure inside .fern-explorer-auth-form:
+    //   <div class="relative">
+    //     <button data-state="...">...trigger banner...</button>
+    //     <!-- INSERT HERE -->
+    //     <div>  <!-- Radix Collapsible.Root -->
+    //       <div class="fern-collapsible">...</div>
+    //     </div>
+    //   </div>
+    var authForm = form.querySelector(".fern-explorer-auth-form");
+    var inserted = false;
+
+    if (authForm) {
+      // The auth card root is .relative > (button + collapsible)
+      var relativeContainer = authForm.querySelector(".relative");
+      if (relativeContainer) {
+        // Find the trigger button (first child button with data-state)
+        var triggerBtn = relativeContainer.querySelector(
+          "button[data-state]"
+        );
+        if (triggerBtn && triggerBtn.nextElementSibling) {
+          // Insert after the trigger button, before the collapsible
+          relativeContainer.insertBefore(
+            ui.wrapper,
+            triggerBtn.nextElementSibling
+          );
+          inserted = true;
+        }
       }
-    } else {
-      // Fallback: if we can't find the auth <ul>, try the auth box itself
-      var authBox = form.querySelector(".fern-explorer-auth-form");
-      if (authBox) {
-        authBox.appendChild(ui.li);
-      } else {
-        form.prepend(ui.li);
+
+      // Fallback: append inside auth form if we couldn't find the right spot
+      if (!inserted) {
+        authForm.appendChild(ui.wrapper);
+        inserted = true;
       }
+    }
+
+    // Final fallback: prepend to form
+    if (!inserted) {
+      form.prepend(ui.wrapper);
     }
 
     // Preview helper
