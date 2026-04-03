@@ -47,21 +47,6 @@ services, helps with bookings, and gives directions.
 from signalwire.prefabs import ConciergeAgent
 ```
 
-### Constructor
-
-```python {3-9}
-from signalwire.prefabs import ConciergeAgent
-
-agent = ConciergeAgent(
-    venue_name="Grand Hotel",
-    services=["room service", "spa bookings", "restaurant reservations"],
-    amenities={
-        "pool": {"hours": "7 AM - 10 PM", "location": "2nd Floor"},
-        "gym": {"hours": "24 hours", "location": "3rd Floor"}
-    }
-)
-```
-
 <ParamField path="venue_name" type="str" required={true} toc={true}>
   Name of the venue or business.
 </ParamField>
@@ -104,7 +89,7 @@ agent = ConciergeAgent(
 
 ### Example
 
-```python {3-5,15-17}
+```python
 from signalwire.prefabs import ConciergeAgent
 
 agent = ConciergeAgent(
@@ -136,19 +121,6 @@ Optionally suggests related questions from the database.
 
 ```python
 from signalwire.prefabs import FAQBotAgent
-```
-
-### Constructor
-
-```python {3-8}
-from signalwire.prefabs import FAQBotAgent
-
-agent = FAQBotAgent(
-    faqs=[
-        {"question": "What are your hours?", "answer": "We're open 9 AM to 5 PM."},
-        {"question": "Where are you located?", "answer": "123 Main Street, Downtown."}
-    ]
-)
 ```
 
 <ParamField path="faqs" type="list[dict[str, str]]" required={true} toc={true}>
@@ -185,7 +157,7 @@ FAQBot works best with up to 50 FAQs. For larger knowledge bases, use the
 
 ### Example
 
-```python {3-4,21-23}
+```python
 from signalwire.prefabs import FAQBotAgent
 
 agent = FAQBotAgent(
@@ -224,20 +196,6 @@ questions (determined at runtime via a callback).
 
 ```python
 from signalwire.prefabs import InfoGathererAgent
-```
-
-### Constructor
-
-```python {3-9}
-from signalwire.prefabs import InfoGathererAgent
-
-agent = InfoGathererAgent(
-    questions=[
-        {"key_name": "name", "question_text": "What is your full name?"},
-        {"key_name": "email", "question_text": "What is your email?", "confirm": True},
-        {"key_name": "reason", "question_text": "How can I help you?"}
-    ]
-)
 ```
 
 <ParamField path="questions" type="list[dict]" toc={true}>
@@ -280,7 +238,7 @@ agent = InfoGathererAgent(
 Instead of static questions, use `set_question_callback()` to determine questions at
 request time based on query parameters, headers, or request body:
 
-```python {15-16}
+```python
 from signalwire.prefabs import InfoGathererAgent
 
 def get_questions(query_params, body_params, headers):
@@ -314,15 +272,26 @@ if __name__ == "__main__":
 Answers are stored in `global_data` and available in SWAIG function handlers:
 
 ```python
-# Inside a tool handler
-global_data = raw_data.get("global_data", {})
-answers = global_data.get("answers", [])
-# [{"key_name": "name", "answer": "John Doe"}, ...]
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
+
+agent = AgentBase(name="assistant", route="/assistant")
+agent.set_prompt_text("You are a helpful assistant.")
+
+@agent.tool(description="Process collected answers")
+def process_answers(args, raw_data=None):
+    # Inside a tool handler
+    global_data = raw_data.get("global_data", {})
+    answers = global_data.get("answers", [])
+    # [{"key_name": "name", "answer": "John Doe"}, ...]
+    return FunctionResult(f"Processed {len(answers)} answers.")
+
+agent.serve()
 ```
 
 ### Example
 
-```python {3-11}
+```python
 from signalwire.prefabs import InfoGathererAgent
 
 agent = InfoGathererAgent(
@@ -351,19 +320,6 @@ appropriate department. Uses `FunctionResult.connect()` for call transfers.
 
 ```python
 from signalwire.prefabs import ReceptionistAgent
-```
-
-### Constructor
-
-```python {3-8}
-from signalwire.prefabs import ReceptionistAgent
-
-agent = ReceptionistAgent(
-    departments=[
-        {"name": "sales", "description": "Product inquiries and pricing", "number": "+15551234567"},
-        {"name": "support", "description": "Technical help", "number": "+15551234568"}
-    ]
-)
 ```
 
 <ParamField path="departments" type="list[dict[str, str]]" required={true} toc={true}>
@@ -415,7 +371,7 @@ before the transfer executes.
 
 ### Example
 
-```python {3-13}
+```python
 from signalwire.prefabs import ReceptionistAgent
 
 agent = ReceptionistAgent(
@@ -446,20 +402,6 @@ validates answers based on the question type, and retries on invalid responses.
 
 ```python
 from signalwire.prefabs import SurveyAgent
-```
-
-### Constructor
-
-```python {3-9}
-from signalwire.prefabs import SurveyAgent
-
-agent = SurveyAgent(
-    survey_name="Customer Satisfaction Survey",
-    questions=[
-        {"id": "rating", "text": "Rate your experience?", "type": "rating", "scale": 5},
-        {"id": "feedback", "text": "Any comments?", "type": "open_ended", "required": False}
-    ]
-)
 ```
 
 <ParamField path="survey_name" type="str" required={true} toc={true}>
@@ -535,7 +477,7 @@ agent = SurveyAgent(
 
 ### Example
 
-```python {3-8,33-34}
+```python
 from signalwire.prefabs import SurveyAgent
 
 agent = SurveyAgent(
@@ -584,7 +526,7 @@ if __name__ == "__main__":
 All prefabs inherit from [`AgentBase`][agentbase],
 so you can add custom tools, prompt sections, and skills:
 
-```python {4-6}
+```python
 from signalwire.prefabs import FAQBotAgent
 from signalwire.core.function_result import FunctionResult
 
