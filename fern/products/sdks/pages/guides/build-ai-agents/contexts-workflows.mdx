@@ -1,0 +1,1009 @@
+---
+title: "Contexts and Workflows"
+description: Build multi-step conversation flows with branching logic, context switching, and step validation using the SDK's ContextBuilder.
+slug: /guides/contexts-workflows
+max-toc-depth: 3
+---
+
+[ref-contextbuilder]: /docs/sdks/reference/python/agents/context-builder
+
+The features in this chapter build on the fundamentals covered earlier. While basic agents handle free-form conversations well, many real-world applications require more structure: guided workflows that ensure certain information is collected, the ability to transfer between different "departments" or personas, recording for compliance, and integration with knowledge bases.
+
+These advanced features transform simple voice agents into sophisticated conversational applications capable of handling complex business processes.
+
+## When to Use Contexts
+
+Contexts are the SDK's answer to a common challenge: how do you ensure a conversation follows a specific path? Regular prompts work well for open-ended conversations, but many business processes require structure -- collecting specific information in a specific order, or routing callers through a defined workflow.
+
+Think of contexts as conversation "states" or "modes." Each context can have its own persona, available functions, and series of steps. The AI automatically manages transitions between contexts and steps based on criteria you define.
+
+| Regular Prompts | Contexts |
+|-----------------|----------|
+| Free-form conversations | Structured workflows |
+| Simple Q&A agents | Multi-step data collection |
+| Single-purpose tasks | Wizard-style flows |
+| No defined sequence | Branching conversations |
+| | Multiple personas |
+
+**Use contexts when you need:**
+
+- Guaranteed step completion
+- Controlled navigation
+- Step-specific function access
+- Context-dependent personas
+- Department transfers
+- Isolated conversation segments
+
+**Common context patterns:**
+
+- **Data collection wizard**: Gather customer information step-by-step (name, address, payment)
+- **Triage flow**: Qualify callers before routing to appropriate department
+- **Multi-department support**: Sales, Support, and Billing each with their own persona
+- **Appointment scheduling**: Check availability, select time, confirm details
+- **Order processing**: Select items, confirm order, process payment
+
+## Context Architecture
+
+Understanding how contexts, steps, and navigation work together is essential for building effective workflows.
+
+**Key concepts:**
+
+- **[ContextBuilder][ref-contextbuilder]**: The top-level container that holds all your contexts
+- **Context**: A distinct conversation mode (like "sales" or "support"), with its own persona and settings
+- **Step**: A specific point within a context where certain tasks must be completed
+
+The AI automatically tracks which context and step the conversation is in. When step criteria are met, it advances to the next allowed step. When context navigation is permitted and appropriate, it switches contexts entirely.
+
+<Frame caption="Context structure showing contexts, steps, and navigation paths.">
+  <img class="diagram" src="/assets/images/sdks/diagrams/06_01_contexts-workflows_diagram1.webp" alt="Diagram showing the hierarchical structure of ContextBuilder, Contexts, and Steps with navigation flow." />
+</Frame>
+
+**How state flows through contexts:**
+
+1. Caller starts in the first step of the default (or specified) context
+2. AI follows the step's instructions until `step_criteria` is satisfied
+3. AI chooses from `valid_steps` to advance within the context
+4. If `valid_contexts` allows, AI can switch to a different context entirely
+5. When switching contexts, `isolated`, `consolidate`, or `full_reset` settings control what conversation history carries over
+
+## Basic Context Example
+
+
+```python
+from signalwire import AgentBase
+
+class OrderAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="order-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Base prompt (required even with contexts)
+        self.prompt_add_section(
+            "Role",
+            "You help customers place orders."
+        )
+
+        # Define contexts after setting base prompt
+        contexts = self.define_contexts()
+
+        # Add a context with steps
+        order = contexts.add_context("default")
+
+        order.add_step("get_item") \
+            .set_text("Ask what item they want to order.") \
+            .set_step_criteria("Customer has specified an item") \
+            .set_valid_steps(["get_quantity"])
+
+        order.add_step("get_quantity") \
+            .set_text("Ask how many they want.") \
+            .set_step_criteria("Customer has specified a quantity") \
+            .set_valid_steps(["confirm"])
+
+        order.add_step("confirm") \
+            .set_text("Confirm the order details and thank them.") \
+            .set_step_criteria("Order has been confirmed")
+
+if __name__ == "__main__":
+    agent = OrderAgent()
+    agent.run()
+```
+
+{/*
+<Tab title="TypeScript">
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'order-agent' });
+agent.addLanguage('English', 'en-US', 'rime.spore');
+
+agent.promptAddSection('Role', 'You help customers place orders.');
+
+const contexts = agent.defineContexts();
+const order = contexts.addContext('default');
+
+order.addStep('get_item', { task: 'Ask what item they want to order.' })
+  .setStepCriteria('Customer has specified an item')
+  .setValidSteps(['get_quantity']);
+
+order.addStep('get_quantity', { task: 'Ask how many they want.' })
+  .setStepCriteria('Customer has specified a quantity')
+  .setValidSteps(['confirm']);
+
+order.addStep('confirm', { task: 'Confirm the order details and thank them.' })
+  .setStepCriteria('Order has been confirmed');
+
+agent.run();
+```
+</Tab>
+<Tab title="Go">
+```go
+package main
+
+import "github.com/signalwire/signalwire-agents-go/pkg/agents"
+
+func main() {
+    a := agents.NewAgentBase(agents.WithName("order-agent"))
+    a.AddLanguage("English", "en-US", "rime.spore")
+    a.PromptAddSection("Role", "You help customers place orders.")
+
+    ctx := a.DefineContexts()
+    order := ctx.AddContext("default")
+
+    order.AddStep("get_item").SetTask("Ask what item they want to order.").
+        SetStepCriteria("Customer has specified an item").
+        SetValidSteps([]string{"get_quantity"})
+
+    order.AddStep("get_quantity").SetTask("Ask how many they want.").
+        SetStepCriteria("Customer has specified a quantity").
+        SetValidSteps([]string{"confirm"})
+
+    order.AddStep("confirm").SetTask("Confirm the order details and thank them.").
+        SetStepCriteria("Order has been confirmed")
+
+    a.Run()
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire'
+
+agent = AgentBase.new(name: 'order-agent')
+agent.add_language('English', 'en-US', 'rime.spore')
+agent.prompt_add_section('Role', 'You help customers place orders.')
+
+ctx = agent.define_contexts
+order = ctx.add_context('default')
+
+order.add_step('get_item', task: 'Ask what item they want to order.')
+     .set_step_criteria('Customer has specified an item')
+     .set_valid_steps(['get_quantity'])
+
+order.add_step('get_quantity', task: 'Ask how many they want.')
+     .set_step_criteria('Customer has specified a quantity')
+     .set_valid_steps(['confirm'])
+
+order.add_step('confirm', task: 'Confirm the order details and thank them.')
+     .set_step_criteria('Order has been confirmed')
+
+agent.run
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.AgentBase;
+
+public class OrderAgent {
+    public static void main(String[] args) {
+        var agent = new AgentBase("order-agent");
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.promptAddSection("Role", "You help customers place orders.");
+
+        var ctx = agent.defineContexts();
+        var order = ctx.addContext("default");
+
+        order.addStep("get_item").setText("Ask what item they want to order.")
+             .setStepCriteria("Customer has specified an item")
+             .setValidSteps(List.of("get_quantity"));
+
+        order.addStep("get_quantity").setText("Ask how many they want.")
+             .setStepCriteria("Customer has specified a quantity")
+             .setValidSteps(List.of("confirm"));
+
+        order.addStep("confirm").setText("Confirm the order details and thank them.")
+             .setStepCriteria("Order has been confirmed");
+
+        agent.run();
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents;
+
+my $agent = SignalWire::Agents::AgentBase->new(name => 'order-agent');
+$agent->add_language('English', 'en-US', 'rime.spore');
+$agent->prompt_add_section('Role', 'You help customers place orders.');
+
+my $ctx = $agent->define_contexts;
+my $order = $ctx->add_context('default');
+
+$order->add_step('get_item', task => 'Ask what item they want to order.')
+      ->set_step_criteria('Customer has specified an item')
+      ->set_valid_steps(['get_quantity']);
+
+$order->add_step('get_quantity', task => 'Ask how many they want.')
+      ->set_step_criteria('Customer has specified a quantity')
+      ->set_valid_steps(['confirm']);
+
+$order->add_step('confirm', task => 'Confirm the order details and thank them.')
+      ->set_step_criteria('Order has been confirmed');
+
+$agent->run;
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agents/agent_base.h>
+using namespace signalwire::agents;
+
+int main() {
+    AgentBase agent("order-agent");
+    agent.add_language("English", "en-US", "rime.spore");
+    agent.prompt_add_section("Role", "You help customers place orders.");
+
+    auto& ctx = agent.define_contexts();
+    auto& order = ctx.add_context("default");
+
+    order.add_step("get_item").add_section("Task", "Ask what item they want to order.")
+         .set_step_criteria("Customer has specified an item")
+         .set_valid_steps({"get_quantity"});
+
+    order.add_step("get_quantity").add_section("Task", "Ask how many they want.")
+         .set_step_criteria("Customer has specified a quantity")
+         .set_valid_steps({"confirm"});
+
+    order.add_step("confirm").add_section("Task", "Confirm the order details and thank them.")
+         .set_step_criteria("Order has been confirmed");
+
+    agent.run();
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+
+$agent = new AgentBase(name: 'order-agent');
+$agent->addLanguage('English', 'en-US', 'rime.spore');
+$agent->promptAddSection('Role', 'You help customers place orders.');
+
+$contexts = $agent->defineContexts();
+$order = $contexts->addContext('default');
+
+$order->addStep('get_item')
+    ->setText('Ask what item they want to order.')
+    ->setStepCriteria('Customer has specified an item')
+    ->setValidSteps(['get_quantity']);
+
+$order->addStep('get_quantity')
+    ->setText('Ask how many they want.')
+    ->setStepCriteria('Customer has specified a quantity')
+    ->setValidSteps(['confirm']);
+
+$order->addStep('confirm')
+    ->setText('Confirm the order details and thank them.')
+    ->setStepCriteria('Order has been confirmed');
+
+$agent->run();
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+using SignalWire.Contexts;
+
+var agent = new AgentBase(new AgentOptions { Name = "order-agent" });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.PromptAddSection("Role", "You help customers place orders.");
+
+var contexts = agent.DefineContexts();
+var order = contexts.AddContext("default");
+
+order.AddStep("get_item")
+    .SetText("Ask what item they want to order.")
+    .SetStepCriteria("Customer has specified an item")
+    .SetValidSteps(new List<string> { "get_quantity" });
+
+order.AddStep("get_quantity")
+    .SetText("Ask how many they want.")
+    .SetStepCriteria("Customer has specified a quantity")
+    .SetValidSteps(new List<string> { "confirm" });
+
+order.AddStep("confirm")
+    .SetText("Confirm the order details and thank them.")
+    .SetStepCriteria("Order has been confirmed");
+
+agent.Run();
+```
+</Tab>
+*/}
+
+## Compact Step Definition
+
+Steps can be fully configured in a single `add_step()` call using keyword arguments:
+
+```python
+contexts = self.define_contexts()
+order = contexts.add_context("default")
+
+order.add_step("get_item",
+    task="Ask what item they want to order.",
+    bullets=["Show available items", "Confirm selection"],
+    criteria="Customer has specified an item",
+    functions=["check_inventory"],
+    valid_steps=["get_quantity"]
+)
+
+order.add_step("get_quantity",
+    task="Ask how many they want.",
+    criteria="Customer has specified a quantity",
+    valid_steps=["confirm"]
+)
+
+order.add_step("confirm",
+    task="Confirm the order details and thank them.",
+    criteria="Order has been confirmed"
+)
+```
+
+The `task` parameter creates a POM section titled "Task" with the given text. The `bullets`, `criteria`, `functions`, and `valid_steps` parameters map to `add_bullets()`, `set_step_criteria()`, `set_functions()`, and `set_valid_steps()` respectively. You can still use the method-chaining API when you need more control.
+
+## Step Configuration
+
+### set_text()
+
+Simple text prompt for the step:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `step.set_text("What item would you like to order?")` |
+{/*
+| TypeScript | `step.setText('What item would you like to order?')` |
+| Go | `step.SetText("What item would you like to order?")` |
+| Ruby | `step.set_text('What item would you like to order?')` |
+| Java | `step.setText("What item would you like to order?")` |
+| Perl | `$step->set_text('What item would you like to order?')` |
+| C++ | `step.set_text("What item would you like to order?")` |
+| PHP | `$step->setText('What item would you like to order?')` |
+| C# | `step.SetText("What item would you like to order?")` |
+*/}
+
+### add_section() / add_bullets()
+
+POM-style structured prompts:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `step.add_section("Task", "Collect customer info").add_bullets("Required", ["Full name", "Phone"])` |
+{/*
+| TypeScript | `step.addSection('Task', 'Collect customer info').addBullets('Required', ['Full name', 'Phone'])` |
+| Go | `step.AddSection("Task", "Collect customer info").AddBullets("Required", []string{"Full name", "Phone"})` |
+| Ruby | `step.add_section('Task', 'Collect customer info').add_bullets('Required', ['Full name', 'Phone'])` |
+| Java | `step.addSection("Task", "Collect customer info").addBullets("Required", List.of("Full name", "Phone"))` |
+| Perl | `$step->add_section('Task', 'Collect customer info')->add_bullets('Required', ['Full name', 'Phone'])` |
+| C++ | `step.add_section("Task", "Collect customer info").add_bullets("Required", {"Full name", "Phone"})` |
+| PHP | `$step->addSection('Task', 'Collect customer info')->addBullets('Required', ['Full name', 'Phone'])` |
+| C# | `step.AddSection("Task", "Collect customer info").AddBullets("Required", new List<string> { "Full name", "Phone" })` |
+*/}
+
+### set_step_criteria()
+
+Define when the step is complete:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `step.set_step_criteria("Customer has provided their full name and phone number")` |
+{/*
+| TypeScript | `step.setStepCriteria('Customer has provided their full name and phone number')` |
+| Go | `step.SetStepCriteria("Customer has provided their full name and phone number")` |
+| Ruby | `step.set_step_criteria('Customer has provided their full name and phone number')` |
+| Java | `step.setStepCriteria("Customer has provided their full name and phone number")` |
+| Perl | `$step->set_step_criteria('Customer has provided their full name and phone number')` |
+| C++ | `step.set_step_criteria("Customer has provided their full name and phone number")` |
+| PHP | `$step->setStepCriteria('Customer has provided their full name and phone number')` |
+| C# | `step.SetStepCriteria("Customer has provided their full name and phone number")` |
+*/}
+
+### set_valid_steps()
+
+Control step navigation:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `step.set_valid_steps(["confirm", "cancel"])` |
+{/*
+| TypeScript | `step.setValidSteps(['confirm', 'cancel'])` |
+| Go | `step.SetValidSteps([]string{"confirm", "cancel"})` |
+| Ruby | `step.set_valid_steps(['confirm', 'cancel'])` |
+| Java | `step.setValidSteps(List.of("confirm", "cancel"))` |
+| Perl | `$step->set_valid_steps(['confirm', 'cancel'])` |
+| C++ | `step.set_valid_steps({"confirm", "cancel"})` |
+| PHP | `$step->setValidSteps(['confirm', 'cancel'])` |
+| C# | `step.SetValidSteps(new List<string> { "confirm", "cancel" })` |
+*/}
+
+### set_functions()
+
+Restrict available functions per step:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `step.set_functions(["check_inventory", "get_price"])` |
+{/*
+| TypeScript | `step.setFunctions(['check_inventory', 'get_price'])` |
+| Go | `step.SetFunctions([]string{"check_inventory", "get_price"})` |
+| Ruby | `step.set_functions(['check_inventory', 'get_price'])` |
+| Java | `step.setFunctions(List.of("check_inventory", "get_price"))` |
+| Perl | `$step->set_functions(['check_inventory', 'get_price'])` |
+| C++ | `step.set_functions({"check_inventory", "get_price"})` |
+| PHP | `$step->setFunctions(['check_inventory', 'get_price'])` |
+| C# | `step.SetFunctions(new List<string> { "check_inventory", "get_price" })` |
+*/}
+
+### set_valid_contexts()
+
+Allow navigation to other contexts:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `step.set_valid_contexts(["support", "manager"])` |
+{/*
+| TypeScript | `step.setValidContexts(['support', 'manager'])` |
+| Go | `step.SetValidContexts([]string{"support", "manager"})` |
+| Ruby | `step.set_valid_contexts(['support', 'manager'])` |
+| Java | `step.setValidContexts(List.of("support", "manager"))` |
+| Perl | `$step->set_valid_contexts(['support', 'manager'])` |
+| C++ | `step.set_valid_contexts({"support", "manager"})` |
+| PHP | `$step->setValidContexts(['support', 'manager'])` |
+| C# | `step.SetValidContexts(new List<string> { "support", "manager" })` |
+*/}
+
+### Step Behavior Flags
+
+Control how steps transition without relying on criteria evaluation:
+
+```python
+# End the conversation after this step (cannot combine with valid_steps)
+step.set_end(True)
+
+# Skip waiting for user input — proceed immediately
+step.set_skip_user_turn(True)
+
+# Auto-advance to the next step without evaluating criteria
+step.set_skip_to_next_step(True)
+```
+
+These flags are useful for non-interactive steps like announcements, automated transitions, or terminal farewell steps.
+
+## Understanding Step Criteria
+
+Step criteria tell the AI when a step is "complete" and it's time to move on. Writing good criteria is crucial -- too vague and the AI may advance prematurely; too strict and the conversation may get stuck.
+
+**Good criteria are:**
+
+- Specific and measurable
+- Phrased as completion conditions
+- Focused on what information has been collected
+
+**Examples of well-written criteria:**
+
+```python
+# Good: Specific, measurable
+.set_step_criteria("Customer has provided their full name and email address")
+
+# Good: Clear completion condition
+.set_step_criteria("Customer has selected a product and confirmed the quantity")
+
+# Good: Explicit confirmation
+.set_step_criteria("Customer has verbally confirmed the order total")
+```
+
+**Problematic criteria to avoid:**
+
+```python
+# Bad: Too vague
+.set_step_criteria("Customer is ready")
+
+# Bad: Subjective
+.set_step_criteria("Customer seems satisfied")
+
+# Bad: No clear completion point
+.set_step_criteria("Help the customer")
+```
+
+## Context Configuration
+
+### set_isolated()
+
+Truncate conversation history when entering:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `context.set_isolated(True)` |
+{/*
+| TypeScript | `context.setIsolated(true)` |
+| Go | `context.SetIsolated(true)` |
+| Ruby | `context.set_isolated(true)` |
+| Java | `context.setIsolated(true)` |
+| Perl | `$context->set_isolated(1)` |
+| C++ | `context.set_isolated(true)` |
+| PHP | `$context->setIsolated(true)` |
+| C# | `context.SetIsolated(true)` |
+*/}
+
+### set_system_prompt()
+
+New system prompt when entering context:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `context.set_system_prompt("You are now a technical support specialist.")` |
+{/*
+| TypeScript | `context.setSystemPrompt('You are now a technical support specialist.')` |
+| Go | `context.SetSystemPrompt("You are now a technical support specialist.")` |
+| Ruby | `context.set_system_prompt('You are now a technical support specialist.')` |
+| Java | `context.setSystemPrompt("You are now a technical support specialist.")` |
+| Perl | `$context->set_system_prompt('You are now a technical support specialist.')` |
+| C++ | `context.set_system_prompt("You are now a technical support specialist.")` |
+| PHP | `$context->setSystemPrompt('You are now a technical support specialist.')` |
+| C# | `context.SetSystemPrompt("You are now a technical support specialist.")` |
+*/}
+
+### set_user_prompt()
+
+Inject a user message when entering:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `context.set_user_prompt("I need help with a technical issue.")` |
+{/*
+| TypeScript | `context.setUserPrompt('I need help with a technical issue.')` |
+| Go | `context.SetUserPrompt("I need help with a technical issue.")` |
+| Ruby | `context.set_user_prompt('I need help with a technical issue.')` |
+| Java | `context.setUserPrompt("I need help with a technical issue.")` |
+| Perl | `$context->set_user_prompt('I need help with a technical issue.')` |
+| C++ | `context.set_user_prompt("I need help with a technical issue.")` |
+| PHP | `$context->setUserPrompt('I need help with a technical issue.')` |
+| C# | `context.SetUserPrompt("I need help with a technical issue.")` |
+*/}
+
+### set_consolidate()
+
+Summarize previous conversation when switching:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `context.set_consolidate(True)` |
+{/*
+| TypeScript | `context.setConsolidate(true)` |
+| Go | `context.SetConsolidate(true)` |
+| Ruby | `context.set_consolidate(true)` |
+| Java | `context.setConsolidate(true)` |
+| Perl | `$context->set_consolidate(1)` |
+| C++ | `context.set_consolidate(true)` |
+| PHP | `$context->setConsolidate(true)` |
+| C# | `context.SetConsolidate(true)` |
+*/}
+
+### set_full_reset()
+
+Completely reset conversation state:
+
+| Language | Syntax |
+|----------|--------|
+| Python | `context.set_full_reset(True)` |
+{/*
+| TypeScript | `context.setFullReset(true)` |
+| Go | `context.SetFullReset(true)` |
+| Ruby | `context.set_full_reset(true)` |
+| Java | `context.setFullReset(true)` |
+| Perl | `$context->set_full_reset(1)` |
+| C++ | `context.set_full_reset(true)` |
+| PHP | `$context->setFullReset(true)` |
+| C# | `context.SetFullReset(true)` |
+*/}
+
+### add_enter_filler() / add_exit_filler()
+
+Add transition phrases:
+
+```python
+context.add_enter_filler("en-US", [
+    "Let me connect you with our support team...",
+    "Transferring you to a specialist..."
+])
+
+context.add_exit_filler("en-US", [
+    "Returning you to the main menu...",
+    "Back to the sales department..."
+])
+```
+
+## Multi-Context Example
+
+```python
+from signalwire import AgentBase
+
+class MultiDepartmentAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="multi-dept-agent")
+        self.add_language("English-Sales", "en-US", "rime.spore")
+        self.add_language("English-Support", "en-US", "rime.cove")
+        self.add_language("English-Manager", "en-US", "rime.marsh")
+
+        self.prompt_add_section(
+            "Instructions",
+            "Guide customers through sales or transfer to appropriate departments."
+        )
+
+        contexts = self.define_contexts()
+
+        # Sales context
+        sales = contexts.add_context("sales") \
+            .set_isolated(True) \
+            .add_section("Role", "You are Alex, a sales representative.")
+
+        sales.add_step("qualify") \
+            .add_section("Task", "Determine customer needs") \
+            .set_step_criteria("Customer needs are understood") \
+            .set_valid_steps(["recommend"]) \
+            .set_valid_contexts(["support", "manager"])
+
+        sales.add_step("recommend") \
+            .add_section("Task", "Make product recommendations") \
+            .set_step_criteria("Recommendation provided") \
+            .set_valid_contexts(["support", "manager"])
+
+        # Support context
+        support = contexts.add_context("support") \
+            .set_isolated(True) \
+            .add_section("Role", "You are Sam, technical support.") \
+            .add_enter_filler("en-US", [
+                "Connecting you with technical support...",
+                "Let me transfer you to our tech team..."
+            ])
+
+        support.add_step("assist") \
+            .add_section("Task", "Help with technical questions") \
+            .set_step_criteria("Technical issue resolved") \
+            .set_valid_contexts(["sales", "manager"])
+
+        # Manager context
+        manager = contexts.add_context("manager") \
+            .set_isolated(True) \
+            .add_section("Role", "You are Morgan, the store manager.") \
+            .add_enter_filler("en-US", [
+                "Let me get the manager for you...",
+                "One moment, connecting you with management..."
+            ])
+
+        manager.add_step("escalate") \
+            .add_section("Task", "Handle escalated issues") \
+            .set_step_criteria("Issue resolved by manager") \
+            .set_valid_contexts(["sales", "support"])
+
+if __name__ == "__main__":
+    agent = MultiDepartmentAgent()
+    agent.run()
+```
+
+## Navigation Flow
+
+### Within Context (Steps)
+
+- `set_valid_steps(["next"])` - Go to next sequential step
+- `set_valid_steps(["step_name"])` - Go to specific step
+- `set_valid_steps(["a", "b"])` - Multiple options
+
+### Context-Level Valid Steps
+
+You can set `valid_steps` at the context level to apply default step navigation for all steps in the context. Step-level `valid_steps` overrides context-level when set.
+
+```python
+contexts = self.define_contexts()
+order = contexts.add_context("default")
+
+# All steps in this context can navigate to "cancel" by default
+order.set_valid_steps(["next", "cancel"])
+
+order.add_step("get_item",
+    task="Ask what item they want to order.",
+    criteria="Customer has specified an item"
+)
+order.add_step("get_quantity",
+    task="Ask how many they want.",
+    criteria="Customer has specified a quantity"
+)
+order.add_step("cancel",
+    task="Cancel the order and apologize."
+)
+```
+
+### Between Contexts
+
+- `set_valid_contexts(["other_context"])` - Allow context switch
+- AI calls `change_context("context_name")` automatically
+- Enter/exit fillers provide smooth transitions
+
+### Context Entry Behavior
+
+- `isolated=True` - Clear conversation history
+- `consolidate=True` - Summarize previous conversation
+- `full_reset=True` - Complete prompt replacement
+
+## Context Manipulation
+
+After defining contexts and steps, you can retrieve, modify, reorder, or remove them programmatically.
+
+### Retrieving Contexts and Steps
+
+```python
+contexts = self.define_contexts()
+
+# Build your contexts...
+order = contexts.add_context("default")
+order.add_step("greeting", task="Greet the caller.")
+
+# Later, retrieve and modify
+ctx = contexts.get_context("default")
+step = ctx.get_step("greeting")
+step.clear_sections()
+step.set_text("Welcome! How can I help you today?")
+```
+
+### Removing and Reordering Steps
+
+```python
+# Remove a step entirely
+ctx.remove_step("obsolete_step")
+
+# Move a step to a new position (0-indexed)
+ctx.move_step("confirm", 0)  # Move "confirm" to the first position
+```
+
+### Clearing Step Content
+
+Use `clear_sections()` to remove all POM sections and text from a step so you can repopulate it:
+
+```python
+step = ctx.get_step("collect_info")
+step.clear_sections()
+step.add_section("Task", "Updated instructions for collecting info.")
+```
+
+## Gather Info Steps
+
+The gather info system lets you define structured question sequences within a step. Questions are presented one at a time via the SignalWire platform's built-in gather mechanism, producing zero tool_call/tool_result entries in the LLM conversation history. This keeps the history clean and focused.
+
+### Basic Gather Info
+
+```python
+from signalwire import AgentBase
+
+class IntakeAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="intake-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        self.prompt_add_section(
+            "Role",
+            "You collect patient intake information."
+        )
+
+        contexts = self.define_contexts()
+        ctx = contexts.add_context("default")
+
+        intake = ctx.add_step("intake")
+        intake.set_gather_info(
+            output_key="patient_info",
+            completion_action="next_step",
+            prompt="You are collecting patient information. Be friendly and professional."
+        )
+        intake.add_gather_question(
+            key="full_name",
+            question="What is your full name?",
+            type="string",
+            confirm=True
+        )
+        intake.add_gather_question(
+            key="dob",
+            question="What is your date of birth?",
+            type="string"
+        )
+        intake.add_gather_question(
+            key="reason",
+            question="What is the reason for your visit today?",
+            type="string",
+            prompt="Be empathetic when asking about the reason for the visit."
+        )
+        intake.set_valid_steps(["summary"])
+
+        ctx.add_step("summary",
+            task="Summarize the collected information and confirm with the patient.",
+            criteria="Patient has confirmed the information is correct"
+        )
+
+if __name__ == "__main__":
+    agent = IntakeAgent()
+    agent.run()
+```
+
+### Gather Info Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `output_key` | Key in `global_data` where answers are stored (default: top-level) |
+| `completion_action` | Set to `"next_step"` to auto-advance when all questions are answered |
+| `prompt` | Preamble text giving the AI personality/context for the questions |
+
+### Gather Question Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `key` | str | required | Key name for storing the answer in global_data |
+| `question` | str | required | The question text to ask |
+| `type` | str | `"string"` | JSON schema type for the answer |
+| `confirm` | bool | `False` | Require confirmation before accepting |
+| `prompt` | str | None | Extra instruction text for this specific question |
+| `functions` | List[str] | None | Additional functions visible during this question |
+
+### When to Use Gather Info vs Regular Steps
+
+| Feature | Regular Steps | Gather Info Steps |
+|---------|--------------|-------------------|
+| History impact | Adds tool calls to history | Zero history entries |
+| Control | Full AI flexibility | Structured one-at-a-time |
+| Best for | Open-ended conversation | Form-like data collection |
+| Confirmation | Manual via criteria | Built-in `confirm` flag |
+| Auto-advance | Via valid_steps | Via `completion_action` |
+
+## Validation Rules
+
+The ContextBuilder validates your configuration:
+
+- Single context must be named "default"
+- Every context must have at least one step
+- `valid_steps` must reference existing steps (or "next")
+- `valid_contexts` must reference existing contexts
+- Cannot mix `set_text()` with `add_section()` on same step
+- Cannot mix `set_prompt()` with `add_section()` on same context
+
+## Step and Context Methods Summary
+
+| Method | Level | Purpose |
+|--------|-------|---------|
+| `set_text()` | Step | Simple text prompt |
+| `add_section()` | Both | POM-style section |
+| `add_bullets()` | Both | Bulleted list section |
+| `set_step_criteria()` | Step | Completion criteria |
+| `set_functions()` | Step | Restrict available functions |
+| `set_valid_steps()` | Both | Allowed step navigation (context-level applies to all steps) |
+| `set_valid_contexts()` | Both | Allowed context navigation |
+| `set_end()` | Step | End conversation after this step |
+| `set_skip_user_turn()` | Step | Skip waiting for user input |
+| `set_skip_to_next_step()` | Step | Auto-advance to next step |
+| `clear_sections()` | Step | Remove all sections/text for repopulation |
+| `set_gather_info()` | Step | Enable structured question gathering |
+| `add_gather_question()` | Step | Add a question to gather info |
+| `set_isolated()` | Context | Clear history on entry |
+| `set_consolidate()` | Context | Summarize on entry |
+| `set_full_reset()` | Context | Complete reset on entry |
+| `set_system_prompt()` | Context | New system prompt |
+| `set_user_prompt()` | Context | Inject user message |
+| `add_enter_filler()` | Context | Entry transition phrases |
+| `add_exit_filler()` | Context | Exit transition phrases |
+| `get_step()` | Context | Retrieve a step by name |
+| `remove_step()` | Context | Remove a step |
+| `move_step()` | Context | Reorder a step |
+| `get_context()` | ContextBuilder | Retrieve a context by name |
+
+## Context Switching Behavior
+
+When the AI switches between contexts, several things can happen depending on your configuration. Understanding these options helps you create smooth transitions.
+
+### Isolated Contexts
+
+When `isolated=True`, the conversation history is cleared when entering the context. This is useful when:
+- You want a clean slate for a new department
+- Previous context shouldn't influence the new persona
+- You're implementing strict separation between workflow segments
+
+```python
+support = contexts.add_context("support") \
+    .set_isolated(True)  # Fresh start when entering support
+```
+
+The caller won't notice -- the AI simply starts fresh with no memory of the previous context.
+
+### Consolidated Contexts
+
+When `consolidate=True`, the AI summarizes the previous conversation before switching. This preserves important information without carrying over the full history:
+
+```python
+billing = contexts.add_context("billing") \
+    .set_consolidate(True)  # Summarize previous conversation
+```
+
+The summary includes key facts and decisions, giving the new context awareness of what happened without the full transcript.
+
+### Full Reset Contexts
+
+`full_reset=True` goes further than isolation -- it completely replaces the system prompt and clears all state:
+
+```python
+escalation = contexts.add_context("escalation") \
+    .set_full_reset(True)  # Complete prompt replacement
+```
+
+Use this when the new context needs to behave as if it were a completely different agent.
+
+### Combining with Enter/Exit Fillers
+
+Fillers provide audio feedback during context switches, making transitions feel natural:
+
+```python
+support = contexts.add_context("support") \
+    .set_isolated(True) \
+    .add_enter_filler("en-US", [
+        "Let me transfer you to technical support.",
+        "One moment while I connect you with a specialist."
+    ]) \
+    .add_exit_filler("en-US", [
+        "Returning you to the main menu.",
+        "Transferring you back."
+    ])
+```
+
+The AI randomly selects from the filler options, providing variety in the transitions.
+
+## Debugging Context Flows
+
+When contexts don't behave as expected, use these debugging strategies:
+
+1. **Check step criteria**: If stuck on a step, the criteria may be too strict. Temporarily loosen them to verify the flow works.
+
+2. **Verify navigation paths**: Ensure `valid_steps` and `valid_contexts` form a complete graph. Every step should have somewhere to go (unless it's a terminal step).
+
+3. **Test with swaig-test**: The testing tool shows context configuration in the SWML output:
+
+```bash
+swaig-test your_agent.py --dump-swml | grep -A 50 "contexts"
+```
+
+4. **Add logging in handlers**: If you have SWAIG functions, log when they're called to trace the conversation flow.
+
+5. **Watch for validation errors**: The ContextBuilder validates your configuration at runtime. Check logs for validation failures.
+
+## Best Practices
+
+**DO:**
+
+- Set clear step_criteria for each step
+- Use isolated=True for persona changes
+- Add enter_fillers for smooth transitions
+- Define valid_contexts to enable department transfers
+- Test navigation paths thoroughly
+- Provide escape routes from every step (avoid dead ends)
+- Use consolidate=True when context needs awareness of previous conversation
+
+**DON'T:**
+
+- Create circular navigation without exit paths
+- Skip setting a base prompt before define_contexts()
+- Mix set_text() with add_section() on the same step
+- Forget to validate step/context references
+- Use full_reset unless you truly need a complete persona change
+- Make criteria too vague or too strict

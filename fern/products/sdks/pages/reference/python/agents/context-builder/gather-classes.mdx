@@ -1,0 +1,185 @@
+---
+title: "GatherInfo & GatherQuestion"
+slug: /reference/python/agents/context-builder/gather-classes
+description: Structured information gathering within context steps using the server-side gather_info system.
+max-toc-depth: 3
+---
+
+[step-setgatherinfo]: /docs/sdks/reference/python/agents/context-builder/step/set-gather-info
+[step-addgatherquestion]: /docs/sdks/reference/python/agents/context-builder/step/add-gather-question
+
+GatherInfo and GatherQuestion provide structured information gathering within
+context steps. Instead of relying on LLM tool calls, the gather system uses
+dynamic step instruction re-injection to present questions one at a time,
+producing zero `tool_call`/`tool_result` entries in the LLM-visible history.
+
+Answers are stored in `global_data` and can be referenced by subsequent steps
+or tools.
+
+```python
+from signalwire import GatherInfo, GatherQuestion
+```
+
+<Info>
+GatherInfo is typically configured through the
+[`Step.set_gather_info()`][step-setgatherinfo] and
+[`Step.add_gather_question()`][step-addgatherquestion]
+methods rather than instantiated directly.
+</Info>
+
+---
+
+## GatherQuestion
+
+Represents a single question in a gather_info configuration. Each question
+defines a key for storing the answer, the question text, and optional
+validation and confirmation settings.
+
+<ParamField path="key" type="str" required={true} toc={true}>
+  Key name for storing the answer in `global_data`. Must be unique within a
+  single GatherInfo configuration.
+</ParamField>
+
+<ParamField path="question" type="str" required={true} toc={true}>
+  The question text to present to the user.
+</ParamField>
+
+<ParamField path="type" type="str" default="string" toc={true}>
+  JSON schema type for the answer parameter. Valid values:
+  - `"string"` -- free-form text
+  - `"number"` -- numeric value
+  - `"boolean"` -- yes/no
+  - `"integer"` -- whole number
+</ParamField>
+
+<ParamField path="confirm" type="bool" default="False" toc={true}>
+  When `True`, the model must confirm the answer with the user before
+  submitting it.
+</ParamField>
+
+<ParamField path="prompt" type="str" toc={true}>
+  Extra instruction text appended to the step prompt when this specific
+  question is active. Use this to give the model additional context for
+  asking or validating this question.
+</ParamField>
+
+<ParamField path="functions" type="list[str]" toc={true}>
+  Additional SWAIG function names to make visible while this question is
+  active. Useful when a question requires tool access (e.g., a lookup
+  function to validate an account number).
+</ParamField>
+
+### to_dict
+
+**to_dict**() -> `dict[str, Any]`
+
+Convert the question to a dictionary for SWML generation. Fields with default
+values are omitted from the output.
+
+#### Returns
+
+`dict[str, Any]`
+
+---
+
+## GatherInfo
+
+Configuration for gathering multiple pieces of information in a step. Wraps
+a list of [`GatherQuestion`](#gatherquestion) objects and controls how
+answers are stored and what happens after all questions are answered.
+
+<ParamField path="output_key" type="str" toc={true}>
+  Key in `global_data` under which to nest all answers. When `None`, answers
+  are stored at the top level of `global_data` using each question's `key`.
+</ParamField>
+
+<ParamField path="completion_action" type="str" toc={true}>
+  Where to navigate after all questions have been answered. Valid values:
+  - `None` -- return to normal step mode
+  - `"next_step"` -- auto-advance to the next sequential step in the context
+  - A step name (e.g., `"process_results"`) -- jump to that specific step
+</ParamField>
+
+<ParamField path="prompt" type="str" toc={true}>
+  Preamble text injected once when entering the gather step. Gives the model
+  personality and context for why it is asking these questions.
+</ParamField>
+
+### add_question
+
+**add_question**(`key`, `question`, `**kwargs`) -> `GatherInfo`
+
+Add a question to the gather configuration. Returns self for method chaining.
+
+#### Parameters
+
+<ParamField path="key" type="str" required={true} toc={true}>
+  Key name for storing the answer in `global_data`.
+</ParamField>
+
+<ParamField path="question" type="str" required={true} toc={true}>
+  The question text to ask.
+</ParamField>
+
+<ParamField path="**kwargs" type="Any" toc={true}>
+  Optional fields passed to [`GatherQuestion`](#gatherquestion): `type`,
+  `confirm`, `prompt`, `functions`.
+</ParamField>
+
+#### Returns
+
+`GatherInfo` -- self, for method chaining.
+
+---
+
+### to_dict
+
+**to_dict**() -> `dict[str, Any]`
+
+Convert the gather configuration to a dictionary for SWML generation. Raises
+`ValueError` if no questions have been added.
+
+#### Returns
+
+`dict[str, Any]`
+
+---
+
+## Example
+
+The typical pattern is to use GatherInfo through the Step API:
+
+```python
+from signalwire import AgentBase
+
+class IntakeAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="intake-agent", route="/intake")
+
+        contexts = self.define_contexts()
+        ctx = contexts.add_context("default")
+
+        intake = ctx.add_step("intake")
+        intake.set_text("Collect the caller's information.")
+        intake.set_gather_info(
+            output_key="caller_info",
+            completion_action="next_step",
+            prompt="You are a friendly receptionist collecting basic info."
+        )
+        intake.add_gather_question("name", "What is your full name?", confirm=True)
+        intake.add_gather_question("phone", "What is your callback number?", type="string")
+        intake.add_gather_question("reason", "What is the reason for your call?")
+
+        process = ctx.add_step("process")
+        process.set_text("Thank the caller and summarize what was collected.")
+```
+
+You can also use GatherInfo directly:
+
+```python
+from signalwire import GatherInfo, GatherQuestion
+
+gather = GatherInfo(output_key="patient_info", completion_action="next_step")
+gather.add_question("dob", "What is your date of birth?", type="string", confirm=True)
+gather.add_question("allergies", "Do you have any allergies?")
+```

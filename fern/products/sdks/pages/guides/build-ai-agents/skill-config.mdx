@@ -1,0 +1,306 @@
+---
+title: "Skill Configuration"
+description: Configure skills with parameters, environment variables, and SWAIG field overrides.
+slug: /guides/skill-config
+max-toc-depth: 3
+---
+
+### Configuration Methods
+
+| Method | Description |
+|--------|-------------|
+| Parameters dict | Pass config when calling `add_skill()` |
+| Environment variables | Set via OS environment |
+| SWAIG fields | Customize tool metadata |
+| External directories | Register custom skill paths |
+
+### Parameter Dictionary
+
+Pass configuration when adding a skill:
+
+| Language | Passing config parameters |
+|----------|--------------------------|
+| Python | `self.add_skill("web_search", {"api_key": "...", "num_results": 5})` |
+{/*
+| TypeScript | `agent.addSkill('web_search', { apiKey: '...', numResults: 5 })` |
+| Go | `a.AddSkill("web_search", map[string]any{"api_key": "...", "num_results": 5})` |
+| Ruby | `agent.add_skill('web_search', api_key: '...', num_results: 5)` |
+| Java | `agent.addSkill("web_search", Map.of("api_key", "...", "num_results", 5))` |
+| Perl | `$agent->add_skill('web_search', { api_key => '...', num_results => 5 })` |
+| C++ | `agent.add_skill("web_search", {{"api_key", "..."}, {"num_results", "5"}})` |
+| PHP | `$agent->addSkill('web_search', ['api_key' => '...', 'num_results' => 5])` |
+*/}
+
+```python
+self.add_skill("web_search", {
+    "api_key": "your-api-key",
+    "search_engine_id": "your-engine-id",
+    "num_results": 5,
+    "min_quality_score": 0.4
+})
+```
+
+### Parameter Schema
+
+Skills define their parameters via `get_parameter_schema()`:
+
+```python
+{
+    "api_key": {
+        "type": "string",
+        "description": "Google API key",
+        "required": True,
+        "hidden": True,
+        "env_var": "GOOGLE_API_KEY"
+    },
+    "num_results": {
+        "type": "integer",
+        "description": "Number of results",
+        "default": 3,
+        "min": 1,
+        "max": 10
+    },
+    "style": {
+        "type": "string",
+        "description": "Output style",
+        "enum": ["brief", "detailed"],
+        "default": "brief"
+    }
+}
+```
+
+### Parameter Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `type` | string | Data type: string, integer, number, boolean, object, array |
+| `description` | string | Human-readable description |
+| `default` | any | Default value if not provided |
+| `required` | bool | Whether parameter is required |
+| `hidden` | bool | Hide in UIs (for secrets) |
+| `env_var` | string | Environment variable source |
+| `enum` | array | Allowed values |
+| `min`/`max` | number | Value range for numbers |
+
+### Environment Variables
+
+Skills can read from environment variables:
+
+```python
+import os
+
+## Set environment variable
+os.environ["GOOGLE_API_KEY"] = "your-key"
+
+## Skill reads from params or falls back to env
+self.add_skill("web_search", {
+    "api_key": os.getenv("GOOGLE_API_KEY"),
+    "search_engine_id": os.getenv("SEARCH_ENGINE_ID")
+})
+```
+
+### SWAIG Fields
+
+Override SWAIG function metadata for skill tools:
+
+| Language | SWAIG fields override |
+|----------|----------------------|
+| Python | `self.add_skill("datetime", {"swaig_fields": {"fillers": {...}}})` |
+{/*
+| TypeScript | `agent.addSkill('datetime', { swaigFields: { fillers: {...} } })` |
+| Go | `a.AddSkill("datetime", map[string]any{"swaig_fields": map[string]any{"fillers": ...}})` |
+| Ruby | `agent.add_skill('datetime', swaig_fields: { fillers: {...} })` |
+| Java | `agent.addSkill("datetime", Map.of("swaig_fields", Map.of("fillers", ...)))` |
+| Perl | `$agent->add_skill('datetime', { swaig_fields => { fillers => {...} } })` |
+| C++ | `agent.add_skill("datetime", {{"swaig_fields", {{"fillers", ...}}}})` |
+| PHP | `$agent->addSkill('datetime', ['swaig_fields' => ['fillers' => [...]]])` |
+*/}
+
+```python
+self.add_skill("datetime", {
+    "swaig_fields": {
+        # Add filler phrases while function executes
+        "fillers": {
+            "en-US": [
+                "Let me check the time...",
+                "One moment..."
+            ]
+        },
+        # Disable security for testing
+        "secure": False
+    }
+})
+```
+
+Available SWAIG fields:
+
+| Field | Description |
+|-------|-------------|
+| `fillers` | Language-specific filler phrases |
+| `secure` | Enable/disable token validation |
+| `webhook_url` | Override webhook URL |
+
+### External Skill Directories
+
+Register custom skill directories:
+
+```python
+from signalwire.skills.registry import skill_registry
+
+## Add directory at runtime
+skill_registry.add_skill_directory("/opt/custom_skills")
+
+## Environment variable (colon-separated paths)
+## SIGNALWIRE_SKILL_PATHS=/path1:/path2:/path3
+```
+
+### Entry Points
+
+Install skills via pip packages:
+
+```python
+## In setup.py
+setup(
+    name="my-skills-package",
+    entry_points={
+        "signalwire.skills": [
+            "weather = my_package.skills:WeatherSkill",
+            "stock = my_package.skills:StockSkill"
+        ]
+    }
+)
+```
+
+### Listing Available Skills
+
+```python
+from signalwire.skills.registry import skill_registry
+
+## List all available skills
+skills = skill_registry.list_skills()
+for skill in skills:
+    print(f"{skill['name']}: {skill['description']}")
+
+## Get complete schema for all skills
+schema = skill_registry.get_all_skills_schema()
+print(schema)
+```
+
+### Multi-Instance Configuration
+
+Skills supporting multiple instances need unique tool names:
+
+| Language | Multi-instance with unique tool_name |
+|----------|--------------------------------------|
+| Python | `self.add_skill("web_search", {"tool_name": "search_news", "api_key": "KEY"})` |
+{/*
+| TypeScript | `agent.addSkill('web_search', { toolName: 'search_news', apiKey: 'KEY' })` |
+| Go | `a.AddSkill("web_search", map[string]any{"tool_name": "search_news", "api_key": "KEY"})` |
+| Ruby | `agent.add_skill('web_search', tool_name: 'search_news', api_key: 'KEY')` |
+| Java | `agent.addSkill("web_search", Map.of("tool_name", "search_news", "api_key", "KEY"))` |
+| Perl | `$agent->add_skill('web_search', { tool_name => 'search_news', api_key => 'KEY' })` |
+| C++ | `agent.add_skill("web_search", {{"tool_name", "search_news"}, {"api_key", "KEY"}})` |
+| PHP | `$agent->addSkill('web_search', ['tool_name' => 'search_news', 'api_key' => 'KEY'])` |
+*/}
+
+```python
+## Instance 1: News search
+self.add_skill("web_search", {
+    "tool_name": "search_news",      # Unique function name
+    "api_key": "KEY",
+    "search_engine_id": "NEWS_ENGINE"
+})
+
+## Instance 2: Documentation search
+self.add_skill("web_search", {
+    "tool_name": "search_docs",      # Different function name
+    "api_key": "KEY",
+    "search_engine_id": "DOCS_ENGINE"
+})
+```
+
+### Configuration Validation
+
+<Frame caption="Validation Flow">
+  <img class="diagram" src="/assets/images/sdks/diagrams/05_05_skill-config_diagram1.webp" alt="Skill configuration validation flow diagram." />
+</Frame>
+
+### Complete Configuration Example
+
+```python
+from signalwire import AgentBase
+from signalwire.skills.registry import skill_registry
+import os
+
+## Register external skills
+skill_registry.add_skill_directory("/opt/my_company/skills")
+
+class ConfiguredAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="configured-agent")
+        self.add_language("English", "en-US", "rime.spore")
+
+        # Simple skill - no config
+        self.add_skill("datetime")
+
+        # Skill with parameters
+        self.add_skill("web_search", {
+            "api_key": os.getenv("GOOGLE_API_KEY"),
+            "search_engine_id": os.getenv("SEARCH_ENGINE_ID"),
+            "num_results": 5,
+            "min_quality_score": 0.4
+        })
+
+        # Skill with SWAIG field overrides
+        self.add_skill("math", {
+            "swaig_fields": {
+                "fillers": {
+                    "en-US": ["Calculating..."]
+                }
+            }
+        })
+
+        # Multi-instance skill
+        self.add_skill("native_vector_search", {
+            "tool_name": "search_products",
+            "index_path": "/data/products.swsearch"
+        })
+
+        self.add_skill("native_vector_search", {
+            "tool_name": "search_faqs",
+            "index_path": "/data/faqs.swsearch"
+        })
+
+        self.prompt_add_section(
+            "Role",
+            "You are a customer service agent."
+        )
+
+if __name__ == "__main__":
+    agent = ConfiguredAgent()
+    agent.run()
+```
+
+### Configuration Best Practices
+
+#### Security
+
+- Store API keys in environment variables
+- Never commit secrets to version control
+- Use hidden: true for sensitive parameters
+
+#### Organization
+
+- Group related configuration
+- Use descriptive tool_name for multi-instance
+- Document required configuration
+
+#### Validation
+
+- Check has_skill() before using conditionally
+- Handle ValueError from add_skill()
+- Validate parameters early in setup()
+
+### Next Steps
+
+You've learned the complete skills system. Next, explore advanced topics like contexts, workflows, and state management.

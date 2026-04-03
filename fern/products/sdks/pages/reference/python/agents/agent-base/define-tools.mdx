@@ -1,0 +1,63 @@
+---
+title: "define_tools"
+slug: /reference/python/agents/agent-base/define-tools
+description: Override hook that returns the list of SWAIG tools available to the AI.
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/sdks/reference/python/agents/agent-base/define-tool
+[tool-decorator]: /docs/sdks/reference/python/agents/agent-base#tool
+[register-swaig-function]: /docs/sdks/reference/python/agents/agent-base/register-swaig-function
+
+Returns the list of SWAIG functions registered on this agent. The default
+implementation collects all tools added via
+[`define_tool()`][define-tool],
+the [`@tool` decorator][tool-decorator], or
+[`register_swaig_function()`][register-swaig-function].
+
+Override this method in a subclass to dynamically filter, reorder, or inject
+tools at SWML generation time.
+
+<Note>
+In most cases you do not need to override this method. Use
+[`define_tool()`][define-tool] or the
+[`@tool` decorator][tool-decorator] to register
+tools instead.
+</Note>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`list[SWAIGFunction | dict]` -- List of `SWAIGFunction` objects and/or raw
+dictionaries (for DataMap-based tools).
+
+## **Example**
+
+```python {14-19}
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
+
+class FilteredAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="filtered", route="/filtered")
+        self.set_prompt_text("You are a helpful assistant.")
+        self._disabled_tools = set()
+
+    @AgentBase.tool(description="Check the weather")
+    def check_weather(self, args, raw_data=None):
+        return FunctionResult("It's sunny and 72F.")
+
+    def define_tools(self):
+        """Filter out any disabled tools before SWML generation."""
+        all_tools = super().define_tools()
+        return [
+            t for t in all_tools
+            if getattr(t, 'name', None) not in self._disabled_tools
+        ]
+
+agent = FilteredAgent()
+agent.run()
+```
