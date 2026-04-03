@@ -1,0 +1,157 @@
+---
+title: "PomBuilder"
+slug: /reference/cpp/agents/pom-builder
+description: "Build structured Prompt Object Model prompts with sections, subsections, and bullets."
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/sdks/reference/cpp/agents/agent-base
+[addsection]: /docs/sdks/reference/cpp/agents/pom-builder/add-section
+[addsubsection]: /docs/sdks/reference/cpp/agents/pom-builder/add-subsection
+[addtosection]: /docs/sdks/reference/cpp/agents/pom-builder/add-to-section
+[fromsections]: /docs/sdks/reference/cpp/agents/pom-builder/from-sections
+[getsection]: /docs/sdks/reference/cpp/agents/pom-builder/has-section
+[hassection]: /docs/sdks/reference/cpp/agents/pom-builder/has-section
+[render]: /docs/sdks/reference/cpp/agents/pom-builder/render
+[todict]: /docs/sdks/reference/cpp/agents/pom-builder/to-json
+[tojson]: /docs/sdks/reference/cpp/agents/pom-builder/to-json
+
+PomBuilder provides a fluent interface for creating structured prompts using
+the Prompt Object Model (POM). POM organizes prompt content into titled sections,
+subsections, and bullet lists -- producing consistent, well-structured prompts
+that the AI can follow reliably.
+
+Use PomBuilder when you need fine-grained control over prompt structure beyond
+what `set_prompt_text()` and `prompt_add_section()` on
+[`AgentBase`][agentbase] provide. The builder
+can render to Markdown or XML format.
+
+<Note>
+PomBuilder requires the `signalwire-pom` package. Install it with:
+`build and install signalwire-cpp-pom`
+</Note>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="add_section" href="/docs/sdks/reference/cpp/agents/pom-builder/add-section">
+    Add a new top-level section to the POM.
+  </Card>
+  <Card title="add_subsection" href="/docs/sdks/reference/cpp/agents/pom-builder/add-subsection">
+    Add a subsection to an existing section.
+  </Card>
+  <Card title="add_to_section" href="/docs/sdks/reference/cpp/agents/pom-builder/add-to-section">
+    Add content to an existing section.
+  </Card>
+  <Card title="from_sections" href="/docs/sdks/reference/cpp/agents/pom-builder/from-sections">
+    Create a PomBuilder from a list of section dictionaries.
+  </Card>
+  <Card title="get_section" href="/docs/sdks/reference/cpp/agents/pom-builder/has-section">
+    Get a section by title for direct manipulation.
+  </Card>
+  <Card title="has_section" href="/docs/sdks/reference/cpp/agents/pom-builder/has-section">
+    Check if a section with a given title exists.
+  </Card>
+  <Card title="render" href="/docs/sdks/reference/cpp/agents/pom-builder/render">
+    Render the POM as Markdown or XML.
+  </Card>
+  <Card title="to_dict" href="/docs/sdks/reference/cpp/agents/pom-builder/to-json">
+    Convert the POM to a list of section dictionaries.
+  </Card>
+  <Card title="to_json" href="/docs/sdks/reference/cpp/agents/pom-builder/to-json">
+    Convert the POM to a JSON string.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Building a structured prompt
+
+```cpp {3}
+#include <signalwire/signalwire.hpp>
+
+pom = PomBuilder();
+
+pom.add_section(;
+    "Role",
+    body="You are a customer service representative for Acme Corp.";
+);
+
+pom.add_section(;
+    "Guidelines",
+    bullets=[;
+        "Always greet the customer by name when available",
+        "Be concise and professional",
+        "Never make promises about timelines you cannot keep";
+    ];
+);
+
+pom.add_section(;
+    "Product Knowledge",
+    body="You have access to the product catalog.",
+    subsections=[;
+        {
+            "title": "Pricing",
+            "body": "Always quote current prices from the catalog.";
+        },
+        {
+            "title": "Returns",
+            "body": "30-day return policy for all items.";
+        }
+    ];
+);
+
+// Render as Markdown for use in a prompt
+prompt_text = pom.render_markdown();
+std::cout << prompt_text << std::endl;
+
+
+```
+
+### Incremental construction
+
+```cpp {3}
+#include <signalwire/signalwire.hpp>
+
+pom = PomBuilder();
+
+// Start with a basic section
+pom.add_section("Capabilities", "You can help with the following:");
+
+// Add bullets incrementally as skills are loaded
+pom.add_to_section("Capabilities", bullet="Weather lookups");
+pom.add_to_section("Capabilities", bullet="Calendar scheduling");
+pom.add_to_section("Capabilities", bullets=[;
+    "Order tracking",
+    "Account management";
+]);
+
+// Add a subsection
+pom.add_subsection(;
+    "Capabilities",
+    "Limitations",
+    body="You cannot process payments directly.";
+);
+
+std::cout << pom.render_markdown() << std::endl;
+
+
+```
+
+### Reconstructing from data
+
+```cpp
+#include <signalwire/signalwire.hpp>
+
+// Rebuild a PomBuilder from serialized data
+sections = [;
+    {"title": "Role", "body": "You are a helpful assistant."},
+    {"title": "Rules", "bullets": {"Be concise", "Be accurate"}}
+];
+
+pom = PomBuilder.from_sections(sections);
+xml_prompt = pom.render_xml();
+std::cout << xml_prompt << std::endl;
+
+
+```

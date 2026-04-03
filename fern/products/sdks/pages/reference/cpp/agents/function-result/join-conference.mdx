@@ -1,0 +1,168 @@
+---
+title: "join_conference"
+slug: /reference/cpp/agents/function-result/join-conference
+description: Join an ad-hoc audio conference with extensive configuration options.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/sdks/reference/cpp/agents/function-result
+
+Join an ad-hoc audio conference. Conferences support both RELAY and CXML calls
+with extensive configuration for moderation, recording, and event callbacks.
+
+When all parameters are at their defaults (except `name`), a simplified form is
+used internally. Passing any non-default parameter triggers the full object form.
+
+## **Parameters**
+
+<ParamField path="name" type="std::string" required={true} toc={true}>
+  Conference name. All participants joining the same name are in the same
+  conference.
+</ParamField>
+
+<ParamField path="muted" type="bool" default="false" toc={true}>
+  Join the conference muted.
+</ParamField>
+
+<ParamField path="beep" type="std::string" default="true" toc={true}>
+  Beep configuration for join/leave notifications.
+
+  - `"true"` -- beep on both enter and exit
+  - `"false"` -- no beep
+  - `"onEnter"` -- beep only when a participant joins
+  - `"onExit"` -- beep only when a participant leaves
+</ParamField>
+
+<ParamField path="start_on_enter" type="bool" default="true" toc={true}>
+  Whether the conference starts when this participant enters. When `false`,
+  the participant waits until another participant with `start_on_enter=True` joins.
+</ParamField>
+
+<ParamField path="end_on_exit" type="bool" default="false" toc={true}>
+  Whether the conference ends for all participants when this participant leaves.
+</ParamField>
+
+<ParamField path="wait_url" type="std::optional<std::string>" default="std::nullopt" toc={true}>
+  SWML URL for hold music played while waiting for the conference to start.
+  When `std::nullopt`, default hold music is used.
+</ParamField>
+
+<ParamField path="max_participants" type="int" default="250" toc={true}>
+  Maximum number of participants. Must be a positive integer, maximum 250.
+</ParamField>
+
+<ParamField path="record" type="std::string" default="do-not-record" toc={true}>
+  Recording mode.
+
+  - `"do-not-record"` -- do not record the conference
+  - `"record-from-start"` -- begin recording as soon as the conference starts
+</ParamField>
+
+<ParamField path="region" type="std::optional<std::string>" default="std::nullopt" toc={true}>
+  Conference region for geographic optimization.
+</ParamField>
+
+<ParamField path="trim" type="std::string" default="trim-silence" toc={true}>
+  Silence trimming in recordings.
+
+  - `"trim-silence"` -- remove leading and trailing silence from the recording
+  - `"do-not-trim"` -- keep silence in the recording as-is
+</ParamField>
+
+<ParamField path="coach" type="std::optional<std::string>" default="std::nullopt" toc={true}>
+  SWML Call ID or CXML CallSid of a participant who can coach (whisper to)
+  this participant without other participants hearing.
+</ParamField>
+
+<ParamField path="status_callback_event" type="std::optional<std::string>" default="std::nullopt" toc={true}>
+  Space-separated list of events to report.
+
+  - `"start"` -- conference has started
+  - `"end"` -- conference has ended
+  - `"join"` -- a participant joined
+  - `"leave"` -- a participant left
+  - `"mute"` -- a participant was muted or unmuted
+  - `"hold"` -- a participant was placed on hold or resumed
+  - `"modify"` -- conference settings were modified
+  - `"speaker"` -- active speaker changed
+  - `"announcement"` -- an announcement was played
+</ParamField>
+
+<ParamField path="status_callback" type="std::optional<std::string>" default="std::nullopt" toc={true}>
+  URL to receive conference status event webhooks.
+</ParamField>
+
+<ParamField path="status_callback_method" type="std::string" default="POST" toc={true}>
+  HTTP method for status callbacks.
+
+  - `"GET"` -- send status callbacks as GET requests
+  - `"POST"` -- send status callbacks as POST requests
+</ParamField>
+
+<ParamField path="recording_status_callback" type="std::optional<std::string>" default="std::nullopt" toc={true}>
+  URL to receive recording status event webhooks.
+</ParamField>
+
+<ParamField path="recording_status_callback_method" type="std::string" default="POST" toc={true}>
+  HTTP method for recording status callbacks.
+
+  - `"GET"` -- send recording status callbacks as GET requests
+  - `"POST"` -- send recording status callbacks as POST requests
+</ParamField>
+
+<ParamField path="recording_status_callback_event" type="std::string" default="completed" toc={true}>
+  Space-separated list of recording events to report.
+
+  - `"in-progress"` -- recording is currently in progress
+  - `"completed"` -- recording has completed
+  - `"absent"` -- no recording was produced
+</ParamField>
+
+<ParamField path="result" type="std::optional<nlohmann::json>" default="std::nullopt" toc={true}>
+  Result handling configuration. Pass an object `{}` for `return_value`-based
+  switching, or an array `[]` for conditional switching.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Simple Conference
+
+```cpp {11}
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+void join_team_call(const nlohmann::json& args, const nlohmann::json& raw_data) {
+        return swaig::FunctionResult("Joining the team call.")
+            .join_conference("team-standup");
+
+}
+agent.serve();
+
+
+```
+
+### Moderated Conference
+
+```cpp {11}
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+void join_moderated_conference(const nlohmann::json& args, const nlohmann::json& raw_data) {
+        return swaig::FunctionResult("Joining the conference.")
+            .join_conference("quarterly-review", true, false, "record-from-start", 50);
+
+}
+agent.serve();
+
+
+```

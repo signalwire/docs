@@ -1,0 +1,87 @@
+---
+title: "webhook"
+slug: /reference/cpp/agents/data-map/webhook
+description: Add an API call to the DataMap.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/cpp/agents/data-map
+
+Add an API call. Multiple webhooks can be chained -- they execute in order, and
+if earlier webhooks fail, later ones act as fallbacks.
+
+## **Parameters**
+
+<ParamField path="method" type="std::string" required={true} toc={true}>
+  HTTP method for the request.
+
+  - `"GET"` -- retrieve a resource
+  - `"POST"` -- create a resource or submit data
+  - `"PUT"` -- replace a resource
+  - `"DELETE"` -- remove a resource
+  - `"PATCH"` -- partially update a resource
+</ParamField>
+
+<ParamField path="url" type="std::string" required={true} toc={true}>
+  API endpoint URL. Supports `${variable}` substitutions (use `${enc:args.param}`
+  for URL-encoded values).
+</ParamField>
+
+<ParamField path="headers" type="std::map<std::string, std::string>" toc={true}>
+  HTTP headers to include in the request.
+</ParamField>
+
+<ParamField path="form_param" type="std::string" toc={true}>
+  Send the JSON body as a single form parameter with this name.
+</ParamField>
+
+<ParamField path="input_args_as_params" type="bool" default="false" toc={true}>
+  Merge function arguments into the request parameters automatically.
+</ParamField>
+
+<ParamField path="require_args" type="std::vector<std::string>" toc={true}>
+  Only execute this webhook if all listed arguments are present.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- Self for method chaining.
+
+## **Example**
+
+```cpp {8}
+#include <signalwire/signalwire.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+weather = (;
+    DataMap("get_weather");
+    .purpose("Get current weather for a city");
+    .parameter("city", "string", "City name", true);
+    .webhook("GET", "https://api.weatherapi.com/v1/current.json", YOUR_API_KEY&q=${enc:args.city}", {{"Accept", "application/json"}});
+    .output(FunctionResult("Weather: ${response.current.condition.text}"));
+);
+
+std::cout << weather.to_swaig_function() << std::endl;
+
+
+```
+
+Chained webhooks act as fallbacks -- if the first webhook fails, the second is tried:
+
+```cpp {8,10}
+#include <signalwire/signalwire.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+search = (;
+    DataMap("search");
+    .purpose("Search across multiple providers");
+    .parameter("query", "string", "Search query", true);
+    .webhook("GET", "https://primary-api.example.com/search?q=${enc:args.query}");
+    .output(FunctionResult("Primary: ${response.result}"));
+    .webhook("GET", "https://backup-api.example.com/search?q=${enc:args.query}");
+    .output(FunctionResult("Backup: ${response.result}"));
+    .fallback_output(FunctionResult("All search providers are unavailable."));
+);
+
+
+```

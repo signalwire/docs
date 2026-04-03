@@ -1,0 +1,72 @@
+---
+title: "add_dynamic_hints"
+slug: /reference/cpp/agents/function-result/add-dynamic-hints
+description: Add speech recognition hints dynamically during a call.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/sdks/reference/cpp/agents/function-result
+
+Add speech recognition hints dynamically during a call. Hints improve recognition
+accuracy for domain-specific vocabulary, product names, or uncommon words. Each
+hint can be a simple string or a pronunciation pattern object that maps
+misrecognized speech to the correct text.
+
+## **Parameters**
+
+<ParamField path="hints" type="std::vector<std::variant<std::string, std::map<std::string, nlohmann::json>>>" required={true} toc={true}>
+  List of hints. Each entry is either:
+  - A `std::string` — a word or phrase to boost recognition (e.g., `"SignalWire"`)
+  - A `nlohmann::json` with pronunciation pattern fields:
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | `pattern` | `std::string` | Regex pattern to match in recognized speech |
+  | `replace` | `std::string` | Replacement text when the pattern matches |
+  | `ignore_case` | `bool` | Case-insensitive matching (optional) |
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Simple Word Hints
+
+```cpp {11}
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+void set_medical_context(const nlohmann::json& args, const nlohmann::json& raw_data) {
+        return swaig::FunctionResult("Switching to medical context.")
+            .add_dynamic_hints({"prescription", "dosage", "milligrams", "refill"});
+
+}
+agent.serve();
+
+
+```
+
+### Pronunciation Patterns
+
+```cpp {12}
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+void set_name_hints(const nlohmann::json& args, const nlohmann::json& raw_data) {
+    auto name = args.value("customer_name", "");
+        return swaig::FunctionResult("I'll listen for " + std::string(name) + ".")
+            .add_dynamic_hints([, name, {"pattern": "cab bee", "replace": "Cabby", "ignore_case": true}, ]));
+
+}
+agent.serve();
+
+
+```

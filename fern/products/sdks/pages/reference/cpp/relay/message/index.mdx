@@ -1,0 +1,195 @@
+---
+title: "Message"
+slug: /reference/cpp/relay/message
+description: "SMS/MMS message tracking and state management."
+max-toc-depth: 3
+---
+
+[relayclient-send-message]: /docs/sdks/reference/cpp/relay/client/send-message
+[message-constants]: /docs/sdks/reference/cpp/relay/constants
+[relayevent]: /docs/sdks/reference/cpp/relay/events
+[message-on]: /docs/sdks/reference/cpp/relay/message/on
+[events]: /docs/sdks/reference/cpp/relay/events#messaging-events
+[on]: /docs/sdks/reference/cpp/relay/message/on
+[wait]: /docs/sdks/reference/cpp/relay/message/wait
+
+The `Message` class represents a single SMS/MMS message in the RELAY messaging
+namespace. It tracks the lifecycle of a sent or received message through state
+events. Outbound messages progress through `queued`, `initiated`, `sent`, and
+then reach a terminal state (`delivered`, `undelivered`, or `failed`). Inbound
+messages arrive fully formed with state `received`.
+
+Obtain a `Message` instance from [`RelayClient.send_message()`][relayclient-send-message]
+or from the `@client.on_message` handler for inbound messages.
+
+```cpp
+#include <signalwire/signalwire.hpp>
+#include <signalwire/relay/client.hpp>
+
+client = RelayClient(;
+);
+
+void send_sms() {
+    with client:;
+        message = client.send_message(;
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Hello from SignalWire!",
+        );
+
+        // Wait for delivery confirmation
+        result = message.wait(30);
+        std::cout << "Final state: " + std::string(message.state) << std::endl;
+
+asyncio.run(send_sms());
+
+
+```
+
+## **Properties**
+
+<ParamField path="message_id" type="std::string" toc={true}>
+  Unique identifier for this message, assigned by SignalWire.
+</ParamField>
+
+<ParamField path="context" type="std::string" toc={true}>
+  The messaging context this message belongs to.
+</ParamField>
+
+<ParamField path="direction" type="std::string" toc={true}>
+  Message direction. Valid values:
+  - `"inbound"` -- incoming message
+  - `"outbound"` -- outgoing message
+</ParamField>
+
+<ParamField path="from_number" type="std::string" toc={true}>
+  Sender phone number in E.164 format.
+</ParamField>
+
+<ParamField path="to_number" type="std::string" toc={true}>
+  Recipient phone number in E.164 format.
+</ParamField>
+
+<ParamField path="body" type="std::string" toc={true}>
+  Text content of the message.
+</ParamField>
+
+<ParamField path="media" type="std::vector<std::string>" toc={true}>
+  List of media URLs for MMS messages. Empty list for SMS-only messages.
+</ParamField>
+
+<ParamField path="segments" type="int" toc={true}>
+  Number of SMS segments required for this message.
+</ParamField>
+
+<ParamField path="state" type="std::string" toc={true}>
+  Current message state. See [`Message Constants`][message-constants] for valid values.
+
+  - `"queued"` -- message has been accepted and is waiting to be processed
+  - `"initiated"` -- message processing has started
+  - `"sent"` -- message has been dispatched to the carrier
+  - `"delivered"` -- message was successfully delivered to the recipient
+  - `"undelivered"` -- carrier was unable to deliver the message
+  - `"failed"` -- message could not be sent
+  - `"received"` -- inbound message received from the network
+</ParamField>
+
+<ParamField path="reason" type="std::string" toc={true}>
+  Failure reason when the message reaches an error state. Empty string if no failure has occurred.
+</ParamField>
+
+<ParamField path="tags" type="std::vector<std::string>" toc={true}>
+  Optional tags associated with this message.
+</ParamField>
+
+<ParamField path="is_done" type="bool" toc={true}>
+  `true` if the message has reached a terminal state (`delivered`, `undelivered`, or `failed`).
+  Read-only property.
+</ParamField>
+
+<ParamField path="result" type="std::optional<RelayEvent>" toc={true}>
+  The terminal [`RelayEvent`][relayevent] that resolved this message,
+  or `std::nullopt` if the message has not yet completed.
+</ParamField>
+
+## **Events**
+
+Events are emitted during the lifecycle of a message. Register handlers using
+[`message.on()`][message-on] to react to state changes on outbound messages.
+
+See the [Events][events] reference
+for the full list of messaging events, their parameters, and typed event classes.
+
+---
+
+## **Methods**
+
+<CardGroup cols={2}>
+  <Card title="on" href="/docs/sdks/reference/cpp/relay/message/on">
+    Register an event listener for state changes on this message.
+  </Card>
+  <Card title="wait" href="/docs/sdks/reference/cpp/relay/message/wait">
+    Block until the message reaches a terminal state.
+  </Card>
+</CardGroup>
+
+## **Examples**
+
+### Listening for state changes
+
+```cpp
+#include <signalwire/signalwire.hpp>
+#include <signalwire/relay/client.hpp>
+
+client = RelayClient(;
+);
+
+void track_state() {
+    with client:;
+        message = client.send_message(;
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Order confirmed",
+        );
+
+        void on_state_change(const auto& event) {
+            std::cout << "Message " + std::string(message.message_id) + " -> " + std::string(message.state) << std::endl;
+
+        message.on(on_state_change);
+        message.wait();
+
+asyncio.run(track_state());
+
+
+```
+
+### Waiting for delivery with timeout
+
+```cpp
+#include <signalwire/signalwire.hpp>
+#include <signalwire/relay/client.hpp>
+
+client = RelayClient(;
+);
+
+void send_with_timeout() {
+    with client:;
+        message = client.send_message(;
+            to_number="+15551234567",
+            from_number="+15559876543",
+            body="Your verification code is 123456",
+        );
+
+        try {
+            event = message.wait(30);
+            if (message.state == "delivered") {
+                std::cout << "Message delivered successfully" << std::endl;
+            } else {
+                std::cout << "Message failed: " + std::string(message.reason) << std::endl;
+        except asyncio.TimeoutError:;
+            std::cout << "Timed out waiting for delivery confirmation" << std::endl;
+
+asyncio.run(send_with_timeout());
+
+
+```

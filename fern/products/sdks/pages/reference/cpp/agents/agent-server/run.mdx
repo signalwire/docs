@@ -1,0 +1,100 @@
+---
+title: "run"
+slug: /reference/cpp/agents/agent-server/run
+description: Start the multi-agent server with automatic environment detection.
+max-toc-depth: 3
+---
+
+Universal entry point that detects the execution environment and starts the server
+accordingly. In standard server mode it launches HTTP server; in serverless environments
+(AWS Lambda, CGI) it processes the incoming request and returns a response.
+
+<Note>
+This method blocks in server mode. For production deployments behind gunicorn or
+another ASGI server, use `server.app` directly instead of calling `run()`.
+</Note>
+
+## **Parameters**
+
+<ParamField path="event" type="nlohmann::json" toc={true}>
+  Serverless event object (AWS Lambda, Google Cloud Functions). Pass the Lambda handler's
+  `event` parameter here. Ignored in server mode.
+</ParamField>
+
+<ParamField path="context" type="nlohmann::json" toc={true}>
+  Serverless context object (AWS Lambda, Google Cloud Functions). Pass the Lambda handler's
+  `context` parameter here. Ignored in server mode.
+</ParamField>
+
+<ParamField path="host" type="std::string" toc={true}>
+  Override the host set in the constructor. Only applies in server mode.
+</ParamField>
+
+<ParamField path="port" type="int" toc={true}>
+  Override the port set in the constructor. Only applies in server mode.
+</ParamField>
+
+## **Returns**
+
+`std::nullopt` in server mode (blocks until shutdown). In Lambda mode, returns a response `nlohmann::json`
+with `statusCode`, `headers`, and `body`. In CGI mode, returns the formatted response string.
+
+## **Examples**
+
+### Server Mode
+
+```cpp {9}
+#include <signalwire/server/agent_server.hpp>
+#include <signalwire/agent/agent_base.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+server = AgentServer("0.0.0.0", 3000);
+server.register(agent);
+server.run();
+
+
+```
+
+### AWS Lambda
+
+```cpp {11}
+#include <signalwire/server/agent_server.hpp>
+#include <signalwire/agent/agent_base.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+server = AgentServer();
+server.register(agent);
+
+void lambda_handler(const auto& event, const auto& context) {
+    return server.run(event, context);
+
+
+```
+
+### Gunicorn (external ASGI server)
+
+```cpp
+#include <signalwire/server/agent_server.hpp>
+#include <signalwire/agent/agent_base.hpp>
+
+agent::AgentBase agent("my-agent", "/agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+server = AgentServer();
+server.register(agent);
+
+// Expose the HTTP server app for gunicorn:
+// gunicorn app:app -k HTTP server.workers.UvicornWorker
+app = server.app;
+
+
+```
+
+<Tip>
+If `SWML_SSL_ENABLED` is set to `true` in the environment along with `SWML_SSL_CERT_PATH`
+and `SWML_SSL_KEY_PATH`, the server starts with HTTPS automatically.
+</Tip>
