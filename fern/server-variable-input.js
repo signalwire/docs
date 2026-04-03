@@ -27,6 +27,7 @@
         "{your_space_name}",
         "{space_name}",
       ],
+      fieldName: "space_name",
       label: "Space name",
       placeholder: "e.g. example",
       description:
@@ -361,44 +362,53 @@
   // DOM Injection
   // ---------------------------------------------------------------------------
 
-  function createVariableSection(variable) {
-    var section = document.createElement("div");
-    section.id = SECTION_ID;
-    section.className = "sw-server-var-section";
+  /**
+   * Create the server variable field as an <li> that matches Fern's auth
+   * field styling (same structure as project_id / api_token fields).
+   */
+  function createVariableField(variable) {
+    // <li class="-mx-4 space-y-2 p-4"> — matches Fern auth field items
+    var li = document.createElement("li");
+    li.id = SECTION_ID;
+    li.className = "-mx-4 space-y-2 p-4";
 
-    var title = document.createElement("div");
-    title.className = "sw-server-var-title";
-    title.textContent = "Server variables";
-    section.appendChild(title);
-
-    var row = document.createElement("div");
-    row.className = "sw-server-var-row";
-
+    // Label: <label class="inline-flex flex-wrap items-baseline">
+    //          <span class="font-mono text-sm">space_name</span>
+    //        </label>
     var label = document.createElement("label");
-    label.className = "sw-server-var-label";
-    label.textContent = variable.label;
-    row.appendChild(label);
+    label.className = "inline-flex flex-wrap items-baseline";
+    var labelSpan = document.createElement("span");
+    labelSpan.className = "font-mono text-sm";
+    labelSpan.textContent = variable.fieldName || "space_name";
+    label.appendChild(labelSpan);
+    li.appendChild(label);
 
+    // Input wrapper: <div><div class="fern-input-group"><input class="fern-input" /></div></div>
+    var inputWrapper = document.createElement("div");
+    var inputGroup = document.createElement("div");
+    inputGroup.className = "fern-input-group";
     var input = document.createElement("input");
     input.type = "text";
-    input.className = "sw-server-var-input";
+    input.className = "fern-input";
     input.placeholder = variable.placeholder;
     input.value = loadSaved(variable.storageKey);
-    row.appendChild(input);
+    inputGroup.appendChild(input);
+    inputWrapper.appendChild(inputGroup);
+    li.appendChild(inputWrapper);
 
-    section.appendChild(row);
-
-    var desc = document.createElement("div");
-    desc.className = "sw-server-var-desc";
+    // Small description text below input
+    var desc = document.createElement("p");
+    desc.className = "t-muted text-xs mt-1";
     desc.textContent = variable.description;
-    section.appendChild(desc);
+    li.appendChild(desc);
 
+    // Preview of resolved URL (hidden when empty)
     var preview = document.createElement("div");
     preview.className = "sw-server-var-preview";
     preview.textContent = "";
-    section.appendChild(preview);
+    li.appendChild(preview);
 
-    return { section: section, input: input, preview: preview };
+    return { li: li, input: input, preview: preview };
   }
 
   // ---------------------------------------------------------------------------
@@ -422,7 +432,6 @@
     var urlText = (baseUrlEl.textContent || "").trim();
 
     // Always render server variable input using the first configured variable.
-    // We no longer gate on detecting a specific placeholder in the URL.
     var variable = VARIABLES[0];
 
     // Remember the template URL (the original URL before any replacement)
@@ -430,14 +439,29 @@
       originalTemplateUrl = urlText;
     }
 
-    var ui = createVariableSection(variable);
+    var ui = createVariableField(variable);
 
-    // Inject inside the auth form box if possible, otherwise prepend to form
-    var authBox = form.querySelector(".fern-explorer-auth-form");
-    if (authBox) {
-      authBox.appendChild(ui.section);
+    // Inject as an <li> inside the auth form's <ul> so it looks like a native
+    // auth field (same level as project_id / api_token).
+    var authUl = form.querySelector(
+      ".fern-explorer-auth-form ul.list-none"
+    );
+    if (authUl) {
+      // Insert before the first existing <li> so it appears at the top
+      var firstLi = authUl.querySelector("li");
+      if (firstLi) {
+        authUl.insertBefore(ui.li, firstLi);
+      } else {
+        authUl.appendChild(ui.li);
+      }
     } else {
-      form.prepend(ui.section);
+      // Fallback: if we can't find the auth <ul>, try the auth box itself
+      var authBox = form.querySelector(".fern-explorer-auth-form");
+      if (authBox) {
+        authBox.appendChild(ui.li);
+      } else {
+        form.prepend(ui.li);
+      }
     }
 
     // Preview helper
@@ -502,75 +526,13 @@
     var style = document.createElement("style");
     style.id = "sw-server-var-styles";
     style.textContent = [
-      ".sw-server-var-section {",
-      "  border: 1px solid var(--border, #e2e2e5);",
-      "  border-radius: 8px;",
-      "  padding: 16px;",
-      "  margin-bottom: 16px;",
-      "  background: var(--card-background, #f8f9fa);",
-      "}",
-      ".dark .sw-server-var-section {",
-      "  border-color: var(--border, #2e2e2e);",
-      "  background: var(--card-background, #1a1a2e);",
-      "}",
-      ".sw-server-var-title {",
-      "  font-size: 0.75rem;",
-      "  font-weight: 600;",
-      "  text-transform: uppercase;",
-      "  letter-spacing: 0.05em;",
-      "  color: var(--grayscale-a11, #6b7280);",
-      "  margin-bottom: 10px;",
-      "}",
-      ".sw-server-var-row {",
-      "  display: flex;",
-      "  align-items: center;",
-      "  gap: 12px;",
-      "}",
-      ".sw-server-var-label {",
-      "  font-size: 0.875rem;",
-      "  font-weight: 500;",
-      "  color: var(--grayscale-12, #111827);",
-      "  white-space: nowrap;",
-      "  min-width: 90px;",
-      "}",
-      ".dark .sw-server-var-label {",
-      "  color: var(--grayscale-12, #e5e7eb);",
-      "}",
-      ".sw-server-var-input {",
-      "  flex: 1;",
-      "  padding: 6px 10px;",
-      "  font-size: 0.875rem;",
-      "  font-family: var(--font-code, monospace);",
-      "  border: 1px solid var(--border, #d1d5db);",
-      "  border-radius: 6px;",
-      "  background: var(--background, #fff);",
-      "  color: var(--grayscale-12, #111827);",
-      "  outline: none;",
-      "  transition: border-color 0.15s;",
-      "}",
-      ".dark .sw-server-var-input {",
-      "  border-color: var(--border, #374151);",
-      "  background: var(--background, #0e0e18);",
-      "  color: var(--grayscale-12, #e5e7eb);",
-      "}",
-      ".sw-server-var-input:focus {",
-      "  border-color: var(--accent, #044ef4);",
-      "  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #044ef4), transparent 80%);",
-      "}",
-      ".sw-server-var-input::placeholder {",
-      "  color: var(--grayscale-a8, #9ca3af);",
-      "}",
-      ".sw-server-var-desc {",
-      "  font-size: 0.75rem;",
-      "  color: var(--grayscale-a11, #6b7280);",
-      "  margin-top: 6px;",
-      "}",
+      // Preview line below the input
       ".sw-server-var-preview {",
       "  font-size: 0.75rem;",
       "  font-family: var(--font-code, monospace);",
       "  color: var(--accent, #044ef4);",
-      "  margin-top: 8px;",
-      "  padding: 6px 10px;",
+      "  margin-top: 4px;",
+      "  padding: 4px 8px;",
       "  background: color-mix(in srgb, var(--accent, #044ef4), transparent 92%);",
       "  border-radius: 4px;",
       "  word-break: break-all;",
@@ -579,6 +541,10 @@
       ".dark .sw-server-var-preview {",
       "  color: var(--accent, #40e0d0);",
       "  background: color-mix(in srgb, var(--accent, #40e0d0), transparent 90%);",
+      "}",
+      // Subtle muted text for description
+      ".t-muted {",
+      "  color: var(--grayscale-a11, #6b7280);",
       "}",
     ].join("\n");
     document.head.appendChild(style);
@@ -604,15 +570,22 @@
       subtree: true,
     });
 
-    // Re-process on SPA navigation
+    // Re-process on SPA navigation.
+    // Instead of removing and re-injecting (which causes a visible flash),
+    // we keep the existing element if it's still in the DOM and only
+    // update the template URL.
     var lastUrl = location.href;
     setInterval(function () {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
         originalTemplateUrl = null;
+        // The MutationObserver will fire when the new page renders and
+        // call processExplorer(). Only remove the old element if it's
+        // no longer inside a live form (i.e. React unmounted it).
         var old = document.getElementById(SECTION_ID);
-        if (old) old.remove();
-        setTimeout(processExplorer, 500);
+        if (old && !old.closest(".fern-explorer-form")) {
+          old.remove();
+        }
       }
     }, 300);
   }
