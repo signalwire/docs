@@ -1,0 +1,53 @@
+---
+title: "webhook_expressions"
+slug: /reference/ruby/agents/data-map/webhook-expressions
+description: Add post-processing expressions for a webhook response.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/ruby/agents/data-map
+
+Add expressions that run after the most recently added webhook completes.
+Allows conditional output based on the API response.
+
+## **Parameters**
+
+<ParamField path="expressions" type="Array\<Hash\>" required={true} toc={true}>
+  List of expression definitions to evaluate against the webhook response.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- Self for method chaining. Raises `ArgumentError` if no webhook has been
+added yet.
+
+## **Example**
+
+```ruby {8}
+require 'signalwire'
+
+status_check = (
+    DataMap("check_status")
+    .purpose("Check service status")
+    .parameter("service", "string", "Service name", required: true)
+    .webhook("GET", "https://api.example.com/status/${enc:args.service}")
+    .webhook_expressions([
+        {
+            "test": "${response.status}",
+            "pattern": "healthy",
+            "output": {"response": "Service ${args.service} is running normally."}
+        },
+        {
+            "test": "${response.status}",
+            "pattern": "degraded|down",
+            "output": {"response": "Service ${args.service} is experiencing issues."}
+        }
+    ])
+)
+
+agent = SignalWire::AgentBase.new(name: "status-agent")
+agent.set_prompt_text("You are a helpful assistant.")
+agent.register_swaig_function(status_check.to_swaig_function())
+
+agent.run()
+```
