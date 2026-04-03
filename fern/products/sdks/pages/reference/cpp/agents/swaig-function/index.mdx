@@ -1,0 +1,193 @@
+---
+title: "SWAIGFunction"
+slug: /reference/cpp/agents/swaig-function
+description: "Wrapper class for SWAIG function definitions with execution and validation."
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/sdks/reference/cpp/agents/agent-base/define-tool
+[agentbase]: /docs/sdks/reference/cpp/agents/agent-base
+[datamap]: /docs/sdks/reference/cpp/agents/data-map
+[functionresult]: /docs/sdks/reference/cpp/agents/function-result
+[swaig-function-definition]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[toswaig]: /docs/sdks/reference/cpp/agents/swaig-function/to-swaig-json
+SWAIGFunction wraps a C++ callable as a SWAIG (SignalWire AI Gateway) tool
+that the AI can invoke during a conversation. It manages the function's name,
+description, parameter schema, security settings, and serialization to SWML.
+
+In most cases you do not create SWAIGFunction instances directly. The
+[`define_tool()` method][define-tool]
+and [`define_tool()`][define-tool] method
+on [`AgentBase`][agentbase] handle construction
+internally. This class is documented for advanced use cases such as custom
+registration via `register_swaig_function()`.
+
+<Info>
+For server-side API tools without a C++ handler, see
+[`DataMap`][datamap]. For building the
+response returned from a handler, see
+[`FunctionResult`][functionresult].
+</Info>
+
+<Info>
+SWAIGFunction serializes to a SWML [SWAIG function definition][swaig-function-definition].
+See the [SWML SWAIG functions reference][swml-swaig-functions-reference] for the
+full specification.
+</Info>
+
+## **Properties**
+
+<ParamField path="name" type="std::string" toc={true}>
+  The function name.
+</ParamField>
+
+<ParamField path="handler" type="std::function<FunctionResult(const nlohmann::json&, const nlohmann::json&)>" toc={true}>
+  The underlying C++ handler function.
+</ParamField>
+
+<ParamField path="description" type="std::string" toc={true}>
+  The function description.
+</ParamField>
+
+<ParamField path="parameters" type="nlohmann::json" toc={true}>
+  The parameter schema dictionary.
+</ParamField>
+
+<ParamField path="secure" type="bool" toc={true}>
+  Whether token authentication is required.
+</ParamField>
+
+<ParamField path="fillers" type="std::optional<std::map<std::string, std::vector<std::string>>>" toc={true}>
+  Filler phrases by language code to speak while the function executes
+  (e.g., `{"en-US": ["Let me check on that..."]}`).
+</ParamField>
+
+<ParamField path="wait_file" type="std::optional<std::string>" toc={true}>
+  URL of an audio file to play while the function executes. Preferred over `fillers`.
+</ParamField>
+
+<ParamField path="wait_file_loops" type="std::optional<int>" toc={true}>
+  Number of times to loop `wait_file`. Defaults to playing once.
+</ParamField>
+
+<ParamField path="webhook_url" type="std::optional<std::string>" toc={true}>
+  External webhook URL. When set, the function call is forwarded to this URL instead
+  of being handled locally.
+</ParamField>
+
+<ParamField path="required" type="std::vector<std::string>" toc={true}>
+  List of required parameter names. Merged into the parameter schema's `required` array.
+</ParamField>
+
+<ParamField path="is_typed_handler" type="bool" toc={true}>
+  Whether the handler uses type-hinted parameters (auto-wrapped by the `define_tool()` method).
+</ParamField>
+
+<ParamField path="is_external" type="bool" toc={true}>
+  `true` when `webhook_url` is set, indicating the function is handled externally.
+</ParamField>
+
+### \_\_call\_\_
+
+The SWAIGFunction object is callable. Calling it directly delegates to the
+underlying handler:
+
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/signalwire.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+agent::AgentBase agent("assistant", "/assistant");
+agent.set_prompt_text("You are a helpful assistant.");
+
+void check_order(const nlohmann::json& args, const nlohmann::json& raw_data) {
+    auto order_id = args{"order_id"};
+    return swaig::FunctionResult("Order " + std::string(order_id) + " shipped March 28.");
+
+}
+agent.serve();
+
+
+```
+
+This is equivalent to `func.handler(args, raw_data)`.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="execute" href="/docs/sdks/reference/cpp/agents/swaig-function/execute">
+    Execute the function with the given arguments.
+  </Card>
+  <Card title="to_swaig" href="/docs/sdks/reference/cpp/agents/swaig-function/to-swaig-json">
+    Convert the function to a SWAIG-compatible dictionary for SWML.
+  </Card>
+  <Card title="validate_args" href="/docs/sdks/reference/cpp/agents/swaig-function/validate-args">
+    Validate arguments against the parameter JSON Schema.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Manual registration
+
+```cpp {10}
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+void handle_lookup(const nlohmann::json& args, const nlohmann::json& raw_data) {
+    auto account_id = args.value("account_id", "");
+    return swaig::FunctionResult("Account " + std::string(account_id) + " is active.");
+
+agent::AgentBase agent("my-agent");
+
+func = SWAIGFunction(;
+    "lookup_account",
+    handle_lookup,
+    "Look up account status by ID",
+    parameters={
+        "type": "object",
+        "properties": {
+            "account_id": {
+                "type": "string",
+                "description": "The account ID to look up";
+            }
+        },
+        "required": {"account_id"};
+    },
+    true,
+    {"en-US": {"Let me check on that..."}}
+);
+
+// Validate before registering
+is_valid, errors = func.validate_args({{"account_id", "12345"}});
+std::cout << "Valid: " + std::string(is_valid) + ", Errors: " + std::string(errors) << std::endl;
+// Valid: True, Errors: []
+
+
+```
+
+### Using define_tool (preferred)
+
+In most cases, use the `define_tool()` method instead of constructing
+SWAIGFunction directly:
+
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+
+agent::AgentBase agent("my-agent");
+agent.set_prompt_text("You are a helpful assistant.");
+
+void lookup_account(const nlohmann::json& args, const nlohmann::json& raw_data) {
+    auto account_id = args.value("account_id", "");
+    return swaig::FunctionResult("Account " + std::string(account_id) + " is active.");
+
+int main() {
+}
+    agent.run();
+
+
+```

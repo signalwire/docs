@@ -1,0 +1,147 @@
+---
+title: "ai"
+slug: /reference/cpp/relay/call/ai
+description: Start an AI agent session on a call.
+max-toc-depth: 3
+---
+
+[aiaction]: /docs/sdks/reference/cpp/relay/actions
+[agentbase]: /docs/sdks/reference/cpp/agents/agent-base
+[amazon-bedrock]: /docs/sdks/reference/cpp/relay/call/amazon-bedrock
+[ai]: /docs/swml/reference/ai
+[swml-ai-reference]: /docs/swml/reference/ai
+
+Start an AI agent session on the call. The AI agent handles the conversation
+using the provided prompt, tools, and configuration. Returns an
+[`AIAction`][aiaction] that you can use to stop
+the AI session or wait for it to complete.
+
+<Tip>
+For building AI agents with the full framework (prompts, tools, skills, contexts),
+use [`AgentBase`][agentbase]. The `ai()` method
+is for lower-level RELAY control where you configure the AI inline.
+</Tip>
+
+<Info>
+See also [`amazon_bedrock()`][amazon-bedrock] for using Amazon Bedrock as the LLM backend.
+</Info>
+
+<Info>
+This method executes the SWML [`ai`][ai] verb on the call. See the
+[SWML AI reference][swml-ai-reference] for the full specification of all supported
+parameters and behaviors.
+</Info>
+
+## **Parameters**
+
+<ParamField path="control_id" type="std::optional<std::string>" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="agent" type="std::optional<std::string>" toc={true}>
+  Fabric agent resource ID. When set, the AI uses a pre-configured agent
+  from SignalWire Fabric instead of inline configuration.
+</ParamField>
+
+<ParamField path="prompt" type="std::optional<nlohmann::json>" toc={true}>
+  The main prompt configuration.
+</ParamField>
+
+<Indent>
+<ParamField path="prompt.text" type="std::string" toc={true}>
+  The system prompt text that defines the AI agent's behavior.
+</ParamField>
+
+<ParamField path="prompt.temperature" type="double" toc={true}>
+  LLM temperature for the main prompt.
+</ParamField>
+
+<ParamField path="prompt.top_p" type="double" toc={true}>
+  LLM top_p sampling parameter.
+</ParamField>
+</Indent>
+
+<ParamField path="post_prompt" type="std::optional<nlohmann::json>" toc={true}>
+  Post-prompt configuration for summarization or analysis after the
+  conversation ends.
+</ParamField>
+
+<Indent>
+<ParamField path="post_prompt.text" type="std::string" toc={true}>
+  The post-prompt text.
+</ParamField>
+</Indent>
+
+<ParamField path="post_prompt_url" type="std::optional<std::string>" toc={true}>
+  URL to receive the post-prompt result via webhook.
+</ParamField>
+
+<ParamField path="post_prompt_auth_user" type="std::optional<std::string>" toc={true}>
+  Username for basic auth on the post-prompt webhook.
+</ParamField>
+
+<ParamField path="post_prompt_auth_password" type="std::optional<std::string>" toc={true}>
+  Password for basic auth on the post-prompt webhook.
+</ParamField>
+
+<ParamField path="global_data" type="std::optional<nlohmann::json>" toc={true}>
+  Data accessible to the AI agent and SWAIG functions throughout the session.
+</ParamField>
+
+<ParamField path="pronounce" type="std::optional<std::vector<nlohmann::json>>" toc={true}>
+  Pronunciation rules for words or phrases the TTS engine should handle
+  specially.
+</ParamField>
+
+<ParamField path="hints" type="std::optional<std::vector<std::string>>" toc={true}>
+  Speech recognition hints to improve accuracy for domain-specific terms.
+</ParamField>
+
+<ParamField path="languages" type="std::optional<std::vector<nlohmann::json>>" toc={true}>
+  Language configurations for multilingual support.
+</ParamField>
+
+<ParamField path="SWAIG" type="std::optional<nlohmann::json>" toc={true}>
+  SWAIG (SignalWire AI Gateway) configuration for tool/function definitions.
+</ParamField>
+
+<ParamField path="ai_params" type="std::optional<nlohmann::json>" toc={true}>
+  Additional AI parameters such as `barge_confidence`, `end_of_speech_timeout`,
+  `attention_timeout`, and other LLM tuning settings.
+</ParamField>
+
+<ParamField path="on_completed" type="std::optional<std::function<nlohmann::json(RelayEvent)>>" toc={true}>
+  Callback invoked when the AI session ends.
+</ParamField>
+
+## **Returns**
+
+[`AIAction`][aiaction] -- An action handle with `stop()` and `wait()` methods.
+
+## **Example**
+
+```cpp {15}
+#include <signalwire/relay/client.hpp>
+
+client = RelayClient(;
+);
+
+// @client.on_call
+void handle_call(const auto& call) {
+    call.answer();
+
+    // Start an AI agent on the call
+    action = call.ai(;
+        prompt={{"text", "You are a helpful customer support agent for Acme Corp."}},
+        hints={"Acme", "support", "billing"},
+        ai_params={"barge_confidence": 0.02},
+    );
+
+    // Wait for the AI session to end (caller hangs up or AI stops)
+    action.wait();
+    std::cout << "AI session ended" << std::endl;
+
+client.run();
+
+
+```
