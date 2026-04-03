@@ -63,7 +63,7 @@ Add a skill in one line:
 
 
 ```python
-from signalwire_agents import AgentBase
+from signalwire import AgentBase
 
 class MyAgent(AgentBase):
     def __init__(self):
@@ -129,7 +129,7 @@ func main() {
 </Tab>
 <Tab title="Ruby">
 ```ruby
-require 'signalwire_agents'
+require 'signalwire'
 
 agent = SignalWireAgents::AgentBase.new(name: 'my-agent')
 agent.add_language('English', 'en-US', 'rime.spore')
@@ -339,7 +339,7 @@ The `add_skill()` vs `define_tool()` distinction applies across all languages:
 ```python
 #!/usr/bin/env python3
 # assistant_agent.py - Agent with multiple skills
-from signalwire_agents import AgentBase
+from signalwire import AgentBase
 
 class AssistantAgent(AgentBase):
     def __init__(self):
@@ -421,7 +421,7 @@ func main() {
 </Tab>
 <Tab title="Ruby">
 ```ruby
-require 'signalwire_agents'
+require 'signalwire'
 
 agent = SignalWireAgents::AgentBase.new(name: 'assistant')
 agent.add_language('English', 'en-US', 'rime.spore')
@@ -606,7 +606,7 @@ Understanding this helps when debugging: a skill's function behaves exactly like
 Built-in skills live in the SDK:
 
 ```text
-signalwire_agents/
+signalwire/
     skills/
         datetime/
             __init__.py
@@ -650,8 +650,8 @@ All skills inherit from [`SkillBase`][ref-skillbase]. The pattern is similar acr
 */}
 
 ```python
-from signalwire_agents.skills import SkillBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+from signalwire.skills import SkillBase
+from signalwire.core.function_result import FunctionResult
 
 class MySkill(SkillBase):
     # Required class attributes
@@ -681,7 +681,7 @@ class MySkill(SkillBase):
 
     def my_handler(self, args, raw_data):
         """Handle function calls."""
-        return SwaigFunctionResult("Result")
+        return FunctionResult("Result")
 ```
 
 ## Skill Lifecycle
@@ -760,8 +760,8 @@ Skills are discovered from multiple locations in priority order:
 | Priority | Source | Example |
 |----------|--------|---------|
 | 1 | Already registered skills (in memory) | - |
-| 2 | Entry points (pip installed packages) | `entry_points={'signalwire_agents.skills': ['my_skill = pkg:Skill']}` |
-| 3 | Built-in skills directory | `signalwire_agents/skills/` |
+| 2 | Entry points (pip installed packages) | `entry_points={'signalwire.skills': ['my_skill = pkg:Skill']}` |
+| 3 | Built-in skills directory | `signalwire/skills/` |
 | 4 | External paths | `skill_registry.add_skill_directory('/opt/custom_skills')` |
 | 5 | Environment variable paths | `SIGNALWIRE_SKILL_PATHS=/path1:/path2` |
 
@@ -860,21 +860,21 @@ def search_handler(self, args, raw_data):
 
 ## Result Handling
 
-Skill handlers return `SwaigFunctionResult` just like regular SWAIG functions:
+Skill handlers return `FunctionResult` just like regular SWAIG functions:
 
 ```python
 def my_handler(self, args, raw_data):
     # Success case
-    return SwaigFunctionResult("The result is 42")
+    return FunctionResult("The result is 42")
 
     # With actions
     return (
-        SwaigFunctionResult("Updated your preferences")
+        FunctionResult("Updated your preferences")
         .update_global_data({"preference": "value"})
     )
 
     # Error case - still return a result for the AI
-    return SwaigFunctionResult("I couldn't complete that request. Please try again.")
+    return FunctionResult("I couldn't complete that request. Please try again.")
 ```
 
 The result goes back to the AI, which uses it to formulate a response to the user.
@@ -887,26 +887,26 @@ Skills should handle errors gracefully and return meaningful messages:
 def api_handler(self, args, raw_data):
     try:
         result = self.call_external_api(args)
-        return SwaigFunctionResult(f"Result: {result}")
+        return FunctionResult(f"Result: {result}")
     except requests.Timeout:
-        return SwaigFunctionResult(
+        return FunctionResult(
             "The service is taking too long to respond. Please try again."
         )
     except requests.RequestException as e:
         self.agent.log.error(f"API error: {e}")
-        return SwaigFunctionResult(
+        return FunctionResult(
             "I'm having trouble connecting to the service right now."
         )
     except Exception as e:
         self.agent.log.error(f"Unexpected error: {e}")
-        return SwaigFunctionResult(
+        return FunctionResult(
             "Something went wrong. Please try again."
         )
 ```
 
 **Error handling principles:**
 
-- Always return a `SwaigFunctionResult`, even on errors
+- Always return a `FunctionResult`, even on errors
 - Make error messages user-friendly (the AI will relay them)
 - Log technical details for debugging
 - Don't expose internal errors to users
@@ -938,5 +938,5 @@ Skills log warnings if required packages or environment variables are missing. C
 Built-in skills are in the SDK source. Examine them to understand how they work:
 ```bash
 pip show signalwire
-# Find location, then look in signalwire_agents/skills/
+# Find location, then look in signalwire/skills/
 ```
