@@ -387,18 +387,25 @@
     // Strategy 1: Jotai storage event (instant, no UI flicker)
     updateViaStorage(newUrl);
 
-    // Strategy 2: Double-click fallback (always attempt after a delay)
+    // Strategy 2: Double-click fallback (only when strategy 1 fails)
     // The StorageEvent approach may not work within the same tab in all
     // browsers. The double-click approach directly uses Fern's editing
-    // UI to commit the URL. We check after a delay whether strategy 1
-    // succeeded before invoking strategy 2.
+    // UI to commit the URL, but it steals focus (which can interrupt
+    // the user's typing). We only invoke it when the URL bar text does
+    // NOT match the desired newUrl after a delay.
     setTimeout(function () {
       var baseUrlEl = document.querySelector(
         ".playground-endpoint-baseurl"
       );
       if (baseUrlEl) {
         var currentText = (baseUrlEl.textContent || "").trim();
-        // If the URL no longer contains a placeholder, strategy 1 worked
+        // Compare directly — if the URL bar already shows the target
+        // URL (including template placeholders), strategy 1 worked.
+        if (currentText === newUrl) {
+          return;
+        }
+        // Also accept a match if the URL no longer has a placeholder
+        // (storage event successfully replaced it with something)
         var hasPlaceholder = detectVariable(currentText);
         if (!hasPlaceholder && currentText.indexOf("://") !== -1) {
           return;
