@@ -1,0 +1,223 @@
+---
+title: "SWAIGFunction"
+slug: /reference/go/agents/swaig-function
+description: "Wrapper class for SWAIG function definitions with execution and validation."
+max-toc-depth: 3
+---
+
+[agent-tool-decorator]: /docs/sdks/reference/go/agents/agent-base#tool
+[define-tool]: /docs/sdks/reference/go/agents/agent-base/define-tool
+[agentbase]: /docs/sdks/reference/go/agents/agent-base
+[datamap]: /docs/sdks/reference/go/agents/data-map
+[functionresult]: /docs/sdks/reference/go/agents/function-result
+[swaig-function-definition]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[execute]: /docs/sdks/reference/go/agents/swaig-function/execute
+[toswaig]: /docs/sdks/reference/go/agents/swaig-function/to-swaig
+[validateargs]: /docs/sdks/reference/go/agents/swaig-function/validate-args
+
+SWAIGFunction wraps a Go function as a SWAIG (SignalWire AI Gateway) tool
+that the AI can invoke during a conversation. It manages the function's name,
+description, parameter schema, security settings, and serialization to SWML.
+
+In most cases you do not create SWAIGFunction instances directly. The
+[`agent.DefineTool()` decorator][agent-tool-decorator]
+and [`DefineTool()`][define-tool] method
+on [`AgentBase`][agentbase] handle construction
+internally. This class is documented for advanced use cases such as custom
+registration via `RegisterSwaigFunction()`.
+
+<Info>
+For server-side API tools without a Python handler, see
+[`DataMap`][datamap]. For building the
+response returned from a handler, see
+[`FunctionResult`][functionresult].
+</Info>
+
+<Info>
+SWAIGFunction serializes to a SWML [SWAIG function definition][swaig-function-definition].
+See the [SWML SWAIG functions reference][swml-swaig-functions-reference] for the
+full specification.
+</Info>
+
+## **Properties**
+
+<ParamField path="name" type="string" toc={true}>
+  The function name.
+</ParamField>
+
+<ParamField path="handler" type="func()" toc={true}>
+  The underlying Python handler function.
+</ParamField>
+
+<ParamField path="description" type="string" toc={true}>
+  The function description.
+</ParamField>
+
+<ParamField path="parameters" type="dict" toc={true}>
+  The parameter schema dictionary.
+</ParamField>
+
+<ParamField path="secure" type="bool" toc={true}>
+  Whether token authentication is required.
+</ParamField>
+
+<ParamField path="fillers" type="*map[string][]string" toc={true}>
+  Filler phrases by language code to speak while the function executes
+  (e.g., `{"en-US": ["Let me check on that..."]}`).
+</ParamField>
+
+<ParamField path="wait_file" type="*string" toc={true}>
+  URL of an audio file to play while the function executes. Preferred over `fillers`.
+</ParamField>
+
+<ParamField path="wait_file_loops" type="*int" toc={true}>
+  Number of times to loop `wait_file`. Defaults to playing once.
+</ParamField>
+
+<ParamField path="webhook_url" type="*string" toc={true}>
+  External webhook URL. When set, the function call is forwarded to this URL instead
+  of being handled locally.
+</ParamField>
+
+<ParamField path="required" type="[]string" toc={true}>
+  List of required parameter names. Merged into the parameter schema's `required` array.
+</ParamField>
+
+<ParamField path="is_typed_handler" type="bool" toc={true}>
+  Whether the handler uses type-hinted parameters (auto-wrapped by the `DefineTool` method).
+</ParamField>
+
+<ParamField path="is_external" type="bool" toc={true}>
+  `true` when `webhook_url` is set, indicating the function is handled externally.
+</ParamField>
+
+### \_\_call\_\_
+
+The SWAIGFunction object is callable. Calling it directly delegates to the
+underlying handler:
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("assistant"), agent.WithRoute("/assistant"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "check_order",
+        Description: "Look up order status",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        order_id := args[]string{"order_id"}
+        return swaig.NewFunctionResult(fmt.Sprintf("Order %v shipped March 28.", order_id))
+
+    agent.Serve()
+}
+```
+
+This is equivalent to `func.handler(args, raw_data)`.
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="execute" href="/docs/sdks/reference/go/agents/swaig-function/execute">
+    Execute the function with the given arguments.
+  </Card>
+  <Card title="to_swaig" href="/docs/sdks/reference/go/agents/swaig-function/to-swaig">
+    Convert the function to a SWAIG-compatible dictionary for SWML.
+  </Card>
+  <Card title="validate_args" href="/docs/sdks/reference/go/agents/swaig-function/validate-args">
+    Validate arguments against the parameter JSON Schema.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Manual registration
+
+```go {10}
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    func HandleLookup(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        account_id := args[]string{"account_id"}
+        return swaig.NewFunctionResult(fmt.Sprintf("Account %v is active.", account_id))
+
+    agent := agent.NewAgentBase(agent.WithName("my-agent"))
+
+    func := SWAIGFunction(
+        name := "lookup_account",
+        handler := handle_lookup,
+        description := "Look up account status by ID",
+        parameters := {
+            "type": "object",
+            "properties": {
+                "account_id": {
+                    "type": "string",
+                    "description": "The account ID to look up"
+                }
+            },
+            "required": []string{"account_id"}
+        },
+        secure := true,
+        fillers := {"en-US": []string{"Let me check on that..."}}
+    )
+
+    // Validate before registering
+    is_valid, errors = func.ValidateArgs({"account_id": "12345"})
+    fmt.Println(fmt.Sprintf("Valid: %v, Errors: %v", is_valid, errors))
+    // Valid: true, Errors: []
+}
+```
+
+### Using the decorator (preferred)
+
+In most cases, use the `agent.DefineTool()` decorator instead of constructing
+SWAIGFunction directly:
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("my-agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+        description := "Look up account status by ID",
+        parameters := {
+            "type": "object",
+            "properties": {
+                "account_id": {"type": "string", "description": "Account ID"}
+            },
+            "required": []string{"account_id"}
+        },
+        secure := true,
+        fillers := []string{"Let me check on that..."}
+    )
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "lookup_account",
+        Description: "Tool function",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        account_id := args[]string{"account_id"}
+        return swaig.NewFunctionResult(fmt.Sprintf("Account %v is active.", account_id))
+
+        agent.Run()
+}
+```

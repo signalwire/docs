@@ -1,0 +1,143 @@
+---
+title: "RecordCall"
+slug: /reference/go/agents/function-result/record-call
+description: Start recording the call in the background.
+max-toc-depth: 3
+---
+
+[stop-record-call]: /docs/sdks/reference/go/agents/function-result/stop-record-call
+[functionresult]: /docs/sdks/reference/go/agents/function-result
+
+Start recording the call in the background. The conversation continues while
+recording is active.
+
+<Note>
+For continuous call recording, omit `initial_timeout` and `end_silence_timeout`.
+Those parameters are for voicemail-style recordings that automatically stop on
+silence. Use [`StopRecordCall()`][stop-record-call] to end continuous recordings.
+</Note>
+
+## **Parameters**
+
+<ParamField path="control_id" type="*string" default="None" toc={true}>
+  Identifier for this recording. Pass the same ID to `StopRecordCall()` to
+  stop this specific recording.
+</ParamField>
+
+<ParamField path="stereo" type="bool" default="False" toc={true}>
+  Record in stereo (`true`) or mono (`false`).
+</ParamField>
+
+<ParamField path="format" type="string" default="wav" toc={true}>
+  Recording file format.
+
+  - `"wav"` -- uncompressed WAV audio
+  - `"mp3"` -- compressed MP3 audio
+</ParamField>
+
+<ParamField path="direction" type="string" default="both" toc={true}>
+  Audio direction to record.
+
+  - `"speak"` -- what the agent says
+  - `"listen"` -- what the caller says
+  - `"both"` -- both sides of the conversation
+</ParamField>
+
+<ParamField path="terminators" type="*string" default="None" toc={true}>
+  DTMF digits that stop recording when pressed (e.g., `"#"`).
+</ParamField>
+
+<ParamField path="beep" type="bool" default="False" toc={true}>
+  Play a beep tone before recording starts.
+</ParamField>
+
+<ParamField path="input_sensitivity" type="float64" default="44.0" toc={true}>
+  Input sensitivity level for the recording.
+</ParamField>
+
+<ParamField path="initial_timeout" type="*float64" default="None" toc={true}>
+  Seconds to wait for speech to begin before auto-stopping. Used for
+  voicemail-style recordings.
+</ParamField>
+
+<ParamField path="end_silence_timeout" type="*float64" default="None" toc={true}>
+  Seconds of silence after speech to wait before auto-stopping. Used for
+  voicemail-style recordings.
+</ParamField>
+
+<ParamField path="max_length" type="*float64" default="None" toc={true}>
+  Maximum recording duration in seconds.
+</ParamField>
+
+<ParamField path="status_url" type="*string" default="None" toc={true}>
+  URL to receive recording status webhook events.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Continuous Recording
+
+```go {11}
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "start_recording",
+        Description: "Start recording the call",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        return (
+            FunctionResult("Recording started.")
+            .record_call(
+                control_id := "main_recording",
+                stereo := true,
+                format := "mp3"
+            )
+        )
+
+    agent.Serve()
+}
+```
+
+### Voicemail Recording
+
+```go {11}
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "record_voicemail",
+        Description: "Record a voicemail message",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        return (
+            FunctionResult("Please leave your message after the beep.")
+            .record_call(
+                control_id := "voicemail",
+                beep := true,
+                max_length := 120.0,
+                end_silence_timeout := 3.0
+            )
+        )
+
+    agent.Serve()
+}
+```

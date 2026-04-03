@@ -1,0 +1,67 @@
+---
+title: "RegisterVerbHandler"
+slug: /reference/go/agents/swml-service/register-verb-handler
+description: "Register custom verb handlers for specialized SWML verb processing."
+max-toc-depth: 3
+---
+
+[add-verb]: /docs/sdks/reference/go/agents/swml-service/add-verb
+
+Register a custom verb handler for specialized validation and configuration of a
+SWML verb. When a verb with a registered handler is added via
+[`AddVerb()`][add-verb], the handler's
+`ValidateConfig()` method is used instead of generic schema validation.
+
+The SDK ships with a built-in `AIVerbHandler` for the `ai` verb. Register your own
+handlers for custom verbs or to override default validation behavior.
+
+<Tip>
+Custom verb handlers are useful when a verb has complex validation rules that go beyond
+JSON Schema checks — for example, mutually exclusive parameters or conditional requirements.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="handler" type="SWMLVerbHandler" required={true} toc={true}>
+  An instance of a class that extends `SWMLVerbHandler`. Must implement three methods:
+  - `GetVerbName()` — returns the verb name string this handler manages
+  - `validate_config(config)` — returns a `(bool, list[str])` tuple of `(is_valid, errors)`
+  - `build_config(**kwargs)` — returns a configuration dictionary for the verb
+</ParamField>
+
+## **Returns**
+
+`nil`
+
+## **Example**
+
+```go {18}
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-go/pkg/swml"
+)
+
+func main() {
+    // CustomVerbHandler embeds SWMLVerbHandler
+        func GetVerbName() *swaig.FunctionResult {
+            return "my_verb"
+
+        func ValidateConfig(config any) *swaig.FunctionResult {
+            errors := []
+            if "target" not in config:
+                errors.append("Missing required field 'target'")
+            return len(errors) == 0, errors
+
+        func BuildConfig(**kwargs any) *swaig.FunctionResult {
+            return {"target": kwargs[]string{"target"}}
+
+    service := SWMLService(name="custom-service")
+    service.RegisterVerbHandler(CustomVerbHandler())
+
+    // Now add_verb will use the custom handler for validation
+    service.AddVerb("my_verb", {"target": "https://example.com"})
+    fmt.Println(service.render_document())
+}
+```

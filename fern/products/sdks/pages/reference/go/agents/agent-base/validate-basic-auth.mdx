@@ -1,0 +1,56 @@
+---
+title: "ValidateBasicAuth"
+slug: /reference/go/agents/agent-base/validate-basic-auth
+description: Validate HTTP Basic Auth credentials against the agent's stored credentials.
+max-toc-depth: 3
+---
+
+Validate a username/password pair against the agent's configured Basic Auth
+credentials. The comparison uses constant-time `hmac.compare_digest` to prevent
+timing attacks.
+
+<Note>
+This method is an **override point**. Subclasses can replace it with custom
+authentication logic (e.g., database lookups, external identity providers) while
+the rest of the auth pipeline (`_check_basic_auth`, `_check_cgi_auth`, etc.)
+continues to call it transparently.
+</Note>
+
+## **Parameters**
+
+<ParamField path="username" type="string" required={true} toc={true}>
+  Username extracted from the incoming request's `Authorization` header.
+</ParamField>
+
+<ParamField path="password" type="string" required={true} toc={true}>
+  Password extracted from the incoming request's `Authorization` header.
+</ParamField>
+
+## **Returns**
+
+`bool` -- `true` if the credentials are valid, `false` otherwise. Returns `false`
+when no credentials have been configured on the agent.
+
+## **Examples**
+
+### Default behavior
+
+```go {4}
+agent := agent.NewAgentBase(agent.WithName("assistant"), agent.WithRoute("/assistant"))
+is_valid := agent.validate_basic_auth("admin", "secret123")
+```
+
+### Custom validation in a subclass
+
+```go {4}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+    // SecureAgent embeds AgentBase
+        func ValidateBasicAuth(username string  , password string) bool {
+            """Look up credentials in an external user store."""
+            return verify_user(username, password)
+}
+```

@@ -1,0 +1,105 @@
+---
+title: "SwitchContext"
+slug: /reference/go/agents/function-result/switch-context
+description: Perform an advanced context switch with prompt replacement and history control.
+max-toc-depth: 3
+---
+
+[swml-change-context]: /docs/sdks/reference/go/agents/function-result/swml-change-context
+[functionresult]: /docs/sdks/reference/go/agents/function-result
+
+Perform an advanced context switch by replacing the system prompt, injecting a
+user message, or resetting the conversation entirely. This is more flexible
+than [`SwmlChangeContext()`][swml-change-context],
+which switches to a pre-defined named context.
+
+When only `system_prompt` is provided (no other arguments), it performs a simple
+string-based context switch. When multiple arguments are given, it constructs an
+object-based context switch with fine-grained control.
+
+## **Parameters**
+
+<ParamField path="system_prompt" type="*string" default="None" toc={true}>
+  New system prompt to replace the current one.
+</ParamField>
+
+<ParamField path="user_prompt" type="*string" default="None" toc={true}>
+  A user message to inject into the conversation after the context switch.
+</ParamField>
+
+<ParamField path="consolidate" type="bool" default="False" toc={true}>
+  When `true`, the existing conversation history is summarized into a condensed
+  form before applying the new context. Reduces token usage on long conversations.
+</ParamField>
+
+<ParamField path="full_reset" type="bool" default="False" toc={true}>
+  When `true`, performs a complete context reset, clearing all conversation
+  history and starting fresh with the new prompt.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Simple Prompt Swap
+
+```go {11}
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "switch_to_technical",
+        Description: "Switch to technical support mode",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        return (
+            FunctionResult("Switching to technical support mode.")
+            .switch_context(
+                system_prompt := "You are a technical support specialist. "
+                            "Help the customer with their technical issue."
+            )
+        )
+
+    agent.Serve()
+}
+```
+
+### Full Reset with User Message
+
+```go {11}
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "escalate_to_supervisor",
+        Description: "Escalate to a supervisor",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        return (
+            FunctionResult("Connecting you to a supervisor.")
+            .switch_context(
+                system_prompt := "You are a customer service supervisor.",
+                user_prompt := "A customer has been escalated to you.",
+                full_reset := true
+            )
+        )
+
+    agent.Serve()
+}
+```

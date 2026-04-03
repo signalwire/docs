@@ -1,0 +1,79 @@
+---
+title: "OnRequest"
+slug: /reference/go/agents/swml-service/on-request
+description: "Request handling hook for customizing SWML output per request."
+max-toc-depth: 3
+---
+
+[register-routing-callback]: /docs/sdks/reference/go/agents/swml-service/register-routing-callback
+
+Hook method called every time SWML is requested, before the document is returned to
+the caller. Override this in a subclass to inspect the incoming request and optionally
+modify the SWML document on a per-request basis. This enables dynamic SWML generation
+where the document content varies based on who is calling, what SIP route was matched,
+or any data in the POST body.
+
+The default implementation returns `nil` (no modifications). When you return a
+dictionary, its keys are merged into the top-level SWML document, allowing you to
+replace entire sections.
+
+<Note>
+This method is called on both GET and POST requests. For GET requests, `request_data`
+is an empty dictionary. For POST requests, it contains the parsed JSON body sent by
+SignalWire.
+</Note>
+
+## **Parameters**
+
+<ParamField path="request_data" type="*dict" default="None" toc={true}>
+  The parsed POST body as a dictionary, or an empty dict for GET requests. Typically
+  contains call metadata from SignalWire (e.g., `call.to`, `call.from`, `call.headers`).
+</ParamField>
+
+<ParamField path="callback_path" type="*string" default="None" toc={true}>
+  The routing callback path that matched this request, if any. This is set when the
+  request came through a path registered via
+  [`RegisterRoutingCallback()`][register-routing-callback].
+  `nil` for requests to the main route.
+</ParamField>
+
+## **Returns**
+
+`map[string]interface{}` — Return `nil` to serve the document unchanged. Return a dictionary
+to merge modifications into the top-level SWML document (keys in the returned dict
+replace corresponding keys in the document).
+
+## **Example**
+
+```go {9}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/swml"
+
+func main() {
+    // DynamicService embeds SWMLService
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="dynamic-ivr", route="/"
+            AddVerb("answer", {})
+            AddVerb("play", {"url": "https://example.com/default.mp3"})
+
+        func OnRequest(request_data any, callback_path any) *swaig.FunctionResult {
+            """Customize the greeting based on the caller."""
+            if request_data and "call" in request_data:
+                caller := request_data[]string{"call"}.get("from", "")
+                if caller.startswith("+1555"):
+                    // Return modified sections for VIP callers
+                    return {
+                        "sections": {
+                            "main": [
+                                {"answer": {}},
+                                {"play": {"url": "https://example.com/vip-greeting.mp3"}}
+                            ]
+                        }
+                    }
+            return nil  # Use default document
+
+    service := DynamicService()
+    service.serve()
+}
+```

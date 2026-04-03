@@ -1,0 +1,1113 @@
+---
+title: "Skills"
+slug: /reference/go/agents/skills
+description: Built-in skills catalog with configuration parameters and usage patterns.
+max-toc-depth: 3
+---
+
+[add-skill]: /docs/sdks/reference/go/agents/agent-base/add-skill
+[sw-search]: /docs/sdks/reference/go/agents/cli/sw-search
+[infogathereragent]: /docs/sdks/reference/go/agents/prefabs#infogathereragent
+[skillbase]: /docs/sdks/reference/go/agents/skill-base
+[ref-datamap]: /docs/sdks/reference/go/agents/data-map
+
+Skills are pluggable capabilities that add tools to your agent. Add a skill with
+[`AddSkill()`][add-skill] and it registers
+one or more SWAIG functions automatically. Skills handle setup, parameter validation,
+and tool registration so you can add features like weather, search, or math with a
+single call.
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="my-agent"
+            SetPromptText("You are a helpful assistant.")
+
+            // No-config skill
+            AddSkill("datetime")
+
+            // Skill with parameters
+            add_skill("web_search", {
+                "api_key": "YOUR_KEY",
+                "search_engine_id": "YOUR_ENGINE_ID"
+            })
+
+        MyAgent().run()
+}
+```
+
+## Skills Summary
+
+| Skill | Functions | API Required | Multi-Instance |
+|-------|-----------|--------------|----------------|
+| [`datetime`](#datetime) | 2 | No | No |
+| [`math`](#math) | 1 | No | No |
+| [`web_search`](#web_search) | 1 | Yes | Yes |
+| [`wikipedia_search`](#wikipedia_search) | 1 | No | No |
+| [`weather_api`](#weather_api) | 1 | Yes | No |
+| [`joke`](#joke) | 1 | Yes | No |
+| [`play_background_file`](#play_background_file) | 1 | No | Yes |
+| [`swml_transfer`](#swml_transfer) | 1 | No | Yes |
+| [`datasphere`](#datasphere) | 1 | Yes | Yes |
+| [`datasphere_serverless`](#datasphere_serverless) | 1 | Yes | Yes |
+| [`native_vector_search`](#native_vector_search) | 1 | No | Yes |
+| [`mcp_gateway`](#mcp_gateway) | Dynamic | No | Yes |
+| [`google_maps`](#google_maps) | 2 | Yes | No |
+| [`info_gatherer`](#info_gatherer) | 2 | No | Yes |
+| [`claude_skills`](#claude_skills) | Dynamic | No | Yes |
+| [`spider`](#spider) | 3 | No | Yes |
+| [`api_ninjas_trivia`](#api_ninjas_trivia) | 1 | Yes | Yes |
+
+## Configuration
+
+All skills accept configuration via a dictionary passed to `AddSkill()`. Skills can also
+read values from environment variables when a parameter defines an `env_var` fallback.
+
+```go
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/skills"
+
+func main() {
+    // Direct configuration
+    AddSkill("web_search", {"api_key": "KEY", "search_engine_id": "ID"})
+
+    // Environment variable fallback
+    import os
+    add_skill("web_search", {
+        "api_key": os.getenv("GOOGLE_API_KEY"),
+        "search_engine_id": os.getenv("SEARCH_ENGINE_ID")
+    })
+}
+```
+
+### SWAIG Field Overrides
+
+Override SWAIG function metadata for any skill by including a `swaig_fields` key:
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("datetime", {
+                "swaig_fields": {
+                    "fillers": {"en-US": []string{"Let me check the time...", "One moment..."}},
+                    "secure": false
+                }
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+### Multi-Instance Skills
+
+Skills that support multiple instances require unique `tool_name` values:
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("native_vector_search", {
+                "tool_name": "search_products",
+                "index_file": "/data/products.swsearch"
+            })
+            add_skill("native_vector_search", {
+                "tool_name": "search_faqs",
+                "index_file": "/data/faqs.swsearch"
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## datetime
+
+Get current date and time information with timezone support.
+
+**Tools:** `get_current_time`, `get_current_date`
+
+**Requirements:** `pytz`
+
+No custom parameters. This skill inherits only the base parameters (`swaig_fields`, `skip_prompt`).
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            AddSkill("datetime")
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## math
+
+Perform mathematical calculations using a secure expression evaluator. Supports basic
+arithmetic, common functions (`sqrt`, `sin`, `cos`, `log`, `abs`, `round`), and constants
+(`pi`, `e`).
+
+**Tools:** `calculate`
+
+**Requirements:** None
+
+<ParamField path="tool_name" type="string" default="calculate" toc={true}>
+  Custom function name.
+</ParamField>
+
+<ParamField path="tool_description" type="string" default="Perform calculations" toc={true}>
+  Custom function description.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            AddSkill("math")
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## web_search
+
+Search the web using the Google Custom Search API. Results are filtered for quality and
+summarized for voice delivery.
+
+**Tools:** `web_search`
+
+**Requirements:** Google Custom Search API key + Search Engine ID
+
+**Multi-instance:** Yes (use different `tool_name` and `search_engine_id` per instance)
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  Google API key with Custom Search JSON API enabled.
+</ParamField>
+
+<ParamField path="search_engine_id" type="string" required={true} toc={true}>
+  Programmable Search Engine ID from Google.
+</ParamField>
+
+<ParamField path="num_results" type="int" default="3" toc={true}>
+  Number of search results to return (1-10).
+</ParamField>
+
+<ParamField path="delay" type="float64" default="0.5" toc={true}>
+  Delay between scraping pages in seconds.
+</ParamField>
+
+<ParamField path="max_content_length" type="int" default="32768" toc={true}>
+  Maximum total response size in characters.
+</ParamField>
+
+<ParamField path="oversample_factor" type="float64" default="2.5" toc={true}>
+  How many extra results to fetch for quality filtering (e.g., `2.5` fetches 2.5x the
+  requested number). Range: 1.0-3.5.
+</ParamField>
+
+<ParamField path="min_quality_score" type="float64" default="0.3" toc={true}>
+  Quality threshold for filtering results (0.0-1.0).
+</ParamField>
+
+<ParamField path="no_results_message" type="string" toc={true}>
+  Message to show when no quality results are found. Use `{query}` as a placeholder
+  for the search query.
+</ParamField>
+
+<ParamField path="tool_name" type="string" default="web_search" toc={true}>
+  Custom function name.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("web_search", {
+                "api_key": "YOUR_GOOGLE_API_KEY",
+                "search_engine_id": "YOUR_SEARCH_ENGINE_ID",
+                "num_results": 3
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## wikipedia_search
+
+Search Wikipedia for factual information. No API key required.
+
+**Tools:** `search_wikipedia`
+
+**Requirements:** None (uses the public Wikipedia API)
+
+<ParamField path="language" type="string" default="en" toc={true}>
+  Wikipedia language code (e.g., `"en"`, `"es"`, `"fr"`).
+</ParamField>
+
+<ParamField path="sentences" type="int" default="3" toc={true}>
+  Number of sentences to return per result.
+</ParamField>
+
+<ParamField path="tool_name" type="string" default="search_wikipedia" toc={true}>
+  Custom function name.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            AddSkill("wikipedia_search", {"sentences": 5})
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## weather_api
+
+Get current weather conditions for locations worldwide using WeatherAPI.com.
+
+**Tools:** `get_weather`
+
+**Requirements:** WeatherAPI.com API key (free tier available at https://www.weatherapi.com/)
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  WeatherAPI.com API key.
+</ParamField>
+
+<ParamField path="tool_name" type="string" default="get_weather" toc={true}>
+  Custom function name.
+</ParamField>
+
+<ParamField path="tool_description" type="string" default="Get weather" toc={true}>
+  Custom function description.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            AddSkill("weather_api", {"api_key": "YOUR_WEATHER_API_KEY"})
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## joke
+
+Tell jokes using the API Ninjas joke API. Uses a [DataMap][ref-datamap] for serverless execution.
+
+**Tools:** `get_joke` (default, customizable via `tool_name`)
+
+**Requirements:** API Ninjas API key
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  API Ninjas API key for the joke service. Can also be set via the `API_NINJAS_KEY`
+  environment variable.
+</ParamField>
+
+<ParamField path="tool_name" type="string" default="get_joke" toc={true}>
+  Custom function name.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("joke", {
+                "api_key": "YOUR_API_NINJAS_KEY"
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## play_background_file
+
+Control background file playback during calls. A single tool handles both starting and
+stopping playback via an `action` parameter with dynamic enum values generated from the
+configured file list. Supports audio and video files.
+
+**Tools:** `play_background_file` (default, customizable via `tool_name`)
+
+**Requirements:** None (files must be accessible via URL)
+
+**Multi-instance:** Yes (use different `tool_name` per instance)
+
+<ParamField path="files" type="[]dict" required={true} toc={true}>
+  Array of file configurations to make available for playback. Each object must include:
+  - `key` (str, required) -- Unique identifier for the file (alphanumeric, underscores, hyphens).
+  - `description` (str, required) -- Human-readable description of the file.
+  - `url` (str, required) -- URL of the audio/video file to play.
+  - `wait` (bool, optional, default `false`) -- Whether to wait for the file to finish playing.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("play_background_file", {
+                "tool_name": "play_testimonial",
+                "files": [
+                    {
+                        "key": "massey",
+                        "description": "Customer success story from Massey Energy",
+                        "url": "https://example.com/massey.mp4",
+                        "wait": true
+                    }
+                ]
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## swml_transfer
+
+Transfer calls between agents using SWML or direct connect, with regex pattern matching
+to route to different destinations from a single tool. Each transfer destination can use
+either a SWML endpoint URL or a phone number / SIP address.
+
+**Tools:** `transfer_call` (default, customizable via `tool_name`)
+
+**Requirements:** None
+
+**Multi-instance:** Yes
+
+<ParamField path="transfers" type="dict" required={true} toc={true}>
+  Transfer configurations mapping regex patterns to destinations. Each key is a regex
+  pattern (e.g., `/sales/i`) and each value is an object with:
+  - `url` (str) -- SWML endpoint URL for agent transfer. Mutually exclusive with `address`.
+  - `address` (str) -- Phone number or SIP address for direct connect. Mutually exclusive with `url`.
+  - `message` (str, default `"Transferring you now..."`) -- Message to say before transferring.
+  - `return_message` (str, default `"The transfer is complete. How else can I help you?"`) -- Message when returning from transfer.
+  - `post_process` (bool, default `true`) -- Whether to process message with AI before saying.
+  - `final` (bool, default `true`) -- Whether transfer is permanent (`true`) or temporary (`false`).
+  - `from_addr` (str, optional) -- Caller ID for connect action.
+</ParamField>
+
+<ParamField path="description" type="string" default="Transfer call based on pattern matching" toc={true}>
+  Description for the transfer tool.
+</ParamField>
+
+<ParamField path="parameter_name" type="string" default="transfer_type" toc={true}>
+  Name of the parameter that accepts the transfer type.
+</ParamField>
+
+<ParamField path="parameter_description" type="string" default="The type of transfer to perform" toc={true}>
+  Description for the transfer type parameter.
+</ParamField>
+
+<ParamField path="default_message" type="string" default="Please specify a valid transfer type." toc={true}>
+  Message when no pattern matches.
+</ParamField>
+
+<ParamField path="default_post_process" type="bool" default="False" toc={true}>
+  Whether to process the default (no-match) message with AI.
+</ParamField>
+
+<ParamField path="required_fields" type="dict" default="{}" toc={true}>
+  Additional required fields to collect before transfer. Keys are field names, values
+  are descriptions. Collected values are saved under `call_data` in global data.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("swml_transfer", {
+                "tool_name": "route_call",
+                "transfers": {
+                    "/sales/i": {
+                        "url": "https://your-server.com/sales-agent",
+                        "message": "Let me connect you with our sales team."
+                    },
+                    "/support/i": {
+                        "address": "+15551234567",
+                        "final": false
+                    }
+                }
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## datasphere
+
+Search documents uploaded to SignalWire DataSphere. This skill executes the search
+via a webhook call from the agent process.
+
+**Tools:** `search_datasphere`
+
+**Requirements:** SignalWire DataSphere credentials
+
+**Multi-instance:** Yes
+
+<ParamField path="space_name" type="string" required={true} toc={true}>
+  SignalWire space name (e.g., `"mycompany"` from `mycompany.signalwire.com`).
+</ParamField>
+
+<ParamField path="project_id" type="string" required={true} toc={true}>
+  SignalWire project ID.
+</ParamField>
+
+<ParamField path="api_token" type="string" required={true} toc={true}>
+  SignalWire API token.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("datasphere", {
+                "space_name": "your-space",
+                "project_id": "YOUR_PROJECT_ID",
+                "api_token": "YOUR_API_TOKEN"
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## datasphere_serverless
+
+Search SignalWire DataSphere documents using a DataMap for serverless execution.
+Unlike the standard `datasphere` skill, this version executes entirely server-side
+without a webhook round-trip, making it suitable for serverless deployments.
+
+**Tools:** `search_datasphere` (default, customizable via `tool_name`)
+
+**Requirements:** SignalWire DataSphere credentials
+
+**Multi-instance:** Yes
+
+<ParamField path="space_name" type="string" required={true} toc={true}>
+  SignalWire space name.
+</ParamField>
+
+<ParamField path="project_id" type="string" required={true} toc={true}>
+  SignalWire project ID.
+</ParamField>
+
+<ParamField path="token" type="string" required={true} toc={true}>
+  SignalWire API token.
+</ParamField>
+
+<ParamField path="document_id" type="string" required={true} toc={true}>
+  DataSphere document ID to search within.
+</ParamField>
+
+<ParamField path="count" type="int" default="1" toc={true}>
+  Number of search results to return.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("datasphere_serverless", {
+                "space_name": "your-space",
+                "project_id": "YOUR_PROJECT_ID",
+                "token": "YOUR_API_TOKEN",
+                "document_id": "YOUR_DOCUMENT_ID",
+                "count": 3
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## native_vector_search
+
+Search local `.swsearch` vector index files built with the
+[`sw-search`][sw-search] CLI tool.
+
+**Tools:** `search_knowledge` (default, customizable via `tool_name`)
+
+**Requirements:** Search extras installed (`go get github.com/signalwire/signalwire-go[search]"`)
+
+**Multi-instance:** Yes
+
+<ParamField path="index_file" type="string" required={true} toc={true}>
+  Path to the `.swsearch` index file.
+</ParamField>
+
+<ParamField path="tool_name" type="string" default="search_knowledge" toc={true}>
+  Custom function name. Required when using multiple instances.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("native_vector_search", {
+                "index_file": "/path/to/knowledge.swsearch",
+                "tool_name": "search_docs"
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## mcp_gateway
+
+Connect to MCP (Model Context Protocol) servers via the MCP Gateway service. Each MCP
+tool is dynamically registered as a SWAIG function, enabling your agent to use any
+MCP-compatible tool.
+
+**Tools:** Dynamically created from connected MCP services
+
+**Requirements:** Running MCP Gateway service
+
+**Multi-instance:** Yes
+
+<ParamField path="gateway_url" type="string" required={true} toc={true}>
+  MCP Gateway service URL.
+</ParamField>
+
+<ParamField path="auth_user" type="string" toc={true}>
+  Basic auth username for the gateway.
+</ParamField>
+
+<ParamField path="auth_password" type="string" toc={true}>
+  Basic auth password for the gateway.
+</ParamField>
+
+<ParamField path="auth_token" type="string" toc={true}>
+  Bearer token (alternative to basic auth).
+</ParamField>
+
+<ParamField path="services" type="[]dict" toc={true}>
+  Specific services and tools to enable. Each dict has `name` (str) and `tools` (str `"*"`
+  or list of tool names). If omitted, all available services are enabled.
+</ParamField>
+
+<ParamField path="session_timeout" type="int" default="300" toc={true}>
+  Session timeout in seconds.
+</ParamField>
+
+<ParamField path="tool_prefix" type="string" default="mcp_" toc={true}>
+  Prefix for generated function names (e.g., `mcp_todo_add_todo`).
+</ParamField>
+
+<ParamField path="retry_attempts" type="int" default="3" toc={true}>
+  Number of connection retry attempts.
+</ParamField>
+
+<ParamField path="request_timeout" type="int" default="30" toc={true}>
+  Individual request timeout in seconds.
+</ParamField>
+
+<ParamField path="verify_ssl" type="bool" default="True" toc={true}>
+  Whether to verify SSL certificates.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("mcp_gateway", {
+                "gateway_url": "http://localhost:8080",
+                "auth_user": "admin",
+                "auth_password": "secure-password",
+                "services": [
+                    {"name": "todo", "tools": "*"},
+                    {"name": "calculator", "tools": []string{"add", "multiply"}}
+                ]
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## google_maps
+
+Validate addresses and compute driving routes using Google Maps. Handles spoken number
+normalization (e.g., "seven one four" becomes "714") and location-biased search.
+
+**Tools:** `lookup_address`, `compute_route`
+
+**Requirements:** Google Maps API key with Geocoding and Routes APIs enabled
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  Google Maps API key.
+</ParamField>
+
+<ParamField path="lookup_tool_name" type="string" default="lookup_address" toc={true}>
+  Custom name for the address lookup function.
+</ParamField>
+
+<ParamField path="route_tool_name" type="string" default="compute_route" toc={true}>
+  Custom name for the route computation function.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            AddSkill("google_maps", {"api_key": "YOUR_GOOGLE_MAPS_API_KEY"})
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## info_gatherer
+
+Skill version of the [`InfoGathererAgent`][infogathereragent]
+prefab. Collects answers to a configurable list of questions. Designed to be embedded
+within larger agents as a reusable capability.
+
+**Tools:** `start_questions`, `submit_answer` (prefixed when using `prefix` parameter)
+
+**Requirements:** None
+
+**Multi-instance:** Yes (use `prefix` for unique tool names and state namespacing)
+
+<ParamField path="questions" type="[]dict" required={true} toc={true}>
+  List of question dictionaries with `key_name`, `question_text`, and optional `confirm`.
+</ParamField>
+
+<ParamField path="prefix" type="string" toc={true}>
+  Prefix for tool names and state namespace. With `prefix="intake"`, tools become
+  `intake_start_questions` and `intake_submit_answer`, and state is stored under
+  `skill:intake` in global_data.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+                    // Two independent question sets on one agent
+            add_skill("info_gatherer", {
+                "prefix": "contact",
+                "questions": [
+                    {"key_name": "name", "question_text": "What is your name?"},
+                    {"key_name": "email", "question_text": "What is your email?", "confirm": true}
+                ]
+            })
+
+            add_skill("info_gatherer", {
+                "prefix": "feedback",
+                "questions": [
+                    {"key_name": "rating", "question_text": "How would you rate our service?"},
+                    {"key_name": "comments", "question_text": "Any additional comments?"}
+                ]
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## claude_skills
+
+Load Claude Code-style SKILL.md files as agent tools. Each SKILL.md file in the
+configured directory becomes a SWAIG function, with YAML frontmatter parsed for
+metadata.
+
+**Tools:** Dynamically created from SKILL.md files
+
+**Requirements:** `PyYAML`
+
+**Multi-instance:** Yes
+
+<ParamField path="skills_path" type="string" required={true} toc={true}>
+  Path to the directory containing SKILL.md files.
+</ParamField>
+
+<ParamField path="tool_prefix" type="string" default="claude_" toc={true}>
+  Prefix for generated function names.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("claude_skills", {
+                "skills_path": "/path/to/skills/directory",
+                "tool_prefix": "skill_"
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## spider
+
+Fast web scraping and crawling. Fetches web pages and extracts content optimized
+for token efficiency.
+
+**Tools:** `scrape_url`, `crawl_site`, `extract_structured_data` (each prefixed with `tool_name` + `_` when set)
+
+**Requirements:** `lxml`
+
+**Multi-instance:** Yes
+
+<ParamField path="delay" type="float64" default="0.1" toc={true}>
+  Delay between requests in seconds.
+</ParamField>
+
+<ParamField path="concurrent_requests" type="int" default="5" toc={true}>
+  Number of concurrent requests allowed (1-20).
+</ParamField>
+
+<ParamField path="timeout" type="int" default="5" toc={true}>
+  Request timeout in seconds.
+</ParamField>
+
+<ParamField path="max_pages" type="int" default="1" toc={true}>
+  Maximum number of pages to scrape (1-100).
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("spider", {
+                "timeout": 10,
+                "concurrent_requests": 3,
+                "max_pages": 5
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## api_ninjas_trivia
+
+Get trivia questions from API Ninjas with configurable categories. Uses DataMap for
+serverless execution.
+
+**Tools:** Configurable via `tool_name`
+
+**Requirements:** API Ninjas API key
+
+**Multi-instance:** Yes
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  API Ninjas API key.
+</ParamField>
+
+<ParamField path="tool_name" type="string" toc={true}>
+  Custom name for the trivia function.
+</ParamField>
+
+<ParamField path="categories" type="[]string" toc={true}>
+  List of trivia categories to enable. Available categories: `artliterature`, `language`,
+  `sciencenature`, `general`, `fooddrink`, `peopleplaces`, `geography`, `historyholidays`,
+  `entertainment`, `toysgames`, `music`, `mathematics`, `religionmythology`, `sportsleisure`.
+</ParamField>
+
+```go
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // MyAgent embeds AgentBase
+        func __init__() *swaig.FunctionResult {
+            // Base config: name="assistant", route="/assistant"
+            SetPromptText("You are a helpful assistant.")
+            add_skill("api_ninjas_trivia", {
+                "tool_name": "get_science_trivia",
+                "api_key": "YOUR_API_NINJAS_KEY",
+                "categories": []string{"sciencenature", "mathematics", "general"}
+            })
+
+    agent := MyAgent()
+    agent.Serve()
+}
+```
+
+---
+
+## Custom Skills
+
+You can create custom skills and register them from external directories or via pip packages.
+
+### External Directory
+
+```go
+skill_registry.AddSkillDirectory("/opt/custom_skills")
+```
+
+Or set the `SIGNALWIRE_SKILL_PATHS` environment variable (colon-separated paths):
+
+```bash
+export SIGNALWIRE_SKILL_PATHS=/path/to/skills1:/path/to/skills2
+```
+
+### Entry Points
+
+Install skills as pip packages by defining entry points:
+
+```go
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/skills"
+
+func main() {
+    // In setup.py
+    setup(
+        name := "my-skills-package",
+        entry_points := {
+            "signalwire.skills": [
+                "weather = my_package.skills:WeatherSkill",
+                "stock = my_package.skills:StockSkill"
+            ]
+        }
+    )
+}
+```
+
+<Note>
+Entry-point skills cannot override built-in skills. If an entry-point skill uses the
+same `SKILL_NAME` as a built-in skill, it is skipped with an error log.
+</Note>
+
+### Listing Available Skills
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-go/pkg/skills"
+)
+
+func main() {
+    // List all available skills
+    skills := skill_registry.list_skills()
+    for _, skill := range skills {
+        fmt.Println(fmt.Sprintf("%v: %v", skill['name'], skill['description']))
+
+    // Get complete schema for all skills (includes parameters)
+    schema := skill_registry.get_all_skills_schema()
+}
+```
+
+For creating custom skills, see [`SkillBase`][skillbase].

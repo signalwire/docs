@@ -1,0 +1,69 @@
+---
+title: "CreatePaymentAction"
+slug: /reference/go/agents/function-result/create-payment-action
+description: Build a single action entry for a payment prompt.
+max-toc-depth: 3
+---
+
+[create-payment-prompt]: /docs/sdks/reference/go/agents/function-result/create-payment-prompt
+[ref-functionresult]: /docs/sdks/reference/go/agents/function-result
+
+**[FunctionResult][ref-functionresult].create_payment_action**(`action_type`, `phrase`) -> `dict[str, str]`
+
+Static helper that builds a single action entry for a payment prompt.
+
+## **Parameters**
+
+<ParamField path="action_type" type="string" required={true} toc={true}>
+  Action type.
+
+  - `"Say"` -- use text-to-speech
+  - `"Play"` -- play an audio file URL
+</ParamField>
+
+<ParamField path="phrase" type="string" required={true} toc={true}>
+  Text to speak (when `action_type` is `"Say"`) or URL to play (when `action_type`
+  is `"Play"`).
+</ParamField>
+
+## **Returns**
+
+`dict[str, str]` — action dictionary for use in
+[`CreatePaymentPrompt()`][create-payment-prompt].
+
+## **Example**
+
+```go {9-10}
+package main
+
+import (
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    agent := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/agent"))
+    agent.SetPromptText("You are a helpful assistant.")
+
+    agent.DefineTool(agent.ToolDefinition{
+        Name:        "collect_card",
+        Description: "Collect card payment",
+        Handler: func(args map[string]any, rawData map[string]any) *swaig.FunctionResult {
+        say_action := FunctionResult.create_payment_action("Say", "Please enter your card number.")
+        play_action := FunctionResult.create_payment_action("Play", "https://example.com/card-prompt.mp3")
+        prompt := FunctionResult.create_payment_prompt(
+            for_situation := "payment-card-number",
+            actions := [say_action]
+        )
+        return (
+            FunctionResult("I'll collect your payment now.")
+            .pay(
+                payment_connector_url := "https://api.example.com/pay",
+                charge_amount := "19.99",
+                prompts := [prompt]
+            )
+        )
+
+    agent.Serve()
+}
+```

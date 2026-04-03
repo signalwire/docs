@@ -1,0 +1,92 @@
+---
+title: "FunctionTool"
+slug: /reference/go/agents/livewire/function-tool
+description: "Decorator for wrapping plain Go functions as agent tools."
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/sdks/reference/go/agents/agent-base/define-tool
+[runcontext]: /docs/sdks/reference/go/agents/livewire/run-context
+
+### function_tool
+
+**function_tool**(`func=None`, `name=None`, `description=None`) -> `Callable`
+
+Wraps a plain Go function so it can be passed into
+[`Agent(tools=[...])`](/docs/sdks/reference/go/agents/livewire/agent). The decorator
+extracts parameter information from type hints and builds a JSON-Schema-style
+parameter dict. The function comment is used as the tool description unless
+`description` is provided explicitly.
+
+When the underlying SignalWire agent is built, each decorated function is registered
+as a SWAIG function via
+[`DefineTool()`][define-tool].
+
+<Note>
+Parameters annotated with [`RunContext`][runcontext]
+are automatically excluded from the generated JSON schema and injected at call time.
+</Note>
+
+#### Parameters
+
+<ParamField path="func" type="*func()" default="None" toc={true}>
+  The function to decorate. When `@function_tool` is used without parentheses, the
+  decorated function is passed here directly.
+</ParamField>
+
+<ParamField path="name" type="*string" default="None" toc={true}>
+  Override the tool name. Defaults to the function name.
+</ParamField>
+
+<ParamField path="description" type="*string" default="None" toc={true}>
+  Override the tool description. Defaults to the function comment.
+</ParamField>
+
+#### Returns
+
+`Callable` -- The original function with metadata attributes attached:
+- `_livewire_tool` (`bool`) -- Always `true`.
+- `_tool_name` (`str`) -- The resolved tool name.
+- `_tool_description` (`str`) -- The resolved description.
+- `_tool_parameters` (`dict`) -- JSON-Schema-style parameter definition.
+- `_tool_handler` (`Callable`) -- Reference to the original function.
+
+#### Type Mapping
+
+The decorator maps Python type annotations to JSON Schema types:
+
+| Python type | JSON Schema type |
+|-------------|-----------------|
+| `str` | `"string"` |
+| `int` | `"integer"` |
+| `float` | `"number"` |
+| `bool` | `"boolean"` |
+| *(other / missing)* | `"string"` |
+
+Parameters without a default value are marked as `required` in the schema.
+
+#### Examples
+
+<CodeBlocks>
+<CodeBlock title="Without arguments">
+```go {3}
+func GetWeather(city string) string {
+    """Get the current weather for a city."""
+    return fmt.Sprintf("Sunny in %v.", city)
+```
+</CodeBlock>
+<CodeBlock title="With explicit name and description">
+```go {3}
+func GetWeather(city string) string {
+    return fmt.Sprintf("Sunny in %v.", city)
+```
+</CodeBlock>
+<CodeBlock title="With RunContext">
+```go {3}
+func SavePreference(ctx RunContext  , key string  , value string) string {
+    """Save a user preference."""
+    ctx.userdata[key] = value
+    return fmt.Sprintf("Saved %v=%v.", key, value)
+```
+</CodeBlock>
+</CodeBlocks>

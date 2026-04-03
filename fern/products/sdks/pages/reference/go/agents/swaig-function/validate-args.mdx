@@ -1,0 +1,58 @@
+---
+title: "ValidateArgs"
+slug: /reference/go/agents/swaig-function/validate-args
+description: Validate arguments against the parameter JSON Schema.
+max-toc-depth: 3
+---
+
+Validate arguments against the parameter JSON Schema. Uses `jsonschema_rs`
+(Rust-based) if available, falls back to `jsonschema` (pure Python), or
+skips validation if neither is installed.
+
+## **Parameters**
+
+<ParamField path="args" type="map[string]interface{}" required={true} toc={true}>
+  Arguments to validate.
+</ParamField>
+
+## **Returns**
+
+`(bool, []string)` -- A `(bool, []string)` pair: `(isValid, errors)`. When no validation
+library is available, returns `(True, [])`.
+
+## **Example**
+
+```go {18,23}
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-go/pkg/agent"
+    "github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+    func := SWAIGFunction(
+        name := "lookup_account",
+        handler := lambda args, rawData: FunctionResult("ok"),
+        description := "Look up account status",
+        parameters := {
+            "type": "object",
+            "properties": {
+                "account_id": {"type": "string", "description": "Account ID"}
+            },
+            "required": []string{"account_id"}
+        }
+    )
+
+    // Valid arguments
+    is_valid, errors = func.ValidateArgs({"account_id": "12345"})
+    fmt.Println(fmt.Sprintf("Valid: %v, Errors: %v", is_valid, errors))
+    // Valid: true, Errors: []
+
+    // Missing required argument
+    is_valid, errors = func.ValidateArgs({})
+    fmt.Println(fmt.Sprintf("Valid: %v, Errors: %v", is_valid, errors))
+    // Valid: false, Errors: []string{"'account_id' is a required property"}
+}
+```
