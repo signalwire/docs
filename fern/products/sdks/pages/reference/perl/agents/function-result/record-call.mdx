@@ -1,0 +1,131 @@
+---
+title: "record_call"
+slug: /reference/perl/agents/function-result/record-call
+description: Start recording the call in the background.
+max-toc-depth: 3
+---
+
+[stop-record-call]: /docs/sdks/reference/perl/agents/function-result/stop-record-call
+[functionresult]: /docs/sdks/reference/perl/agents/function-result
+
+Start recording the call in the background. The conversation continues while
+recording is active.
+
+<Note>
+For continuous call recording, omit `initial_timeout` and `end_silence_timeout`.
+Those parameters are for voicemail-style recordings that automatically stop on
+silence. Use [`stop_record_call()`][stop-record-call] to end continuous recordings.
+</Note>
+
+## **Parameters**
+
+<ParamField path="control_id" type="$scalar / undef" default="None" toc={true}>
+  Identifier for this recording. Pass the same ID to `stop_record_call()` to
+  stop this specific recording.
+</ParamField>
+
+<ParamField path="stereo" type="$boolean" default="False" toc={true}>
+  Record in stereo (`True`) or mono (`False`).
+</ParamField>
+
+<ParamField path="format" type="$scalar" default="wav" toc={true}>
+  Recording file format.
+
+  - `"wav"` -- uncompressed WAV audio
+  - `"mp3"` -- compressed MP3 audio
+</ParamField>
+
+<ParamField path="direction" type="$scalar" default="both" toc={true}>
+  Audio direction to record.
+
+  - `"speak"` -- what the agent says
+  - `"listen"` -- what the caller says
+  - `"both"` -- both sides of the conversation
+</ParamField>
+
+<ParamField path="terminators" type="$scalar / undef" default="None" toc={true}>
+  DTMF digits that stop recording when pressed (e.g., `"#"`).
+</ParamField>
+
+<ParamField path="beep" type="$boolean" default="False" toc={true}>
+  Play a beep tone before recording starts.
+</ParamField>
+
+<ParamField path="input_sensitivity" type="$number" default="44.0" toc={true}>
+  Input sensitivity level for the recording.
+</ParamField>
+
+<ParamField path="initial_timeout" type="$scalar / undef" default="None" toc={true}>
+  Seconds to wait for speech to begin before auto-stopping. Used for
+  voicemail-style recordings.
+</ParamField>
+
+<ParamField path="end_silence_timeout" type="$scalar / undef" default="None" toc={true}>
+  Seconds of silence after speech to wait before auto-stopping. Used for
+  voicemail-style recordings.
+</ParamField>
+
+<ParamField path="max_length" type="$scalar / undef" default="None" toc={true}>
+  Maximum recording duration in seconds.
+</ParamField>
+
+<ParamField path="status_url" type="$scalar / undef" default="None" toc={true}>
+  URL to receive recording status webhook events.
+</ParamField>
+
+## **Returns**
+
+[`SignalWire::SWAIG::FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Continuous Recording
+
+```perl {11}
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "my-agent", route => "/agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+
+sub start_recording {
+    my ($args, $raw_data) = @_;
+    return (;
+        SignalWire::SWAIG::FunctionResult->new("Recording started.");
+        .record_call(
+            my $control_id = "main_recording",
+            my $stereo = 1,
+            my $format = "mp3";
+        )
+    )
+
+}
+
+$agent->serve();
+```
+
+### Voicemail Recording
+
+```perl {11}
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "my-agent", route => "/agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+
+sub record_voicemail {
+    my ($args, $raw_data) = @_;
+    return (;
+        SignalWire::SWAIG::FunctionResult->new("Please leave your message after the beep.");
+        .record_call(
+            my $control_id = "voicemail",
+            my $beep = 1,
+            my $max_length = 120.0,
+            my $end_silence_timeout = 3.0;
+        )
+    )
+
+}
+
+$agent->serve();
+```

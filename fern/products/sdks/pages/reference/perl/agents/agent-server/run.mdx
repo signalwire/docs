@@ -1,0 +1,95 @@
+---
+title: "run"
+slug: /reference/perl/agents/agent-server/run
+description: Start the multi-agent server with automatic environment detection.
+max-toc-depth: 3
+---
+
+Universal entry point that detects the execution environment and starts the server
+accordingly. In standard server mode it launches uvicorn; in serverless environments
+(AWS Lambda, CGI) it processes the incoming request and returns a response.
+
+<Note>
+This method blocks in server mode. For production deployments behind gunicorn or
+another ASGI server, use `server.app` directly instead of calling `run()`.
+</Note>
+
+## **Parameters**
+
+<ParamField path="event" type="\%hashref" toc={true}>
+  Serverless event object (AWS Lambda, Google Cloud Functions). Pass the Lambda handler's
+  `event` parameter here. Ignored in server mode.
+</ParamField>
+
+<ParamField path="context" type="object" toc={true}>
+  Serverless context object (AWS Lambda, Google Cloud Functions). Pass the Lambda handler's
+  `context` parameter here. Ignored in server mode.
+</ParamField>
+
+<ParamField path="host" type="$scalar" toc={true}>
+  Override the host set in the constructor. Only applies in server mode.
+</ParamField>
+
+<ParamField path="port" type="$integer" toc={true}>
+  Override the port set in the constructor. Only applies in server mode.
+</ParamField>
+
+## **Returns**
+
+`None` in server mode (blocks until shutdown). In Lambda mode, returns a response `dict`
+with `statusCode`, `headers`, and `body`. In CGI mode, returns the formatted response string.
+
+## **Examples**
+
+### Server Mode
+
+```perl {9}
+use SignalWire::Server::AgentServer;
+use SignalWire::Agent::AgentBase;
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "my-agent", route => "/agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+
+my $server = SignalWire::Server::AgentServer->new(host => "0.0.0.0", port => 3000);
+$server->register(agent);
+$server->run();
+```
+
+### AWS Lambda
+
+```perl {11}
+use SignalWire::Server::AgentServer;
+use SignalWire::Agent::AgentBase;
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "my-agent", route => "/agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+
+my $server = SignalWire::Server::AgentServer->new();
+$server->register(agent);
+
+sub lambda_handler {
+    my ($event, $context) = @_;
+    return $server->run(event, context);
+```
+
+### Gunicorn (external ASGI server)
+
+```perl
+use SignalWire::Server::AgentServer;
+use SignalWire::Agent::AgentBase;
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "my-agent", route => "/agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+
+my $server = SignalWire::Server::AgentServer->new();
+$server->register(agent);
+
+# Expose the Plack app for gunicorn:
+# gunicorn app:app -k uvicorn.workers.UvicornWorker
+my $app = $server->app;
+```
+
+<Tip>
+If `SWML_SSL_ENABLED` is set to `true` in the environment along with `SWML_SSL_CERT_PATH`
+and `SWML_SSL_KEY_PATH`, the server starts with HTTPS automatically.
+</Tip>

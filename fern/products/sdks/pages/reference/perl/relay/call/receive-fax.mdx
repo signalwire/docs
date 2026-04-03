@@ -1,0 +1,63 @@
+---
+title: "receive_fax"
+slug: /reference/perl/relay/call/receive-fax
+description: "Receive a fax on a call."
+max-toc-depth: 3
+---
+
+[faxaction]: /docs/sdks/reference/perl/relay/actions
+[calling-call-fax]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+
+Start receiving a fax on the call. Returns a
+[`FaxAction`][faxaction] that resolves when the
+fax is fully received or an error occurs.
+
+<Info>
+This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when the fax reception completes. The event contains
+  the received document URL and page count.
+</ParamField>
+
+## **Returns**
+
+[`FaxAction`][faxaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```perl {14}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    my $action = $call->receive_fax();
+    my $event = $action->wait();
+
+    my $fax_result = $event->params->{"fax"} // {}
+    my $document_url = fax_result.get("document", "");
+    my $pages = fax_result.get("pages", 0);
+    print "Received fax: ${pages} pages, document: ${document_url}";
+    $call->hangup();
+
+});
+$client->run();
+```

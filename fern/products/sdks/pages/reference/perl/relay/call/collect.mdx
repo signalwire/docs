@@ -1,0 +1,127 @@
+---
+title: "collect"
+slug: /reference/perl/relay/call/collect
+description: "Collect DTMF or speech input without playing media."
+max-toc-depth: 3
+---
+
+[play-and-collect]: /docs/sdks/reference/perl/relay/call/play-and-collect
+[calling-call-collect]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+[standalonecollectaction]: /docs/sdks/reference/perl/relay/actions
+
+Collect DTMF digit or speech input without playing a prompt. Use this when you
+want to listen for input silently or after a prompt has already been played
+separately. For collecting input with a prompt, use
+[`play_and_collect()`][play-and-collect].
+
+<Info>
+This method emits [`calling.call.collect`][calling-call-collect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="digits" type="$scalar / undef" toc={true}>
+  DTMF digit collection settings.
+</ParamField>
+
+<Indent>
+<ParamField path="digits.max" type="$integer" toc={true}>
+  Maximum number of digits to collect.
+</ParamField>
+
+<ParamField path="digits.digit_timeout" type="$number" toc={true}>
+  Seconds to wait between digits before completing.
+</ParamField>
+
+<ParamField path="digits.terminators" type="$scalar" toc={true}>
+  Characters that terminate digit collection (e.g., `"#"`).
+</ParamField>
+</Indent>
+
+<ParamField path="speech" type="$scalar / undef" toc={true}>
+  Speech recognition settings.
+</ParamField>
+
+<Indent>
+<ParamField path="speech.end_silence_timeout" type="$number" toc={true}>
+  Seconds of silence to wait before finalizing speech input.
+</ParamField>
+
+<ParamField path="speech.speech_timeout" type="$number" toc={true}>
+  Maximum seconds to listen for speech.
+</ParamField>
+
+<ParamField path="speech.language" type="$scalar" toc={true}>
+  Speech recognition language code (e.g., `"en-US"`).
+</ParamField>
+
+<ParamField path="speech.hints" type="\@arrayref" toc={true}>
+  Words or phrases to boost recognition accuracy.
+</ParamField>
+</Indent>
+
+<ParamField path="initial_timeout" type="$scalar / undef" toc={true}>
+  Seconds to wait for the first input before ending with `no_input`.
+</ParamField>
+
+<ParamField path="partial_results" type="$scalar / undef" toc={true}>
+  Enable partial speech recognition results.
+</ParamField>
+
+<ParamField path="continuous" type="$scalar / undef" toc={true}>
+  Keep collecting after each result instead of stopping.
+</ParamField>
+
+<ParamField path="send_start_of_input" type="$scalar / undef" toc={true}>
+  Send an event when input is first detected.
+</ParamField>
+
+<ParamField path="start_input_timers" type="$scalar / undef" toc={true}>
+  Start input timers immediately. If `false`, call
+  `action.start_input_timers()` to start them manually.
+</ParamField>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when collection completes.
+</ParamField>
+
+## **Returns**
+
+[`StandaloneCollectAction`][standalonecollectaction] -- An action
+handle with `stop()`, `start_input_timers()`, and `wait()` methods.
+
+## **Example**
+
+```perl {15}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    # Collect digits silently (e.g., extension entry)
+    my $action = $call->collect(
+        my $digits = {"max": 4, "digit_timeout": 3, "terminators": "#"},
+        my $initial_timeout = 10,
+    )
+    my $event = $action->wait();
+
+    my $result = $event->params->{"result"} // {}
+    my $extension = $result->{"digits"} // "";
+    print "Extension entered: ${extension}";
+
+});
+$client->run();
+```

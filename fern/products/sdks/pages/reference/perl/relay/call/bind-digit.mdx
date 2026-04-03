@@ -1,0 +1,82 @@
+---
+title: "bind_digit"
+slug: /reference/perl/relay/call/bind-digit
+description: Bind a DTMF digit sequence to trigger a RELAY method.
+max-toc-depth: 3
+---
+
+[clear-digit-bindings]: /docs/sdks/reference/perl/relay/call/clear-digit-bindings
+
+Bind a DTMF digit sequence to automatically trigger a RELAY method when the
+caller presses those digits. This enables in-call DTMF shortcuts without
+requiring an active collect operation.
+
+<Info>
+Use [`clear_digit_bindings()`][clear-digit-bindings] to remove bindings.
+</Info>
+
+## **Parameters**
+
+<ParamField path="digits" type="$scalar" required={true} toc={true}>
+  The DTMF digit sequence to bind (e.g., `"*1"`, `"##"`).
+</ParamField>
+
+<ParamField path="bind_method" type="$scalar" required={true} toc={true}>
+  The RELAY calling method to execute when the digit sequence is detected
+  (e.g., `"calling.transfer"`, `"calling.play"`).
+</ParamField>
+
+<ParamField path="bind_params" type="$scalar / undef" toc={true}>
+  Parameters to pass to the bound method when triggered.
+</ParamField>
+
+<ParamField path="realm" type="$scalar / undef" toc={true}>
+  A namespace for grouping digit bindings. Useful for selectively clearing
+  bindings by realm.
+</ParamField>
+
+<ParamField path="max_triggers" type="$scalar / undef" toc={true}>
+  Maximum number of times this binding can be triggered. After reaching
+  the limit, the binding is automatically removed.
+</ParamField>
+
+## **Returns**
+
+`dict` -- Server response confirming the binding.
+
+## **Example**
+
+```perl {15,24}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    # Bind *0 to transfer to an operator
+    my $result = $call->bind_digit(
+        my $digits = "*0",
+        my $bind_method = "calling.transfer",
+        my $bind_params = {"dest": "operator"},
+        my $realm = "shortcuts",
+    )
+    print "Digit binding created: ${result}";
+
+    # Bind *9 to play a help message
+    $call->bind_digit(
+        my $digits = "*9",
+        my $bind_method = "calling.play",
+        my $bind_params = {"play": [{"type": "tts", "text": "Press star-zero for an operator."}]},
+        my $realm = "shortcuts",
+    )
+
+});
+$client->run();
+```

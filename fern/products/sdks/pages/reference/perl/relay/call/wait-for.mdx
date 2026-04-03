@@ -1,0 +1,61 @@
+---
+title: "wait_for"
+slug: /reference/perl/relay/call/wait-for
+description: Wait for a specific event on a call.
+max-toc-depth: 3
+---
+
+[relayevent]: /docs/sdks/reference/perl/relay/events
+
+Wait for a specific event type on this call, optionally filtered by a predicate
+function. This is a one-shot listener -- it resolves on the first matching event
+and then removes itself.
+
+## **Parameters**
+
+<ParamField path="event_type" type="$scalar" required={true} toc={true}>
+  The event type string to wait for.
+</ParamField>
+
+<ParamField path="predicate" type="\&coderef / undef" toc={true}>
+  Optional filter function. If provided, the wait only resolves when the
+  predicate returns `True` for a received event.
+</ParamField>
+
+<ParamField path="timeout" type="$scalar / undef" toc={true}>
+  Maximum seconds to wait. Raises `asyncio.TimeoutError` if exceeded. `None`
+  waits indefinitely.
+</ParamField>
+
+## **Returns**
+
+[`RelayEvent`][relayevent] -- The first event matching the type and optional predicate.
+
+## **Example**
+
+```perl {16}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    # Wait for a specific play event
+    my $action = $call->play([{"type": "tts", "text": "Hello!"}]);
+    my $event = $call->wait_for(
+        "calling.$call->play",
+        my $predicate = lambda e: e.params.get("state") == "finished",
+        my $timeout = 30,
+    )
+    print "Play finished: ${$event->params}";
+
+});
+$client->run();
+```

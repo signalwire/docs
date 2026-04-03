@@ -1,0 +1,45 @@
+---
+title: "to_swaig_function"
+slug: /reference/perl/agents/data-map/to-swaig-function
+description: Convert the DataMap to a SWAIG function definition dictionary.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/perl/agents/data-map
+
+Convert this [DataMap][ref-datamap] to a SWAIG function definition dictionary. Register the
+result with your agent using `agent.register_swaig_function()`.
+
+## **Returns**
+
+`\%hash` -- A dictionary containing the function name, description,
+parameter schema, and `data_map` configuration (instead of a webhook URL).
+
+## **Example**
+
+```perl {19}
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
+
+package WeatherAgent;
+use Moo;
+extends 'SignalWire::Agent::AgentBase';
+
+    sub __init__ {
+        super().__init__(name => "weather-agent");
+        self.set_prompt_text("You are a helpful assistant.");
+
+        my $weather = (
+            SignalWire::DataMap->new("get_weather");
+            .description("Get current weather for a city");
+            .parameter("city", "string", "City name", required => 1);
+            .webhook("GET", "https://api.weatherapi.com/v1/current.json?key => KEY&q=${enc:args.city}");
+            .output(SignalWire::SWAIG::FunctionResult->new("Weather: ${$response->current->condition->text}, ${$response->current->temp_f}F"));
+            .fallback_output(SignalWire::SWAIG::FunctionResult->new("Weather data unavailable for ${args.city}"));
+        )
+
+        # Convert DataMap to a SWAIG function definition and register it
+        self.register_swaig_function(weather.to_swaig_function());
+
+    WeatherAgent().run();
+```

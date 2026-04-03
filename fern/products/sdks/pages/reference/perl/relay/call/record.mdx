@@ -1,0 +1,116 @@
+---
+title: "record"
+slug: /reference/perl/relay/call/record
+description: "Record audio from a call."
+max-toc-depth: 3
+---
+
+[recordaction]: /docs/sdks/reference/perl/relay/actions
+[calling-call-record]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+[record]: /docs/swml/reference/record
+[swml-record-reference]: /docs/swml/reference/record
+
+Start recording audio from the call. Returns a
+[`RecordAction`][recordaction] that you can use to
+pause, resume, stop, or wait for the recording to complete.
+
+<Info>
+This method emits [`calling.call.record`][calling-call-record] events. See [Call Events][call-events] for payload details.
+</Info>
+
+<Info>
+This method corresponds to the SWML [`record`][record] verb. See the
+[SWML record reference][swml-record-reference] for the full specification.
+</Info>
+
+## **Parameters**
+
+<ParamField path="audio" type="$scalar / undef" toc={true}>
+  Audio recording configuration object.
+</ParamField>
+
+<Indent>
+<ParamField path="audio.direction" type="$scalar" toc={true}>
+  Which audio to record.
+
+  - `"listen"` -- record audio heard by the caller
+  - `"speak"` -- record audio spoken by the caller
+  - `"both"` -- record audio in both directions
+</ParamField>
+
+<ParamField path="audio.format" type="$scalar" toc={true}>
+  Recording file format.
+
+  - `"mp3"` -- compressed MP3 format
+  - `"wav"` -- uncompressed WAV format
+</ParamField>
+
+<ParamField path="audio.stereo" type="$boolean" toc={true}>
+  Record in stereo (each side on a separate channel).
+</ParamField>
+
+<ParamField path="audio.initial_timeout" type="$number" toc={true}>
+  Seconds to wait for audio before ending with `no_input`.
+</ParamField>
+
+<ParamField path="audio.end_silence_timeout" type="$number" toc={true}>
+  Seconds of silence before stopping automatically.
+</ParamField>
+
+<ParamField path="audio.terminators" type="$scalar" toc={true}>
+  DTMF digits that stop recording (e.g., `"#"`).
+</ParamField>
+
+<ParamField path="audio.beep" type="$boolean" toc={true}>
+  Play a beep before recording starts.
+</ParamField>
+
+<ParamField path="audio.input_sensitivity" type="$number" toc={true}>
+  Sensitivity threshold for detecting audio input.
+</ParamField>
+</Indent>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID for this operation. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when recording reaches a terminal state (`finished` or
+  `no_input`). The event contains the recording `url`, `duration`, and `size`.
+</ParamField>
+
+## **Returns**
+
+[`RecordAction`][recordaction] -- An action handle with
+`stop()`, `pause()`, `resume()`, and `wait()` methods.
+
+## **Example**
+
+```perl {15}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+    $call->play([{"type": "tts", "text": "Leave a message after the beep."}]);
+
+    my $action = $call->record(
+        my $audio = {"beep": 1, "end_silence_timeout": 3, "terminators": "#"},
+    )
+    my $event = $action->wait();
+
+    my $url = $event->params->{"record"} // {}->{"url"} // "";
+    print "Recording saved: ${url}";
+    $call->hangup();
+
+});
+$client->run();
+```

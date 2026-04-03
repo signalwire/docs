@@ -1,0 +1,65 @@
+---
+title: "queue_enter"
+slug: /reference/perl/relay/call/queue-enter
+description: Place a call into a named queue.
+max-toc-depth: 3
+---
+
+[queue-leave]: /docs/sdks/reference/perl/relay/call/queue-leave
+[calling-call-queue]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+
+Place the call into a named queue. The caller waits in the queue until they are
+dequeued by another operation (such as an agent picking up) or removed via
+[`queue_leave()`][queue-leave].
+
+<Info>
+This method emits [`calling.call.queue`][calling-call-queue] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="queue_name" type="$scalar" required={true} toc={true}>
+  Name of the queue to enter.
+</ParamField>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="status_url" type="$scalar / undef" toc={true}>
+  URL to receive queue status webhooks (position updates, dequeue events).
+</ParamField>
+
+## **Returns**
+
+`dict` -- Server response confirming the call entered the queue.
+
+## **Example**
+
+```perl {16}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+    $call->play([{"type": "tts", "text": "You are being placed in the support queue."}]);
+
+    # Enter the queue
+    $call->queue_enter(
+        my $queue_name = "support",
+        my $status_url = "https://example.com/queue-status",
+    )
+
+    # The call stays in the queue until an agent dequeues it
+
+});
+$client->run();
+```

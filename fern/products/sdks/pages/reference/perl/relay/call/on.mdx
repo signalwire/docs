@@ -1,0 +1,63 @@
+---
+title: "on"
+slug: /reference/perl/relay/call/on
+description: Register an event listener on a call.
+max-toc-depth: 3
+---
+
+[events-section]: /docs/sdks/reference/perl/relay/call#events
+[relayevent]: /docs/sdks/reference/perl/relay/events
+
+Register a listener for events on this call. The handler is called each time
+an event of the specified type is received. Handlers can be regular functions
+or async coroutines.
+
+## **Parameters**
+
+<ParamField path="event_type" type="$scalar" required={true} toc={true}>
+  The event type string to listen for (e.g., `"calling.call.state"`,
+  `"calling.call.play"`). See the [Events section][events-section]
+  on the Call page for class-level events, or individual method pages for
+  method-specific events.
+</ParamField>
+
+<ParamField path="handler" type="\&coderef" required={true} toc={true}>
+  Function or coroutine to invoke when the event fires. Receives a
+  [`RelayEvent`][relayevent] instance.
+</ParamField>
+
+## **Returns**
+
+`None`
+
+## **Example**
+
+```perl {10,15,21}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    # Register a listener for play events
+    $call->on("calling.$call->play", lambda event: print "Play state: ${$event->params->get('state')}");
+
+    # Register a listener for state changes
+    def on_state_change(event):;
+        print "Call state changed: ${$event->params->get('call_state')}";
+
+    $call->on("calling.$call->state", on_state_change);
+
+    my $action = $call->play([{"type": "tts", "text": "Hello!"}]);
+    $action->wait();
+
+});
+$client->run();
+```

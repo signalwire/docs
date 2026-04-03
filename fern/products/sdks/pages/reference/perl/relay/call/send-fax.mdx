@@ -1,0 +1,76 @@
+---
+title: "send_fax"
+slug: /reference/perl/relay/call/send-fax
+description: "Send a fax document on a call."
+max-toc-depth: 3
+---
+
+[faxaction]: /docs/sdks/reference/perl/relay/actions
+[calling-call-fax]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+
+Send a fax document on the call. The document must be accessible via URL.
+Returns a [`FaxAction`][faxaction] that you can
+use to stop the fax or wait for it to complete.
+
+<Info>
+This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="document" type="$scalar" required={true} toc={true}>
+  URL of the document to fax (PDF or TIFF format).
+</ParamField>
+
+<ParamField path="identity" type="$scalar / undef" toc={true}>
+  Caller identity string (TSI) transmitted with the fax.
+</ParamField>
+
+<ParamField path="header_info" type="$scalar / undef" toc={true}>
+  Header text printed at the top of each fax page.
+</ParamField>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when the fax operation completes.
+</ParamField>
+
+## **Returns**
+
+[`FaxAction`][faxaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```perl {14}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    my $action = $call->send_fax(
+        my $document = "https://example.com/invoice.pdf",
+        my $identity = "+15559876543",
+        my $header_info = "Invoice #12345",
+    )
+    my $event = $action->wait();
+
+    my $fax_result = $event->params->{"fax"} // {}
+    print "Fax sent: ${fax_result.get('pages', 0)} pages";
+    $call->hangup();
+
+});
+$client->run();
+```
