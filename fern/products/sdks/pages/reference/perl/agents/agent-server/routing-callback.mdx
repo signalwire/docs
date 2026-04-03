@@ -1,0 +1,64 @@
+---
+title: "register_global_routing_callback"
+slug: /reference/perl/agents/agent-server/routing-callback
+description: Register a routing callback across all agents for custom request routing.
+max-toc-depth: 3
+---
+
+[setup-sip-routing]: /docs/sdks/reference/perl/agents/agent-server/sip-routing
+
+Register a custom routing callback on every registered agent at the specified path.
+When a request arrives at that path on any agent, the callback is invoked to determine
+whether to redirect the request to a different agent route.
+
+This is the low-level mechanism that powers [`setup_sip_routing()`][setup-sip-routing].
+Use it directly when you need custom routing logic beyond SIP username matching --
+for example, routing based on HTTP headers, query parameters, or request body content.
+
+## **Parameters**
+
+<ParamField path="callback_fn" type="\&coderef" required={true} toc={true}>
+  A function that receives a Plack `Request` object and the parsed request body `dict`.
+  Return a route string (e.g., `"/sales"`) to redirect, or `None` to let the current
+  agent handle the request.
+</ParamField>
+
+<ParamField path="path" type="$scalar" required={true} toc={true}>
+  The URL path where the callback is triggered (e.g., `"/route"`). Leading slashes are
+  added and trailing slashes are stripped automatically.
+</ParamField>
+
+## **Returns**
+
+`None`
+
+## **Example**
+
+```perl {24}
+use SignalWire::Server::AgentServer;
+use SignalWire::Agent::AgentBase;
+
+sub route_by_language {
+    my ($request, $body) = @_;
+    """Route to different agents based on Accept-Language header."""
+    my $lang = request.headers.get("Accept-Language", "en");
+    if (lang.startswith("es")) {
+        return "/spanish-agent";
+    } elsif (lang.startswith("fr")) {
+        return "/french-agent";
+    return undef  # Default agent handles it;
+
+my $english = SignalWire::Agent::AgentBase->new(name => "english", route => "/english-agent");
+english.set_prompt_text("You are a helpful assistant. Respond in English.");
+my $spanish = SignalWire::Agent::AgentBase->new(name => "spanish", route => "/spanish-agent");
+spanish.set_prompt_text("You are a helpful assistant. Respond in Spanish.");
+my $french = SignalWire::Agent::AgentBase->new(name => "french", route => "/french-agent");
+french.set_prompt_text("You are a helpful assistant. Respond in French.");
+
+my $server = SignalWire::Server::AgentServer->new(port => 3000);
+$server->register(english);
+$server->register(spanish);
+$server->register(french);
+$server->register_global_routing_callback(route_by_language, "/route");
+$server->run();
+```

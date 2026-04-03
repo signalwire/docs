@@ -1,0 +1,96 @@
+---
+title: "detect"
+slug: /reference/perl/relay/call/detect
+description: "Detect answering machines, fax tones, or digits on a call."
+max-toc-depth: 3
+---
+
+[detectaction]: /docs/sdks/reference/perl/relay/actions
+[calling-call-detect]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+
+Start audio detection on the call. Detects answering machines, fax tones, or
+DTMF digits. Returns a [`DetectAction`][detectaction]
+that resolves on the first detection result or when the operation finishes.
+
+<Note>
+The `DetectAction` resolves on the **first detection result**, not when the
+detect operation finishes. This means `await action.wait()` returns as soon as
+a result is available.
+</Note>
+
+<Info>
+This method emits [`calling.call.detect`][calling-call-detect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="detect" type="\%hashref" required={true} toc={true}>
+  Detection configuration object.
+</ParamField>
+
+<Indent>
+<ParamField path="detect.type" type="$scalar" required={true} toc={true}>
+  Detection type. Valid values:
+  - `"machine"` -- answering machine detection (AMD)
+  - `"fax"` -- fax tone detection (CNG/CED)
+  - `"digit"` -- DTMF digit detection
+</ParamField>
+
+<ParamField path="detect.params" type="\%hashref" toc={true}>
+  Type-specific detection parameters.
+</ParamField>
+</Indent>
+
+<ParamField path="timeout" type="$scalar / undef" toc={true}>
+  Maximum seconds to run the detector before stopping.
+</ParamField>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when detection completes.
+</ParamField>
+
+## **Returns**
+
+[`DetectAction`][detectaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```perl {15}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    # Answering machine detection
+    my $action = $call->detect(
+        my $detect = {"type": "machine", "params": {}},
+        my $timeout = 30,
+    )
+    my $event = $action->wait();
+
+    my $detect_result = $event->params->{"detect"} // {}
+    if (detect_result.get("type") == "machine") {
+        print "Answering machine detected";
+        $call->hangup();
+    } else {
+        print "Human answered";
+        my $action = $call->play([{"type": "tts", "text": "Hello! This is a call from..."}]);
+        $action->wait();
+
+});
+$client->run();
+```

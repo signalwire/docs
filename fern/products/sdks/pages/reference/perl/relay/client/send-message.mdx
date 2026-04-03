@@ -1,0 +1,145 @@
+---
+title: "send_message"
+slug: /reference/perl/relay/client/send-message
+description: "Send an outbound SMS or MMS message."
+max-toc-depth: 3
+---
+
+[message]: /docs/sdks/reference/perl/relay/message
+
+Send an outbound SMS or MMS message. Returns a
+[`SignalWire::Relay::Message`][message] object that tracks delivery
+state changes. Use `await message.wait()` to block until the message reaches a
+terminal state (delivered, undelivered, or failed).
+
+All parameters are keyword-only.
+
+<Note>
+At least one of `body` or `media` must be provided. Providing both sends an MMS
+with text and attached media.
+</Note>
+
+## **Parameters**
+
+<ParamField path="to_number" type="$scalar" required={true} toc={true}>
+  Destination phone number in E.164 format (e.g., `"+15559876543"`).
+</ParamField>
+
+<ParamField path="from_number" type="$scalar" required={true} toc={true}>
+  Sender phone number in E.164 format. Must be a number owned by your SignalWire project.
+</ParamField>
+
+<ParamField path="context" type="$scalar / undef" toc={true}>
+  Context for receiving state-change events for this message. Defaults to the
+  server-assigned relay protocol string, or `"default"` if no protocol has been
+  assigned yet.
+</ParamField>
+
+<ParamField path="body" type="$scalar / undef" toc={true}>
+  Text body of the message. Required for SMS. Optional for MMS if `media` is provided.
+</ParamField>
+
+<ParamField path="media" type="\@arrayref / undef" toc={true}>
+  List of publicly accessible media URLs for MMS attachments (e.g., images, audio files).
+</ParamField>
+
+<ParamField path="tags" type="\@arrayref / undef" toc={true}>
+  Optional tags to attach to the message for filtering or tracking.
+</ParamField>
+
+<ParamField path="region" type="$scalar / undef" toc={true}>
+  Origination region for the message.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback function invoked when the message reaches a terminal state
+  (`delivered`, `undelivered`, or `failed`). Receives the terminal
+  event as its argument.
+</ParamField>
+
+## **Returns**
+
+[`SignalWire::Relay::Message`][message] -- A message object in the `"queued"` state. Use `await message.wait()` to block until delivery confirmation.
+
+## **Examples**
+
+### Send SMS
+
+```perl {13}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+sub send_sms {
+    with client:
+        my $message = $client->send_message(
+            to_number => "+15559876543",
+            from_number => "+15551234567",
+            body => "Hello from SignalWire RELAY!",
+        )
+        print "Message ID: ${$message->message_id}";
+
+        # Wait for delivery confirmation
+        my $result = $message->wait(timeout => 30.0);
+        print "Final state: ${$message->state}";
+
+asyncio.run(send_sms());
+```
+
+### Send MMS with media
+
+```perl {13}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+sub send_mms {
+    with client:
+        my $message = $client->send_message(
+            to_number => "+15559876543",
+            from_number => "+15551234567",
+            body => "Check out this image!",
+            media => ["https://example.com/photo.jpg"],
+        )
+
+asyncio.run(send_mms());
+```
+
+### With completion callback
+
+```perl {16}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+sub on_delivered {
+    my ($event) = @_;
+    print "Message delivered: ${$event->params}";
+
+sub send_with_callback {
+    with client:
+        my $message = $client->send_message(
+            to_number => "+15559876543",
+            from_number => "+15551234567",
+            body => "Important notification",
+            on_completed => on_delivered,
+        )
+        # No need to await -- callback fires automatically
+
+asyncio.run(send_with_callback());
+```

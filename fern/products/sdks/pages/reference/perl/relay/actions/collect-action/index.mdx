@@ -1,0 +1,74 @@
+---
+title: "CollectAction"
+slug: /reference/perl/relay/actions/collect-action
+description: Action handle for a play-and-collect operation.
+max-toc-depth: 3
+---
+
+[call-play-and-collect]: /docs/sdks/reference/perl/relay/call/play-and-collect
+[base-action-interface]: /docs/sdks/reference/perl/relay/actions
+[stop]: /docs/sdks/reference/perl/relay/actions/collect-action/stop
+[volume]: /docs/sdks/reference/perl/relay/actions/collect-action/volume
+[startinputtimers]: /docs/sdks/reference/perl/relay/actions/collect-action/start-input-timers
+
+Returned from [`call.play_and_collect()`][call-play-and-collect].
+Tracks a combined play-and-collect operation where a prompt is played and user
+input (digits or speech) is collected. Terminal states: `finished`, `error`,
+`no_input`, `no_match`.
+
+<Note>
+`CollectAction` only resolves on collect events. Play events sharing the same
+`control_id` are ignored, so `await action.wait()` returns only when input
+collection completes.
+</Note>
+
+Inherits all properties and methods from the
+[base Action interface][base-action-interface] (`control_id`,
+`is_done`, `completed`, `result`, `wait()`).
+
+## **Properties**
+
+No additional properties beyond the [base Action interface][base-action-interface].
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="stop" href="/docs/sdks/reference/perl/relay/actions/collect-action/stop">
+    Stop the play-and-collect operation.
+  </Card>
+  <Card title="volume" href="/docs/sdks/reference/perl/relay/actions/collect-action/volume">
+    Adjust the prompt playback volume during a play-and-collect operation.
+  </Card>
+  <Card title="start_input_timers" href="/docs/sdks/reference/perl/relay/actions/collect-action/start-input-timers">
+    Manually start the initial_timeout timer on an active collect.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+```perl
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+    my $action = $call->play_and_collect(
+        my $media = [{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
+        my $collect = {"digits": {"max": 1, "digit_timeout": 5.0}},
+    )
+
+    my $event = $action->wait();
+    my $result = $event->params->{"result"} // {}
+    my $digit = $result->{"digits"} // "";
+    print "User pressed: ${digit}";
+
+});
+$client->run();
+```

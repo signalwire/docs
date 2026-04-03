@@ -1,0 +1,133 @@
+---
+title: "play_and_collect"
+slug: /reference/perl/relay/call/play-and-collect
+description: "Play audio and collect DTMF or speech input."
+max-toc-depth: 3
+---
+
+[collectaction]: /docs/sdks/reference/perl/relay/actions
+[calling-call-collect]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+[play]: /docs/sdks/reference/perl/relay/call/play
+
+Play audio content as a prompt and simultaneously collect user input via DTMF
+digits or speech recognition. Returns a
+[`CollectAction`][collectaction] that resolves when
+input is collected, the operation times out, or an error occurs.
+
+<Note>
+The `CollectAction` resolves only on collect events, not on play events. This
+means `await action.wait()` blocks until the user provides input (or the
+operation terminates), not when the audio finishes playing.
+</Note>
+
+<Info>
+This method emits [`calling.call.collect`][calling-call-collect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="media" type="\@arrayref" required={true} toc={true}>
+  List of media items to play as the prompt. Same format as
+  [`play()`][play] media items.
+</ParamField>
+
+<ParamField path="collect" type="\%hashref" required={true} toc={true}>
+  Input collection configuration.
+</ParamField>
+
+<Indent>
+<ParamField path="collect.digits" type="\%hashref" toc={true}>
+  DTMF digit collection settings.
+</ParamField>
+
+<Indent>
+<ParamField path="collect.digits.max" type="$integer" toc={true}>
+  Maximum number of digits to collect.
+</ParamField>
+
+<ParamField path="collect.digits.digit_timeout" type="$number" toc={true}>
+  Seconds to wait between digits before completing.
+</ParamField>
+
+<ParamField path="collect.digits.terminators" type="$scalar" toc={true}>
+  Characters that terminate digit collection (e.g., `"#"`).
+</ParamField>
+</Indent>
+
+<ParamField path="collect.speech" type="\%hashref" toc={true}>
+  Speech recognition settings.
+</ParamField>
+
+<Indent>
+<ParamField path="collect.speech.end_silence_timeout" type="$number" toc={true}>
+  Seconds of silence to wait before finalizing speech input.
+</ParamField>
+
+<ParamField path="collect.speech.speech_timeout" type="$number" toc={true}>
+  Maximum seconds to listen for speech.
+</ParamField>
+
+<ParamField path="collect.speech.language" type="$scalar" toc={true}>
+  Speech recognition language code (e.g., `"en-US"`).
+</ParamField>
+
+<ParamField path="collect.speech.hints" type="\@arrayref" toc={true}>
+  Words or phrases to boost recognition accuracy.
+</ParamField>
+</Indent>
+</Indent>
+
+<ParamField path="volume" type="$scalar / undef" toc={true}>
+  Volume adjustment in dB for the prompt audio.
+</ParamField>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when collection completes.
+</ParamField>
+
+## **Returns**
+
+[`CollectAction`][collectaction] -- An action handle with
+`stop()`, `volume()`, `start_input_timers()`, and `wait()` methods.
+
+## **Example**
+
+```perl {14}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    my $action = $call->play_and_collect(
+        my $media = [{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
+        my $collect = {
+            "digits": {"max": 1, "digit_timeout": 5, "terminators": "#"},
+        },
+    )
+    my $event = $action->wait();
+
+    my $result = $event->params->{"result"} // {}
+    my $digits = $result->{"digits"} // "";
+    if (digits == "1") {
+        $call->transfer("sales");
+    } elsif (digits == "2") {
+        $call->transfer("support");
+    } else {
+        $call->hangup();
+
+});
+$client->run();
+```

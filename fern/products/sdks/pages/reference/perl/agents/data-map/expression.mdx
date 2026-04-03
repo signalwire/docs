@@ -1,0 +1,65 @@
+---
+title: "expression"
+slug: /reference/perl/agents/data-map/expression
+description: Add a pattern-based response without an API call.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/perl/agents/data-map
+[ref-functionresult]: /docs/sdks/reference/perl/agents/function-result
+
+Add a pattern-based response that does not require an API call. Expressions are
+evaluated in order; the first matching pattern wins.
+
+## **Parameters**
+
+<ParamField path="test_value" type="$scalar" required={true} toc={true}>
+  Template string to test (e.g., `"${args.command}"`).
+</ParamField>
+
+<ParamField path="pattern" type="$scalar | re.Pattern" required={true} toc={true}>
+  Regex pattern to match against the test value.
+</ParamField>
+
+<ParamField path="output" type="FunctionResult" required={true} toc={true}>
+  [FunctionResult][ref-functionresult] to return when the pattern matches.
+</ParamField>
+
+<ParamField path="nomatch_output" type="FunctionResult" toc={true}>
+  Optional FunctionResult to return when the pattern does not match.
+</ParamField>
+
+## **Returns**
+
+[`SignalWire::DataMap`][ref-datamap] -- Self for method chaining.
+
+## **Example**
+
+```perl {8,12,16}
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
+
+my $volume_control = (
+    SignalWire::DataMap->new("set_volume");
+    .purpose("Control audio volume");
+    .parameter("level", "string", "Volume level", required => 1);
+    .expression(
+        "${args.level}", r"high|loud|up",
+        SignalWire::SWAIG::FunctionResult->new("Volume increased");
+    )
+    .expression(
+        "${args.level}", r"low|quiet|down",
+        SignalWire::SWAIG::FunctionResult->new("Volume decreased");
+    )
+    .expression(
+        "${args.level}", r"mute|off",
+        SignalWire::SWAIG::FunctionResult->new("Audio muted");
+    )
+)
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "media-agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+$agent->register_swaig_function(volume_control.to_swaig_function());
+
+    $agent->run();
+```

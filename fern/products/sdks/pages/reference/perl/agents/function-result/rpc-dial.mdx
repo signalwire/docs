@@ -1,0 +1,65 @@
+---
+title: "rpc_dial"
+slug: /reference/perl/agents/function-result/rpc-dial
+description: Dial out to a phone number with a destination SWML URL via RPC.
+max-toc-depth: 3
+---
+
+[hold]: /docs/sdks/reference/perl/agents/function-result/hold
+[functionresult]: /docs/sdks/reference/perl/agents/function-result
+
+Dial out to a phone number with a destination SWML URL that handles the
+outbound call leg. This is commonly used in call screening scenarios: place the
+caller on hold with [`hold()`][hold],
+then dial out to a human whose call is handled by a separate SWML agent.
+
+## **Parameters**
+
+<ParamField path="to_number" type="$scalar" required={true} toc={true}>
+  Phone number to dial in E.164 format.
+</ParamField>
+
+<ParamField path="from_number" type="$scalar" required={true} toc={true}>
+  Caller ID to display in E.164 format.
+</ParamField>
+
+<ParamField path="dest_swml" type="$scalar" required={true} toc={true}>
+  URL of the SWML document that handles the outbound call leg. The SWML at this
+  URL typically runs a screening agent that can accept, reject, or take a message.
+</ParamField>
+
+<ParamField path="device_type" type="$scalar" default="phone" toc={true}>
+  Device type for the outbound leg.
+</ParamField>
+
+## **Returns**
+
+[`SignalWire::SWAIG::FunctionResult`][functionresult] — self, for chaining.
+
+## **Example**
+
+```perl {14}
+use SignalWire::Agent::AgentBase;
+use SignalWire::SWAIG::FunctionResult;
+
+my $agent = SignalWire::Agent::AgentBase->new(name => "my-agent", route => "/agent");
+$agent->set_prompt_text("You are a helpful assistant.");
+
+sub screen_call {
+    my ($args, $raw_data) = @_;
+    my $human_number = args.get("phone_number");
+    my $caller_name = args.get("caller_name", "Unknown");
+    return (;
+        SignalWire::SWAIG::FunctionResult->new("Please hold while I connect you.");
+        .hold(timeout => 120);
+        .rpc_dial(
+            my $to_number = human_number,
+            my $from_number = "+15559876543",
+            my $dest_swml = "https://example.com/screening-agent?caller => ${caller_name}";
+        )
+    )
+
+}
+
+$agent->serve();
+```

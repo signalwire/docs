@@ -1,0 +1,99 @@
+---
+title: "tap"
+slug: /reference/perl/relay/call/tap
+description: "Intercept call media and stream it to an external destination."
+max-toc-depth: 3
+---
+
+[tapaction]: /docs/sdks/reference/perl/relay/actions
+[calling-call-tap]: /docs/sdks/reference/perl/relay/call#events
+[call-events]: /docs/sdks/reference/perl/relay/call#events
+
+Intercept call media (audio) and stream it to an external destination such as a
+WebSocket or RTP endpoint. Returns a
+[`TapAction`][tapaction] that you can use to stop
+the tap or wait for it to finish.
+
+<Info>
+This method emits [`calling.call.tap`][calling-call-tap] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="tap" type="\%hashref" required={true} toc={true}>
+  Tap configuration specifying which audio to intercept.
+</ParamField>
+
+<Indent>
+<ParamField path="tap.type" type="$scalar" required={true} toc={true}>
+  Tap type. Valid values: `"audio"`.
+</ParamField>
+
+<ParamField path="tap.params" type="\%hashref" toc={true}>
+  Tap parameters. Supports a `direction` key with the following values:
+
+  - `"listen"` -- capture audio heard by the caller
+  - `"speak"` -- capture audio spoken by the caller
+  - `"both"` -- capture audio in both directions
+</ParamField>
+</Indent>
+
+<ParamField path="device" type="\%hashref" required={true} toc={true}>
+  Destination device for the tapped media.
+</ParamField>
+
+<Indent>
+<ParamField path="device.type" type="$scalar" required={true} toc={true}>
+  Device type.
+
+  - `"ws"` -- WebSocket endpoint
+  - `"rtp"` -- RTP endpoint
+</ParamField>
+
+<ParamField path="device.params" type="\%hashref" required={true} toc={true}>
+  Device-specific parameters (e.g., `uri` for WebSocket, `addr`/`port` for RTP).
+</ParamField>
+</Indent>
+
+<ParamField path="control_id" type="$scalar / undef" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="\&coderef / undef" toc={true}>
+  Callback invoked when the tap operation ends.
+</ParamField>
+
+## **Returns**
+
+[`TapAction`][tapaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```perl {16}
+use SignalWire::Relay::Client;
+
+my $client = SignalWire::Relay::Client->new(
+    project => "your-project-id",
+    token => "your-api-token",
+    host => "your-space.signalwire.com",
+    contexts => ["default"],
+)
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer();
+
+    # Tap audio and stream to a WebSocket endpoint
+    my $action = $call->tap(
+        my $tap = {"type": "audio", "params": {"direction": "both"}},
+        my $device = {"type": "ws", "params": {"uri": "wss://example.com/tap"}},
+    )
+
+    # Tap runs in background; stop it later
+    asyncio.sleep(30);
+    $action->stop();
+
+});
+$client->run();
+```
