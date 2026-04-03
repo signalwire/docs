@@ -5,15 +5,13 @@ description: Programmatically define a SWAIG tool that the AI can invoke during 
 max-toc-depth: 3
 ---
 
-[tool-decorator]: /docs/sdks/reference/typescript/agents/agent-base#tool
 [swaig-function]: /docs/swml/reference/ai/swaig/functions
 [swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
 [functionresult]: /docs/sdks/reference/typescript/agents/function-result
 [ref-agentbase]: /docs/sdks/reference/typescript/agents/agent-base
 
 Programmatically define a SWAIG function (tool) that the AI can invoke during a
-conversation. This is the imperative alternative to the
-[`@tool` decorator][tool-decorator].
+conversation.
 
 <Info>
 Tool definitions map to SWML [SWAIG function][swaig-function]
@@ -21,60 +19,52 @@ entries. See the [SWML SWAIG functions reference][swml-swaig-functions-reference
 for the full specification.
 </Info>
 
-<Tip>
-For most cases, the [`@tool` decorator][tool-decorator]
-is simpler and supports automatic parameter inference from type hints. Use
-`defineTool()` when you need dynamic tool registration or when the tool definition
-comes from external configuration.
-</Tip>
-
 ## **Parameters**
 
-<ParamField path="name" type="string" required={true} toc={true}>
-  Function name. Must be unique within the agent. The AI uses this name to invoke the
-  function.
-</ParamField>
+<ParamField path="opts" type="object" required={true} toc={true}>
+  Tool definition object.
 
-<ParamField path="description" type="string" required={true} toc={true}>
-  Human-readable description of what the function does. The AI reads this to decide
-  when to call the function.
-</ParamField>
+  <ParamField path="opts.name" type="string" required={true}>
+    Tool name. Must be unique within the agent. The AI uses this name to invoke the
+    function.
+  </ParamField>
 
-<ParamField path="parameters" type={"Record<string, unknown>"} required={true} toc={true}>
-  JSON Schema describing the function's parameters. The AI generates arguments
-  conforming to this schema.
-</ParamField>
+  <ParamField path="opts.description" type="string" required={true}>
+    Human-readable description of what the tool does. The AI reads this to decide
+    when to call the tool.
+  </ParamField>
 
-<ParamField path="handler" type="Function" required={true} toc={true}>
-  TypeScript function to call when the AI invokes this tool. Receives `(args: dict, raw_data: dict)`
-  and should return a [`FunctionResult`][functionresult].
-</ParamField>
+  <ParamField path="opts.parameters" type={"Record<string, unknown>"}>
+    JSON Schema describing the tool's parameters. The AI generates arguments
+    conforming to this schema.
+  </ParamField>
 
-<ParamField path="secure" type="boolean" default="True" toc={true}>
-  Whether to require token validation on tool calls. Recommended for production.
-</ParamField>
+  <ParamField path="opts.handler" type="SwaigHandler" required={true}>
+    Callback invoked when the AI calls this tool. Receives
+    `(args: Record<string, unknown>, rawData: Record<string, unknown>)` and should
+    return a [`FunctionResult`][functionresult].
+  </ParamField>
 
-<ParamField path="fillers" type={"Record<string, string[]> | undefined"} toc={true}>
-  Language-specific filler phrases spoken while the function executes.
-  Format: `{"en-US": ["Looking that up...", "One moment..."]}`.
-</ParamField>
+  <ParamField path="opts.secure" type="boolean">
+    Whether to require token validation on tool calls.
+  </ParamField>
 
-<ParamField path="webhookUrl" type="string | undefined" toc={true}>
-  External URL to forward the tool call to instead of executing locally.
-</ParamField>
+  <ParamField path="opts.fillers" type={"Record<string, string[]>"}>
+    Language-specific filler phrases spoken while the tool executes.
+    Format: `{ 'en-US': ['Looking that up...', 'One moment...'] }`.
+  </ParamField>
 
-<ParamField path="required" type="string[] | undefined" toc={true}>
-  List of required parameter names from the JSON Schema.
-</ParamField>
+  <ParamField path="opts.waitFile" type="string">
+    URL of an audio file to play while the tool executes.
+  </ParamField>
 
-<ParamField path="isTypedHandler" type="boolean" default="False" toc={true}>
-  Set to `True` if the handler uses type-hinted parameters instead of the standard
-  `(args, raw_data)` signature.
-</ParamField>
+  <ParamField path="opts.waitFileLoops" type="number">
+    Number of times to loop the wait file.
+  </ParamField>
 
-<ParamField path="**swaig_fields" type="unknown" toc={true}>
-  Additional SWAIG fields to include in the function definition
-  (e.g., `wait_file`, `meta_data`).
+  <ParamField path="opts.required" type="string[]">
+    List of required parameter names from the JSON Schema.
+  </ParamField>
 </ParamField>
 
 ## **Returns**
@@ -83,32 +73,28 @@ comes from external configuration.
 
 ## **Example**
 
-```typescript {11}
-import { AgentBase } from "@signalwire/sdk";
-import { FunctionResult } from "@signalwire/sdk";
+```typescript
+import { AgentBase, FunctionResult } from 'signalwire-agents';
 
-agent = AgentBase(name="weather-agent", route="/weather")
-agent.setPromptText("You are a helpful assistant.")
+const agent = new AgentBase({ name: 'weather-agent', route: '/weather' });
+agent.setPromptText('You are a helpful assistant.');
 
-function getWeather(args, rawData = undefined) {
-    city = args.get("city", "unknown")
-    return FunctionResult(`The weather in ${city} is 72F and sunny.`)
-
-agent.defineTool(
-    name="get_weather",
-    description="Get the current weather for a city",
-    parameters={
-        "type": "object",
-        "properties": {
-            "city": {
-                "type": "string",
-                "description": "City name"
-            }
-        }
+agent.defineTool({
+  name: 'get_weather',
+  description: 'Get the current weather for a city',
+  parameters: {
+    type: 'object',
+    properties: {
+      city: { type: 'string', description: 'City name' },
     },
-    handler=get_weather,
-    required=["city"],
-    fillers={"en-US": ["Checking the weather...", "Let me look that up..."]}
-)
-agent.run()
+  },
+  handler: async (args) => {
+    const city = (args.city as string) ?? 'unknown';
+    const result = FunctionResult.create(`The weather in ${city} is 72F and sunny.`);
+    return result;
+  },
+  required: ['city'],
+  fillers: { 'en-US': ['Checking the weather...', 'Let me look that up...'] },
+});
+await agent.serve();
 ```

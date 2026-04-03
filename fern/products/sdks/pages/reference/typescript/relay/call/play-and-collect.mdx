@@ -28,16 +28,16 @@ This method emits [`calling.call.collect`][calling-call-collect] events. See [Ca
 ## **Parameters**
 
 <ParamField path="media" type={"Record<string, unknown>[]"} required={true} toc={true}>
-  List of media items to play as the prompt. Same format as
+  Array of media items to play as the prompt. Same format as
   [`play()`][play] media items.
 </ParamField>
 
-<ParamField path="collect" type="dict" required={true} toc={true}>
+<ParamField path="collect" type="Record&lt;string, unknown&gt;" required={true} toc={true}>
   Input collection configuration.
 </ParamField>
 
 <Indent>
-<ParamField path="collect.digits" type="dict" toc={true}>
+<ParamField path="collect.digits" type="Record&lt;string, unknown&gt;" toc={true}>
   DTMF digit collection settings.
 </ParamField>
 
@@ -55,7 +55,7 @@ This method emits [`calling.call.collect`][calling-call-collect] events. See [Ca
 </ParamField>
 </Indent>
 
-<ParamField path="collect.speech" type="dict" toc={true}>
+<ParamField path="collect.speech" type="Record&lt;string, unknown&gt;" toc={true}>
   Speech recognition settings.
 </ParamField>
 
@@ -86,47 +86,45 @@ This method emits [`calling.call.collect`][calling-call-collect] events. See [Ca
   Custom control ID. Auto-generated if not provided.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when collection completes.
 </ParamField>
 
 ## **Returns**
 
-[`CollectAction`][collectaction] -- An action handle with
+`Promise<`[`CollectAction`][collectaction]`>` -- An action handle with
 `stop()`, `volume()`, `startInputTimers()`, and `wait()` methods.
 
 ## **Example**
 
-```typescript {14}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    action = await call.playAndCollect(
-        media=[{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
-        collect={
-            "digits": {"max": 1, "digit_timeout": 5, "terminators": "#"},
-        },
-    )
-    event = await action.wait()
+  const action = await call.playAndCollect(
+    [{ type: 'tts', text: 'Press 1 for sales, 2 for support.' }],
+    { digits: { max: 1, digit_timeout: 5, terminators: '#' } }
+  );
+  const event = await action.wait();
 
-    result = event.params.get("result", {})
-    digits = result.get("digits", "")
-    if digits == "1":
-        await call.transfer("sales")
-    elif digits == "2":
-        await call.transfer("support")
-    else:
-        await call.hangup()
+  const result = event.params.result as Record<string, unknown> ?? {};
+  const digits = (result.digits ?? '') as string;
+  if (digits === '1') {
+    await call.transfer('sales');
+  } else if (digits === '2') {
+    await call.transfer('support');
+  } else {
+    await call.hangup();
+  }
+});
 
-client.run()
+await client.run();
 ```

@@ -9,18 +9,17 @@ max-toc-depth: 3
 [disconnect]: /docs/sdks/reference/typescript/relay/client/disconnect
 [ref-relayclient]: /docs/sdks/reference/typescript/relay/client
 
-Blocking entry point that connects to RELAY and runs the event loop until
+Async entry point that connects to RELAY and runs the event loop until
 interrupted. This is the recommended way to start a [`RelayClient`][ref-relayclient] for long-running
 services. It calls [`connect()`][connect]
 internally and automatically reconnects with exponential backoff (1 second initial
 delay, up to 30 seconds maximum) if the connection is lost.
 
-The method blocks the current thread. Press `Ctrl+C` to trigger a clean shutdown --
-the client handles `SIGINT` gracefully without dumping a stack trace.
+The method awaits until shutdown is requested. Press `Ctrl+C` to trigger a clean shutdown --
+the client handles `SIGINT` and `SIGTERM` gracefully.
 
 <Note>
-`run()` is synchronous and creates its own `asyncio` event loop via `asyncio.run()`.
-Do not call it from inside an already-running async event loop. For async contexts,
+For async contexts where you need manual control over the connection lifecycle,
 use [`connect()`][connect] and
 [`disconnect()`][disconnect] directly.
 </Note>
@@ -31,27 +30,26 @@ None.
 
 ## **Returns**
 
-`undefined` -- blocks until the client is stopped via `Ctrl+C` or a programmatic shutdown.
+`Promise<void>` -- resolves when the client is stopped via `Ctrl+C` or a programmatic shutdown.
 
 ## **Example**
 
-```typescript {18}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-    action = await call.play([{"type": "tts", "text": "Welcome! Goodbye."}])
-    await action.wait()
-    await call.hangup()
+client.onCall(async (call) => {
+  await call.answer();
+  const action = await call.play([{ type: 'tts', text: 'Welcome! Goodbye.' }]);
+  await action.wait();
+  await call.hangup();
+});
 
-# Blocks forever, reconnects on connection loss
-client.run()
+// Awaits forever, reconnects on connection loss
+await client.run();
 ```

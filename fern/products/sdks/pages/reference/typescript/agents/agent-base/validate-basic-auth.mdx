@@ -1,20 +1,14 @@
 ---
 title: "validateBasicAuth"
 slug: /reference/typescript/agents/agent-base/validate-basic-auth
-description: Validate HTTP Basic Auth credentials against the agent's stored credentials.
+description: Override to add custom basic-auth validation logic.
 max-toc-depth: 3
 ---
 
-Validate a username/password pair against the agent's configured Basic Auth
-credentials. The comparison uses constant-time `hmac.compare_digest` to prevent
-timing attacks.
-
-<Note>
-This method is an **override point**. Subclasses can replace it with custom
-authentication logic (e.g., database lookups, external identity providers) while
-the rest of the auth pipeline (`_check_basic_auth`, `_check_cgi_auth`, etc.)
-continues to call it transparently.
-</Note>
+Override to add custom basic-auth validation logic beyond credential matching.
+The default implementation returns `true` (allowing all requests that pass the
+built-in credential check). Subclasses can replace it with custom authentication
+logic (e.g., database lookups, external identity providers).
 
 ## **Parameters**
 
@@ -28,28 +22,34 @@ continues to call it transparently.
 
 ## **Returns**
 
-`bool` -- `True` if the credentials are valid, `False` otherwise. Returns `False`
-when no credentials have been configured on the agent.
+`boolean | Promise<boolean>` -- `true` if the credentials are valid, `false` to
+reject the request.
 
-## **Examples**
+## **Example**
 
-### Default behavior
-
-```typescript {4}
-import { AgentBase } from "@signalwire/sdk";
-
-agent = AgentBase(name="assistant", route="/assistant")
-is_valid = agent.validateBasicAuth("admin", "secret123")
-```
-
-### Custom validation in a subclass
-
-```typescript {4}
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { AgentBase } from 'signalwire-agents';
 
 class SecureAgent extends AgentBase {
-    validateBasicAuth(username: string, password: string): boolean {
-        `Look up credentials in an external user store.`
-        from myapp.auth import verify_user
-        return verify_user(username, password)
+  constructor() {
+    super({ name: 'assistant', route: '/assistant' });
+    this.setPromptText('You are a helpful assistant.');
+  }
+
+  override async validateBasicAuth(
+    username: string,
+    password: string,
+  ): Promise<boolean> {
+    // Custom validation against an external user store
+    const response = await fetch('https://auth.example.com/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    return response.ok;
+  }
+}
+
+const agent = new SecureAgent();
+await agent.serve();
 ```

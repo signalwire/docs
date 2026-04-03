@@ -35,41 +35,39 @@ This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Event
   Custom control ID. Auto-generated if not provided.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when the fax operation completes.
 </ParamField>
 
 ## **Returns**
 
-[`FaxAction`][faxaction] -- An action handle with
+`Promise<`[`FaxAction`][faxaction]`>` -- An action handle with
 `stop()` and `wait()` methods.
 
 ## **Example**
 
-```typescript {14}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    action = await call.sendFax(
-        document="https://example.com/invoice.pdf",
-        identity="+15559876543",
-        header_info="Invoice #12345",
-    )
-    event = await action.wait()
+  const action = await call.sendFax(
+    'https://example.com/invoice.pdf',
+    { identity: '+15559876543', headerInfo: 'Invoice #12345' }
+  );
+  const event = await action.wait();
 
-    fax_result = event.params.get("fax", {})
-    console.log(`Fax sent: ${fax_result.get('pages', 0)} pages`)
-    await call.hangup()
+  const faxResult = event.params.fax as Record<string, unknown> ?? {};
+  console.log(`Fax sent: ${faxResult.pages ?? 0} pages`);
+  await call.hangup();
+});
 
-client.run()
+await client.run();
 ```

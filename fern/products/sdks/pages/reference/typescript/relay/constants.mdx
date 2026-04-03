@@ -14,31 +14,31 @@ max-toc-depth: 3
 [recordevent-state]: /docs/sdks/reference/typescript/relay/events
 [call-detect]: /docs/sdks/reference/typescript/relay/call/detect
 
-The `signalwire.relay.constants` module defines string and numeric constants used
+The `signalwire-agents/relay` module exports string and numeric constants used
 throughout the RELAY namespace for call states, end reasons, connect states, event
 types, message states, media operation states, and protocol settings.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-    CALL_STATE_ANSWERED,
-    CALL_STATE_ENDED,
-    END_REASON_HANGUP,
-    EVENT_CALL_STATE,
-    MESSAGE_STATE_DELIVERED,
-)
+import {
+  CALL_STATE_ANSWERED,
+  CALL_STATE_ENDED,
+  END_REASON_HANGUP,
+  EVENT_CALL_STATE,
+  MESSAGE_STATE_DELIVERED,
+} from 'signalwire-agents/relay';
 ```
 
 ## Protocol
 
-<ParamField path="PROTOCOLVersion" type="dict" toc={true}>
-  RELAY protocol version. Value: `{"major": 2, "minor": 0, "revision": 0}`.
+<ParamField path="PROTOCOL_VERSION" type="Record&lt;string, number&gt;" toc={true}>
+  RELAY protocol version. Value: `{ major: 2, minor: 0, revision: 0 }`.
 </ParamField>
 
-<ParamField path="AGENTString" type="string" toc={true}>
-  User agent string sent during connection. Value: `"signalwire-agents-python/1.0"`.
+<ParamField path="AGENT_STRING" type="string" toc={true}>
+  User agent string sent during connection. Value: `"@signalwire/sdk-typescript/2.0"`.
 </ParamField>
 
-<ParamField path="DEFAULTRelayHost" type="string" toc={true}>
+<ParamField path="DEFAULT_RELAY_HOST" type="string" toc={true}>
   Default WebSocket host for RELAY connections. Value: `"relay.signalwire.com"`.
 </ParamField>
 
@@ -70,15 +70,15 @@ through these states in order: `created` -> `ringing` -> `answered` -> `ending` 
 | `CALL_STATE_ENDING` | `"ending"` | Call is in the process of ending |
 | `CALL_STATE_ENDED` | `"ended"` | Call has ended |
 
-<ParamField path="CALLStates" type={"[string, ...]"} toc={true}>
-  Tuple of all call states in lifecycle order:
-  `("created", "ringing", "answered", "ending", "ended")`.
+<ParamField path="CALL_STATES" type="readonly string[]" toc={true}>
+  Array of all call states in lifecycle order:
+  `['created', 'ringing', 'answered', 'ending', 'ended']`.
 </ParamField>
 
 ## End Reasons
 
 Constants for the reason a call ended. Available in
-[`CallStateEvent.end_reason`][callstateevent-endreason] when the call
+[`CallStateEvent.endReason`][callstateevent-endreason] when the call
 reaches the `ended` state.
 
 | Constant | Value | Description |
@@ -98,7 +98,7 @@ reaches the `ended` state.
 ## Connect States
 
 Constants representing the state of a call bridge (connect) operation. Used in
-[`ConnectEvent.connect_state`][connectevent-connectstate].
+[`ConnectEvent.connectState`][connectevent-connectstate].
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -113,7 +113,7 @@ Constants representing the state of a call bridge (connect) operation. Used in
 
 String constants for all RELAY event types. Use these when registering event
 handlers with [`Call.on()`][call-on] or when
-matching against [`RelayEvent.event_type`][relayevent-eventtype].
+matching against [`RelayEvent.eventType`][relayevent-eventtype].
 
 ### Calling Events
 
@@ -137,6 +137,7 @@ matching against [`RelayEvent.event_type`][relayevent-eventtype].
 | `EVENT_CALL_STREAM` | `"calling.call.stream"` |
 | `EVENT_CALL_ECHO` | `"calling.call.echo"` |
 | `EVENT_CALL_TRANSCRIBE` | `"calling.call.transcribe"` |
+| `EVENT_CALL_HOLD` | `"calling.call.hold"` |
 | `EVENT_CONFERENCE` | `"calling.conference"` |
 | `EVENT_CALLING_ERROR` | `"calling.error"` |
 
@@ -171,9 +172,9 @@ messages progress through: `queued` -> `initiated` -> `sent` -> `delivered`
 | `MESSAGE_STATE_FAILED` | `"failed"` | Message send failed |
 | `MESSAGE_STATE_RECEIVED` | `"received"` | Inbound message received |
 
-<ParamField path="MESSAGETerminalStates" type={"[string, ...]"} toc={true}>
-  Tuple of terminal states that resolve a [`Message.wait()`][message-wait] call:
-  `("delivered", "undelivered", "failed")`.
+<ParamField path="MESSAGE_TERMINAL_STATES" type="readonly string[]" toc={true}>
+  Array of terminal states that resolve a [`Message.wait()`][message-wait] call:
+  `['delivered', 'undelivered', 'failed']`.
 </ParamField>
 
 ## Play States
@@ -243,24 +244,29 @@ Configuration constants for the WebSocket reconnection strategy.
 ## **Example**
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-    CALL_STATE_ANSWERED,
-    CALL_STATE_ENDED,
-    END_REASON_HANGUP,
-    EVENT_CALL_STATE,
-    MESSAGE_STATE_DELIVERED,
-    MESSAGE_TERMINAL_STATES,
-)
+import {
+  CALL_STATE_ANSWERED,
+  CALL_STATE_ENDED,
+  END_REASON_HANGUP,
+  EVENT_CALL_STATE,
+  MESSAGE_STATE_DELIVERED,
+  MESSAGE_TERMINAL_STATES,
+} from 'signalwire-agents/relay';
+import type { CallStateEvent } from 'signalwire-agents/relay';
 
-# Use in event handlers
-function handleCallState(event) {
-    if event.call_state == CALL_STATE_ANSWERED:
-        console.log("Call answered!")
-    elif event.call_state == CALL_STATE_ENDED:
-        console.log(`Call ended: ${event.end_reason}`)
+// Use in event handlers
+function handleCallState(event: CallStateEvent) {
+  if (event.callState === CALL_STATE_ANSWERED) {
+    console.log('Call answered!');
+  } else if (event.callState === CALL_STATE_ENDED) {
+    console.log(`Call ended: ${event.endReason}`);
+  }
+}
 
-# Check terminal message states
-function handleMessageState(message) {
-    if message.state in MESSAGE_TERMINAL_STATES:
-        console.log("Message delivery complete")
+// Check terminal message states
+function handleMessageState(message: { state: string }) {
+  if ((MESSAGE_TERMINAL_STATES as readonly string[]).includes(message.state)) {
+    console.log('Message delivery complete');
+  }
+}
 ```

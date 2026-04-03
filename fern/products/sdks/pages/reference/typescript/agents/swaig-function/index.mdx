@@ -16,7 +16,7 @@ max-toc-depth: 3
 [toswaig]: /docs/sdks/reference/typescript/agents/swaig-function/to-swaig
 [validateargs]: /docs/sdks/reference/typescript/agents/swaig-function/validate-args
 
-SwaigFunction wraps a Python callable as a SWAIG (SignalWire AI Gateway) tool
+SwaigFunction wraps a function as a SWAIG (SignalWire AI Gateway) tool
 that the AI can invoke during a conversation. It manages the function's name,
 description, parameter schema, security settings, and serialization to SWML.
 
@@ -54,7 +54,7 @@ full specification.
   The function description.
 </ParamField>
 
-<ParamField path="parameters" type="dict" toc={true}>
+<ParamField path="parameters" type="Record<string, unknown>" toc={true}>
   The parameter schema dictionary.
 </ParamField>
 
@@ -89,7 +89,7 @@ full specification.
 </ParamField>
 
 <ParamField path="isExternal" type="boolean" toc={true}>
-  `True` when `webhook_url` is set, indicating the function is handled externally.
+  `true` when `webhook_url` is set, indicating the function is handled externally.
 </ParamField>
 
 ### \_\_call\_\_
@@ -98,17 +98,18 @@ The SwaigFunction object is callable. Calling it directly delegates to the
 underlying handler:
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-import { SwaigFunction } from "@signalwire/sdk";
-import { FunctionResult } from "@signalwire/sdk";
+import { SwaigFunction, FunctionResult } from 'signalwire-agents';
 
-agent = AgentBase(name="assistant", route="/assistant")
-agent.setPromptText("You are a helpful assistant.")
-
-    order_id = args["order_id"]
-    return FunctionResult(`Order ${order_id} shipped March 28.`)
-
-agent.run()
+const fn = new SwaigFunction({
+  name: 'check_order',
+  description: 'Check order status by ID',
+  parameters: {
+    order_id: { type: 'string', description: 'The order ID' },
+  },
+  handler: async (args) => {
+    return new FunctionResult(`Order ${args.order_id} is shipped.`);
+  },
+});
 ```
 
 This is equivalent to `func.handler(args, raw_data)`.
@@ -119,10 +120,10 @@ This is equivalent to `func.handler(args, raw_data)`.
   <Card title="execute" href="/docs/sdks/reference/typescript/agents/swaig-function/execute">
     Execute the function with the given arguments.
   </Card>
-  <Card title="to_swaig" href="/docs/sdks/reference/typescript/agents/swaig-function/to-swaig">
+  <Card title="toSwaig" href="/docs/sdks/reference/typescript/agents/swaig-function/to-swaig">
     Convert the function to a SWAIG-compatible dictionary for SWML.
   </Card>
-  <Card title="validate_args" href="/docs/sdks/reference/typescript/agents/swaig-function/validate-args">
+  <Card title="validateArgs" href="/docs/sdks/reference/typescript/agents/swaig-function/validate-args">
     Validate arguments against the parameter JSON Schema.
   </Card>
 </CardGroup>
@@ -133,15 +134,14 @@ This is equivalent to `func.handler(args, raw_data)`.
 
 ### Manual registration
 
-```typescript {10}
-import { AgentBase } from "@signalwire/sdk";
-import { FunctionResult } from "@signalwire/sdk";
+```typescript
+import { AgentBase, FunctionResult } from 'signalwire-agents';
 
 function handleLookup(args, rawData) {
     account_id = args.get("account_id", "")
     return FunctionResult(`Account ${account_id} is active.`)
 
-agent = AgentBase(name="my-agent")
+const agent = new AgentBase({ name: 'my-agent' });
 
 func = SWAIGFunction(
     name="lookup_account",
@@ -157,14 +157,14 @@ func = SWAIGFunction(
         },
         "required": ["account_id"]
     },
-    secure=true,
+    secure= true,
     fillers={"en-US": ["Let me check on that..."]}
 )
 
-# Validate before registering
-is_valid, errors = func.validate_args({"account_id": "12345"})
+// Validate before registering
+is_valid, errors = func.validateArgs({"account_id": "12345"})
 console.log(`Valid: ${is_valid}, Errors: ${errors}`)
-# Valid: true, Errors: []
+// Valid: true, Errors: []
 ```
 
 ### Using the decorator (preferred)
@@ -173,10 +173,9 @@ In most cases, use the `@agent.tool()` decorator instead of constructing
 SwaigFunction directly:
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-import { FunctionResult } from "@signalwire/sdk";
+import { AgentBase, FunctionResult } from 'signalwire-agents';
 
-agent = AgentBase(name="my-agent")
+const agent = new AgentBase({ name: 'my-agent' });
 agent.setPromptText("You are a helpful assistant.")
 
     description="Look up account status by ID",
@@ -187,7 +186,7 @@ agent.setPromptText("You are a helpful assistant.")
         },
         "required": ["account_id"]
     },
-    secure=true,
+    secure= true,
     fillers=["Let me check on that..."]
 )
     account_id = args.get("account_id", "")

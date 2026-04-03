@@ -1,94 +1,36 @@
 ---
 title: "run"
 slug: /reference/typescript/agents/agent-server/run
-description: Start the multi-agent server with automatic environment detection.
+description: Start the multi-agent HTTP server.
 max-toc-depth: 3
 ---
 
-Universal entry point that detects the execution environment and starts the server
-accordingly. In standard server mode it launches uvicorn; in serverless environments
-(AWS Lambda, CGI) it processes the incoming request and returns a response.
-
-<Note>
-This method blocks in server mode. For production deployments behind gunicorn or
-another ASGI server, use `server.app` directly instead of calling `run()`.
-</Note>
+Start the HTTP server and begin listening for requests. Uses `@hono/node-server`
+to serve the Hono application with all registered agents.
 
 ## **Parameters**
 
-<ParamField path="event" type="dict" toc={true}>
-  Serverless event object (AWS Lambda, Google Cloud Functions). Pass the Lambda handler's
-  `event` parameter here. Ignored in server mode.
-</ParamField>
-
-<ParamField path="context" type="object" toc={true}>
-  Serverless context object (AWS Lambda, Google Cloud Functions). Pass the Lambda handler's
-  `context` parameter here. Ignored in server mode.
-</ParamField>
-
 <ParamField path="host" type="string" toc={true}>
-  Override the host set in the constructor. Only applies in server mode.
+  Override the configured hostname.
 </ParamField>
 
 <ParamField path="port" type="number" toc={true}>
-  Override the port set in the constructor. Only applies in server mode.
+  Override the configured port.
 </ParamField>
 
 ## **Returns**
 
-`undefined` in server mode (blocks until shutdown). In Lambda mode, returns a response `dict`
-with `statusCode`, `headers`, and `body`. In CGI mode, returns the formatted response string.
+`Promise<void>` -- Resolves once the server is running.
 
-## **Examples**
-
-### Server Mode
-
-```typescript {9}
-import { AgentServer } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
-
-agent = AgentBase(name="my-agent", route="/agent")
-agent.setPromptText("You are a helpful assistant.")
-
-server = AgentServer(host="0.0.0.0", port=3000)
-server.register(agent)
-server.run()
-```
-
-### AWS Lambda
-
-```typescript {11}
-import { AgentServer } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
-
-agent = AgentBase(name="my-agent", route="/agent")
-agent.setPromptText("You are a helpful assistant.")
-
-server = AgentServer()
-server.register(agent)
-
-function lambdaHandler(event, context) {
-    return server.run(event, context)
-```
-
-### Gunicorn (external ASGI server)
+## **Example**
 
 ```typescript
-import { AgentServer } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { AgentBase, AgentServer } from 'signalwire-agents';
 
-agent = AgentBase(name="my-agent", route="/agent")
-agent.setPromptText("You are a helpful assistant.")
+const agent = new AgentBase({ name: 'my-agent', route: '/agent' });
+agent.setPromptText('You are a helpful assistant.');
 
-server = AgentServer()
-server.register(agent)
-
-# Expose the FastAPI app for gunicorn:
-# gunicorn app:app -k uvicorn.workers.UvicornWorker
-app = server.app
+const server = new AgentServer({ host: '0.0.0.0', port: 3000 });
+server.register(agent);
+await server.run();
 ```
-
-<Tip>
-If `SWML_SSL_ENABLED` is set to `true` in the environment along with `SWML_SSL_CERT_PATH`
-and `SWML_SSL_KEY_PATH`, the server starts with HTTPS automatically.
-</Tip>

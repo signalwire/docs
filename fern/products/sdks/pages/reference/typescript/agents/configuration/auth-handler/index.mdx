@@ -1,77 +1,96 @@
 ---
 title: "AuthHandler"
 slug: /reference/typescript/agents/configuration/auth-handler
-description: "Unified authentication handler for Basic Auth, Bearer tokens, and API keys."
+description: "Multi-method authentication handler with timing-safe credential comparison."
 max-toc-depth: 3
 ---
 
-[mcp-gateway]: /docs/sdks/reference/typescript/agents/cli/mcp-gateway
-[securityconfig]: /docs/sdks/reference/typescript/agents/configuration/security-config
-[flaskdecorator]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/flask-decorator
-[getauthinfo]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/get-auth-info
-[gethonodependency]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/get-hono-dependency
-[verifyapikey]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/verify-api-key
-[verifybasicauth]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/verify-basic-auth
-[verifybearertoken]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/verify-bearer-token
+[validate]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/validate
+[middleware]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/middleware
+[hasbearerauth]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/has-bearer-auth
+[hasapikeyauth]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/has-api-key-auth
+[hasbasicauth]: /docs/sdks/reference/typescript/agents/configuration/auth-handler/has-basic-auth
 
-`AuthHandler` provides a unified authentication layer supporting HTTP Basic Auth,
-Bearer tokens, and API keys. It integrates with both Hono (as a dependency) and
-Flask (as a decorator), and is used internally by the
-[`mcp-gateway`][mcp-gateway] and agent
-webhook endpoints.
+`AuthHandler` provides a unified authentication layer supporting Bearer tokens,
+API keys, and HTTP Basic Auth. All credential comparisons use constant-time
+algorithms to prevent timing attacks. It can be used as Hono middleware or as a
+standalone request validator.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { AuthHandler } from 'signalwire-agents';
 
-security = SecurityConfig()
-auth = AuthHandler(security)
+const auth = new AuthHandler({
+  bearerToken: 'my-secret-token',
+  apiKey: 'my-api-key',
+});
 ```
 
-## **Properties**
+## **Constructor**
 
-<ParamField path="securityConfig" type="SecurityConfig" required={true} toc={true}>
-  A [`SecurityConfig`][securityconfig]
-  instance that provides the authentication credentials. The handler reads:
-  - Basic auth username/password from `getBasicAuth()`
-  - Bearer token from the `bearer_token` attribute (if set)
-  - API key and header name from the `api_key` and `api_key_header` attributes (if set)
+<ParamField path="config" type="AuthConfig" required={true} toc={true}>
+  Authentication configuration object with the following optional fields:
+</ParamField>
+
+<ParamField path="config.bearerToken" type="string" toc={true}>
+  Bearer token matched against the `Authorization: Bearer <token>` header.
+</ParamField>
+
+<ParamField path="config.apiKey" type="string" toc={true}>
+  API key matched against the `X-Api-Key` header.
+</ParamField>
+
+<ParamField path="config.basicAuth" type="[string, string]" toc={true}>
+  Basic auth credentials as a `[username, password]` tuple.
+</ParamField>
+
+<ParamField path="config.customValidator" type="(request: { headers, method, url }) => boolean | Promise<boolean>" toc={true}>
+  Custom validator function. Return `true` to allow the request.
+</ParamField>
+
+<ParamField path="config.allowUnauthenticated" type="boolean" toc={true}>
+  When explicitly set to `false`, deny requests if no auth methods are configured.
+  By default, unauthenticated access is allowed when no methods are set.
 </ParamField>
 
 ## **Methods**
 
 <CardGroup cols={3}>
-  <Card title="flask_decorator" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/flask-decorator">
-    Flask decorator for protecting routes with authentication.
+  <Card title="validate" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/validate">
+    Validate request headers against all configured auth methods.
   </Card>
-  <Card title="get_auth_info" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/get-auth-info">
-    Get a summary of configured authentication methods.
+  <Card title="middleware" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/middleware">
+    Create a Hono-compatible middleware that rejects unauthorized requests.
   </Card>
-  <Card title="get_hono_dependency" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/get-hono-dependency">
-    Get a Hono dependency function for protecting routes.
+  <Card title="hasBearerAuth" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/has-bearer-auth">
+    Check whether Bearer token authentication is configured.
   </Card>
-  <Card title="verify_api_key" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/verify-api-key">
-    Verify an API key using constant-time comparison.
+  <Card title="hasApiKeyAuth" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/has-api-key-auth">
+    Check whether API key authentication is configured.
   </Card>
-  <Card title="verify_basic_auth" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/verify-basic-auth">
-    Verify HTTP Basic Auth credentials using constant-time comparison.
-  </Card>
-  <Card title="verify_bearer_token" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/verify-bearer-token">
-    Verify a Bearer token using constant-time comparison.
+  <Card title="hasBasicAuth" href="/docs/sdks/reference/typescript/agents/configuration/auth-handler/has-basic-auth">
+    Check whether Basic authentication is configured.
   </Card>
 </CardGroup>
 
 ## **Example**
 
-```typescript {5}
-import { AgentBase } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+```typescript {4-7,10}
+import { AuthHandler } from 'signalwire-agents';
 
-security = SecurityConfig()
-auth = AuthHandler(security)
+const auth = new AuthHandler({
+  bearerToken: process.env.AUTH_TOKEN,
+  basicAuth: ['admin', 'secret'],
+  apiKey: process.env.API_KEY,
+});
 
-# Check which methods are configured
-info = auth.get_auth_info()
-console.log(info)
-# {'basic': {'enabled': true, 'username': 'signalwire'}}
+// Check which methods are configured
+console.log('Bearer:', auth.hasBearerAuth());   // true
+console.log('API Key:', auth.hasApiKeyAuth());   // true
+console.log('Basic:', auth.hasBasicAuth());      // true
+
+// Validate incoming request headers
+const isValid = await auth.validate({
+  authorization: 'Bearer my-secret-token',
+});
+console.log('Valid:', isValid);
 ```

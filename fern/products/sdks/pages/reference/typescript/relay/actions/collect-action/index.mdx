@@ -11,20 +11,20 @@ max-toc-depth: 3
 [volume]: /docs/sdks/reference/typescript/relay/actions/collect-action/volume
 [startinputtimers]: /docs/sdks/reference/typescript/relay/actions/collect-action/start-input-timers
 
-Returned from [`call.play_and_collect()`][call-play-and-collect].
+Returned from [`call.playAndCollect()`][call-play-and-collect].
 Tracks a combined play-and-collect operation where a prompt is played and user
 input (digits or speech) is collected. Terminal states: `finished`, `error`,
 `no_input`, `no_match`.
 
 <Note>
 `CollectAction` only resolves on collect events. Play events sharing the same
-`control_id` are ignored, so `await action.wait()` returns only when input
+`controlId` are ignored, so `await action.wait()` returns only when input
 collection completes.
 </Note>
 
 Inherits all properties and methods from the
-[base Action interface][base-action-interface] (`control_id`,
-`is_done`, `completed`, `result`, `wait()`).
+[base Action interface][base-action-interface] (`controlId`,
+`isDone`, `completed`, `result`, `wait()`).
 
 ## **Properties**
 
@@ -39,7 +39,7 @@ No additional properties beyond the [base Action interface][base-action-interfac
   <Card title="volume" href="/docs/sdks/reference/typescript/relay/actions/collect-action/volume">
     Adjust the prompt playback volume during a play-and-collect operation.
   </Card>
-  <Card title="start_input_timers" href="/docs/sdks/reference/typescript/relay/actions/collect-action/start-input-timers">
+  <Card title="startInputTimers" href="/docs/sdks/reference/typescript/relay/actions/collect-action/start-input-timers">
     Manually start the initial_timeout timer on an active collect.
   </Card>
 </CardGroup>
@@ -47,27 +47,26 @@ No additional properties beyond the [base Action interface][base-action-interfac
 ## **Example**
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-    action = await call.playAndCollect(
-        media=[{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
-        collect={"digits": {"max": 1, "digit_timeout": 5.0}},
-    )
+client.onCall(async (call) => {
+  await call.answer();
+  const action = await call.playAndCollect({
+    media: [{ type: 'tts', text: 'Press 1 for sales, 2 for support.' }],
+    collect: { digits: { max: 1, digitTimeout: 5.0 } },
+  });
 
-    event = await action.wait()
-    result = event.params.get("result", {})
-    digit = result.get("digits", "")
-    console.log(`User pressed: ${digit}`)
+  const event = await action.wait();
+  const result = event.params.result ?? {};
+  const digit = (result as Record<string, unknown>).digits ?? '';
+  console.log(`User pressed: ${digit}`);
+});
 
-client.run()
+await client.run();
 ```

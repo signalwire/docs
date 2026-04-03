@@ -7,8 +7,8 @@ max-toc-depth: 3
 
 [ref-agentbase]: /docs/sdks/reference/typescript/agents/agent-base
 
-Set a callback function that runs on every incoming request, receiving the actual agent
-instance so you can dynamically configure **any** aspect of it -- skills, prompts,
+Set a callback that runs on every incoming SWML request, receiving an ephemeral copy
+of the agent so you can dynamically configure **any** aspect of it -- prompts,
 parameters, languages, tools, global data, etc. -- based on the request's query
 parameters, body, or headers.
 
@@ -16,15 +16,10 @@ This is the primary mechanism for multi-tenant or per-caller customization.
 
 ## **Parameters**
 
-<ParamField path="callback" type={"(arg0: Record<string, unknown>, arg1: dict, arg2: dict, arg3: AgentBase) => undefined"} required={true} toc={true}>
-  A function with the signature `(query_params, body_params, headers, agent)`.
-  Use the `agent` argument to call any configuration method:
-  - `agent.add_skill(...)`
-  - `agent.add_language(...)`
-  - `agent.prompt_add_section(...)`
-  - `agent.set_params(...)`
-  - `agent.set_global_data(...)`
-  - `agent.define_tool(...)`
+<ParamField path="cb" type="DynamicConfigCallback" required={true} toc={true}>
+  A function with the signature
+  `(queryParams: Record<string, string>, bodyParams: Record<string, unknown>, headers: Record<string, string>, agent: AgentBase) => void | Promise<void>`.
+  Use the `agent` argument to call any configuration method on the ephemeral copy.
 </ParamField>
 
 ## **Returns**
@@ -33,19 +28,19 @@ This is the primary mechanism for multi-tenant or per-caller customization.
 
 ## **Example**
 
-```typescript {13}
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { AgentBase } from 'signalwire-agents';
 
-agent = AgentBase(name="assistant", route="/assistant")
-agent.setPromptText("You are a helpful assistant.")
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-function configurePerRequest(queryParams, bodyParams, headers, agent) {
-    tier = query_params.get("tier", "standard")
-    if tier == "premium":
-        agent.addSkill("web_search")
-        agent.setParams({"end_of_speech_timeout": 500})
-    agent.setGlobalData({"tier": tier})
+agent.setDynamicConfigCallback(async (queryParams, bodyParams, headers, agentCopy) => {
+  const tier = queryParams.tier ?? 'standard';
+  if (tier === 'premium') {
+    agentCopy.setParams({ end_of_speech_timeout: 500 });
+  }
+  agentCopy.setGlobalData({ tier });
+});
 
-agent.setDynamicConfigCallback(configure_per_request)
-agent.run()
+await agent.serve();
 ```

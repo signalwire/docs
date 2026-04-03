@@ -10,7 +10,7 @@ max-toc-depth: 3
 
 Register a listener for events on this call. The handler is called each time
 an event of the specified type is received. Handlers can be regular functions
-or async coroutines.
+or async functions.
 
 ## **Parameters**
 
@@ -21,42 +21,41 @@ or async coroutines.
   method-specific events.
 </ParamField>
 
-<ParamField path="handler" type="(arg0: RelayEvent) => unknown" required={true} toc={true}>
-  Function or coroutine to invoke when the event fires. Receives a
+<ParamField path="handler" type="(event: RelayEvent) => void | Promise&lt;void&gt;" required={true} toc={true}>
+  Function to invoke when the event fires. Receives a
   [`RelayEvent`][relayevent] instance.
 </ParamField>
 
 ## **Returns**
 
-`undefined`
+`void`
 
 ## **Example**
 
-```typescript {10,15,21}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Register a listener for play events
-    call.on("calling.call.play", lambda event: console.log(`Play state: ${event.params["state"]}`))
+  // Register a listener for play events
+  call.on('calling.call.play', (event) => console.log(`Play state: ${event.params.state}`));
 
-    # Register a listener for state changes
-    function onStateChange(event) {
-        console.log(`Call state changed: ${event.params["call_state"]}`)
+  // Register a listener for state changes
+  const onStateChange = (event) => {
+    console.log(`Call state changed: ${event.params.call_state}`);
+  };
+  call.on('calling.call.state', onStateChange);
 
-    call.on("calling.call.state", on_state_change)
+  const action = await call.play([{ type: 'tts', text: 'Hello!' }]);
+  await action.wait();
+});
 
-    action = await call.play([{"type": "tts", "text": "Hello!"}])
-    await action.wait()
-
-client.run()
+await client.run();
 ```

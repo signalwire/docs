@@ -29,49 +29,47 @@ an active session has no effect.
   - `"assistant"` -- inject an assistant response
 </ParamField>
 
-<ParamField path="reset" type="dict | undefined" toc={true}>
+<ParamField path="reset" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Reset configuration. Allows resetting AI state such as the conversation
   history or functions.
 </ParamField>
 
-<ParamField path="globalData" type="dict | undefined" toc={true}>
+<ParamField path="globalData" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Update the global data accessible to the AI and SWAIG functions.
 </ParamField>
 
 ## **Returns**
 
-`dict` -- Server response confirming the message was sent.
+`Promise<Record<string, unknown>>` -- Server response confirming the message was sent.
 
 ## **Example**
 
-```typescript {22}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Start an AI agent
-    action = await call.ai(
-        prompt={"text": "You are a helpful assistant."},
-    )
+  // Start an AI agent
+  const action = await call.ai({
+    prompt: { text: 'You are a helpful assistant.' },
+  });
 
-    # Inject a system message after 10 seconds
-    await asyncio.sleep(10)
-    await call.aiMessage(
-        message_text="The caller is a VIP customer. Be extra helpful.",
-        role="system",
-    )
+  // Inject a system message after 10 seconds
+  await new Promise((resolve) => setTimeout(resolve, 10_000));
+  await call.aiMessage({
+    messageText: 'The caller is a VIP customer. Be extra helpful.',
+    role: 'system',
+  });
 
-    await action.wait()
+  await action.wait();
+});
 
-client.run()
+await client.run();
 ```

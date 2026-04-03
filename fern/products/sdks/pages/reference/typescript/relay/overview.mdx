@@ -37,25 +37,24 @@ the SignalWire dashboard, all calls to that number are routed to RELAY clients
 subscribed to that context.
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-# Subscribe to specific contexts
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["support", "sales"],
-)
+const client = new RelayClient({
+  project: 'your-project-id',
+  token: 'your-api-token',
+  host: 'your-space.signalwire.com',
+  contexts: ['support', 'sales'],
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Or subscribe/unsubscribe dynamically
-    # await client.receive(["billing"])     # Add a context
-    # await client.unreceive(["sales"])     # Remove a context
+  // Or subscribe/unsubscribe dynamically
+  // await client.receive(['billing']);     // Add a context
+  // await client.unreceive(['sales']);     // Remove a context
+});
 
-client.run()
+await client.run();
 ```
 
 A client only receives events for its subscribed contexts. This enables multiple
@@ -67,39 +66,40 @@ subscribing to different contexts.
 An IVR that answers calls, plays a menu, collects a digit, and routes accordingly:
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: 'your-project-id',
+  token: 'your-api-token',
+  host: 'your-space.signalwire.com',
+  contexts: ['default'],
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Play a menu and collect one digit
-    action = await call.playAndCollect(
-        media=[{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
-        collect={"digits": {"max": 1, "digit_timeout": 5.0}},
-    )
-    event = await action.wait()
+  // Play a menu and collect one digit
+  const action = await call.playAndCollect(
+    [{ type: 'tts', text: 'Press 1 for sales, 2 for support.' }],
+    { digits: { max: 1, digit_timeout: 5.0 } },
+  );
+  const event = await action.wait();
 
-    digit = event.params.get("result", {}).get("digits", "")
+  const digit = (event.params.result as Record<string, unknown>)?.digits ?? '';
 
-    if digit == "1":
-        await call.play([{"type": "tts", "text": "Transferring to sales."}])
-        await call.transfer(dest="+15551234567")
-    elif digit == "2":
-        await call.play([{"type": "tts", "text": "Transferring to support."}])
-        await call.transfer(dest="+15559876543")
-    else:
-        await call.play([{"type": "tts", "text": "Goodbye."}])
-        await call.hangup()
+  if (digit === '1') {
+    await call.play([{ type: 'tts', text: 'Transferring to sales.' }]);
+    await call.transfer('+15551234567');
+  } else if (digit === '2') {
+    await call.play([{ type: 'tts', text: 'Transferring to support.' }]);
+    await call.transfer('+15559876543');
+  } else {
+    await call.play([{ type: 'tts', text: 'Goodbye.' }]);
+    await call.hangup();
+  }
+});
 
-client.run()
+await client.run();
 ```
 
 ## Classes
@@ -133,7 +133,7 @@ client.run()
     title="Events"
     href="/docs/sdks/reference/typescript/relay/events"
   >
-    Typed event dataclasses for call state changes, playback, recording, and messaging.
+    Typed event classes for call state changes, playback, recording, and messaging.
   </Card>
   <Card
     title="Constants"
@@ -145,6 +145,6 @@ client.run()
     title="RelayError"
     href="/docs/sdks/reference/typescript/relay/relay-error"
   >
-    Exception raised when the RELAY server returns an error response.
+    Error thrown when the RELAY server returns an error response.
   </Card>
 </CardGroup>

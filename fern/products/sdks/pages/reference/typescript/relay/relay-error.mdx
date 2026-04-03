@@ -1,26 +1,29 @@
 ---
 title: "RelayError"
 slug: /reference/typescript/relay/relay-error
-description: Exception raised when the RELAY server returns an error.
+description: Error thrown when the RELAY server returns an error.
 max-toc-depth: 3
 ---
 
-Exception raised when the RELAY server returns an error response. Inherits from
-Python's built-in `Exception`. The string representation follows the format
-`"RELAY error {code}: {message}"`.
+Custom error class for RELAY protocol errors. Extends JavaScript's built-in `Error`
+class. The `name` property is always `"RelayError"`.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { RelayError } from 'signalwire-agents/relay';
 ```
 
 ## **Properties**
 
 <ParamField path="code" type="number" toc={true}>
-  Numeric error code returned by the RELAY server.
+  Numeric error code returned by the RELAY server. Defaults to `0`.
 </ParamField>
 
 <ParamField path="message" type="string" toc={true}>
   Human-readable error description returned by the RELAY server.
+</ParamField>
+
+<ParamField path="name" type="string" toc={true}>
+  Always `"RelayError"`.
 </ParamField>
 
 ## **Examples**
@@ -28,23 +31,26 @@ import { AgentBase } from "@signalwire/sdk";
 ### Catch a RELAY error
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient, RelayError } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default'],
+});
 
-@client.on_call
-async def handle_call(call):
-    try:
-        await call.connect(devices=[[{"type": "phone", "params": {"to_number": "+15559876543"}}]])
-    except RelayError as e:
-        console.log(`Error ${e.code}: ${e.message}`)
-        await call.hangup()
+client.onCall(async (call) => {
+  try {
+    await call.connect(
+      [[{ type: 'phone', params: { to_number: '+15559876543' } }]],
+    );
+  } catch (e) {
+    if (e instanceof RelayError) {
+      console.log(`Error ${e.code}: ${e.message}`);
+    }
+    await call.hangup();
+  }
+});
 
-client.run()
+await client.run();
 ```

@@ -10,7 +10,16 @@ max-toc-depth: 3
 [ref-functionresult]: /docs/sdks/reference/typescript/agents/function-result
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { createSimpleApiTool } from 'signalwire-agents';
+
+const weatherTool = createSimpleApiTool({
+  name: 'get_weather',
+  url: 'https://api.weather.com/v1/current?q=${args.location}',
+  responseTemplate: 'Weather: ${response.current.condition.text}, ${response.current.temp_f}F',
+  parameters: {
+    location: { type: 'string', description: 'City name', required: true },
+  },
+});
 ```
 
 Create a DataMap for a straightforward single-endpoint API call with minimal
@@ -58,7 +67,17 @@ configuration.
 ---
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { createExpressionTool, FunctionResult } from 'signalwire-agents';
+
+const controlTool = createExpressionTool({
+  name: 'playback_control',
+  patterns: {
+    '${args.command}': ['play.*', new FunctionResult('Playing.')],
+  },
+  parameters: {
+    command: { type: 'string', description: 'Playback command', required: true },
+  },
+});
 ```
 
 Create a DataMap for pattern-matching responses without API calls.
@@ -84,11 +103,10 @@ Create a DataMap for pattern-matching responses without API calls.
 ## **Example**
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
-import { FunctionResult } from "@signalwire/sdk";
+import { AgentBase } from 'signalwire-agents';
+import { AgentBase, FunctionResult } from 'signalwire-agents';
 
-# Simple API tool -- one line instead of a full DataMap chain
+// Simple API tool -- one line instead of a full DataMap chain
 weather = create_simple_api_tool(
     name="get_weather",
     url="https://api.weatherapi.com/v1/current.json?key=KEY&q=${enc:args.city}",
@@ -99,21 +117,21 @@ weather = create_simple_api_tool(
     error_keys=["error"]
 )
 
-# Expression tool -- pattern matching without API calls
+// Expression tool -- pattern matching without API calls
 greeting = create_expression_tool(
     name="greet",
     patterns={
-        "${args.language}": (r"spanish|espanol", FunctionResult("Hola!")),
+        "${args.language}": (r"spanish|espanol", new FunctionResult('Hola!')),
     },
     parameters={
         "language": {"type": "string", "description": "Language to greet in"}
     }
 )
 
-agent = AgentBase(name="helper-demo")
+const agent = new AgentBase({ name: 'helper-demo' });
 agent.setPromptText("You are a helpful assistant.")
-agent.registerSwaigFunction(weather.to_swaig_function())
-agent.registerSwaigFunction(greeting.to_swaig_function())
+agent.registerSwaigFunction(weather.toSwaigFunction())
+agent.registerSwaigFunction(greeting.toSwaigFunction())
 
 // Entry point
     agent.run()

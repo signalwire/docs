@@ -24,11 +24,11 @@ names while running on SignalWire infrastructure. Change your import path and yo
 existing code runs on SignalWire with no other modifications.
 
 ```typescript
-# Before (livekit-agents)
-from livekit.agents import Agent, AgentSession, function_tool
+// Before (livekit-agents)
+import { Agent, AgentSession } from '@livekit/agents';
 
-# After (SignalWire LiveWire)
-import { AgentBase } from "@signalwire/sdk";
+// After (SignalWire LiveWire)
+import { Agent, AgentSession } from 'signalwire-agents/livewire';
 ```
 
 <Note>
@@ -41,33 +41,32 @@ time each no-op parameter is used.
 ## Quick Start
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
-    Agent,
-    AgentSession,
-    AgentServer,
-    JobContext,
-    JobProcess,
-    function_tool,
-    run_app,
-)
+import {
+  Agent, AgentSession, JobContext,
+  tool, defineAgent, runApp,
+} from 'signalwire-agents/livewire';
 
-@function_tool
-function lookupOrder(orderId: string): string {
-    `Look up the status of a customer order.`
-    return `Order ${order_id} shipped yesterday.`
+const lookupOrder = tool({
+  description: 'Look up the status of a customer order.',
+  parameters: { orderId: { type: 'string' } },
+  execute: (params) => {
+    return `Order ${params.orderId} shipped yesterday.`;
+  },
+});
 
-server = AgentServer()
+const agentDef = defineAgent({
+  entry: async (ctx: JobContext) => {
+    const agent = new Agent({
+      instructions: 'You are a helpful customer support agent.',
+      tools: { lookupOrder },
+    });
+    const session = new AgentSession();
+    await session.start({ agent });
+    session.generateReply({ instructions: 'Greet the user.' });
+  },
+});
 
-@server.rtcSession()
-async def entrypoint(ctx: JobContext):
-    agent = Agent(
-        instructions="You are a helpful order-status assistant.",
-        tools=[lookup_order],
-    )
-    session = AgentSession()
-    await session.start(agent, room=ctx.room)
-
-run_app(server)
+runApp(agentDef);
 ```
 
 ## Namespace Aliases
@@ -82,7 +81,7 @@ LiveWire provides namespace objects that mirror common livekit-agents import pat
 | `inference` | `STT`, `LLM`, `TTS` | `livekit.agents.inference` |
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { AgentBase } from 'signalwire-agents';
 
 agent = voice.Agent(instructions="Hello")
 session = voice.AgentSession(llm=inference.LLM(model="gpt-4o"))
@@ -110,13 +109,13 @@ session = voice.AgentSession(llm=inference.LLM(model="gpt-4o"))
     Context object available inside tool handler functions.
   </Card>
   <Card
-    title="function_tool"
+    title="functionTool"
     href="/docs/sdks/reference/typescript/agents/livewire/function-tool"
   >
     Decorator for wrapping plain TypeScript functions as agent tools.
   </Card>
   <Card
-    title="run_app"
+    title="runApp"
     href="/docs/sdks/reference/typescript/agents/livewire/run-app"
   >
     Main entry point that prints the banner, runs setup, and starts the agent.

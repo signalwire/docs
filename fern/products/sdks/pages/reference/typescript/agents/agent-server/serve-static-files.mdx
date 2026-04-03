@@ -1,52 +1,52 @@
 ---
 title: "serveStaticFiles"
 slug: /reference/typescript/agents/agent-server/serve-static-files
-description: "AgentServer - Hosts multiple AgentBase instances under a single HTTP server."
+description: Serve static files from a local directory under a given route prefix.
 max-toc-depth: 3
 ---
 
-AgentServer - Hosts multiple AgentBase instances under a single HTTP server.
+Serve static files (HTML, CSS, JS, images) from a local directory. Includes path
+traversal protection (rejects `..`), MIME type detection, and security headers
+(`Cache-Control`, `X-Content-Type-Options`).
 
 ## **Parameters**
 
-<ParamField path="opts" type="unknown">
-  Optional host and port overrides; defaults to 0.0.0.0:3000.
-</ParamField>
-
-<ParamField path="agent" type="unknown">
-  The AgentBase instance to mount.
-</ParamField>
-
-<ParamField path="route" type="unknown">
-  Route prefix; defaults to the agent's own route or '/'.
-</ParamField>
-
-<ParamField path="route" type="unknown">
-  The route prefix to unregister.
-</ParamField>
-
-<ParamField path="route" type="unknown">
-  The route prefix to look up.
-</ParamField>
-
-<ParamField path="directory" type="string">
+<ParamField path="directory" type="string" required={true} toc={true}>
   Absolute or relative path to the directory to serve.
 </ParamField>
 
-<ParamField path="route" type="unknown">
-  Route prefix for static files (defaults to '/static').
+<ParamField path="route" type="string" default="/static" toc={true}>
+  Route prefix for static files.
 </ParamField>
 
 ## **Returns**
 
-`void` -- The result of the operation.
+`void`
 
 ## **Example**
 
 ```typescript
-import { AgentServer } from "@signalwire/sdk";
+import { AgentBase, AgentServer } from 'signalwire-agents';
 
-const agentServer = new AgentServer();
-const result = agentServer.serveStaticFiles();
-console.log(result);
+const support = new AgentBase({ name: 'support', route: '/support' });
+support.setPromptText('You are a helpful assistant.');
+
+const server = new AgentServer({ port: 3000 });
+server.register(support);
+server.serveStaticFiles('./web', '/static');
+await server.run();
 ```
+
+With this configuration:
+
+| Request Path | Served By |
+|-------------|-----------|
+| `/support` | SupportAgent |
+| `/support/swaig` | SupportAgent SWAIG endpoint |
+| `/static/style.css` | `./web/style.css` |
+| `/static/logo.png` | `./web/logo.png` |
+
+<Warning>
+Path traversal attempts (e.g., `/../etc/passwd`) are blocked. The resolved file path
+must remain within the configured static directory.
+</Warning>

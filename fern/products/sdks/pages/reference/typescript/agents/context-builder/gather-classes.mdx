@@ -17,13 +17,13 @@ Answers are stored in `global_data` and can be referenced by subsequent steps
 or tools.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { ContextBuilder } from 'signalwire-agents';
 ```
 
 <Info>
 GatherInfo is typically configured through the
-[`Step.set_gather_info()`][step-setgatherinfo] and
-[`Step.add_gather_question()`][step-addgatherquestion]
+[`Step.setGatherInfo()`][step-setgatherinfo] and
+[`Step.addGatherQuestion()`][step-addgatherquestion]
 methods rather than instantiated directly.
 </Info>
 
@@ -44,16 +44,16 @@ validation and confirmation settings.
   The question text to present to the user.
 </ParamField>
 
-<ParamField path="type" type="string" default="string" toc={true}>
-  JSON schema type for the answer parameter. Valid values:
+<ParamField path="type" type="string" default="'string'" toc={true}>
+  Expected answer type. Valid values:
   - `"string"` -- free-form text
   - `"number"` -- numeric value
   - `"boolean"` -- yes/no
   - `"integer"` -- whole number
 </ParamField>
 
-<ParamField path="confirm" type="boolean" default="False" toc={true}>
-  When `True`, the model must confirm the answer with the user before
+<ParamField path="confirm" type="boolean" default="false" toc={true}>
+  When `true`, the model must confirm the answer with the user before
   submitting it.
 </ParamField>
 
@@ -69,9 +69,9 @@ validation and confirmation settings.
   function to validate an account number).
 </ParamField>
 
-### to_dict
+### toDict
 
-**to_dict**() -> `Record<string, unknown>`
+**toDict**() -> `Record<string, unknown>`
 
 Convert the question to a dictionary for SWML generation. Fields with default
 values are omitted from the output.
@@ -105,25 +105,36 @@ answers are stored and what happens after all questions are answered.
   personality and context for why it is asking these questions.
 </ParamField>
 
-### add_question
+### addQuestion
 
-**add_question**(`key`, `question`, `**kwargs`) -> `GatherInfo`
+**addQuestion**(`opts`) -> `GatherInfo`
 
 Add a question to the gather configuration. Returns `this` for method chaining.
 
 #### Parameters
 
-<ParamField path="key" type="string" required={true} toc={true}>
+<ParamField path="opts.key" type="string" required={true} toc={true}>
   Key name for storing the answer in `global_data`.
 </ParamField>
 
-<ParamField path="question" type="string" required={true} toc={true}>
+<ParamField path="opts.question" type="string" required={true} toc={true}>
   The question text to ask.
 </ParamField>
 
-<ParamField path="**kwargs" type="unknown" toc={true}>
-  Optional fields passed to [`GatherQuestion`](#gatherquestion): `type`,
-  `confirm`, `prompt`, `functions`.
+<ParamField path="opts.type" type="string" toc={true}>
+  Answer type: `"string"`, `"number"`, `"boolean"`, `"integer"`.
+</ParamField>
+
+<ParamField path="opts.confirm" type="boolean" toc={true}>
+  Whether to confirm the answer with the user.
+</ParamField>
+
+<ParamField path="opts.prompt" type="string" toc={true}>
+  Extra instruction text for this question.
+</ParamField>
+
+<ParamField path="opts.functions" type="string[]" toc={true}>
+  SWAIG function names available during this question.
 </ParamField>
 
 #### Returns
@@ -132,12 +143,12 @@ Add a question to the gather configuration. Returns `this` for method chaining.
 
 ---
 
-### to_dict
+### toDict
 
-**to_dict**() -> `Record<string, unknown>`
+**toDict**() -> `Record<string, unknown>`
 
-Convert the gather configuration to a dictionary for SWML generation. Raises
-`ValueError` if no questions have been added.
+Convert the gather configuration to a dictionary for SWML generation. Throws
+an error if no questions have been added.
 
 #### Returns
 
@@ -149,37 +160,34 @@ Convert the gather configuration to a dictionary for SWML generation. Raises
 
 The typical pattern is to use GatherInfo through the Step API:
 
-```typescript
-import { AgentBase } from "@signalwire/sdk";
+```typescript {7-16}
+import { ContextBuilder } from 'signalwire-agents';
 
-class IntakeAgent extends AgentBase {
-    Init() {
-        super().__init__(name="intake-agent", route="/intake")
+const builder = new ContextBuilder();
+const ctx = builder.addContext('default');
 
-        contexts = self.defineContexts()
-        ctx = contexts.add_context("default")
+// Configure gather info on a step
+ctx.addStep('intake')
+  .setText('Collect the caller\'s information.')
+  .setGatherInfo({
+    outputKey: 'caller_info',
+    completionAction: 'next_step',
+    prompt: 'You are a friendly receptionist collecting basic info.',
+  })
+  .addGatherQuestion({ key: 'name', question: 'What is your full name?', confirm: true })
+  .addGatherQuestion({ key: 'phone', question: 'What is your callback number?', type: 'string' })
+  .addGatherQuestion({ key: 'reason', question: 'What is the reason for your call?' });
 
-        intake = ctx.addStep("intake")
-        intake.set_text("Collect the caller's information.")
-        intake.set_gather_info(
-            output_key="caller_info",
-            completion_action="next_step",
-            prompt="You are a friendly receptionist collecting basic info."
-        )
-        intake.add_gather_question("name", "What is your full name?", confirm=true)
-        intake.add_gather_question("phone", "What is your callback number?", type="string")
-        intake.add_gather_question("reason", "What is the reason for your call?")
-
-        process = ctx.addStep("process")
-        process.set_text("Thank the caller and summarize what was collected.")
+ctx.addStep('process')
+  .setText('Thank the caller and summarize what was collected.');
 ```
 
 You can also use GatherInfo directly:
 
-```typescript
-import { AgentBase } from "@signalwire/sdk";
+```typescript {3-5}
+import { GatherInfo } from 'signalwire-agents';
 
-gather = GatherInfo(output_key="patient_info", completion_action="next_step")
-gather.add_question("dob", "What is your date of birth?", type="string", confirm=true)
-gather.add_question("allergies", "Do you have any allergies?")
+const gather = new GatherInfo({ outputKey: 'patient_info', completionAction: 'next_step' });
+gather.addQuestion({ key: 'dob', question: 'What is your date of birth?', type: 'string', confirm: true });
+gather.addQuestion({ key: 'allergies', question: 'Do you have any allergies?' });
 ```

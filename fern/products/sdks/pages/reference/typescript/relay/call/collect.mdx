@@ -21,7 +21,7 @@ This method emits [`calling.call.collect`][calling-call-collect] events. See [Ca
 
 ## **Parameters**
 
-<ParamField path="digits" type="dict | undefined" toc={true}>
+<ParamField path="digits" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   DTMF digit collection settings.
 </ParamField>
 
@@ -39,7 +39,7 @@ This method emits [`calling.call.collect`][calling-call-collect] events. See [Ca
 </ParamField>
 </Indent>
 
-<ParamField path="speech" type="dict | undefined" toc={true}>
+<ParamField path="speech" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Speech recognition settings.
 </ParamField>
 
@@ -79,48 +79,47 @@ This method emits [`calling.call.collect`][calling-call-collect] events. See [Ca
 
 <ParamField path="startInputTimers" type="boolean | undefined" toc={true}>
   Start input timers immediately. If `false`, call
-  `action.start_input_timers()` to start them manually.
+  `action.startInputTimers()` to start them manually.
 </ParamField>
 
 <ParamField path="controlId" type="string | undefined" toc={true}>
   Custom control ID. Auto-generated if not provided.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when collection completes.
 </ParamField>
 
 ## **Returns**
 
-[`StandaloneCollectAction`][standalonecollectaction] -- An action
+`Promise<`[`StandaloneCollectAction`][standalonecollectaction]`>` -- An action
 handle with `stop()`, `startInputTimers()`, and `wait()` methods.
 
 ## **Example**
 
-```typescript {15}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Collect digits silently (e.g., extension entry)
-    action = await call.collect(
-        digits={"max": 4, "digit_timeout": 3, "terminators": "#"},
-        initial_timeout=10,
-    )
-    event = await action.wait()
+  // Collect digits silently (e.g., extension entry)
+  const action = await call.collect({
+    digits: { max: 4, digit_timeout: 3, terminators: '#' },
+    initialTimeout: 10,
+  });
+  const event = await action.wait();
 
-    result = event.params.get("result", {})
-    extension = result.get("digits", "")
-    console.log(`Extension entered: ${extension}`)
+  const result = event.params.result as Record<string, unknown> ?? {};
+  const extension = (result.digits ?? '') as string;
+  console.log(`Extension entered: ${extension}`);
+});
 
-client.run()
+await client.run();
 ```

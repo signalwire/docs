@@ -24,38 +24,39 @@ engine/model via separate parameters, or a combined `"engine.voice:model"` strin
 
 ## **Parameters**
 
-<ParamField path="name" type="string" required={true} toc={true}>
-  Human-readable language name (e.g., `"English"`, `"French"`, `"Spanish"`).
-</ParamField>
+<ParamField path="config" type="LanguageConfig" required={true} toc={true}>
+  A language configuration object with the following fields:
 
-<ParamField path="code" type="string" required={true} toc={true}>
-  Language code (e.g., `"en-US"`, `"fr-FR"`, `"es-MX"`).
-</ParamField>
+  <ParamField path="config.name" type="string" required={true}>
+    Human-readable language name (e.g., `"English"`, `"French"`, `"Spanish"`).
+  </ParamField>
 
-<ParamField path="voice" type="string" required={true} toc={true}>
-  TTS voice identifier. Accepts one of three formats:
-  - Simple name: `"en-US-Neural2-F"`
-  - Combined format: `"elevenlabs.josh:eleven_turbo_v2_5"`
-  - Short name with explicit `engine`/`model`: `"josh"`
-</ParamField>
+  <ParamField path="config.code" type="string" required={true}>
+    Language code (e.g., `"en-US"`, `"fr-FR"`, `"es-MX"`).
+  </ParamField>
 
-<ParamField path="speechFillers" type="string[] | undefined" toc={true}>
-  Filler phrases used during natural speech pauses (e.g., `["Um...", "Let me see..."]`).
-</ParamField>
+  <ParamField path="config.voice" type="string">
+    TTS voice identifier. Accepts one of three formats:
+    - Simple name: `"en-US-Neural2-F"`
+    - Combined format: `"elevenlabs.josh:eleven_turbo_v2_5"`
+    - Short name with explicit `engine`: `"josh"`
+  </ParamField>
 
-<ParamField path="functionFillers" type="string[] | undefined" toc={true}>
-  Filler phrases spoken while executing SWAIG functions
-  (e.g., `["One moment please...", "Looking that up..."]`).
-</ParamField>
+  <ParamField path="config.engine" type="string">
+    Explicit TTS engine name (e.g., `"elevenlabs"`, `"rime"`).
+  </ParamField>
 
-<ParamField path="engine" type="string | undefined" toc={true}>
-  Explicit TTS engine name (e.g., `"elevenlabs"`, `"rime"`). Overrides the
-  combined string format if provided.
-</ParamField>
+  <ParamField path="config.fillers" type={"Record<string, string[]>"}>
+    Filler phrases keyed by category for this language.
+  </ParamField>
 
-<ParamField path="model" type="string | undefined" toc={true}>
-  Explicit TTS model name (e.g., `"eleven_turbo_v2_5"`, `"arcana"`). Overrides the
-  combined string format if provided.
+  <ParamField path="config.speechModel" type="string">
+    Speech recognition model identifier.
+  </ParamField>
+
+  <ParamField path="config.functionFillers" type={"Record<string, Record<string, string[]>>"}>
+    Per-function filler phrases, keyed by function name then language code.
+  </ParamField>
 </ParamField>
 
 ## **Returns**
@@ -66,41 +67,48 @@ engine/model via separate parameters, or a combined `"engine.voice:model"` strin
 
 ### Simple voice
 
-```typescript {5}
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { AgentBase } from 'signalwire-agents';
 
-agent = AgentBase(name="support", route="/support")
-agent.setPromptText("You are a helpful assistant.")
-agent.addLanguage("English", "en-US", "rime.spore")
-agent.run()
+const agent = new AgentBase({ name: 'support', route: '/support' });
+agent.setPromptText('You are a helpful assistant.');
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+await agent.serve();
 ```
 
-### Explicit engine and model
+### Explicit engine
 
-```typescript {5}
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { AgentBase } from 'signalwire-agents';
 
-agent = AgentBase(name="support", route="/support")
-agent.setPromptText("You are a helpful assistant.")
-agent.addLanguage(
-    "English", "en-US", "josh",
-    engine="elevenlabs",
-    model="eleven_turbo_v2_5"
-)
-agent.run()
+const agent = new AgentBase({ name: 'support', route: '/support' });
+agent.setPromptText('You are a helpful assistant.');
+agent.addLanguage({
+  name: 'English',
+  code: 'en-US',
+  voice: 'josh',
+  engine: 'elevenlabs',
+});
+await agent.serve();
 ```
 
 ### With fillers
 
-```typescript {5}
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { AgentBase } from 'signalwire-agents';
 
-agent = AgentBase(name="support", route="/support")
-agent.setPromptText("You are a helpful assistant.")
-agent.addLanguage(
-    "English", "en-US", "rime.spore",
-    speech_fillers=["Um...", "Let me think..."],
-    function_fillers=["One moment please...", "Looking that up..."]
-)
-agent.run()
+const agent = new AgentBase({ name: 'support', route: '/support' });
+agent.setPromptText('You are a helpful assistant.');
+agent.addLanguage({
+  name: 'English',
+  code: 'en-US',
+  voice: 'rime.spore',
+  fillers: {
+    speech: ['Um...', 'Let me think...'],
+  },
+  functionFillers: {
+    get_weather: { 'en-US': ['Checking the weather...', 'One moment please...'] },
+  },
+});
+await agent.serve();
 ```

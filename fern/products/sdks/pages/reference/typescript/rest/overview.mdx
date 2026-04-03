@@ -19,10 +19,10 @@ position: 0
 [compat]: /docs/sdks/reference/typescript/rest/compat
 [mfa]: /docs/sdks/reference/typescript/rest/mfa
 
-The REST namespace provides a synchronous HTTP client for the SignalWire platform
+The REST namespace provides an HTTP client for the SignalWire platform
 APIs. It organizes every HTTP endpoint into namespaced resource objects with
 standard CRUD operations, letting you manage phone numbers, fabric resources,
-call logs, video rooms, datasphere documents, and more from Python.
+call logs, video rooms, datasphere documents, and more from TypeScript.
 
 ## Example
 
@@ -30,54 +30,60 @@ Search for available phone numbers, purchase one, and assign it to a fabric
 AI agent resource:
 
 ```typescript
-import { RestClient } from "@signalwire/sdk";
+import { RestClient } from "signalwire-agents/rest";
 
-client = RestClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-)
+const client = new RestClient({
+  project: "your-project-id",
+  token: "your-api-token",
+  host: "your-space.signalwire.com"
+});
 
-# Search for available numbers in area code 512
-available = client.phone_numbers.search(area_code="512", quantity=3)
-for number in available.get("data", []):
-    console.log(`${number['number']} - ${number["region"]}`)
+// Search for available numbers in area code 512
+const available = await client.phoneNumbers.search({ areaCode: "512", quantity: 3 });
+for (const number of available.data ?? []) {
+  console.log(`${number.number} - ${number.region}`);
+}
 
-# Purchase the first available number
-purchased = client.phone_numbers.create(number=available["data"][0]["number"])
-console.log(`Purchased: ${purchased['number']}`)
+// Purchase the first available number
+const purchased = await client.phoneNumbers.create({ number: available.data[0].number });
+console.log(`Purchased: ${purchased.number}`);
 
-# List your AI agent resources
-response = client.fabric.ai_agents.list()
-for agent in response.get("data", []):
-    console.log(`Agent: ${agent['name']} (${agent['id']})`)
+// List your AI agent resources
+const response = await client.fabric.aiAgents.list();
+for (const agent of response.data ?? []) {
+  console.log(`Agent: ${agent.name} (${agent.id})`);
+}
 
-# Query recent voice call logs
-logs = client.logs.voice.list(page_size=5)
-for log in logs.get("data", []):
-    console.log(`Call from ${log["from"]} to ${log["to"]}`)
+// Query recent voice call logs
+const logs = await client.logs.voice.list({ pageSize: 5 });
+for (const log of logs.data ?? []) {
+  console.log(`Call from ${log.from} to ${log.to}`);
+}
 ```
 
 <Note>
 All three constructor arguments can also be provided via environment variables:
 `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, and `SIGNALWIRE_SPACE`.
-When those are set, you can instantiate with `RestClient()` and no arguments.
+When those are set, you can instantiate with `new RestClient()` and no arguments.
 </Note>
 
 ## Error Handling
 
-REST errors raise `SignalWireRestError`:
+REST errors throw `RestError`:
 
 ```typescript
-import { RestClient } from "@signalwire/sdk";
+import { RestClient, RestError } from "signalwire-agents/rest";
 
-client = RestClient()
+const client = new RestClient();
 
-try:
-    client.phone_numbers.get("nonexistent-id")
-except SignalWireRestError as e:
-    console.log(`HTTP ${e.status_code}: ${e.body}`)
-    console.log(`URL: ${e.method} ${e.url}`)
+try {
+  await client.phoneNumbers.get("nonexistent-id");
+} catch (e) {
+  if (e instanceof RestError) {
+    console.log(`HTTP ${e.status}: ${e.body}`);
+    console.log(`URL: ${e.method} ${e.url}`);
+  }
+}
 ```
 
 ## Resources

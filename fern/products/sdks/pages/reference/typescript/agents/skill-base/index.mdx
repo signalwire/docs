@@ -58,7 +58,7 @@ Define these on your subclass to configure the skill:
 </ParamField>
 
 <ParamField path="SUPPORTSMultipleInstances" type="boolean" default="false" toc={true}>
-  When `True`, the same skill can be added to an agent multiple times with
+  When `true`, the same skill can be added to an agent multiple times with
   different configurations (distinguished by a `tool_name` parameter).
 </ParamField>
 
@@ -87,25 +87,25 @@ Define these on your subclass to configure the skill:
   <Card title="cleanup" href="/docs/sdks/reference/typescript/agents/skill-base/cleanup">
     Release resources when the skill is removed or the agent shuts down.
   </Card>
-  <Card title="define_tool" href="/docs/sdks/reference/typescript/agents/skill-base/define-tool">
+  <Card title="defineTool" href="/docs/sdks/reference/typescript/agents/skill-base/define-tool">
     Register a tool with automatic swaig_fields merging.
   </Card>
-  <Card title="get_global_data" href="/docs/sdks/reference/typescript/agents/skill-base/get-global-data">
+  <Card title="getGlobalData" href="/docs/sdks/reference/typescript/agents/skill-base/get-global-data">
     Return data to merge into the agent's global_data dictionary.
   </Card>
-  <Card title="get_hints" href="/docs/sdks/reference/typescript/agents/skill-base/get-hints">
+  <Card title="getHints" href="/docs/sdks/reference/typescript/agents/skill-base/get-hints">
     Return speech recognition hints for this skill.
   </Card>
-  <Card title="get_instance_key" href="/docs/sdks/reference/typescript/agents/skill-base/get-instance-key">
+  <Card title="getInstanceKey" href="/docs/sdks/reference/typescript/agents/skill-base/get-instance-key">
     Get the unique key used to track this skill instance.
   </Card>
-  <Card title="get_parameter_schema" href="/docs/sdks/reference/typescript/agents/skill-base/get-parameter-schema">
+  <Card title="getParameterSchema" href="/docs/sdks/reference/typescript/agents/skill-base/get-parameter-schema">
     Return metadata about all parameters the skill accepts.
   </Card>
-  <Card title="get_prompt_sections" href="/docs/sdks/reference/typescript/agents/skill-base/get-prompt-sections">
+  <Card title="getPromptSections" href="/docs/sdks/reference/typescript/agents/skill-base/get-prompt-sections">
     Return POM prompt sections for the agent.
   </Card>
-  <Card title="register_tools" href="/docs/sdks/reference/typescript/agents/skill-base/register-tools">
+  <Card title="registerTools" href="/docs/sdks/reference/typescript/agents/skill-base/register-tools">
     Register SWAIG tools with the parent agent.
   </Card>
   <Card title="setup" href="/docs/sdks/reference/typescript/agents/skill-base/setup">
@@ -124,86 +124,38 @@ Define these on your subclass to configure the skill:
 ### Custom skill
 
 ```typescript
-import os
-import { SkillBase } from "@signalwire/sdk";
-import { FunctionResult } from "@signalwire/sdk";
+import { SkillBase, SkillManifest, SkillToolDefinition } from 'signalwire-agents';
 
-class WeatherSkill extends SkillBase {
-    SKILL_NAME = "weather"
-    SKILL_DESCRIPTION = "Provides weather information"
-    SKILL_VERSION = "1.0.0"
-    REQUIRED_PACKAGES = ["requests"]
-    REQUIRED_ENV_VARS = ["WEATHER_API_KEY"]
+class MyWeatherSkill extends SkillBase {
+  constructor(config?: Record<string, unknown>) {
+    super('my_weather', config);
+  }
 
-    setup(): boolean {
-        if not self.validatePackages():
-            return false
-        if not self.validateEnvVars():
-            return false
-        self.api_key = os.getenv("WEATHER_API_KEY")
-        return true
+  getManifest(): SkillManifest {
+    return { name: 'my_weather', description: 'Look up weather', version: '1.0.0' };
+  }
 
-    registerTools() {
-        self.defineTool(
-            name="get_weather",
-            description="Get current weather for a location",
-            handler=self._get_weather,
-            parameters={
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "City name or zip code"
-                    }
-                },
-                "required": ["location"]
-            }
-        )
-
-    GetWeather(args, rawData) {
-        import requests
-        location = args["location"]
-        resp = requests.get(
-            `https://api.weather.com/v1/current?q=${location}&key=${self.api_key}`
-        )
-        data = resp.json()
-        return FunctionResult(
-            `Weather in ${location}: ${data['condition']}, ${data['temp']}F`
-        )
-
-    getHints() {
-        return ["weather", "temperature", "forecast"]
-
-    GetPromptSections() {
-        return [{
-            "title": "Weather Information",
-            "body": "You can check weather for any location."
-        }]
-
-    @classmethod
-    function getParameterSchema(cls) {
-        schema = super().get_parameter_schema()
-        schema.update({
-            "units": {
-                "type": "string",
-                "description": "Temperature units",
-                "default": "fahrenheit",
-                "enum": ["fahrenheit", "celsius"]
-            }
-        })
-        return schema
+  getTools(): SkillToolDefinition[] {
+    return [{
+      name: 'get_weather',
+      description: 'Get current weather for a city',
+      parameters: { city: { type: 'string', description: 'City name' } },
+      handler: async (args) => ({ response: 'Sunny, 72F' }),
+    }];
+  }
+}
 ```
 
 ### Using a skill
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { AgentBase } from 'signalwire-agents';
 
-agent = AgentBase(name="weather-agent")
+const agent = new AgentBase({ name: 'weather-agent' });
 agent.setPromptText("You are a helpful assistant.")
 agent.addSkill("weather")
 
-# Or with custom configuration
+// Or with custom configuration
 agent.addSkill("weather", {"units": "celsius"})
 
 // Entry point

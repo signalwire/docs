@@ -17,44 +17,43 @@ and then removes itself.
   The event type string to wait for.
 </ParamField>
 
-<ParamField path="predicate" type="(arg0: RelayEvent) => boolean | undefined" toc={true}>
+<ParamField path="predicate" type="(event: RelayEvent) => boolean" toc={true}>
   Optional filter function. If provided, the wait only resolves when the
-  predicate returns `True` for a received event.
+  predicate returns `true` for a received event.
 </ParamField>
 
 <ParamField path="timeout" type="number | undefined" toc={true}>
-  Maximum seconds to wait. Raises `asyncio.TimeoutError` if exceeded. `undefined`
+  Maximum milliseconds to wait. Throws an `Error` if exceeded. `undefined`
   waits indefinitely.
 </ParamField>
 
 ## **Returns**
 
-[`RelayEvent`][relayevent] -- The first event matching the type and optional predicate.
+`Promise<`[`RelayEvent`][relayevent]`>` -- The first event matching the type and optional predicate.
 
 ## **Example**
 
-```typescript {16}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Wait for a specific play event
-    action = await call.play([{"type": "tts", "text": "Hello!"}])
-    event = await call.waitFor(
-        "calling.call.play",
-        predicate=lambda e: e.params["state"] == "finished",
-        timeout=30,
-    )
-    console.log(`Play finished: ${event.params}`)
+  // Wait for a specific play event
+  const action = await call.play([{ type: 'tts', text: 'Hello!' }]);
+  const event = await call.waitFor(
+    'calling.call.play',
+    (e) => e.params.state === 'finished',
+    30_000
+  );
+  console.log(`Play finished: ${JSON.stringify(event.params)}`);
+});
 
-client.run()
+await client.run();
 ```

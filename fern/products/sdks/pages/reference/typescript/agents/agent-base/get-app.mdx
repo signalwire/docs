@@ -1,7 +1,7 @@
 ---
 title: "getApp"
 slug: /reference/typescript/agents/agent-base/get-app
-description: Get the FastAPI application instance for use with deployment adapters.
+description: Get or lazily create the Hono HTTP application with all routes and middleware.
 max-toc-depth: 3
 ---
 
@@ -9,8 +9,8 @@ Get the fully initialized Hono application instance. If the app has not been
 created yet, this method initializes it with all routes, middleware, health checks,
 and security headers -- the same configuration that `serve()` would create.
 
-This is primarily used with deployment adapters like Mangum (AWS Lambda) or when
-embedding the agent in a larger Hono application.
+This is primarily used when embedding the agent in a larger Hono application or
+when deploying to serverless platforms.
 
 ## **Returns**
 
@@ -19,27 +19,28 @@ registered.
 
 ## **Examples**
 
-### AWS Lambda with Mangum
-
-```typescript {7}
-from mangum import Mangum
-import { AgentBase } from "@signalwire/sdk";
-
-agent = AgentBase(name="lambda-agent")
-agent.setPromptText("You are a helpful assistant.")
-
-app = agent.getApp()
-handler = Mangum(app)
-```
-
 ### Embed in existing Hono app
 
-```typescript {7}
-from fastapi import FastAPI
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { Hono } from 'hono';
+import { AgentBase } from 'signalwire-agents';
 
-main_app = FastAPI()
-agent = AgentBase(name="assistant", route="/agent")
+const mainApp = new Hono();
+const agent = new AgentBase({ name: 'assistant', route: '/agent' });
+agent.setPromptText('You are a helpful assistant.');
 
-main_app.mount("/ai", agent.getApp())
+mainApp.route('/ai', agent.getApp());
+```
+
+### Use with a custom server
+
+```typescript
+import { serve } from '@hono/node-server';
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+const app = agent.getApp();
+serve({ fetch: app.fetch, port: 8080 });
 ```

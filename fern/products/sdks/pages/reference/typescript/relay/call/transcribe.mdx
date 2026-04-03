@@ -34,44 +34,44 @@ This method emits [`calling.call.transcribe`][calling-call-transcribe] events. S
   URL to receive transcription status webhooks.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when transcription completes. The event contains the
   transcription `url`, `duration`, and `size`.
 </ParamField>
 
 ## **Returns**
 
-[`TranscribeAction`][transcribeaction] -- An action handle
+`Promise<`[`TranscribeAction`][transcribeaction]`>` -- An action handle
 with `stop()` and `wait()` methods.
 
 ## **Example**
 
-```typescript {15}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Start transcription
-    action = await call.transcribe(
-        status_url="https://example.com/transcription-status",
-    )
+  // Start transcription
+  const action = await call.transcribe({
+    statusUrl: 'https://example.com/transcription-status',
+  });
 
-    # Let the call proceed...
-    await call.waitForEnded()
+  // Let the call proceed...
+  await call.waitForEnded();
 
-    # The transcription result is available after the call ends
-    if action.result:
-        url = action.result.params.get("url", "")
-        console.log(`Transcription available at: ${url}`)
+  // The transcription result is available after the call ends
+  if (action.result) {
+    const url = action.result.params.url ?? '';
+    console.log(`Transcription available at: ${url}`);
+  }
+});
 
-client.run()
+await client.run();
 ```

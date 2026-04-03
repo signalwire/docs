@@ -43,7 +43,7 @@ parameters and behaviors.
   from SignalWire Fabric instead of inline configuration.
 </ParamField>
 
-<ParamField path="prompt" type="dict | undefined" toc={true}>
+<ParamField path="prompt" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   The main prompt configuration.
 </ParamField>
 
@@ -61,7 +61,7 @@ parameters and behaviors.
 </ParamField>
 </Indent>
 
-<ParamField path="postPrompt" type="dict | undefined" toc={true}>
+<ParamField path="postPrompt" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Post-prompt configuration for summarization or analysis after the
   conversation ends.
 </ParamField>
@@ -84,7 +84,7 @@ parameters and behaviors.
   Password for basic auth on the post-prompt webhook.
 </ParamField>
 
-<ParamField path="globalData" type="dict | undefined" toc={true}>
+<ParamField path="globalData" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Data accessible to the AI agent and SWAIG functions throughout the session.
 </ParamField>
 
@@ -101,49 +101,48 @@ parameters and behaviors.
   Language configurations for multilingual support.
 </ParamField>
 
-<ParamField path="SWAIG" type="dict | undefined" toc={true}>
+<ParamField path="SWAIG" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   SWAIG (SignalWire AI Gateway) configuration for tool/function definitions.
 </ParamField>
 
-<ParamField path="aiParams" type="dict | undefined" toc={true}>
+<ParamField path="aiParams" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Additional AI parameters such as `barge_confidence`, `end_of_speech_timeout`,
   `attention_timeout`, and other LLM tuning settings.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when the AI session ends.
 </ParamField>
 
 ## **Returns**
 
-[`AIAction`][aiaction] -- An action handle with `stop()` and `wait()` methods.
+`Promise<`[`AIAction`][aiaction]`>` -- An action handle with `stop()` and `wait()` methods.
 
 ## **Example**
 
-```typescript {15}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Start an AI agent on the call
-    action = await call.ai(
-        prompt={"text": "You are a helpful customer support agent for Acme Corp."},
-        hints=["Acme", "support", "billing"],
-        ai_params={"barge_confidence": 0.02},
-    )
+  // Start an AI agent on the call
+  const action = await call.ai({
+    prompt: { text: 'You are a helpful customer support agent for Acme Corp.' },
+    hints: ['Acme', 'support', 'billing'],
+    aiParams: { barge_confidence: 0.02 },
+  });
 
-    # Wait for the AI session to end (caller hangs up or AI stops)
-    await action.wait()
-    console.log("AI session ended")
+  // Wait for the AI session to end (caller hangs up or AI stops)
+  await action.wait();
+  console.log('AI session ended');
+});
 
-client.run()
+await client.run();
 ```

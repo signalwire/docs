@@ -26,7 +26,7 @@ This method corresponds to the SWML [`record`][record] verb. See the
 
 ## **Parameters**
 
-<ParamField path="audio" type="dict | undefined" toc={true}>
+<ParamField path="audio" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Audio recording configuration object.
 </ParamField>
 
@@ -75,41 +75,40 @@ This method corresponds to the SWML [`record`][record] verb. See the
   Custom control ID for this operation. Auto-generated if not provided.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when recording reaches a terminal state (`finished` or
   `no_input`). The event contains the recording `url`, `duration`, and `size`.
 </ParamField>
 
 ## **Returns**
 
-[`RecordAction`][recordaction] -- An action handle with
+`Promise<`[`RecordAction`][recordaction]`>` -- An action handle with
 `stop()`, `pause()`, `resume()`, and `wait()` methods.
 
 ## **Example**
 
-```typescript {15}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-    await call.play([{"type": "tts", "text": "Leave a message after the beep."}])
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'Leave a message after the beep.' }]);
 
-    action = await call.record(
-        audio={"beep": true, "end_silence_timeout": 3, "terminators": "#"},
-    )
-    event = await action.wait()
+  const action = await call.record(
+    { beep: true, end_silence_timeout: 3, terminators: '#' }
+  );
+  const event = await action.wait();
 
-    url = event.params.get("record", {}).get("url", "")
-    console.log(`Recording saved: ${url}`)
-    await call.hangup()
+  const url = event.params.record?.url ?? '';
+  console.log(`Recording saved: ${url}`);
+  await call.hangup();
+});
 
-client.run()
+await client.run();
 ```

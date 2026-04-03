@@ -6,25 +6,18 @@ max-toc-depth: 3
 ---
 
 [run]: /docs/sdks/reference/typescript/relay/client/run
+[disconnect]: /docs/sdks/reference/typescript/relay/client/disconnect
 [ref-relayclient]: /docs/sdks/reference/typescript/relay/client
 
 Establish a WebSocket connection to SignalWire RELAY and authenticate. This method
 connects to `wss://<host>`, sends a `signalwire.connect` authentication request,
-subscribes to the configured contexts, and starts the internal receive loop.
+subscribes to the configured contexts, and starts the internal ping loop.
 
 <Note>
 For most use cases, prefer [`run()`][run]
 which calls `connect()` internally and adds automatic reconnection. Use `connect()`
-directly only when you need manual control over the event loop or are using the
-async context manager.
+directly only when you need manual control over the connection lifecycle.
 </Note>
-
-<Warning>
-By default, only one [`RelayClient`][ref-relayclient] connection is allowed per process. Calling
-`connect()` on a second instance without disconnecting the first raises
-`RuntimeError`. Set the `RELAY_MAX_CONNECTIONS` environment variable to allow
-multiple concurrent connections.
-</Warning>
 
 ## **Parameters**
 
@@ -32,54 +25,24 @@ None.
 
 ## **Returns**
 
-`undefined`
+`Promise<void>`
 
-## **Examples**
-
-### Manual connect/disconnect
-
-```typescript {12}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
-
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
-
-async def main():
-    await client.connect()
-    # Connected and authenticated -- do work here
-    call = await client.dial(
-        devices=[[{"type": "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"}}]]
-    )
-    await call.hangup()
-    await client.disconnect()
-
-asyncio.run(main())
-```
-
-### Async context manager
+## **Example**
 
 ```typescript
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{"type": "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"}}]]
-        )
-        await call.hangup()
-
-asyncio.run(main())
+await client.connect();
+// Connected and authenticated -- do work here
+const call = await client.dial({
+  devices: [[{ type: 'phone', params: { to_number: '+15559876543', from_number: '+15551234567' } }]],
+});
+await call.hangup();
+await client.disconnect();
 ```

@@ -1,7 +1,7 @@
 ---
 title: "AgentServer"
 slug: /reference/typescript/agents/agent-server
-description: Host multiple AI agents on a single FastAPI server with shared routing and health checks.
+description: Host multiple AI agents on a single Hono HTTP server with shared routing and health checks.
 max-toc-depth: 3
 ---
 
@@ -11,95 +11,93 @@ max-toc-depth: 3
 [getagent]: /docs/sdks/reference/typescript/agents/agent-server/get-agent
 [getagents]: /docs/sdks/reference/typescript/agents/agent-server/get-agents
 [register]: /docs/sdks/reference/typescript/agents/agent-server/register
-[registerglobalroutingcallback]: /docs/sdks/reference/typescript/agents/agent-server/routing-callback
 [run]: /docs/sdks/reference/typescript/agents/agent-server/run
 [servestaticfiles]: /docs/sdks/reference/typescript/agents/agent-server/static-files
-[setupsiprouting]: /docs/sdks/reference/typescript/agents/agent-server/sip-routing
 [unregister]: /docs/sdks/reference/typescript/agents/agent-server/unregister
 
-AgentServer hosts multiple [`AgentBase`][agentbase] instances
-on a single Hono process. Each agent registers at its own URL route, and the server provides
-unified health monitoring, SIP-based routing, and static file serving. Use AgentServer when you
-have several related agents (sales, support, billing) that share the same deployment environment.
+`AgentServer` hosts multiple [`AgentBase`][agentbase] instances
+on a single Hono HTTP server. Each agent registers at its own URL route, and the server
+provides unified health monitoring and static file serving. Use `AgentServer` when you
+have several related agents (sales, support, billing) that share the same deployment.
 
 For a single agent, use [`AgentBase.serve()`][agentbase-serve]
 or [`AgentBase.run()`][agentbase-run] instead.
 
+## **Constructor**
+
+```typescript
+import { AgentServer } from 'signalwire-agents';
+
+const server = new AgentServer({ host: '0.0.0.0', port: 3000 });
+```
+
+### Constructor Parameters
+
+<ParamField path="opts" type="object" toc={true}>
+  Optional server configuration.
+
+  <ParamField path="opts.host" type="string" default="0.0.0.0">
+    Hostname the server binds to.
+  </ParamField>
+
+  <ParamField path="opts.port" type="number" default="3000">
+    Port the server listens on. Also reads from the `PORT` environment variable.
+  </ParamField>
+</ParamField>
+
 ## **Properties**
 
-<ParamField path="app" type="Hono" toc={true}>
-  The underlying Hono application. Use this to add custom routes, middleware, or to run
-  the server with an external ASGI server like gunicorn.
-</ParamField>
-
-<ParamField path="agents" type={"Record<string, AgentBase>"} toc={true}>
-  Dictionary mapping route strings to registered [`AgentBase`][agentbase] instances.
-</ParamField>
-
 <ParamField path="host" type="string" toc={true}>
-  The host address the server binds to.
+  The hostname the server binds to.
 </ParamField>
 
 <ParamField path="port" type="number" toc={true}>
   The port the server listens on.
 </ParamField>
 
-<ParamField path="logLevel" type="string" toc={true}>
-  The logging level for the server.
-</ParamField>
-
 ## **Methods**
 
 <CardGroup cols={4}>
-  <Card title="get_agent" href="/docs/sdks/reference/typescript/agents/agent-server/get-agent">
+  <Card title="getAgent" href="/docs/sdks/reference/typescript/agents/agent-server/get-agent">
     Retrieve a specific registered agent by its route.
   </Card>
-  <Card title="get_agents" href="/docs/sdks/reference/typescript/agents/agent-server/get-agents">
-    Return all registered agents as a list of route/agent tuples.
+  <Card title="getAgents" href="/docs/sdks/reference/typescript/agents/agent-server/get-agents">
+    Return all registered agents as a Map.
   </Card>
   <Card title="register" href="/docs/sdks/reference/typescript/agents/agent-server/register">
     Register an agent at a URL route on the server.
   </Card>
-  <Card title="register_global_routing_callback" href="/docs/sdks/reference/typescript/agents/agent-server/routing-callback">
-    Register a routing callback across all agents for custom request routing.
-  </Card>
   <Card title="run" href="/docs/sdks/reference/typescript/agents/agent-server/run">
-    Start the multi-agent server with automatic environment detection.
+    Start the multi-agent HTTP server.
   </Card>
-  <Card title="serve_static_files" href="/docs/sdks/reference/typescript/agents/agent-server/static-files">
+  <Card title="serveStaticFiles" href="/docs/sdks/reference/typescript/agents/agent-server/static-files">
     Serve static files from a directory alongside agent routes.
-  </Card>
-  <Card title="setup_sip_routing" href="/docs/sdks/reference/typescript/agents/agent-server/sip-routing">
-    Configure SIP-based routing to direct calls to specific agents by username.
   </Card>
   <Card title="unregister" href="/docs/sdks/reference/typescript/agents/agent-server/unregister">
     Remove an agent from the server's registry by route.
+  </Card>
+  <Card title="getApp" href="/docs/sdks/reference/typescript/agents/agent-server/get-app">
+    Get the fully configured Hono application.
   </Card>
 </CardGroup>
 
 ## **Example**
 
-```typescript {17}
-import { AgentServer } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+```typescript
+import { AgentBase, AgentServer } from 'signalwire-agents';
 
-class SalesAgent extends AgentBase {
-    Init() {
-        super().__init__(name="sales-agent", route="/sales")
-        self.addLanguage("English", "en-US", "rime.spore")
-        self.promptAddSection("Role", "You are a sales representative.")
+const salesAgent = new AgentBase({ name: 'sales-agent', route: '/sales' });
+salesAgent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+salesAgent.promptAddSection('Role', { body: 'You are a sales representative.' });
 
-class SupportAgent extends AgentBase {
-    Init() {
-        super().__init__(name="support-agent", route="/support")
-        self.addLanguage("English", "en-US", "rime.spore")
-        self.promptAddSection("Role", "You are a support specialist.")
+const supportAgent = new AgentBase({ name: 'support-agent', route: '/support' });
+supportAgent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+supportAgent.promptAddSection('Role', { body: 'You are a support specialist.' });
 
-// Entry point
-    server = AgentServer(host="0.0.0.0", port=3000)
-    server.register(SalesAgent(), "/sales")
-    server.register(SupportAgent(), "/support")
-    server.run()
+const server = new AgentServer({ host: '0.0.0.0', port: 3000 });
+server.register(salesAgent, '/sales');
+server.register(supportAgent, '/support');
+await server.run();
 ```
 
 After starting, agents are available at:

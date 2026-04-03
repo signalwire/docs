@@ -10,26 +10,26 @@ max-toc-depth: 3
 Initiate an outbound call. Sends a `calling.dial` JSON-RPC request and waits for the
 server to return a `calling.call.dial` event confirming the call was answered or failed.
 Returns a fully-initialized [`Call`][call] object
-with valid `call_id` and `node_id`.
+with valid `callId` and `nodeId`.
 
 The `devices` parameter supports both serial and parallel dialing strategies. Each
-inner list represents a set of devices to ring simultaneously (parallel). The outer
-list represents sequential attempts -- if the first group fails, the next group is
+inner array represents a set of devices to ring simultaneously (parallel). The outer
+array represents sequential attempts -- if the first group fails, the next group is
 tried.
 
 <Warning>
-Raises `RelayError` if the dial fails or if no answer is received within the
-`dial_timeout` period. The default timeout is 120 seconds.
+Throws `RelayError` if the dial fails or if no answer is received within the
+`dialTimeout` period. The default timeout is 120 seconds.
 </Warning>
 
 ## **Parameters**
 
 <ParamField path="devices" type={"Record<string, unknown>[][]"} required={true} toc={true}>
   Nested array of device definitions for serial and parallel dialing. Each device is
-  a dict with `type` and `params` keys.
+  an object with `type` and `params` keys.
 
-  - **Serial dial** (try one after another): each inner list has one device
-  - **Parallel dial** (ring simultaneously): one inner list with multiple devices
+  - **Serial dial** (try one after another): each inner array has one device
+  - **Parallel dial** (ring simultaneously): one inner array with multiple devices
 </ParamField>
 
 <Indent>
@@ -39,7 +39,7 @@ Raises `RelayError` if the dial fails or if no answer is received within the
   - `"sip"` -- SIP endpoint
 </ParamField>
 
-<ParamField path="devices[][].params" type="dict" required={true} toc={true}>
+<ParamField path="devices[][].params" type="Record&lt;string, unknown&gt;" required={true} toc={true}>
   Device-specific parameters.
 </ParamField>
 
@@ -68,97 +68,87 @@ Raises `RelayError` if the dial fails or if no answer is received within the
   limit is reached.
 </ParamField>
 
-<ParamField path="dialTimeout" type="number | undefined" default="120.0" toc={true}>
-  How long in seconds to wait for the dial to complete (answer or failure) before
-  raising a timeout error.
+<ParamField path="dialTimeout" type="number | undefined" default="120000" toc={true}>
+  How long in milliseconds to wait for the dial to complete (answer or failure) before
+  throwing a timeout error.
 </ParamField>
 
 ## **Returns**
 
-[`Call`][call] -- A call object with all properties populated and ready for call control operations.
+`Promise<`[`Call`][call]`>` -- A call object with all properties populated and ready for call control operations.
 
 ## **Examples**
 
 ### Simple outbound call
 
-```typescript {13}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def main():
-    async with client:
-        call = await client.dial(
-            devices=[[{
-                "type": "phone",
-                "params": {
-                    "from_number": "+15551234567",
-                    "to_number": "+15559876543",
-                    "timeout": 30,
-                },
-            }]],
-        )
-        action = await call.play([{"type": "tts", "text": "Hello!"}])
-        await action.wait()
-        await call.hangup()
+await client.connect();
 
-asyncio.run(main())
+const call = await client.dial(
+  [[{
+    type: 'phone',
+    params: {
+      from_number: '+15551234567',
+      to_number: '+15559876543',
+      timeout: 30,
+    },
+  }]]
+);
+const action = await call.play([{ type: 'tts', text: 'Hello!' }]);
+await action.wait();
+await call.hangup();
+
+await client.disconnect();
 ```
 
 ### Serial dial (failover)
 
-```typescript {14}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def main():
-    async with client:
-        # Try the first number, then fall back to the second
-        call = await client.dial(
-            devices=[
-                [{"type": "phone", "params": {"to_number": "+15551111111", "from_number": "+15550000000"}}],
-                [{"type": "phone", "params": {"to_number": "+15552222222", "from_number": "+15550000000"}}],
-            ],
-        )
+await client.connect();
 
-asyncio.run(main())
+// Try the first number, then fall back to the second
+const call = await client.dial([
+  [{ type: 'phone', params: { to_number: '+15551111111', from_number: '+15550000000' } }],
+  [{ type: 'phone', params: { to_number: '+15552222222', from_number: '+15550000000' } }],
+]);
+
+await client.disconnect();
 ```
 
 ### Parallel dial (ring all)
 
-```typescript {14}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def main():
-    async with client:
-        # Ring both numbers simultaneously, first to answer wins
-        call = await client.dial(
-            devices=[[
-                {"type": "phone", "params": {"to_number": "+15551111111", "from_number": "+15550000000"}},
-                {"type": "phone", "params": {"to_number": "+15552222222", "from_number": "+15550000000"}},
-            ]],
-        )
+await client.connect();
 
-asyncio.run(main())
+// Ring both numbers simultaneously, first to answer wins
+const call = await client.dial([[
+  { type: 'phone', params: { to_number: '+15551111111', from_number: '+15550000000' } },
+  { type: 'phone', params: { to_number: '+15552222222', from_number: '+15550000000' } },
+]]);
+
+await client.disconnect();
 ```

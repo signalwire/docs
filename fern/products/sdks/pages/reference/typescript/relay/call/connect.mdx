@@ -27,11 +27,11 @@ This method corresponds to the SWML [`connect`][connect] verb. See the
 ## **Parameters**
 
 <ParamField path="devices" type={"Record<string, unknown>[][]"} required={true} toc={true}>
-  A list of device groups for serial/parallel dialing. The outer list is tried
-  serially (one group at a time). Each inner list is dialed in parallel
+  An array of device groups for serial/parallel dialing. The outer array is tried
+  serially (one group at a time). Each inner array is dialed in parallel
   (all devices in the group ring simultaneously).
 
-  Each device dict contains:
+  Each device object contains:
   - `"type"` -- Device type (`"phone"`, `"sip"`)
   - `"params"` -- Type-specific parameters (`to_number`, `from_number`, etc.)
 </ParamField>
@@ -59,31 +59,30 @@ This method corresponds to the SWML [`connect`][connect] verb. See the
 
 ## **Returns**
 
-`dict` -- Server response confirming the connect operation.
+`Promise<Record<string, unknown>>` -- Server response confirming the connect operation.
 
 ## **Example**
 
-```typescript {16}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-    await call.play([{"type": "tts", "text": "Connecting you now..."}])
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'Connecting you now...' }]);
 
-    # Serial dialing: try first number, then second if no answer
-    result = await call.connect([
-        [{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}],
-        [{"type": "phone", "params": {"to_number": "+15559999999", "from_number": "+15559876543"}}],
-    ])
-    console.log(`Connect result: ${result}`)
+  // Serial dialing: try first number, then second if no answer
+  const result = await call.connect([
+    [{ type: 'phone', params: { to_number: '+15551234567', from_number: '+15559876543' } }],
+    [{ type: 'phone', params: { to_number: '+15559999999', from_number: '+15559876543' } }],
+  ]);
+  console.log(`Connect result: ${JSON.stringify(result)}`);
+});
 
-client.run()
+await client.run();
 ```

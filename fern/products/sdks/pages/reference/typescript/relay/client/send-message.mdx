@@ -12,8 +12,6 @@ Send an outbound SMS or MMS message. Returns a
 state changes. Use `await message.wait()` to block until the message reaches a
 terminal state (delivered, undelivered, or failed).
 
-All parameters are keyword-only.
-
 <Note>
 At least one of `body` or `media` must be provided. Providing both sends an MMS
 with text and attached media.
@@ -21,11 +19,11 @@ with text and attached media.
 
 ## **Parameters**
 
-<ParamField path="toNumber" type="string" required={true} toc={true}>
+<ParamField path="to" type="string" required={true} toc={true}>
   Destination phone number in E.164 format (e.g., `"+15559876543"`).
 </ParamField>
 
-<ParamField path="fromNumber" type="string" required={true} toc={true}>
+<ParamField path="from" type="string" required={true} toc={true}>
   Sender phone number in E.164 format. Must be a number owned by your SignalWire project.
 </ParamField>
 
@@ -59,89 +57,82 @@ with text and attached media.
 
 ## **Returns**
 
-[`Message`][message] -- A message object in the `"queued"` state. Use `await message.wait()` to block until delivery confirmation.
+`Promise<`[`Message`][message]`>` -- A message object in the `"queued"` state. Use `await message.wait()` to block until delivery confirmation.
 
 ## **Examples**
 
 ### Send SMS
 
-```typescript {13}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def send_sms():
-    async with client:
-        message = await client.sendMessage(
-            to_number="+15559876543",
-            from_number="+15551234567",
-            body="Hello from SignalWire RELAY!",
-        )
-        console.log(`Message ID: ${message.message_id}`)
+await client.connect();
 
-        # Wait for delivery confirmation
-        result = await message.wait(timeout=30.0)
-        console.log(`Final state: ${message.state}`)
+const message = await client.sendMessage({
+  to: '+15559876543',
+  from: '+15551234567',
+  body: 'Hello from SignalWire RELAY!',
+});
+console.log(`Message ID: ${message.messageId}`);
 
-asyncio.run(send_sms())
+// Wait for delivery confirmation
+const result = await message.wait(30_000);
+console.log(`Final state: ${message.state}`);
+
+await client.disconnect();
 ```
 
 ### Send MMS with media
 
-```typescript {13}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def send_mms():
-    async with client:
-        message = await client.sendMessage(
-            to_number="+15559876543",
-            from_number="+15551234567",
-            body="Check out this image!",
-            media=["https://example.com/photo.jpg"],
-        )
+await client.connect();
 
-asyncio.run(send_mms())
+const message = await client.sendMessage({
+  to: '+15559876543',
+  from: '+15551234567',
+  body: 'Check out this image!',
+  media: ['https://example.com/photo.jpg'],
+});
+
+await client.disconnect();
 ```
 
 ### With completion callback
 
-```typescript {16}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-async def on_delivered(event):
-    console.log(`Message delivered: ${event.params}`)
+await client.connect();
 
-async def send_with_callback():
-    async with client:
-        message = await client.sendMessage(
-            to_number="+15559876543",
-            from_number="+15551234567",
-            body="Important notification",
-            on_completed=on_delivered,
-        )
-        # No need to await -- callback fires automatically
+const message = await client.sendMessage({
+  to: '+15559876543',
+  from: '+15551234567',
+  body: 'Important notification',
+  onCompleted: (event) => {
+    console.log(`Message delivered: ${JSON.stringify(event.params)}`);
+  },
+});
+// No need to await -- callback fires automatically
 
-asyncio.run(send_with_callback())
+await client.disconnect();
 ```

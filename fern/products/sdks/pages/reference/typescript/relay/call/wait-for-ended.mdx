@@ -8,41 +8,40 @@ max-toc-depth: 3
 [relayevent]: /docs/sdks/reference/typescript/relay/events
 
 Wait for the call to reach the `ended` state. This is a convenience method
-equivalent to waiting for a `calling.call.state` event with `call_state == "ended"`.
+equivalent to waiting for a `calling.call.state` event with `callState === "ended"`.
 
 ## **Parameters**
 
 <ParamField path="timeout" type="number | undefined" toc={true}>
-  Maximum seconds to wait. Raises `asyncio.TimeoutError` if exceeded. `undefined`
+  Maximum milliseconds to wait. Throws an `Error` if exceeded. `undefined`
   waits indefinitely.
 </ParamField>
 
 ## **Returns**
 
-[`RelayEvent`][relayevent] -- The state-change event indicating the call has ended.
+`Promise<`[`RelayEvent`][relayevent]`>` -- The state-change event indicating the call has ended.
 
 ## **Example**
 
-```typescript {18}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    action = await call.play([{"type": "tts", "text": "Goodbye!"}])
-    await action.wait()
-    await call.hangup()
+  const action = await call.play([{ type: 'tts', text: 'Goodbye!' }]);
+  await action.wait();
+  await call.hangup();
 
-    event = await call.waitForEnded()
-    console.log(`Call ${call.call_id} has ended: ${event.params}`)
+  const event = await call.waitForEnded();
+  console.log(`Call ${call.callId} has ended: ${JSON.stringify(event.params)}`);
+});
 
-client.run()
+await client.run();
 ```

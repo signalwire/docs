@@ -30,47 +30,8 @@ This method emits [`calling.call.pay`][calling-call-pay] events. See [Call Event
 
 <ParamField path="inputMethod" type="string | undefined" toc={true}>
   How the caller provides payment info.
-
   - `"dtmf"` -- caller enters digits on the keypad
   - `"speech"` -- caller speaks the payment information
-</ParamField>
-
-<ParamField path="statusUrl" type="string | undefined" toc={true}>
-  URL to receive payment status webhooks.
-</ParamField>
-
-<ParamField path="paymentMethod" type="string | undefined" toc={true}>
-  Payment method type. Valid values: `"credit-card"`.
-</ParamField>
-
-<ParamField path="timeout" type="string | undefined" toc={true}>
-  Timeout for the payment session.
-</ParamField>
-
-<ParamField path="maxAttempts" type="string | undefined" toc={true}>
-  Maximum number of input attempts before failing.
-</ParamField>
-
-<ParamField path="securityCode" type="string | undefined" toc={true}>
-  Whether to collect CVV.
-
-  - `"true"` -- prompt the caller for the security code
-  - `"false"` -- skip security code collection
-</ParamField>
-
-<ParamField path="postalCode" type="string | undefined" toc={true}>
-  Whether to collect postal code.
-
-  - `"true"` -- prompt the caller for the postal code
-  - `"false"` -- skip postal code collection
-</ParamField>
-
-<ParamField path="minPostalCodeLength" type="string | undefined" toc={true}>
-  Minimum length for the postal code.
-</ParamField>
-
-<ParamField path="tokenType" type="string | undefined" toc={true}>
-  Tokenization type for the payment data.
 </ParamField>
 
 <ParamField path="chargeAmount" type="string | undefined" toc={true}>
@@ -81,72 +42,55 @@ This method emits [`calling.call.pay`][calling-call-pay] events. See [Call Event
   Currency code (e.g., `"USD"`, `"EUR"`).
 </ParamField>
 
-<ParamField path="language" type="string | undefined" toc={true}>
-  Language for payment prompts (e.g., `"en"`).
+<ParamField path="securityCode" type="string | undefined" toc={true}>
+  Whether to collect CVV (`"true"` or `"false"`).
 </ParamField>
 
-<ParamField path="voice" type="string | undefined" toc={true}>
-  Voice for TTS prompts during the payment flow.
+<ParamField path="postalCode" type="string | undefined" toc={true}>
+  Whether to collect postal code (`"true"` or `"false"`).
 </ParamField>
 
-<ParamField path="description" type="string | undefined" toc={true}>
-  Description of the payment/charge.
-</ParamField>
-
-<ParamField path="validCardTypes" type="string | undefined" toc={true}>
-  Comma-separated list of accepted card types (e.g., `"visa,mastercard,amex"`).
-</ParamField>
-
-<ParamField path="parameters" type={"Record<string, unknown>[] | undefined"} toc={true}>
-  Additional parameters to pass to the payment connector.
-</ParamField>
-
-<ParamField path="prompts" type={"Record<string, unknown>[] | undefined"} toc={true}>
-  Custom prompts for the payment flow.
-</ParamField>
-
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when the payment operation completes.
 </ParamField>
 
 ## **Returns**
 
-[`PayAction`][payaction] -- An action handle with
+`Promise<`[`PayAction`][payaction]`>` -- An action handle with
 `stop()` and `wait()` methods.
 
 ## **Example**
 
-```typescript {15}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-    await call.play([{"type": "tts", "text": "We will now collect your payment."}])
+client.onCall(async (call) => {
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'We will now collect your payment.' }]);
 
-    action = await call.pay(
-        payment_connector_url="https://example.com/payment-connector",
-        charge_amount="29.99",
-        currency="USD",
-        security_code="true",
-        postal_code="true",
-    )
-    event = await action.wait()
+  const action = await call.pay('https://example.com/payment-connector', {
+    chargeAmount: '29.99',
+    currency: 'USD',
+    securityCode: 'true',
+    postalCode: 'true',
+  });
+  const event = await action.wait();
 
-    state = event.params.get("state", "")
-    if state == "finished":
-        await call.play([{"type": "tts", "text": "Payment processed successfully."}])
-    else:
-        await call.play([{"type": "tts", "text": "Payment failed. Please try again later."}])
+  const state = (event.params.state ?? '') as string;
+  if (state === 'finished') {
+    await call.play([{ type: 'tts', text: 'Payment processed successfully.' }]);
+  } else {
+    await call.play([{ type: 'tts', text: 'Payment failed. Please try again later.' }]);
+  }
 
-    await call.hangup()
+  await call.hangup();
+});
 
-client.run()
+await client.run();
 ```

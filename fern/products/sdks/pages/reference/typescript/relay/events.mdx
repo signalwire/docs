@@ -18,7 +18,7 @@ max-toc-depth: 3
 [queueenter]: /docs/sdks/reference/typescript/relay/call/queue-enter
 [queueleave]: /docs/sdks/reference/typescript/relay/call/queue-leave
 
-RELAY events are delivered as typed dataclass instances that wrap the raw JSON-RPC
+RELAY events are delivered as typed class instances that wrap the raw JSON-RPC
 event payloads from the SignalWire WebSocket connection. When you register a handler
 with [`Call.on()`][call-on] or
 [`Message.on()`][message-on], the handler
@@ -26,28 +26,27 @@ automatically receives a typed event object with named properties for each field
 
 All typed event classes inherit from [`RelayEvent`](#relayevent), which provides
 access to the raw `params` dictionary alongside the typed properties. You can also
-use the [`parseEvent()`](#parse_event) helper to manually parse raw event payloads.
+use the [`parseEvent()`](#parseevent) helper to manually parse raw event payloads.
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient, CallStateEvent } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def on_call(call):
-    function handleState(event: CallStateEvent) {
-        console.log(`Call state: ${event.call_state}`)
+client.onCall(async (call) => {
+  const handleState = (event: CallStateEvent) => {
+    console.log(`Call state: ${event.callState}`);
+  };
 
-    call.on("calling.call.state", handle_state)
-    await call.answer()
+  call.on('calling.call.state', handleState);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ## RelayEvent
@@ -75,9 +74,9 @@ at minimum a `RelayEvent` instance, which provides access to the raw event data.
 
 ## **Methods**
 
-### from_payload
+### fromPayload
 
-**from_payload**(`payload`) -> `RelayEvent`
+**fromPayload**(`payload`) -> `RelayEvent`
 
 Class method. Parse a raw event dict into a `RelayEvent` instance.
 
@@ -104,22 +103,22 @@ Class method. Parse a raw event dict into a `RelayEvent` instance.
 #### Example
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { RelayEvent } from 'signalwire-agents/relay';
 
-event = RelayEvent.from_payload({
-    "event_type": "calling.call.state",
-    "params": {"call_state": "answered"},
-})
-console.log(event.event_type)  # "calling.call.state"
+const event = RelayEvent.fromPayload({
+  event_type: 'calling.call.state',
+  params: { call_state: 'answered' },
+});
+console.log(event.eventType); // "calling.call.state"
 ```
 
 ---
 
-### parse_event
+### parseEvent
 
-**parse_event**(`payload`) -> `RelayEvent`
+**parseEvent**(`payload`) -> `RelayEvent`
 
-Module-level helper function. Parses a raw event dict and returns the appropriate
+Standalone helper function. Parses a raw event object and returns the appropriate
 typed event subclass based on the `event_type` field. Falls back to `RelayEvent`
 for unrecognized event types.
 
@@ -148,14 +147,14 @@ for unrecognized event types.
 #### Example
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { parseEvent } from 'signalwire-agents/relay';
 
-event = parse_event({
-    "event_type": "calling.call.play",
-    "params": {"control_id": "abc-123", "state": "playing"},
-})
-# Returns a PlayEvent instance
-console.log(event.state)  # "playing"
+const event = parseEvent({
+  event_type: 'calling.call.play',
+  params: { control_id: 'abc-123', state: 'playing' },
+});
+// Returns a PlayEvent instance
+console.log(event.state); // "playing"
 ```
 
 ---
@@ -182,7 +181,7 @@ Handlers for this event receive a `CallStateEvent` with the following properties
 </ParamField>
 
 <ParamField path="endReason" type="string" default="" toc={true}>
-  Reason the call ended. Only present when `call_state` is `"ended"`.
+  Reason the call ended. Only present when `callState` is `"ended"`.
 
   - `"hangup"` -- normal disconnect by a party on the call
   - `"cancel"` -- call was cancelled before being answered
@@ -209,25 +208,24 @@ Handlers for this event receive a `CallStateEvent` with the following properties
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleState(event: CallStateEvent) {
-        console.log(`State: ${event.call_state}, reason: ${event.end_reason}`)
+client.onCall(async (call) => {
+  const handleState = (event: CallStateEvent) => {
+    console.log(`State: ${event.callState}, reason: ${event.endReason}`);
+  };
 
-    call.on("calling.call.state", handle_state)
-    await call.answer()
+  call.on('calling.call.state', handleState);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -235,7 +233,7 @@ client.run()
 ### calling.call.receive
 
 Emitted when an inbound call is received on a subscribed context. This event is
-dispatched at the client level via the `@client.on_call` decorator rather than
+dispatched at the client level via `client.onCall()` rather than
 through `call.on()`.
 
 #### CallReceiveEvent
@@ -300,26 +298,25 @@ Handlers for this event receive a `PlayEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handlePlay(event: PlayEvent) {
-        console.log(`Playback: ${event.state}`)
+client.onCall(async (call) => {
+  const handlePlay = (event: PlayEvent) => {
+    console.log(`Playback: ${event.state}`);
+  };
 
-    call.on("calling.call.play", handle_play)
-    await call.answer()
-    await call.play([{"type": "tts", "text": "Hello!"}])
+  call.on('calling.call.play', handlePlay);
+  await call.answer();
+  await call.play([{ type: 'tts', text: 'Hello!' }]);
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -364,26 +361,25 @@ Handlers for this event receive a `RecordEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleRecord(event: RecordEvent) {
-        console.log(`Recording ${event.state}: ${event.url}`)
+client.onCall(async (call) => {
+  const handleRecord = (event: RecordEvent) => {
+    console.log(`Recording ${event.state}: ${event.url}`);
+  };
 
-    call.on("calling.call.record", handle_record)
-    await call.answer()
-    await call.record({"direction": "both"})
+  call.on('calling.call.record', handleRecord);
+  await call.answer();
+  await call.record({ direction: 'both' });
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -426,29 +422,28 @@ Handlers for this event receive a `CollectEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleCollect(event: CollectEvent) {
-        console.log(`Collected: ${event.result}`)
+client.onCall(async (call) => {
+  const handleCollect = (event: CollectEvent) => {
+    console.log(`Collected: ${JSON.stringify(event.result)}`);
+  };
 
-    call.on("calling.call.collect", handle_collect)
-    await call.answer()
-    await call.playAndCollect(
-        media=[{"type": "tts", "text": "Press 1 or 2."}],
-        collect={"digits": {"max": 1}},
-    )
+  call.on('calling.call.collect', handleCollect);
+  await call.answer();
+  await call.playAndCollect(
+    [{ type: 'tts', text: 'Press 1 or 2.' }],
+    { digits: { max: 1 } }
+  );
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -477,28 +472,27 @@ Handlers for this event receive a `ConnectEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleConnect(event: ConnectEvent) {
-        console.log(`Connection: ${event.connect_state}`)
+client.onCall(async (call) => {
+  const handleConnect = (event: ConnectEvent) => {
+    console.log(`Connection: ${event.connectState}`);
+  };
 
-    call.on("calling.call.connect", handle_connect)
-    await call.answer()
-    await call.connect(
-        devices=[[{"type": "phone", "params": {"to_number": "+15559876543", "from_number": "+15551234567"}}]]
-    )
+  call.on('calling.call.connect', handleConnect);
+  await call.answer();
+  await call.connect(
+    [[{ type: 'phone', params: { to_number: '+15559876543', from_number: '+15551234567' } }]]
+  );
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -526,26 +520,25 @@ Handlers for this event receive a `DetectEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleDetect(event: DetectEvent) {
-        console.log(`Detected: ${event.detect}`)
+client.onCall(async (call) => {
+  const handleDetect = (event: DetectEvent) => {
+    console.log(`Detected: ${JSON.stringify(event.detect)}`);
+  };
 
-    call.on("calling.call.detect", handle_detect)
-    await call.answer()
-    await call.detect({"type": "machine", "params": {"initial_timeout": 5.0}})
+  call.on('calling.call.detect', handleDetect);
+  await call.answer();
+  await call.detect({ type: 'machine', params: { initial_timeout: 5.0 } });
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -571,26 +564,25 @@ Handlers for this event receive a `FaxEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleFax(event: FaxEvent) {
-        console.log(`Fax: ${event.fax}`)
+client.onCall(async (call) => {
+  const handleFax = (event: FaxEvent) => {
+    console.log(`Fax: ${JSON.stringify(event.fax)}`);
+  };
 
-    call.on("calling.call.fax", handle_fax)
-    await call.answer()
-    await call.sendFax(document="https://example.com/invoice.pdf")
+  call.on('calling.call.fax', handleFax);
+  await call.answer();
+  await call.sendFax('https://example.com/invoice.pdf');
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -624,25 +616,24 @@ Handlers for this event receive a `TapEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleTap(event: TapEvent) {
-        console.log(`Tap ${event.state}: ${event.tap}`)
+client.onCall(async (call) => {
+  const handleTap = (event: TapEvent) => {
+    console.log(`Tap ${event.state}: ${JSON.stringify(event.tap)}`);
+  };
 
-    call.on("calling.call.tap", handle_tap)
-    await call.answer()
+  call.on('calling.call.tap', handleTap);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -676,25 +667,24 @@ Handlers for this event receive a `StreamEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleStream(event: StreamEvent) {
-        console.log(`Stream ${event.state}: ${event.url}`)
+client.onCall(async (call) => {
+  const handleStream = (event: StreamEvent) => {
+    console.log(`Stream ${event.state}: ${event.url}`);
+  };
 
-    call.on("calling.call.stream", handle_stream)
-    await call.answer()
+  call.on('calling.call.stream', handleStream);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -718,25 +708,24 @@ Handlers for this event receive a `SendDigitsEvent` with the following propertie
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleDigits(event: SendDigitsEvent) {
-        console.log(`Send digits: ${event.state}`)
+client.onCall(async (call) => {
+  const handleDigits = (event: SendDigitsEvent) => {
+    console.log(`Send digits: ${event.state}`);
+  };
 
-    call.on("calling.call.send_digits", handle_digits)
-    await call.answer()
+  call.on('calling.call.send_digits', handleDigits);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -792,25 +781,24 @@ Handlers for this event receive a `ReferEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleRefer(event: ReferEvent) {
-        console.log(`Refer to ${event.sip_refer_to}: ${event.state}`)
+client.onCall(async (call) => {
+  const handleRefer = (event: ReferEvent) => {
+    console.log(`Refer to ${event.sipReferTo}: ${event.state}`);
+  };
 
-    call.on("calling.call.refer", handle_refer)
-    await call.answer()
+  call.on('calling.call.refer', handleRefer);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -832,25 +820,24 @@ Handlers for this event receive a `HoldEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleHold(event: HoldEvent) {
-        console.log(`Hold: ${event.state}`)
+client.onCall(async (call) => {
+  const handleHold = (event: HoldEvent) => {
+    console.log(`Hold: ${event.state}`);
+  };
 
-    call.on("calling.call.hold", handle_hold)
-    await call.answer()
+  call.on('calling.call.hold', handleHold);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -870,25 +857,24 @@ Handlers for this event receive a `DenoiseEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleDenoise(event: DenoiseEvent) {
-        console.log(`Denoise active: ${event.denoised}`)
+client.onCall(async (call) => {
+  const handleDenoise = (event: DenoiseEvent) => {
+    console.log(`Denoise active: ${event.denoised}`);
+  };
 
-    call.on("calling.call.denoise", handle_denoise)
-    await call.answer()
+  call.on('calling.call.denoise', handleDenoise);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -915,25 +901,24 @@ Handlers for this event receive a `PayEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handlePay(event: PayEvent) {
-        console.log(`Payment: ${event.state}`)
+client.onCall(async (call) => {
+  const handlePay = (event: PayEvent) => {
+    console.log(`Payment: ${event.state}`);
+  };
 
-    call.on("calling.call.pay", handle_pay)
-    await call.answer()
+  call.on('calling.call.pay', handlePay);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -953,25 +938,24 @@ Handlers for this event receive an `EchoEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleEcho(event: EchoEvent) {
-        console.log(`Echo: ${event.state}`)
+client.onCall(async (call) => {
+  const handleEcho = (event: EchoEvent) => {
+    console.log(`Echo: ${event.state}`);
+  };
 
-    call.on("calling.call.echo", handle_echo)
-    await call.answer()
+  call.on('calling.call.echo', handleEcho);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -1013,25 +997,24 @@ Handlers for this event receive a `QueueEvent` with the following properties:
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleQueue(event: QueueEvent) {
-        console.log(`Queue ${event.queue_name}: position ${event.position}/${event.size}`)
+client.onCall(async (call) => {
+  const handleQueue = (event: QueueEvent) => {
+    console.log(`Queue ${event.queueName}: position ${event.position}/${event.size}`);
+  };
 
-    call.on("calling.call.queue", handle_queue)
-    await call.answer()
+  call.on('calling.call.queue', handleQueue);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -1059,25 +1042,24 @@ Handlers for this event receive a `ConferenceEvent` with the following propertie
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleConference(event: ConferenceEvent) {
-        console.log(`Conference ${event.name}: ${event.status}`)
+client.onCall(async (call) => {
+  const handleConference = (event: ConferenceEvent) => {
+    console.log(`Conference ${event.name}: ${event.status}`);
+  };
 
-    call.on("calling.conference", handle_conference)
-    await call.answer()
+  call.on('calling.conference', handleConference);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -1119,25 +1101,24 @@ Handlers for this event receive a `TranscribeEvent` with the following propertie
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleTranscribe(event: TranscribeEvent) {
-        console.log(`Transcription ${event.state}: ${event.url}`)
+client.onCall(async (call) => {
+  const handleTranscribe = (event: TranscribeEvent) => {
+    console.log(`Transcription ${event.state}: ${event.url}`);
+  };
 
-    call.on("calling.call.transcribe", handle_transcribe)
-    await call.answer()
+  call.on('calling.call.transcribe', handleTranscribe);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -1161,25 +1142,24 @@ Handlers for this event receive a `CallingErrorEvent` with the following propert
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    function handleError(event: CallingErrorEvent) {
-        console.log(`Error ${event.code}: ${event.message}`)
+client.onCall(async (call) => {
+  const handleError = (event: CallingErrorEvent) => {
+    console.log(`Error ${event.code}: ${event.message}`);
+  };
 
-    call.on("calling.error", handle_error)
-    await call.answer()
+  call.on('calling.error', handleError);
+  await call.answer();
+});
 
-client.run()
+await client.run();
 ```
 
 ---
@@ -1189,8 +1169,7 @@ client.run()
 ### messaging.receive
 
 Emitted when an inbound SMS/MMS message is received on a subscribed context.
-This event is dispatched at the client level via the `@client.on_message`
-decorator.
+This event is dispatched at the client level via `client.onMessage()`.
 
 #### MessageReceiveEvent
 
@@ -1298,24 +1277,23 @@ Handlers for this event receive a `MessageStateEvent` with the following propert
 #### Example
 
 ```typescript
-import { RelayClient } from "@signalwire/sdk";
-import { AgentBase } from "@signalwire/sdk";
+import { RelayClient, MessageStateEvent } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_message
-async def handle_message(message):
-    function handleState(event: MessageStateEvent) {
-        console.log(`Message ${event.message_id}: ${event.message_state}`)
+client.onMessage(async (message) => {
+  const handleState = (event: MessageStateEvent) => {
+    console.log(`Message ${event.messageId}: ${event.messageState}`);
+  };
 
-    message.on(handle_state)
+  message.on(handleState);
+});
 
-client.run()
+await client.run();
 ```
 
 ---

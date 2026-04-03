@@ -15,47 +15,29 @@ so the same configuration is applied when SignalWire invokes tool webhooks.
 ## **Parameters**
 
 <ParamField path="params" type={"Record<string, string>"} required={true} toc={true}>
-  Dictionary of query parameters to merge into every SWAIG URL. Subsequent calls
-  merge into (not replace) the existing set. Pass the same key again to overwrite
-  its value.
+  Object of query parameters to merge into every SWAIG URL. Subsequent calls merge
+  into (not replace) the existing set. Pass the same key again to overwrite its value.
 </ParamField>
 
 ## **Returns**
 
 [`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
 
-## **Examples**
+## **Example**
 
-### Preserve tier in dynamic config
+```typescript
+import { AgentBase } from 'signalwire-agents';
 
-```typescript {10}
-import { AgentBase } from "@signalwire/sdk";
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-agent = AgentBase(name="assistant", route="/assistant")
-agent.setPromptText("You are a helpful assistant.")
+agent.setDynamicConfigCallback(async (queryParams, bodyParams, headers, agentCopy) => {
+  const tier = queryParams.tier ?? 'free';
+  if (tier === 'premium') {
+    agentCopy.setParams({ end_of_speech_timeout: 500 });
+  }
+  agentCopy.addSwaigQueryParams({ tier });
+});
 
-function dynamicConfig(queryParams, bodyParams, headers, agent) {
-    tier = query_params.get("tier", "free")
-    if tier == "premium":
-        agent.addSkill("advanced_search")
-    agent.addSwaigQueryParams({"tier": tier})
-
-agent.setDynamicConfigCallback(dynamic_config)
-agent.run()
-```
-
-### Multi-tenant routing
-
-```typescript {8}
-import { AgentBase } from "@signalwire/sdk";
-
-agent = AgentBase(name="support", route="/support")
-agent.setPromptText("You are a helpful assistant.")
-
-function dynamicConfig(queryParams, bodyParams, headers, agent) {
-    tenant_id = query_params.get("tenant_id", "default")
-    agent.addSwaigQueryParams({"tenant_id": tenant_id})
-
-agent.setDynamicConfigCallback(dynamic_config)
-agent.run()
+await agent.serve();
 ```

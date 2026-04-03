@@ -35,33 +35,31 @@ This method emits [`calling.call.queue`][calling-call-queue] events. See [Call E
 
 ## **Returns**
 
-`dict` -- Server response confirming the call left the queue.
+`Promise<Record<string, unknown>>` -- Server response confirming the call left the queue.
 
 ## **Example**
 
-```typescript {20}
-import asyncio
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Enter the queue
-    await call.queueEnter(queue_name="support")
+  // Enter the queue
+  await call.queueEnter('support');
 
-    # Remove from queue after a timeout
-    await asyncio.sleep(300)  # 5 minute max wait
-    await call.queueLeave(queue_name="support")
-    await call.play([{"type": "tts", "text": "No agents available. Please try again later."}])
-    await call.hangup()
+  // Remove from queue after a timeout
+  await new Promise((resolve) => setTimeout(resolve, 300_000)); // 5 minute max wait
+  await call.queueLeave('support');
+  await call.play([{ type: 'tts', text: 'No agents available. Please try again later.' }]);
+  await call.hangup();
+});
 
-client.run()
+await client.run();
 ```

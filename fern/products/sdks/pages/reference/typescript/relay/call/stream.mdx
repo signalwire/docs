@@ -58,7 +58,7 @@ This method emits [`calling.call.stream`][calling-call-stream] events. See [Call
   Bearer token for authenticating with the WebSocket server.
 </ParamField>
 
-<ParamField path="customParameters" type="dict | undefined" toc={true}>
+<ParamField path="customParameters" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
   Custom key-value pairs sent with the stream start message.
 </ParamField>
 
@@ -66,41 +66,38 @@ This method emits [`calling.call.stream`][calling-call-stream] events. See [Call
   Custom control ID. Auto-generated if not provided.
 </ParamField>
 
-<ParamField path="onCompleted" type="(arg0: RelayEvent) => unknown | undefined" toc={true}>
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise&lt;void&gt;" toc={true}>
   Callback invoked when the stream ends.
 </ParamField>
 
 ## **Returns**
 
-[`StreamAction`][streamaction] -- An action handle with
+`Promise<`[`StreamAction`][streamaction]`>` -- An action handle with
 `stop()` and `wait()` methods.
 
 ## **Example**
 
-```typescript {15}
-import { RelayClient } from "@signalwire/sdk";
+```typescript
+import { RelayClient } from 'signalwire-agents/relay';
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="your-space.signalwire.com",
-    contexts=["default"],
-)
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
+client.onCall(async (call) => {
+  await call.answer();
 
-    # Stream audio to an external service for real-time processing
-    action = await call.stream(
-        url="wss://example.com/audio-stream",
-        track="inbound",
-        codec="PCMU",
-        custom_parameters={"session_id": "abc123"},
-    )
+  // Stream audio to an external service for real-time processing
+  const action = await call.stream(
+    'wss://example.com/audio-stream',
+    { track: 'inbound', codec: 'PCMU', customParameters: { session_id: 'abc123' } }
+  );
 
-    # The stream runs until stopped or the call ends
-    await call.waitForEnded()
+  // The stream runs until stopped or the call ends
+  await call.waitForEnded();
+});
 
-client.run()
+await client.run();
 ```

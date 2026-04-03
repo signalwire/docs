@@ -7,42 +7,41 @@ max-toc-depth: 3
 
 [agent]: /docs/sdks/reference/typescript/agents/livewire/agent
 
-LiveWire provides exception and signal classes that tool handlers can raise or
-return to control agent behavior. These mirror their LiveKit equivalents.
+LiveWire provides exception and signal classes that tool handlers can throw or
+return to control agent behavior.
 
 ## StopResponse
 
-An exception that, when raised inside a tool handler, signals that the tool
+An error that, when thrown inside a tool handler, signals that the tool
 should **not** trigger another LLM reply. Use this when the tool's side effect
 is the final action and no further conversation is needed.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { StopResponse } from 'signalwire-agents/livewire';
 
-@function_tool
-function endCall(reason: string): string {
-    `End the call immediately.`
-    # Perform cleanup...
-    raise StopResponse()
+function endCall(reason: string): never {
+  // Perform cleanup...
+  throw new StopResponse();
+}
 ```
 
 ---
 
 ## ToolError
 
-An exception that signals a tool execution error. Raise this when a tool
+An error that signals a tool execution failure. Throw this when a tool
 encounters a problem that should be reported back to the LLM so it can
 communicate the issue to the user or retry.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { ToolError } from 'signalwire-agents/livewire';
 
-@function_tool
 function transferFunds(amount: number, toAccount: string): string {
-    `Transfer funds to another account.`
-    if amount <= 0:
-        raise ToolError("Amount must be positive.")
-    return `Transferred $${amount} to ${to_account}.`
+  if (amount <= 0) {
+    throw new ToolError('Amount must be positive.');
+  }
+  return `Transferred $${amount} to ${toAccount}.`;
+}
 ```
 
 ---
@@ -54,14 +53,13 @@ multi-agent scenarios. Return an `AgentHandoff` from a tool handler to
 indicate that a different agent should take over.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { Agent, AgentHandoff } from 'signalwire-agents/livewire';
 
-billing_agent = Agent(instructions="You handle billing questions.")
+const billingAgent = new Agent({ instructions: 'You handle billing questions.' });
 
-@function_tool
 function transferToBilling(): AgentHandoff {
-    `Transfer the caller to the billing department.`
-    return AgentHandoff(billing_agent)
+  return new AgentHandoff(billingAgent);
+}
 ```
 
 ### Properties
@@ -82,24 +80,24 @@ A minimal stub mirroring the LiveKit `ChatContext`. Holds a list of chat
 messages that can be used to seed conversation history.
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { ChatContext } from 'signalwire-agents/livewire';
 
-chat = ChatContext()
-chat.append(role="user", text="What is the weather?")
-chat.append(role="assistant", text="It is sunny today.")
+const chat = new ChatContext();
+chat.append({ role: 'user', text: 'What is the weather?' });
+chat.append({ role: 'assistant', text: 'It is sunny today.' });
 ```
 
 ### Properties
 
 <ParamField path="messages" type={"Record<string, string>[]"} toc={true}>
-  List of message dicts, each with `"role"` and `"content"` keys.
+  List of message objects, each with `"role"` and `"content"` keys.
 </ParamField>
 
 ### Methods
 
 #### append
 
-**append**(`role="user"`, `text=""`) -> `ChatContext`
+**append**(`opts: { role?: string; text?: string }`) -> `ChatContext`
 
 Add a message to the context. Returns `this` for chaining.
 

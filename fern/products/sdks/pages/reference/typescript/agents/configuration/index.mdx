@@ -8,10 +8,10 @@ max-toc-depth: 3
 [configloader]: /docs/sdks/reference/typescript/agents/configuration/config-loader
 [environment-variables]: /docs/sdks/reference/typescript/agents/configuration/environment-variables
 [authhandler]: /docs/sdks/reference/typescript/agents/configuration/auth-handler
-[securityconfig]: /docs/sdks/reference/typescript/agents/configuration/security-config
-[config-loader]: /docs/sdks/reference/typescript/agents/configuration/config-loader
-[security-config]: /docs/sdks/reference/typescript/agents/configuration/security-config
-[auth-handler]: /docs/sdks/reference/typescript/agents/configuration/auth-handler
+[promptmanager]: /docs/sdks/reference/typescript/agents/configuration/prompt-manager
+[schemautils]: /docs/sdks/reference/typescript/agents/configuration/schema-utils
+[serverlessadapter]: /docs/sdks/reference/typescript/agents/configuration/serverless-adapter
+[sessionmanager]: /docs/sdks/reference/typescript/agents/configuration/session-manager
 
 The SignalWire Agents SDK uses a layered configuration system. Settings can come
 from constructor parameters, environment variables, JSON config files, or
@@ -23,27 +23,21 @@ sensible defaults. The layers are resolved in priority order:
 4. **Defaults** -- built-in fallback values
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { ConfigLoader } from 'signalwire-agents';
 
-# Constructor parameters take precedence over everything else
-agent = AgentBase(
-    name="my-agent",
-    port=9000,                        # Overrides PORT env var and config file
-    config_file="my_config.json",     # Explicit config file path
-)
+// Constructor parameters take precedence over everything else
+const config = new ConfigLoader('./my_config.json');
+const port = config.get<number>('server.port', 3000);
 ```
 
 ## Config File Discovery
 
-When no explicit `config_file` is provided, the SDK searches for JSON config
-files in this order:
+When no explicit config file path is provided, the SDK searches for JSON config
+files using `ConfigLoader.search()`, which checks these locations in order:
 
-1. `config.json`
-2. `agent_config.json`
-3. `swml_config.json`
-4. `.swml/config.json`
-5. `~/.swml/config.json`
-6. `/etc/swml/config.json`
+1. Current working directory
+2. `./config/`
+3. `~/.signalwire/`
 
 See [`ConfigLoader`][configloader] for
 the full file discovery logic and environment variable substitution syntax.
@@ -54,8 +48,7 @@ the full file discovery logic and environment variable substitution syntax.
 |------|---------------|-----------|
 | Server port, host, route | Constructor, `PORT` env var, config file | [Environment Variables][environment-variables] |
 | Authentication | `SWML_BASIC_AUTH_*` env vars, config file | [AuthHandler][authhandler] |
-| SSL/HTTPS | `SWML_SSL_*` env vars, config file | [SecurityConfig][securityconfig] |
-| CORS and host allowlists | `SWML_CORS_ORIGINS`, `SWML_ALLOWED_HOSTS` env vars | [SecurityConfig][securityconfig] |
+| CORS and host allowlists | `SWML_CORS_ORIGINS`, `SWML_ALLOWED_HOSTS` env vars | [Environment Variables][environment-variables] |
 | Logging | `SIGNALWIRE_LOG_MODE`, `SIGNALWIRE_LOG_LEVEL` env vars | [Environment Variables][environment-variables] |
 | RELAY / REST auth | `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, `SIGNALWIRE_SPACE` | [Environment Variables][environment-variables] |
 
@@ -73,12 +66,6 @@ the full file discovery logic and environment variable substitution syntax.
     "basic_auth": {
       "username": "${AUTH_USER|support_agent}",
       "password": "${AUTH_PASSWORD}"
-    },
-    "ssl": {
-      "enabled": true,
-      "domain": "support.example.com",
-      "cert_path": "/etc/ssl/certs/support.crt",
-      "key_path": "/etc/ssl/private/support.key"
     }
   },
   "agent": {
@@ -112,15 +99,33 @@ the full file discovery logic and environment variable substitution syntax.
     JSON config file loading with environment variable substitution.
   </Card>
   <Card
-    title="SecurityConfig"
-    href="/docs/sdks/reference/typescript/agents/configuration/security-config"
-  >
-    SSL, CORS, host allowlists, rate limiting, and HSTS configuration.
-  </Card>
-  <Card
     title="AuthHandler"
     href="/docs/sdks/reference/typescript/agents/configuration/auth-handler"
   >
-    HTTP Basic Auth, Bearer tokens, and API key authentication for Hono and Flask.
+    HTTP Basic Auth, Bearer tokens, and API key authentication for Hono middleware.
+  </Card>
+  <Card
+    title="PromptManager"
+    href="/docs/sdks/reference/typescript/agents/configuration/prompt-manager"
+  >
+    Manages agent prompt text with raw text and structured POM-based prompts.
+  </Card>
+  <Card
+    title="SchemaUtils"
+    href="/docs/sdks/reference/typescript/agents/configuration/schema-utils"
+  >
+    SWML document validation against structural rules with result caching.
+  </Card>
+  <Card
+    title="ServerlessAdapter"
+    href="/docs/sdks/reference/typescript/agents/configuration/serverless-adapter"
+  >
+    Adapts Hono apps for AWS Lambda, Google Cloud Functions, and Azure Functions.
+  </Card>
+  <Card
+    title="SessionManager"
+    href="/docs/sdks/reference/typescript/agents/configuration/session-manager"
+  >
+    Stateless HMAC-SHA256 token generation and validation for SWAIG function calls.
   </Card>
 </CardGroup>

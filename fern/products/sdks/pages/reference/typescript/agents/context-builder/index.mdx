@@ -23,15 +23,8 @@ Access the builder by calling `defineContexts()` on an
 [`AgentBase`][agentbase] instance. The builder
 validates the entire context tree when the SWML document is rendered.
 
-## **Properties**
-
-<ParamField path="agent" type="AgentBase" required={true} toc={true}>
-  The parent agent that owns these contexts. Typically called internally by
-  `AgentBase.define_contexts()` rather than instantiated directly.
-</ParamField>
-
 <Note>
-You rarely create a ContextBuilder directly. Call `self.define_contexts()` inside
+You rarely create a ContextBuilder directly. Call `defineContexts()` inside
 your agent class, which creates the builder and wires it into SWML generation
 automatically.
 </Note>
@@ -39,13 +32,13 @@ automatically.
 ## **Methods**
 
 <CardGroup cols={4}>
-  <Card title="add_context" href="/docs/sdks/reference/typescript/agents/context-builder/add-context">
+  <Card title="addContext" href="/docs/sdks/reference/typescript/agents/context-builder/add-context">
     Create a new named context and add it to the builder.
   </Card>
-  <Card title="get_context" href="/docs/sdks/reference/typescript/agents/context-builder/get-context">
+  <Card title="getContext" href="/docs/sdks/reference/typescript/agents/context-builder/get-context">
     Retrieve an existing context by name.
   </Card>
-  <Card title="to_dict" href="/docs/sdks/reference/typescript/agents/context-builder/to-dict">
+  <Card title="toDict" href="/docs/sdks/reference/typescript/agents/context-builder/to-dict">
     Convert all contexts to a dictionary for SWML generation.
   </Card>
   <Card title="validate" href="/docs/sdks/reference/typescript/agents/context-builder/validate">
@@ -69,78 +62,64 @@ automatically.
 ### Single context with sequential steps
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { ContextBuilder } from 'signalwire-agents';
 
-class OrderAgent extends AgentBase {
-    Init() {
-        super().__init__(name="order-agent")
-        self.addLanguage("English", "en-US", "rime.spore")
-        self.promptAddSection("Role", "You help customers place orders.")
+const builder = new ContextBuilder();
+const order = builder.addContext('default');
 
-        contexts = self.defineContexts()
+order.addStep('get_item')
+  .setText('Ask what item they want to order.')
+  .setStepCriteria('Customer has specified an item')
+  .setValidSteps(['get_quantity']);
 
-        order = contexts.add_context("default")
+order.addStep('get_quantity')
+  .setText('Ask how many they want.')
+  .setStepCriteria('Customer has specified a quantity')
+  .setValidSteps(['confirm']);
 
-        order.add_step("get_item") \
-            .set_text("Ask what item they want to order.") \
-            .set_step_criteria("Customer has specified an item") \
-            .set_valid_steps(["get_quantity"])
+order.addStep('confirm')
+  .setText('Confirm the order details and thank them.')
+  .setStepCriteria('Order has been confirmed')
+  .setEnd(true);
 
-        order.add_step("get_quantity") \
-            .set_text("Ask how many they want.") \
-            .set_step_criteria("Customer has specified a quantity") \
-            .set_valid_steps(["confirm"])
-
-        order.add_step("confirm") \
-            .set_text("Confirm the order details and thank them.") \
-            .set_step_criteria("Order has been confirmed") \
-            .set_end(true)
-
-// Entry point
-    agent = OrderAgent()
-    agent.run()
+const swml = builder.toDict();
+console.log(JSON.stringify(swml, null, 2));
 ```
 
 ### Multiple contexts
 
 ```typescript
-import { AgentBase } from "@signalwire/sdk";
+import { ContextBuilder } from 'signalwire-agents';
 
-class SupportAgent extends AgentBase {
-    Init() {
-        super().__init__(name="support-agent")
-        self.addLanguage("English", "en-US", "rime.spore")
-        self.promptAddSection("Role", "You are a customer support assistant.")
+const builder = new ContextBuilder();
 
-        contexts = self.defineContexts()
+// Main menu
+const main = builder.addContext('default');
+main.addStep('menu')
+  .setText('Ask whether they need sales, support, or billing help.')
+  .setFunctions('none')
+  .setValidContexts(['sales', 'support', 'billing']);
 
-        # Main menu
-        main = contexts.add_context("default")
-        main.add_step("menu") \
-            .set_text("Ask whether they need sales, support, or billing help.") \
-            .set_functions("none") \
-            .set_valid_contexts(["sales", "support", "billing"])
+// Sales context
+const sales = builder.addContext('sales');
+sales.setSystemPrompt('You are a friendly sales representative.');
+sales.addStep('qualify')
+  .setText('Understand what product the caller is interested in.')
+  .setFunctions(['check_inventory', 'get_pricing'])
+  .setValidSteps(['close']);
+sales.addStep('close')
+  .setText('Close the sale or schedule a follow-up.')
+  .setValidContexts(['default']);
 
-        # Sales context
-        sales = contexts.add_context("sales")
-        sales.set_system_prompt("You are a friendly sales representative.")
-        sales.add_step("qualify") \
-            .set_text("Understand what product the caller is interested in.") \
-            .set_functions(["check_inventory", "get_pricing"]) \
-            .set_valid_steps(["close"])
-        sales.add_step("close") \
-            .set_text("Close the sale or schedule a follow-up.") \
-            .set_valid_contexts(["default"])
-
-        # Support context
-        support = contexts.add_context("support")
-        support.set_system_prompt("You are a patient support engineer.")
-        support.add_step("diagnose") \
-            .set_text("Understand the customer's issue.") \
-            .set_functions(["lookup_account", "check_status"]) \
-            .set_valid_steps(["resolve"])
-        support.add_step("resolve") \
-            .set_text("Resolve the issue or escalate.") \
-            .set_functions(["create_ticket", "transfer_call"]) \
-            .set_valid_contexts(["default"])
+// Support context
+const support = builder.addContext('support');
+support.setSystemPrompt('You are a patient support engineer.');
+support.addStep('diagnose')
+  .setText('Understand the customer\'s issue.')
+  .setFunctions(['lookup_account', 'check_status'])
+  .setValidSteps(['resolve']);
+support.addStep('resolve')
+  .setText('Resolve the issue or escalate.')
+  .setFunctions(['create_ticket', 'transfer_call'])
+  .setValidContexts(['default']);
 ```
