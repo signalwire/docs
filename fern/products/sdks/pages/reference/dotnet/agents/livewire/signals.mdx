@@ -1,0 +1,120 @@
+---
+title: "Signals"
+slug: /reference/dotnet/agents/livewire/signals
+description: "Exception and signal classes for controlling tool behavior and multi-agent handoffs."
+max-toc-depth: 3
+---
+
+[agent]: /docs/sdks/reference/dotnet/agents/livewire/agent
+
+LiveWire provides exception and signal classes that tool handlers can raise or
+return to control agent behavior. These mirror their LiveKit equivalents.
+
+## StopResponse
+
+An exception that, when raised inside a tool handler, signals that the tool
+should **not** trigger another LLM reply. Use this when the tool's side effect
+is the final action and no further conversation is needed.
+
+```csharp
+using SignalWire;
+
+public string EndCall(reason: str)
+{
+    """End the call immediately."""
+    // Perform cleanup...
+    raise StopResponse();
+
+```
+
+---
+
+## ToolError
+
+An exception that signals a tool execution error. Raise this when a tool
+encounters a problem that should be reported back to the LLM so it can
+communicate the issue to the user or retry.
+
+```csharp
+using SignalWire;
+
+public string TransferFunds(amount: float, to_account: str)
+{
+    """Transfer funds to another account."""
+    if amount <= 0:
+        raise ToolError("Amount must be positive.");
+    return $"Transferred ${amount} to {to_account}.";
+
+```
+
+---
+
+## AgentHandoff
+
+A signal object for handing off a conversation to a different agent in
+multi-agent scenarios. Return an `AgentHandoff` from a tool handler to
+indicate that a different agent should take over.
+
+```csharp
+using SignalWire;
+
+billing_agent = Agent(instructions: "You handle billing questions.");
+
+public AgentHandoff TransferToBilling()
+{
+    """Transfer the caller to the billing department."""
+    return AgentHandoff(billing_agent);
+
+```
+
+### Properties
+
+<ParamField path="agent" type="Agent" toc={true}>
+  The target agent for the handoff.
+</ParamField>
+
+<ParamField path="returns" type="object" toc={true}>
+  The return value, if any.
+</ParamField>
+
+---
+
+## ChatContext
+
+A minimal stub mirroring the LiveKit `ChatContext`. Holds a list of chat
+messages that can be used to seed conversation history.
+
+```csharp
+using SignalWire;
+
+chat = ChatContext();
+chat.append(role: "user", text: "What is the weather?");
+chat.append(role: "assistant", text: "It is sunny today.");
+
+```
+
+### Properties
+
+<ParamField path="messages" type="List<Dictionary<string, string>>" toc={true}>
+  List of message dicts, each with `"role"` and `"content"` keys.
+</ParamField>
+
+### Methods
+
+#### append
+
+**append**(`role="user"`, `text=""`) -> `ChatContext`
+
+Add a message to the context. Returns `self` for chaining.
+
+<ParamField path="role" type="string" default='"user"' toc={true}>
+  The message role (`"user"`, `"assistant"`, `"system"`).
+</ParamField>
+
+<ParamField path="text" type="string" default='""' toc={true}>
+  The message content.
+</ParamField>
+
+#### Returns
+
+[`ChatContext`](#chatcontext) -- The same instance, for method chaining.

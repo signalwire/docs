@@ -1,0 +1,67 @@
+---
+title: "queue_leave"
+slug: /reference/python/relay/call/queue-leave
+description: Remove a call from a queue.
+max-toc-depth: 3
+---
+
+[calling-call-queue]: /docs/sdks/reference/python/relay/call#events
+[call-events]: /docs/sdks/reference/python/relay/call#events
+
+Remove the call from a queue.
+
+<Info>
+This method emits [`calling.call.queue`][calling-call-queue] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="queue_name" type="str" required={true} toc={true}>
+  Name of the queue to leave.
+</ParamField>
+
+<ParamField path="control_id" type="Optional[str]" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="queue_id" type="Optional[str]" toc={true}>
+  Specific queue ID to leave (if the call is in multiple queues with the
+  same name).
+</ParamField>
+
+<ParamField path="status_url" type="Optional[str]" toc={true}>
+  URL to receive queue status webhooks.
+</ParamField>
+
+## **Returns**
+
+`dict` -- Server response confirming the call left the queue.
+
+## **Example**
+
+```python {20}
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Enter the queue
+    await call.queue_enter(queue_name="support")
+
+    # Remove from queue after a timeout
+    await asyncio.sleep(300)  # 5 minute max wait
+    await call.queue_leave(queue_name="support")
+    await call.play([{"type": "tts", "text": "No agents available. Please try again later."}])
+    await call.hangup()
+
+client.run()
+```

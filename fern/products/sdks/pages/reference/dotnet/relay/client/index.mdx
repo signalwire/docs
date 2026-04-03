@@ -1,0 +1,205 @@
+---
+title: "RelayClient"
+slug: /reference/dotnet/relay/client
+description: "WebSocket client for real-time call and message control."
+max-toc-depth: 3
+---
+
+[call]: /docs/sdks/reference/dotnet/relay/call
+[message]: /docs/sdks/reference/dotnet/relay/message
+[connect]: /docs/sdks/reference/dotnet/relay/client/connect
+[disconnect]: /docs/sdks/reference/dotnet/relay/client/disconnect
+[run]: /docs/sdks/reference/dotnet/relay/client/run
+[dial]: /docs/sdks/reference/dotnet/relay/client/dial
+[sendmessage]: /docs/sdks/reference/dotnet/relay/client/send-message
+[receive]: /docs/sdks/reference/dotnet/relay/client/receive
+[unreceive]: /docs/sdks/reference/dotnet/relay/client/unreceive
+[execute]: /docs/sdks/reference/dotnet/relay/client/execute
+
+`RelayClient` manages a persistent WebSocket connection to SignalWire's RELAY
+service. It handles authentication, automatic reconnection with exponential
+backoff, inbound event dispatch, outbound dialing, and SMS/MMS messaging.
+Use it when you need imperative, event-driven control over calls rather than
+the declarative AI agent approach.
+
+The client supports two authentication modes: project ID + API token, or JWT
+token. Credentials can be passed directly or read from environment variables.
+
+## **Properties**
+
+<ParamField path="project" type="string" toc={true}>
+  SignalWire project ID. Set via constructor or `SIGNALWIRE_PROJECT_ID` environment variable.
+</ParamField>
+
+<ParamField path="token" type="string" toc={true}>
+  API token for authentication. Set via constructor or `SIGNALWIRE_API_TOKEN` environment variable.
+</ParamField>
+
+<ParamField path="jwt_token" type="string" toc={true}>
+  JWT token for alternative authentication. Set via constructor or `SIGNALWIRE_JWT_TOKEN` environment variable.
+  When provided, `project` and `token` are not required.
+</ParamField>
+
+<ParamField path="host" type="string" toc={true}>
+  SignalWire space hostname (e.g., `your-space.signalwire.com`). Set via constructor or `SIGNALWIRE_SPACE`
+  environment variable. Defaults to `relay.signalwire.com`.
+</ParamField>
+
+<ParamField path="contexts" type="List<string>" toc={true}>
+  List of contexts to subscribe to for inbound call and message events.
+</ParamField>
+
+<ParamField path="max_active_calls" type="int?" default="1000" toc={true}>
+  Maximum number of concurrent inbound calls the client will track. Calls
+  arriving beyond this limit are dropped with a log warning. Set via constructor
+  or `RELAY_MAX_ACTIVE_CALLS` environment variable.
+</ParamField>
+
+<ParamField path="relay_protocol" type="string" toc={true}>
+  Server-assigned protocol string from the connect response. Read-only. Used internally
+  for session resumption on reconnect.
+</ParamField>
+
+## **Decorators**
+
+### on_call
+
+```csharp
+using SignalWire.Relay;
+using SignalWire;
+
+var client = new RelayClient(;
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],;
+)
+
+async Task HandleCall(Call call)
+{
+    await call.answer();
+    Console.WriteLine($"Received call: {call.call_id}");
+}
+
+await client.RunAsync();
+
+
+```
+
+Register the inbound call handler. The decorated function is called once for each
+`calling.call.receive` event on the subscribed contexts. The function receives a
+[`Call`][call] object with all call properties
+and control methods.
+
+### on_message
+
+```csharp
+using SignalWire.Relay;
+using SignalWire;
+
+var client = new RelayClient(;
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],;
+)
+
+async Task HandleMessage(Message message)
+{
+    Console.WriteLine($"Received message: {message.body}");
+}
+
+await client.RunAsync();
+
+
+```
+
+Register the inbound SMS/MMS message handler. The decorated function is called for
+each `messaging.receive` event. The function receives a
+[`Message`][message] object with message
+properties and state tracking.
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="connect" href="/docs/sdks/reference/dotnet/relay/client/connect">
+    Establish the WebSocket connection and authenticate.
+  </Card>
+  <Card title="disconnect" href="/docs/sdks/reference/dotnet/relay/client/disconnect">
+    Close the WebSocket connection cleanly.
+  </Card>
+  <Card title="run" href="/docs/sdks/reference/dotnet/relay/client/run">
+    Start the client with automatic reconnection.
+  </Card>
+  <Card title="dial" href="/docs/sdks/reference/dotnet/relay/client/dial">
+    Initiate an outbound call.
+  </Card>
+  <Card title="send_message" href="/docs/sdks/reference/dotnet/relay/client/send-message">
+    Send an outbound SMS or MMS message.
+  </Card>
+  <Card title="receive" href="/docs/sdks/reference/dotnet/relay/client/receive">
+    Subscribe to additional contexts for inbound events.
+  </Card>
+  <Card title="unreceive" href="/docs/sdks/reference/dotnet/relay/client/unreceive">
+    Unsubscribe from inbound event contexts.
+  </Card>
+  <Card title="execute" href="/docs/sdks/reference/dotnet/relay/client/execute">
+    Send a raw JSON-RPC request to RELAY.
+  </Card>
+</CardGroup>
+
+## **Async Context Manager**
+
+`RelayClient` supports `async with` for scoped connections:
+
+```csharp
+using SignalWire.Relay;
+
+async Task Main()
+{
+    using var client = new RelayClient(
+        project: "your-project-id",
+        token: "your-api-token",
+        host: "your-space.signalwire.com",
+        contexts: new[] { "default" }
+    );
+    await client.ConnectAsync();
+    var call = await client.Dial(
+        to: "+15559876543",
+        fromNumber: "+15551234567"
+    );
+    // Automatically disconnects on dispose
+}
+
+await Main();
+
+
+```
+
+## **Example**
+
+```csharp
+using SignalWire.Relay;
+
+var client = new RelayClient(;
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],;
+)
+
+async Task HandleCall(call)
+{
+    await call.answer();
+    var action = await call.play([{"type": "tts", "text": "Hello from RELAY!"}]);
+    await action.wait();
+    await call.hangup();
+
+async Task HandleMessage(message)
+{
+    Console.WriteLine($"SMS from {message.from_number}: {message.body}");
+
+await client.RunAsync();
+
+
+```

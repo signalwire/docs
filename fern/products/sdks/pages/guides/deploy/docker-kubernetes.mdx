@@ -1,0 +1,518 @@
+---
+title: "Docker & Kubernetes"
+description: Containerize your agents with Docker and deploy to Kubernetes for scalable, manageable production deployments.
+slug: /guides/docker-kubernetes
+max-toc-depth: 3
+---
+
+## Dockerfile
+
+Each language has a different Dockerfile. Choose the one matching your SDK language.
+
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+## Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+## Copy application
+COPY . .
+
+## Create non-root user
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+## Expose port
+EXPOSE 3000
+
+## Run with uvicorn
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "3000", "--workers", "4"]
+```
+
+{/*
+<Tab title="TypeScript">
+```dockerfile
+FROM node:20-slim
+
+WORKDIR /app
+
+## Install dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+## Copy application
+COPY . .
+
+## Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 3000
+
+CMD ["node", "dist/app.js"]
+```
+</Tab>
+<Tab title="Go">
+```dockerfile
+## Multi-stage build
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o signalwire-agent .
+
+FROM alpine:3.19
+
+RUN adduser -D appuser
+WORKDIR /app
+COPY --from=builder /app/signalwire-agent .
+
+USER appuser
+EXPOSE 3000
+
+CMD ["./signalwire-agent"]
+```
+</Tab>
+<Tab title="Ruby">
+```dockerfile
+FROM ruby:3.3-slim
+
+WORKDIR /app
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install --without development test
+
+COPY . .
+
+RUN groupadd -r appuser && useradd -r -g appuser appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 3000
+
+CMD ["puma", "-w", "4", "-b", "tcp://0.0.0.0:3000"]
+```
+</Tab>
+<Tab title="Java">
+```dockerfile
+## Multi-stage build
+FROM maven:3.9-eclipse-temurin-21 AS builder
+
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn package -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+
+RUN adduser -D appuser
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+
+USER appuser
+EXPOSE 3000
+
+CMD ["java", "-jar", "app.jar"]
+```
+</Tab>
+<Tab title="Perl">
+```dockerfile
+FROM perl:5.38-slim
+
+WORKDIR /app
+
+COPY cpanfile .
+RUN cpanm --installdeps .
+
+COPY . .
+
+RUN groupadd -r appuser && useradd -r -g appuser appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 3000
+
+CMD ["starman", "--workers", "4", "--port", "3000", "app.psgi"]
+```
+</Tab>
+<Tab title="C++">
+```dockerfile
+## Multi-stage build
+FROM ubuntu:22.04 AS builder
+
+RUN apt-get update && apt-get install -y cmake g++ libcurl4-openssl-dev
+WORKDIR /app
+COPY . .
+RUN cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
+
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y libcurl4 && rm -rf /var/lib/apt/lists/*
+RUN useradd -m appuser
+WORKDIR /app
+COPY --from=builder /app/build/signalwire-agent .
+
+USER appuser
+EXPOSE 3000
+
+CMD ["./signalwire-agent"]
+```
+</Tab>
+<Tab title="PHP">
+```dockerfile
+FROM php:8.1-cli
+
+WORKDIR /app
+
+## Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+## Install dependencies
+COPY composer.json .
+RUN composer install --no-dev --optimize-autoloader
+
+## Copy application
+COPY . .
+
+## Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 3000
+
+CMD ["php", "agent.php"]
+```
+</Tab>
+<Tab title="C#">
+```dockerfile
+## Multi-stage build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+COPY *.csproj .
+RUN dotnet restore
+COPY . .
+RUN dotnet publish -c Release -o out
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+
+RUN adduser --disabled-password appuser
+WORKDIR /app
+COPY --from=build /app/out .
+
+USER appuser
+EXPOSE 3000
+
+ENTRYPOINT ["dotnet", "MyAgent.dll"]
+```
+</Tab>
+*/}
+
+## Application entry point (Python)
+
+```python
+## app.py
+from signalwire_agents import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+
+agent = MyAgent()
+app = agent._app
+```
+
+## Building and running
+
+```bash
+## Build image
+docker build -t signalwire-agent .
+
+## Run container
+docker run -d \
+  -p 3000:3000 \
+  -e SWML_BASIC_AUTH_USER=myuser \
+  -e SWML_BASIC_AUTH_PASSWORD=mypassword \
+  --name agent \
+  signalwire-agent
+
+## View logs
+docker logs -f agent
+
+## Stop container
+docker stop agent
+```
+
+## Docker Compose
+
+```yaml
+## docker-compose.yml
+version: '3.8'
+
+services:
+  agent:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - SWML_BASIC_AUTH_USER=${SWML_BASIC_AUTH_USER}
+      - SWML_BASIC_AUTH_PASSWORD=${SWML_BASIC_AUTH_PASSWORD}
+      - SWML_PROXY_URL_BASE=${SWML_PROXY_URL_BASE}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/ssl/certs:ro
+    depends_on:
+      - agent
+    restart: unless-stopped
+```
+
+Run with:
+
+```bash
+docker-compose up -d
+```
+
+## Kubernetes deployment
+
+Kubernetes manifests are language-agnostic. The only difference is the Docker image referenced and any build steps. Use the appropriate Dockerfile from the section above to build your image, then deploy with the same manifests regardless of language.
+
+| Language | Image Build Command |
+|----------|---------------------|
+| Python | `docker build -f Dockerfile.python -t your-registry/agent:latest .` |
+{/*
+| TypeScript | `docker build -f Dockerfile.ts -t your-registry/agent:latest .` |
+| Go | `docker build -f Dockerfile.go -t your-registry/agent:latest .` |
+| Ruby | `docker build -f Dockerfile.ruby -t your-registry/agent:latest .` |
+| Java | `docker build -f Dockerfile.java -t your-registry/agent:latest .` |
+| Perl | `docker build -f Dockerfile.perl -t your-registry/agent:latest .` |
+| C++ | `docker build -f Dockerfile.cpp -t your-registry/agent:latest .` |
+| PHP | `docker build -f Dockerfile.php -t your-registry/agent:latest .` |
+| C# | `docker build -f Dockerfile.cs -t your-registry/agent:latest .` |
+*/}
+
+### Deployment manifest
+
+```yaml
+## deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signalwire-agent
+  labels:
+    app: signalwire-agent
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: signalwire-agent
+  template:
+    metadata:
+      labels:
+        app: signalwire-agent
+    spec:
+      containers:
+      - name: agent
+        image: your-registry/signalwire-agent:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SWML_BASIC_AUTH_USER
+          valueFrom:
+            secretKeyRef:
+              name: agent-secrets
+              key: auth-user
+        - name: SWML_BASIC_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: agent-secrets
+              key: auth-password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+```
+
+### Service manifest
+
+```yaml
+## service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: signalwire-agent
+spec:
+  selector:
+    app: signalwire-agent
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
+```
+
+### Ingress manifest
+
+```yaml
+## ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signalwire-agent
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - agent.example.com
+    secretName: agent-tls
+  rules:
+  - host: agent.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: signalwire-agent
+            port:
+              number: 80
+```
+
+### Secrets
+
+```yaml
+## secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agent-secrets
+type: Opaque
+stringData:
+  auth-user: your-username
+  auth-password: your-secure-password
+```
+
+## Kubernetes architecture
+
+<Frame caption="Kubernetes Architecture">
+  <img class="diagram" src="/assets/images/sdks/diagrams/07_04_docker-kubernetes_diagram1.webp" alt="Kubernetes architecture diagram showing pods, services, ingress, and SignalWire Cloud." />
+</Frame>
+
+## Deploying to Kubernetes
+
+```bash
+## Create secrets
+kubectl apply -f secrets.yaml
+
+## Deploy application
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f ingress.yaml
+
+## Check status
+kubectl get pods -l app=signalwire-agent
+kubectl get svc signalwire-agent
+kubectl get ingress signalwire-agent
+
+## View logs
+kubectl logs -f -l app=signalwire-agent
+
+## Scale deployment
+kubectl scale deployment signalwire-agent --replicas=5
+```
+
+## Horizontal Pod Autoscaler
+
+```yaml
+## hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: signalwire-agent
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: signalwire-agent
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+## Multi-architecture builds
+
+```dockerfile
+## Build for multiple architectures
+FROM --platform=$TARGETPLATFORM python:3.11-slim
+
+## ... rest of Dockerfile
+```
+
+Build with:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t your-registry/agent:latest --push .
+```
+
+## Container best practices
+
+### Security
+
+- Run as non-root user
+- Use minimal base images (slim, alpine)
+- Scan images for vulnerabilities
+- Don't store secrets in images
+
+### Performance
+
+- Use multi-stage builds to reduce image size
+- Layer dependencies efficiently
+- Set appropriate resource limits
+
+### Reliability
+
+- Add health checks
+- Use restart policies
+- Configure proper logging
+- Set graceful shutdown handling

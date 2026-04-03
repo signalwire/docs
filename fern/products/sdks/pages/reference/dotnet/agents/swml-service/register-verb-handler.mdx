@@ -1,0 +1,61 @@
+---
+title: "RegisterVerbHandler"
+slug: /reference/dotnet/agents/swml-service/register-verb-handler
+description: "Register custom verb handlers for specialized SWML verb processing."
+max-toc-depth: 3
+---
+
+[add-verb]: /docs/sdks/reference/dotnet/agents/swml-service/add-verb
+
+Register a custom verb handler for specialized validation and configuration of a
+SWML verb. When a verb with a registered handler is added via
+[`AddVerb()`][add-verb], the handler's
+`validate_config()` method is used instead of generic schema validation.
+
+The SDK ships with a built-in `AIVerbHandler` for the `ai` verb. Register your own
+handlers for custom verbs or to override default validation behavior.
+
+<Tip>
+Custom verb handlers are useful when a verb has complex validation rules that go beyond
+JSON Schema checks — for example, mutually exclusive parameters or conditional requirements.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="handler" type="SWMLVerbHandler" required={true} toc={true}>
+  An instance of a class that extends `SWMLVerbHandler`. Must implement three methods:
+  - `get_verb_name()` — returns the verb name string this handler manages
+  - `validate_config(config)` — returns a `(bool, list[str])` tuple of `(is_valid, errors)`
+  - `build_config(**kwargs)` — returns a configuration dictionary for the verb
+</ParamField>
+
+## **Returns**
+
+`None`
+
+## **Example**
+
+```csharp {18}
+using SignalWire;
+
+class CustomVerbHandler(SWMLVerbHandler):
+    FunctionResult GetVerbName(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+        return "my_verb";
+
+    FunctionResult ValidateConfig(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+        errors = [];
+        if "target" not in config:
+            errors.append("Missing required field 'target'");
+        return len(errors) == 0, errors;
+
+    FunctionResult BuildConfig(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+        return {"target": kwargs["target"]}
+
+service = SWMLService(name: "custom-service");
+service.RegisterVerbHandler(CustomVerbHandler())
+
+// Now add_verb will use the custom handler for validation
+service.AddVerb("my_verb", {"target": "https://example.com"})
+Console.WriteLine(service.render_document());
+
+```

@@ -1,0 +1,86 @@
+---
+title: "RunApp"
+slug: /reference/dotnet/agents/livewire/run-app
+description: "Main entry point that starts a LiveWire agent server."
+max-toc-depth: 3
+---
+
+[jobcontext]: /docs/sdks/reference/dotnet/agents/livewire/job-context
+[agentserver]: /docs/sdks/reference/dotnet/agents/livewire/agent-server
+[jobprocess]: /docs/sdks/reference/dotnet/agents/livewire/job-context
+[server-rtc-session]: /docs/sdks/reference/dotnet/agents/livewire/agent-server
+
+### run_app
+
+**run_app**(`server`) -> `None`
+
+The main entry point for a LiveWire application. It prints the ASCII banner,
+runs the setup function (if registered on the server), creates a
+[`JobContext`][jobcontext], invokes the
+registered entrypoint, prints a random tip, and starts the underlying SignalWire agent.
+
+This mirrors `livekit.agents.cli.run_app`. It is also available as `cli_ns.run_app`.
+
+#### Parameters
+
+<ParamField path="server" type="AgentServer" required={true} toc={true}>
+  The [`AgentServer`][agentserver] instance
+  with a registered entrypoint.
+</ParamField>
+
+#### Returns
+
+`None` -- This function blocks while the agent is running.
+
+#### Lifecycle
+
+1. Prints the LiveWire ASCII banner to stderr.
+2. If `server.setup_fnc` is set, calls it with a fresh
+   [`JobProcess`][jobprocess] instance.
+3. Creates a [`JobContext`][jobcontext].
+4. Calls the entrypoint registered via
+   [`@server.rtc_session()`][server-rtc-session].
+   If the entrypoint is a coroutine, it is awaited.
+5. Prints a random "Did you know?" tip to stderr.
+6. Starts the underlying SignalWire agent (blocking).
+
+#### Example
+
+```csharp
+using SignalWire;
+    Agent,
+    AgentSession,
+    AgentServer,
+    JobContext,
+    JobProcess,
+    function_tool,
+    run_app,
+)
+
+public string LookupOrder(order_id: str)
+{
+    """Look up an order by ID."""
+    return $"Order {order_id} shipped yesterday.";
+
+var server = new AgentServer();
+
+FunctionResult OnSetup(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    proc.userdata["db_url"] = "postgres://localhost/orders";
+
+server.setup_fnc = on_setup;
+
+async Task Entrypoint(JobContext ctx)
+{
+    await ctx.connect();
+    var agent = new Agent(;
+        instructions: "You are an order tracking assistant.",
+        tools: [lookup_order],;
+    )
+    var session = new AgentSession();
+    await session.start(agent, room=ctx.room);
+    session.say("Hello! I can help you track your orders.");
+
+server.Run();
+
+
+```

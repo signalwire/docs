@@ -1,0 +1,59 @@
+---
+title: "run"
+slug: /reference/dotnet/relay/client/run
+description: "Start the client with automatic reconnection."
+max-toc-depth: 3
+---
+
+[connect]: /docs/sdks/reference/dotnet/relay/client/connect
+[disconnect]: /docs/sdks/reference/dotnet/relay/client/disconnect
+[ref-relayclient]: /docs/sdks/reference/dotnet/relay/client
+
+Blocking entry point that connects to RELAY and runs the event loop until
+interrupted. This is the recommended way to start a [`RelayClient`][ref-relayclient] for long-running
+services. It calls [`Connect()`][connect]
+internally and automatically reconnects with exponential backoff (1 second initial
+delay, up to 30 seconds maximum) if the connection is lost.
+
+The method blocks the current thread. Press `Ctrl+C` to trigger a clean shutdown --
+the client handles `SIGINT` gracefully without dumping a stack trace.
+
+<Note>
+`run()` is synchronous and creates its own `asyncio` event loop via `asyncio.run()`.
+Do not call it from inside an already-running async event loop. For async contexts,
+use [`Connect()`][connect] and
+[`Disconnect()`][disconnect] directly.
+</Note>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`None` -- blocks until the client is stopped via `Ctrl+C` or a programmatic shutdown.
+
+## **Example**
+
+```csharp
+using SignalWire.Relay;
+
+var client = new RelayClient(;
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],;
+)
+
+async Task HandleCall(call)
+{
+    await call.answer();
+    var action = await call.play([{"type": "tts", "text": "Welcome! Goodbye."}]);
+    await action.wait();
+    await call.hangup();
+
+// Blocks forever, reconnects on connection loss
+await client.RunAsync();
+
+
+```

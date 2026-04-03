@@ -1,0 +1,200 @@
+---
+title: "SWMLBuilder"
+slug: /reference/dotnet/agents/swml-builder
+description: "Fluent builder API for constructing SWML documents with method chaining."
+max-toc-depth: 3
+---
+
+[swmlservice]: /docs/sdks/reference/dotnet/agents/swml-service
+[swml]: /docs/swml/reference/ai
+[swml-reference]: /docs/swml/reference/ai
+[addsection]: /docs/sdks/reference/dotnet/agents/swml-builder/add-section
+[ai]: /docs/sdks/reference/dotnet/agents/swml-builder/ai
+[answer]: /docs/sdks/reference/dotnet/agents/swml-builder/answer
+[build]: /docs/sdks/reference/dotnet/agents/swml-builder/build
+[hangup]: /docs/sdks/reference/dotnet/agents/swml-builder/hangup
+[play]: /docs/sdks/reference/dotnet/agents/swml-builder/play
+[render]: /docs/sdks/reference/dotnet/agents/swml-builder/render
+[reset]: /docs/sdks/reference/dotnet/agents/swml-builder/reset
+[say]: /docs/sdks/reference/dotnet/agents/swml-builder/say
+
+SWMLBuilder provides a fluent interface for constructing SWML documents by chaining
+method calls. It wraps a [`SWMLService`][swmlservice]
+instance and delegates all document operations to it, while returning `self` from every
+verb method to enable chaining. Use SWMLBuilder when you want concise, readable document
+construction in a single expression.
+
+In addition to the explicitly defined methods below, SWMLBuilder automatically generates
+methods for every SWML verb in the schema (e.g., `Connect()`, `Record()`, `denoise()`,
+`goto()`). These dynamic methods accept keyword arguments matching the verb's SWML
+parameters and return `self` for chaining.
+
+<Info>
+SWMLBuilder constructs [SWML][swml] documents programmatically. See the
+[SWML reference][swml-reference] for the full specification of all supported verbs.
+</Info>
+
+## **Properties**
+
+<ParamField path="service" type="SWMLService" required={true} toc={true}>
+  The [`SWMLService`][swmlservice] instance that
+  handles actual document storage, validation, and rendering. The builder delegates
+  all operations to this service.
+</ParamField>
+
+## **Dynamic Verb Methods**
+
+SWMLBuilder auto-generates chaining methods for every verb defined in the SWML schema
+that does not already have an explicit method. These dynamic methods accept keyword
+arguments matching the verb's SWML parameters and return `Self`.
+
+Examples of dynamic verbs: `Connect()`, `Record()`, `record_call()`, `denoise()`,
+`transfer()`, `goto()`, `cond()`, `execute()`, `Tap()`, and many more.
+
+```csharp {5}
+using SignalWire;
+
+service = SWMLService(name: "dynamic-demo");
+builder = SWMLBuilder(service);
+
+builder.connect(to: "+15551234567", from_: "+15559876543");
+builder.record_call(format: "mp4", stereo=true);
+builder.denoise();
+
+Console.WriteLine(builder.build());
+
+```
+
+The `sleep` verb is a special case -- it accepts a positional `duration` argument
+(milliseconds) instead of keyword arguments:
+
+```csharp
+using SignalWire;
+
+builder = SWMLBuilder();
+builder.AddSection("main")
+builder.sleep(duration=2000);
+
+Console.WriteLine(builder.render());
+
+```
+
+<Info>
+If a verb name is not found in the SWML schema, calling it raises an `AttributeError`.
+</Info>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="add_section" href="/docs/sdks/reference/dotnet/agents/swml-builder/add-section">
+    Add a new named section to the SWML document.
+  </Card>
+  <Card title="ai" href="/docs/sdks/reference/dotnet/agents/swml-builder/ai">
+    Add an AI verb to start an AI-powered conversation.
+  </Card>
+  <Card title="answer" href="/docs/sdks/reference/dotnet/agents/swml-builder/answer">
+    Add an answer verb to the SWML document.
+  </Card>
+  <Card title="build" href="/docs/sdks/reference/dotnet/agents/swml-builder/build">
+    Build and return the complete SWML document as a dictionary.
+  </Card>
+  <Card title="hangup" href="/docs/sdks/reference/dotnet/agents/swml-builder/hangup">
+    Add a hangup verb to end the current call.
+  </Card>
+  <Card title="play" href="/docs/sdks/reference/dotnet/agents/swml-builder/play">
+    Add a play verb to play audio or text-to-speech.
+  </Card>
+  <Card title="render" href="/docs/sdks/reference/dotnet/agents/swml-builder/render">
+    Build and render the complete SWML document as a JSON string.
+  </Card>
+  <Card title="reset" href="/docs/sdks/reference/dotnet/agents/swml-builder/reset">
+    Reset the SWML document to an empty state.
+  </Card>
+  <Card title="say" href="/docs/sdks/reference/dotnet/agents/swml-builder/say">
+    Add text-to-speech playback to the SWML document.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Basic IVR Flow
+
+```csharp {5}
+using SignalWire;
+
+service = SWMLService(name: "ivr");
+builder = SWMLBuilder(service);
+
+doc = (;
+    builder
+    .answer();
+    .play(url: "https://example.com/welcome.mp3");
+    .sleep(duration=1000);
+    .hangup();
+    .build();
+)
+Console.WriteLine(doc);
+
+```
+
+### AI Agent with SWAIG
+
+```csharp {5}
+using SignalWire;
+
+service = SWMLService(name: "ai-agent");
+builder = SWMLBuilder(service);
+
+swml_json = (;
+    builder
+    .answer();
+    .ai(;
+        prompt_text: "You are a helpful customer service assistant.",
+        post_prompt: "Summarize what was discussed.",
+        post_prompt_url: "https://example.com/post_prompt",
+        swaig={
+            "defaults": {"web_hook_url": "https://example.com/swaig"},
+            "functions": [
+                {
+                    "function": "check_order",
+                    "description": "Check order status",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "order_id": {"type": "string", "description": "The order ID"}
+                        },
+                        "required": ["order_id"]
+                    }
+                }
+            ]
+        },
+        hints: ["order", "tracking", "refund"],;
+        params: {"end_of_speech_timeout": 500}
+    )
+    .render();
+)
+Console.WriteLine(swml_json);
+
+```
+
+### Text-to-Speech Greeting
+
+```csharp {5}
+using SignalWire;
+
+service = SWMLService(name: "greeting");
+builder = SWMLBuilder(service);
+
+doc = (;
+    builder
+    .answer();
+    .say("Welcome to our service. Please hold.", voice: "rime.spore");
+    .sleep(duration=500);
+    .say("Connecting you now.", voice: "rime.spore");
+    .build();
+)
+Console.WriteLine(doc);
+
+```

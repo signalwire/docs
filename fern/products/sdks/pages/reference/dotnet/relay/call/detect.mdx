@@ -1,0 +1,97 @@
+---
+title: "detect"
+slug: /reference/dotnet/relay/call/detect
+description: "Detect answering machines, fax tones, or digits on a call."
+max-toc-depth: 3
+---
+
+[detectaction]: /docs/sdks/reference/dotnet/relay/actions
+[calling-call-detect]: /docs/sdks/reference/dotnet/relay/call#events
+[call-events]: /docs/sdks/reference/dotnet/relay/call#events
+
+Start audio detection on the call. Detects answering machines, fax tones, or
+DTMF digits. Returns a [`DetectAction`][detectaction]
+that resolves on the first detection result or when the operation finishes.
+
+<Note>
+The `DetectAction` resolves on the **first detection result**, not when the
+detect operation finishes. This means `await action.wait()` returns as soon as
+a result is available.
+</Note>
+
+<Info>
+This method emits [`calling.call.detect`][calling-call-detect] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="detect" type="dict" required={true} toc={true}>
+  Detection configuration object.
+</ParamField>
+
+<Indent>
+<ParamField path="detect.type" type="string" required={true} toc={true}>
+  Detection type. Valid values:
+  - `"machine"` -- answering machine detection (AMD)
+  - `"fax"` -- fax tone detection (CNG/CED)
+  - `"digit"` -- DTMF digit detection
+</ParamField>
+
+<ParamField path="detect.params" type="dict" toc={true}>
+  Type-specific detection parameters.
+</ParamField>
+</Indent>
+
+<ParamField path="timeout" type="double?" toc={true}>
+  Maximum seconds to run the detector before stopping.
+</ParamField>
+
+<ParamField path="control_id" type="string?" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="Func<RelayEvent, object>?" toc={true}>
+  Callback invoked when detection completes.
+</ParamField>
+
+## **Returns**
+
+[`DetectAction`][detectaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```csharp
+using SignalWire.Relay;
+
+var client = new RelayClient(;
+    project: "your-project-id",
+    token: "your-api-token",
+    host: "your-space.signalwire.com",
+    contexts: ["default"],;
+)
+
+async Task HandleCall(call)
+{
+    await call.answer();
+
+    // Answering machine detection
+    var action = await call.detect(;
+        detect: {"type": "machine", "params": {}},;
+        timeout: 30,
+    )
+    var event = await action.wait();
+
+    detect_result = event.params.get("detect", {});
+    if detect_result["type"] == "machine":
+        Console.WriteLine("Answering machine detected");
+        await call.hangup();
+    else:
+        Console.WriteLine("Human answered");
+        var action = await call.play([{"type": "tts", "text": "Hello! This is a call from..."}]);
+        await action.wait();
+
+await client.RunAsync();
+
+
+```

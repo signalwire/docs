@@ -1,0 +1,174 @@
+---
+title: "JoinConference"
+slug: /reference/dotnet/agents/function-result/join-conference
+description: Join an ad-hoc audio conference with extensive configuration options.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/sdks/reference/dotnet/agents/function-result
+
+Join an ad-hoc audio conference. Conferences support both RELAY and CXML calls
+with extensive configuration for moderation, recording, and event callbacks.
+
+When all parameters are at their defaults (except `name`), a simplified form is
+used internally. Passing any non-default parameter triggers the full object form.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Conference name. All participants joining the same name are in the same
+  conference.
+</ParamField>
+
+<ParamField path="muted" type="bool" default="false" toc={true}>
+  Join the conference muted.
+</ParamField>
+
+<ParamField path="beep" type="string" default="true" toc={true}>
+  Beep configuration for join/leave notifications.
+
+  - `"true"` -- beep on both enter and exit
+  - `"false"` -- no beep
+  - `"onEnter"` -- beep only when a participant joins
+  - `"onExit"` -- beep only when a participant leaves
+</ParamField>
+
+<ParamField path="start_on_enter" type="bool" default="true" toc={true}>
+  Whether the conference starts when this participant enters. When `false`,
+  the participant waits until another participant with `startOnEnter: true` joins.
+</ParamField>
+
+<ParamField path="end_on_exit" type="bool" default="false" toc={true}>
+  Whether the conference ends for all participants when this participant leaves.
+</ParamField>
+
+<ParamField path="wait_url" type="string?" default="None" toc={true}>
+  SWML URL for hold music played while waiting for the conference to start.
+  When `None`, default hold music is used.
+</ParamField>
+
+<ParamField path="max_participants" type="int" default="250" toc={true}>
+  Maximum number of participants. Must be a positive integer, maximum 250.
+</ParamField>
+
+<ParamField path="record" type="string" default="do-not-record" toc={true}>
+  Recording mode.
+
+  - `"do-not-record"` -- do not record the conference
+  - `"record-from-start"` -- begin recording as soon as the conference starts
+</ParamField>
+
+<ParamField path="region" type="string?" default="None" toc={true}>
+  Conference region for geographic optimization.
+</ParamField>
+
+<ParamField path="trim" type="string" default="trim-silence" toc={true}>
+  Silence trimming in recordings.
+
+  - `"trim-silence"` -- remove leading and trailing silence from the recording
+  - `"do-not-trim"` -- keep silence in the recording as-is
+</ParamField>
+
+<ParamField path="coach" type="string?" default="None" toc={true}>
+  SWML Call ID or CXML CallSid of a participant who can coach (whisper to)
+  this participant without other participants hearing.
+</ParamField>
+
+<ParamField path="status_callback_event" type="string?" default="None" toc={true}>
+  Space-separated list of events to report.
+
+  - `"start"` -- conference has started
+  - `"end"` -- conference has ended
+  - `"join"` -- a participant joined
+  - `"leave"` -- a participant left
+  - `"mute"` -- a participant was muted or unmuted
+  - `"hold"` -- a participant was placed on hold or resumed
+  - `"modify"` -- conference settings were modified
+  - `"speaker"` -- active speaker changed
+  - `"announcement"` -- an announcement was played
+</ParamField>
+
+<ParamField path="status_callback" type="string?" default="None" toc={true}>
+  URL to receive conference status event webhooks.
+</ParamField>
+
+<ParamField path="status_callback_method" type="string" default="POST" toc={true}>
+  HTTP method for status callbacks.
+
+  - `"GET"` -- send status callbacks as GET requests
+  - `"POST"` -- send status callbacks as POST requests
+</ParamField>
+
+<ParamField path="recording_status_callback" type="string?" default="None" toc={true}>
+  URL to receive recording status event webhooks.
+</ParamField>
+
+<ParamField path="recording_status_callback_method" type="string" default="POST" toc={true}>
+  HTTP method for recording status callbacks.
+
+  - `"GET"` -- send recording status callbacks as GET requests
+  - `"POST"` -- send recording status callbacks as POST requests
+</ParamField>
+
+<ParamField path="recording_status_callback_event" type="string" default="completed" toc={true}>
+  Space-separated list of recording events to report.
+
+  - `"in-progress"` -- recording is currently in progress
+  - `"completed"` -- recording has completed
+  - `"absent"` -- no recording was produced
+</ParamField>
+
+<ParamField path="result" type="object?" default="None" toc={true}>
+  Result handling configuration. Pass an object `{}` for `return_value`-based
+  switching, or an array `[]` for conditional switching.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] — self, for chaining.
+
+## **Examples**
+
+### Simple Conference
+
+```csharp {11}
+using SignalWire.Agent;
+using SignalWire.SWAIG;
+
+var agent = new AgentBase(name: "my-agent", route: "/agent");
+agent.SetPromptText("You are a helpful assistant.")
+
+FunctionResult JoinTeamCall(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    return (;
+        FunctionResult("Joining the team call.");
+        .join_conference(name: "team-standup");
+    )
+
+agent.Serve();
+
+```
+
+### Moderated Conference
+
+```csharp {11}
+using SignalWire.Agent;
+using SignalWire.SWAIG;
+
+var agent = new AgentBase(name: "my-agent", route: "/agent");
+agent.SetPromptText("You are a helpful assistant.")
+
+FunctionResult JoinModeratedConference(Dictionary<string, object> args, Dictionary<string, object?> rawData)
+    return (;
+        FunctionResult("Joining the conference.");
+        .join_conference(;
+            name: "quarterly-review",
+            muted: true,
+            start_on_enter: false,
+            record: "record-from-start",
+            max_participants=50;
+        )
+    )
+
+agent.Serve();
+
+```
