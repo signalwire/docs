@@ -1,0 +1,191 @@
+---
+title: "RelayClient"
+slug: /reference/ruby/relay/client
+description: "WebSocket client for real-time call and message control."
+max-toc-depth: 3
+---
+
+[call]: /docs/sdks/reference/ruby/relay/call
+[message]: /docs/sdks/reference/ruby/relay/message
+[connect]: /docs/sdks/reference/ruby/relay/client/connect
+[disconnect]: /docs/sdks/reference/ruby/relay/client/disconnect
+[run]: /docs/sdks/reference/ruby/relay/client/run
+[dial]: /docs/sdks/reference/ruby/relay/client/dial
+[sendmessage]: /docs/sdks/reference/ruby/relay/client/send-message
+[receive]: /docs/sdks/reference/ruby/relay/client/receive
+[unreceive]: /docs/sdks/reference/ruby/relay/client/unreceive
+[execute]: /docs/sdks/reference/ruby/relay/client/execute
+
+`RelayClient` manages a persistent WebSocket connection to SignalWire's RELAY
+service. It handles authentication, automatic reconnection with exponential
+backoff, inbound event dispatch, outbound dialing, and SMS/MMS messaging.
+Use it when you need imperative, event-driven control over calls rather than
+the declarative AI agent approach.
+
+The client supports two authentication modes: project ID + API token, or JWT
+token. Credentials can be passed directly or read from environment variables.
+
+## **Properties**
+
+<ParamField path="project" type="String" toc={true}>
+  SignalWire project ID. Set via constructor or `SIGNALWIRE_PROJECT_ID` environment variable.
+</ParamField>
+
+<ParamField path="token" type="String" toc={true}>
+  API token for authentication. Set via constructor or `SIGNALWIRE_API_TOKEN` environment variable.
+</ParamField>
+
+<ParamField path="jwt_token" type="String" toc={true}>
+  JWT token for alternative authentication. Set via constructor or `SIGNALWIRE_JWT_TOKEN` environment variable.
+  When provided, `project` and `token` are not required.
+</ParamField>
+
+<ParamField path="host" type="String" toc={true}>
+  SignalWire space hostname (e.g., `your-space.signalwire.com`). Set via constructor or `SIGNALWIRE_SPACE`
+  environment variable. Defaults to `relay.signalwire.com`.
+</ParamField>
+
+<ParamField path="contexts" type="Array\<String\>" toc={true}>
+  List of contexts to subscribe to for inbound call and message events.
+</ParamField>
+
+<ParamField path="max_active_calls" type="Integer, nil" default="1000" toc={true}>
+  Maximum number of concurrent inbound calls the client will track. Calls
+  arriving beyond this limit are dropped with a log warning. Set via constructor
+  or `RELAY_MAX_ACTIVE_CALLS` environment variable.
+</ParamField>
+
+<ParamField path="relay_protocol" type="String" toc={true}>
+  Server-assigned protocol string from the connect response. Read-only. Used internally
+  for session resumption on reconnect.
+</ParamField>
+
+## **Decorators**
+
+### on_call
+
+```ruby
+require 'signalwire/relay/client'
+
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+def handle_call(call: Call)
+    call.answer()
+    puts("Received call: #{call.call_id}")
+
+client.run()
+```
+
+Register the inbound call handler. The decorated function is called once for each
+`calling.call.receive` event on the subscribed contexts. The function receives a
+[`Call`][call] object with all call properties
+and control methods.
+
+### on_message
+
+```ruby
+require 'signalwire/relay/client'
+
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_message
+def handle_message(message: Message)
+    puts("Received message: #{message.body}")
+
+client.run()
+```
+
+Register the inbound SMS/MMS message handler. The decorated function is called for
+each `messaging.receive` event. The function receives a
+[`Message`][message] object with message
+properties and state tracking.
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="connect" href="/docs/sdks/reference/ruby/relay/client/connect">
+    Establish the WebSocket connection and authenticate.
+  </Card>
+  <Card title="disconnect" href="/docs/sdks/reference/ruby/relay/client/disconnect">
+    Close the WebSocket connection cleanly.
+  </Card>
+  <Card title="run" href="/docs/sdks/reference/ruby/relay/client/run">
+    Start the client with automatic reconnection.
+  </Card>
+  <Card title="dial" href="/docs/sdks/reference/ruby/relay/client/dial">
+    Initiate an outbound call.
+  </Card>
+  <Card title="send_message" href="/docs/sdks/reference/ruby/relay/client/send-message">
+    Send an outbound SMS or MMS message.
+  </Card>
+  <Card title="receive" href="/docs/sdks/reference/ruby/relay/client/receive">
+    Subscribe to additional contexts for inbound events.
+  </Card>
+  <Card title="unreceive" href="/docs/sdks/reference/ruby/relay/client/unreceive">
+    Unsubscribe from inbound event contexts.
+  </Card>
+  <Card title="execute" href="/docs/sdks/reference/ruby/relay/client/execute">
+    Send a raw JSON-RPC request to RELAY.
+  </Card>
+</CardGroup>
+
+## **Async Context Manager**
+
+`RelayClient` supports `async with` for scoped connections:
+
+```ruby
+# import asyncio
+require 'signalwire/relay/client'
+
+def main()
+    async with SignalWire::Relay::Client.new(
+        project="your-project-id",
+        token="your-api-token",
+        host="your-space.signalwire.com",
+        contexts=["default"],
+    ) as client:
+        call = client.dial(
+            to="+15559876543",
+            from_number="+15551234567",
+        )
+        # Automatically disconnects on exit
+
+asyncio.run(main())
+```
+
+## **Example**
+
+```ruby {3}
+require 'signalwire/relay/client'
+
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+def handle_call(call)
+    call.answer()
+    action = call.play([{"type": "tts", "text": "Hello from RELAY!"}])
+    action.wait()
+    call.hangup()
+
+@client.on_message
+def handle_message(message)
+    puts("SMS from #{message.from_number}: #{message.body}")
+
+client.run()
+```

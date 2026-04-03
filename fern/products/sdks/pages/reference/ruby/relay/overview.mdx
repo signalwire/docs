@@ -1,0 +1,150 @@
+---
+title: "RELAY"
+sidebar-title: Overview
+subtitle: "Python API reference for RelayClient, Call, Message, and real-time events"
+slug: /reference/ruby/relay
+description: "Real-time WebSocket client for call and message control."
+max-toc-depth: 3
+position: 0
+---
+
+[agents]: /docs/sdks/reference/ruby/agents
+[client]: /docs/sdks/reference/ruby/relay/client
+[call]: /docs/sdks/reference/ruby/relay/call
+[message]: /docs/sdks/reference/ruby/relay/message
+[actions]: /docs/sdks/reference/ruby/relay/actions
+[events]: /docs/sdks/reference/ruby/relay/events
+[constants]: /docs/sdks/reference/ruby/relay/constants
+[relay-error]: /docs/sdks/reference/ruby/relay/relay-error
+
+The RELAY namespace provides imperative, event-driven control over voice calls and
+SMS/MMS messages through a persistent WebSocket connection to SignalWire. While the
+[Agents][agents] namespace handles AI-driven conversations
+declaratively via SWML, RELAY gives you fine-grained, async control over every step
+of a call -- answering, playing prompts, collecting digits, recording, bridging,
+conferencing, and more.
+
+RELAY uses the JSON-RPC 2.0 protocol over WebSocket (`wss://`). The client
+authenticates once, subscribes to contexts for inbound events, and processes
+call and message events in an async event loop. Automatic reconnection with
+exponential backoff ensures resilience against transient network failures.
+
+## Context Routing
+
+Contexts are routing labels that control which inbound calls and messages are
+delivered to your application. When you assign a phone number to a context in
+the SignalWire dashboard, all calls to that number are routed to RELAY clients
+subscribed to that context.
+
+```ruby
+require 'signalwire/relay/client'
+
+# Subscribe to specific contexts
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["support", "sales"],
+)
+
+@client.on_call
+def handle_call(call)
+    call.answer()
+
+    # Or subscribe/unsubscribe dynamically
+    # client.receive(["billing"])     # Add a context
+    # client.unreceive(["sales"])     # Remove a context
+
+client.run()
+```
+
+A client only receives events for its subscribed contexts. This enables multiple
+applications or workers to handle different call flows on the same project by
+subscribing to different contexts.
+
+## Example
+
+An IVR that answers calls, plays a menu, collects a digit, and routes accordingly:
+
+```ruby
+require 'signalwire/relay/client'
+
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+def handle_call(call)
+    call.answer()
+
+    # Play a menu and collect one digit
+    action = call.play_and_collect(
+        media=[{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
+        collect={"digits": {"max": 1, "digit_timeout": 5.0}},
+    )
+    event = action.wait()
+
+    digit = event.params.fetch("result", {}).fetch("digits", "")
+
+    if digit == "1"
+        call.play([{"type": "tts", "text": "Transferring to sales."}])
+        call.transfer(dest: "+15551234567")
+    elsif digit == "2"
+        call.play([{"type": "tts", "text": "Transferring to support."}])
+        call.transfer(dest: "+15559876543")
+    else
+        call.play([{"type": "tts", "text": "Goodbye."}])
+        call.hangup()
+
+client.run()
+```
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card
+    title="RelayClient"
+    href="/docs/sdks/reference/ruby/relay/client"
+  >
+    WebSocket client for connecting, authenticating, dialing calls, and sending messages.
+  </Card>
+  <Card
+    title="Call"
+    href="/docs/sdks/reference/ruby/relay/call"
+  >
+    Call object with methods for answer, hangup, play, record, collect, connect, and more.
+  </Card>
+  <Card
+    title="Message"
+    href="/docs/sdks/reference/ruby/relay/message"
+  >
+    Message object for tracking SMS/MMS state and waiting for delivery confirmation.
+  </Card>
+  <Card
+    title="Actions"
+    href="/docs/sdks/reference/ruby/relay/actions"
+  >
+    Async action handles returned from call control methods like play, record, and detect.
+  </Card>
+  <Card
+    title="Events"
+    href="/docs/sdks/reference/ruby/relay/events"
+  >
+    Typed event dataclasses for call state changes, playback, recording, and messaging.
+  </Card>
+  <Card
+    title="Constants"
+    href="/docs/sdks/reference/ruby/relay/constants"
+  >
+    Call states, connect states, message states, and event type string constants.
+  </Card>
+  <Card
+    title="RelayError"
+    href="/docs/sdks/reference/ruby/relay/relay-error"
+  >
+    Exception raised when the RELAY server returns an error response.
+  </Card>
+</CardGroup>

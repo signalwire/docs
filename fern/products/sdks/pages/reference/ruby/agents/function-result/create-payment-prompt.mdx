@@ -1,0 +1,68 @@
+---
+title: "create_payment_prompt"
+slug: /reference/ruby/agents/function-result/create-payment-prompt
+description: Build a payment prompt object for use with pay().
+max-toc-depth: 3
+---
+
+[pay]: /docs/sdks/reference/ruby/agents/function-result/pay
+[create-payment-action]: /docs/sdks/reference/ruby/agents/function-result/create-payment-action
+[ref-functionresult]: /docs/sdks/reference/ruby/agents/function-result
+
+**[FunctionResult][ref-functionresult].create_payment_prompt**(`for_situation`, `actions`, `card_type=nil`, `error_type=nil`) -> `dict[str, Any]`
+
+Static helper that builds a payment prompt object for use with the `prompts`
+parameter of [`pay()`][pay].
+Payment prompts customize the TTS messages played during different stages of
+payment collection.
+
+## **Parameters**
+
+<ParamField path="for_situation" type="String" required={true} toc={true}>
+  The payment stage this prompt applies to (e.g., `"payment-card-number"`,
+  `"expiration-date"`, `"security-code"`, `"postal-code"`).
+</ParamField>
+
+<ParamField path="actions" type="Array\<Hash\>" required={true} toc={true}>
+  List of prompt actions. Use [`create_payment_action()`][create-payment-action]
+  to build each entry.
+</ParamField>
+
+<ParamField path="card_type" type="String, nil" default="nil" toc={true}>
+  Space-separated card types this prompt applies to (e.g., `"visa mastercard"`).
+</ParamField>
+
+<ParamField path="error_type" type="String, nil" default="nil" toc={true}>
+  Space-separated error types this prompt handles.
+</ParamField>
+
+## **Returns**
+
+`dict[str, Any]` — prompt dictionary to pass in the `prompts` list of [`pay()`][pay].
+
+## **Example**
+
+```ruby {9}
+require 'signalwire'
+
+agent = SignalWire::AgentBase.new(name: "my-agent", route: "/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+def collect_card(args, raw_data)
+    prompt = FunctionResult.create_payment_prompt(
+        for_situation="payment-card-number",
+        actions=[
+            FunctionResult.create_payment_action("Say", "Please enter your credit card number.")
+        ]
+    )
+    return (
+        SignalWire::Swaig::FunctionResult.new("I'll collect your payment now.")
+        .pay(
+            payment_connector_url="https://api.example.com/pay",
+            charge_amount="49.99",
+            prompts=[prompt]
+        )
+    )
+
+agent.serve()
+```

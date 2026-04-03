@@ -1,0 +1,66 @@
+---
+title: "serve_static_files"
+slug: /reference/ruby/agents/agent-server/static-files
+description: Serve static files from a directory alongside agent routes.
+max-toc-depth: 3
+---
+
+Serve static files (HTML, CSS, JS, images) from a local directory. Agent routes take priority
+over static files, so requests matching a registered agent route are handled by the agent
+first. Unmatched paths fall through to static file serving.
+
+This method is useful for serving a web frontend alongside your agents -- for example,
+an admin dashboard or a configuration UI.
+
+<Note>
+Unlike mounting `StaticFiles` directly on the FastAPI app, this method integrates
+correctly with agent route priority. Static files are served via the catch-all handler
+that runs on startup.
+</Note>
+
+## **Parameters**
+
+<ParamField path="directory" type="String" required={true} toc={true}>
+  Path to the directory containing static files. Must exist and be a valid directory.
+  Raises `ArgumentError` if the path does not exist or is not a directory.
+</ParamField>
+
+<ParamField path="route" type="String" default="/" toc={true}>
+  URL path prefix for static files. Use `"/"` to serve from the root. Directory requests
+  automatically resolve to `index.html` if it exists.
+</ParamField>
+
+## **Returns**
+
+`nil`
+
+## **Example**
+
+```ruby {10}
+require 'signalwire'
+require 'signalwire'
+
+support = SignalWire::AgentBase.new(name: "support", route: "/support")
+support.set_prompt_text("You are a helpful assistant.")
+
+server = SignalWire::AgentServer.new(port: 3000)
+server.register(support)
+
+server.serve_static_files("./web")
+server.run()
+```
+
+With this configuration:
+
+| Request Path | Served By |
+|-------------|-----------|
+| `/support` | SupportAgent |
+| `/support/swaig` | SupportAgent SWAIG endpoint |
+| `/index.html` | `./web/index.html` |
+| `/` | `./web/index.html` |
+| `/css/style.css` | `./web/css/style.css` |
+
+<Warning>
+Path traversal attempts (e.g., `/../etc/passwd`) are blocked. The resolved file path
+must remain within the configured static directory.
+</Warning>

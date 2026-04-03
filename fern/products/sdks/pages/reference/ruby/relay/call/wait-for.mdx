@@ -1,0 +1,60 @@
+---
+title: "wait_for"
+slug: /reference/ruby/relay/call/wait-for
+description: Wait for a specific event on a call.
+max-toc-depth: 3
+---
+
+[relayevent]: /docs/sdks/reference/ruby/relay/events
+
+Wait for a specific event type on this call, optionally filtered by a predicate
+function. This is a one-shot listener -- it resolves on the first matching event
+and then removes itself.
+
+## **Parameters**
+
+<ParamField path="event_type" type="String" required={true} toc={true}>
+  The event type string to wait for.
+</ParamField>
+
+<ParamField path="predicate" type="Proc, nil" toc={true}>
+  Optional filter function. If provided, the wait only resolves when the
+  predicate returns `true` for a received event.
+</ParamField>
+
+<ParamField path="timeout" type="Float, nil" toc={true}>
+  Maximum seconds to wait. Raises `Timeout::Error` if exceeded. `nil`
+  waits indefinitely.
+</ParamField>
+
+## **Returns**
+
+[`RelayEvent`][relayevent] -- The first event matching the type and optional predicate.
+
+## **Example**
+
+```ruby {16}
+require 'signalwire/relay/client'
+
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+def handle_call(call)
+    call.answer()
+
+    # Wait for a specific play event
+    action = call.play([{"type": "tts", "text": "Hello!"}])
+    event = call.wait_for(
+        "calling.call.play",
+        predicate=-> (e) { e.params["state"] == "finished", }
+        timeout=30,
+    )
+    puts("Play finished: #{event.params}")
+
+client.run()
+```

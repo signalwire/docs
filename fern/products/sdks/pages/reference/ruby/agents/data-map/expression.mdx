@@ -1,0 +1,64 @@
+---
+title: "expression"
+slug: /reference/ruby/agents/data-map/expression
+description: Add a pattern-based response without an API call.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/sdks/reference/ruby/agents/data-map
+[ref-functionresult]: /docs/sdks/reference/ruby/agents/function-result
+
+Add a pattern-based response that does not require an API call. Expressions are
+evaluated in order; the first matching pattern wins.
+
+## **Parameters**
+
+<ParamField path="test_value" type="String" required={true} toc={true}>
+  Template string to test (e.g., `"${args.command}"`).
+</ParamField>
+
+<ParamField path="pattern" type="str | re.Pattern" required={true} toc={true}>
+  Regex pattern to match against the test value.
+</ParamField>
+
+<ParamField path="output" type="FunctionResult" required={true} toc={true}>
+  [FunctionResult][ref-functionresult] to return when the pattern matches.
+</ParamField>
+
+<ParamField path="nomatch_output" type="FunctionResult" toc={true}>
+  Optional FunctionResult to return when the pattern does not match.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- Self for method chaining.
+
+## **Example**
+
+```ruby {8,12,16}
+require 'signalwire'
+
+volume_control = (
+    DataMap("set_volume")
+    .purpose("Control audio volume")
+    .parameter("level", "string", "Volume level", required: true)
+    .expression(
+        "${args.level}", r"high|loud|up",
+        SignalWire::Swaig::FunctionResult.new("Volume increased")
+    )
+    .expression(
+        "${args.level}", r"low|quiet|down",
+        SignalWire::Swaig::FunctionResult.new("Volume decreased")
+    )
+    .expression(
+        "${args.level}", r"mute|off",
+        SignalWire::Swaig::FunctionResult.new("Audio muted")
+    )
+)
+
+agent = SignalWire::AgentBase.new(name: "media-agent")
+agent.set_prompt_text("You are a helpful assistant.")
+agent.register_swaig_function(volume_control.to_swaig_function())
+
+agent.run()
+```

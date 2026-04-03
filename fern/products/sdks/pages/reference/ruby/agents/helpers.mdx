@@ -1,0 +1,288 @@
+---
+title: "Helper Functions"
+slug: /reference/ruby/agents/helpers
+description: Top-level convenience functions for creating contexts, data map tools, and managing skills.
+max-toc-depth: 3
+---
+
+[context]: /docs/sdks/reference/ruby/agents/context-builder/context
+[contextbuilder]: /docs/sdks/reference/ruby/agents/context-builder
+[datamap]: /docs/sdks/reference/ruby/agents/data-map
+[skillbase]: /docs/sdks/reference/ruby/agents/skill-base
+[ref-functionresult]: /docs/sdks/reference/ruby/agents/function-result
+
+The SignalWire SDK exports several helper functions at the top level for common
+tasks like creating simple contexts, building server-side API tools, and
+managing the skill registry. All are imported directly from `signalwire`.
+
+```ruby
+    create_simple_context,
+    create_simple_api_tool,
+    create_expression_tool,
+    list_skills_with_params,
+    register_skill,
+    add_skill_directory,
+)
+```
+
+---
+
+## create_simple_context
+
+**create_simple_context**(`name="default"`) -> [`Context`][context]
+
+Create a standalone [`Context`][context] object
+without needing a full [`ContextBuilder`][contextbuilder].
+Useful for quick single-context agents.
+
+#### Parameters
+
+<ParamField path="name" type="String" default="default" toc={true}>
+  Context name. For single-context agents this must be `"default"`.
+</ParamField>
+
+#### Returns
+
+[`Context`][context] -- A new Context
+object ready for adding steps.
+
+#### Example
+
+```ruby
+
+ctx = create_simple_context()
+ctx.add_step("greet").set_text("Say hello to the caller.")
+ctx.add_step("help").set_text("Ask how you can help today.")
+```
+
+---
+
+## create_simple_api_tool
+
+**create_simple_api_tool**(`name`, `url`, `response_template`, `parameters=nil`, `method="GET"`, `headers=nil`, `body=nil`, `error_keys=nil`) -> [`DataMap`][datamap]
+
+Create a server-side API tool with minimal configuration. Returns a configured
+[`DataMap`][datamap] that executes an HTTP
+request on the SignalWire server without requiring a webhook endpoint.
+
+#### Parameters
+
+<ParamField path="name" type="String" required={true} toc={true}>
+  Function name for the SWAIG tool.
+</ParamField>
+
+<ParamField path="url" type="String" required={true} toc={true}>
+  API endpoint URL. Supports `${variable}` substitution for injecting parameter
+  values (e.g., `"https://api.example.com/search?q=${args.query}"`).
+</ParamField>
+
+<ParamField path="response_template" type="String" required={true} toc={true}>
+  Template string for formatting the API response. Uses `${response.field}`
+  syntax to reference fields from the API response JSON.
+</ParamField>
+
+<ParamField path="parameters" type="Hash" toc={true}>
+  Parameter definitions. Each key is a parameter name, and each value is a
+  dictionary with `type`, `description`, and optionally `required`.
+</ParamField>
+
+<ParamField path="method" type="String" default="GET" toc={true}>
+  HTTP method for the API call.
+</ParamField>
+
+<ParamField path="headers" type="Hash" toc={true}>
+  Optional HTTP headers to include in the request.
+</ParamField>
+
+<ParamField path="body" type="Hash" toc={true}>
+  Optional request body for POST/PUT requests.
+</ParamField>
+
+<ParamField path="error_keys" type="Array\<String\>" toc={true}>
+  JSON keys whose presence in the response indicates an error.
+</ParamField>
+
+#### Returns
+
+[`DataMap`][datamap] -- A configured DataMap
+ready to be added to an agent.
+
+#### Example
+
+```ruby
+
+weather_tool = create_simple_api_tool(
+    name="get_weather",
+    url="https://api.weather.com/v1/current?key=API_KEY&q=${args.location}",
+    response_template="Weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}F",
+    parameters={
+        "location": {
+            "type": "string",
+            "description": "City name",
+            "required": true
+        }
+    }
+)
+```
+
+<Tip>
+For more complex API integrations with multiple webhooks, fallback outputs, or
+array processing, use the [`DataMap`][datamap]
+builder directly.
+</Tip>
+
+---
+
+## create_expression_tool
+
+**create_expression_tool**(`name`, `patterns`, `parameters=nil`) -> [`DataMap`][datamap]
+
+Create a pattern-matching tool that evaluates expressions locally on the
+SignalWire server without making any HTTP requests. Useful for command routing
+and conditional responses.
+
+#### Parameters
+
+<ParamField path="name" type="String" required={true} toc={true}>
+  Function name for the SWAIG tool.
+</ParamField>
+
+<ParamField path="patterns" type="Hash" required={true} toc={true}>
+  Dictionary mapping test values to `(pattern, [FunctionResult][ref-functionresult])` tuples. The test
+  value is a template string (e.g., `"${args.command}"`), and the pattern is a
+  regex string matched against it.
+</ParamField>
+
+<ParamField path="parameters" type="Hash" toc={true}>
+  Parameter definitions, same format as `create_simple_api_tool`.
+</ParamField>
+
+#### Returns
+
+[`DataMap`][datamap] -- A configured DataMap
+with expression-based routing.
+
+#### Example
+
+```ruby
+
+playback_tool = create_expression_tool(
+    name="playback_control",
+    patterns={
+        "${args.command}": (
+            r"play.*",
+            SignalWire::Swaig::FunctionResult.new().add_action("start_playbook", {"file": "${args.filename}"})
+        ),
+        "${args.command}": (
+            r"stop.*",
+            SignalWire::Swaig::FunctionResult.new().add_action("stop_playback", true)
+        ),
+    },
+    parameters={
+        "command": {"type": "string", "description": "Playback command", "required": true},
+        "filename": {"type": "string", "description": "File to play"},
+    }
+)
+```
+
+<Note>
+Since dictionary keys must be unique, use separate `DataMap.expression()` calls
+via the [`DataMap`][datamap] builder if you
+need multiple patterns against the same test value.
+</Note>
+
+---
+
+## list_skills_with_params
+
+**list_skills_with_params**() -> `dict[str, dict[str, Any]]`
+
+Return a comprehensive schema for all available skills, including metadata and
+parameter definitions. Useful for GUI configuration tools, API documentation,
+or programmatic skill discovery.
+
+#### Returns
+
+`dict[str, dict[str, Any]]` -- Dictionary keyed by skill name. Each value
+contains the skill's metadata and a `parameters` dictionary describing each
+configurable parameter with its `type`, `description`, `required` status,
+`hidden` flag, and `env_var` name.
+
+#### Example
+
+```ruby
+
+schema = list_skills_with_params()
+for skill_name, skill_info in schema.each
+    puts("#{skill_name}: #{skill_info.get('description', '')}")
+    for param, meta in skill_info.fetch("parameters", {}).each
+        puts("  #{param}: #{meta['type']} (required=#{meta.get('required', false)})")
+```
+
+---
+
+## register_skill
+
+**register_skill**(`skill_class`) -> `nil`
+
+Register a custom skill class with the global skill registry. This allows
+third-party code to make skills available without placing them in a specific
+directory structure.
+
+#### Parameters
+
+<ParamField path="skill_class" type="type" required={true} toc={true}>
+  A class that inherits from
+  [`SkillBase`][skillbase]. Must define
+  `SKILL_NAME` and `SKILL_DESCRIPTION` class attributes.
+</ParamField>
+
+#### Example
+
+```ruby
+require 'signalwire'
+
+class MyWeatherSkill:
+    SKILL_NAME = "my_weather"
+    SKILL_DESCRIPTION = "Custom weather lookup"
+
+    def setup
+        return true
+
+    def register_tools
+        define_tool(name: "get_weather", handler=@_get_weather, description: "Get weather")
+
+    def _get_weather(args, raw_data)
+        return {"response": "Sunny, 72F"}
+
+register_skill(MyWeatherSkill)
+
+agent = SignalWire::AgentBase.new()
+agent.add_skill("my_weather")
+```
+
+---
+
+## add_skill_directory
+
+**add_skill_directory**(`path`) -> `nil`
+
+Add a directory to the skill search path. Skills in this directory should follow
+the same structure as built-in skills (each skill in its own subdirectory with
+a module exporting a `SkillBase` subclass).
+
+#### Parameters
+
+<ParamField path="path" type="String" required={true} toc={true}>
+  Path to a directory containing skill subdirectories.
+</ParamField>
+
+#### Example
+
+```ruby
+
+add_skill_directory("/opt/custom_skills")
+
+agent = SignalWire::AgentBase.new()
+agent.add_skill("my_custom_skill")  # Found in /opt/custom_skills/my_custom_skill/
+```

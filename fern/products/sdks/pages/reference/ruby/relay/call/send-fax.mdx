@@ -1,0 +1,75 @@
+---
+title: "send_fax"
+slug: /reference/ruby/relay/call/send-fax
+description: "Send a fax document on a call."
+max-toc-depth: 3
+---
+
+[faxaction]: /docs/sdks/reference/ruby/relay/actions
+[calling-call-fax]: /docs/sdks/reference/ruby/relay/call#events
+[call-events]: /docs/sdks/reference/ruby/relay/call#events
+
+Send a fax document on the call. The document must be accessible via URL.
+Returns a [`FaxAction`][faxaction] that you can
+use to stop the fax or wait for it to complete.
+
+<Info>
+This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="document" type="String" required={true} toc={true}>
+  URL of the document to fax (PDF or TIFF format).
+</ParamField>
+
+<ParamField path="identity" type="String, nil" toc={true}>
+  Caller identity string (TSI) transmitted with the fax.
+</ParamField>
+
+<ParamField path="header_info" type="String, nil" toc={true}>
+  Header text printed at the top of each fax page.
+</ParamField>
+
+<ParamField path="control_id" type="String, nil" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="Proc, nil" toc={true}>
+  Callback invoked when the fax operation completes.
+</ParamField>
+
+## **Returns**
+
+[`FaxAction`][faxaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```ruby {14}
+require 'signalwire/relay/client'
+
+client = SignalWire::Relay::Client.new(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+def handle_call(call)
+    call.answer()
+
+    action = call.send_fax(
+        document="https://example.com/invoice.pdf",
+        identity="+15559876543",
+        header_info="Invoice #12345",
+    )
+    event = action.wait()
+
+    fax_result = event.params.fetch("fax", {})
+    puts("Fax sent: #{fax_result.get('pages', 0)} pages")
+    call.hangup()
+
+client.run()
+```

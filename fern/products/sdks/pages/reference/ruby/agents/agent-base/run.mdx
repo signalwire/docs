@@ -1,0 +1,90 @@
+---
+title: "run"
+slug: /reference/ruby/agents/agent-base/run
+description: Smart entry point that auto-detects the runtime environment and starts the agent accordingly.
+max-toc-depth: 3
+---
+
+[serve]: /docs/sdks/reference/ruby/agents/agent-base/serve
+[handle-serverless-request]: /docs/sdks/reference/ruby/agents/agent-base/serverless
+
+Universal entry point that automatically detects the execution environment and starts
+the agent in the appropriate mode. In server environments it calls
+[`serve()`][serve]. In serverless
+environments (Lambda, Cloud Functions, Azure Functions, CGI) it delegates to
+[`handle_serverless_request()`][handle-serverless-request].
+
+<Tip>
+Use `run()` as your default entry point. It makes your agent code portable across
+development, Docker, and serverless deployments without changes.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="event" type="Object, nil" toc={true}>
+  Serverless event object. Pass the Lambda event, Cloud Functions request, or
+  Azure Functions HttpRequest here.
+</ParamField>
+
+<ParamField path="context" type="Object, nil" toc={true}>
+  Serverless context object (Lambda context, etc.).
+</ParamField>
+
+<ParamField path="force_mode" type="String, nil" toc={true}>
+  Override automatic environment detection. Valid values:
+  - `"server"` -- Force web server mode
+  - `"lambda"` -- Force AWS Lambda mode
+  - `"cgi"` -- Force CGI mode
+  - `"google_cloud_function"` -- Force Google Cloud Functions mode
+  - `"azure_function"` -- Force Azure Functions mode
+</ParamField>
+
+<ParamField path="host" type="String, nil" toc={true}>
+  Host override for server mode.
+</ParamField>
+
+<ParamField path="port" type="Integer, nil" toc={true}>
+  Port override for server mode.
+</ParamField>
+
+## **Returns**
+
+`Hash` or `nil` -- In serverless modes, returns the platform-specific response object.
+In server mode, blocks until shutdown and returns `nil`.
+
+## **Examples**
+
+### Standard entry point
+
+```ruby {7}
+require 'signalwire'
+
+agent = SignalWire::AgentBase.new(name: "my-agent", route: "/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+agent.run()
+```
+
+### AWS Lambda handler
+
+```ruby {7}
+require 'signalwire'
+
+agent = SignalWire::AgentBase.new(name: "lambda-agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+def handler(event, context)
+    return agent.run(event=event, context=context)
+```
+
+### Google Cloud Function
+
+```ruby {7}
+require 'signalwire'
+
+agent = SignalWire::AgentBase.new(name: "gcf-agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+def main(request)
+    return agent.run(event=request)
+```
