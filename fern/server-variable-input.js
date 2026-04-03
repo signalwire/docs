@@ -75,9 +75,17 @@
   /**
    * Given a template URL (with placeholder) and a current URL (with the
    * placeholder replaced), extract the value that replaced the placeholder.
-   * For example:
+   *
+   * Strategy 1 (strict): match the prefix AND suffix around the placeholder.
    *   template: "https://{Your_Space_Name}.signalwire.com/api/rest"
    *   current:  "https://myspace.signalwire.com/api/rest"
+   *   => "myspace"
+   *
+   * Strategy 2 (prefix-only fallback): if the user edited away the suffix
+   *   (e.g. removed ".signalwire.com"), extract from the prefix to the
+   *   first "." or "/" or end of string.
+   *   template: "https://{Your_Space_Name}.signalwire.com/api/rest"
+   *   current:  "https://myspace"
    *   => "myspace"
    */
   function extractVariableValue(templateUrl, currentUrl, variable) {
@@ -90,13 +98,27 @@
       var suffix = templateUrl.substring(idx + pattern.length);
       // Check that the current URL starts with the same prefix
       if (currentUrl.substring(0, prefix.length) !== prefix) continue;
-      // Check that the current URL ends with the same suffix
+      var afterPrefix = currentUrl.substring(prefix.length);
+      if (!afterPrefix) continue;
+
+      // Strategy 1: strict — suffix is still present in the current URL
       if (suffix.length > 0) {
         var suffixIdx = currentUrl.indexOf(suffix, prefix.length);
-        if (suffixIdx === -1) continue;
-        return currentUrl.substring(prefix.length, suffixIdx);
+        if (suffixIdx !== -1) {
+          return currentUrl.substring(prefix.length, suffixIdx);
+        }
       }
-      return currentUrl.substring(prefix.length);
+
+      // Strategy 2: prefix-only — suffix was edited away.
+      // Extract from after the prefix up to the first "." or "/" so we
+      // get just the subdomain / space-name portion.
+      var delimIdx = afterPrefix.search(/[.\/]/);
+      if (delimIdx > 0) {
+        return afterPrefix.substring(0, delimIdx);
+      }
+      // No delimiter found — the entire remainder is the value
+      // (e.g. user typed "https://myspace" with no trailing dot or slash)
+      return afterPrefix;
     }
     return null;
   }
