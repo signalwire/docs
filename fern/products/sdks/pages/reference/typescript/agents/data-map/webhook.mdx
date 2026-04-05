@@ -27,21 +27,27 @@ if earlier webhooks fail, later ones act as fallbacks.
   for URL-encoded values).
 </ParamField>
 
-<ParamField path="headers" type={"Record<string, string>"} toc={true}>
+<ParamField path="opts" type="object" toc={true}>
+  Optional configuration.
+</ParamField>
+
+<Indent>
+<ParamField path="opts.headers" type={"Record<string, string>"} toc={true}>
   HTTP headers to include in the request.
 </ParamField>
 
-<ParamField path="formParam" type="string" toc={true}>
+<ParamField path="opts.formParam" type="string" toc={true}>
   Send the JSON body as a single form parameter with this name.
 </ParamField>
 
-<ParamField path="inputArgsAsParams" type="boolean" default="false" toc={true}>
+<ParamField path="opts.inputArgsAsParams" type="boolean" toc={true}>
   Merge function arguments into the request parameters automatically.
 </ParamField>
 
-<ParamField path="requireArgs" type="string[]" toc={true}>
+<ParamField path="opts.requireArgs" type="string[]" toc={true}>
   Only execute this webhook if all listed arguments are present.
 </ParamField>
+</Indent>
 
 ## **Returns**
 
@@ -49,40 +55,33 @@ if earlier webhooks fail, later ones act as fallbacks.
 
 ## **Example**
 
-```typescript {8}
-import { AgentBase } from 'signalwire-agents';
-import { FunctionResult } from 'signalwire-agents';
+```typescript {7}
+import { DataMap, FunctionResult } from '@signalwire/sdk';
 
-weather = (
-    DataMap("get_weather")
-    .purpose("Get current weather for a city")
-    .parameter("city", "string", "City name", required=true)
-    .webhook(
-        "GET",
-        "https://api.weatherapi.com/v1/current.json"
-        "?key=YOUR_API_KEY&q=${enc:args.city}",
-        headers={"Accept": "application/json"}
-    )
-    .output(FunctionResult("Weather: ${response.current.condition.text}"))
-)
+const weather = new DataMap('get_weather');
+weather
+  .purpose('Get current weather for a city')
+  .parameter('city', 'string', 'City name', { required: true })
+  .webhook('GET', 'https://api.weatherapi.com/v1/current.json?key=YOUR_API_KEY&q=${enc:args.city}', {
+    headers: { Accept: 'application/json' },
+  })
+  .output(new FunctionResult('Weather: ${response.current.condition.text}'));
 
-console.log(weather.to_swaig_function())
+console.log(weather.toSwaigFunction());
 ```
 
 Chained webhooks act as fallbacks -- if the first webhook fails, the second is tried:
 
-```typescript {8,10}
-import { AgentBase } from 'signalwire-agents';
-import { FunctionResult } from 'signalwire-agents';
+```typescript {7,9}
+import { DataMap, FunctionResult } from '@signalwire/sdk';
 
-search = (
-    DataMap("search")
-    .purpose("Search across multiple providers")
-    .parameter("query", "string", "Search query", required=true)
-    .webhook("GET", "https://primary-api.example.com/search?q=${enc:args.query}")
-    .output(FunctionResult("Primary: ${response.result}"))
-    .webhook("GET", "https://backup-api.example.com/search?q=${enc:args.query}")
-    .output(FunctionResult("Backup: ${response.result}"))
-    .fallback_output(FunctionResult("All search providers are unavailable."))
-)
+const search = new DataMap('search');
+search
+  .purpose('Search across multiple providers')
+  .parameter('query', 'string', 'Search query', { required: true })
+  .webhook('GET', 'https://primary-api.example.com/search?q=${enc:args.query}')
+  .output(new FunctionResult('Primary: ${response.result}'))
+  .webhook('GET', 'https://backup-api.example.com/search?q=${enc:args.query}')
+  .output(new FunctionResult('Backup: ${response.result}'))
+  .fallbackOutput(new FunctionResult('All search providers are unavailable.'));
 ```

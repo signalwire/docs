@@ -8,83 +8,83 @@ max-toc-depth: 3
 [swmlservice]: /docs/sdks/reference/typescript/agents/swml-service
 [swml]: /docs/swml/reference/ai
 [swml-reference]: /docs/swml/reference/ai
-[addsection]: /docs/sdks/reference/typescript/agents/swml-builder/add-section
+[addverb]: /docs/sdks/reference/typescript/agents/swml-builder/add-verb
+[addverbtosection]: /docs/sdks/reference/typescript/agents/swml-builder/add-verb-to-section
 [ai]: /docs/sdks/reference/typescript/agents/swml-builder/ai
 [answer]: /docs/sdks/reference/typescript/agents/swml-builder/answer
-[build]: /docs/sdks/reference/typescript/agents/swml-builder/build
+[getdocument]: /docs/sdks/reference/typescript/agents/swml-builder/get-document
+[getschemautils]: /docs/sdks/reference/typescript/agents/swml-builder/get-schema-utils
 [hangup]: /docs/sdks/reference/typescript/agents/swml-builder/hangup
 [play]: /docs/sdks/reference/typescript/agents/swml-builder/play
-[render]: /docs/sdks/reference/typescript/agents/swml-builder/render
+[renderdocument]: /docs/sdks/reference/typescript/agents/swml-builder/render-document
 [reset]: /docs/sdks/reference/typescript/agents/swml-builder/reset
-[say]: /docs/sdks/reference/typescript/agents/swml-builder/say
 
-SWMLBuilder provides a fluent interface for constructing SWML documents by chaining
-method calls. It wraps a [`AgentBase`][swmlservice]
-instance and delegates all document operations to it, while returning `self` from every
-verb method to enable chaining. Use SWMLBuilder when you want concise, readable document
-construction in a single expression.
+SwmlBuilder provides a fluent interface for constructing SWML documents by chaining
+verb method calls. It produces documents of the form
+`{ version: "1.0.0", sections: { main: [...verbs] } }`. Use SwmlBuilder when you
+want concise, readable document construction in a single expression.
 
-In addition to the explicitly defined methods below, SWMLBuilder automatically generates
-methods for every SWML verb in the schema (e.g., `connect()`, `record()`, `denoise()`,
-`goto()`). These dynamic methods accept keyword arguments matching the verb's SWML
-parameters and return `self` for chaining.
+In addition to the explicitly defined methods below, SwmlBuilder automatically generates
+methods for every SWML verb in the bundled schema (e.g., `connect()`, `record()`,
+`denoise()`, `goto()`). These dynamic methods accept an optional
+`config?: Record<string, unknown>` parameter and return `this` for chaining.
 
 <Info>
-SWMLBuilder constructs [SWML][swml] documents programmatically. See the
+SwmlBuilder constructs [SWML][swml] documents programmatically. See the
 [SWML reference][swml-reference] for the full specification of all supported verbs.
 </Info>
 
-## **Properties**
+## **Constructor**
 
-<ParamField path="service" type="AgentBase" required={true} toc={true}>
-  The [`AgentBase`][swmlservice] instance that
-  handles actual document storage, validation, and rendering. The builder delegates
-  all operations to this service.
-</ParamField>
+```typescript {1}
+const builder = new SwmlBuilder();
+```
+
+The constructor takes no parameters. It initializes an empty SWML document and
+installs dynamic verb methods from the bundled schema.
 
 ## **Dynamic Verb Methods**
 
-SWMLBuilder auto-generates chaining methods for every verb defined in the SWML schema
-that does not already have an explicit method. These dynamic methods accept keyword
-arguments matching the verb's SWML parameters and return `Self`.
+SwmlBuilder auto-generates chaining methods for every verb defined in the SWML schema.
+These dynamic methods accept an optional config object matching the verb's SWML
+parameters and return `this` for chaining.
 
 Examples of dynamic verbs: `connect()`, `record()`, `recordCall()`, `denoise()`,
 `transfer()`, `goto()`, `cond()`, `execute()`, `tap()`, and many more.
 
-```typescript
-import { SwmlBuilder } from 'signalwire-agents';
+```typescript {3}
+import { SwmlBuilder } from '@signalwire/sdk';
 
 const builder = new SwmlBuilder();
-builder.addVerb('answer', {});
-builder.addVerb('play', { url: 'https://example.com/greeting.mp3' });
-builder.addVerb('hangup', {});
+builder.answer();
+builder.play({ url: 'https://example.com/greeting.mp3' });
+builder.hangup();
 
 console.log(builder.renderDocument());
 ```
 
-The `sleep` verb is a special case -- it accepts a positional `duration` argument
-(milliseconds) instead of keyword arguments:
+The `sleep` verb is a special case -- it accepts either a number (duration) directly
+or a config object:
 
-```typescript
-import { SWMLBuilder, SWMLService } from "@signalwire/sdk";
+```typescript {5}
+import { SwmlBuilder } from '@signalwire/sdk';
 
-const service = new SWMLService({ name: "demo" });
-const builder = new SWMLBuilder(service);
-builder.addSection("main");
+const builder = new SwmlBuilder();
+builder.answer();
 builder.sleep(2000);
+builder.hangup();
 
-console.log(builder.render());
+console.log(builder.renderDocument());
 ```
-
-<Info>
-If a verb name is not found in the SWML schema, calling it raises an `AttributeError`.
-</Info>
 
 ## **Methods**
 
 <CardGroup cols={4}>
-  <Card title="addSection" href="/docs/sdks/reference/typescript/agents/swml-builder/add-section">
-    Add a new named section to the SWML document.
+  <Card title="addVerb" href="/docs/sdks/reference/typescript/agents/swml-builder/add-verb">
+    Append a verb to the main section.
+  </Card>
+  <Card title="addVerbToSection" href="/docs/sdks/reference/typescript/agents/swml-builder/add-verb-to-section">
+    Append a verb to a named section.
   </Card>
   <Card title="ai" href="/docs/sdks/reference/typescript/agents/swml-builder/ai">
     Add an AI verb to start an AI-powered conversation.
@@ -92,8 +92,11 @@ If a verb name is not found in the SWML schema, calling it raises an `AttributeE
   <Card title="answer" href="/docs/sdks/reference/typescript/agents/swml-builder/answer">
     Add an answer verb to the SWML document.
   </Card>
-  <Card title="build" href="/docs/sdks/reference/typescript/agents/swml-builder/build">
-    Build and return the complete SWML document as a dictionary.
+  <Card title="getDocument" href="/docs/sdks/reference/typescript/agents/swml-builder/get-document">
+    Return the raw SWML document object.
+  </Card>
+  <Card title="getSchemaUtils" href="/docs/sdks/reference/typescript/agents/swml-builder/get-schema-utils">
+    Get the shared SchemaUtils singleton (static).
   </Card>
   <Card title="hangup" href="/docs/sdks/reference/typescript/agents/swml-builder/hangup">
     Add a hangup verb to end the current call.
@@ -101,14 +104,11 @@ If a verb name is not found in the SWML schema, calling it raises an `AttributeE
   <Card title="play" href="/docs/sdks/reference/typescript/agents/swml-builder/play">
     Add a play verb to play audio or text-to-speech.
   </Card>
-  <Card title="render" href="/docs/sdks/reference/typescript/agents/swml-builder/render">
-    Build and render the complete SWML document as a JSON string.
+  <Card title="renderDocument" href="/docs/sdks/reference/typescript/agents/swml-builder/render-document">
+    Serialize the SWML document to a JSON string.
   </Card>
   <Card title="reset" href="/docs/sdks/reference/typescript/agents/swml-builder/reset">
     Reset the SWML document to an empty state.
-  </Card>
-  <Card title="say" href="/docs/sdks/reference/typescript/agents/swml-builder/say">
-    Add text-to-speech playback to the SWML document.
   </Card>
 </CardGroup>
 
@@ -118,80 +118,73 @@ If a verb name is not found in the SWML schema, calling it raises an `AttributeE
 
 ### Basic IVR Flow
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
-import { SwmlBuilder } from 'signalwire-agents';
+```typescript {5}
+import { SwmlBuilder } from '@signalwire/sdk';
 
-const service = new SWMLService({ name: 'ivr' });
-builder = SWMLBuilder(service)
+const builder = new SwmlBuilder();
 
-doc = (
-    builder
-    .answer()
-    .play(url="https://example.com/welcome.mp3")
-    .sleep(duration=1000)
-    .hangup()
-    .build()
-)
-console.log(doc)
+const doc = builder
+  .answer()
+  .play({ url: 'https://example.com/welcome.mp3' })
+  .sleep(1000)
+  .hangup()
+  .getDocument();
+
+console.log(doc);
 ```
 
 ### AI Agent with SWAIG
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
-import { SwmlBuilder } from 'signalwire-agents';
+```typescript {7}
+import { SwmlBuilder } from '@signalwire/sdk';
 
-const service = new SWMLService({ name: 'ai-agent' });
-builder = SWMLBuilder(service)
+const builder = new SwmlBuilder();
 
-swml_json = (
-    builder
-    .answer()
-    .ai(
-        prompt_text="You are a helpful customer service assistant.",
-        post_prompt="Summarize what was discussed.",
-        post_prompt_url="https://example.com/post_prompt",
-        swaig={
-            "defaults": {"web_hook_url": "https://example.com/swaig"},
-            "functions": [
-                {
-                    "function": "check_order",
-                    "description": "Check order status",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "order_id": {"type": "string", "description": "The order ID"}
-                        },
-                        "required": ["order_id"]
-                    }
-                }
-            ]
+builder
+  .answer()
+  .ai({
+    prompt: { text: 'You are a helpful customer service assistant.' },
+    post_prompt: 'Summarize what was discussed.',
+    post_prompt_url: 'https://example.com/post_prompt',
+    swaig: {
+      defaults: { web_hook_url: 'https://example.com/swaig' },
+      functions: [
+        {
+          function: 'check_order',
+          description: 'Check order status',
+          parameters: {
+            type: 'object',
+            properties: {
+              order_id: { type: 'string', description: 'The order ID' },
+            },
+            required: ['order_id'],
+          },
         },
-        hints=["order", "tracking", "refund"],
-        params={"end_of_speech_timeout": 500}
-    )
-    .render()
-)
-console.log(swml_json)
+      ],
+    },
+    hints: ['order', 'tracking', 'refund'],
+    params: { end_of_speech_timeout: 500 },
+  });
+
+console.log(builder.renderDocument());
 ```
 
-### Text-to-Speech Greeting
+### Multi-Section Document
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
-import { SwmlBuilder } from 'signalwire-agents';
+```typescript {10}
+import { SwmlBuilder } from '@signalwire/sdk';
 
-const service = new SWMLService({ name: 'greeting' });
-builder = SWMLBuilder(service)
+const builder = new SwmlBuilder();
 
-doc = (
-    builder
-    .answer()
-    .say("Welcome to our service. Please hold.", voice="rime.spore")
-    .sleep(duration=500)
-    .say("Connecting you now.", voice="rime.spore")
-    .build()
-)
-console.log(doc)
+// Add verbs to the default main section
+builder.answer();
+builder.play({ url: 'https://example.com/greeting.mp3' });
+
+// Add verbs to a named section
+builder.addVerbToSection('goodbye', 'play', {
+  url: 'https://example.com/goodbye.mp3',
+});
+builder.addVerbToSection('goodbye', 'hangup', {});
+
+console.log(builder.renderDocument());
 ```

@@ -12,8 +12,9 @@ Define contexts and steps for multi-step conversation workflows. Contexts allow 
 agent to guide the caller through a structured sequence of interactions -- such as
 gathering information, verifying identity, and then performing an action.
 
-Returns a [`ContextBuilder`][contextbuilder] for fluent context definition. If a
-`ContextBuilder` or plain object is passed, it is used directly.
+Returns a [`ContextBuilder`][contextbuilder] for fluent context definition. If an
+existing `ContextBuilder` instance is passed, it is used directly. Otherwise a new
+empty `ContextBuilder` is created and returned.
 
 <Note>
 Contexts can coexist with traditional prompts. The only restriction is that POM
@@ -23,8 +24,8 @@ sections and raw text cannot be mixed in the main prompt.
 ## **Parameters**
 
 <ParamField path="contexts" type="ContextBuilder | Record<string, unknown> | undefined" toc={true}>
-  Context configuration. Pass a `ContextBuilder` or plain object to set contexts
-  directly. Omit to receive a new `ContextBuilder` for fluent definition.
+  An existing `ContextBuilder` instance to use directly. If omitted or a plain object
+  is passed, a new empty `ContextBuilder` is created instead.
 </ParamField>
 
 ## **Returns**
@@ -35,46 +36,47 @@ sections and raw text cannot be mixed in the main prompt.
 
 ### Fluent ContextBuilder
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+```typescript {4}
+import { AgentBase } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'intake', route: '/intake' });
-agent.defineContexts()
-  .addContext('default')
-    .addStep('greeting')
-      .setText('Greet the caller and ask for their name.')
-      .setStepCriteria('The caller has provided their name.')
-      .setFunctions(['lookup_account'])
-      .setValidSteps(['verify'])
-    .addStep('verify')
-      .setText('Verify the caller\'s identity.')
-      .setStepCriteria('Identity verified.')
-      .setValidSteps(['assist'])
-    .addStep('assist')
-      .setText('Help the caller with their request.')
-      .setFunctions(['search_orders', 'process_return']);
+const ctx = agent.defineContexts().addContext('default');
+
+ctx.addStep('greeting')
+  .setText('Greet the caller and ask for their name.')
+  .setStepCriteria('The caller has provided their name.')
+  .setFunctions(['lookup_account'])
+  .setValidSteps(['verify']);
+
+ctx.addStep('verify')
+  .setText('Verify the caller\'s identity.')
+  .setStepCriteria('Identity verified.')
+  .setValidSteps(['assist']);
+
+ctx.addStep('assist')
+  .setText('Help the caller with their request.')
+  .setFunctions(['search_orders', 'process_return']);
+
 await agent.serve();
 ```
 
-### Direct object configuration
+<Note>
+`addStep()` is a method on `Context`, not on `Step`. Since `Step` methods like
+`setValidSteps()` return the `Step` (not the parent `Context`), you must keep a
+reference to the `Context` and call `addStep()` on it for each new step.
+</Note>
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+### Using an existing ContextBuilder
+
+```typescript {9}
+import { AgentBase, ContextBuilder } from '@signalwire/sdk';
+
+const builder = new ContextBuilder();
+const ctx = builder.addContext('default');
+ctx.addStep('greeting').setText('Greet the caller.');
+ctx.addStep('verify').setText('Verify identity.');
 
 const agent = new AgentBase({ name: 'intake', route: '/intake' });
-agent.defineContexts({
-  default: {
-    steps: {
-      greeting: {
-        text: 'Greet the caller.',
-        valid_steps: ['verify'],
-      },
-      verify: {
-        text: 'Verify identity.',
-        valid_steps: ['assist'],
-      },
-    },
-  },
-});
+agent.defineContexts(builder);
 await agent.serve();
 ```

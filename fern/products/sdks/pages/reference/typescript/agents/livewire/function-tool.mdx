@@ -1,101 +1,139 @@
 ---
-title: "functionTool"
+title: "tool / FunctionTool"
 slug: /reference/typescript/agents/livewire/function-tool
-description: "Decorator for wrapping plain TypeScript functions as agent tools."
+description: "Factory function and interface for creating agent tools."
 max-toc-depth: 3
 ---
 
 [define-tool]: /docs/sdks/reference/typescript/agents/agent-base/define-tool
 [runcontext]: /docs/sdks/reference/typescript/agents/livewire/run-context
 
-### function_tool
+## **tool**
 
-**function_tool**(`func=None`, `name=None`, `description=None`) -> `Callable`
+```typescript {1}
+function tool<P = any>(options: {
+  description: string;
+  parameters?: any;
+  execute: (params: P, context: { ctx: RunContext }) => any;
+}): FunctionTool
+```
 
-Wraps a plain TypeScript function so it can be passed into
-[`Agent(tools=[...])`](/docs/sdks/reference/typescript/agents/livewire/agent). The decorator
-extracts parameter information from type hints and builds a JSON-Schema-style
-parameter dict. The function's docstring is used as the tool description unless
-`description` is provided explicitly.
+Creates a `FunctionTool` definition that can be passed into an `Agent`'s `tools` map.
+The `tool()` function mirrors `llm.tool()` from `@livekit/agents-js`.
 
-When the underlying SignalWire agent is built, each defined function is registered
-as a SWAIG function via
-[`defineTool()`][define-tool].
+When the underlying SignalWire agent is built, each tool is registered as a SWAIG
+function via [`defineTool()`][define-tool].
 
-<Note>
-Parameters annotated with [`RunContext`][runcontext]
-are automatically excluded from the generated JSON schema and injected at call time.
-</Note>
+### Parameters
 
-#### Parameters
-
-<ParamField path="func" type="Function | undefined" default="undefined" toc={true}>
-  The function to decorate. When `@function_tool` is used without parentheses, the
-  defined function is passed here directly.
+<ParamField path="description" type="string" required={true} toc={true}>
+  A description of what the tool does. This is sent to the LLM so it knows when
+  to invoke the tool.
 </ParamField>
 
-<ParamField path="name" type="string | undefined" default="undefined" toc={true}>
-  Override the tool name. Defaults to the function's `function name`.
+<ParamField path="parameters" type="any" toc={true}>
+  JSON Schema describing the tool's parameters, or a Zod schema object. If omitted,
+  the tool accepts no parameters.
 </ParamField>
 
-<ParamField path="description" type="string | undefined" default="undefined" toc={true}>
-  Override the tool description. Defaults to the function's JSDoc comment.
+<ParamField path="execute" type="(params: P, context: { ctx: RunContext }) => any" required={true} toc={true}>
+  The function to run when the tool is invoked. Receives the parsed parameters and
+  a context object containing the [`RunContext`][runcontext]. Can return a string,
+  an object (serialized to JSON), or a `FunctionResult`.
 </ParamField>
 
-#### Returns
+### Returns
 
-`Callable` -- The original function with metadata attributes attached:
-- `_livewire_tool` (`bool`) -- Always `true`.
-- `_tool_name` (`str`) -- The resolved tool name.
-- `_tool_description` (`str`) -- The resolved description.
-- `_tool_parameters` (`dict`) -- JSON-Schema-style parameter definition.
-- `_tool_handler` (`Callable`) -- Reference to the original function.
+[`FunctionTool`](#functiontool-interface) -- A tool definition object. The `name` field is empty and
+gets filled in when the tool is assigned to a key in `Agent.tools`.
 
-#### Type Mapping
-
-The decorator maps Python type annotations to JSON Schema types:
-
-| Python type | JSON Schema type |
-|-------------|-----------------|
-| `str` | `"string"` |
-| `int` | `"integer"` |
-| `float` | `"number"` |
-| `bool` | `"boolean"` |
-| *(other / missing)* | `"string"` |
-
-Parameters without a default value are marked as `required` in the schema.
-
-#### Examples
+### Examples
 
 <CodeBlocks>
-<CodeBlock title="Without arguments">
+<CodeBlock title="Basic tool">
 ```typescript {3}
-import { AgentBase } from 'signalwire-agents';
+import { tool } from '@signalwire/sdk/livewire';
 
-@function_tool
-function getWeather(city: string): string {
-    `Get the current weather for a city.`
-    return `Sunny in ${city}.`
+const getWeather = tool({
+  description: 'Get the current weather for a city.',
+  parameters: {
+    city: { type: 'string', description: 'The city name' },
+  },
+  execute: (params) => {
+    return `It is sunny in ${params.city}.`;
+  },
+});
 ```
 </CodeBlock>
-<CodeBlock title="With explicit name and description">
+<CodeBlock title="Tool with RunContext">
 ```typescript {3}
-import { AgentBase } from 'signalwire-agents';
+import { tool, RunContext } from '@signalwire/sdk/livewire';
 
-@function_tool(name="weather_lookup", description="Look up weather by city name")
-function getWeather(city: string): string {
-    return `Sunny in ${city}.`
+const savePreference = tool<{ key: string; value: string }>({
+  description: 'Save a user preference.',
+  parameters: {
+    key: { type: 'string' },
+    value: { type: 'string' },
+  },
+  execute: (params, { ctx }) => {
+    const data = ctx.userData as Record<string, string>;
+    data[params.key] = params.value;
+    return `Saved ${params.key} = ${params.value}.`;
+  },
+});
 ```
 </CodeBlock>
-<CodeBlock title="With RunContext">
+<CodeBlock title="Tool returning an object">
 ```typescript {3}
-import { AgentBase } from 'signalwire-agents';
+import { tool } from '@signalwire/sdk/livewire';
 
-@function_tool
-function savePreference(ctx: RunContext, key: string, value: string): string {
-    `Save a user preference.`
-    ctx.userdata[key] = value
-    return `Saved ${key}=${value}.`
+const lookupOrder = tool<{ orderId: string }>({
+  description: 'Look up an order by ID.',
+  parameters: {
+    orderId: { type: 'string', description: 'The order ID' },
+  },
+  execute: (params) => {
+    return {
+      orderId: params.orderId,
+      status: 'shipped',
+      estimatedDelivery: '2025-01-15',
+    };
+  },
+});
 ```
 </CodeBlock>
 </CodeBlocks>
+
+---
+
+## **FunctionTool Interface**
+
+The `FunctionTool` interface represents a tool definition that can be registered on
+an `Agent`.
+
+```typescript {1}
+interface FunctionTool {
+  name: string;
+  description: string;
+  parameters?: Record<string, unknown>;
+  execute: (params: any, context: { ctx: RunContext }) => any;
+}
+```
+
+<ParamField path="name" type="string" toc={true}>
+  The tool name. When created via `tool()`, this is initially empty and is set
+  automatically when the tool is added to an `Agent`'s `tools` map (the map key
+  becomes the name).
+</ParamField>
+
+<ParamField path="description" type="string" toc={true}>
+  A description of what the tool does.
+</ParamField>
+
+<ParamField path="parameters" type="Record<string, unknown> | undefined" toc={true}>
+  JSON Schema or Zod schema describing the tool's accepted parameters.
+</ParamField>
+
+<ParamField path="execute" type="(params: any, context: { ctx: RunContext }) => any" toc={true}>
+  The handler function invoked when the LLM calls this tool.
+</ParamField>

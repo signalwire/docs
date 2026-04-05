@@ -9,8 +9,8 @@ max-toc-depth: 3
 [ref-datamap]: /docs/sdks/reference/typescript/agents/data-map
 [ref-functionresult]: /docs/sdks/reference/typescript/agents/function-result
 
-```typescript
-import { createSimpleApiTool } from 'signalwire-agents';
+```typescript {3}
+import { createSimpleApiTool } from '@signalwire/sdk';
 
 const weatherTool = createSimpleApiTool({
   name: 'get_weather',
@@ -39,8 +39,8 @@ configuration.
   Template string for formatting the response.
 </ParamField>
 
-<ParamField path="parameters" type={"Record<string, dict>"} toc={true}>
-  Parameter definitions. Keys are parameter names, values are dicts with
+<ParamField path="parameters" type={"Record<string, object>"} toc={true}>
+  Parameter definitions. Keys are parameter names, values are objects with
   `"type"`, `"description"`, and optional `"required"` keys.
 </ParamField>
 
@@ -66,8 +66,8 @@ configuration.
 
 ---
 
-```typescript
-import { createExpressionTool, FunctionResult } from 'signalwire-agents';
+```typescript {3}
+import { createExpressionTool, FunctionResult } from '@signalwire/sdk';
 
 const controlTool = createExpressionTool({
   name: 'playback_control',
@@ -88,51 +88,54 @@ Create a DataMap for pattern-matching responses without API calls.
   Function name.
 </ParamField>
 
-<ParamField path="patterns" type={"Record<str, [str, FunctionResult]>"} required={true} toc={true}>
-  Dictionary mapping test values to `(pattern, [FunctionResult][ref-functionresult])` tuples.
+<ParamField path="patterns" type={"Record<string, [string, FunctionResult]>"} required={true} toc={true}>
+  Object mapping test values to `[pattern, FunctionResult]` tuples.
 </ParamField>
 
-<ParamField path="parameters" type={"Record<string, dict>"} toc={true}>
-  Parameter definitions (same format as `create_simple_api_tool`).
+<ParamField path="parameters" type={"Record<string, object>"} toc={true}>
+  Parameter definitions (same format as `createSimpleApiTool`).
 </ParamField>
 
 ## **Returns**
 
-`DataMap` -- A fully configured DataMap.
+[`DataMap`][ref-datamap] -- A fully configured DataMap.
 
 ## **Example**
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
-import { AgentBase, FunctionResult } from 'signalwire-agents';
+```typescript {9}
+import {
+  AgentBase,
+  FunctionResult,
+  createSimpleApiTool,
+  createExpressionTool,
+} from '@signalwire/sdk';
 
 // Simple API tool -- one line instead of a full DataMap chain
-weather = create_simple_api_tool(
-    name="get_weather",
-    url="https://api.weatherapi.com/v1/current.json?key=KEY&q=${enc:args.city}",
-    response_template="Weather in ${args.city}: ${response.current.condition.text}",
-    parameters={
-        "city": {"type": "string", "description": "City name", "required": true}
-    },
-    error_keys=["error"]
-)
+const weather = createSimpleApiTool({
+  name: 'get_weather',
+  url: 'https://api.weatherapi.com/v1/current.json?key=KEY&q=${enc:args.city}',
+  responseTemplate: 'Weather in ${args.city}: ${response.current.condition.text}',
+  parameters: {
+    city: { type: 'string', description: 'City name', required: true },
+  },
+  errorKeys: ['error'],
+});
 
 // Expression tool -- pattern matching without API calls
-greeting = create_expression_tool(
-    name="greet",
-    patterns={
-        "${args.language}": (r"spanish|espanol", new FunctionResult('Hola!')),
-    },
-    parameters={
-        "language": {"type": "string", "description": "Language to greet in"}
-    }
-)
+const greeting = createExpressionTool({
+  name: 'greet',
+  patterns: {
+    '${args.language}': ['spanish|espanol', new FunctionResult('Hola!')],
+  },
+  parameters: {
+    language: { type: 'string', description: 'Language to greet in' },
+  },
+});
 
 const agent = new AgentBase({ name: 'helper-demo' });
-agent.setPromptText("You are a helpful assistant.")
-agent.registerSwaigFunction(weather.toSwaigFunction())
-agent.registerSwaigFunction(greeting.toSwaigFunction())
+agent.setPromptText('You are a helpful assistant.');
+agent.registerSwaigFunction(weather.toSwaigFunction());
+agent.registerSwaigFunction(greeting.toSwaigFunction());
 
-// Entry point
-    agent.run()
+agent.run();
 ```

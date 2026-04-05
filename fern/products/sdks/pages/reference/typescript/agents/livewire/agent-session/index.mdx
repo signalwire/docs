@@ -7,7 +7,7 @@ max-toc-depth: 3
 
 [agent]: /docs/sdks/reference/typescript/agents/livewire/agent
 [agentbase]: /docs/sdks/reference/typescript/agents/agent-base
-[runcontext-userdata]: /docs/sdks/reference/typescript/agents/livewire/run-context
+[runcontext]: /docs/sdks/reference/typescript/agents/livewire/run-context
 [functiontool]: /docs/sdks/reference/typescript/agents/livewire/function-tool
 [start]: /docs/sdks/reference/typescript/agents/livewire/agent-session/start
 [say]: /docs/sdks/reference/typescript/agents/livewire/agent-session/say
@@ -15,31 +15,74 @@ max-toc-depth: 3
 [interrupt]: /docs/sdks/reference/typescript/agents/livewire/agent-session/interrupt
 [updateagent]: /docs/sdks/reference/typescript/agents/livewire/agent-session/update-agent
 
-`AgentSession` is the orchestrator that binds an
+`AgentSession<UserData>` is the orchestrator that binds an
 [`Agent`][agent] to the SignalWire platform.
 When `start()` is called, it translates the LiveWire agent definition into a SignalWire
 [`AgentBase`][agentbase] instance, mapping
-instructions to prompts, tools to SWAIG functions, and timing parameters to
+instructions to prompts, tools to SWAIG functions, and LLM model settings to
 SignalWire AI parameters.
 
-```typescript {4}
-import { AgentBase } from 'signalwire-agents';
+```typescript {4-5}
+import { Agent, AgentSession } from '@signalwire/sdk/livewire';
 
-agent = Agent(instructions="You are a helpful assistant.")
-session = AgentSession()
-await session.start(agent)
+const agent = new Agent({ instructions: 'You are a helpful assistant.' });
+const session = new AgentSession();
+await session.start({ agent });
 ```
+
+## **Constructor**
+
+```typescript {1}
+new AgentSession<UserData>(options?: {
+  stt?: any;
+  tts?: any;
+  llm?: any;
+  vad?: any;
+  turnDetection?: any;
+  userData?: UserData;
+  voiceOptions?: Partial<VoiceOptions>;
+})
+```
+
+<ParamField path="stt" type="any" default="undefined" toc={true}>
+  STT provider instance. Accepted for API compatibility; SignalWire handles speech
+  recognition automatically. Logs an informational message on first use.
+</ParamField>
+
+<ParamField path="tts" type="any" default="undefined" toc={true}>
+  TTS provider instance. Accepted for API compatibility; SignalWire handles
+  text-to-speech automatically. Logs an informational message on first use.
+</ParamField>
+
+<ParamField path="llm" type="any" default="undefined" toc={true}>
+  LLM provider or model string. If provided, the model name is extracted (stripping
+  any provider prefix like `"openai/"`) and set on the underlying SignalWire agent.
+</ParamField>
+
+<ParamField path="vad" type="any" default="undefined" toc={true}>
+  VAD provider instance. Accepted for API compatibility; SignalWire handles voice
+  activity detection automatically.
+</ParamField>
+
+<ParamField path="turnDetection" type="any" default="undefined" toc={true}>
+  Turn detection configuration. Accepted for API compatibility; SignalWire handles
+  turn detection automatically.
+</ParamField>
+
+<ParamField path="userData" type="UserData" default="{}" toc={true}>
+  Arbitrary data attached to the session. Accessible from tool handlers via
+  [`RunContext.userData`][runcontext].
+</ParamField>
+
+<ParamField path="voiceOptions" type="Partial<VoiceOptions>" default="undefined" toc={true}>
+  Voice configuration (`voice`, `engine`, `language`) passed through to the
+  SignalWire AI config.
+</ParamField>
 
 ## **Properties**
 
-<ParamField path="userdata" type="unknown" toc={true}>
-  Arbitrary data attached to the session. Accessible from tool handlers via
-  [`RunContext.userdata`][runcontext-userdata].
-  Defaults to an empty dict.
-</ParamField>
-
-<ParamField path="history" type={"Record<string, string>[]"} toc={true}>
-  Conversation history as a list of `{"role": ..., "content": ...}` dicts.
+<ParamField path="userData" type="UserData" toc={true}>
+  Getter/setter for the session's user data. Defaults to an empty object.
 </ParamField>
 
 ## **Methods**
@@ -61,3 +104,12 @@ await session.start(agent)
     Swap in a new Agent mid-session.
   </Card>
 </CardGroup>
+
+### getSwAgent
+
+```typescript {1}
+getSwAgent(): AgentBase | undefined
+```
+
+Returns the underlying SignalWire [`AgentBase`][agentbase] instance, or `undefined`
+if `start()` has not been called yet. Useful for testing or advanced configuration.

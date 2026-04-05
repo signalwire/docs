@@ -1,7 +1,7 @@
 ---
 title: "SwaigFunction"
 slug: /reference/typescript/agents/swaig-function
-description: "Wrapper class for SWAIG function definitions with execution and validation."
+description: "Wrapper class for SWAIG function definitions with execution and serialization."
 max-toc-depth: 3
 ---
 
@@ -14,21 +14,19 @@ max-toc-depth: 3
 [swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
 [execute]: /docs/sdks/reference/typescript/agents/swaig-function/execute
 [toswaig]: /docs/sdks/reference/typescript/agents/swaig-function/to-swaig
-[validateargs]: /docs/sdks/reference/typescript/agents/swaig-function/validate-args
 
 SwaigFunction wraps a function as a SWAIG (SignalWire AI Gateway) tool
 that the AI can invoke during a conversation. It manages the function's name,
 description, parameter schema, security settings, and serialization to SWML.
 
 In most cases you do not create SwaigFunction instances directly. The
-[`@agent.tool()` decorator][agent-tool-decorator]
-and [`defineTool()`][define-tool] method
-on [`AgentBase`][agentbase] handle construction
+[`defineTool()`][define-tool] method
+on [`AgentBase`][agentbase] handles construction
 internally. This class is documented for advanced use cases such as custom
 registration via `registerSwaigFunction()`.
 
 <Info>
-For server-side API tools without a Python handler, see
+For server-side API tools without a handler, see
 [`DataMap`][datamap]. For building the
 response returned from a handler, see
 [`FunctionResult`][functionresult].
@@ -40,22 +38,94 @@ See the [SWML SWAIG functions reference][swml-swaig-functions-reference] for the
 full specification.
 </Info>
 
-## **Properties**
+## **Constructor**
 
-<ParamField path="name" type="string" toc={true}>
-  The function name.
+```typescript {3}
+import { SwaigFunction } from '@signalwire/sdk';
+
+const fn = new SwaigFunction(opts);
+```
+
+### SwaigFunctionOptions
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Unique name used to register and invoke this tool.
 </ParamField>
 
-<ParamField path="handler" type="Function" toc={true}>
-  The underlying Python handler function.
+<ParamField path="handler" type="SwaigHandler" required={true} toc={true}>
+  The handler invoked when the AI calls this tool. Receives parsed
+  arguments and optional raw request data. Can return a `FunctionResult`,
+  a plain object, or a string. May be async.
 </ParamField>
 
-<ParamField path="description" type="string" toc={true}>
-  The function description.
+<ParamField path="description" type="string" required={true} toc={true}>
+  Human-readable description shown to the AI so it knows when to call this tool.
 </ParamField>
 
 <ParamField path="parameters" type="Record<string, unknown>" toc={true}>
-  The parameter schema dictionary.
+  JSON Schema `properties` object describing the tool's parameters.
+</ParamField>
+
+<ParamField path="secure" type="boolean" default="false" toc={true}>
+  Whether the tool requires session token authentication.
+</ParamField>
+
+<ParamField path="fillers" type={"Record<string, string[]>"} toc={true}>
+  Language-keyed filler phrases to speak while the tool executes
+  (e.g., `{ "en-US": ["Let me check on that..."] }`).
+</ParamField>
+
+<ParamField path="waitFile" type="string" toc={true}>
+  URL of an audio file to play while the tool executes. Preferred over `fillers`.
+</ParamField>
+
+<ParamField path="waitFileLoops" type="number" toc={true}>
+  Number of times to loop `waitFile`.
+</ParamField>
+
+<ParamField path="webhookUrl" type="string" toc={true}>
+  External webhook URL. When set, the tool call is forwarded to this URL
+  instead of being handled locally.
+</ParamField>
+
+<ParamField path="required" type="string[]" toc={true}>
+  List of required parameter names.
+</ParamField>
+
+<ParamField path="extraFields" type="Record<string, unknown>" toc={true}>
+  Additional fields to include in the SWAIG definition.
+</ParamField>
+
+<ParamField path="isTypedHandler" type="boolean" toc={true}>
+  Whether the handler uses typed parameters.
+</ParamField>
+
+### SwaigHandler type
+
+```typescript {1}
+type SwaigHandler = (
+  args: Record<string, unknown>,
+  rawData: Record<string, unknown>,
+) => FunctionResult | Record<string, unknown> | string
+   | Promise<FunctionResult | Record<string, unknown> | string>;
+```
+
+## **Properties**
+
+<ParamField path="name" type="string" toc={true}>
+  The tool name.
+</ParamField>
+
+<ParamField path="handler" type="SwaigHandler" toc={true}>
+  The handler.
+</ParamField>
+
+<ParamField path="description" type="string" toc={true}>
+  The tool description.
+</ParamField>
+
+<ParamField path="parameters" type="Record<string, unknown>" toc={true}>
+  The parameter schema object.
 </ParamField>
 
 <ParamField path="secure" type="boolean" toc={true}>
@@ -63,68 +133,45 @@ full specification.
 </ParamField>
 
 <ParamField path="fillers" type={"Record<string, string[]> | undefined"} toc={true}>
-  Filler phrases by language code to speak while the function executes
-  (e.g., `{"en-US": ["Let me check on that..."]}`).
+  Filler phrases by language code.
 </ParamField>
 
 <ParamField path="waitFile" type="string | undefined" toc={true}>
-  URL of an audio file to play while the function executes. Preferred over `fillers`.
+  URL of an audio file to play while the tool executes.
 </ParamField>
 
 <ParamField path="waitFileLoops" type="number | undefined" toc={true}>
-  Number of times to loop `wait_file`. Defaults to playing once.
+  Number of times to loop `waitFile`.
 </ParamField>
 
 <ParamField path="webhookUrl" type="string | undefined" toc={true}>
-  External webhook URL. When set, the function call is forwarded to this URL instead
-  of being handled locally.
+  External webhook URL for remotely handled tools.
 </ParamField>
 
 <ParamField path="required" type="string[]" toc={true}>
-  List of required parameter names. Merged into the parameter schema's `required` array.
+  List of required parameter names.
+</ParamField>
+
+<ParamField path="extraFields" type="Record<string, unknown>" toc={true}>
+  Additional SWAIG definition fields.
 </ParamField>
 
 <ParamField path="isTypedHandler" type="boolean" toc={true}>
-  Whether the handler uses type-hinted parameters (auto-wrapped by the `@tool` decorator).
+  Whether the handler uses typed parameters.
 </ParamField>
 
 <ParamField path="isExternal" type="boolean" toc={true}>
-  `true` when `webhook_url` is set, indicating the function is handled externally.
+  `true` when `webhookUrl` is set, indicating the tool is handled externally.
 </ParamField>
-
-### \_\_call\_\_
-
-The SwaigFunction object is callable. Calling it directly delegates to the
-underlying handler:
-
-```typescript
-import { SwaigFunction, FunctionResult } from 'signalwire-agents';
-
-const fn = new SwaigFunction({
-  name: 'check_order',
-  description: 'Check order status by ID',
-  parameters: {
-    order_id: { type: 'string', description: 'The order ID' },
-  },
-  handler: async (args) => {
-    return new FunctionResult(`Order ${args.order_id} is shipped.`);
-  },
-});
-```
-
-This is equivalent to `func.handler(args, raw_data)`.
 
 ## **Methods**
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="execute" href="/docs/sdks/reference/typescript/agents/swaig-function/execute">
-    Execute the function with the given arguments.
+    Execute the tool with the given arguments.
   </Card>
   <Card title="toSwaig" href="/docs/sdks/reference/typescript/agents/swaig-function/to-swaig">
-    Convert the function to a SWAIG-compatible dictionary for SWML.
-  </Card>
-  <Card title="validateArgs" href="/docs/sdks/reference/typescript/agents/swaig-function/validate-args">
-    Validate arguments against the parameter JSON Schema.
+    Convert the tool to a SWAIG-compatible dictionary for SWML.
   </Card>
 </CardGroup>
 
@@ -134,64 +181,58 @@ This is equivalent to `func.handler(args, raw_data)`.
 
 ### Manual registration
 
-```typescript
-import { AgentBase, FunctionResult } from 'signalwire-agents';
+```typescript {3}
+import { AgentBase, SwaigFunction, FunctionResult } from '@signalwire/sdk';
 
-function handleLookup(args, rawData) {
-    account_id = args.get("account_id", "")
-    return FunctionResult(`Account ${account_id} is active.`)
+const fn = new SwaigFunction({
+  name: 'lookup_account',
+  description: 'Look up account status by ID',
+  handler: async (args) => {
+    const accountId = args.account_id as string;
+    return new FunctionResult(`Account ${accountId} is active.`);
+  },
+  parameters: {
+    type: 'object',
+    properties: {
+      account_id: { type: 'string', description: 'The account ID to look up' },
+    },
+    required: ['account_id'],
+  },
+  secure: true,
+  fillers: { 'en-US': ['Let me check on that...'] },
+});
 
 const agent = new AgentBase({ name: 'my-agent' });
-
-func = SWAIGFunction(
-    name="lookup_account",
-    handler=handle_lookup,
-    description="Look up account status by ID",
-    parameters={
-        "type": "object",
-        "properties": {
-            "account_id": {
-                "type": "string",
-                "description": "The account ID to look up"
-            }
-        },
-        "required": ["account_id"]
-    },
-    secure= true,
-    fillers={"en-US": ["Let me check on that..."]}
-)
-
-// Validate before registering
-is_valid, errors = func.validateArgs({"account_id": "12345"})
-console.log(`Valid: ${is_valid}, Errors: ${errors}`)
-// Valid: true, Errors: []
+agent.registerSwaigFunction(fn);
+await agent.serve();
 ```
 
-### Using the decorator (preferred)
+### Using defineTool (preferred)
 
-In most cases, use the `@agent.tool()` decorator instead of constructing
-SwaigFunction directly:
+In most cases, use `defineTool()` instead of constructing SwaigFunction directly:
 
-```typescript
-import { AgentBase, FunctionResult } from 'signalwire-agents';
+```typescript {6}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'my-agent' });
-agent.setPromptText("You are a helpful assistant.")
+agent.setPromptText('You are a helpful assistant.');
 
-    description="Look up account status by ID",
-    parameters={
-        "type": "object",
-        "properties": {
-            "account_id": {"type": "string", "description": "Account ID"}
-        },
-        "required": ["account_id"]
+agent.defineTool({
+  name: 'lookup_account',
+  description: 'Look up account status by ID',
+  parameters: {
+    type: 'object',
+    properties: {
+      account_id: { type: 'string', description: 'Account ID' },
     },
-    secure= true,
-    fillers=["Let me check on that..."]
-)
-    account_id = args.get("account_id", "")
-    return FunctionResult(`Account ${account_id} is active.`)
+    required: ['account_id'],
+  },
+  secure: true,
+  handler: async (args) => {
+    const accountId = args.account_id as string;
+    return new FunctionResult(`Account ${accountId} is active.`);
+  },
+});
 
-// Entry point
-    agent.run()
+await agent.serve();
 ```

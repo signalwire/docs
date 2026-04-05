@@ -1,36 +1,47 @@
 ---
 title: "setOnRequestCallback"
 slug: /reference/typescript/agents/swml-service/set-on-request-callback
-description: "SWMLService - Lightweight HTTP service for non-AI SWML documents."
+description: "Set a per-request callback for dynamic SWML generation."
 max-toc-depth: 3
 ---
 
-SWMLService - Lightweight HTTP service for non-AI SWML documents.
+[swmlbuilder]: /docs/sdks/reference/typescript/agents/swml-builder
+
+Set a callback invoked per-request to dynamically build SWML. When set, the
+static SwmlBuilder is ignored and the callback's returned
+[`SwmlBuilder`][swmlbuilder] is used instead.
 
 ## **Parameters**
 
-<ParamField path="name" type="unknown">
-  Verb name (e.g., 'answer', 'play', 'hangup').
-</ParamField>
-
-<ParamField path="config" type="unknown">
-  Verb configuration.
-</ParamField>
-
-<ParamField path="cb" type="OnRequestCallback">
-  Callback receiving query params, body params, and headers.
+<ParamField path="cb" type="OnRequestCallback" required={true} toc={true}>
+  Callback function that receives `(queryParams, bodyParams, headers)` and
+  returns a `SwmlBuilder` or `Promise<SwmlBuilder>`.
 </ParamField>
 
 ## **Returns**
 
-`this` -- The result of the operation.
+`this` -- Returns the service for method chaining.
 
 ## **Example**
 
-```typescript
-import { SWMLService } from 'signalwire-agents';
+```typescript {5}
+import { SWMLService, SwmlBuilder } from '@signalwire/sdk';
 
-const sWMLService = new SWMLService();
-const result = sWMLService.setOnRequestCallback();
-console.log(result);
+const service = new SWMLService({ name: 'dynamic-ivr' });
+
+service.setOnRequestCallback(async (queryParams, bodyParams, headers) => {
+  const builder = new SwmlBuilder();
+  builder.addVerb('answer', {});
+
+  if (queryParams.lang === 'es') {
+    builder.addVerb('play', { url: 'https://example.com/greeting-es.mp3' });
+  } else {
+    builder.addVerb('play', { url: 'https://example.com/greeting-en.mp3' });
+  }
+
+  builder.addVerb('hangup', {});
+  return builder;
+});
+
+await service.run();
 ```

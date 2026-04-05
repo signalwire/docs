@@ -11,763 +11,784 @@ max-toc-depth: 3
 [skillbase]: /docs/sdks/reference/typescript/agents/skill-base
 [ref-datamap]: /docs/sdks/reference/typescript/agents/data-map
 
-Skills are pluggable capabilities that add tools to your agent. Add a skill with
-[`addSkill()`][add-skill] and it registers
-one or more SWAIG functions automatically. Skills handle setup, parameter validation,
-and tool registration so you can add features like weather, search, or math with a
-single call.
+Skills are pluggable capabilities that add tools to your agent. Import a skill class,
+instantiate it with optional configuration, and pass the instance to
+[`addSkill()`][add-skill]. Each skill registers
+one or more SWAIG functions automatically and injects prompt sections, hints, and
+global data.
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+```typescript {8,11-14}
+import { AgentBase, DateTimeSkill, WebSearchSkill } from '@signalwire/sdk';
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="my-agent")
-        this.setPromptText("You are a helpful assistant.")
+const agent = new AgentBase({ name: 'my-agent', route: '/' });
 
-        // No-config skill
-        this.addSkill("datetime")
+agent.setPromptText('You are a helpful assistant.');
 
-        // Skill with parameters
-        this.addSkill("web_search", {
-            "api_key": "YOUR_KEY",
-            "search_engine_id": "YOUR_ENGINE_ID"
-        })
+// No-config skill
+await agent.addSkill(new DateTimeSkill());
 
-// Entry point
-    MyAgent().run()
+// Skill with parameters
+await agent.addSkill(new WebSearchSkill({
+  max_results: 5,
+  safe_search: 'high',
+}));
+
+agent.run();
 ```
 
 ## Skills Summary
 
-| Skill | Functions | API Required | Multi-Instance |
-|-------|-----------|--------------|----------------|
-| [`datetime`](#datetime) | 2 | No | No |
-| [`math`](#math) | 1 | No | No |
-| [`web_search`](#web_search) | 1 | Yes | Yes |
-| [`wikipedia_search`](#wikipedia_search) | 1 | No | No |
-| [`weather_api`](#weather_api) | 1 | Yes | No |
-| [`joke`](#joke) | 1 | Yes | No |
-| [`play_background_file`](#play_background_file) | 1 | No | Yes |
-| [`swml_transfer`](#swml_transfer) | 1 | No | Yes |
-| [`datasphere`](#datasphere) | 1 | Yes | Yes |
-| [`datasphere_serverless`](#datasphere_serverless) | 1 | Yes | Yes |
-| [`native_vector_search`](#native_vector_search) | 1 | No | Yes |
-| [`mcp_gateway`](#mcp_gateway) | Dynamic | No | Yes |
-| [`google_maps`](#google_maps) | 2 | Yes | No |
-| [`info_gatherer`](#info_gatherer) | 2 | No | Yes |
-| [`claude_skills`](#claude_skills) | Dynamic | No | Yes |
-| [`spider`](#spider) | 3 | No | Yes |
-| [`api_ninjas_trivia`](#api_ninjas_trivia) | 1 | Yes | Yes |
+| Skill | Class | Tools | Env Vars Required | Multi-Instance |
+|-------|-------|-------|-------------------|----------------|
+| [`datetime`](#datetime) | `DateTimeSkill` | 1 | No | No |
+| [`math`](#math) | `MathSkill` | 1 | No | No |
+| [`joke`](#joke) | `JokeSkill` | 1 | No | No |
+| [`weather_api`](#weather_api) | `WeatherApiSkill` | 1 | Yes | No |
+| [`web_search`](#web_search) | `WebSearchSkill` | 1 | Yes | No |
+| [`wikipedia_search`](#wikipedia_search) | `WikipediaSearchSkill` | 1 | No | No |
+| [`google_maps`](#google_maps) | `GoogleMapsSkill` | 2 | Yes | No |
+| [`play_background_file`](#play_background_file) | `PlayBackgroundFileSkill` | 2 | No | No |
+| [`swml_transfer`](#swml_transfer) | `SwmlTransferSkill` | 1-2 | No | No |
+| [`datasphere`](#datasphere) | `DataSphereSkill` | 1 | Yes | Yes |
+| [`datasphere_serverless`](#datasphere_serverless) | `DataSphereServerlessSkill` | 1 | Yes | Yes |
+| [`native_vector_search`](#native_vector_search) | `NativeVectorSearchSkill` | 1 | No | Yes |
+| [`info_gatherer`](#info_gatherer) | `InfoGathererSkill` | 2 | No | No |
+| [`api_ninjas_trivia`](#api_ninjas_trivia) | `ApiNinjasTriviaSkill` | 1 | Yes | No |
+| [`spider`](#spider) | `SpiderSkill` | 1 | Yes | No |
+| [`ask_claude`](#ask_claude) | `AskClaudeSkill` | 1 | Yes | No |
+| [`claude_skills`](#claude_skills) | `ClaudeSkillsSkill` | Dynamic | No | Yes |
+| [`custom_skills`](#custom_skills) | `CustomSkillsSkill` | Dynamic | No | No |
+| [`mcp_gateway`](#mcp_gateway) | `McpGatewaySkill` | 1 | No | No |
 
 ## Configuration
 
-All skills accept configuration via a dictionary passed to `addSkill()`. Skills can also
-read values from environment variables when a parameter defines an `env_var` fallback.
+All skills accept configuration via a config object passed to the skill constructor.
+Skills with an `env_var` fallback on a parameter read from `process.env` when the
+parameter is not provided directly.
 
-```typescript
+```typescript {4}
+import { WebSearchSkill } from '@signalwire/sdk';
+
 // Direct configuration
-this.addSkill("web_search", {"api_key": "KEY", "search_engine_id": "ID"})
+const skill = new WebSearchSkill({ max_results: 5, safe_search: 'high' });
 
-// Environment variable fallback
-import os
-this.addSkill("web_search", {
-    "api_key": os.getenv("GOOGLE_API_KEY"),
-    "search_engine_id": os.getenv("SEARCH_ENGINE_ID")
-})
+// Environment variable fallback (api_key falls back to GOOGLE_SEARCH_API_KEY,
+// search_engine_id falls back to GOOGLE_SEARCH_CX)
+process.env.GOOGLE_SEARCH_API_KEY = 'YOUR_KEY';
+process.env.GOOGLE_SEARCH_CX = 'YOUR_ENGINE_ID';
+const skillWithEnv = new WebSearchSkill({ max_results: 5 });
 ```
 
 ### SWAIG Field Overrides
 
 Override SWAIG function metadata for any skill by including a `swaig_fields` key:
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+```typescript {6-11}
+import { AgentBase, DateTimeSkill } from '@signalwire/sdk';
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("datetime", {
-            "swaig_fields": {
-                "fillers": {"en-US": ["Let me check the time...", "One moment..."]},
-                "secure": false
-            }
-        })
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-agent = MyAgent()
-agent.run()
+await agent.addSkill(new DateTimeSkill({
+  swaig_fields: {
+    fillers: { 'en-US': ['Let me check the time...', 'One moment...'] },
+    secure: false,
+  },
+}));
+
+agent.run();
 ```
 
 ### Multi-Instance Skills
 
-Skills that support multiple instances require unique `tool_name` values:
+Skills that support multiple instances (`SUPPORTS_MULTIPLE_INSTANCES = true`)
+can be added to the same agent more than once with different `tool_name` values:
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+```typescript {6-9,10-13}
+import { AgentBase, DataSphereSkill } from '@signalwire/sdk';
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("native_vector_search", {
-            "tool_name": "search_products",
-            "index_file": "/data/products.swsearch"
-        })
-        this.addSkill("native_vector_search", {
-            "tool_name": "search_faqs",
-            "index_file": "/data/faqs.swsearch"
-        })
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-agent = MyAgent()
-agent.run()
+await agent.addSkill(new DataSphereSkill({
+  tool_name: 'search_products',
+  max_results: 3,
+}));
+await agent.addSkill(new DataSphereSkill({
+  tool_name: 'search_policies',
+  max_results: 5,
+}));
+
+agent.run();
 ```
+
+### Base Parameters
+
+Every skill inherits these parameters from `SkillBase`:
+
+<ParamField path="swaig_fields" type="object" toc={true}>
+  Additional SWAIG fields to merge into each tool definition provided by this skill
+  (e.g., `fillers`, `secure`).
+</ParamField>
+
+<ParamField path="skip_prompt" type="boolean" default="false" toc={true}>
+  When `true`, suppress all prompt sections from this skill.
+</ParamField>
 
 ---
 
 ## datetime
 
-Get current date and time information with timezone support.
+Get the current date and time with optional timezone support.
 
-**Tools:** `getCurrentTime`, `getCurrentDate`
+**Class:** `DateTimeSkill`
 
-**Requirements:** `pytz`
+**Tools:** `get_datetime`
 
-No custom parameters. This skill inherits only the base parameters (`swaig_fields`, `skip_prompt`).
+**Env vars:** None
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+No custom parameters. This skill inherits only the [base parameters](#base-parameters).
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("datetime")
+```typescript {5}
+import { AgentBase, DateTimeSkill } from '@signalwire/sdk';
 
-agent = MyAgent()
-agent.run()
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+await agent.addSkill(new DateTimeSkill());
+
+agent.run();
 ```
 
 ---
 
 ## math
 
-Perform mathematical calculations using a secure expression evaluator. Supports basic
-arithmetic, common functions (`sqrt`, `sin`, `cos`, `log`, `abs`, `round`), and constants
-(`pi`, `e`).
+Evaluate mathematical expressions safely. Supports basic arithmetic (`+`, `-`, `*`,
+`/`), exponentiation (`^`), modulo (`%`), and parentheses for grouping.
+
+**Class:** `MathSkill`
 
 **Tools:** `calculate`
 
-**Requirements:** None
+**Env vars:** None
 
-<ParamField path="toolName" type="string" default="calculate" toc={true}>
-  Custom function name.
-</ParamField>
+No custom parameters. This skill inherits only the [base parameters](#base-parameters).
 
-<ParamField path="toolDescription" type="string" default="Perform calculations" toc={true}>
-  Custom function description.
-</ParamField>
+```typescript {5}
+import { AgentBase, MathSkill } from '@signalwire/sdk';
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+await agent.addSkill(new MathSkill());
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("math")
-
-agent = MyAgent()
-agent.run()
-```
-
----
-
-## web_search
-
-Search the web using the Google Custom Search API. Results are filtered for quality and
-summarized for voice delivery.
-
-**Tools:** `web_search`
-
-**Requirements:** Google Custom Search API key + Search Engine ID
-
-**Multi-instance:** Yes (use different `tool_name` and `search_engine_id` per instance)
-
-<ParamField path="apiKey" type="string" required={true} toc={true}>
-  Google API key with Custom Search JSON API enabled.
-</ParamField>
-
-<ParamField path="searchEngineId" type="string" required={true} toc={true}>
-  Programmable Search Engine ID from Google.
-</ParamField>
-
-<ParamField path="numResults" type="number" default="3" toc={true}>
-  Number of search results to return (1-10).
-</ParamField>
-
-<ParamField path="delay" type="number" default="0.5" toc={true}>
-  Delay between scraping pages in seconds.
-</ParamField>
-
-<ParamField path="maxContentLength" type="number" default="32768" toc={true}>
-  Maximum total response size in characters.
-</ParamField>
-
-<ParamField path="oversampleFactor" type="number" default="2.5" toc={true}>
-  How many extra results to fetch for quality filtering (e.g., `2.5` fetches 2.5x the
-  requested number). Range: 1.0-3.5.
-</ParamField>
-
-<ParamField path="minQualityScore" type="number" default="0.3" toc={true}>
-  Quality threshold for filtering results (0.0-1.0).
-</ParamField>
-
-<ParamField path="noResultsMessage" type="string" toc={true}>
-  Message to show when no quality results are found. Use `{query}` as a placeholder
-  for the search query.
-</ParamField>
-
-<ParamField path="toolName" type="string" default="web_search" toc={true}>
-  Custom function name.
-</ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("web_search", {
-            "api_key": "YOUR_GOOGLE_API_KEY",
-            "search_engine_id": "YOUR_SEARCH_ENGINE_ID",
-            "num_results": 3
-        })
-
-agent = MyAgent()
-agent.run()
-```
-
----
-
-## wikipedia_search
-
-Search Wikipedia for factual information. No API key required.
-
-**Tools:** `search_wikipedia`
-
-**Requirements:** None (uses the public Wikipedia API)
-
-<ParamField path="language" type="string" default="en" toc={true}>
-  Wikipedia language code (e.g., `"en"`, `"es"`, `"fr"`).
-</ParamField>
-
-<ParamField path="sentences" type="number" default="3" toc={true}>
-  Number of sentences to return per result.
-</ParamField>
-
-<ParamField path="toolName" type="string" default="search_wikipedia" toc={true}>
-  Custom function name.
-</ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("wikipedia_search", {"sentences": 5})
-
-agent = MyAgent()
-agent.run()
-```
-
----
-
-## weather_api
-
-Get current weather conditions for locations worldwide using WeatherAPI.com.
-
-**Tools:** `getWeather`
-
-**Requirements:** WeatherAPI.com API key (free tier available at https://www.weatherapi.com/)
-
-<ParamField path="apiKey" type="string" required={true} toc={true}>
-  WeatherAPI.com API key.
-</ParamField>
-
-<ParamField path="toolName" type="string" default="get_weather" toc={true}>
-  Custom function name.
-</ParamField>
-
-<ParamField path="toolDescription" type="string" default="Get weather" toc={true}>
-  Custom function description.
-</ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("weather_api", {"api_key": "YOUR_WEATHER_API_KEY"})
-
-agent = MyAgent()
-agent.run()
+agent.run();
 ```
 
 ---
 
 ## joke
 
-Tell jokes using the API Ninjas joke API. Uses a [DataMap][ref-datamap] for serverless execution.
+Tell jokes from a built-in collection. Includes general, programming, and dad joke
+categories. No external API required.
 
-**Tools:** `getJoke` (default, customizable via `tool_name`)
+**Class:** `JokeSkill`
 
-**Requirements:** API Ninjas API key
+**Tools:** `tell_joke`
 
-<ParamField path="apiKey" type="string" required={true} toc={true}>
-  API Ninjas API key for the joke service. Can also be set via the `API_NINJAS_KEY`
-  environment variable.
-</ParamField>
+**Env vars:** None
 
-<ParamField path="toolName" type="string" default="get_joke" toc={true}>
-  Custom function name.
-</ParamField>
+No custom parameters. This skill inherits only the [base parameters](#base-parameters).
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+```typescript {5}
+import { AgentBase, JokeSkill } from '@signalwire/sdk';
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("joke", {
-            "api_key": "YOUR_API_NINJAS_KEY"
-        })
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+await agent.addSkill(new JokeSkill());
 
-agent = MyAgent()
-agent.run()
+agent.run();
 ```
 
 ---
 
-## play_background_file
+## weather_api
 
-Control background file playback during calls. A single tool handles both starting and
-stopping playback via an `action` parameter with dynamic enum values generated from the
-configured file list. Supports audio and video files.
+Get current weather conditions for any location using the OpenWeatherMap API.
 
-**Tools:** `play_background_file` (default, customizable via `tool_name`)
+**Class:** `WeatherApiSkill`
 
-**Requirements:** None (files must be accessible via URL)
+**Tools:** `get_weather`
 
-**Multi-instance:** Yes (use different `tool_name` per instance)
+**Env vars:** `WEATHER_API_KEY`
 
-<ParamField path="files" type={"Record<string, unknown>[]"} required={true} toc={true}>
-  Array of file configurations to make available for playback. Each object must include:
-  - `key` (str, required) -- Unique identifier for the file (alphanumeric, underscores, hyphens).
-  - `description` (str, required) -- Human-readable description of the file.
-  - `url` (str, required) -- URL of the audio/video file to play.
-  - `wait` (bool, optional, default `false`) -- Whether to wait for the file to finish playing.
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  OpenWeatherMap API key. Falls back to the `WEATHER_API_KEY` environment variable.
 </ParamField>
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+<ParamField path="units" type="string" default="metric" toc={true}>
+  Temperature units: `"metric"` (Celsius), `"imperial"` (Fahrenheit), or
+  `"standard"` (Kelvin).
+</ParamField>
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("play_background_file", {
-            "tool_name": "play_testimonial",
-            "files": [
-                {
-                    "key": "massey",
-                    "description": "Customer success story from Massey Energy",
-                    "url": "https://example.com/massey.mp4",
-                    "wait": true
-                }
-            ]
-        })
+```typescript {6-8}
+import { AgentBase, WeatherApiSkill } from '@signalwire/sdk';
 
-agent = MyAgent()
-agent.run()
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new WeatherApiSkill({
+  units: 'imperial',
+}));
+
+agent.run();
 ```
 
 ---
 
-## swml_transfer
+## web_search
 
-Transfer calls between agents using SWML or direct connect, with regex pattern matching
-to route to different destinations from a single tool. Each transfer destination can use
-either a SWML endpoint URL or a phone number / SIP address.
+Search the web using the Google Custom Search JSON API. Returns titles, links,
+and snippets.
 
-**Tools:** `transfer_call` (default, customizable via `tool_name`)
+**Class:** `WebSearchSkill`
 
-**Requirements:** None
+**Tools:** `web_search`
 
-**Multi-instance:** Yes
+**Env vars:** `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_CX`
 
-<ParamField path="transfers" type="Record<string, unknown>" required={true} toc={true}>
-  Transfer configurations mapping regex patterns to destinations. Each key is a regex
-  pattern (e.g., `/sales/i`) and each value is an object with:
-  - `url` (str) -- SWML endpoint URL for agent transfer. Mutually exclusive with `address`.
-  - `address` (str) -- Phone number or SIP address for direct connect. Mutually exclusive with `url`.
-  - `message` (str, default `"Transferring you now..."`) -- Message to say before transferring.
-  - `return_message` (str, default `"The transfer is complete. How else can I help you?"`) -- Message when returning from transfer.
-  - `post_process` (bool, default `true`) -- Whether to process message with AI before saying.
-  - `final` (bool, default `true`) -- Whether transfer is permanent (`true`) or temporary (`false`).
-  - `from_addr` (str, optional) -- Caller ID for connect action.
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  Google Custom Search API key. Falls back to the `GOOGLE_SEARCH_API_KEY` environment variable.
 </ParamField>
 
-<ParamField path="description" type="string" default="Transfer call based on pattern matching" toc={true}>
-  Description for the transfer tool.
+<ParamField path="search_engine_id" type="string" required={true} toc={true}>
+  Google Custom Search Engine ID (CX). Falls back to the `GOOGLE_SEARCH_CX` environment variable.
 </ParamField>
 
-<ParamField path="parameterName" type="string" default="transfer_type" toc={true}>
-  Name of the parameter that accepts the transfer type.
+<ParamField path="max_results" type="number" default="5" toc={true}>
+  Maximum number of results to return (1-10).
 </ParamField>
 
-<ParamField path="parameterDescription" type="string" default="The type of transfer to perform" toc={true}>
-  Description for the transfer type parameter.
+<ParamField path="safe_search" type="string" default="medium" toc={true}>
+  Safe search level: `"off"`, `"medium"`, or `"high"`.
 </ParamField>
 
-<ParamField path="defaultMessage" type="string" default="Please specify a valid transfer type." toc={true}>
-  Message when no pattern matches.
-</ParamField>
+```typescript {6-9}
+import { AgentBase, WebSearchSkill } from '@signalwire/sdk';
 
-<ParamField path="defaultPostProcess" type="boolean" default="false" toc={true}>
-  Whether to process the default (no-match) message with AI.
-</ParamField>
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-<ParamField path="requiredFields" type="Record<string, unknown>" default="{}" toc={true}>
-  Additional required fields to collect before transfer. Keys are field names, values
-  are descriptions. Collected values are saved under `call_data` in global data.
-</ParamField>
+await agent.addSkill(new WebSearchSkill({
+  max_results: 3,
+  safe_search: 'high',
+}));
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("swml_transfer", {
-            "tool_name": "route_call",
-            "transfers": {
-                "/sales/i": {
-                    "url": "https://your-server.com/sales-agent",
-                    "message": "Let me connect you with our sales team."
-                },
-                "/support/i": {
-                    "address": "+15551234567",
-                    "final": false
-                }
-            }
-        })
-
-agent = MyAgent()
-agent.run()
+agent.run();
 ```
 
 ---
 
-## datasphere
+## wikipedia_search
 
-Search documents uploaded to SignalWire DataSphere. This skill executes the search
-via a webhook call from the agent process.
+Search Wikipedia for article summaries and extracts. No API key required.
 
-**Tools:** `search_datasphere`
+**Class:** `WikipediaSearchSkill`
 
-**Requirements:** SignalWire DataSphere credentials
+**Tools:** `search_wikipedia`
 
-**Multi-instance:** Yes
+**Env vars:** None
 
-<ParamField path="spaceName" type="string" required={true} toc={true}>
-  SignalWire space name (e.g., `"mycompany"` from `mycompany.signalwire.com`).
+<ParamField path="language" type="string" default="en" toc={true}>
+  Wikipedia language edition to search (e.g., `"en"`, `"fr"`, `"de"`).
 </ParamField>
 
-<ParamField path="projectId" type="string" required={true} toc={true}>
-  SignalWire project ID.
+<ParamField path="max_results" type="number" default="1" toc={true}>
+  Maximum number of search results to consider.
 </ParamField>
 
-<ParamField path="apiToken" type="string" required={true} toc={true}>
-  SignalWire API token.
+<ParamField path="max_content_length" type="number" default="5000" toc={true}>
+  Maximum length of returned content in characters.
 </ParamField>
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+```typescript {6-9}
+import { AgentBase, WikipediaSearchSkill } from '@signalwire/sdk';
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("datasphere", {
-            "space_name": "your-space",
-            "project_id": "YOUR_PROJECT_ID",
-            "api_token": "YOUR_API_TOKEN"
-        })
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-agent = MyAgent()
-agent.run()
-```
+await agent.addSkill(new WikipediaSearchSkill({
+  language: 'en',
+  max_results: 1,
+}));
 
----
-
-## datasphere_serverless
-
-Search SignalWire DataSphere documents using a DataMap for serverless execution.
-Unlike the standard `datasphere` skill, this version executes entirely server-side
-without a webhook round-trip, making it suitable for serverless deployments.
-
-**Tools:** `search_datasphere` (default, customizable via `tool_name`)
-
-**Requirements:** SignalWire DataSphere credentials
-
-**Multi-instance:** Yes
-
-<ParamField path="spaceName" type="string" required={true} toc={true}>
-  SignalWire space name.
-</ParamField>
-
-<ParamField path="projectId" type="string" required={true} toc={true}>
-  SignalWire project ID.
-</ParamField>
-
-<ParamField path="token" type="string" required={true} toc={true}>
-  SignalWire API token.
-</ParamField>
-
-<ParamField path="documentId" type="string" required={true} toc={true}>
-  DataSphere document ID to search within.
-</ParamField>
-
-<ParamField path="count" type="number" default="1" toc={true}>
-  Number of search results to return.
-</ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("datasphere_serverless", {
-            "space_name": "your-space",
-            "project_id": "YOUR_PROJECT_ID",
-            "token": "YOUR_API_TOKEN",
-            "document_id": "YOUR_DOCUMENT_ID",
-            "count": 3
-        })
-
-agent = MyAgent()
-agent.run()
-```
-
----
-
-## native_vector_search
-
-Search local `.swsearch` vector index files built with the
-[`sw-search`][sw-search] CLI tool.
-
-**Tools:** `search_knowledge` (default, customizable via `tool_name`)
-
-**Requirements:** Search extras installed (`npm install "signalwire[search]"`)
-
-**Multi-instance:** Yes
-
-<ParamField path="indexFile" type="string" required={true} toc={true}>
-  Path to the `.swsearch` index file.
-</ParamField>
-
-<ParamField path="toolName" type="string" default="search_knowledge" toc={true}>
-  Custom function name. Required when using multiple instances.
-</ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("native_vector_search", {
-            "index_file": "/path/to/knowledge.swsearch",
-            "tool_name": "search_docs"
-        })
-
-agent = MyAgent()
-agent.run()
-```
-
----
-
-## mcp_gateway
-
-Connect to MCP (Model Context Protocol) servers via the MCP Gateway service. Each MCP
-tool is dynamically registered as a SWAIG function, enabling your agent to use any
-MCP-compatible tool.
-
-**Tools:** Dynamically created from connected MCP services
-
-**Requirements:** Running MCP Gateway service
-
-**Multi-instance:** Yes
-
-<ParamField path="gatewayUrl" type="string" required={true} toc={true}>
-  MCP Gateway service URL.
-</ParamField>
-
-<ParamField path="authUser" type="string" toc={true}>
-  Basic auth username for the gateway.
-</ParamField>
-
-<ParamField path="authPassword" type="string" toc={true}>
-  Basic auth password for the gateway.
-</ParamField>
-
-<ParamField path="authToken" type="string" toc={true}>
-  Bearer token (alternative to basic auth).
-</ParamField>
-
-<ParamField path="services" type={"Record<string, unknown>[]"} toc={true}>
-  Specific services and tools to enable. Each dict has `name` (str) and `tools` (str `"*"`
-  or list of tool names). If omitted, all available services are enabled.
-</ParamField>
-
-<ParamField path="sessionTimeout" type="number" default="300" toc={true}>
-  Session timeout in seconds.
-</ParamField>
-
-<ParamField path="toolPrefix" type="string" default="mcp_" toc={true}>
-  Prefix for generated function names (e.g., `mcp_todo_add_todo`).
-</ParamField>
-
-<ParamField path="retryAttempts" type="number" default="3" toc={true}>
-  Number of connection retry attempts.
-</ParamField>
-
-<ParamField path="requestTimeout" type="number" default="30" toc={true}>
-  Individual request timeout in seconds.
-</ParamField>
-
-<ParamField path="verifySsl" type="boolean" default="true" toc={true}>
-  Whether to verify SSL certificates.
-</ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("mcp_gateway", {
-            "gateway_url": "http://localhost:8080",
-            "auth_user": "admin",
-            "auth_password": "secure-password",
-            "services": [
-                {"name": "todo", "tools": "*"},
-                {"name": "calculator", "tools": ["add", "multiply"]}
-            ]
-        })
-
-agent = MyAgent()
-agent.run()
+agent.run();
 ```
 
 ---
 
 ## google_maps
 
-Validate addresses and compute driving routes using Google Maps. Handles spoken number
-normalization (e.g., "seven one four" becomes "714") and location-biased search.
+Get driving/walking/transit directions and search for places using Google Maps APIs.
 
-**Tools:** `lookup_address`, `compute_route`
+**Class:** `GoogleMapsSkill`
 
-**Requirements:** Google Maps API key with Geocoding and Routes APIs enabled
+**Tools:** `get_directions`, `find_place`
 
-<ParamField path="apiKey" type="string" required={true} toc={true}>
-  Google Maps API key.
+**Env vars:** `GOOGLE_MAPS_API_KEY`
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  Google Maps API key with Directions and Places APIs enabled.
+  Falls back to the `GOOGLE_MAPS_API_KEY` environment variable.
 </ParamField>
 
-<ParamField path="lookupToolName" type="string" default="lookup_address" toc={true}>
-  Custom name for the address lookup function.
+<ParamField path="default_mode" type="string" default="driving" toc={true}>
+  Default travel mode: `"driving"`, `"walking"`, `"bicycling"`, or `"transit"`.
 </ParamField>
 
-<ParamField path="routeToolName" type="string" default="compute_route" toc={true}>
-  Custom name for the route computation function.
+```typescript {6-8}
+import { AgentBase, GoogleMapsSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new GoogleMapsSkill({
+  default_mode: 'transit',
+}));
+
+agent.run();
+```
+
+---
+
+## play_background_file
+
+Control background audio playback during calls. Play hold music, ambient sounds,
+or any audio file using SWML playback actions.
+
+**Class:** `PlayBackgroundFileSkill`
+
+**Tools:** `play_background`, `stop_background`
+
+**Env vars:** None
+
+<ParamField path="default_file_url" type="string" toc={true}>
+  Default audio file URL to use when no URL is specified by the caller.
+  When set, the `file_url` parameter becomes optional on the `play_background` tool.
 </ParamField>
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+<ParamField path="allowed_domains" type="string[]" toc={true}>
+  List of allowed domains for audio file URLs. If set, only URLs from these
+  domains are accepted.
+</ParamField>
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("google_maps", {"api_key": "YOUR_GOOGLE_MAPS_API_KEY"})
+```typescript {6-9}
+import { AgentBase, PlayBackgroundFileSkill } from '@signalwire/sdk';
 
-agent = MyAgent()
-agent.run()
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new PlayBackgroundFileSkill({
+  default_file_url: 'https://example.com/hold-music.mp3',
+  allowed_domains: ['example.com', 'cdn.example.com'],
+}));
+
+agent.run();
+```
+
+---
+
+## swml_transfer
+
+Transfer calls using SWML transfer actions. Supports named pattern-based transfers
+with friendly destination names, or arbitrary direct-destination transfers.
+
+**Class:** `SwmlTransferSkill`
+
+**Tools:** `transfer_call` (always), `list_transfer_destinations` (when `patterns` are configured)
+
+**Env vars:** None
+
+<ParamField path="patterns" type={"Record<string, unknown>[]"} toc={true}>
+  Array of named transfer patterns. Each object has:
+  - `name` (string, required) -- Friendly name for the destination.
+  - `destination` (string, required) -- SIP URI, phone number, or agent URL.
+  - `description` (string, optional) -- Human-readable description.
+</ParamField>
+
+<ParamField path="allow_arbitrary" type="boolean" toc={true}>
+  Whether to allow transfers to arbitrary destinations not in the patterns list.
+  Defaults to `true` when no patterns are configured, `false` when patterns exist.
+</ParamField>
+
+<ParamField path="default_message" type="string" default="Transferring your call now." toc={true}>
+  Default message to say before transferring.
+</ParamField>
+
+```typescript {6-16}
+import { AgentBase, SwmlTransferSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new SwmlTransferSkill({
+  patterns: [
+    {
+      name: 'sales',
+      destination: 'https://your-server.com/sales-agent',
+      description: 'Sales team',
+    },
+    {
+      name: 'support',
+      destination: '+15551234567',
+      description: 'Technical support line',
+    },
+  ],
+  default_message: 'Let me connect you now.',
+}));
+
+agent.run();
+```
+
+---
+
+## datasphere
+
+Search documents uploaded to SignalWire DataSphere using semantic search.
+Executes the search via a webhook call from the agent process.
+
+**Class:** `DataSphereSkill`
+
+**Tools:** `search_datasphere`
+
+**Env vars:** `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_TOKEN`, `SIGNALWIRE_SPACE`
+
+**Multi-instance:** Yes
+
+<ParamField path="tool_name" type="string" toc={true}>
+  Custom tool name for this instance. Required when using multiple instances.
+</ParamField>
+
+<ParamField path="space_name" type="string" toc={true}>
+  SignalWire space name. Falls back to the `SIGNALWIRE_SPACE` environment variable.
+</ParamField>
+
+<ParamField path="project_id" type="string" toc={true}>
+  SignalWire project ID. Falls back to the `SIGNALWIRE_PROJECT_ID` environment variable.
+</ParamField>
+
+<ParamField path="token" type="string" toc={true}>
+  SignalWire auth token. Falls back to the `SIGNALWIRE_TOKEN` environment variable.
+</ParamField>
+
+<ParamField path="document_id" type="string" toc={true}>
+  Restrict search to a specific document ID.
+</ParamField>
+
+<ParamField path="max_results" type="number" default="5" toc={true}>
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="distance_threshold" type="number" default="0.7" toc={true}>
+  Maximum distance threshold for results (0-1, lower is more similar).
+</ParamField>
+
+```typescript {6-9}
+import { AgentBase, DataSphereSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new DataSphereSkill({
+  max_results: 3,
+  distance_threshold: 0.5,
+}));
+
+agent.run();
+```
+
+---
+
+## datasphere_serverless
+
+Search SignalWire DataSphere documents using a [DataMap][ref-datamap] for
+serverless execution. Unlike the standard `datasphere` skill, this version
+executes entirely server-side without a webhook round-trip.
+
+**Class:** `DataSphereServerlessSkill`
+
+**Tools:** `search_datasphere`
+
+**Env vars:** `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_TOKEN`, `SIGNALWIRE_SPACE`
+
+**Multi-instance:** Yes
+
+<ParamField path="tool_name" type="string" toc={true}>
+  Custom tool name for this instance. Required when using multiple instances.
+</ParamField>
+
+<ParamField path="space_name" type="string" toc={true}>
+  SignalWire space name. Falls back to the `SIGNALWIRE_SPACE` environment variable.
+</ParamField>
+
+<ParamField path="project_id" type="string" toc={true}>
+  SignalWire project ID. Falls back to the `SIGNALWIRE_PROJECT_ID` environment variable.
+</ParamField>
+
+<ParamField path="token" type="string" toc={true}>
+  SignalWire auth token. Falls back to the `SIGNALWIRE_TOKEN` environment variable.
+</ParamField>
+
+<ParamField path="document_id" type="string" toc={true}>
+  Restrict search to a specific document ID.
+</ParamField>
+
+<ParamField path="max_results" type="number" default="5" toc={true}>
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="distance_threshold" type="number" default="0.7" toc={true}>
+  Maximum distance threshold for results (0-1, lower is more similar).
+</ParamField>
+
+```typescript {6-9}
+import { AgentBase, DataSphereServerlessSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new DataSphereServerlessSkill({
+  document_id: 'YOUR_DOCUMENT_ID',
+  max_results: 3,
+}));
+
+agent.run();
+```
+
+---
+
+## native_vector_search
+
+In-memory document search using TF-IDF-like word overlap scoring. No external
+dependencies or API keys required. Documents are provided via config and indexed
+at construction time.
+
+**Class:** `NativeVectorSearchSkill`
+
+**Tools:** `search_documents`
+
+**Env vars:** None
+
+**Multi-instance:** Yes
+
+<ParamField path="tool_name" type="string" toc={true}>
+  Custom tool name for this instance. Required when using multiple instances.
+</ParamField>
+
+<ParamField path="documents" type={"Record<string, unknown>[]"} toc={true}>
+  Array of documents to index. Each object has:
+  - `id` (string, required) -- Unique document identifier.
+  - `text` (string, required) -- Full text content of the document.
+  - `metadata` (object, optional) -- Metadata associated with the document.
+</ParamField>
+
+<ParamField path="num_results" type="number" default="3" toc={true}>
+  Default number of top results to return.
+</ParamField>
+
+<ParamField path="distance_threshold" type="number" default="0" toc={true}>
+  Minimum relevance score threshold.
+</ParamField>
+
+```typescript {6-13}
+import { AgentBase, NativeVectorSearchSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new NativeVectorSearchSkill({
+  tool_name: 'search_faqs',
+  documents: [
+    { id: 'faq-1', text: 'To reset your password, visit the settings page...' },
+    { id: 'faq-2', text: 'Refund requests must be submitted within 30 days...' },
+  ],
+  num_results: 3,
+}));
+
+agent.run();
 ```
 
 ---
 
 ## info_gatherer
 
-Skill version of the [`InfoGathererAgent`][infogathereragent]
-prefab. Collects answers to a configurable list of questions. Designed to be embedded
-within larger agents as a reusable capability.
+Collect structured information from the user based on configurable fields. Fields
+support optional validation patterns and required/optional flags. Collected data
+can be stored in global data.
 
-**Tools:** `start_questions`, `submit_answer` (prefixed when using `prefix` parameter)
+**Class:** `InfoGathererSkill`
 
-**Requirements:** None
+**Tools:** `save_info`, `get_gathered_info`
 
-**Multi-instance:** Yes (use `prefix` for unique tool names and state namespacing)
+**Env vars:** None
 
-<ParamField path="questions" type={"Record<string, unknown>[]"} required={true} toc={true}>
-  List of question dictionaries with `key_name`, `question_text`, and optional `confirm`.
+<ParamField path="fields" type={"Record<string, unknown>[]"} toc={true}>
+  Array of field definitions to collect. Each object has:
+  - `name` (string, required) -- Field name used as the parameter key.
+  - `description` (string, required) -- Description of what this field collects.
+  - `required` (boolean, optional) -- Whether this field must be provided.
+  - `validation` (string, optional) -- Regex pattern for validating the field value.
+  - `type` (string, optional) -- Parameter type for the tool schema (defaults to `"string"`).
 </ParamField>
 
-<ParamField path="prefix" type="string" toc={true}>
-  Prefix for tool names and state namespace. With `prefix="intake"`, tools become
-  `intake_start_questions` and `intake_submit_answer`, and state is stored under
-  `skill:intake` in global_data.
+<ParamField path="purpose" type="string" toc={true}>
+  A description of why this information is being collected (shown in prompt).
 </ParamField>
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+<ParamField path="confirmation_message" type="string" default="Information has been saved successfully." toc={true}>
+  Custom message returned after successful info collection.
+</ParamField>
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-                // Two independent question sets on one agent
-        this.addSkill("info_gatherer", {
-            "prefix": "contact",
-            "questions": [
-                {"key_name": "name", "question_text": "What is your name?"},
-                {"key_name": "email", "question_text": "What is your email?", "confirm": true}
-            ]
-        })
+<ParamField path="store_globally" type="boolean" default="false" toc={true}>
+  Whether to store gathered info in global data.
+</ParamField>
 
-        this.addSkill("info_gatherer", {
-            "prefix": "feedback",
-            "questions": [
-                {"key_name": "rating", "question_text": "How would you rate our service?"},
-                {"key_name": "comments", "question_text": "Any additional comments?"}
-            ]
-        })
+```typescript {6-15}
+import { AgentBase, InfoGathererSkill } from '@signalwire/sdk';
 
-agent = MyAgent()
-agent.run()
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new InfoGathererSkill({
+  purpose: 'Collect contact information for follow-up.',
+  fields: [
+    { name: 'name', description: 'Full name', required: true },
+    {
+      name: 'email',
+      description: 'Email address',
+      required: true,
+      validation: '^[\\w.+-]+@[\\w-]+\\.[\\w.]+$',
+    },
+    { name: 'phone', description: 'Phone number', required: false },
+  ],
+  store_globally: true,
+}));
+
+agent.run();
+```
+
+---
+
+## api_ninjas_trivia
+
+Fetch trivia questions from the API Ninjas service with optional category filtering.
+
+**Class:** `ApiNinjasTriviaSkill`
+
+**Tools:** `get_trivia`
+
+**Env vars:** `API_NINJAS_KEY`
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  API Ninjas API key. Falls back to the `API_NINJAS_KEY` environment variable.
+</ParamField>
+
+<ParamField path="default_category" type="string" toc={true}>
+  Default trivia category if none is specified by the user. Available categories:
+  `artliterature`, `language`, `sciencenature`, `general`, `fooddrink`,
+  `peopleplaces`, `geography`, `historyholidays`, `entertainment`, `toysgames`,
+  `music`, `mathematics`, `religionmythology`, `sportsleisure`.
+</ParamField>
+
+<ParamField path="reveal_answer" type="boolean" default="false" toc={true}>
+  Whether to include the answer in the response. When `false`, the AI receives
+  the answer privately so it can quiz the user.
+</ParamField>
+
+```typescript {6-9}
+import { AgentBase, ApiNinjasTriviaSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new ApiNinjasTriviaSkill({
+  default_category: 'sciencenature',
+  reveal_answer: false,
+}));
+
+agent.run();
+```
+
+---
+
+## spider
+
+Scrape webpage content using the Spider API. Extracts text or markdown from any
+public URL, with optional CSS selector filtering.
+
+**Class:** `SpiderSkill`
+
+**Tools:** `scrape_url`
+
+**Env vars:** `SPIDER_API_KEY`
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  Spider API key. Falls back to the `SPIDER_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="max_content_length" type="number" default="5000" toc={true}>
+  Maximum length of returned content in characters.
+</ParamField>
+
+```typescript {6-8}
+import { AgentBase, SpiderSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new SpiderSkill({
+  max_content_length: 10000,
+}));
+
+agent.run();
+```
+
+---
+
+## ask_claude
+
+Send prompts to Anthropic's Claude AI for complex reasoning, analysis, or
+sub-tasks that benefit from a dedicated AI query.
+
+**Class:** `AskClaudeSkill`
+
+**Tools:** `ask_claude`
+
+**Env vars:** `ANTHROPIC_API_KEY`
+
+<ParamField path="api_key" type="string" required={true} toc={true}>
+  Anthropic API key. Falls back to the `ANTHROPIC_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="model" type="string" default="claude-sonnet-4-5-20250929" toc={true}>
+  The Claude model to use.
+</ParamField>
+
+<ParamField path="max_tokens" type="number" default="1024" toc={true}>
+  Maximum tokens in the response.
+</ParamField>
+
+```typescript {6-9}
+import { AgentBase, AskClaudeSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new AskClaudeSkill({
+  model: 'claude-sonnet-4-5-20250929',
+  max_tokens: 2048,
+}));
+
+agent.run();
 ```
 
 ---
@@ -778,180 +799,291 @@ Load Claude Code-style SKILL.md files as agent tools. Each SKILL.md file in the
 configured directory becomes a SWAIG function, with YAML frontmatter parsed for
 metadata.
 
-**Tools:** Dynamically created from SKILL.md files
+**Class:** `ClaudeSkillsSkill`
 
-**Requirements:** `PyYAML`
+**Tools:** Dynamically created from SKILL.md files (prefixed with `tool_prefix`)
+
+**Env vars:** None
 
 **Multi-instance:** Yes
 
-<ParamField path="skillsPath" type="string" required={true} toc={true}>
-  Path to the directory containing SKILL.md files.
+<ParamField path="skills_path" type="string" required={true} toc={true}>
+  Path to the directory containing Claude skill folders (each with a SKILL.md file).
 </ParamField>
 
-<ParamField path="toolPrefix" type="string" default="claude_" toc={true}>
-  Prefix for generated function names.
+<ParamField path="include" type="string[]" default={["*"]} toc={true}>
+  Glob patterns for skills to include.
 </ParamField>
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+<ParamField path="exclude" type="string[]" default={[]} toc={true}>
+  Glob patterns for skills to exclude.
+</ParamField>
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("claude_skills", {
-            "skills_path": "/path/to/skills/directory",
-            "tool_prefix": "skill_"
-        })
+<ParamField path="tool_prefix" type="string" default="claude_" toc={true}>
+  Prefix for generated tool names. Use an empty string for no prefix.
+</ParamField>
 
-agent = MyAgent()
-agent.run()
+<ParamField path="prompt_title" type="string" default="Claude Skills" toc={true}>
+  Title for the prompt section listing skills.
+</ParamField>
+
+<ParamField path="prompt_intro" type="string" toc={true}>
+  Introductory text for the prompt section.
+</ParamField>
+
+<ParamField path="skill_descriptions" type="object" toc={true}>
+  Override descriptions for specific skills. Keys are skill names, values are
+  description strings.
+</ParamField>
+
+<ParamField path="response_prefix" type="string" default="" toc={true}>
+  Text to prepend to skill results.
+</ParamField>
+
+<ParamField path="response_postfix" type="string" default="" toc={true}>
+  Text to append to skill results.
+</ParamField>
+
+<ParamField path="allow_shell_injection" type="boolean" default="false" toc={true}>
+  Enable shell command preprocessing in skill bodies.
+  **Security warning:** allows arbitrary shell execution.
+</ParamField>
+
+<ParamField path="allow_script_execution" type="boolean" default="false" toc={true}>
+  Discover and list `scripts/` and `assets/` files in prompt sections.
+</ParamField>
+
+<ParamField path="ignore_invocation_control" type="boolean" default="false" toc={true}>
+  Override `disable-model-invocation` and `user-invocable` flags from frontmatter.
+  When `true`, all discovered skills are registered regardless of invocation control.
+</ParamField>
+
+<ParamField path="shell_timeout" type="number" default="30" toc={true}>
+  Timeout in seconds for shell injection commands.
+</ParamField>
+
+```typescript {6-11}
+import { AgentBase, ClaudeSkillsSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new ClaudeSkillsSkill({
+  skills_path: '/path/to/skills/directory',
+  tool_prefix: 'skill_',
+  include: ['*'],
+  exclude: ['deprecated-*'],
+}));
+
+agent.run();
 ```
 
 ---
 
-## spider
+## custom_skills
 
-Fast web scraping and crawling. Fetches web pages and extracts content optimized
-for token efficiency.
+A meta-skill that registers user-defined tools from configuration. Define
+tools with names, descriptions, parameters, and JavaScript handler code
+without writing skill classes.
 
-**Tools:** `scrape_url`, `crawl_site`, `extract_structured_data` (each prefixed with `tool_name` + `_` when set)
+**Class:** `CustomSkillsSkill`
 
-**Requirements:** `lxml`
+**Tools:** Dynamically created from the `tools` array
 
-**Multi-instance:** Yes
+**Env vars:** `SWML_ALLOW_CUSTOM_HANDLER_CODE` must be set to `"true"` to enable handler execution.
 
-<ParamField path="delay" type="number" default="0.1" toc={true}>
-  Delay between requests in seconds.
+<ParamField path="tools" type={"Record<string, unknown>[]"} toc={true}>
+  Array of custom tool definitions. Each object has:
+  - `name` (string, required) -- Unique tool name.
+  - `description` (string, required) -- Tool description shown to the AI.
+  - `handler_code` (string, required) -- JavaScript function body. Receives `(args, rawData, FunctionResult)` as arguments. Must return a `FunctionResult`, string, or object.
+  - `parameters` (array, optional) -- Parameter definitions: `[{ name, type, description, required? }]`.
+  - `required` (string[], optional) -- Array of required parameter names.
+  - `prompt_description` (string, optional) -- Description to include in the prompt section.
+  - `secure` (boolean, optional) -- Whether to mark the tool as secure.
+  - `fillers` (object, optional) -- Filler phrases keyed by language.
 </ParamField>
 
-<ParamField path="concurrentRequests" type="number" default="5" toc={true}>
-  Number of concurrent requests allowed (1-20).
+<ParamField path="prompt_title" type="string" default="Custom Tools" toc={true}>
+  Custom title for the prompt section.
 </ParamField>
 
-<ParamField path="timeout" type="number" default="5" toc={true}>
-  Request timeout in seconds.
+<ParamField path="prompt_body" type="string" toc={true}>
+  Custom body text for the prompt section.
 </ParamField>
 
-<ParamField path="maxPages" type="number" default="1" toc={true}>
-  Maximum number of pages to scrape (1-100).
-</ParamField>
+```typescript {6-14}
+import { AgentBase, CustomSkillsSkill } from '@signalwire/sdk';
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("spider", {
-            "timeout": 10,
-            "concurrent_requests": 3,
-            "max_pages": 5
-        })
+await agent.addSkill(new CustomSkillsSkill({
+  tools: [
+    {
+      name: 'greet_user',
+      description: 'Greet the user by name.',
+      parameters: [
+        { name: 'name', type: 'string', description: 'The user name', required: true },
+      ],
+      required: ['name'],
+      handler_code: 'return new FunctionResult("Hello, " + args.name + "! Welcome.");',
+    },
+  ],
+}));
 
-agent = MyAgent()
-agent.run()
+agent.run();
 ```
 
 ---
 
-## api_ninjas_trivia
+## mcp_gateway
 
-Get trivia questions from API Ninjas with configurable categories. Uses DataMap for
-serverless execution.
+Placeholder skill for future Model Context Protocol (MCP) server integration.
+Currently provides a stub `mcp_invoke` tool.
 
-**Tools:** Configurable via `tool_name`
+**Class:** `McpGatewaySkill`
 
-**Requirements:** API Ninjas API key
+**Tools:** `mcp_invoke` (placeholder, not yet functional)
 
-**Multi-instance:** Yes
+**Env vars:** None
 
-<ParamField path="apiKey" type="string" required={true} toc={true}>
-  API Ninjas API key.
+<ParamField path="gateway_url" type="string" toc={true}>
+  URL of the MCP gateway server.
 </ParamField>
 
-<ParamField path="toolName" type="string" toc={true}>
-  Custom name for the trivia function.
+<ParamField path="tool_prefix" type="string" toc={true}>
+  Prefix for tool names from this gateway.
 </ParamField>
 
-<ParamField path="categories" type="string[]" toc={true}>
-  List of trivia categories to enable. Available categories: `artliterature`, `language`,
-  `sciencenature`, `general`, `fooddrink`, `peopleplaces`, `geography`, `historyholidays`,
-  `entertainment`, `toysgames`, `music`, `mathematics`, `religionmythology`, `sportsleisure`.
+<ParamField path="auth_token" type="string" toc={true}>
+  Authentication token for the MCP gateway.
 </ParamField>
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-class MyAgent extends AgentBase {
-    Init() {
-        super().__init__(name="assistant", route="/assistant")
-        this.setPromptText("You are a helpful assistant.")
-        this.addSkill("api_ninjas_trivia", {
-            "tool_name": "get_science_trivia",
-            "api_key": "YOUR_API_NINJAS_KEY",
-            "categories": ["sciencenature", "mathematics", "general"]
-        })
-
-agent = MyAgent()
-agent.run()
-```
-
----
-
-## Custom Skills
-
-You can create custom skills and register them from external directories or via pip packages.
-
-### External Directory
-
-```typescript
-import { AgentBase } from 'signalwire-agents';
-
-skill_registry.add_skill_directory("/opt/custom_skills")
-```
-
-Or set the `SIGNALWIRE_SKILL_PATHS` environment variable (colon-separated paths):
-
-```bash
-export SIGNALWIRE_SKILL_PATHS=/path/to/skills1:/path/to/skills2
-```
-
-### Entry Points
-
-Install skills as pip packages by defining entry points:
-
-```typescript
-# In setup.py
-setup(
-    name="my-skills-package",
-    entry_points={
-        "signalwire.skills": [
-            "weather = my_package.skills:WeatherSkill",
-            "stock = my_package.skills:StockSkill"
-        ]
-    }
-)
-```
 
 <Note>
-Entry-point skills cannot override built-in skills. If an entry-point skill uses the
-same `SKILL_NAME` as a built-in skill, it is skipped with an error log.
+This skill is a placeholder. The `mcp_invoke` tool returns a "not yet implemented"
+message. Full MCP integration is planned for a future release.
 </Note>
 
-### Listing Available Skills
+```typescript {6-8}
+import { AgentBase, McpGatewaySkill } from '@signalwire/sdk';
 
-```typescript
-import { AgentBase } from 'signalwire-agents';
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
 
-# List all available skills
-skills = skill_registry.list_skills()
-for skill in skills:
-    console.log(`${skill['name']}: ${skill['description']}`)
+await agent.addSkill(new McpGatewaySkill({
+  gateway_url: 'http://localhost:8080',
+}));
 
-# Get complete schema for all skills (includes parameters)
-schema = skill_registry.get_all_skills_schema()
+agent.run();
 ```
 
-For creating custom skills, see [`SkillBase`][skillbase].
+---
+
+## Extending SkillBase
+
+Create custom skills by extending [`SkillBase`][skillbase] and registering
+them with the `SkillRegistry`.
+
+### Defining a Custom Skill
+
+```typescript {10}
+import { SkillBase, FunctionResult } from '@signalwire/sdk';
+import type {
+  SkillManifest,
+  SkillToolDefinition,
+  SkillPromptSection,
+  SkillConfig,
+  ParameterSchemaEntry,
+} from '@signalwire/sdk';
+
+export class StockPriceSkill extends SkillBase {
+  constructor(config?: SkillConfig) {
+    super('stock_price', config);
+  }
+
+  static override getParameterSchema(): Record<string, ParameterSchemaEntry> {
+    return {
+      ...super.getParameterSchema(),
+      api_key: {
+        type: 'string',
+        description: 'Stock API key.',
+        hidden: true,
+        env_var: 'STOCK_API_KEY',
+        required: true,
+      },
+    };
+  }
+
+  getManifest(): SkillManifest {
+    return {
+      name: 'stock_price',
+      description: 'Look up current stock prices.',
+      version: '1.0.0',
+      requiredEnvVars: ['STOCK_API_KEY'],
+    };
+  }
+
+  getTools(): SkillToolDefinition[] {
+    return [
+      {
+        name: 'get_stock_price',
+        description: 'Get the current price of a stock by ticker symbol.',
+        parameters: {
+          symbol: {
+            type: 'string',
+            description: 'Stock ticker symbol (e.g., "AAPL", "GOOG").',
+          },
+        },
+        required: ['symbol'],
+        handler: async (args: Record<string, unknown>) => {
+          const symbol = args.symbol as string;
+          // Your implementation here
+          return new FunctionResult(
+            'The current price of ' + symbol + ' is $150.00.',
+          );
+        },
+      },
+    ];
+  }
+
+  protected override _getPromptSections(): SkillPromptSection[] {
+    return [
+      {
+        title: 'Stock Prices',
+        body: 'You can look up current stock prices.',
+        bullets: [
+          'Use the get_stock_price tool when the user asks about a stock price.',
+          'Provide the stock ticker symbol (e.g., AAPL for Apple).',
+        ],
+      },
+    ];
+  }
+}
+```
+
+### Registering with SkillRegistry
+
+```typescript {4-5}
+import { SkillRegistry } from '@signalwire/sdk';
+import { StockPriceSkill } from './stock-price-skill.js';
+
+const registry = SkillRegistry.getInstance();
+registry.register('stock_price', (config) => new StockPriceSkill(config));
+```
+
+### Using a Custom Skill
+
+```typescript {7}
+import { AgentBase } from '@signalwire/sdk';
+import { StockPriceSkill } from './stock-price-skill.js';
+
+const agent = new AgentBase({ name: 'finance-bot', route: '/' });
+agent.setPromptText('You are a financial assistant.');
+
+await agent.addSkill(new StockPriceSkill());
+
+agent.run();
+```
+
+For more details on the skill base class, see [`SkillBase`][skillbase].

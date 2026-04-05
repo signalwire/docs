@@ -1,70 +1,101 @@
 ---
 title: "Agent"
 slug: /reference/typescript/agents/livewire/agent
-description: "LiveKit-compatible agent class that holds instructions, tools, and lifecycle hooks."
+description: "LiveKit-compatible agent class that holds instructions, tools, and user data."
 max-toc-depth: 3
 ---
 
 [agentsession]: /docs/sdks/reference/typescript/agents/livewire/agent-session
 [agentbase]: /docs/sdks/reference/typescript/agents/agent-base
 [functiontool]: /docs/sdks/reference/typescript/agents/livewire/function-tool
-[onenter]: /docs/sdks/reference/typescript/agents/livewire/agent/on-enter
-[onexit]: /docs/sdks/reference/typescript/agents/livewire/agent/on-exit
-[onuserturncompleted]: /docs/sdks/reference/typescript/agents/livewire/agent/on-user-turn-completed
-[updateinstructions]: /docs/sdks/reference/typescript/agents/livewire/agent/update-instructions
-[updatetools]: /docs/sdks/reference/typescript/agents/livewire/agent/update-tools
-[pipeline-nodes]: /docs/sdks/reference/typescript/agents/livewire/agent/pipeline-nodes
 
-The `Agent` class mirrors a LiveKit agent. It holds the system prompt (instructions),
-a list of tools, and optional lifecycle hooks. When bound to an
-[`AgentSession`][agentsession], the session
-translates this into a SignalWire
+The `Agent<UserData>` class mirrors a LiveKit voice agent. It holds the system prompt
+(instructions), a map of tools, and optional user data. When bound to an
+[`AgentSession`][agentsession], the session translates this into a SignalWire
 [`AgentBase`][agentbase] under the hood.
 
-```typescript {8}
-import { AgentBase } from 'signalwire-agents';
+```typescript {11-14}
+import { Agent, tool } from '@signalwire/sdk/livewire';
 
-@function_tool
-function getWeather(city: string): string {
-    `Get the current weather for a city.`
-    return `It is sunny in ${city}.`
+const getWeather = tool({
+  description: 'Get the current weather for a city.',
+  parameters: { city: { type: 'string' } },
+  execute: (params) => {
+    return `It is sunny in ${params.city}.`;
+  },
+});
 
-agent = Agent(
-    instructions="You are a helpful weather assistant.",
-    tools=[get_weather],
-)
+const agent = new Agent({
+  instructions: 'You are a helpful weather assistant.',
+  tools: { getWeather },
+});
 ```
+
+## **Constructor**
+
+```typescript {1}
+new Agent<UserData>(options: {
+  instructions: string;
+  tools?: Record<string, FunctionTool>;
+  userData?: UserData;
+})
+```
+
+<ParamField path="instructions" type="string" required={true} toc={true}>
+  The system prompt text for the agent. Mapped to the SignalWire prompt when the
+  session starts.
+</ParamField>
+
+<ParamField path="tools" type="Record<string, FunctionTool>" default="{}" toc={true}>
+  A map of tool names to [`FunctionTool`][functiontool] definitions. Each tool is
+  registered as a SWAIG function on the underlying SignalWire agent.
+</ParamField>
+
+<ParamField path="userData" type="UserData" default="undefined" toc={true}>
+  Arbitrary data attached to the agent. Accessible from tool handlers via
+  `RunContext.userData`.
+</ParamField>
 
 ## **Properties**
 
 <ParamField path="instructions" type="string" toc={true}>
-  The system prompt text for the agent.
+  The system prompt text for the agent. Can be read or modified directly.
 </ParamField>
 
-<ParamField path="session" type="AgentSession | undefined" toc={true}>
-  The [`AgentSession`][agentsession] this
-  agent is bound to. Set automatically when `session.start(agent)` is called.
+<ParamField path="tools" type="Record<string, FunctionTool>" toc={true}>
+  The map of registered tools.
 </ParamField>
 
-## **Methods**
+<ParamField path="userData" type="UserData | undefined" toc={true}>
+  The user data attached to this agent.
+</ParamField>
 
-<CardGroup cols={2}>
-  <Card title="onEnter" href="/docs/sdks/reference/typescript/agents/livewire/agent/on-enter">
-    Lifecycle hook called when the agent enters.
-  </Card>
-  <Card title="onExit" href="/docs/sdks/reference/typescript/agents/livewire/agent/on-exit">
-    Lifecycle hook called when the agent exits.
-  </Card>
-  <Card title="onUserTurnCompleted" href="/docs/sdks/reference/typescript/agents/livewire/agent/on-user-turn-completed">
-    Lifecycle hook called when the user finishes speaking.
-  </Card>
-  <Card title="updateInstructions" href="/docs/sdks/reference/typescript/agents/livewire/agent/update-instructions">
-    Update the agent's system prompt mid-session.
-  </Card>
-  <Card title="updateTools" href="/docs/sdks/reference/typescript/agents/livewire/agent/update-tools">
-    Replace the agent's tool list mid-session.
-  </Card>
-  <Card title="Pipeline Nodes" href="/docs/sdks/reference/typescript/agents/livewire/agent/pipeline-nodes">
-    No-op pipeline stubs: stt_node, llm_node, tts_node.
-  </Card>
-</CardGroup>
+## **Example**
+
+```typescript {13-17}
+import { Agent, AgentSession, tool, defineAgent, runApp, JobContext } from '@signalwire/sdk/livewire';
+
+const lookupAccount = tool({
+  description: 'Look up a customer account by email.',
+  parameters: { email: { type: 'string' } },
+  execute: (params) => {
+    return `Account found for ${params.email}: Premium tier.`;
+  },
+});
+
+const agentDef = defineAgent({
+  entry: async (ctx: JobContext) => {
+    const agent = new Agent({
+      instructions: 'You are a customer support agent. Help users with their accounts.',
+      tools: { lookupAccount },
+      userData: { department: 'support' },
+    });
+
+    const session = new AgentSession();
+    await session.start({ agent });
+    session.generateReply({ instructions: 'Greet the customer and ask how you can help.' });
+  },
+});
+
+runApp(agentDef);
+```

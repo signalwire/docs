@@ -95,13 +95,34 @@ then URL-encodes.
     Set the function description shown to the AI.
   </Card>
   <Card title="toSwaigFunction" href="/docs/sdks/reference/typescript/agents/data-map/to-swaig-function">
-    Convert the DataMap to a SWAIG function definition dictionary.
+    Convert the DataMap to a SWAIG function definition object.
   </Card>
   <Card title="webhook" href="/docs/sdks/reference/typescript/agents/data-map/webhook">
     Add an API call to the DataMap.
   </Card>
   <Card title="webhookExpressions" href="/docs/sdks/reference/typescript/agents/data-map/webhook-expressions">
     Add post-processing expressions for a webhook response.
+  </Card>
+  <Card title="description" href="/docs/sdks/reference/typescript/agents/data-map/description">
+    Alias for purpose -- set the function description.
+  </Card>
+  <Card title="params" href="/docs/sdks/reference/typescript/agents/data-map/params">
+    Set query or form parameters for a webhook.
+  </Card>
+  <Card title="fallbackOutput" href="/docs/sdks/reference/typescript/agents/data-map/fallback-output">
+    Set the fallback output when no webhook or expression matches.
+  </Card>
+  <Card title="globalErrorKeys" href="/docs/sdks/reference/typescript/agents/data-map/global-error-keys">
+    Set top-level error detection keys.
+  </Card>
+  <Card title="enableEnvExpansion" href="/docs/sdks/reference/typescript/agents/data-map/enable-env-expansion">
+    Enable environment variable expansion.
+  </Card>
+  <Card title="setAllowedEnvPrefixes" href="/docs/sdks/reference/typescript/agents/data-map/set-allowed-env-prefixes">
+    Override allowed env var prefixes for this DataMap.
+  </Card>
+  <Card title="registerWithAgent" href="/docs/sdks/reference/typescript/agents/data-map/register-with-agent">
+    Register this DataMap tool with an AgentBase instance.
   </Card>
 </CardGroup>
 
@@ -111,8 +132,8 @@ then URL-encodes.
 
 ### Weather lookup
 
-```typescript
-import { DataMap, FunctionResult } from 'signalwire-agents';
+```typescript {3}
+import { DataMap, FunctionResult } from '@signalwire/sdk';
 
 const dm = new DataMap('get_weather');
 dm.purpose('Look up current weather for a location');
@@ -123,60 +144,51 @@ dm.output(new FunctionResult('Weather in ${args.city}: ${response.current.condit
 
 ### Expression-based control
 
-```typescript
-import { AgentBase, FunctionResult } from 'signalwire-agents';
+```typescript {3}
+import { AgentBase, DataMap, FunctionResult } from '@signalwire/sdk';
 
-volume_control = (
-    DataMap("set_volume")
-    .purpose("Control audio volume")
-    .parameter("level", "string", "Volume level", required= true)
-    .expression(
-        "${args.level}", r"high|loud|up",
-        new FunctionResult('Volume increased')
-    )
-    .expression(
-        "${args.level}", r"low|quiet|down",
-        new FunctionResult('Volume decreased')
-    )
-    .expression(
-        "${args.level}", r"mute|of`,
-        new FunctionResult('Audio muted')
-    )
-)
+const volumeControl = new DataMap('set_volume')
+  .purpose('Control audio volume')
+  .parameter('level', 'string', 'Volume level', { required: true })
+  .expression(
+    '${args.level}', /high|loud|up/,
+    new FunctionResult('Volume increased'),
+  )
+  .expression(
+    '${args.level}', /low|quiet|down/,
+    new FunctionResult('Volume decreased'),
+  )
+  .expression(
+    '${args.level}', /mute|off/,
+    new FunctionResult('Audio muted'),
+  );
 
-const agent = new AgentBase(${ name: 'media-agent' });
-agent.setPromptText(`You are a helpful assistant.")
-agent.registerSwaigFunction(volume_control.toSwaigFunction())
-
-// Entry point
-    agent.run()
+const agent = new AgentBase({ name: 'media-agent' });
+agent.setPromptText('You are a helpful assistant.');
+agent.registerSwaigFunction(volumeControl.toSwaigFunction());
+await agent.run();
 ```
 
 ### POST with body and foreach
 
-```typescript {5}
-import { AgentBase } from 'signalwire-agents';
-import { FunctionResult } from 'signalwire-agents';
+```typescript {3}
+import { DataMap, FunctionResult } from '@signalwire/sdk';
 
-search_docs = (
-    DataMap("search_docs")
-    .purpose("Search documentation")
-    .parameter("query", "string", "Search query", required=true)
-    .webhook(
-        "POST",
-        "https://api.docs.example.com/search",
-        headers={"Authorization": "Bearer TOKEN"}
-    )
-    .body({"query": "${args.query}", "limit": 3})
-    .foreach({
-        "input_key": "results",
-        "output_key": "formatted_results",
-        "max": 3,
-        "append": "- ${this.title}: ${this.summary}\n"
-    })
-    .output(FunctionResult("Found:\n${formatted_results}"))
-    .fallback_output(FunctionResult("Search is currently unavailable."))
-)
+const searchDocs = new DataMap('search_docs')
+  .purpose('Search documentation')
+  .parameter('query', 'string', 'Search query', { required: true })
+  .webhook('POST', 'https://api.docs.example.com/search', {
+    headers: { Authorization: 'Bearer TOKEN' },
+  })
+  .body({ query: '${args.query}', limit: 3 })
+  .foreach({
+    input_key: 'results',
+    output_key: 'formatted_results',
+    max: 3,
+    append: '- ${this.title}: ${this.summary}\n',
+  })
+  .output(new FunctionResult('Found:\n${formatted_results}'))
+  .fallbackOutput(new FunctionResult('Search is currently unavailable.'));
 
-console.log(search_docs.to_swaig_function())
+console.log(searchDocs.toSwaigFunction());
 ```
