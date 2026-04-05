@@ -40,19 +40,20 @@ token. Credentials can be passed directly or read from environment variables.
   When provided, `project` and `token` are not required.
 </ParamField>
 
-<ParamField path="host" type="str" toc={true}>
+<ParamField path="host" type="str" default="relay.signalwire.com" toc={true}>
   SignalWire space hostname (e.g., `your-space.signalwire.com`). Set via constructor or `SIGNALWIRE_SPACE`
   environment variable. Defaults to `relay.signalwire.com`.
 </ParamField>
 
-<ParamField path="contexts" type="list[str]" toc={true}>
+<ParamField path="contexts" type="list[str]" default="[]" toc={true}>
   List of contexts to subscribe to for inbound call and message events.
 </ParamField>
 
 <ParamField path="max_active_calls" type="Optional[int]" default="1000" toc={true}>
   Maximum number of concurrent inbound calls the client will track. Calls
   arriving beyond this limit are dropped with a log warning. Set via constructor
-  or `RELAY_MAX_ACTIVE_CALLS` environment variable.
+  or `RELAY_MAX_ACTIVE_CALLS` environment variable. Constructor-only -- not
+  accessible as a public attribute after initialization.
 </ParamField>
 
 <ParamField path="relay_protocol" type="str" toc={true}>
@@ -64,7 +65,7 @@ token. Credentials can be passed directly or read from environment variables.
 
 ### on_call
 
-```python
+```python {11-12}
 from signalwire.relay import RelayClient
 from signalwire.relay.call import Call
 
@@ -86,11 +87,12 @@ client.run()
 Register the inbound call handler. The decorated function is called once for each
 `calling.call.receive` event on the subscribed contexts. The function receives a
 [`Call`][call] object with all call properties
-and control methods.
+and control methods. Only one call handler can be active at a time -- calling
+`@client.on_call` again replaces the previous handler.
 
 ### on_message
 
-```python
+```python {11-12}
 from signalwire.relay import RelayClient
 from signalwire.relay.message import Message
 
@@ -111,7 +113,8 @@ client.run()
 Register the inbound SMS/MMS message handler. The decorated function is called for
 each `messaging.receive` event. The function receives a
 [`Message`][message] object with message
-properties and state tracking.
+properties and state tracking. Only one message handler can be active at a time --
+calling `@client.on_message` again replaces the previous handler.
 
 ## **Methods**
 
@@ -146,7 +149,7 @@ properties and state tracking.
 
 `RelayClient` supports `async with` for scoped connections:
 
-```python
+```python {4-5}
 import asyncio
 from signalwire.relay import RelayClient
 
