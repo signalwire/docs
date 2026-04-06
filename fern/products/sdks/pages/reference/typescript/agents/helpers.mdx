@@ -1,7 +1,7 @@
 ---
-title: "Helper Functions"
+title: "Helper Functions & Utilities"
 slug: /reference/typescript/agents/helpers
-description: Top-level convenience functions for creating contexts, server-side API tools, expression tools, and managing environment variable expansion.
+description: Top-level convenience functions for creating contexts, server-side API tools, expression tools, environment variable expansion, security, and type inference.
 max-toc-depth: 3
 ---
 
@@ -9,18 +9,26 @@ max-toc-depth: 3
 [contextbuilder]: /docs/sdks/reference/typescript/agents/context-builder
 [datamap]: /docs/sdks/reference/typescript/agents/data-map
 [ref-functionresult]: /docs/sdks/reference/typescript/agents/function-result
+[ref-pombuilder]: /docs/sdks/reference/typescript/agents/pom-builder
+[ref-skillregistry]: /docs/sdks/reference/typescript/agents/skill-registry
 
-The SignalWire Agents SDK exports several helper functions at the top level for common
-tasks like creating standalone contexts, building server-side API tools, and
-managing environment variable expansion. All are imported directly from `@signalwire/sdk`.
+The SignalWire Agents SDK exports helper functions and utilities at the top level for common
+tasks like creating standalone contexts, building server-side API tools,
+managing environment variable expansion, security, and type inference.
+All are imported directly from `@signalwire/sdk`.
 
-```typescript {2-6}
+```typescript {2-11}
 import {
   createSimpleContext,
   createSimpleApiTool,
   createExpressionTool,
   setAllowedEnvPrefixes,
   getAllowedEnvPrefixes,
+  safeAssign,
+  filterSensitiveHeaders,
+  redactUrl,
+  inferSchema,
+  registerBuiltinSkills,
 } from '@signalwire/sdk';
 ```
 
@@ -274,4 +282,230 @@ import { getAllowedEnvPrefixes } from '@signalwire/sdk';
 const prefixes = getAllowedEnvPrefixes();
 console.log(prefixes);
 // ['SIGNALWIRE_', 'SWML_', 'SW_']
+```
+
+---
+
+## **safeAssign**
+
+Copy properties from `source` to `target`, filtering out prototype-pollution
+keys (`__proto__`, `constructor`, `prototype`). Drop-in replacement for
+`Object.assign()` where `source` is untrusted.
+
+## **Parameters**
+
+<ParamField path="target" type={"Record<string, unknown>"} required={true} toc={true}>
+  The object to assign into.
+</ParamField>
+
+<ParamField path="source" type={"Record<string, unknown>"} required={true} toc={true}>
+  The object to copy properties from.
+</ParamField>
+
+## **Returns**
+
+The `target` object.
+
+## **Example**
+
+```typescript {4}
+import { safeAssign } from '@signalwire/sdk';
+
+const target = { a: 1 };
+safeAssign(target, { b: 2, __proto__: 'blocked' });
+console.log(target); // { a: 1, b: 2 }
+```
+
+---
+
+## **filterSensitiveHeaders**
+
+Return a copy of `headers` with sensitive entries removed (`authorization`,
+`cookie`, `x-api-key`, `proxy-authorization`, `set-cookie`).
+
+## **Parameters**
+
+<ParamField path="headers" type={"Record<string, string>"} required={true} toc={true}>
+  Original header record.
+</ParamField>
+
+## **Returns**
+
+`Record<string, string>` -- A new record with sensitive headers removed.
+
+## **Example**
+
+```typescript {4}
+import { filterSensitiveHeaders } from '@signalwire/sdk';
+
+const raw = { 'content-type': 'application/json', authorization: 'Bearer secret' };
+const safe = filterSensitiveHeaders(raw);
+console.log(safe); // { 'content-type': 'application/json' }
+```
+
+---
+
+## **redactUrl**
+
+Redact credentials embedded in a URL. Replaces the password portion with `****`.
+
+## **Parameters**
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  The URL string to redact.
+</ParamField>
+
+## **Returns**
+
+`string` -- The URL with the password replaced by `****`.
+
+## **Example**
+
+```typescript {3}
+import { redactUrl } from '@signalwire/sdk';
+
+console.log(redactUrl('https://admin:secret@example.com/api'));
+// "https://admin:****@example.com/api"
+```
+
+---
+
+## **MAX_SKILL_INPUT_LENGTH**
+
+Maximum allowed input length for skill handler arguments (characters). Value: `1000`.
+
+## **Example**
+
+```typescript {3}
+import { MAX_SKILL_INPUT_LENGTH } from '@signalwire/sdk';
+
+console.log(MAX_SKILL_INPUT_LENGTH); // 1000
+```
+
+---
+
+## **inferSchema**
+
+Infer a JSON Schema from a function's source code by parsing parameter names
+and default values. Used internally by `defineTypedTool()`.
+
+## **Parameters**
+
+<ParamField path="fn" type="Function" required={true} toc={true}>
+  The function to analyze.
+</ParamField>
+
+## **Returns**
+
+`InferredSchema | null` -- The inferred schema with `parameters`,
+`required`, `paramNames`, and `hasRawData` fields, or `null` if inference fails.
+
+## **Example**
+
+```typescript {3}
+import { inferSchema } from '@signalwire/sdk';
+
+const schema = inferSchema((city: string, units = 'metric') => {});
+console.log(schema?.parameters);
+// { city: { type: 'string' }, units: { type: 'string' } }
+console.log(schema?.required); // ['city']
+```
+
+---
+
+## **parseFunctionParams**
+
+Parse function parameter names and default values from source code text.
+
+## **Parameters**
+
+<ParamField path="source" type="string" required={true} toc={true}>
+  The function source code string (via `fn.toString()`).
+</ParamField>
+
+## **Returns**
+
+`ParsedParam[]` -- Array of `{ name: string; defaultValue?: string }` objects.
+
+---
+
+## **createTypedHandlerWrapper**
+
+Create a wrapper function that unpacks a `Record<string, unknown>` args dict
+into named positional parameters for a typed handler.
+
+## **Parameters**
+
+<ParamField path="fn" type="Function" required={true} toc={true}>
+  The original typed handler function.
+</ParamField>
+
+<ParamField path="paramNames" type="string[]" required={true} toc={true}>
+  Ordered parameter names to extract from args.
+</ParamField>
+
+<ParamField path="hasRawData" type="boolean" required={true} toc={true}>
+  Whether the handler accepts a rawData parameter.
+</ParamField>
+
+## **Returns**
+
+`SwaigHandler` -- A wrapped handler with the standard `(args, rawData)` signature.
+
+---
+
+## **PomSection**
+
+A single section in a Prompt Object Model, with a title, body, bullets, and
+nested subsections. Returned by [`PomBuilder.getSection()`][ref-pombuilder] and [`PomBuilder.findSection()`][ref-pombuilder].
+
+## **Properties**
+
+<ParamField path="title" type="string | null" toc={true}>
+  Section heading text, or `null` if untitled.
+</ParamField>
+
+<ParamField path="body" type="string" toc={true}>
+  Section body paragraph text.
+</ParamField>
+
+<ParamField path="bullets" type="string[]" toc={true}>
+  List of bullet point strings.
+</ParamField>
+
+<ParamField path="subsections" type="PomSection[]" toc={true}>
+  Nested child sections.
+</ParamField>
+
+<ParamField path="numbered" type="boolean | null" toc={true}>
+  Whether this section is numbered when rendered.
+</ParamField>
+
+<ParamField path="numberedBullets" type="boolean" toc={true}>
+  Whether bullet points are rendered as a numbered list.
+</ParamField>
+
+---
+
+## **registerBuiltinSkills**
+
+Register all 19 built-in skills with the global [`SkillRegistry`][ref-skillregistry]. Call this once
+at startup if you want to use `SkillRegistry.create('datetime')` style registration.
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { registerBuiltinSkills, SkillRegistry } from '@signalwire/sdk';
+
+registerBuiltinSkills();
+const registry = SkillRegistry.getInstance();
+console.log(registry.listRegistered()); // ['datetime', 'math', 'joke', ...]
 ```

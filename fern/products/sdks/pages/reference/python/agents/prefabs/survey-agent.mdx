@@ -1,0 +1,130 @@
+---
+title: "SurveyAgent"
+slug: /reference/python/agents/prefabs/survey-agent
+description: Conducts automated surveys with support for multiple question types, response validation, and structured result summaries.
+---
+
+[agentbase]: /docs/sdks/reference/python/agents/agent-base
+
+Conducts automated surveys with support for multiple question types, response validation,
+and structured result summaries. The agent guides users through each question in sequence,
+validates answers based on the question type, and retries on invalid responses.
+
+```python
+from signalwire.prefabs import SurveyAgent
+```
+
+<ParamField path="survey_name" type="str" required={true} toc={true}>
+  Name of the survey. Used in the agent's prompt and summary output.
+</ParamField>
+
+<ParamField path="questions" type="list[dict]" required={true} toc={true}>
+  List of survey questions. Each dict must have `id`, `text`, and `type`:
+</ParamField>
+
+<Indent>
+<ParamField path="questions[].id" type="str" required={true} toc={true}>
+  Unique identifier for the question (e.g., `"satisfaction"`). Auto-generated as
+  `question_N` if omitted.
+</ParamField>
+
+<ParamField path="questions[].text" type="str" required={true} toc={true}>
+  The question text to ask the user.
+</ParamField>
+
+<ParamField path="questions[].type" type="str" required={true} toc={true}>
+  Question type. Valid values:
+  - `"rating"` -- numeric scale (1 to `scale`)
+  - `"multiple_choice"` -- select from `options` list
+  - `"yes_no"` -- accepts yes/no/y/n
+  - `"open_ended"` -- free text response
+</ParamField>
+
+<ParamField path="questions[].options" type="list[str]" toc={true}>
+  Required for `multiple_choice` questions. List of valid answer options.
+</ParamField>
+
+<ParamField path="questions[].scale" type="int" default="5" toc={true}>
+  For `rating` questions, the maximum value on the scale (e.g., `5` for 1-5).
+</ParamField>
+
+<ParamField path="questions[].required" type="bool" default="True" toc={true}>
+  Whether the question requires an answer. Non-required `open_ended` questions accept
+  empty responses.
+</ParamField>
+</Indent>
+
+<ParamField path="introduction" type="str" toc={true}>
+  Custom introduction message. Defaults to `"Welcome to our {survey_name}."`.
+</ParamField>
+
+<ParamField path="conclusion" type="str" toc={true}>
+  Custom conclusion message. Defaults to `"Thank you for completing our survey."`.
+</ParamField>
+
+<ParamField path="brand_name" type="str" default="Our Company" toc={true}>
+  Company or brand name used in the agent's persona.
+</ParamField>
+
+<ParamField path="max_retries" type="int" default="2" toc={true}>
+  Maximum number of times to re-ask a question after an invalid response.
+</ParamField>
+
+<ParamField path="name" type="str" default="survey" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="str" default="/survey" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `validate_response` | Check if a response meets the question's requirements | `question_id` (str), `response` (str) |
+| `log_response` | Record a validated response | `question_id` (str), `response` (str) |
+
+### Example
+
+```python
+from signalwire.prefabs import SurveyAgent
+
+agent = SurveyAgent(
+    survey_name="Product Feedback Survey",
+    brand_name="TechGadgets Inc.",
+    introduction="Thank you for purchasing our product. We'd love your feedback!",
+    conclusion="Thank you for completing our survey. Your input helps us improve.",
+    questions=[
+        {
+            "id": "overall_rating",
+            "text": "How would you rate the product overall?",
+            "type": "rating",
+            "scale": 5
+        },
+        {
+            "id": "quality",
+            "text": "How would you rate the build quality?",
+            "type": "multiple_choice",
+            "options": ["Poor", "Fair", "Good", "Excellent"]
+        },
+        {
+            "id": "purchase_again",
+            "text": "Would you purchase from us again?",
+            "type": "yes_no"
+        },
+        {
+            "id": "improvements",
+            "text": "What could we improve?",
+            "type": "open_ended",
+            "required": False
+        }
+    ],
+    max_retries=2
+)
+
+agent.add_language("English", "en-US", "rime.spore")
+
+if __name__ == "__main__":
+    agent.run()
+```

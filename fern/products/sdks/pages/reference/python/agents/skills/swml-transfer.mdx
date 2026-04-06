@@ -1,0 +1,77 @@
+---
+title: "swml_transfer"
+slug: /reference/python/agents/skills/swml-transfer
+description: Transfer calls between agents using SWML or direct connect.
+---
+
+Transfer calls between agents using SWML or direct connect, with regex pattern matching
+to route to different destinations from a single tool. Each transfer destination can use
+either a SWML endpoint URL or a phone number / SIP address.
+
+**Tools:** `transfer_call` (default, customizable via `tool_name`)
+
+**Requirements:** None
+
+**Multi-instance:** Yes
+
+<ParamField path="transfers" type="dict" required={true} toc={true}>
+  Transfer configurations mapping regex patterns to destinations. Each key is a regex
+  pattern (e.g., `/sales/i`) and each value is an object with:
+  - `url` (str) -- SWML endpoint URL for agent transfer. Mutually exclusive with `address`.
+  - `address` (str) -- Phone number or SIP address for direct connect. Mutually exclusive with `url`.
+  - `message` (str, default `"Transferring you now..."`) -- Message to say before transferring.
+  - `return_message` (str, default `"The transfer is complete. How else can I help you?"`) -- Message when returning from transfer.
+  - `post_process` (bool, default `True`) -- Whether to process message with AI before saying.
+  - `final` (bool, default `True`) -- Whether transfer is permanent (`True`) or temporary (`False`).
+  - `from_addr` (str, optional) -- Caller ID for connect action.
+</ParamField>
+
+<ParamField path="description" type="str" default="Transfer call based on pattern matching" toc={true}>
+  Description for the transfer tool.
+</ParamField>
+
+<ParamField path="parameter_name" type="str" default="transfer_type" toc={true}>
+  Name of the parameter that accepts the transfer type.
+</ParamField>
+
+<ParamField path="parameter_description" type="str" default="The type of transfer to perform" toc={true}>
+  Description for the transfer type parameter.
+</ParamField>
+
+<ParamField path="default_message" type="str" default="Please specify a valid transfer type." toc={true}>
+  Message when no pattern matches.
+</ParamField>
+
+<ParamField path="default_post_process" type="bool" default="False" toc={true}>
+  Whether to process the default (no-match) message with AI.
+</ParamField>
+
+<ParamField path="required_fields" type="dict" default="{}" toc={true}>
+  Additional required fields to collect before transfer. Keys are field names, values
+  are descriptions. Collected values are saved under `call_data` in global data.
+</ParamField>
+
+```python
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="assistant", route="/assistant")
+        self.set_prompt_text("You are a helpful assistant.")
+        self.add_skill("swml_transfer", {
+            "tool_name": "route_call",
+            "transfers": {
+                "/sales/i": {
+                    "url": "https://your-server.com/sales-agent",
+                    "message": "Let me connect you with our sales team."
+                },
+                "/support/i": {
+                    "address": "+15551234567",
+                    "final": False
+                }
+            }
+        })
+
+agent = MyAgent()
+agent.serve()
+```

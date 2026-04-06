@@ -1,0 +1,60 @@
+---
+title: "info_gatherer"
+slug: /reference/python/agents/skills/info-gatherer
+description: Collect answers to a configurable list of questions.
+---
+
+[infogathereragent]: /docs/sdks/reference/python/agents/prefabs#infogathereragent
+
+Skill version of the [`InfoGathererAgent`][infogathereragent]
+prefab. Collects answers to a configurable list of questions. Designed to be embedded
+within larger agents as a reusable capability.
+
+**Tools:** `start_questions`, `submit_answer` (prefixed when using `prefix` parameter)
+
+**Requirements:** None
+
+**Multi-instance:** Yes (use `prefix` for unique tool names and state namespacing)
+
+<ParamField path="questions" type="list[dict]" required={true} toc={true}>
+  List of question dictionaries with `key_name`, `question_text`, and optional `confirm`.
+</ParamField>
+
+<ParamField path="prefix" type="str" toc={true}>
+  Prefix for tool names and state namespace. With `prefix="intake"`, tools become
+  `intake_start_questions` and `intake_submit_answer`, and state is stored under
+  `skill:intake` in global_data.
+</ParamField>
+
+<ParamField path="completion_message" type="str" toc={true}>
+  Message returned after all questions have been answered. Defaults to a built-in
+  message prompting the agent to summarize the collected information.
+</ParamField>
+
+```python
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="assistant", route="/assistant")
+        self.set_prompt_text("You are a helpful assistant.")
+                # Two independent question sets on one agent
+        self.add_skill("info_gatherer", {
+            "prefix": "contact",
+            "questions": [
+                {"key_name": "name", "question_text": "What is your name?"},
+                {"key_name": "email", "question_text": "What is your email?", "confirm": True}
+            ]
+        })
+
+        self.add_skill("info_gatherer", {
+            "prefix": "feedback",
+            "questions": [
+                {"key_name": "rating", "question_text": "How would you rate our service?"},
+                {"key_name": "comments", "question_text": "Any additional comments?"}
+            ]
+        })
+
+agent = MyAgent()
+agent.serve()
+```

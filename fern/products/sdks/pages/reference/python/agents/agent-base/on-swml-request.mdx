@@ -20,9 +20,9 @@ agent cloning. For most per-request customization,
 is the simpler approach.
 
 <Info>
-This method is called by [`SWMLService.on_request()`][on-request-swml] during
-SWML rendering. It is not an override of that method -- it is a separate
-hook that adds support for dynamic configuration and ephemeral agent copies.
+This method is called during SWML rendering by the internal request handler. It
+is not an override of `SWMLService.on_request()` -- it is a separate hook that
+adds support for dynamic configuration and ephemeral agent copies.
 </Info>
 
 ## **Parameters**
@@ -48,7 +48,7 @@ pipeline.
 
 ## **Example**
 
-```python {10-17}
+```python {10-16}
 from signalwire import AgentBase
 
 class MultiTenantAgent(AgentBase):
@@ -57,13 +57,13 @@ class MultiTenantAgent(AgentBase):
         self.set_prompt_text("You are a helpful assistant.")
 
     def on_swml_request(self, request_data=None, callback_path=None, request=None):
-        """Add custom verbs based on a request header."""
+        """Inject tenant context into global_data based on a request header."""
         tenant = None
         if request:
             tenant = request.headers.get("X-Tenant-ID")
-        if tenant == "premium":
-            # Return modifications for premium tenants
-            return {"__inject_verbs": [{"play": {"url": "https://example.com/premium-greeting.mp3"}}]}
+        if tenant:
+            # Return modifications — "global_data" keys are merged into ai.params.global_data
+            return {"global_data": {"tenant_id": tenant, "tier": "premium" if tenant == "acme" else "standard"}}
         return super().on_swml_request(request_data, callback_path, request)
 
 agent = MultiTenantAgent()
