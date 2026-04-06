@@ -1,0 +1,32 @@
+# Interface: CallOptions
+
+Defined in: [core/entities/types/call.types.ts:168](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L168)
+
+Configuration options for creating a call.
+
+## Extends
+
+- [`MediaOptions`](MediaOptions.md)
+
+## Properties
+
+| Property | Modifier | Type | Description | Inherited from | Defined in |
+| ------ | ------ | ------ | ------ | ------ | ------ |
+| <a id="audio"></a> `audio?` | `public` | `boolean` | Enable audio input. Defaults to `true` when not specified. | [`MediaOptions`](MediaOptions.md).[`audio`](MediaOptions.md#audio) | [core/types/media.types.ts:15](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L15) |
+| <a id="callid"></a> `callId?` | `readonly` | `string` | Pre-assigned call ID (used for reattach). | - | [core/entities/types/call.types.ts:172](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L172) |
+| <a id="displaydirection"></a> `displayDirection?` | `readonly` | `string` | Direction hint for display purposes. | - | [core/entities/types/call.types.ts:186](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L186) |
+| <a id="from"></a> `from?` | `readonly` | `string` | Address URI of the caller. | - | [core/entities/types/call.types.ts:182](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L182) |
+| <a id="fromname"></a> `fromName?` | `readonly` | `string` | Display name of the caller. | - | [core/entities/types/call.types.ts:180](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L180) |
+| <a id="initoffer"></a> `initOffer?` | `readonly` | `string` | SDP offer for inbound calls. | - | [core/entities/types/call.types.ts:176](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L176) |
+| <a id="inputaudiodeviceconstraints"></a> `inputAudioDeviceConstraints?` | `public` | `MediaTrackConstraints` | Custom constraints for the audio input track. | [`MediaOptions`](MediaOptions.md).[`inputAudioDeviceConstraints`](MediaOptions.md#inputaudiodeviceconstraints) | [core/types/media.types.ts:19](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L19) |
+| <a id="inputaudiostream"></a> `inputAudioStream?` | `public` | `MediaStream` | Pre-existing audio stream to use instead of `getUserMedia`. | [`MediaOptions`](MediaOptions.md).[`inputAudioStream`](MediaOptions.md#inputaudiostream) | [core/types/media.types.ts:23](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L23) |
+| <a id="inputvideodeviceconstraints"></a> `inputVideoDeviceConstraints?` | `public` | `MediaTrackConstraints` | Custom constraints for the video input track. | [`MediaOptions`](MediaOptions.md).[`inputVideoDeviceConstraints`](MediaOptions.md#inputvideodeviceconstraints) | [core/types/media.types.ts:21](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L21) |
+| <a id="inputvideostream"></a> `inputVideoStream?` | `public` | `MediaStream` | Pre-existing video stream to use instead of `getUserMedia`. | [`MediaOptions`](MediaOptions.md).[`inputVideoStream`](MediaOptions.md#inputvideostream) | [core/types/media.types.ts:25](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L25) |
+| <a id="nodeid"></a> `nodeId?` | `readonly` | `string` | Target server node ID. | - | [core/entities/types/call.types.ts:170](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L170) |
+| <a id="reattach"></a> `reattach?` | `readonly` | `boolean` | Whether this call is being reattached after reconnect. | - | [core/entities/types/call.types.ts:178](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L178) |
+| <a id="receiveaudio"></a> `receiveAudio?` | `public` | `boolean` | Whether to receive remote audio. | [`MediaOptions`](MediaOptions.md).[`receiveAudio`](MediaOptions.md#receiveaudio) | [core/types/media.types.ts:27](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L27) |
+| <a id="receivevideo"></a> `receiveVideo?` | `public` | `boolean` | Whether to receive remote video. | [`MediaOptions`](MediaOptions.md).[`receiveVideo`](MediaOptions.md#receivevideo) | [core/types/media.types.ts:29](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L29) |
+| <a id="to"></a> `to?` | `readonly` | `string` | Destination URI. | - | [core/entities/types/call.types.ts:174](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L174) |
+| <a id="toname"></a> `toName?` | `readonly` | `string` | Display name of the callee. | - | [core/entities/types/call.types.ts:184](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L184) |
+| <a id="uservariables"></a> `userVariables?` | `readonly` | `Record`\<`string`, `unknown`\> | Custom user variables sent with the call invite. | - | [core/entities/types/call.types.ts:188](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L188) |
+| <a id="video"></a> `video?` | `public` | `boolean` | Enable video input. Defaults to `false` when not specified. | [`MediaOptions`](MediaOptions.md).[`video`](MediaOptions.md#video) | [core/types/media.types.ts:17](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/media.types.ts#L17) |
