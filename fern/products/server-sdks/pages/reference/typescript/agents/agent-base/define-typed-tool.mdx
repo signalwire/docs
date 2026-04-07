@@ -1,0 +1,94 @@
+---
+title: "defineTypedTool"
+slug: /reference/typescript/agents/agent-base/define-typed-tool
+description: Register a SWAIG tool with a typed handler that receives named parameters.
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-tool
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[ref-agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+
+Register a SWAIG tool with a typed handler that receives named parameters instead of
+the standard `(args, rawData)` convention. The SDK wraps the handler to unpack the
+args object into positional params.
+
+If no `parameters` schema is provided, one is inferred from the handler's source
+code (parameter names and default values).
+
+<Tip>
+Use `defineTypedTool()` when you want cleaner handler signatures with named
+parameters. Use [`defineTool()`][define-tool] when you need full control over
+the args object.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="opts" type="object" required={true} toc={true}>
+  Tool definition object.
+</ParamField>
+
+<Indent>
+<ParamField path="opts.name" type="string" required={true} toc={true}>
+  Tool name. Must be unique within the agent.
+</ParamField>
+
+<ParamField path="opts.description" type="string" required={true} toc={true}>
+  Human-readable description. The AI reads this to decide when to call the tool.
+</ParamField>
+
+<ParamField path="opts.parameters" type={"Record<string, unknown>"} toc={true}>
+  JSON Schema describing the tool's parameters. If omitted, the schema is
+  inferred from the handler's parameter names and default values.
+</ParamField>
+
+<ParamField path="opts.handler" type="Function" required={true} toc={true}>
+  Typed handler that receives named parameters extracted from the args
+  object. Parameter names must match the JSON Schema property names.
+</ParamField>
+
+<ParamField path="opts.secure" type="boolean" toc={true}>
+  Whether to require token validation on tool calls.
+</ParamField>
+
+<ParamField path="opts.fillers" type={"Record<string, string[]>"} toc={true}>
+  Language-specific filler phrases spoken while the tool executes.
+</ParamField>
+
+<ParamField path="opts.waitFile" type="string" toc={true}>
+  URL of an audio file to play while the tool executes.
+</ParamField>
+
+<ParamField path="opts.waitFileLoops" type="number" toc={true}>
+  Number of times to loop the wait file.
+</ParamField>
+
+<ParamField path="opts.required" type="string[]" toc={true}>
+  List of required parameter names from the JSON Schema.
+</ParamField>
+</Indent>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
+
+## **Example**
+
+```typescript {6}
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'weather-agent', route: '/weather' });
+agent.setPromptText('You are a helpful weather assistant.');
+
+agent.defineTypedTool({
+  name: 'get_weather',
+  description: 'Get the current weather for a city',
+  handler: (city: string, unit: string = 'fahrenheit') => {
+    const temp = unit === 'celsius' ? '22C' : '72F';
+    return new FunctionResult(`The weather in ${city} is ${temp} and sunny.`);
+  },
+  required: ['city'],
+});
+
+await agent.serve();
+```

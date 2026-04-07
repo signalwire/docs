@@ -1,0 +1,75 @@
+---
+title: "on_function_call"
+slug: /reference/python/agents/agent-base/on-function-call
+description: Override hook called when a SWAIG function is invoked during a conversation.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[tool-decorator]: /docs/server-sdks/reference/python/agents/agent-base#tool
+
+Called when the SignalWire platform invokes a SWAIG function on this agent.
+The default implementation looks up the function in the tool registry and
+executes it. Override this method in a subclass to intercept tool calls
+for logging, metrics, pre/post-processing, or custom dispatch logic.
+
+<Note>
+Most agents do not need to override this method. The default implementation
+handles function lookup, argument validation, and execution automatically.
+Token verification occurs upstream in the HTTP handler before this method is
+called. Override only when you need cross-cutting behavior across all tool calls.
+</Note>
+
+<Warning>
+This method **is** the tool dispatch mechanism. If you override it without calling
+`super().on_function_call(name, args, raw_data)`, the registered tool handler will
+**not** execute. Always call `super()` to preserve default dispatch behavior.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  The name of the SWAIG function being invoked.
+</ParamField>
+
+<ParamField path="args" type="dict[str, Any]" required={true} toc={true}>
+  Arguments passed by the AI, conforming to the function's parameter schema.
+</ParamField>
+
+<ParamField path="raw_data" type="Optional[dict[str, Any]]" default="None" toc={true}>
+  The complete raw POST data from the SWAIG request, including metadata such as
+  `call_id`, `caller_id_number`, and `global_data`.
+</ParamField>
+
+## **Returns**
+
+[`FunctionResult`][functionresult] or `dict` -- The tool's response. The default
+implementation returns the result of executing the registered handler.
+
+## **Example**
+
+```python {14-19}
+from signalwire import AgentBase
+from signalwire.core.function_result import FunctionResult
+
+class LoggingAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="logging-agent", route="/logging")
+        self.set_prompt_text("You are a helpful assistant.")
+
+    @AgentBase.tool(description="Look up an order")
+    def lookup_order(self, args, raw_data=None):
+        order_id = args.get("order_id")
+        return FunctionResult(f"Order {order_id} is in transit.")
+
+    def on_function_call(self, name, args, raw_data=None):
+        call_id = raw_data.get("call_id", "unknown") if raw_data else "unknown"
+        print(f"[{call_id}] Tool called: {name}({args})")
+        result = super().on_function_call(name, args, raw_data)
+        print(f"[{call_id}] Tool result: {result}")
+        return result
+
+agent = LoggingAgent()
+agent.run()
+```

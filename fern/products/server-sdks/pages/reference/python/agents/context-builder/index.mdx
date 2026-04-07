@@ -1,0 +1,149 @@
+---
+title: "ContextBuilder"
+slug: /reference/python/agents/context-builder
+description: "Build multi-step conversation workflows with structured contexts and steps."
+max-toc-depth: 3
+---
+
+[context]: /docs/server-sdks/reference/python/agents/context-builder/context
+[step]: /docs/server-sdks/reference/python/agents/context-builder/step
+[agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[addcontext]: /docs/server-sdks/reference/python/agents/context-builder/add-context
+[getcontext]: /docs/server-sdks/reference/python/agents/context-builder/get-context
+[todict]: /docs/server-sdks/reference/python/agents/context-builder/to-dict
+[validate]: /docs/server-sdks/reference/python/agents/context-builder/validate
+
+ContextBuilder is the top-level container for defining structured conversation
+workflows. It holds one or more [`Context`][context]
+objects, each containing a sequence of [`Step`][step]
+objects. Use it when your agent needs guided, multi-step conversations instead of
+free-form prompting.
+
+Access the builder by calling `define_contexts()` on an
+[`AgentBase`][agentbase] instance. The builder
+validates the entire context tree when the SWML document is rendered.
+
+## **Properties**
+
+<ParamField path="agent" type="AgentBase" required={true} toc={true}>
+  The parent agent that owns these contexts. Typically called internally by
+  `AgentBase.define_contexts()` rather than instantiated directly.
+</ParamField>
+
+<Note>
+You rarely create a ContextBuilder directly. Call `self.define_contexts()` inside
+your agent class, which creates the builder and wires it into SWML generation
+automatically.
+</Note>
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="add_context" href="/docs/server-sdks/reference/python/agents/context-builder/add-context">
+    Create a new named context and add it to the builder.
+  </Card>
+  <Card title="get_context" href="/docs/server-sdks/reference/python/agents/context-builder/get-context">
+    Retrieve an existing context by name.
+  </Card>
+  <Card title="to_dict" href="/docs/server-sdks/reference/python/agents/context-builder/to-dict">
+    Convert all contexts to a dictionary for SWML generation.
+  </Card>
+  <Card title="validate" href="/docs/server-sdks/reference/python/agents/context-builder/validate">
+    Validate the entire context configuration tree.
+  </Card>
+  <Card title="create_simple_context" href="/docs/server-sdks/reference/python/agents/context-builder/create-simple-context">
+    Helper to create a standalone Context without a ContextBuilder.
+  </Card>
+</CardGroup>
+
+---
+
+## **Limits**
+
+| Limit | Value |
+|-------|-------|
+| Maximum contexts per builder | 50 |
+| Maximum steps per context | 100 |
+
+---
+
+## **Examples**
+
+### Single context with sequential steps
+
+```python
+from signalwire import AgentBase
+
+class OrderAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="order-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You help customers place orders.")
+
+        contexts = self.define_contexts()
+
+        order = contexts.add_context("default")
+
+        order.add_step("get_item") \
+            .set_text("Ask what item they want to order.") \
+            .set_step_criteria("Customer has specified an item") \
+            .set_valid_steps(["get_quantity"])
+
+        order.add_step("get_quantity") \
+            .set_text("Ask how many they want.") \
+            .set_step_criteria("Customer has specified a quantity") \
+            .set_valid_steps(["confirm"])
+
+        order.add_step("confirm") \
+            .set_text("Confirm the order details and thank them.") \
+            .set_step_criteria("Order has been confirmed") \
+            .set_end(True)
+
+if __name__ == "__main__":
+    agent = OrderAgent()
+    agent.run()
+```
+
+### Multiple contexts
+
+```python
+from signalwire import AgentBase
+
+class SupportAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="support-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a customer support assistant.")
+
+        contexts = self.define_contexts()
+
+        # Main menu
+        main = contexts.add_context("default")
+        main.add_step("menu") \
+            .set_text("Ask whether they need sales, support, or billing help.") \
+            .set_functions("none") \
+            .set_valid_contexts(["sales", "support", "billing"])
+
+        # Sales context
+        sales = contexts.add_context("sales")
+        sales.set_system_prompt("You are a friendly sales representative.")
+        sales.add_step("qualify") \
+            .set_text("Understand what product the caller is interested in.") \
+            .set_functions(["check_inventory", "get_pricing"]) \
+            .set_valid_steps(["close"])
+        sales.add_step("close") \
+            .set_text("Close the sale or schedule a follow-up.") \
+            .set_valid_contexts(["default"])
+
+        # Support context
+        support = contexts.add_context("support")
+        support.set_system_prompt("You are a patient support engineer.")
+        support.add_step("diagnose") \
+            .set_text("Understand the customer's issue.") \
+            .set_functions(["lookup_account", "check_status"]) \
+            .set_valid_steps(["resolve"])
+        support.add_step("resolve") \
+            .set_text("Resolve the issue or escalate.") \
+            .set_functions(["create_ticket", "transfer_call"]) \
+            .set_valid_contexts(["default"])
+```

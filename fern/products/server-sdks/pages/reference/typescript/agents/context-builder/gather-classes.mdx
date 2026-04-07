@@ -1,0 +1,187 @@
+---
+title: "GatherInfo & GatherQuestion"
+slug: /reference/typescript/agents/context-builder/gather-classes
+description: Structured information gathering within context steps using the server-side gather_info system.
+max-toc-depth: 3
+---
+
+[step-setgatherinfo]: /docs/server-sdks/reference/typescript/agents/context-builder/step/set-gather-info
+[step-addgatherquestion]: /docs/server-sdks/reference/typescript/agents/context-builder/step/add-gather-question
+
+GatherInfo and GatherQuestion provide structured information gathering within
+context steps. Instead of relying on LLM tool calls, the gather system uses
+dynamic step instruction re-injection to present questions one at a time,
+producing zero `tool_call`/`tool_result` entries in the LLM-visible history.
+
+Answers are stored in `global_data` and can be referenced by subsequent steps
+or tools.
+
+```typescript {1}
+import { ContextBuilder } from '@signalwire/sdk';
+```
+
+<Info>
+GatherInfo is typically configured through the
+[`Step.setGatherInfo()`][step-setgatherinfo] and
+[`Step.addGatherQuestion()`][step-addgatherquestion]
+methods rather than instantiated directly.
+</Info>
+
+---
+
+## **GatherQuestion**
+
+Represents a single question in a gather_info configuration. Each question
+defines a key for storing the answer, the question text, and optional
+validation and confirmation settings.
+
+<ParamField path="key" type="string" required={true} toc={true}>
+  Key name for storing the answer in `global_data`. Must be unique within a
+  single GatherInfo configuration.
+</ParamField>
+
+<ParamField path="question" type="string" required={true} toc={true}>
+  The question text to present to the user.
+</ParamField>
+
+<ParamField path="type" type="string" default="string" toc={true}>
+  Expected answer type. Valid values:
+  - `"string"` -- free-form text
+  - `"number"` -- numeric value
+  - `"boolean"` -- yes/no
+  - `"integer"` -- whole number
+</ParamField>
+
+<ParamField path="confirm" type="boolean" default="false" toc={true}>
+  When `true`, the model must confirm the answer with the user before
+  submitting it.
+</ParamField>
+
+<ParamField path="prompt" type="string" toc={true}>
+  Extra instruction text appended to the step prompt when this specific
+  question is active. Use this to give the model additional context for
+  asking or validating this question.
+</ParamField>
+
+<ParamField path="functions" type="string[]" toc={true}>
+  Additional SWAIG function names to make visible while this question is
+  active. Useful when a question requires tool access (e.g., a lookup
+  function to validate an account number).
+</ParamField>
+
+### **toDict**
+
+Convert the question to a dictionary for SWML generation. Fields with default
+values are omitted from the output.
+
+#### Returns
+
+`Record<string, unknown>`
+
+---
+
+## **GatherInfo**
+
+Configuration for gathering multiple pieces of information in a step. Wraps
+a list of [`GatherQuestion`](#gatherquestion) objects and controls how
+answers are stored and what happens after all questions are answered.
+
+<ParamField path="outputKey" type="string" toc={true}>
+  Key in `global_data` under which to nest all answers. When `undefined`, answers
+  are stored at the top level of `global_data` using each question's `key`.
+</ParamField>
+
+<ParamField path="completionAction" type="string" toc={true}>
+  Where to navigate after all questions have been answered. Valid values:
+  - `undefined` -- return to normal step mode
+  - `"next_step"` -- auto-advance to the next sequential step in the context
+  - A step name (e.g., `"process_results"`) -- jump to that specific step
+</ParamField>
+
+<ParamField path="prompt" type="string" toc={true}>
+  Preamble text injected once when entering the gather step. Gives the model
+  personality and context for why it is asking these questions.
+</ParamField>
+
+### **addQuestion**
+
+Add a question to the gather configuration. Returns `this` for method chaining.
+
+#### Parameters
+
+<ParamField path="opts.key" type="string" required={true} toc={true}>
+  Key name for storing the answer in `global_data`.
+</ParamField>
+
+<ParamField path="opts.question" type="string" required={true} toc={true}>
+  The question text to ask.
+</ParamField>
+
+<ParamField path="opts.type" type="string" default="string" toc={true}>
+  Answer type: `"string"`, `"number"`, `"boolean"`, `"integer"`.
+</ParamField>
+
+<ParamField path="opts.confirm" type="boolean" default="false" toc={true}>
+  Whether to confirm the answer with the user.
+</ParamField>
+
+<ParamField path="opts.prompt" type="string" toc={true}>
+  Extra instruction text for this question.
+</ParamField>
+
+<ParamField path="opts.functions" type="string[]" toc={true}>
+  SWAIG function names available during this question.
+</ParamField>
+
+#### Returns
+
+`GatherInfo` -- self, for method chaining.
+
+---
+
+### **toDict**
+
+Convert the gather configuration to a dictionary for SWML generation. Throws
+an error if no questions have been added.
+
+#### Returns
+
+`Record<string, unknown>`
+
+---
+
+## **Example**
+
+The typical pattern is to use GatherInfo through the Step API:
+
+```typescript {7-16}
+import { ContextBuilder } from '@signalwire/sdk';
+
+const builder = new ContextBuilder();
+const ctx = builder.addContext('default');
+
+// Configure gather info on a step
+ctx.addStep('intake')
+  .setText('Collect the caller\'s information.')
+  .setGatherInfo({
+    outputKey: 'caller_info',
+    completionAction: 'next_step',
+    prompt: 'You are a friendly receptionist collecting basic info.',
+  })
+  .addGatherQuestion({ key: 'name', question: 'What is your full name?', confirm: true })
+  .addGatherQuestion({ key: 'phone', question: 'What is your callback number?', type: 'string' })
+  .addGatherQuestion({ key: 'reason', question: 'What is the reason for your call?' });
+
+ctx.addStep('process')
+  .setText('Thank the caller and summarize what was collected.');
+```
+
+You can also use GatherInfo directly:
+
+```typescript {3-5}
+import { GatherInfo } from '@signalwire/sdk';
+
+const gather = new GatherInfo({ outputKey: 'patient_info', completionAction: 'next_step' });
+gather.addQuestion({ key: 'dob', question: 'What is your date of birth?', type: 'string', confirm: true });
+gather.addQuestion({ key: 'allergies', question: 'Do you have any allergies?' });
+```

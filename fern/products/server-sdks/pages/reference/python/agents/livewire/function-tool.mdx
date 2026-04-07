@@ -1,0 +1,101 @@
+---
+title: "function_tool"
+slug: /reference/python/agents/livewire/function-tool
+description: "Decorator for wrapping plain Python functions as agent tools."
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/server-sdks/reference/python/agents/agent-base/define-tool
+[runcontext]: /docs/server-sdks/reference/python/agents/livewire/run-context
+
+### function_tool
+
+**function_tool**(`func=None`, `name=None`, `description=None`) -> `Callable`
+
+Wraps a plain Python function so it can be passed into
+[`Agent(tools=[...])`](/docs/server-sdks/reference/python/agents/livewire/agent). The decorator
+extracts parameter information from type hints and builds a JSON-Schema-style
+parameter dict. The function's docstring is used as the tool description unless
+`description` is provided explicitly.
+
+When the underlying SignalWire agent is built, each decorated function is registered
+as a SWAIG function via
+[`define_tool()`][define-tool].
+
+<Note>
+Parameters annotated with [`RunContext`][runcontext]
+are automatically excluded from the generated JSON schema and injected at call time.
+</Note>
+
+#### Parameters
+
+<ParamField path="func" type="Optional[Callable]" default="None" toc={true}>
+  The function to decorate. When `@function_tool` is used without parentheses, the
+  decorated function is passed here directly.
+</ParamField>
+
+<ParamField path="name" type="Optional[str]" default="None" toc={true}>
+  Override the tool name. Defaults to the function's `__name__`.
+</ParamField>
+
+<ParamField path="description" type="Optional[str]" default="None" toc={true}>
+  Override the tool description. Defaults to the function's docstring.
+</ParamField>
+
+#### Returns
+
+`Callable` -- The original function with metadata attributes attached:
+- `_livewire_tool` (`bool`) -- Always `True`.
+- `_tool_name` (`str`) -- The resolved tool name.
+- `_tool_description` (`str`) -- The resolved description.
+- `_tool_parameters` (`dict`) -- JSON-Schema-style parameter definition.
+- `_tool_handler` (`Callable`) -- Reference to the original function.
+
+#### Type Mapping
+
+The decorator maps Python type annotations to JSON Schema types:
+
+| Python type | JSON Schema type |
+|-------------|-----------------|
+| `str` | `"string"` |
+| `int` | `"integer"` |
+| `float` | `"number"` |
+| `bool` | `"boolean"` |
+| *(other / missing)* | `"string"` |
+
+Parameters without a default value are marked as `required` in the schema.
+
+#### Examples
+
+<CodeBlocks>
+<CodeBlock title="Without arguments">
+```python {3}
+from signalwire.livewire import function_tool
+
+@function_tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a city."""
+    return f"Sunny in {city}."
+```
+</CodeBlock>
+<CodeBlock title="With explicit name and description">
+```python {3}
+from signalwire.livewire import function_tool
+
+@function_tool(name="weather_lookup", description="Look up weather by city name")
+def get_weather(city: str) -> str:
+    return f"Sunny in {city}."
+```
+</CodeBlock>
+<CodeBlock title="With RunContext">
+```python {3}
+from signalwire.livewire import function_tool, RunContext
+
+@function_tool
+def save_preference(ctx: RunContext, key: str, value: str) -> str:
+    """Save a user preference."""
+    ctx.userdata[key] = value
+    return f"Saved {key}={value}."
+```
+</CodeBlock>
+</CodeBlocks>

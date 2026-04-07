@@ -1,0 +1,847 @@
+---
+title: "RELAY Client"
+description: Use the RELAY client to make and receive phone calls with the SignalWire SDK.
+slug: /guides/relay-client
+max-toc-depth: 3
+---
+
+[your-first-agent]: /docs/server-sdks/guides/quickstart
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[ref-call]: /docs/server-sdks/reference/python/relay/call
+[ref-collectaction]: /docs/server-sdks/reference/python/relay/actions/collect-action
+[ref-message]: /docs/server-sdks/reference/python/relay/message
+[ref-playaction]: /docs/server-sdks/reference/python/relay/actions/play-action
+[ref-recordaction]: /docs/server-sdks/reference/python/relay/actions/record-action
+[ref-relayclient]: /docs/server-sdks/reference/python/relay/client
+
+### What Is RELAY?
+
+RELAY is SignalWire's real-time WebSocket protocol for programmatic call control. While the agent-based approach ([AgentBase][ref-agentbase] + SWML) lets SignalWire's AI handle conversations declaratively, RELAY gives you **imperative, event-driven control** over every aspect of a call.
+
+#### When to Use RELAY vs Agents
+
+| Approach | Best For |
+|----------|----------|
+| **AgentBase** (SWML) | AI-driven conversations, voice bots, structured workflows |
+| **RELAY Client** | IVR systems, call routing, call center logic, recording pipelines, custom media flows |
+
+Use RELAY when you need fine-grained control over call flow — answering, playing prompts, collecting digits, recording, bridging, conferencing — without an AI agent in the loop.
+
+### Installation
+
+The RELAY client is included in the `signalwire` package:
+
+```bash
+pip install signalwire
+```
+
+It requires the `websockets` library (installed automatically as a dependency).
+
+### Quick Start
+
+<Tabs>
+<Tab title="Python">
+`relay_hello.py`
+
+```python
+#!/usr/bin/env python3
+"""Minimal RELAY example: answer and play a greeting."""
+
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    action = await call.play([{"type": "tts", "text": "Hello from RELAY!"}])
+    await action.wait()
+    await call.hangup()
+
+client.run()
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import { RelayClient } from 'signalwire-agents';
+
+const client = new RelayClient({
+  projectId: 'your-project-id',
+  apiToken: 'your-api-token',
+  host: 'your-space.signalwire.com',
+  contexts: ['default'],
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  const action = await call.play([{ type: 'tts', text: 'Hello from RELAY!' }]);
+  await action.wait();
+  await call.hangup();
+});
+
+client.run();
+```
+</Tab>
+</Tabs>
+{/*
+
+<Tab title="Go">
+```go
+package main
+
+import "github.com/signalwire/signalwire-agents-go/pkg/relay"
+
+func main() {
+    client := relay.NewClient(
+        relay.WithProjectID("your-project-id"),
+        relay.WithAPIToken("your-api-token"),
+        relay.WithHost("your-space.signalwire.com"),
+        relay.WithContexts("default"),
+    )
+
+    client.OnCall(func(call *relay.Call) {
+        call.Answer()
+        action := call.Play([]relay.Media{{Type: "tts", Text: "Hello from RELAY!"}})
+        action.Wait()
+        call.Hangup()
+    })
+
+    client.Run()
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire'
+
+client = RelayClient.new(
+  project_id: 'your-project-id',
+  api_token: 'your-api-token',
+  host: 'your-space.signalwire.com',
+  contexts: ['default']
+)
+
+client.on_call do |call|
+  call.answer
+  action = call.play([{ type: 'tts', text: 'Hello from RELAY!' }])
+  action.wait
+  call.hangup
+end
+
+client.run
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.RelayClient;
+
+public class RelayHello {
+    public static void main(String[] args) {
+        var client = RelayClient.builder()
+            .projectId("your-project-id")
+            .apiToken("your-api-token")
+            .host("your-space.signalwire.com")
+            .contexts(List.of("default"))
+            .build();
+
+        client.onCall(call -> {
+            call.answer();
+            var action = call.play(List.of(Map.of("type", "tts", "text", "Hello from RELAY!")));
+            action.waitFor();
+            call.hangup();
+        });
+
+        client.run();
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::RelayClient;
+
+my $client = SignalWire::Agents::RelayClient->new(
+    project_id => 'your-project-id',
+    api_token  => 'your-api-token',
+    host       => 'your-space.signalwire.com',
+    contexts   => ['default'],
+);
+
+$client->on_call(sub {
+    my ($call) = @_;
+    $call->answer;
+    my $action = $call->play([{ type => 'tts', text => 'Hello from RELAY!' }]);
+    $action->wait;
+    $call->hangup;
+});
+
+$client->run;
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agents/relay_client.h>
+using namespace signalwire::relay;
+
+int main() {
+    Client client("your-project-id", "your-api-token", "your-space.signalwire.com");
+    client.add_context("default");
+
+    client.on_call([](Call& call) {
+        call.answer();
+        auto action = call.play({{"type", "tts"}, {"text", "Hello from RELAY!"}});
+        action.wait();
+        call.hangup();
+    });
+
+    client.run();
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Relay\Client;
+
+$client = new Client(
+    project: 'your-project-id',
+    token: 'your-api-token',
+    host: 'your-space.signalwire.com',
+    contexts: ['default']
+);
+
+$client->onCall(function ($call) {
+    $call->answer();
+    $call->play('https://example.com/hello.mp3');
+    $call->hangup();
+});
+
+$client->run();
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Relay;
+
+var client = new RelayClient(new RelayClientOptions
+{
+    Project = Environment.GetEnvironmentVariable("SIGNALWIRE_PROJECT_ID") ?? "",
+    Token = Environment.GetEnvironmentVariable("SIGNALWIRE_API_TOKEN") ?? "",
+    Host = "your-space.signalwire.com",
+    Contexts = new List<string> { "default" },
+});
+
+client.OnCall = async (call) =>
+{
+    await call.Answer();
+    await call.PlayTts("Hello from SignalWire RELAY!");
+    await call.Hangup();
+};
+
+await client.Connect();
+```
+</Tab>
+
+*/}
+
+### Authentication
+
+The RELAY client supports two authentication methods:
+
+#### Project + API Token
+
+| Language | Syntax |
+|----------|--------|
+| Python | `RelayClient(project="...", token="...", host="...")` |
+| TypeScript | `new RelayClient({ projectId: '...', apiToken: '...', host: '...' })` |
+{/*
+
+| Go | `relay.NewClient(relay.WithProjectID("..."), relay.WithAPIToken("..."), relay.WithHost("..."))` |
+| Ruby | `RelayClient.new(project_id: '...', api_token: '...', host: '...')` |
+| Java | `RelayClient.builder().projectId("...").apiToken("...").host("...").build()` |
+| Perl | `RelayClient->new(project_id => '...', api_token => '...', host => '...')` |
+| C++ | `relay::Client client("project_id", "api_token", "host")` |
+| PHP | `new Client(project: '...', token: '...', host: '...')` |
+| C# | `new RelayClient(new RelayClientOptions { Project = "...", Token = "...", Host = "..." })` |
+
+*/}
+
+```python
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+)
+```
+
+#### JWT Token
+
+```python
+client = RelayClient(
+    jwt_token="your-jwt-token",
+    host="your-space.signalwire.com",
+)
+```
+
+#### Environment Variables
+
+All credentials can be provided via environment variables instead of constructor arguments:
+
+| Variable | Purpose |
+|----------|---------|
+| `SIGNALWIRE_PROJECT_ID` | Project ID |
+| `SIGNALWIRE_API_TOKEN` | API token |
+| `SIGNALWIRE_JWT_TOKEN` | JWT token (alternative to project+token) |
+| `SIGNALWIRE_SPACE` | Space hostname (e.g., `your-space.signalwire.com`) |
+
+```python
+# With env vars set, no arguments needed
+client = RelayClient(contexts=["default"])
+```
+
+### Connection Lifecycle
+
+The RELAY client manages a persistent WebSocket connection with automatic reconnection:
+
+1. **Connect** — Establishes WebSocket to `wss://<host>`
+2. **Authenticate** — Sends `signalwire.connect` with credentials
+3. **Subscribe** — Registers for events on specified contexts
+4. **Event Loop** — Processes events until disconnected
+5. **Reconnect** — Automatic reconnection with exponential backoff (1s to 30s max)
+
+#### Contexts
+
+Contexts determine which inbound calls your client receives. Pass them in the constructor or subscribe dynamically:
+
+```python
+# Subscribe at connection time
+client = RelayClient(contexts=["sales", "support"])
+
+# Or subscribe dynamically after connecting
+await client.receive(["new-context"])
+
+# Unsubscribe from contexts
+await client.unreceive(["old-context"])
+```
+
+#### Async Context Manager
+
+```python
+async with RelayClient(contexts=["default"]) as client:
+    # Connected and authenticated
+    call = await client.dial(...)
+    # Automatically disconnects on exit
+```
+
+### Handling Inbound Calls
+
+Register a handler with the `@client.on_call` decorator:
+
+`relay_inbound.py`
+
+```python
+#!/usr/bin/env python3
+"""Handle inbound calls with RELAY."""
+
+from signalwire.relay import RelayClient
+
+client = RelayClient(contexts=["ivr"])
+
+@client.on_call
+async def handle_call(call):
+    print(f"Inbound call from {call.device}")
+    await call.answer()
+
+    # Play a menu
+    action = await call.play([
+        {"type": "tts", "text": "Press 1 for sales, 2 for support."}
+    ])
+    await action.wait()
+
+    # Collect a digit
+    collect = await call.collect(
+        digits={"max": 1, "digit_timeout": 5.0},
+        initial_timeout=10.0,
+    )
+    result = await collect.wait()
+
+    digit = result.params.get("result", {}).get("digits", "")
+    if digit == "1":
+        await call.connect([[{"type": "phone", "params": {"to_number": "+15551001000"}}]])
+    elif digit == "2":
+        await call.connect([[{"type": "phone", "params": {"to_number": "+15552002000"}}]])
+    else:
+        play = await call.play([{"type": "tts", "text": "Invalid selection. Goodbye."}])
+        await play.wait()
+        await call.hangup()
+
+client.run()
+```
+
+The [`Call`][ref-call] object provides:
+
+| Property | Description |
+|----------|-------------|
+| `call_id` | Unique call identifier |
+| `node_id` | RELAY node handling the call |
+| `context` | Context the call arrived on |
+| `direction` | `"inbound"` or `"outbound"` |
+| `device` | Device info dict (type, params) |
+| `state` | Current call state |
+| `tag` | Client-provided correlation tag |
+
+### Making Outbound Calls
+
+Use `client.dial()` to initiate outbound calls:
+
+`relay_outbound.py`
+
+```python
+#!/usr/bin/env python3
+"""Make an outbound call with RELAY."""
+
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(contexts=["default"])
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "+15551234567",
+                    "to_number": "+15559876543",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        print(f"Call answered: {call.call_id}")
+
+        action = await call.play([
+            {"type": "tts", "text": "This is an automated message from SignalWire."}
+        ])
+        await action.wait()
+        await call.hangup()
+
+asyncio.run(main())
+```
+
+The `devices` parameter supports serial and parallel dialing:
+
+```python
+# Serial dial: try first, then second
+devices = [
+    [{"type": "phone", "params": {"to_number": "+15551111111", "from_number": "+15550000000"}}],
+    [{"type": "phone", "params": {"to_number": "+15552222222", "from_number": "+15550000000"}}],
+]
+
+# Parallel dial: ring both simultaneously
+devices = [
+    [
+        {"type": "phone", "params": {"to_number": "+15551111111", "from_number": "+15550000000"}},
+        {"type": "phone", "params": {"to_number": "+15552222222", "from_number": "+15550000000"}},
+    ],
+]
+```
+
+### Call Control Methods
+
+Key call control methods across languages:
+
+| Method | Python |
+|--------|--------|
+| Answer | `await call.answer()` |
+| Play TTS | `await call.play([{"type": "tts", "text": "Hello"}])` |
+| Record | `await call.record(audio={...})` |
+| Hang up | `await call.hangup()` |
+| Connect | `await call.connect(devices)` |
+
+{/*
+| Method | Ruby | Java | Perl | C++ | PHP | C# |
+|--------|------|------|------|-----|-----|-----|
+| Answer | `call.answer` | `call.answer()` | `$call->answer` | `call.answer()` | `$call->answer()` | `await call.Answer()` |
+| Play TTS | `call.play([{type: 'tts', text: 'Hello'}])` | `call.play(List.of(...))` | `$call->play([{type=>'tts',text=>'Hello'}])` | `call.play({{"type","tts"},{"text","Hello"}})` | `$call->play('https://...')` | `await call.PlayTts("Hello")` |
+| Record | `call.record(audio: {...})` | `call.record(Map.of(...))` | `$call->record(audio => {...})` | `call.record({...})` | `$call->record()` | `await call.Record()` |
+| Hang up | `call.hangup` | `call.hangup()` | `$call->hangup` | `call.hangup()` | `$call->hangup()` | `await call.Hangup()` |
+| Connect | `call.connect(devices)` | `call.connect(devices)` | `$call->connect($devices)` | `call.connect(devices)` | `$call->connect($devices)` | `await call.Connect(devices)` |
+*/}
+
+#### Audio Playback
+
+```python
+# Play TTS
+action = await call.play([{"type": "tts", "text": "Hello!"}])
+await action.wait()
+
+# Play audio file
+action = await call.play([{"type": "audio", "url": "https://example.com/audio.mp3"}])
+
+# Control playback
+await action.pause()
+await action.resume()
+await action.volume(5.0)  # -40.0 to 40.0 dB
+await action.stop()
+```
+
+#### Recording
+
+```python
+# Start recording
+action = await call.record(audio={"direction": "both", "format": "mp3"})
+
+# Pause/resume recording
+await action.pause()
+await action.resume()
+
+# Stop and get result
+await action.stop()
+result = await action.wait()
+url = result.params.get("record", {}).get("url", "")
+print(f"Recording URL: {url}")
+```
+
+#### Input Collection
+
+```python
+# Collect digits with prompt
+collect = await call.play_and_collect(
+    media=[{"type": "tts", "text": "Enter your account number."}],
+    collect={
+        "digits": {
+            "max": 10,
+            "digit_timeout": 3.0,
+            "terminators": "#",
+        },
+    },
+)
+result = await collect.wait()
+digits = result.params.get("result", {}).get("digits", "")
+
+# Standalone collect (no prompt)
+collect = await call.collect(
+    digits={"max": 4, "digit_timeout": 5.0},
+    speech={"end_silence_timeout": 2.0},
+)
+result = await collect.wait()
+```
+
+#### Detection (Answering Machine, Fax, DTMF)
+
+```python
+# Answering machine detection
+detect = await call.detect(
+    detect={"type": "machine", "params": {"initial_timeout": 4.5}},
+    timeout=30.0,
+)
+result = await detect.wait()
+machine_result = result.params.get("detect", {})
+```
+
+#### Bridging / Connecting
+
+```python
+# Bridge to another number
+await call.connect(
+    devices=[[{
+        "type": "phone",
+        "params": {"to_number": "+15559876543", "from_number": "+15551234567"},
+    }]],
+    ringback=[{"type": "ringtone", "name": "us"}],
+)
+
+# Disconnect (unbridge)
+await call.disconnect()
+```
+
+#### Conference
+
+```python
+# Join a conference
+await call.join_conference("team-standup", muted=False, beep="true")
+
+# Leave a conference
+await call.leave_conference("conference-id-here")
+```
+
+#### Hold / Unhold
+
+```python
+await call.hold()
+# ... do something ...
+await call.unhold()
+```
+
+#### Noise Reduction
+
+```python
+await call.denoise()
+# ... later ...
+await call.denoise_stop()
+```
+
+#### AI Agent on a Call
+
+You can start an AI agent session on a RELAY-controlled call:
+
+```python
+ai = await call.ai(
+    prompt={"text": "You are a helpful assistant."},
+    languages=[{"name": "English", "code": "en-US", "voice": "rime.spore"}],
+)
+await ai.wait()  # Blocks until AI session ends
+```
+
+### The Action Pattern
+
+Most call control methods return an **Action** object — an async handle for the ongoing operation:
+
+```python
+action = await call.play([{"type": "tts", "text": "Hello"}])
+
+# Fire-and-forget: don't wait for completion
+print(f"Play started, control_id={action.control_id}")
+
+# Or wait for completion
+result = await action.wait(timeout=30.0)
+print(f"Play finished: {result.params.get('state')}")
+```
+
+#### Common Action Methods
+
+| Method | Available On | Description |
+|--------|-------------|-------------|
+| `wait(timeout)` | All actions | Wait for completion |
+| `stop()` | Play, Record, Detect, Collect, Fax, Tap, Stream, Transcribe, AI | Stop the operation |
+| `pause()` | [PlayAction][ref-playaction], [RecordAction][ref-recordaction] | Pause playback/recording |
+| `resume()` | PlayAction, RecordAction | Resume playback/recording |
+| `volume(db)` | PlayAction, [CollectAction][ref-collectaction] | Adjust volume |
+
+#### on_completed Callback
+
+Every action-based method accepts an `on_completed` callback:
+
+```python
+async def on_play_done(event):
+    print(f"Play finished: {event.params.get('state')}")
+
+action = await call.play(
+    [{"type": "tts", "text": "Processing..."}],
+    on_completed=on_play_done,
+)
+# No need to await — callback fires automatically
+```
+
+### SMS/MMS Messaging
+
+The RELAY client supports sending and receiving SMS/MMS messages.
+
+| Language | Send Message |
+|----------|-------------|
+| Python | `await client.send_message(to_number="+155...", from_number="+155...", body="Hello")` |
+| TypeScript | `await client.sendMessage({ toNumber: '+155...', fromNumber: '+155...', body: 'Hello' })` |
+{/*
+
+| Go | `client.SendMessage("+155...", "+155...", "Hello")` |
+| Ruby | `client.send_message(to_number: '+155...', from_number: '+155...', body: 'Hello')` |
+| Java | `client.sendMessage("+155...", "+155...", "Hello")` |
+| Perl | `$client->send_message(to_number => '+155...', from_number => '+155...', body => 'Hello')` |
+| C++ | `client.send_message("+155...", "+155...", "Hello")` |
+| PHP | `$client->sendMessage(toNumber: '+155...', fromNumber: '+155...', body: 'Hello')` |
+| C# | `await client.SendMessage(toNumber: "+155...", fromNumber: "+155...", body: "Hello")` |
+
+*/}
+
+#### Sending Messages
+
+```python
+message = await client.send_message(
+    to_number="+15559876543",
+    from_number="+15551234567",
+    body="Hello from SignalWire RELAY!",
+)
+print(f"Message ID: {message.message_id}")
+
+# Wait for delivery confirmation
+result = await message.wait(timeout=30.0)
+print(f"Final state: {message.state}")  # delivered, failed, etc.
+```
+
+#### Sending MMS (with media)
+
+```python
+message = await client.send_message(
+    to_number="+15559876543",
+    from_number="+15551234567",
+    body="Check out this image!",
+    media=["https://example.com/photo.jpg"],
+)
+```
+
+#### Receiving Messages
+
+```python
+@client.on_message
+async def handle_message(message):
+    print(f"From: {message.from_number}")
+    print(f"Body: {message.body}")
+    if message.media:
+        print(f"Media: {message.media}")
+```
+
+The [`Message`][ref-message] object provides:
+
+| Property | Description |
+|----------|-------------|
+| `message_id` | Unique message identifier |
+| `from_number` | Sender number |
+| `to_number` | Recipient number |
+| `body` | Text content |
+| `media` | List of media URLs |
+| `state` | Current state (queued, sent, delivered, failed) |
+| `direction` | `"inbound"` or `"outbound"` |
+| `segments` | Number of SMS segments |
+| `tags` | Optional tags |
+
+### Event Listeners
+
+Register per-call event listeners for fine-grained control:
+
+```python
+from signalwire.relay import EVENT_CALL_STATE, EVENT_CALL_PLAY
+
+@client.on_call
+async def handle_call(call):
+    def on_state_change(event):
+        print(f"Call state: {event.params.get('call_state')}")
+
+    def on_play_event(event):
+        print(f"Play state: {event.params.get('state')}")
+
+    call.on(EVENT_CALL_STATE, on_state_change)
+    call.on(EVENT_CALL_PLAY, on_play_event)
+
+    await call.answer()
+    action = await call.play([{"type": "tts", "text": "Hello"}])
+    await call.wait_for_ended()
+```
+
+### Advanced Configuration
+
+#### Max Active Calls
+
+Limit concurrent calls to prevent resource exhaustion:
+
+```python
+# Via constructor
+client = RelayClient(contexts=["default"], max_active_calls=100)
+```
+
+Or via environment variable:
+
+```bash
+export RELAY_MAX_ACTIVE_CALLS=100
+```
+
+Default: 1000.
+
+#### Connection Limits
+
+By default, only one [`RelayClient`][ref-relayclient] connection is allowed per process:
+
+```bash
+export RELAY_MAX_CONNECTIONS=3
+```
+
+#### Error Handling
+
+The client handles errors gracefully — server errors from call methods return empty dicts rather than raising exceptions. Connection-level errors trigger automatic reconnection.
+
+For explicit error handling:
+
+```python
+from signalwire.relay import RelayClient, RelayError
+
+try:
+    call = await client.dial(devices=[[{...}]])
+except RelayError as e:
+    print(f"RELAY error {e.code}: {e.message}")
+```
+
+### Complete Example: IVR System
+
+`relay_ivr.py`
+
+```python
+#!/usr/bin/env python3
+"""Complete IVR system with RELAY."""
+
+from signalwire.relay import RelayClient, EVENT_CALL_STATE
+
+client = RelayClient(contexts=["main-ivr"])
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Start recording
+    recording = await call.record(audio={"direction": "both", "format": "mp3"})
+
+    # Play welcome and collect input
+    collect = await call.play_and_collect(
+        media=[
+            {"type": "tts", "text": "Welcome to Acme Corp."},
+            {"type": "tts", "text": "Press 1 for sales, 2 for support, or 3 to leave a message."},
+        ],
+        collect={"digits": {"max": 1, "digit_timeout": 5.0}},
+    )
+    result = await collect.wait()
+    digit = result.params.get("result", {}).get("digits", "")
+
+    if digit == "1":
+        await call.play([{"type": "tts", "text": "Connecting you to sales."}])
+        await call.connect([[{
+            "type": "phone",
+            "params": {"to_number": "+15551001000", "from_number": "+15550000000"},
+        }]])
+    elif digit == "2":
+        await call.play([{"type": "tts", "text": "Connecting you to support."}])
+        await call.connect([[{
+            "type": "phone",
+            "params": {"to_number": "+15552002000", "from_number": "+15550000000"},
+        }]])
+    elif digit == "3":
+        play = await call.play([
+            {"type": "tts", "text": "Please leave your message after the beep."},
+            {"type": "audio", "url": "https://example.com/beep.wav"},
+        ])
+        await play.wait()
+        voicemail = await call.record(audio={
+            "direction": "listen",
+            "format": "mp3",
+            "end_silence_timeout": 3.0,
+        })
+        await voicemail.wait()
+    else:
+        play = await call.play([{"type": "tts", "text": "Invalid option. Goodbye."}])
+        await play.wait()
+
+    # Stop recording and hang up
+    await recording.stop()
+    await call.hangup()
+
+if __name__ == "__main__":
+    client.run()
+```
+
+### See Also
+
+| Topic | Reference |
+|-------|-----------|
+| Agent-based approach | [Your First Agent][your-first-agent] |

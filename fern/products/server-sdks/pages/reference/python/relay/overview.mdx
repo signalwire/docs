@@ -1,0 +1,150 @@
+---
+title: "RELAY"
+sidebar-title: Overview
+subtitle: "Python API reference for RelayClient, Call, Message, and real-time events"
+slug: /reference/python/relay
+description: "Real-time WebSocket client for call and message control."
+max-toc-depth: 3
+position: 0
+---
+
+[agents]: /docs/server-sdks/reference/python/agents
+[client]: /docs/server-sdks/reference/python/relay/client
+[call]: /docs/server-sdks/reference/python/relay/call
+[message]: /docs/server-sdks/reference/python/relay/message
+[actions]: /docs/server-sdks/reference/python/relay/actions
+[events]: /docs/server-sdks/reference/python/relay/events
+[constants]: /docs/server-sdks/reference/python/relay/constants
+[relay-error]: /docs/server-sdks/reference/python/relay/relay-error
+
+The RELAY namespace provides imperative, event-driven control over voice calls and
+SMS/MMS messages through a persistent WebSocket connection to SignalWire. While the
+[Agents][agents] namespace handles AI-driven conversations
+declaratively via SWML, RELAY gives you fine-grained, async control over every step
+of a call -- answering, playing prompts, collecting digits, recording, bridging,
+conferencing, and more.
+
+RELAY uses the JSON-RPC 2.0 protocol over WebSocket (`wss://`). The client
+authenticates once, subscribes to contexts for inbound events, and processes
+call and message events in an async event loop. Automatic reconnection with
+exponential backoff ensures resilience against transient network failures.
+
+## Context Routing
+
+Contexts are routing labels that control which inbound calls and messages are
+delivered to your application. When you assign a phone number to a context in
+the SignalWire dashboard, all calls to that number are routed to RELAY clients
+subscribed to that context.
+
+```python
+from signalwire.relay import RelayClient
+
+# Subscribe to specific contexts
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["support", "sales"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Or subscribe/unsubscribe dynamically
+    # await client.receive(["billing"])     # Add a context
+    # await client.unreceive(["sales"])     # Remove a context
+
+client.run()
+```
+
+A client only receives events for its subscribed contexts. This enables multiple
+applications or workers to handle different call flows on the same project by
+subscribing to different contexts.
+
+## Example
+
+An IVR that answers calls, plays a menu, collects a digit, and routes accordingly:
+
+```python
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Play a menu and collect one digit
+    action = await call.play_and_collect(
+        media=[{"type": "tts", "text": "Press 1 for sales, 2 for support."}],
+        collect={"digits": {"max": 1, "digit_timeout": 5.0}},
+    )
+    event = await action.wait()
+
+    digit = event.params.get("result", {}).get("digits", "")
+
+    if digit == "1":
+        await call.play([{"type": "tts", "text": "Transferring to sales."}])
+        await call.transfer(dest="+15551234567")
+    elif digit == "2":
+        await call.play([{"type": "tts", "text": "Transferring to support."}])
+        await call.transfer(dest="+15559876543")
+    else:
+        await call.play([{"type": "tts", "text": "Goodbye."}])
+        await call.hangup()
+
+client.run()
+```
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card
+    title="RelayClient"
+    href="/docs/server-sdks/reference/python/relay/client"
+  >
+    WebSocket client for connecting, authenticating, dialing calls, and sending messages.
+  </Card>
+  <Card
+    title="Call"
+    href="/docs/server-sdks/reference/python/relay/call"
+  >
+    Call object with methods for answer, hangup, play, record, collect, connect, and more.
+  </Card>
+  <Card
+    title="Message"
+    href="/docs/server-sdks/reference/python/relay/message"
+  >
+    Message object for tracking SMS/MMS state and waiting for delivery confirmation.
+  </Card>
+  <Card
+    title="Actions"
+    href="/docs/server-sdks/reference/python/relay/actions"
+  >
+    Async action handles returned from call control methods like play, record, and detect.
+  </Card>
+  <Card
+    title="Events"
+    href="/docs/server-sdks/reference/python/relay/events"
+  >
+    Typed event dataclasses for call state changes, playback, recording, and messaging.
+  </Card>
+  <Card
+    title="Constants"
+    href="/docs/server-sdks/reference/python/relay/constants"
+  >
+    Call states, connect states, message states, and event type string constants.
+  </Card>
+  <Card
+    title="RelayError"
+    href="/docs/server-sdks/reference/python/relay/relay-error"
+  >
+    Exception raised when the RELAY server returns an error response.
+  </Card>
+</CardGroup>

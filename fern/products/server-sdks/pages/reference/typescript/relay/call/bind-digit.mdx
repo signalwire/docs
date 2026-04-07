@@ -1,0 +1,76 @@
+---
+title: "bindDigit"
+slug: /reference/typescript/relay/call/bind-digit
+description: Bind a DTMF digit sequence to trigger a RELAY method.
+max-toc-depth: 3
+---
+
+[clear-digit-bindings]: /docs/server-sdks/reference/typescript/relay/call/clear-digit-bindings
+
+Bind a DTMF digit sequence to automatically trigger a RELAY method when the
+caller presses those digits. This enables in-call DTMF shortcuts without
+requiring an active collect operation.
+
+<Info>
+Use [`clearDigitBindings()`][clear-digit-bindings] to remove bindings.
+</Info>
+
+## **Parameters**
+
+<ParamField path="digits" type="string" required={true} toc={true}>
+  The DTMF digit sequence to bind (e.g., `"*1"`, `"##"`).
+</ParamField>
+
+<ParamField path="bindMethod" type="string" required={true} toc={true}>
+  The RELAY calling method to execute when the digit sequence is detected
+  (e.g., `"calling.transfer"`, `"calling.play"`).
+</ParamField>
+
+<ParamField path="bindParams" type="Record&lt;string, unknown&gt; | undefined" toc={true}>
+  Parameters to pass to the bound method when triggered.
+</ParamField>
+
+<ParamField path="realm" type="string | undefined" toc={true}>
+  A namespace for grouping digit bindings. Useful for selectively clearing
+  bindings by realm.
+</ParamField>
+
+<ParamField path="maxTriggers" type="number | undefined" toc={true}>
+  Maximum number of times this binding can be triggered. After reaching
+  the limit, the binding is automatically removed.
+</ParamField>
+
+## **Returns**
+
+`Promise<Record<string, unknown>>` -- Server response confirming the binding.
+
+## **Example**
+
+```typescript {13}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  // Bind *0 to transfer to an operator
+  const result = await call.bindDigit('*0', 'calling.transfer', {
+    bindParams: { dest: 'operator' },
+    realm: 'shortcuts',
+  });
+  console.log(`Digit binding created: ${JSON.stringify(result)}`);
+
+  // Bind *9 to play a help message
+  await call.bindDigit('*9', 'calling.play', {
+    bindParams: { play: [{ type: 'tts', text: 'Press star-zero for an operator.' }] },
+    realm: 'shortcuts',
+  });
+});
+
+await client.run();
+```

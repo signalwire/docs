@@ -1,0 +1,84 @@
+---
+title: "ReceptionistAgent"
+slug: /reference/python/agents/prefabs/receptionist-agent
+description: Greets callers, collects basic information about their needs, and transfers them to the appropriate department.
+---
+
+[agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+
+Greets callers, collects basic information about their needs, and transfers them to the
+appropriate department. Uses `FunctionResult.connect()` for call transfers.
+
+```python
+from signalwire.prefabs import ReceptionistAgent
+```
+
+<ParamField path="departments" type="list[dict[str, str]]" required={true} toc={true}>
+  List of departments. At least one department is required. Each dict must have:
+</ParamField>
+
+<Indent>
+<ParamField path="departments[].name" type="str" required={true} toc={true}>
+  Department identifier (e.g., `"sales"`). Used in the transfer tool's enum.
+</ParamField>
+
+<ParamField path="departments[].description" type="str" required={true} toc={true}>
+  Description of what the department handles. Guides the AI in routing decisions.
+</ParamField>
+
+<ParamField path="departments[].number" type="str" required={true} toc={true}>
+  Phone number for call transfer (e.g., `"+15551234567"`).
+</ParamField>
+</Indent>
+
+<ParamField path="greeting" type="str" default="Thank you for calling. How can I help you today?" toc={true}>
+  Initial greeting spoken to the caller.
+</ParamField>
+
+<ParamField path="voice" type="str" default="rime.spore" toc={true}>
+  Voice ID for the agent's language configuration.
+</ParamField>
+
+<ParamField path="name" type="str" default="receptionist" toc={true}>
+  Agent name for identification and logging.
+</ParamField>
+
+<ParamField path="route" type="str" default="/receptionist" toc={true}>
+  HTTP route for this agent.
+</ParamField>
+
+### Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `collect_caller_info` | Record the caller's name and reason for calling | `name` (str), `reason` (str) |
+| `transfer_call` | Transfer the caller to a department | `department` (str, one of the registered department names) |
+
+<Note>
+The `transfer_call` tool uses `FunctionResult.connect()` with `final=True`, which
+permanently transfers the call out of the agent. The AI speaks a goodbye message
+before the transfer executes.
+</Note>
+
+### Example
+
+```python
+from signalwire.prefabs import ReceptionistAgent
+
+agent = ReceptionistAgent(
+    departments=[
+        {"name": "sales", "description": "New orders, pricing, and product information", "number": "+15551001001"},
+        {"name": "support", "description": "Technical issues and troubleshooting", "number": "+15551001002"},
+        {"name": "billing", "description": "Invoices, payments, and refunds", "number": "+15551001003"},
+        {"name": "hr", "description": "Employment, careers, and benefits", "number": "+15551001004"}
+    ],
+    greeting="Thank you for calling Acme Corporation. How may I direct your call?",
+    voice="rime.spore",
+    name="acme-receptionist"
+)
+
+agent.prompt_add_section("Company", "You are the receptionist for Acme Corporation.")
+
+if __name__ == "__main__":
+    agent.run()
+```
