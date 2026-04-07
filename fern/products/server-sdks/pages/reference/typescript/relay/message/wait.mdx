@@ -1,0 +1,60 @@
+---
+title: "wait"
+slug: /reference/typescript/relay/message/wait
+description: "Await until the message reaches a terminal state."
+max-toc-depth: 3
+---
+
+[relayevent]: /docs/server-sdks/reference/typescript/relay/events
+
+Await until the message reaches a terminal state (`delivered`, `undelivered`, or
+`failed`). Returns the terminal [`RelayEvent`][relayevent].
+
+<Warning>
+Throws an `Error` if `timeout` is specified and the message does not
+reach a terminal state within the given duration.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="timeout" type="number | undefined" toc={true}>
+  Maximum number of milliseconds to wait. `undefined` waits indefinitely.
+</ParamField>
+
+## **Returns**
+
+`Promise<`[`RelayEvent`][relayevent]`>` -- The event that caused the message to
+reach its terminal state. Inspect `message.state` for the final state value.
+
+## **Example**
+
+```typescript {18}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+await client.connect();
+
+const message = await client.sendMessage({
+  to: '+15551234567',
+  from: '+15559876543',
+  body: 'Your verification code is 123456',
+});
+
+try {
+  const event = await message.wait(30_000);
+  if (message.state === 'delivered') {
+    console.log('Message delivered successfully');
+  } else {
+    console.log(`Message failed: ${message.reason}`);
+  }
+} catch (err) {
+  console.log('Timed out waiting for delivery confirmation');
+}
+
+await client.disconnect();
+```

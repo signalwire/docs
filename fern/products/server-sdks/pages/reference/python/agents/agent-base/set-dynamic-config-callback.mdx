@@ -1,0 +1,57 @@
+---
+title: "set_dynamic_config_callback"
+slug: /reference/python/agents/agent-base/set-dynamic-config-callback
+description: Set a callback for per-request dynamic agent configuration.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+
+Set a callback function that runs on every incoming request, receiving an ephemeral
+copy of the agent so you can dynamically configure **any** aspect of it -- skills,
+prompts, parameters, languages, tools, global data, etc. -- based on the request's
+query parameters, body, or headers.
+
+This is the primary mechanism for multi-tenant or per-caller customization.
+
+<Note>
+The `agent` argument passed to the callback is an **ephemeral copy** of the original
+agent. Changes made inside the callback apply only to the current request and do not
+persist across calls.
+</Note>
+
+## **Parameters**
+
+<ParamField path="callback" type="Callable[[dict, dict, dict, AgentBase], None]" required={true} toc={true}>
+  A function with the signature `(query_params, body_params, headers, agent)`.
+  Use the `agent` argument to call any configuration method:
+  - `agent.add_skill(...)`
+  - `agent.add_language(...)`
+  - `agent.prompt_add_section(...)`
+  - `agent.set_params(...)`
+  - `agent.set_global_data(...)`
+  - `agent.define_tool(...)`
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns self for method chaining.
+
+## **Example**
+
+```python {13}
+from signalwire import AgentBase
+
+agent = AgentBase(name="assistant", route="/assistant")
+agent.set_prompt_text("You are a helpful assistant.")
+
+def configure_per_request(query_params, body_params, headers, agent):
+    tier = query_params.get("tier", "standard")
+    if tier == "premium":
+        agent.add_skill("web_search")
+        agent.set_params({"end_of_speech_timeout": 500})
+    agent.set_global_data({"tier": tier})
+
+agent.set_dynamic_config_callback(configure_per_request)
+agent.serve()
+```

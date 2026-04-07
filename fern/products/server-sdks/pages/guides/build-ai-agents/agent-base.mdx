@@ -1,0 +1,686 @@
+---
+title: "AgentBase"
+description: Learn how to build voice AI agents using AgentBase, from basic configuration to advanced prompt engineering and voice customization.
+slug: /guides/agent-base
+max-toc-depth: 3
+---
+
+[swml]: /docs/server-sdks/guides/swml
+[swaig]: /docs/server-sdks/guides/swaig
+[lifecycle]: /docs/server-sdks/guides/lifecycle
+[agentbase]: /docs/server-sdks/guides/agent-base
+[static-vs-dynamic]: /docs/server-sdks/guides/static-vs-dynamic
+[prompts-pom]: /docs/server-sdks/guides/prompts-pom
+[voice-language]: /docs/server-sdks/guides/voice-language
+[ai-parameters]: /docs/server-sdks/guides/ai-parameters
+[hints]: /docs/server-sdks/guides/hints
+[call-flow]: /docs/server-sdks/guides/call-flow
+
+## What You'll Learn
+
+This chapter covers everything you need to build production-quality agents:
+
+1. **AgentBase** - The foundation class and its capabilities
+2. **Static vs Dynamic** - Choosing the right pattern for your use case
+3. **Prompts & POM** - Crafting effective prompts with the Prompt Object Model
+4. **Voice & Language** - Configuring voices and multi-language support
+5. **AI Parameters** - Tuning conversation behavior
+6. **Hints** - Improving speech recognition accuracy
+7. **Call Flow** - Customizing when and how calls are answered
+
+## Prerequisites
+
+Before building agents, you should understand:
+
+- Core concepts from Chapter 2 ([SWML][swml], [SWAIG][swaig], [Lifecycle][lifecycle])
+- Basic Python class structure
+- How SignalWire processes calls
+
+## Agent Architecture Overview
+
+<Frame caption="Agent Components">
+  <img class="diagram" src="/assets/images/sdks/diagrams/03_01_agent-base_diagram1.webp" alt="Agent components overview." />
+</Frame>
+
+## A Complete Agent Example
+
+Here's what a production agent looks like across all supported languages:
+
+<Tabs>
+<Tab title="Python">
+```python
+from signalwire import AgentBase, FunctionResult
+
+class CustomerSupportAgent(AgentBase):
+    """Production customer support agent."""
+
+    def __init__(self):
+        super().__init__(
+            name="customer-support",
+            route="/support"
+        )
+
+        # Voice configuration
+        self.add_language("English", "en-US", "rime.spore")
+
+        # AI behavior
+        self.set_params({
+            "end_of_speech_timeout": 500,
+            "attention_timeout": 15000,
+            "inactivity_timeout": 30000
+        })
+
+        # Prompts
+        self.prompt_add_section(
+            "Role",
+            "You are Alex, a friendly customer support agent for Acme Inc."
+        )
+
+        self.prompt_add_section(
+            "Guidelines",
+            body="Follow these guidelines:",
+            bullets=[
+                "Be helpful and professional",
+                "Ask clarifying questions when needed",
+                "Keep responses concise for voice",
+                "Offer to transfer if you cannot help"
+            ]
+        )
+
+        # Speech recognition hints
+        self.add_hints([
+            "Acme", "account number", "order status",
+            "refund", "billing", "representative"
+        ])
+
+        # Functions
+        self.define_tool(
+            name="check_order",
+            description="Look up an order by order number",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "order_number": {
+                        "type": "string",
+                        "description": "The order number to look up"
+                    }
+                },
+                "required": ["order_number"]
+            },
+            handler=self.check_order
+        )
+
+        # Skills
+        self.add_skill("datetime")
+
+        # Post-call summary
+        self.set_post_prompt(
+            "Summarize: issue type, resolution, customer satisfaction"
+        )
+
+    def check_order(self, args, raw_data):
+        order_number = args.get("order_number")
+        return FunctionResult(
+            f"Order {order_number}: Shipped on Monday, arriving Thursday"
+        )
+
+if __name__ == "__main__":
+    agent = CustomerSupportAgent()
+    agent.run(host="0.0.0.0", port=3000)
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import { AgentBase, FunctionResult } from 'signalwire-agents';
+
+const agent = new AgentBase({
+  name: "customer-support",
+  route: "/support"
+});
+
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.setParams({ end_of_speech_timeout: 500, attention_timeout: 15000, inactivity_timeout: 30000 });
+agent.promptAddSection('Role', 'You are Alex, a friendly customer support agent for Acme Inc.');
+agent.promptAddSection('Guidelines', { body: 'Follow these guidelines:', bullets: ['Be helpful and professional', 'Ask clarifying questions when needed', 'Keep responses concise for voice', 'Offer to transfer if you cannot help'] });
+agent.addHints(['Acme', 'account number', 'order status', 'refund', 'billing', 'representative']);
+agent.defineTool({ name: 'check_order', description: 'Look up an order by order number', parameters: { type: 'object', properties: { order_number: { type: 'string', description: 'The order number to look up' } }, required: ['order_number'] }, handler: async (args) => new FunctionResult(`Order ${args.order_number}: Shipped on Monday, arriving Thursday`) });
+agent.addSkill('datetime');
+agent.setPostPrompt('Summarize: issue type, resolution, customer satisfaction');
+agent.run({ host: '0.0.0.0', port: 3000 });
+```
+</Tab>
+</Tabs>
+{/*
+
+<Tab title="Go">
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-agents-go/pkg/agent"
+    "github.com/signalwire/signalwire-agents-go/pkg/swaig"
+)
+
+func main() {
+    a := agent.NewAgentBase(agent.WithName("customer-support"), agent.WithRoute("/support"))
+    a.AddLanguage(map[string]any{"name": "English", "code": "en-US", "voice": "rime.spore"})
+    a.SetParam("end_of_speech_timeout", 500)
+    a.SetParam("attention_timeout", 15000)
+    a.SetParam("inactivity_timeout", 30000)
+    a.PromptAddSection("Role", "You are Alex, a friendly customer support agent for Acme Inc.")
+    a.PromptAddSection("Guidelines", "Follow these guidelines:", []string{"Be helpful and professional", "Ask clarifying questions when needed", "Keep responses concise for voice", "Offer to transfer if you cannot help"})
+    a.AddHints([]string{"Acme", "account number", "order status", "refund", "billing", "representative"})
+    a.DefineTool(agent.ToolDefinition{Name: "check_order", Description: "Look up an order by order number", Parameters: map[string]any{"type": "object", "properties": map[string]any{"order_number": map[string]any{"type": "string", "description": "The order number to look up"}}, "required": []string{"order_number"}}, Handler: func(args map[string]any) (*swaig.FunctionResult, error) { return swaig.NewFunctionResult(fmt.Sprintf("Order %s: Shipped on Monday, arriving Thursday", args["order_number"].(string))), nil }})
+    a.AddSkill("datetime")
+    a.SetPostPrompt("Summarize: issue type, resolution, customer satisfaction")
+    a.Run("0.0.0.0", 3000)
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire'
+class CustomerSupportAgent < AgentBase
+  def initialize
+    super(name: "customer-support", route: "/support")
+    add_language(name: 'English', code: 'en-US', voice: 'rime.spore')
+    set_params({ end_of_speech_timeout: 500, attention_timeout: 15000, inactivity_timeout: 30000 })
+    prompt_add_section('Role', 'You are Alex, a friendly customer support agent for Acme Inc.')
+    prompt_add_section('Guidelines', 'Follow these guidelines:', bullets: ['Be helpful and professional', 'Ask clarifying questions when needed', 'Keep responses concise for voice', 'Offer to transfer if you cannot help'])
+    add_hints(['Acme', 'account number', 'order status', 'refund', 'billing', 'representative'])
+    define_tool(name: 'check_order', description: 'Look up an order by order number', parameters: { type: 'object', properties: { order_number: { type: 'string', description: 'The order number to look up' } }, required: ['order_number'] }) { |args| FunctionResult.new("Order #{args['order_number']}: Shipped on Monday, arriving Thursday") }
+    add_skill('datetime')
+    set_post_prompt('Summarize: issue type, resolution, customer satisfaction')
+  end
+end
+agent = CustomerSupportAgent.new
+agent.run(host: '0.0.0.0', port: 3000)
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.agent.AgentBase;
+import com.signalwire.agents.swaig.FunctionResult;
+import java.util.List;
+import java.util.Map;
+
+public class CustomerSupportAgent {
+    public static void main(String[] args) {
+        AgentBase agent = AgentBase.builder().name("customer-support").route("/support").build();
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.setParams(Map.of("end_of_speech_timeout", 500, "attention_timeout", 15000, "inactivity_timeout", 30000));
+        agent.promptAddSection("Role", "You are Alex, a friendly customer support agent for Acme Inc.");
+        agent.promptAddSection("Guidelines", "Follow these guidelines:", List.of("Be helpful and professional", "Ask clarifying questions when needed", "Keep responses concise for voice", "Offer to transfer if you cannot help"));
+        agent.addHints(List.of("Acme", "account number", "order status", "refund", "billing", "representative"));
+        agent.defineTool("check_order", "Look up an order by order number", Map.of("type", "object", "properties", Map.of("order_number", Map.of("type", "string", "description", "The order number to look up")), "required", List.of("order_number")), (toolArgs) -> new FunctionResult("Order " + toolArgs.get("order_number") + ": Shipped on Monday, arriving Thursday"));
+        agent.addSkill("datetime");
+        agent.setPostPrompt("Summarize: issue type, resolution, customer satisfaction");
+        agent.run("0.0.0.0", 3000);
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+use SignalWire::Agents::Swaig::FunctionResult;
+my $agent = AgentBase->new(name => "customer-support", route => "/support");
+$agent->add_language(name => 'English', code => 'en-US', voice => 'rime.spore');
+$agent->set_params({ end_of_speech_timeout => 500, attention_timeout => 15000, inactivity_timeout => 30000 });
+$agent->prompt_add_section('Role', 'You are Alex, a friendly customer support agent for Acme Inc.');
+$agent->prompt_add_section('Guidelines', 'Follow these guidelines:', bullets => ['Be helpful and professional', 'Ask clarifying questions when needed', 'Keep responses concise for voice', 'Offer to transfer if you cannot help']);
+$agent->add_hints(['Acme', 'account number', 'order status', 'refund', 'billing', 'representative']);
+$agent->define_tool(name => 'check_order', description => 'Look up an order by order number', parameters => { type => 'object', properties => { order_number => { type => 'string', description => 'The order number to look up' } }, required => ['order_number'] }, handler => sub { my ($args) = @_; return FunctionResult->new("Order $args->{order_number}: Shipped on Monday, arriving Thursday"); });
+$agent->add_skill('datetime');
+$agent->set_post_prompt('Summarize: issue type, resolution, customer satisfaction');
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+#include <signalwire/swaig/function_result.hpp>
+int main() {
+    agent::AgentBase agent("customer-support");
+    agent.set_route("/support");
+    agent.add_language({"English", "en-US", "rime.spore"});
+    agent.set_params({{"end_of_speech_timeout", 500}, {"attention_timeout", 15000}, {"inactivity_timeout", 30000}});
+    agent.prompt_add_section("Role", "You are Alex, a friendly customer support agent for Acme Inc.");
+    agent.prompt_add_section("Guidelines", "Follow these guidelines:", {"Be helpful and professional", "Ask clarifying questions when needed", "Keep responses concise for voice", "Offer to transfer if you cannot help"});
+    agent.add_hints({"Acme", "account number", "order status", "refund", "billing", "representative"});
+    agent.define_tool("check_order", "Look up an order by order number", {{"type", "object"}, {"properties", {{"order_number", {{"type", "string"}, {"description", "The order number to look up"}}}}}, {"required", {"order_number"}}}, [](auto args) { return swaig::FunctionResult("Order " + args["order_number"].get<std::string>() + ": Shipped on Monday, arriving Thursday"); });
+    agent.add_skill("datetime");
+    agent.set_post_prompt("Summarize: issue type, resolution, customer satisfaction");
+    agent.run("0.0.0.0", 3000);
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+use SignalWire\Agent\FunctionResult;
+$agent = new AgentBase(name: 'customer-support', route: '/support');
+$agent->addLanguage(name: 'English', code: 'en-US', voice: 'rime.spore');
+$agent->setParams(['end_of_speech_timeout' => 500, 'attention_timeout' => 15000, 'inactivity_timeout' => 30000]);
+$agent->promptAddSection('Role', 'You are Alex, a friendly customer support agent for Acme Inc.');
+$agent->promptAddSection('Guidelines', body: 'Follow these guidelines:', bullets: ['Be helpful and professional', 'Ask clarifying questions when needed', 'Keep responses concise for voice', 'Offer to transfer if you cannot help']);
+$agent->addHints('Acme', 'account number', 'order status', 'refund', 'billing', 'representative');
+$agent->defineTool('check_order', 'Look up an order by order number', ['type' => 'object', 'properties' => ['order_number' => ['type' => 'string', 'description' => 'The order number to look up']], 'required' => ['order_number']], function ($args, $raw) { return new FunctionResult("Order {$args['order_number']}: Shipped on Monday, arriving Thursday"); });
+$agent->addSkill('datetime');
+$agent->setPostPrompt('Summarize: issue type, resolution, customer satisfaction');
+$agent->run('0.0.0.0', 3000);
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+using SignalWire.SWAIG;
+var agent = new AgentBase(new AgentOptions { Name = "customer-support", Route = "/support" });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.SetParams(new Dictionary<string, object> { ["end_of_speech_timeout"] = 500, ["attention_timeout"] = 15000, ["inactivity_timeout"] = 30000 });
+agent.PromptAddSection("Role", "You are Alex, a friendly customer support agent for Acme Inc.");
+agent.PromptAddSection("Guidelines", body: "Follow these guidelines:", bullets: new List<string> { "Be helpful and professional", "Ask clarifying questions when needed", "Keep responses concise for voice", "Offer to transfer if you cannot help" });
+agent.AddHints(new List<string> { "Acme", "account number", "order status", "refund", "billing", "representative" });
+agent.DefineTool("check_order", "Look up an order by order number", new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object> { ["order_number"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "The order number to look up" } }, ["required"] = new List<string> { "order_number" } }, (args, raw) => new FunctionResult($"Order {args["order_number"]}: Shipped on Monday, arriving Thursday"));
+agent.AddSkill("datetime");
+agent.SetPostPrompt("Summarize: issue type, resolution, customer satisfaction");
+agent.Run();
+```
+</Tab>
+
+*/}
+
+## Chapter Contents
+
+| Section | Description |
+|---------|-------------|
+| [AgentBase][agentbase] | Core class and constructor options |
+| [Static vs Dynamic][static-vs-dynamic] | Choosing the right pattern |
+| [Prompts & POM][prompts-pom] | Prompt engineering for voice AI |
+| [Voice & Language][voice-language] | Voice selection and multi-language |
+| [AI Parameters][ai-parameters] | Behavior tuning |
+| [Hints][hints] | Speech recognition improvement |
+| [Call Flow][call-flow] | Customizing call answer behavior |
+
+## Key Patterns
+
+### Pattern 1: Class-Based Agent
+
+Best for complex agents with multiple functions:
+
+```python
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.configure()
+
+    def configure(self):
+        # All configuration here
+        pass
+```
+
+### Pattern 2: Functional Agent
+
+Quick agents for simple use cases:
+
+| Language | Functional Agent |
+|----------|-----------------|
+| Python | `agent = AgentBase(name="simple-agent")` |
+| TypeScript | `const agent = new AgentBase({ name: "simple-agent" })` |
+{/*
+
+| Go | `a := agent.NewAgentBase(agent.WithName("simple-agent"))` |
+| Ruby | `agent = AgentBase.new(name: "simple-agent")` |
+| Java | `AgentBase agent = AgentBase.builder().name("simple-agent").build()` |
+| Perl | `my $agent = AgentBase->new(name => "simple-agent")` |
+| C++ | `agent::AgentBase agent("simple-agent")` |
+| PHP | `$agent = new AgentBase(name: 'simple-agent')` |
+| C# | `var agent = new AgentBase(new AgentOptions { Name = "simple-agent" })` |
+
+*/}
+
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="simple-agent")
+agent.add_language("English", "en-US", "rime.spore")
+agent.prompt_add_section("Role", "You are a helpful assistant.")
+agent.run()
+```
+
+### Pattern 3: Multi-Agent Server
+
+Multiple agents on one server:
+
+```python
+from signalwire import AgentServer
+
+server = AgentServer()
+server.register(SupportAgent(), "/support")
+server.register(SalesAgent(), "/sales")
+server.register(BillingAgent(), "/billing")
+server.run(port=3000)
+```
+
+## Testing Your Agent
+
+Always test before deploying:
+
+```bash
+# View SWML output
+swaig-test my_agent.py --dump-swml
+
+# List registered functions
+swaig-test my_agent.py --list-tools
+
+# Test a function
+swaig-test my_agent.py --exec check_order --order_number 12345
+```
+
+## Class Overview
+
+<Frame caption="AgentBase Inheritance">
+  <img class="diagram" src="/assets/images/sdks/diagrams/03_01_agent-base_diagram2.webp" alt="AgentBase inheritance diagram." />
+</Frame>
+
+## Constructor Parameters
+
+The constructor accepts the agent name plus optional configuration:
+
+| Language | Constructor Syntax |
+|----------|-------------------|
+| Python | `AgentBase(name="my-agent", route="/", port=3000)` |
+| TypeScript | `new AgentBase({ name: "my-agent", route: "/", port: 3000 })` |
+{/*
+
+| Go | `agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/"), agent.WithPort(3000))` |
+| Ruby | `AgentBase.new(name: "my-agent", route: "/", port: 3000)` |
+| Java | `AgentBase.builder().name("my-agent").route("/").port(3000).build()` |
+| Perl | `AgentBase->new(name => "my-agent", route => "/", port => 3000)` |
+| C++ | `agent::AgentBase agent("my-agent"); agent.set_route("/"); agent.set_port(3000);` |
+| PHP | `new AgentBase(name: 'my-agent', route: '/', port: 3000)` |
+| C# | `new AgentBase(new AgentOptions { Name = "my-agent", Route = "/", Port = 3000 })` |
+
+*/}
+
+Full Python constructor with all options:
+
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(
+    # Required
+    name="my-agent",                    # Unique agent identifier
+
+    # Server Configuration
+    route="/",                          # HTTP route path (default: "/")
+    host="0.0.0.0",                     # Bind address (default: "0.0.0.0")
+    port=3000,                          # Server port (default: 3000)
+
+    # Authentication
+    basic_auth=("user", "pass"),        # Override env var credentials
+
+    # Behavior
+    auto_answer=True,                   # Answer calls automatically
+    use_pom=True,                       # Use Prompt Object Model
+
+    # Recording
+    record_call=False,                  # Enable call recording
+    record_format="mp4",                # Recording format
+    record_stereo=True,                 # Stereo recording
+
+    # Tokens and Security
+    token_expiry_secs=3600,             # Function token expiration
+
+    # Advanced
+    default_webhook_url=None,           # Override webhook URL
+    agent_id=None,                      # Custom agent ID (auto-generated)
+    native_functions=None,              # Built-in SignalWire functions
+    schema_path=None,                   # Custom SWML schema path
+    suppress_logs=False,                # Disable logging
+    config_file=None                    # Load from config file
+)
+```
+
+## Parameter Reference
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | Required | Unique identifier for the agent |
+| `route` | str | "/" | HTTP route where agent is accessible |
+| `host` | str | "0.0.0.0" | IP address to bind server |
+| `port` | int | 3000 | Port number for server |
+| `basic_auth` | tuple | None | (username, password) for auth |
+| `use_pom` | bool | True | Enable Prompt Object Model |
+| `auto_answer` | bool | True | Auto-answer incoming calls |
+| `record_call` | bool | False | Enable call recording |
+| `record_format` | str | "mp4" | Recording file format |
+| `record_stereo` | bool | True | Record in stereo |
+| `token_expiry_secs` | int | 3600 | Token validity period |
+| `native_functions` | list | None | SignalWire native functions |
+| `suppress_logs` | bool | False | Disable agent logs |
+
+## Creating an Agent
+
+### Method 1: Class-Based (Recommended)
+
+```python
+from signalwire import AgentBase, FunctionResult
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self._setup()
+
+    def _setup(self):
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+        self.define_tool(name="greet", description="Greet the user", parameters={}, handler=self.greet)
+
+    def greet(self, args, raw_data):
+        return FunctionResult("Hello! How can I help you today?")
+
+if __name__ == "__main__":
+    agent = MyAgent()
+    agent.run()
+```
+
+### Method 2: Instance-Based
+
+```python
+from signalwire import AgentBase
+
+agent = AgentBase(name="quick-agent")
+agent.add_language("English", "en-US", "rime.spore")
+agent.prompt_add_section("Role", "You are a helpful assistant.")
+agent.run()
+```
+
+### Method 3: Declarative (PROMPT_SECTIONS)
+
+```python
+from signalwire import AgentBase
+
+class DeclarativeAgent(AgentBase):
+    PROMPT_SECTIONS = {
+        "Role": "You are a helpful customer service agent.",
+        "Guidelines": [
+            "Be professional and courteous",
+            "Ask clarifying questions when needed",
+            "Keep responses concise"
+        ],
+        "Rules": {
+            "body": "Always follow these rules:",
+            "bullets": [
+                "Never share customer data",
+                "Escalate complex issues"
+            ]
+        }
+    }
+
+    def __init__(self):
+        super().__init__(name="declarative-agent")
+        self.add_language("English", "en-US", "rime.spore")
+```
+
+## Key Methods
+
+### Configuration Methods
+
+| Method | Python |
+|--------|--------|
+| Add language | `add_language(name, code, voice)` |
+| Add prompt | `prompt_add_section(title, body)` |
+| Set params | `set_params(dict)` |
+| Add hints | `add_hints(list)` |
+| Define tool | `define_tool(name=..., handler=fn)` |
+| Post-prompt | `set_post_prompt(text)` |
+
+{/*
+| Method | Ruby | Java | Perl | C++ | PHP | C# |
+|--------|------|------|------|-----|-----|-----|
+| Add language | `add_language(name:, code:, voice:)` | `addLanguage(name, code, voice)` | `$a->add_language(...)` | `add_language({...})` | `$a->addLanguage(name:, code:, voice:)` | `agent.AddLanguage(name, code, voice)` |
+| Add prompt | `prompt_add_section(title, body, bullets:)` | `promptAddSection(title, body, List.of(...))` | `$a->prompt_add_section(...)` | `prompt_add_section(title, body, {...})` | `$a->promptAddSection(title, body, bullets:)` | `agent.PromptAddSection(title, body, bullets)` |
+| Set params | `set_params(hash)` | `setParams(Map.of(...))` | `$a->set_params({...})` | `set_params({...})` | `$a->setParams([...])` | `agent.SetParams(new Dictionary<string, object>{...})` |
+*/}
+
+```python
+# Voice and Language
+agent.add_language(name, code, voice)       # Add language support
+agent.set_languages(languages)               # Set all languages at once
+
+# Prompts
+agent.prompt_add_section(title, body)        # Add prompt section
+agent.prompt_add_subsection(parent, title)   # Add subsection
+agent.set_post_prompt(text)                  # Set post-call summary prompt
+
+# AI Parameters
+agent.set_params(params_dict)                # Set AI behavior parameters
+agent.set_param_value(key, value)            # Set single parameter
+
+# Speech Recognition
+agent.add_hints(hints_list)                  # Add speech hints
+agent.add_hint(hint_string)                  # Add single hint
+
+# Functions
+agent.define_tool(name, description, ...)   # Define SWAIG function
+agent.add_skill(skill_name)                 # Add a skill
+
+# Pronunciation
+agent.add_pronunciation(replace, with_text)  # Add pronunciation rule
+```
+
+### Runtime Methods
+
+```python
+# Start server
+agent.run(host="0.0.0.0", port=3000)
+
+# Get SWML document
+swml = agent.get_swml()
+
+# Access components
+agent.pom              # Prompt Object Model
+agent.data_map         # DataMap builder
+```
+
+## Agent Lifecycle
+
+<Frame caption="Agent Lifecycle">
+  <img class="diagram" src="/assets/images/sdks/diagrams/03_01_agent-base_diagram3.webp" alt="Agent lifecycle." />
+</Frame>
+
+## Configuration File
+
+Load configuration from a YAML/JSON file:
+
+```python
+agent = AgentBase(
+    name="my-agent",
+    config_file="config/agent.yaml"
+)
+```
+
+```yaml
+# config/agent.yaml
+name: my-agent
+route: /support
+host: 0.0.0.0
+port: 3000
+```
+
+## Environment Variables
+
+AgentBase respects these environment variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `SWML_BASIC_AUTH_USER` | Basic auth username |
+| `SWML_BASIC_AUTH_PASSWORD` | Basic auth password |
+| `SWML_PROXY_URL_BASE` | Base URL for webhooks behind proxy |
+| `SWML_SSL_ENABLED` | Enable SSL |
+| `SWML_SSL_CERT_PATH` | SSL certificate path |
+| `SWML_SSL_KEY_PATH` | SSL key path |
+| `SWML_DOMAIN` | Domain for SSL |
+
+## Multi-Agent Server
+
+Run multiple agents on one server:
+
+```python
+from signalwire import AgentServer
+
+class SupportAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="support", route="/support")
+
+class SalesAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="sales", route="/sales")
+
+server = AgentServer()
+server.register(SupportAgent())
+server.register(SalesAgent())
+server.run(host="0.0.0.0", port=3000)
+```
+
+Access agents at:
+
+- `http://localhost:3000/support`
+- `http://localhost:3000/sales`
+
+## Best Practices
+
+1. **Use class-based agents** for anything beyond simple prototypes
+2. **Organize configuration** into logical private methods
+3. **Set explicit credentials** in production via environment variables
+4. **Use meaningful agent names** for logging and debugging
+5. **Test with swaig-test** before deploying
+
+```python
+class WellOrganizedAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="organized-agent")
+        self._configure_voice()
+        self._configure_prompts()
+        self._configure_functions()
+        self._configure_skills()
+
+    def _configure_voice(self):
+        self.add_language("English", "en-US", "rime.spore")
+        self.set_params({"end_of_speech_timeout": 500, "attention_timeout": 15000})
+
+    def _configure_prompts(self):
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+
+    def _configure_functions(self):
+        self.define_tool(name="help", description="Get help", parameters={}, handler=self.get_help)
+
+    def _configure_skills(self):
+        self.add_skill("datetime")
+
+    def get_help(self, args, raw_data):
+        return FunctionResult("I can help you with...")
+```

@@ -1,0 +1,81 @@
+---
+title: "bind_digit"
+slug: /reference/python/relay/call/bind-digit
+description: Bind a DTMF digit sequence to trigger a RELAY method.
+max-toc-depth: 3
+---
+
+[clear-digit-bindings]: /docs/server-sdks/reference/python/relay/call/clear-digit-bindings
+
+Bind a DTMF digit sequence to automatically trigger a RELAY method when the
+caller presses those digits. This enables in-call DTMF shortcuts without
+requiring an active collect operation.
+
+<Info>
+Use [`clear_digit_bindings()`][clear-digit-bindings] to remove bindings.
+</Info>
+
+## **Parameters**
+
+<ParamField path="digits" type="str" required={true} toc={true}>
+  The DTMF digit sequence to bind (e.g., `"*1"`, `"##"`).
+</ParamField>
+
+<ParamField path="bind_method" type="str" required={true} toc={true}>
+  The RELAY calling method to execute when the digit sequence is detected
+  (e.g., `"calling.transfer"`, `"calling.play"`).
+</ParamField>
+
+<ParamField path="bind_params" type="Optional[dict]" toc={true}>
+  Parameters to pass to the bound method when triggered.
+</ParamField>
+
+<ParamField path="realm" type="Optional[str]" toc={true}>
+  A namespace for grouping digit bindings. Useful for selectively clearing
+  bindings by realm.
+</ParamField>
+
+<ParamField path="max_triggers" type="Optional[int]" toc={true}>
+  Maximum number of times this binding can be triggered. After reaching
+  the limit, the binding is automatically removed.
+</ParamField>
+
+## **Returns**
+
+`dict` -- Server response confirming the binding.
+
+## **Example**
+
+```python {15,24}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    # Bind *0 to transfer to an operator
+    result = await call.bind_digit(
+        digits="*0",
+        bind_method="calling.transfer",
+        bind_params={"dest": "operator"},
+        realm="shortcuts",
+    )
+    print(f"Digit binding created: {result}")
+
+    # Bind *9 to play a help message
+    await call.bind_digit(
+        digits="*9",
+        bind_method="calling.play",
+        bind_params={"play": [{"type": "tts", "text": "Press star-zero for an operator."}]},
+        realm="shortcuts",
+    )
+
+client.run()
+```

@@ -1,0 +1,65 @@
+---
+title: "queueLeave"
+slug: /reference/typescript/relay/call/queue-leave
+description: Remove a call from a queue.
+max-toc-depth: 3
+---
+
+[calling-call-queue]: /docs/server-sdks/reference/typescript/relay/call#events
+[call-events]: /docs/server-sdks/reference/typescript/relay/call#events
+
+Remove the call from a queue.
+
+<Info>
+This method emits [`calling.call.queue`][calling-call-queue] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="queueName" type="string" required={true} toc={true}>
+  Name of the queue to leave.
+</ParamField>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="queueId" type="string | undefined" toc={true}>
+  Specific queue ID to leave (if the call is in multiple queues with the
+  same name).
+</ParamField>
+
+<ParamField path="statusUrl" type="string | undefined" toc={true}>
+  URL to receive queue status webhooks.
+</ParamField>
+
+## **Returns**
+
+`Promise<Record<string, unknown>>` -- Server response confirming the call left the queue.
+
+## **Example**
+
+```typescript {17}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  // Enter the queue
+  await call.queueEnter('support');
+
+  // Remove from queue after a timeout
+  await new Promise((resolve) => setTimeout(resolve, 300_000)); // 5 minute max wait
+  await call.queueLeave('support');
+  await call.play([{ type: 'tts', text: 'No agents available. Please try again later.' }]);
+  await call.hangup();
+});
+
+await client.run();
+```

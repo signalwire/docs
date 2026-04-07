@@ -1,0 +1,52 @@
+---
+title: "setDynamicConfigCallback"
+slug: /reference/typescript/agents/agent-base/set-dynamic-config-callback
+description: Set a callback for per-request dynamic agent configuration.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+
+Set a callback that runs on every incoming SWML request, receiving an ephemeral copy
+of the agent so you can dynamically configure **any** aspect of it -- prompts,
+parameters, languages, tools, global data, etc. -- based on the request's query
+parameters, body, or headers.
+
+This is the primary mechanism for multi-tenant or per-caller customization.
+
+<Note>
+The `agent` argument is an **ephemeral copy** of the base agent — changes made
+inside the callback apply only to the current request and do not persist to the
+base agent or affect other requests.
+</Note>
+
+## **Parameters**
+
+<ParamField path="cb" type="DynamicConfigCallback" required={true} toc={true}>
+  A function with the signature
+  `(queryParams: Record<string, string>, bodyParams: Record<string, unknown>, headers: Record<string, string>, agent: AgentBase) => void | Promise<void>`.
+  Use the `agent` argument to call any configuration method on the ephemeral copy.
+</ParamField>
+
+## **Returns**
+
+[`AgentBase`][ref-agentbase] -- Returns `this` for method chaining.
+
+## **Example**
+
+```typescript {6}
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+agent.setDynamicConfigCallback(async (queryParams, bodyParams, headers, agentCopy) => {
+  const tier = queryParams.tier ?? 'standard';
+  if (tier === 'premium') {
+    agentCopy.setParams({ end_of_speech_timeout: 500 });
+  }
+  agentCopy.setGlobalData({ tier });
+});
+
+await agent.serve();
+```

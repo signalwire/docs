@@ -1,0 +1,133 @@
+---
+title: "SurveyAgent"
+slug: /reference/typescript/agents/prefabs/survey-agent
+description: A survey agent that conducts surveys with support for multiple question types, conditional branching based on answers, per-answer scoring, and a completion callback.
+---
+
+[agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+
+Conducts surveys with support for multiple question types, conditional branching based
+on answers, per-answer scoring, and a completion callback. The agent guides the caller
+through each question, validates answers, and tracks progress per call.
+
+```typescript {3}
+import { SurveyAgent } from '@signalwire/sdk';
+
+const agent = new SurveyAgent({ /* SurveyConfig */ });
+```
+
+## SurveyConfig
+
+<ParamField path="questions" type="SurveyQuestion[]" required={true} toc={true}>
+  Ordered list of survey questions. Each `SurveyQuestion` object has:
+
+  - `id` (string, required) -- Unique question identifier.
+  - `text` (string, required) -- The question text to ask the caller.
+  - `type` (string, required) -- One of `"multiple_choice"`, `"open_ended"`, `"rating"`, or `"yes_no"`.
+  - `options` (string[]) -- Required for `multiple_choice` questions.
+  - `nextQuestion` (string | Record&lt;string, string&gt;) -- Next question ID, or a map from answer value to next question ID for branching. If omitted, proceeds in array order.
+  - `points` (number | Record&lt;string, number&gt;) -- Fixed points for any answer, or per-answer scoring map.
+</ParamField>
+
+<ParamField path="introMessage" type="string" default="Thank you for taking our survey. I have a few questions for you." toc={true}>
+  Opening message before the first question.
+</ParamField>
+
+<ParamField path="completionMessage" type="string" default="Thank you for completing the survey! Your responses have been recorded." toc={true}>
+  Message after the survey is complete.
+</ParamField>
+
+<ParamField path="onComplete" type="(responses: Record&lt;string, unknown&gt;, score: number) => void | Promise&lt;void&gt;" toc={true}>
+  Callback fired when the survey is finished. Receives all responses and the total score.
+</ParamField>
+
+<ParamField path="name" type="string" default="SurveyAgent" toc={true}>
+  Agent display name.
+</ParamField>
+
+<ParamField path="agentOptions" type="Partial&lt;AgentOptions&gt;" toc={true}>
+  Additional [`AgentBase`][agentbase] options forwarded to the constructor.
+</ParamField>
+
+## Built-in Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `answer_question` | Record the caller's answer, validate it, apply scoring, and advance to the next question | `question_id` (string), `answer` (string) |
+| `get_current_question` | Get the current question that should be asked | (none) |
+| `get_survey_progress` | Get progress stats: questions answered, total score, and answer history | (none) |
+
+## Branching and Scoring
+
+Questions support conditional branching via the `nextQuestion` property. When set to a
+`Record<string, string>`, the agent routes to different follow-up questions based on the
+caller's answer. Use the key `"_default"` as a fallback branch.
+
+Scoring is configured via the `points` property. A fixed `number` awards the same points
+for any answer. A `Record<string, number>` awards different points per answer value.
+
+## Example
+
+```typescript {3}
+import { SurveyAgent } from '@signalwire/sdk';
+
+const agent = new SurveyAgent({
+  introMessage: 'Thank you for purchasing our product. We\'d love your feedback!',
+  completionMessage: 'Thanks for your time. Your feedback helps us improve!',
+  questions: [
+    {
+      id: 'overall_rating',
+      text: 'On a scale of 1 to 10, how would you rate the product overall?',
+      type: 'rating',
+      points: { '9': 3, '10': 3, '7': 2, '8': 2 },
+    },
+    {
+      id: 'quality',
+      text: 'How would you rate the build quality?',
+      type: 'multiple_choice',
+      options: ['Poor', 'Fair', 'Good', 'Excellent'],
+      points: { 'Excellent': 3, 'Good': 2, 'Fair': 1, 'Poor': 0 },
+    },
+    {
+      id: 'purchase_again',
+      text: 'Would you purchase from us again?',
+      type: 'yes_no',
+      nextQuestion: {
+        yes: 'recommend',
+        no: 'improvements',
+      },
+    },
+    {
+      id: 'recommend',
+      text: 'Would you recommend us to a friend?',
+      type: 'yes_no',
+    },
+    {
+      id: 'improvements',
+      text: 'What could we improve?',
+      type: 'open_ended',
+    },
+  ],
+  onComplete: (responses, score) => {
+    console.log('Survey complete:', { responses, score });
+  },
+});
+
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+
+agent.serve();
+```
+
+### createSurveyAgent
+
+```typescript {3}
+import { createSurveyAgent } from '@signalwire/sdk';
+
+const agent = createSurveyAgent({
+  questions: [
+    { id: 'q1', text: 'How was your experience?', type: 'rating' },
+    { id: 'q2', text: 'Any comments?', type: 'open_ended' },
+  ],
+});
+```

@@ -1,0 +1,98 @@
+---
+title: "Prefabs"
+slug: /reference/typescript/agents/prefabs
+description: Pre-built agent templates for common conversational patterns.
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+
+Prefabs are ready-to-use agent classes that implement common conversational patterns.
+Each prefab extends [`AgentBase`][agentbase], so you can
+customize them with additional prompt sections, tools, skills, and languages. Use them
+directly for rapid prototyping or subclass them for production use.
+
+```typescript {2-6}
+import {
+  ConciergeAgent,
+  FAQBotAgent,
+  InfoGathererAgent,
+  ReceptionistAgent,
+  SurveyAgent,
+} from '@signalwire/sdk';
+```
+
+| Prefab | Purpose | Built-in Tools |
+|--------|---------|----------------|
+| [ConciergeAgent](/docs/server-sdks/reference/typescript/agents/prefabs/concierge-agent) | Multi-department routing with knowledge base | `list_departments`, `get_department_info`, `transfer_to_department` |
+| [FAQBotAgent](/docs/server-sdks/reference/typescript/agents/prefabs/faq-bot-agent) | Answer questions using keyword matching | `search_faq`, `escalate` (optional) |
+| [InfoGathererAgent](/docs/server-sdks/reference/typescript/agents/prefabs/info-gatherer-agent) | Collect named fields from a caller | `save_field`, `get_status` |
+| [ReceptionistAgent](/docs/server-sdks/reference/typescript/agents/prefabs/receptionist-agent) | Front-desk check-in, directory, and transfers | `get_department_list`, `transfer_to_department`, `check_in_visitor` (optional) |
+| [SurveyAgent](/docs/server-sdks/reference/typescript/agents/prefabs/survey-agent) | Conduct surveys with branching and scoring | `answer_question`, `get_current_question`, `get_survey_progress` |
+
+Each prefab also has a corresponding factory function (e.g., `createConciergeAgent()`)
+that creates and returns a configured instance.
+
+<Tip>
+All prefabs can be extended by subclassing. Add custom tools with `defineTool()`, extra
+prompt sections with `promptAddSection()`, and skills with `addSkill()`.
+</Tip>
+
+<CardGroup cols={2}>
+  <Card title="ConciergeAgent" href="/docs/server-sdks/reference/typescript/agents/prefabs/concierge-agent">
+    Multi-department routing with knowledge base, hours of operation, and call transfer.
+  </Card>
+  <Card title="FAQBotAgent" href="/docs/server-sdks/reference/typescript/agents/prefabs/faq-bot-agent">
+    Answer questions using keyword matching with optional escalation.
+  </Card>
+  <Card title="InfoGathererAgent" href="/docs/server-sdks/reference/typescript/agents/prefabs/info-gatherer-agent">
+    Collect named fields from a caller with validation and completion callbacks.
+  </Card>
+  <Card title="ReceptionistAgent" href="/docs/server-sdks/reference/typescript/agents/prefabs/receptionist-agent">
+    Front-desk check-in, directory lookup, and call transfers.
+  </Card>
+  <Card title="SurveyAgent" href="/docs/server-sdks/reference/typescript/agents/prefabs/survey-agent">
+    Conduct surveys with branching, scoring, and multiple question types.
+  </Card>
+</CardGroup>
+
+---
+
+## Extending Prefabs
+
+All prefabs inherit from [`AgentBase`][agentbase],
+so you can add custom tools, prompt sections, and skills:
+
+```typescript {4}
+import { FAQBotAgent } from '@signalwire/sdk';
+import { FunctionResult } from '@signalwire/sdk';
+
+class MyFAQBot extends FAQBotAgent {
+  protected override defineTools(): void {
+    super.defineTools();
+
+    this.defineTool({
+      name: 'escalate_to_human',
+      description: 'Escalate to a human agent',
+      parameters: { type: 'object', properties: {} },
+      handler: () => {
+        const result = new FunctionResult('Transferring you to an agent now.');
+        result.connect('+15551234567');
+        return result;
+      },
+    });
+  }
+}
+
+const agent = new MyFAQBot({
+  faqs: [
+    { question: 'What is your return policy?', answer: '30-day returns.' },
+  ],
+});
+
+agent.promptAddSection('Brand', { body: 'You represent Acme Corp.' });
+agent.addSkill('datetime');
+
+agent.serve();
+```

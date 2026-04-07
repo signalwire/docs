@@ -10,7 +10,7 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
-@route("/resources/sip_gateways/{resource_id}/addresses")
+@route("/{id}/addresses")
 namespace SignalWireAPI.Fabric.SipGateways.Addresses {
   @tag(SIP_GATEWAY_TAG)
   @friendlyName("SIP Gateway")

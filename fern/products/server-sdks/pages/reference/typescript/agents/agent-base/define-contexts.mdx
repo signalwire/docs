@@ -1,0 +1,82 @@
+---
+title: "defineContexts"
+slug: /reference/typescript/agents/agent-base/define-contexts
+description: Define multi-step conversation contexts and workflows for complex agent interactions.
+max-toc-depth: 3
+---
+
+[contextbuilder]: /docs/server-sdks/reference/typescript/agents/context-builder
+[ref-agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+
+Define contexts and steps for multi-step conversation workflows. Contexts allow an
+agent to guide the caller through a structured sequence of interactions -- such as
+gathering information, verifying identity, and then performing an action.
+
+Returns a [`ContextBuilder`][contextbuilder] for fluent context definition. If an
+existing `ContextBuilder` instance is passed, it is used directly. Otherwise a new
+empty `ContextBuilder` is created and returned.
+
+<Note>
+Contexts can coexist with traditional prompts. The only restriction is that POM
+sections and raw text cannot be mixed in the main prompt.
+</Note>
+
+## **Parameters**
+
+<ParamField path="contexts" type="ContextBuilder | Record<string, unknown> | undefined" toc={true}>
+  An existing `ContextBuilder` instance to use directly. If omitted or a plain object
+  is passed, a new empty `ContextBuilder` is created instead.
+</ParamField>
+
+## **Returns**
+
+[`ContextBuilder`][contextbuilder] -- The active `ContextBuilder` for further configuration.
+
+## **Examples**
+
+### Fluent ContextBuilder
+
+```typescript {4}
+import { AgentBase } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'intake', route: '/intake' });
+const ctx = agent.defineContexts().addContext('default');
+
+ctx.addStep('greeting')
+  .setText('Greet the caller and ask for their name.')
+  .setStepCriteria('The caller has provided their name.')
+  .setFunctions(['lookup_account'])
+  .setValidSteps(['verify']);
+
+ctx.addStep('verify')
+  .setText('Verify the caller\'s identity.')
+  .setStepCriteria('Identity verified.')
+  .setValidSteps(['assist']);
+
+ctx.addStep('assist')
+  .setText('Help the caller with their request.')
+  .setFunctions(['search_orders', 'process_return']);
+
+await agent.serve();
+```
+
+<Note>
+`addStep()` is a method on `Context`, not on `Step`. Since `Step` methods like
+`setValidSteps()` return the `Step` (not the parent `Context`), you must keep a
+reference to the `Context` and call `addStep()` on it for each new step.
+</Note>
+
+### Using an existing ContextBuilder
+
+```typescript {9}
+import { AgentBase, ContextBuilder } from '@signalwire/sdk';
+
+const builder = new ContextBuilder();
+const ctx = builder.addContext('default');
+ctx.addStep('greeting').setText('Greet the caller.');
+ctx.addStep('verify').setText('Verify identity.');
+
+const agent = new AgentBase({ name: 'intake', route: '/intake' });
+agent.defineContexts(builder);
+await agent.serve();
+```

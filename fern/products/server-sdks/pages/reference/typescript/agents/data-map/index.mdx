@@ -1,0 +1,194 @@
+---
+title: "DataMap"
+slug: /reference/typescript/agents/data-map
+description: "Fluent builder for server-side API tools that execute without webhooks."
+max-toc-depth: 3
+---
+
+[swaigfunction]: /docs/server-sdks/reference/typescript/agents/swaig-function
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[data-map]: /docs/swml/reference/ai/swaig/functions/data-map
+[swml-data-map-reference]: /docs/swml/reference/ai/swaig/functions/data-map
+[body]: /docs/server-sdks/reference/typescript/agents/data-map/body
+[errorkeys]: /docs/server-sdks/reference/typescript/agents/data-map/error-keys
+[expression]: /docs/server-sdks/reference/typescript/agents/data-map/expression
+[foreach]: /docs/server-sdks/reference/typescript/agents/data-map/foreach
+[helper-functions]: /docs/server-sdks/reference/typescript/agents/data-map/helper-functions
+[output]: /docs/server-sdks/reference/typescript/agents/data-map/output
+[parameter]: /docs/server-sdks/reference/typescript/agents/data-map/parameter
+[purpose]: /docs/server-sdks/reference/typescript/agents/data-map/purpose
+[toswaigfunction]: /docs/server-sdks/reference/typescript/agents/data-map/to-swaig-function
+[webhook]: /docs/server-sdks/reference/typescript/agents/data-map/webhook
+[webhookexpressions]: /docs/server-sdks/reference/typescript/agents/data-map/webhook-expressions
+
+DataMap builds SWAIG function definitions that execute REST API calls directly on
+SignalWire's infrastructure -- no webhook endpoint required on your server. This
+reduces latency, simplifies deployment, and is ideal for straightforward
+API-to-response integrations.
+
+Use DataMap when you need to call an external REST API and format the response
+with simple variable substitution. For complex business logic, database access,
+or multi-step processing, use a standard SWAIG function with a handler instead.
+
+<Info>
+See [`SwaigFunction`][swaigfunction] for
+handler-based tool definitions, and
+[`FunctionResult`][functionresult] for the
+response builder used in DataMap outputs.
+</Info>
+
+<Info>
+DataMap generates a SWML [`data_map`][data-map] object
+within a SWAIG function definition. See the
+[SWML data_map reference][swml-data-map-reference] for the
+full specification.
+</Info>
+
+## **Properties**
+
+<ParamField path="functionName" type="string" required={true} toc={true}>
+  Name of the SWAIG function this DataMap will create.
+</ParamField>
+
+## **Variable Substitution Patterns**
+
+| Pattern | Description |
+|---------|-------------|
+| `${args.param}` | Function argument value |
+| `${enc:args.param}` | URL-encoded argument (use in webhook URLs) |
+| `${lc:args.param}` | Lowercase argument value |
+| `${fmt_ph:args.phone}` | Format as phone number |
+| `${response.field}` | API response field |
+| `${response.arr[0]}` | Array element in response |
+| `${global_data.key}` | Global session data |
+| `${meta_data.key}` | Call metadata |
+| `${this.field}` | Current item in foreach |
+
+Modifiers are applied right-to-left: `${enc:lc:args.param}` lowercases first,
+then URL-encodes.
+
+## **Methods**
+
+<CardGroup cols={4}>
+  <Card title="body" href="/docs/server-sdks/reference/typescript/agents/data-map/body">
+    Set the request body for a webhook.
+  </Card>
+  <Card title="errorKeys" href="/docs/server-sdks/reference/typescript/agents/data-map/error-keys">
+    Set error detection keys for webhook responses.
+  </Card>
+  <Card title="expression" href="/docs/server-sdks/reference/typescript/agents/data-map/expression">
+    Add a pattern-based response without an API call.
+  </Card>
+  <Card title="foreach" href="/docs/server-sdks/reference/typescript/agents/data-map/foreach">
+    Process an array from the webhook response.
+  </Card>
+  <Card title="Helper Functions" href="/docs/server-sdks/reference/typescript/agents/data-map/helper-functions">
+    Convenience functions for creating common DataMap patterns.
+  </Card>
+  <Card title="output" href="/docs/server-sdks/reference/typescript/agents/data-map/output">
+    Set the output template for a webhook.
+  </Card>
+  <Card title="parameter" href="/docs/server-sdks/reference/typescript/agents/data-map/parameter">
+    Add a function parameter to the tool definition.
+  </Card>
+  <Card title="purpose" href="/docs/server-sdks/reference/typescript/agents/data-map/purpose">
+    Set the function description shown to the AI.
+  </Card>
+  <Card title="toSwaigFunction" href="/docs/server-sdks/reference/typescript/agents/data-map/to-swaig-function">
+    Convert the DataMap to a SWAIG function definition object.
+  </Card>
+  <Card title="webhook" href="/docs/server-sdks/reference/typescript/agents/data-map/webhook">
+    Add an API call to the DataMap.
+  </Card>
+  <Card title="webhookExpressions" href="/docs/server-sdks/reference/typescript/agents/data-map/webhook-expressions">
+    Add post-processing expressions for a webhook response.
+  </Card>
+  <Card title="description" href="/docs/server-sdks/reference/typescript/agents/data-map/description">
+    Alias for purpose -- set the function description.
+  </Card>
+  <Card title="params" href="/docs/server-sdks/reference/typescript/agents/data-map/params">
+    Set query or form parameters for a webhook.
+  </Card>
+  <Card title="fallbackOutput" href="/docs/server-sdks/reference/typescript/agents/data-map/fallback-output">
+    Set the fallback output when no webhook or expression matches.
+  </Card>
+  <Card title="globalErrorKeys" href="/docs/server-sdks/reference/typescript/agents/data-map/global-error-keys">
+    Set top-level error detection keys.
+  </Card>
+  <Card title="enableEnvExpansion" href="/docs/server-sdks/reference/typescript/agents/data-map/enable-env-expansion">
+    Enable environment variable expansion.
+  </Card>
+  <Card title="setAllowedEnvPrefixes" href="/docs/server-sdks/reference/typescript/agents/data-map/set-allowed-env-prefixes">
+    Override allowed env var prefixes for this DataMap.
+  </Card>
+  <Card title="registerWithAgent" href="/docs/server-sdks/reference/typescript/agents/data-map/register-with-agent">
+    Register this DataMap tool with an AgentBase instance.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Weather lookup
+
+```typescript {3}
+import { DataMap, FunctionResult } from '@signalwire/sdk';
+
+const dm = new DataMap('get_weather');
+dm.purpose('Look up current weather for a location');
+dm.parameter('city', 'string', 'City name', { required: true });
+dm.webhook('GET', 'https://api.weather.com/v1/current?q=${args.city}');
+dm.output(new FunctionResult('Weather in ${args.city}: ${response.current.condition.text}, ${response.current.temp_f}F'));
+```
+
+### Expression-based control
+
+```typescript {3}
+import { AgentBase, DataMap, FunctionResult } from '@signalwire/sdk';
+
+const volumeControl = new DataMap('set_volume')
+  .purpose('Control audio volume')
+  .parameter('level', 'string', 'Volume level', { required: true })
+  .expression(
+    '${args.level}', /high|loud|up/,
+    new FunctionResult('Volume increased'),
+  )
+  .expression(
+    '${args.level}', /low|quiet|down/,
+    new FunctionResult('Volume decreased'),
+  )
+  .expression(
+    '${args.level}', /mute|off/,
+    new FunctionResult('Audio muted'),
+  );
+
+const agent = new AgentBase({ name: 'media-agent' });
+agent.setPromptText('You are a helpful assistant.');
+agent.registerSwaigFunction(volumeControl.toSwaigFunction());
+await agent.run();
+```
+
+### POST with body and foreach
+
+```typescript {3}
+import { DataMap, FunctionResult } from '@signalwire/sdk';
+
+const searchDocs = new DataMap('search_docs')
+  .purpose('Search documentation')
+  .parameter('query', 'string', 'Search query', { required: true })
+  .webhook('POST', 'https://api.docs.example.com/search', {
+    headers: { Authorization: 'Bearer TOKEN' },
+  })
+  .body({ query: '${args.query}', limit: 3 })
+  .foreach({
+    input_key: 'results',
+    output_key: 'formatted_results',
+    max: 3,
+    append: '- ${this.title}: ${this.summary}\n',
+  })
+  .output(new FunctionResult('Found:\n${formatted_results}'))
+  .fallbackOutput(new FunctionResult('Search is currently unavailable.'));
+
+console.log(searchDocs.toSwaigFunction());
+```

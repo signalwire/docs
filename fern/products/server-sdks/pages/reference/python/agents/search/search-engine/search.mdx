@@ -1,0 +1,78 @@
+---
+title: "search"
+slug: /reference/python/agents/search/search-engine/search
+description: Perform a hybrid search query against the indexed documents.
+max-toc-depth: 3
+---
+
+[preprocess-query]: /docs/server-sdks/reference/python/agents/search/helpers
+
+Perform a hybrid search combining vector similarity, keyword matching, filename
+search, and metadata search. Candidates from all strategies are merged, scored,
+filtered, and ranked.
+
+The search pipeline works in three stages:
+1. **Candidate collection** -- run vector, filename, metadata, and keyword searches in parallel
+2. **Scoring** -- combine signals using max-signal-wins with agreement boosts
+3. **Ranking** -- apply diversity penalties, exact-match boosts, and tag filtering
+
+## **Parameters**
+
+<ParamField path="query_vector" type="list[float]" required={true} toc={true}>
+  Embedding vector for the query, produced by encoding the query text with
+  the same model used to build the index.
+</ParamField>
+
+<ParamField path="enhanced_text" type="str" required={true} toc={true}>
+  Preprocessed query text for keyword and full-text search. Typically the output
+  of [`preprocess_query()`][preprocess-query].
+</ParamField>
+
+<ParamField path="count" type="int" default="3" toc={true}>
+  Maximum number of results to return.
+</ParamField>
+
+<ParamField path="similarity_threshold" type="float" default="0.0" toc={true}>
+  Minimum combined score for a result to be included. Results below this
+  threshold are filtered out.
+</ParamField>
+
+<ParamField path="tags" type="Optional[list[str]]" toc={true}>
+  Filter results to only those containing at least one of the specified tags.
+</ParamField>
+
+<ParamField path="keyword_weight" type="Optional[float]" toc={true}>
+  Manual weight for keyword vs. vector scoring. When not set, the engine
+  uses its internal max-signal-wins scoring.
+</ParamField>
+
+<ParamField path="original_query" type="Optional[str]" toc={true}>
+  The original unprocessed query string. Used for exact-match boosting.
+</ParamField>
+
+## **Returns**
+
+`list[dict]` -- A list of result dictionaries, each containing:
+- `content` (str) -- the chunk text
+- `score` (float) -- the final combined score
+- `metadata` (dict) -- chunk metadata including `filename`, `section`, `tags`
+- `search_type` (str) -- the primary search strategy that found the result
+
+## **Example**
+
+```python {5}
+from signalwire.search import SearchEngine, preprocess_query
+
+engine = SearchEngine(backend="sqlite", index_path="./docs.swsearch")
+enhanced = preprocess_query("How do I configure an agent?", vector=True)
+results = engine.search(
+    query_vector=enhanced["vector"],
+    enhanced_text=enhanced["enhanced_text"],
+    count=5,
+    original_query="How do I configure an agent?",
+)
+
+for result in results:
+    print(f"[{result['score']:.3f}] {result['metadata']['filename']}")
+    print(f"  {result['content'][:120]}...")
+```
