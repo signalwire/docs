@@ -1,0 +1,1212 @@
+---
+layout: overview
+slug: signalwire-python/signalwire/relay/client
+title: signalwire.relay.client
+---
+
+RelayClient — WebSocket + JSON-RPC 2.0 protocol + event dispatch.
+
+One instance = one persistent WebSocket connection to SignalWire RELAY.
+
+Architecture notes (mirrors the JS SDK):
+- JSON-RPC requests are tracked by ``id`` in ``_pending``; responses resolve
+  the corresponding Future.
+- ``signalwire.event`` messages are acknowledged back to the server (event ACK)
+  and then dispatched by ``event_type`` → Call object → Action object.
+- Each Action registers with a ``control_id`` and listens for its own
+  event_type (e.g. ``calling.call.play``).  Actions filter events by
+  ``control_id`` so multiple concurrent actions on the same call work.
+- Result code checking accepts any 2xx (matching the JS SDK regex /^2[0-9][0-9]$/).
+  ``signalwire.connect`` responses skip code checking entirely.
+- Execute has a configurable timeout (default 10s) to detect half-open connections.
+- Requests made while disconnected are queued and flushed after re-auth.
+- Server pings are tracked; if no ping arrives within the check interval the
+  connection is assumed half-open and force-closed for reconnect.
+
+## Module Contents
+
+### Classes
+
+| Name | Description |
+|------|-------------|
+| [`RelayClient`](#signalwire-relay-client-RelayClient) | Manages a WebSocket connection to SignalWire RELAY. |
+| [`RelayError`](#signalwire-relay-client-RelayError) | Error returned by the RELAY server. |
+
+### Data
+
+[`CallHandler`](#signalwire-relay-client-CallHandler)
+
+[`MessageHandler`](#signalwire-relay-client-MessageHandler)
+
+[`_CHECK_PING_DELAY`](#signalwire-relay-client-_CHECK_PING_DELAY)
+
+[`_CLIENT_PING_INTERVAL`](#signalwire-relay-client-_CLIENT_PING_INTERVAL)
+
+[`_DEFAULT_MAX_ACTIVE_CALLS`](#signalwire-relay-client-_DEFAULT_MAX_ACTIVE_CALLS)
+
+[`_EXECUTE_TIMEOUT`](#signalwire-relay-client-_EXECUTE_TIMEOUT)
+
+[`_MAX_CONNECTIONS`](#signalwire-relay-client-_MAX_CONNECTIONS)
+
+[`_MAX_PING_FAILURES`](#signalwire-relay-client-_MAX_PING_FAILURES)
+
+[`_MAX_QUEUE_SIZE`](#signalwire-relay-client-_MAX_QUEUE_SIZE)
+
+[`_SUCCESS_CODE_RE`](#signalwire-relay-client-_SUCCESS_CODE_RE)
+
+[`_active_clients`](#signalwire-relay-client-_active_clients)
+
+[`logger`](#signalwire-relay-client-logger)
+
+### API
+
+<Anchor id="signalwire-relay-client-RelayClient">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class signalwire.relay.client.RelayClient(
+    project: typing.Optional[str] = None,
+    token: typing.Optional[str] = None,
+    jwt_token: typing.Optional[str] = None,
+    host: typing.Optional[str] = None,
+    contexts: typing.Optional[list[str]] = None,
+    max_active_calls: typing.Optional[int] = None
+)
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Manages a WebSocket connection to SignalWire RELAY.
+
+Usage::
+
+    client = RelayClient(project="...", token="...", contexts=["default"])
+
+    @client.on_call
+    async def handle(call):
+        await call.answer()
+        await call.hangup()
+
+    client.run()
+
+
+<ParamField path="_authorization_state" type="str = ''">
+</ParamField>
+
+<ParamField path="_calls" type="dict[str, Call] = &#123;&#125;">
+</ParamField>
+
+<ParamField path="_check_ping_handle" type="Optional[TimerHandle] = None">
+</ParamField>
+
+<ParamField path="_dial_calls_by_tag" type="dict[str, list['Call']] = &#123;&#125;">
+</ParamField>
+
+<ParamField path="_execute_queue" type="list[tuple[dict, Future[dict]]] = []">
+</ParamField>
+
+<ParamField path="_identity" type="str = ''">
+</ParamField>
+
+<ParamField path="_max_active_calls">
+</ParamField>
+
+<ParamField path="_messages" type="dict[str, Message] = &#123;&#125;">
+</ParamField>
+
+<ParamField path="_on_call_handler" type="Optional[CallHandler] = None">
+</ParamField>
+
+<ParamField path="_on_message_handler" type="Optional[MessageHandler] = None">
+</ParamField>
+
+<ParamField path="_pending" type="dict[str, Future[dict]] = &#123;&#125;">
+</ParamField>
+
+<ParamField path="_pending_dials" type="dict[str, Future['Call']] = &#123;&#125;">
+</ParamField>
+
+<ParamField path="_pending_methods" type="dict[str, str] = &#123;&#125;">
+</ParamField>
+
+<ParamField path="_ping_failures" type="int = 0">
+</ParamField>
+
+<ParamField path="_ping_task" type="Optional[Task] = None">
+</ParamField>
+
+<ParamField path="_recv_task" type="Optional[Task] = None">
+</ParamField>
+
+<ParamField path="_relay_protocol" type="str = ''">
+</ParamField>
+
+<ParamField path="_ws" type="Optional[WebSocketClientProtocol] = None">
+</ParamField>
+
+<ParamField path="contexts" type="= contexts or []">
+</ParamField>
+
+<ParamField path="host">
+</ParamField>
+
+<ParamField path="jwt_token">
+</ParamField>
+
+<ParamField path="project">
+</ParamField>
+
+<ParamField path="relay_protocol" type="str">
+Server-assigned protocol string from the connect response.
+</ParamField>
+
+<ParamField path="token">
+</ParamField>
+<Anchor id="signalwire-relay-client-RelayClient-__aenter__">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.__aenter__() -> 'RelayClient'
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-__aexit__">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.__aexit__(
+    exc: typing.Any = ()
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-__del__">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.__del__() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_authenticate">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._authenticate() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Send signalwire.connect and wait for the response.
+
+The server returns a ``protocol`` string that must be used as
+the ``protocol`` field in all subsequent calling commands.
+On reconnect the previously-received protocol is sent back to
+resume the same session.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_cancel_check_ping">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._cancel_check_ping() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_clear_pending_requests">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._clear_pending_requests() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Reject all pending request futures (connection lost).
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_flush_execute_queue">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._flush_execute_queue() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Send any requests that were queued while disconnected.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_force_close">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._force_close() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Force-close the WebSocket to trigger reconnect.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_get_request_method">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._get_request_method(
+    req_id: str
+) -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Look up the original method for a pending request by ID.
+
+Used to skip code-checking for signalwire.connect responses.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_handle_dial_event">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._handle_dial_event(
+    payload: dict[str, typing.Any]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Handle a ``calling.call.dial`` event.
+
+The event structure (per spec):
+- ``params.tag`` — the dial tag
+- ``params.dial_state`` — ``dialing`` | ``answered`` | ``failed``
+- ``params.call`` — object with ``call_id``, ``node_id``,
+  ``tag``, ``device``, ``dial_winner`` (only on answered)
+
+Resolves the pending dial Future with the winning Call when
+``dial_state`` is ``"answered"``, or rejects it on ``"failed"``.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_handle_event">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._handle_event(
+    payload: dict[str, typing.Any]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Dispatch a signalwire.event to the appropriate Call.
+
+Routing logic:
+1. ``calling.call.receive`` → create inbound Call
+2. ``calling.call.dial`` → resolve pending dial by tag
+3. ``calling.call.state`` with tag matching a pending dial →
+   create/register the Call leg so events flow before dial completes
+4. All other events → route by ``call_id`` in ``params``
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_handle_inbound_call">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._handle_inbound_call(
+    payload: dict[str, typing.Any]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Create a Call object for an inbound call and invoke the handler.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_handle_inbound_message">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._handle_inbound_message(
+    payload: dict[str, typing.Any]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Create a Message object for an inbound message and invoke the handler.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_handle_message">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._handle_message(
+    msg: dict[str, typing.Any]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Route an incoming JSON-RPC message.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_handle_message_state">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._handle_message_state(
+    payload: dict[str, typing.Any]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Route a messaging.state event to the tracked Message object.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_on_check_ping_timeout">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._on_check_ping_timeout() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+No server ping received in time — send a client ping as probe.
+
+The client ping loop will handle failures with exponential backoff.
+This just logs; the ping loop does the actual probing.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_ping_loop">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._ping_loop() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Periodically send client pings for resilience.
+
+- Sends signalwire.ping every _CLIENT_PING_INTERVAL seconds.
+- On failure, retries with exponential backoff up to _MAX_PING_FAILURES.
+- After max failures, force-closes the connection for reconnect.
+- Server pings also reset the failure counter (see _handle_message).
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_recv_loop">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._recv_loop() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Read messages from the WebSocket until closed.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_register_dial_leg">
+
+<CodeBlock links={{"signalwire.relay.call.Call":"/signalwire-python/signalwire/relay/call#signalwire-relay-call-Call"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._register_dial_leg(
+    tag: str,
+    event_params: dict[str, typing.Any]
+) -> signalwire.relay.call.Call
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Create a Call for a call leg spawned by calling.dial.
+
+Called when a ``calling.call.state`` event arrives with a tag
+matching a pending dial but the call_id isn't registered yet.
+The Call is registered in ``_calls`` so subsequent events route
+normally, and also tracked in ``_dial_calls_by_tag`` so
+``_handle_dial_event`` can find the winner.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_reset_check_ping">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._reset_check_ping() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Reset the server-ping watchdog timer.
+
+Called when we receive a server ping — resets failure counter and
+restarts the watchdog that will probe if the server goes silent.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_run_forever">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._run_forever() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Connect and maintain the connection with auto-reconnect.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_safe_call_handler">
+
+<CodeBlock links={{"signalwire.relay.call.Call":"/signalwire-python/signalwire/relay/call#signalwire-relay-call-Call"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._safe_call_handler(
+    call: signalwire.relay.call.Call
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Run the on_call handler as a free task so the recv loop is never blocked.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_safe_message_handler">
+
+<CodeBlock links={{"signalwire.relay.message.Message":"/signalwire-python/signalwire/relay/message#signalwire-relay-message-Message"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._safe_message_handler(
+    message: signalwire.relay.message.Message
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Run the on_message handler as a free task so the recv loop is never blocked.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_safe_send">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._safe_send(
+    raw: str,
+    future: asyncio.Future
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Send a queued message, rejecting its future on failure.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_send_event_ack">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._send_event_ack(
+    req_id: str
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Acknowledge a signalwire.event back to the server.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_send_pong">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._send_pong(
+    req_id: str
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Respond to a server ping.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_send_request">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._send_request(
+    method: str,
+    params: dict[str, typing.Any]
+) -> dict
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Send a JSON-RPC 2.0 request and return the result.
+
+If not connected, queues the request for later delivery.
+Applies a timeout to detect half-open connections.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-_shutdown">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient._shutdown() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Signal handler for clean Ctrl+C shutdown.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-connect">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.connect() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Connect to RELAY and authenticate.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-dial">
+
+<CodeBlock links={{"signalwire.relay.call.Call":"/signalwire-python/signalwire/relay/call#signalwire-relay-call-Call"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.dial(
+    devices: list[list[dict[str, typing.Any]]],
+    tag: typing.Optional[str] = None,
+    max_duration: typing.Optional[int] = None,
+    dial_timeout: typing.Optional[float] = None
+) -> signalwire.relay.call.Call
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Initiate an outbound call using dial. Returns a Call object.
+
+The ``calling.dial`` RPC response only contains
+``&#123;"code": "200", "message": "Dialing"&#125;`` — no call_id. The real
+call_id and node_id arrive via ``calling.call.dial`` events
+matched by ``tag``.  This method waits for that event so the
+returned Call always has valid identifiers.
+
+**Parameters:**
+
+<ParamField path="devices" type="list[list[dict[str, Any]]]">
+Array of device lists (serial/parallel dial).
+</ParamField>
+
+<ParamField path="tag" type="Optional[str]" default="None">
+Client-provided tag for event correlation. Auto-generated
+ if not supplied.
+</ParamField>
+
+<ParamField path="max_duration" type="Optional[int]" default="None">
+Optional max call duration in minutes.
+</ParamField>
+
+<ParamField path="dial_timeout" type="Optional[float]" default="None">
+How long (seconds) to wait for the dial to
+          complete before raising TimeoutError.  Defaults
+          to 120s.
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-disconnect">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.disconnect() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Cleanly close the connection.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-execute">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.execute(
+    method: str,
+    params: dict[str, typing.Any]
+) -> dict
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Send a JSON-RPC request and await the response.
+
+For calling methods, ``method`` is the full name (e.g.
+``"calling.answer"``, ``"calling.play"``) with ``node_id``
+and ``call_id`` in ``params``.
+
+If the connection is not ready, the request is queued and sent
+after re-authentication completes.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-on_call">
+
+<CodeBlock links={{"signalwire.relay.client.CallHandler":"#signalwire-relay-client-CallHandler"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.on_call(
+    handler: signalwire.relay.client.CallHandler
+) -> signalwire.relay.client.CallHandler
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Register the inbound call handler (decorator).
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-on_message">
+
+<CodeBlock links={{"signalwire.relay.client.MessageHandler":"#signalwire-relay-client-MessageHandler"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.on_message(
+    handler: signalwire.relay.client.MessageHandler
+) -> signalwire.relay.client.MessageHandler
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Register the inbound message handler (decorator).
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-receive">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.receive(
+    contexts: list[str]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Subscribe to additional contexts for inbound events.
+
+Sends ``signalwire.receive`` on the assigned protocol to start
+receiving inbound calls on the given contexts.  Can be called
+after ``connect()`` to dynamically add contexts without reconnecting.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-run">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.run() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Blocking entry point — runs the event loop until interrupted.
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-send_message">
+
+<CodeBlock links={{"signalwire.relay.message.Message":"/signalwire-python/signalwire/relay/message#signalwire-relay-message-Message"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.send_message(
+    to_number: str,
+    from_number: str,
+    context: typing.Optional[str] = None,
+    body: typing.Optional[str] = None,
+    media: typing.Optional[list[str]] = None,
+    tags: typing.Optional[list[str]] = None,
+    region: typing.Optional[str] = None,
+    on_completed: typing.Optional[typing.Callable] = None
+) -> signalwire.relay.message.Message
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Send an outbound SMS/MMS message.
+
+At least one of ``body`` or ``media`` must be provided.
+
+Returns a Message object that tracks state changes. Use
+``await message.wait()`` to block until delivery confirmation
+(or failure).
+
+**Parameters:**
+
+<ParamField path="to_number" type="str">
+Destination phone number in E.164 format.
+</ParamField>
+
+<ParamField path="from_number" type="str">
+Sender phone number in E.164 format.
+</ParamField>
+
+<ParamField path="context" type="Optional[str]" default="None">
+Context for receiving state events. Defaults to
+     the relay protocol.
+</ParamField>
+
+<ParamField path="body" type="Optional[str]" default="None">
+Text body of the message.
+</ParamField>
+
+<ParamField path="media" type="Optional[list[str]]" default="None">
+List of media URLs for MMS.
+</ParamField>
+
+<ParamField path="tags" type="Optional[list[str]]" default="None">
+Optional tags for the message.
+</ParamField>
+
+<ParamField path="region" type="Optional[str]" default="None">
+Optional origination region.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable]" default="None">
+Optional callback fired when a terminal state
+          (delivered/undelivered/failed) is reached.
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-relay-client-RelayClient-unreceive">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.RelayClient.unreceive(
+    contexts: list[str]
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Unsubscribe from contexts for inbound events.
+
+Sends ``signalwire.unreceive`` to stop receiving inbound calls
+on the given contexts.
+
+
+</Indent>
+</Indent>
+
+<Anchor id="signalwire-relay-client-RelayError">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class signalwire.relay.client.RelayError(
+    code: int,
+    message: str
+)
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>Exception</Badge>
+
+**Bases:** `Exception`
+
+Error returned by the RELAY server.
+
+
+</Indent>
+
+<Anchor id="signalwire-relay-client-CallHandler">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.CallHandler = Callable[['Call'], Coroutine[Any, Any, None]]
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-MessageHandler">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.MessageHandler = Callable[['Message'], Coroutine[Any, Any, None]]
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_CHECK_PING_DELAY">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._CHECK_PING_DELAY = 15.0
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_CLIENT_PING_INTERVAL">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._CLIENT_PING_INTERVAL = 30.0
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_DEFAULT_MAX_ACTIVE_CALLS">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._DEFAULT_MAX_ACTIVE_CALLS = 1000
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_EXECUTE_TIMEOUT">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._EXECUTE_TIMEOUT = 10.0
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_MAX_CONNECTIONS">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._MAX_CONNECTIONS = max(1, int(os.environ.get('RELAY_MAX_CONNECTIONS', '1')))
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_MAX_PING_FAILURES">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._MAX_PING_FAILURES = 3
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_MAX_QUEUE_SIZE">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._MAX_QUEUE_SIZE = 500
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_SUCCESS_CODE_RE">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._SUCCESS_CODE_RE = re.compile('^2\\d{2}$')
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-_active_clients">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client._active_clients: set[int] = set()
+```
+
+</CodeBlock>
+</Anchor>
+
+
+<Anchor id="signalwire-relay-client-logger">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.relay.client.logger = get_logger('relay_client')
+```
+
+</CodeBlock>
+</Anchor>
+

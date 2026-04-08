@@ -1,0 +1,859 @@
+---
+layout: overview
+slug: signalwire-python/signalwire/core/swml_service
+title: signalwire.core.swml_service
+---
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire AI Agents SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Module Contents
+
+### Classes
+
+| Name | Description |
+|------|-------------|
+| [`SWMLService`](#signalwire-core-swml_service-SWMLService) | Base class for creating and serving SWML documents. |
+
+### Data
+
+[`logger`](#signalwire-core-swml_service-logger)
+
+### API
+
+<Anchor id="signalwire-core-swml_service-SWMLService">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class signalwire.core.swml_service.SWMLService(
+    name: str,
+    route: str = '/',
+    host: str = '0.0.0.0',
+    port: typing.Optional[int] = None,
+    basic_auth: typing.Optional[typing.Tuple[str, str]] = None,
+    schema_path: typing.Optional[str] = None,
+    config_file: typing.Optional[str] = None,
+    schema_validation: bool = True
+)
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Base class for creating and serving SWML documents.
+
+This class provides core functionality for:
+- Loading and validating SWML schema
+- Creating SWML documents
+- Setting up web endpoints for serving SWML
+- Managing authentication
+- Registering SWML functions
+
+It serves as the foundation for more specialized services like AgentBase.
+
+
+<ParamField path="_current_document" type="= self._create_empty_document()">
+</ParamField>
+
+<ParamField path="_proxy_debug">
+</ParamField>
+
+<ParamField path="_proxy_url_base" type="= os.environ.get('SWML_PROXY_URL_BASE')">
+</ParamField>
+
+<ParamField path="_proxy_url_base_from_env" type="= bool(self._proxy_url_base)">
+</ParamField>
+
+<ParamField path="_routing_callbacks" type="= &#123;&#125;">
+</ParamField>
+
+<ParamField path="_verb_methods_cache" type="= &#123;&#125;">
+</ParamField>
+
+<ParamField path="domain" type="= self.security.domain">
+</ParamField>
+
+<ParamField path="full_validation_enabled" type="bool">
+Check if full JSON Schema validation is enabled.
+</ParamField>
+
+<ParamField path="log" type="= logger.bind(service=name)">
+</ParamField>
+
+<ParamField path="port">
+</ParamField>
+
+<ParamField path="route" type="= route.rstrip('/')">
+</ParamField>
+
+<ParamField path="schema_utils">
+</ParamField>
+
+<ParamField path="security">
+</ParamField>
+
+<ParamField path="ssl_cert_path" type="= self.security.ssl_cert_path">
+</ParamField>
+
+<ParamField path="ssl_enabled" type="= self.security.ssl_enabled">
+</ParamField>
+
+<ParamField path="ssl_key_path" type="= self.security.ssl_key_path">
+</ParamField>
+
+<ParamField path="verb_registry" type="= VerbHandlerRegistry()">
+</ParamField>
+<Anchor id="signalwire-core-swml_service-SWMLService-__getattr__">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.__getattr__(
+    name: str
+) -> typing.Any
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Dynamically generate and return SWML verb methods when accessed
+
+This method is called when an attribute lookup fails through the normal
+mechanisms. It checks if the attribute name corresponds to a SWML verb
+defined in the schema, and if so, dynamically creates a method for that verb.
+
+**Parameters:**
+
+<ParamField path="name" type="str">
+The name of the attribute being accessed
+</ParamField>
+
+**Returns:** `Any`
+
+The dynamically created verb method if name is a valid SWML verb,
+
+**Raises:**
+
+- `AttributeError`: If name is not a valid SWML verb
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_build_full_url">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._build_full_url(
+    endpoint: str = '',
+    include_auth: bool = True,
+    query_params: typing.Optional[typing.Dict[str, str]] = None
+) -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Build the full URL for this service or a specific endpoint
+
+This is the internal implementation used by both get_full_url (for AgentBase compatibility)
+and _build_webhook_url.
+
+**Parameters:**
+
+<ParamField path="endpoint" type="str" default="''">
+Optional endpoint path (e.g., "swaig", "post_prompt")
+</ParamField>
+
+<ParamField path="include_auth" type="bool" default="True">
+Whether to include authentication credentials in the URL
+</ParamField>
+
+<ParamField path="query_params" type="Optional[Dict[str, str]]" default="None">
+Optional query parameters to append
+</ParamField>
+
+**Returns:** `str`
+
+Full URL string
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_build_webhook_url">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._build_webhook_url(
+    endpoint: str,
+    query_params: typing.Optional[typing.Dict[str, str]] = None
+) -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Helper method to build webhook URLs consistently
+
+**Parameters:**
+
+<ParamField path="endpoint" type="str">
+The endpoint path (e.g., "swaig", "post_prompt")
+</ParamField>
+
+<ParamField path="query_params" type="Optional[Dict[str, str]]" default="None">
+Optional query parameters to append
+</ParamField>
+
+**Returns:** `str`
+
+Fully constructed webhook URL
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_check_basic_auth">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._check_basic_auth(
+    request: fastapi.Request
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Check if the request has valid basic auth credentials
+
+**Parameters:**
+
+<ParamField path="request" type="Request">
+FastAPI Request object
+</ParamField>
+
+**Returns:** `bool`
+
+True if auth is valid, False otherwise
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_create_empty_document">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._create_empty_document() -> typing.Dict[str, typing.Any]
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Create an empty SWML document
+
+**Returns:** `Dict[str, Any]`
+
+Empty SWML document structure
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_create_verb_methods">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._create_verb_methods() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Create auto-vivified methods for all verbs at initialization time
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_detect_proxy_from_request">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._detect_proxy_from_request(
+    request: fastapi.Request
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Detect if we're behind a proxy by examining request headers
+and auto-configure proxy_url_base if needed
+
+**Parameters:**
+
+<ParamField path="request" type="Request">
+FastAPI Request object
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_find_schema_path">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._find_schema_path() -> typing.Optional[str]
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Find the schema.json file location
+
+**Returns:** `Optional[str]`
+
+Path to schema.json if found, None otherwise
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_get_base_url">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._get_base_url(
+    include_auth: bool = True
+) -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Get the base URL for this service, using proxy info if available or falling back to configured values
+
+This is the central method for URL building that handles both startup configuration
+and per-request proxy detection.
+
+**Parameters:**
+
+<ParamField path="include_auth" type="bool" default="True">
+Whether to include authentication credentials in the URL
+</ParamField>
+
+**Returns:** `str`
+
+Base URL string (protocol://[auth@]host[:port])
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-_handle_request">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService._handle_request(
+    request: fastapi.Request,
+    response: fastapi.Response
+)
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>async</Badge>
+
+Internal handler for both GET and POST requests
+
+**Parameters:**
+
+<ParamField path="request" type="Request">
+FastAPI Request object
+</ParamField>
+
+<ParamField path="response" type="Response">
+FastAPI Response object
+</ParamField>
+
+**Returns:**
+
+Response with SWML document or error
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-add_section">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.add_section(
+    section_name: str
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Add a new section to the document
+
+**Parameters:**
+
+<ParamField path="section_name" type="str">
+Name of the section to add
+</ParamField>
+
+**Returns:** `bool`
+
+True if the section was added, False if it already exists
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-add_verb">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.add_verb(
+    verb_name: str,
+    config: typing.Union[typing.Dict[str, typing.Any], int]
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Add a verb to the main section of the current document
+
+**Parameters:**
+
+<ParamField path="verb_name" type="str">
+The name of the verb to add
+</ParamField>
+
+<ParamField path="config" type="Union[Dict[str, Any], int]">
+Configuration for the verb or direct value for certain verbs (e.g., sleep)
+</ParamField>
+
+**Returns:** `bool`
+
+True if the verb was added successfully, False otherwise
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-add_verb_to_section">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.add_verb_to_section(
+    section_name: str,
+    verb_name: str,
+    config: typing.Union[typing.Dict[str, typing.Any], int]
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Add a verb to a specific section
+
+**Parameters:**
+
+<ParamField path="section_name" type="str">
+Name of the section to add to
+</ParamField>
+
+<ParamField path="verb_name" type="str">
+The name of the verb to add
+</ParamField>
+
+<ParamField path="config" type="Union[Dict[str, Any], int]">
+Configuration for the verb or direct value for certain verbs (e.g., sleep)
+</ParamField>
+
+**Returns:** `bool`
+
+True if the verb was added successfully, False otherwise
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-as_router">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.as_router() -> fastapi.APIRouter
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Create a FastAPI router for this service
+
+**Returns:** `APIRouter`
+
+FastAPI router
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-extract_sip_username">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.extract_sip_username(
+    request_body: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+<Badge>staticmethod</Badge>
+
+Extract SIP username from request body
+
+This extracts the username portion of a SIP URI from the 'to' field
+in the call data of a request body.
+
+**Parameters:**
+
+<ParamField path="request_body" type="Dict[str, Any]">
+The parsed JSON body of the request
+</ParamField>
+
+**Returns:** `Optional[str]`
+
+The extracted SIP username, or None if not found
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-get_basic_auth_credentials">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.get_basic_auth_credentials(
+    include_source: bool = False
+) -> typing.Union[typing.Tuple[str, str], typing.Tuple[str, str, str]]
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Get the basic auth credentials
+
+**Parameters:**
+
+<ParamField path="include_source" type="bool" default="False">
+Whether to include the source of the credentials
+</ParamField>
+
+**Returns:** `Union[Tuple[str, str], Tuple[str, str, str]]`
+
+(username, password) tuple or (username, password, source) tuple if include_source is True
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-get_document">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.get_document() -> typing.Dict[str, typing.Any]
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Get the current SWML document
+
+**Returns:** `Dict[str, Any]`
+
+The current SWML document as a dictionary
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-manual_set_proxy_url">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.manual_set_proxy_url(
+    proxy_url: str
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Manually set the proxy URL base for webhook callbacks
+
+This can be called at runtime to set or update the proxy URL
+
+**Parameters:**
+
+<ParamField path="proxy_url" type="str">
+The base URL to use for webhooks (e.g., https://example.ngrok.io)
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-on_request">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.on_request(
+    request_data: typing.Optional[dict] = None,
+    callback_path: typing.Optional[str] = None
+) -> typing.Optional[dict]
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Called when SWML is requested, with request data when available
+
+Subclasses can override this to inspect or modify SWML based on the request
+
+**Parameters:**
+
+<ParamField path="request_data" type="Optional[dict]" default="None">
+Optional dictionary containing the parsed POST body
+</ParamField>
+
+<ParamField path="callback_path" type="Optional[str]" default="None">
+Optional callback path
+</ParamField>
+
+**Returns:** `Optional[dict]`
+
+Optional dict to modify/augment the SWML document
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-register_routing_callback">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.register_routing_callback(
+    callback_fn: typing.Callable[[Request, Dict[str, Any]], typing.Optional[str]],
+    path: str = '/sip'
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Register a callback function that will be called to determine routing
+based on POST data.
+
+When a routing callback is registered, an endpoint at the specified path is automatically
+created that will handle requests. This endpoint will use the callback to
+determine if the request should be processed by this service or redirected.
+
+The callback should take a request object and request body dictionary and return:
+- A route string if it should be routed to a different endpoint
+- None if normal processing should continue
+
+**Parameters:**
+
+<ParamField path="callback_fn" type="Callable[[Request, Dict[str, Any]], Optional[str]]">
+The callback function to register
+</ParamField>
+
+<ParamField path="path" type="str" default="'/sip'">
+The path where this callback should be registered (default: "/sip")
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-register_verb_handler">
+
+<CodeBlock links={{"signalwire.core.swml_handler.SWMLVerbHandler":"/signalwire-python/signalwire/core/swml_handler#signalwire-core-swml_handler-SWMLVerbHandler"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.register_verb_handler(
+    handler: signalwire.core.swml_handler.SWMLVerbHandler
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Register a custom verb handler
+
+**Parameters:**
+
+<ParamField path="handler" type="SWMLVerbHandler">
+The verb handler to register
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-render_document">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.render_document() -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Render the current SWML document as a JSON string
+
+**Returns:** `str`
+
+The current SWML document as a JSON string
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-reset_document">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.reset_document() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Reset the current document to an empty state
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-serve">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.serve(
+    host: typing.Optional[str] = None,
+    port: typing.Optional[int] = None,
+    ssl_cert: typing.Optional[str] = None,
+    ssl_key: typing.Optional[str] = None,
+    ssl_enabled: typing.Optional[bool] = None,
+    domain: typing.Optional[str] = None
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Start a web server for this service
+
+**Parameters:**
+
+<ParamField path="host" type="Optional[str]" default="None">
+Host to bind to (defaults to self.host)
+</ParamField>
+
+<ParamField path="port" type="Optional[int]" default="None">
+Port to bind to (defaults to self.port)
+</ParamField>
+
+<ParamField path="ssl_cert" type="Optional[str]" default="None">
+Path to SSL certificate file
+</ParamField>
+
+<ParamField path="ssl_key" type="Optional[str]" default="None">
+Path to SSL key file
+</ParamField>
+
+<ParamField path="ssl_enabled" type="Optional[bool]" default="None">
+Whether to enable SSL
+</ParamField>
+
+<ParamField path="domain" type="Optional[str]" default="None">
+Domain name for SSL certificate
+</ParamField>
+
+
+</Indent>
+<Anchor id="signalwire-core-swml_service-SWMLService-stop">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.SWMLService.stop() -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Stop the web server
+
+
+</Indent>
+</Indent>
+
+<Anchor id="signalwire-core-swml_service-logger">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+signalwire.core.swml_service.logger = get_logger('swml_service')
+```
+
+</CodeBlock>
+</Anchor>
+
