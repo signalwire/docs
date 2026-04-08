@@ -1,0 +1,600 @@
+---
+layout: overview
+slug: flask/flask/sessions
+title: flask.sessions
+---
+
+## Module Contents
+
+### Classes
+
+| Name | Description |
+|------|-------------|
+| [`NullSession`](#flask-sessions-NullSession) | Class used to generate nicer error messages if sessions are not |
+| [`SecureCookieSession`](#flask-sessions-SecureCookieSession) | Base class for sessions based on signed cookies. |
+| [`SecureCookieSessionInterface`](#flask-sessions-SecureCookieSessionInterface) | The default session interface that stores sessions in signed cookies |
+| [`SessionInterface`](#flask-sessions-SessionInterface) | The basic interface you have to implement in order to replace the |
+| [`SessionMixin`](#flask-sessions-SessionMixin) | Expands a basic dictionary with session attributes. |
+
+### Functions
+
+| Name | Description |
+|------|-------------|
+| [`_lazy_sha1`](#flask-sessions-_lazy_sha1) | Don't access ``hashlib.sha1`` until runtime. FIPS builds may not include |
+
+### Data
+
+[`session_json_serializer`](#flask-sessions-session_json_serializer)
+
+### API
+
+<Anchor id="flask-sessions-NullSession">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class flask.sessions.NullSession()
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+**Bases:** [SecureCookieSession](#flask-sessions-SecureCookieSession)
+
+Class used to generate nicer error messages if sessions are not
+available.  Will still allow read-only access to the empty session
+but fail on setting.
+
+
+<Anchor id="flask-sessions-NullSession-_fail">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.NullSession._fail(
+    args: typing.Any = (),
+    kwargs: typing.Any = {}
+) -> typing.NoReturn
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+
+</Indent>
+</Indent>
+
+<Anchor id="flask-sessions-SecureCookieSession">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class flask.sessions.SecureCookieSession(
+    initial: collections.abc.Mapping[str, typing.Any] | None = None
+)
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+**Bases:** `CallbackDict[str, Any]`, [SessionMixin](#flask-sessions-SessionMixin)
+
+Base class for sessions based on signed cookies.
+
+This session backend will set the :attr:`modified` and
+:attr:`accessed` attributes. It cannot reliably track whether a
+session is new (vs. empty), so :attr:`new` remains hard coded to
+``False``.
+
+
+</Indent>
+
+<Anchor id="flask-sessions-SecureCookieSessionInterface">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class flask.sessions.SecureCookieSessionInterface()
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+**Bases:** [SessionInterface](#flask-sessions-SessionInterface)
+
+The default session interface that stores sessions in signed cookies
+through the :mod:`itsdangerous` module.
+
+
+<ParamField path="digest_method" type="= staticmethod(_lazy_sha1)">
+</ParamField>
+
+<ParamField path="key_derivation" type="= 'hmac'">
+</ParamField>
+
+<ParamField path="salt" type="= 'cookie-session'">
+</ParamField>
+<Anchor id="flask-sessions-SecureCookieSessionInterface-get_signing_serializer">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SecureCookieSessionInterface.get_signing_serializer(
+    app: flask.app.Flask
+) -> itsdangerous.URLSafeTimedSerializer | None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+
+</Indent>
+<Anchor id="flask-sessions-SecureCookieSessionInterface-open_session">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.wrappers.Request":"/flask/flask/wrappers#flask-wrappers-Request","flask.sessions.SecureCookieSession":"#flask-sessions-SecureCookieSession"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SecureCookieSessionInterface.open_session(
+    app: flask.app.Flask,
+    request: flask.wrappers.Request
+) -> flask.sessions.SecureCookieSession | None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+
+</Indent>
+<Anchor id="flask-sessions-SecureCookieSessionInterface-save_session">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.sessions.SessionMixin":"#flask-sessions-SessionMixin","flask.wrappers.Response":"/flask/flask/wrappers#flask-wrappers-Response"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SecureCookieSessionInterface.save_session(
+    app: flask.app.Flask,
+    session: flask.sessions.SessionMixin,
+    response: flask.wrappers.Response
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+
+</Indent>
+</Indent>
+
+<Anchor id="flask-sessions-SessionInterface">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class flask.sessions.SessionInterface()
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+The basic interface you have to implement in order to replace the
+default session interface which uses werkzeug's securecookie
+implementation.  The only methods you have to implement are
+:meth:`open_session` and :meth:`save_session`, the others have
+useful defaults which you don't need to change.
+
+The session object returned by the :meth:`open_session` method has to
+provide a dictionary like interface plus the properties and methods
+from the :class:`SessionMixin`.  We recommend just subclassing a dict
+and adding that mixin::
+
+    class Session(dict, SessionMixin):
+        pass
+
+If :meth:`open_session` returns ``None`` Flask will call into
+:meth:`make_null_session` to create a session that acts as replacement
+if the session support cannot work because some requirement is not
+fulfilled.  The default :class:`NullSession` class that is created
+will complain that the secret key was not set.
+
+To replace the session interface on an application all you have to do
+is to assign :attr:`flask.Flask.session_interface`::
+
+    app = Flask(__name__)
+    app.session_interface = MySessionInterface()
+
+Multiple requests with the same session may be sent and handled
+concurrently. When implementing a new session interface, consider
+whether reads or writes to the backing store must be synchronized.
+There is no guarantee on the order in which the session for each
+request is opened or saved, it will occur in the order that requests
+begin and end processing.
+
+.. versionadded:: 0.8
+
+
+<Anchor id="flask-sessions-SessionInterface-get_cookie_domain">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_domain(
+    app: flask.app.Flask
+) -> str | None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+The value of the ``Domain`` parameter on the session cookie. If not set,
+browsers will only send the cookie to the exact domain it was set from.
+Otherwise, they will send it to any subdomain of the given value as well.
+
+Uses the :data:`SESSION_COOKIE_DOMAIN` config.
+
+.. versionchanged:: 2.3
+    Not set by default, does not fall back to ``SERVER_NAME``.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_cookie_httponly">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_httponly(
+    app: flask.app.Flask
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Returns True if the session cookie should be httponly.  This
+currently just returns the value of the ``SESSION_COOKIE_HTTPONLY``
+config var.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_cookie_name">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_name(
+    app: flask.app.Flask
+) -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+The name of the session cookie. Uses``app.config["SESSION_COOKIE_NAME"]``.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_cookie_partitioned">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_partitioned(
+    app: flask.app.Flask
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Returns True if the cookie should be partitioned. By default, uses
+the value of :data:`SESSION_COOKIE_PARTITIONED`.
+
+.. versionadded:: 3.1
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_cookie_path">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_path(
+    app: flask.app.Flask
+) -> str
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Returns the path for which the cookie should be valid.  The
+default implementation uses the value from the ``SESSION_COOKIE_PATH``
+config var if it's set, and falls back to ``APPLICATION_ROOT`` or
+uses ``/`` if it's ``None``.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_cookie_samesite">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_samesite(
+    app: flask.app.Flask
+) -> str | None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Return ``'Strict'`` or ``'Lax'`` if the cookie should use the
+``SameSite`` attribute. This currently just returns the value of
+the :data:`SESSION_COOKIE_SAMESITE` setting.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_cookie_secure">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_cookie_secure(
+    app: flask.app.Flask
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Returns True if the cookie should be secure.  This currently
+just returns the value of the ``SESSION_COOKIE_SECURE`` setting.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-get_expiration_time">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.sessions.SessionMixin":"#flask-sessions-SessionMixin"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.get_expiration_time(
+    app: flask.app.Flask,
+    session: flask.sessions.SessionMixin
+) -> datetime.datetime | None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+A helper method that returns an expiration date for the session
+or ``None`` if the session is linked to the browser session.  The
+default implementation returns now + the permanent session
+lifetime configured on the application.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-is_null_session">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.is_null_session(
+    obj: object
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Checks if a given object is a null session.  Null sessions are
+not asked to be saved.
+
+This checks if the object is an instance of :attr:`null_session_class`
+by default.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-make_null_session">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.sessions.NullSession":"#flask-sessions-NullSession"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.make_null_session(
+    app: flask.app.Flask
+) -> flask.sessions.NullSession
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Creates a null session which acts as a replacement object if the
+real session support could not be loaded due to a configuration
+error.  This mainly aids the user experience because the job of the
+null session is to still support lookup without complaining but
+modifications are answered with a helpful error message of what
+failed.
+
+This creates an instance of :attr:`null_session_class` by default.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-open_session">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.wrappers.Request":"/flask/flask/wrappers#flask-wrappers-Request","flask.sessions.SessionMixin":"#flask-sessions-SessionMixin"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.open_session(
+    app: flask.app.Flask,
+    request: flask.wrappers.Request
+) -> flask.sessions.SessionMixin | None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+This is called at the beginning of each request, after
+pushing the request context, before matching the URL.
+
+This must return an object which implements a dictionary-like
+interface as well as the :class:`SessionMixin` interface.
+
+This will return ``None`` to indicate that loading failed in
+some way that is not immediately an error. The request
+context will fall back to using :meth:`make_null_session`
+in this case.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-save_session">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.sessions.SessionMixin":"#flask-sessions-SessionMixin","flask.wrappers.Response":"/flask/flask/wrappers#flask-wrappers-Response"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.save_session(
+    app: flask.app.Flask,
+    session: flask.sessions.SessionMixin,
+    response: flask.wrappers.Response
+) -> None
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+This is called at the end of each request, after generating
+a response, before removing the request context. It is skipped
+if :meth:`is_null_session` returns ``True``.
+
+
+</Indent>
+<Anchor id="flask-sessions-SessionInterface-should_set_cookie">
+
+<CodeBlock links={{"flask.app.Flask":"/flask/flask/app#flask-app-Flask","flask.sessions.SessionMixin":"#flask-sessions-SessionMixin"}} showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.SessionInterface.should_set_cookie(
+    app: flask.app.Flask,
+    session: flask.sessions.SessionMixin
+) -> bool
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Used by session backends to determine if a ``Set-Cookie`` header
+should be set for this session cookie for this response. If the session
+has been modified, the cookie is set. If the session is permanent and
+the ``SESSION_REFRESH_EACH_REQUEST`` config is true, the cookie is
+always set.
+
+This check is usually skipped if the session was deleted.
+
+.. versionadded:: 0.11
+
+
+</Indent>
+</Indent>
+
+<Anchor id="flask-sessions-SessionMixin">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+class flask.sessions.SessionMixin()
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+**Bases:** `MutableMapping[str, Any]`
+
+Expands a basic dictionary with session attributes.
+
+
+<ParamField path="accessed" type="= False">
+Indicates if the session was accessed, even if it was not modified. This
+is set when the session object is accessed through the request context,
+including the global :data:`.session` proxy. A ``Vary: cookie`` header will
+be added if this is ``True``.
+
+.. versionchanged:: 3.1.3
+    This is tracked by the request context.
+</ParamField>
+
+<ParamField path="permanent" type="bool">
+This reflects the ``'_permanent'`` key in the dict.
+</ParamField>
+</Indent>
+
+<Anchor id="flask-sessions-_lazy_sha1">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions._lazy_sha1(
+    string: bytes = b''
+) -> typing.Any
+```
+
+</CodeBlock>
+</Anchor>
+
+<Indent>
+
+Don't access ``hashlib.sha1`` until runtime. FIPS builds may not include
+SHA-1, in which case the import and use as a default would fail before the
+developer can configure something else.
+
+
+</Indent>
+
+<Anchor id="flask-sessions-session_json_serializer">
+
+<CodeBlock showLineNumbers={false} wordWrap={true}>
+
+```python
+flask.sessions.session_json_serializer = TaggedJSONSerializer()
+```
+
+</CodeBlock>
+</Anchor>
+
