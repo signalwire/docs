@@ -1,0 +1,256 @@
+---
+title: "Logging"
+slug: /reference/typescript/agents/configuration/logging
+description: "Structured logging with Logger class and global configuration functions."
+max-toc-depth: 3
+---
+
+[env-vars]: /docs/server-sdks/reference/typescript/agents/configuration/environment-variables
+
+The SDK provides a structured logging system with configurable log levels, formats,
+colors, and output streams. Configuration is driven by environment variables (see
+[Environment Variables][env-vars]) and can be overridden programmatically.
+
+```typescript {1}
+import { Logger, getLogger, setGlobalLogLevel } from '@signalwire/sdk';
+```
+
+---
+
+## **Logger**
+
+Structured logger that respects global level, format, and color settings. Each
+Logger has a name and optional bound context data included in every entry.
+
+### **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Logger name shown in log output (e.g., `"AgentBase"`, `"SessionManager"`).
+</ParamField>
+
+<ParamField path="context" type={"Record<string, unknown>"} toc={true}>
+  Optional key-value pairs included in every log entry from this logger.
+</ParamField>
+
+### **debug** / **info** / **warn** / **error**
+
+Log a message at the given severity level.
+
+<ParamField path="msg" type="string" required={true} toc={true}>
+  The log message.
+</ParamField>
+
+<ParamField path="data" type={"Record<string, unknown>"} toc={true}>
+  Optional structured data to include in the log entry.
+</ParamField>
+
+### **bind**
+
+Create a child logger with additional bound context fields merged into the
+parent's context.
+
+<ParamField path="context" type={"Record<string, unknown>"} required={true} toc={true}>
+  Key-value pairs to merge into the child logger's context.
+</ParamField>
+
+**Returns:** `Logger` -- A new Logger instance with the merged context.
+
+---
+
+## **getLogger**
+
+Create or retrieve a cached Logger instance by name.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Logger name. Instances are cached — calling `getLogger('foo')` twice returns the same Logger.
+</ParamField>
+
+## **Returns**
+
+`Logger`
+
+## **Example**
+
+```typescript {3}
+import { getLogger } from '@signalwire/sdk';
+
+const log = getLogger('MyAgent');
+log.info('Agent started', { port: 3000 });
+log.debug('Processing request', { callId: 'abc-123' });
+```
+
+---
+
+## **setGlobalLogLevel**
+
+Set the minimum log level for all loggers. Messages below this level are suppressed.
+
+## **Parameters**
+
+<ParamField path="level" type={'"debug" | "info" | "warn" | "error"'} required={true} toc={true}>
+  The minimum severity level to emit.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { setGlobalLogLevel } from '@signalwire/sdk';
+
+setGlobalLogLevel('debug'); // Show all messages including debug
+```
+
+---
+
+## **suppressAllLogs**
+
+Suppress or restore all log output globally.
+
+## **Parameters**
+
+<ParamField path="suppress" type="boolean" default="true" toc={true}>
+  `true` to suppress all output, `false` to restore.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { suppressAllLogs } from '@signalwire/sdk';
+
+suppressAllLogs(true); // Silence all logging
+```
+
+---
+
+## **setGlobalLogFormat**
+
+Set the output format for all loggers.
+
+## **Parameters**
+
+<ParamField path="format" type={'"text" | "json"'} required={true} toc={true}>
+  `"text"` for human-readable output with colors, `"json"` for structured JSON entries.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { setGlobalLogFormat } from '@signalwire/sdk';
+
+setGlobalLogFormat('json'); // Structured JSON output for log aggregators
+```
+
+---
+
+## **setGlobalLogColor**
+
+Enable or disable ANSI color codes in text-format output.
+
+## **Parameters**
+
+<ParamField path="enabled" type="boolean" required={true} toc={true}>
+  `true` to enable colors, `false` to disable.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { setGlobalLogColor } from '@signalwire/sdk';
+
+setGlobalLogColor(false); // Disable colors for CI/CD pipelines
+```
+
+---
+
+## **setGlobalLogStream**
+
+Set the output stream for all loggers.
+
+## **Parameters**
+
+<ParamField path="stream" type={'"stdout" | "stderr"'} required={true} toc={true}>
+  The output stream to use.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { setGlobalLogStream } from '@signalwire/sdk';
+
+setGlobalLogStream('stderr'); // Route all logs to stderr
+```
+
+---
+
+## **resetLoggingConfiguration**
+
+Reset all logging settings to their environment-variable-based defaults and clear
+the logger cache.
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { resetLoggingConfiguration } from '@signalwire/sdk';
+
+resetLoggingConfiguration();
+```
+
+---
+
+## **getExecutionMode**
+
+Detect the execution environment by inspecting well-known environment variables.
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`[string, 'off' | 'stderr' | 'default']` -- A tuple of `[environment_name, derived_log_mode]`.
+
+| Environment | Detection | Log Mode |
+|-------------|-----------|----------|
+| CGI | `GATEWAY_INTERFACE` | `off` |
+| AWS Lambda | `AWS_LAMBDA_FUNCTION_NAME` or `LAMBDA_TASK_ROOT` | `stderr` |
+| Google Cloud Functions | `FUNCTION_TARGET` or `K_SERVICE` | `default` |
+| Azure Functions | `AZURE_FUNCTIONS_ENVIRONMENT` or `FUNCTIONS_WORKER_RUNTIME` | `default` |
+| Server (default) | No match | `default` |
+
+## **Example**
+
+```typescript {3}
+import { getExecutionMode } from '@signalwire/sdk';
+
+const [env, mode] = getExecutionMode();
+console.log(`Running in ${env} environment (log mode: ${mode})`);
+```

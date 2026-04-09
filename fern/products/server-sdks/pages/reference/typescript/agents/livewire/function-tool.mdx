@@ -1,0 +1,139 @@
+---
+title: "tool / FunctionTool"
+slug: /reference/typescript/agents/livewire/function-tool
+description: "Factory function and interface for creating agent tools."
+max-toc-depth: 3
+---
+
+[define-tool]: /docs/server-sdks/reference/typescript/agents/agent-base/define-tool
+[runcontext]: /docs/server-sdks/reference/typescript/agents/livewire/run-context
+
+## **tool**
+
+```typescript {1}
+function tool<P = any>(options: {
+  description: string;
+  parameters?: any;
+  execute: (params: P, context: { ctx: RunContext }) => any;
+}): FunctionTool
+```
+
+Creates a `FunctionTool` definition that can be passed into an `Agent`'s `tools` map.
+The `tool()` function mirrors `llm.tool()` from `@livekit/agents-js`.
+
+When the underlying SignalWire agent is built, each tool is registered as a SWAIG
+function via [`defineTool()`][define-tool].
+
+### Parameters
+
+<ParamField path="description" type="string" required={true} toc={true}>
+  A description of what the tool does. This is sent to the LLM so it knows when
+  to invoke the tool.
+</ParamField>
+
+<ParamField path="parameters" type="any" toc={true}>
+  JSON Schema describing the tool's parameters, or a Zod schema object. If omitted,
+  the tool accepts no parameters.
+</ParamField>
+
+<ParamField path="execute" type="(params: P, context: { ctx: RunContext }) => any" required={true} toc={true}>
+  The function to run when the tool is invoked. Receives the parsed parameters and
+  a context object containing the [`RunContext`][runcontext]. Can return a string,
+  an object (serialized to JSON), or a `FunctionResult`.
+</ParamField>
+
+### Returns
+
+[`FunctionTool`](#functiontool-interface) -- A tool definition object. The `name` field is empty and
+gets filled in when the tool is assigned to a key in `Agent.tools`.
+
+### Examples
+
+<CodeBlocks>
+<CodeBlock title="Basic tool">
+```typescript {3}
+import { tool } from '@signalwire/sdk/livewire';
+
+const getWeather = tool({
+  description: 'Get the current weather for a city.',
+  parameters: {
+    city: { type: 'string', description: 'The city name' },
+  },
+  execute: (params) => {
+    return `It is sunny in ${params.city}.`;
+  },
+});
+```
+</CodeBlock>
+<CodeBlock title="Tool with RunContext">
+```typescript {3}
+import { tool, RunContext } from '@signalwire/sdk/livewire';
+
+const savePreference = tool<{ key: string; value: string }>({
+  description: 'Save a user preference.',
+  parameters: {
+    key: { type: 'string' },
+    value: { type: 'string' },
+  },
+  execute: (params, { ctx }) => {
+    const data = ctx.userData as Record<string, string>;
+    data[params.key] = params.value;
+    return `Saved ${params.key} = ${params.value}.`;
+  },
+});
+```
+</CodeBlock>
+<CodeBlock title="Tool returning an object">
+```typescript {3}
+import { tool } from '@signalwire/sdk/livewire';
+
+const lookupOrder = tool<{ orderId: string }>({
+  description: 'Look up an order by ID.',
+  parameters: {
+    orderId: { type: 'string', description: 'The order ID' },
+  },
+  execute: (params) => {
+    return {
+      orderId: params.orderId,
+      status: 'shipped',
+      estimatedDelivery: '2025-01-15',
+    };
+  },
+});
+```
+</CodeBlock>
+</CodeBlocks>
+
+---
+
+## **FunctionTool Interface**
+
+The `FunctionTool` interface represents a tool definition that can be registered on
+an `Agent`.
+
+```typescript {1}
+interface FunctionTool {
+  name: string;
+  description: string;
+  parameters?: Record<string, unknown>;
+  execute: (params: any, context: { ctx: RunContext }) => any;
+}
+```
+
+<ParamField path="name" type="string" toc={true}>
+  The tool name. When created via `tool()`, this is initially empty and is set
+  automatically when the tool is added to an `Agent`'s `tools` map (the map key
+  becomes the name).
+</ParamField>
+
+<ParamField path="description" type="string" toc={true}>
+  A description of what the tool does.
+</ParamField>
+
+<ParamField path="parameters" type="Record<string, unknown> | undefined" toc={true}>
+  JSON Schema or Zod schema describing the tool's accepted parameters.
+</ParamField>
+
+<ParamField path="execute" type="(params: any, context: { ctx: RunContext }) => any" toc={true}>
+  The handler function invoked when the LLM calls this tool.
+</ParamField>
