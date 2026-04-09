@@ -19,8 +19,8 @@ namespace SignalWireAPI.Fabric.Subscribers.Addresses {
     @operationId("list_subscriber_addresses")
     @summary("List Subscriber Addresses")
     @doc("""
-      List Subscriber Addresses
-      
+      List [Subscriber](/docs/platform/subscribers) Addresses.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...SubscriberAddressID):

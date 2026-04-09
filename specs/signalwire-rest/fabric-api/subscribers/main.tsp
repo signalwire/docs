@@ -27,8 +27,8 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("list_subscribers")
     @summary("List Subscribers")
     @doc("""
-      Retrieve a list of all subscribers
-      
+      Retrieve a list of all [subscribers](/docs/platform/subscribers).
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list():
@@ -40,8 +40,8 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("create_subscriber")
     @summary("Create Subscriber")
     @doc("""
-      Create a new Subscriber
-      
+      Create a new [Subscriber](/docs/platform/subscribers).
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
@@ -58,8 +58,8 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("get_subscriber")
     @summary("Get Subscriber")
     @doc("""
-      Fetch an existing Subscriber
-      
+      Fetch an existing [Subscriber](/docs/platform/subscribers).
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     get(...SubscriberPathID):
@@ -74,8 +74,8 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("update_subscriber")
     @summary("Update Subscriber")
     @doc("""
-      Update an existing Subsriber
-      
+      Update an existing [Subscriber](/docs/platform/subscribers).
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @put
@@ -92,8 +92,8 @@ namespace SignalWireAPI.Fabric.Subscribers {
     @operationId("delete_subscriber")
     @summary("Delete Subscriber")
     @doc("""
-      Delete an existing Subscriber
-      
+      Delete an existing [Subscriber](/docs/platform/subscribers).
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete

@@ -153,7 +153,7 @@ model ResourceResponseSubscriber is ResourceResponseBase {
   @example(FabricResponseType.Subscriber)
   type: FabricResponseType.Subscriber;
 
-  @doc("An object containing the response data of the Subscriber")
+  @doc("An object containing the response data of the [Subscriber](/docs/platform/subscribers).")
   subscriber: Subscriber;
 }
 
