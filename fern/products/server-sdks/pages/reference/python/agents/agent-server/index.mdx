@@ -1,0 +1,112 @@
+---
+title: "AgentServer"
+slug: /reference/python/agents/agent-server
+description: Host multiple AI agents on a single FastAPI server with shared routing and health checks.
+max-toc-depth: 3
+---
+
+[agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[agentbase-serve]: /docs/server-sdks/reference/python/agents/agent-base/serve
+[agentbase-run]: /docs/server-sdks/reference/python/agents/agent-base/run
+[getagent]: /docs/server-sdks/reference/python/agents/agent-server/get-agent
+[getagents]: /docs/server-sdks/reference/python/agents/agent-server/get-agents
+[register]: /docs/server-sdks/reference/python/agents/agent-server/register
+[registerglobalroutingcallback]: /docs/server-sdks/reference/python/agents/agent-server/routing-callback
+[run]: /docs/server-sdks/reference/python/agents/agent-server/run
+[servestaticfiles]: /docs/server-sdks/reference/python/agents/agent-server/static-files
+[setupsiprouting]: /docs/server-sdks/reference/python/agents/agent-server/sip-routing
+[unregister]: /docs/server-sdks/reference/python/agents/agent-server/unregister
+
+AgentServer hosts multiple [`AgentBase`][agentbase] instances
+on a single FastAPI process. Each agent registers at its own URL route, and the server provides
+unified health monitoring, SIP-based routing, and static file serving. Use AgentServer when you
+have several related agents (sales, support, billing) that share the same deployment environment.
+
+For a single agent, use [`AgentBase.serve()`][agentbase-serve]
+or [`AgentBase.run()`][agentbase-run] instead.
+
+## **Properties**
+
+<ParamField path="app" type="FastAPI" toc={true}>
+  The underlying FastAPI application. Use this to add custom routes, middleware, or to run
+  the server with an external ASGI server like gunicorn.
+</ParamField>
+
+<ParamField path="agents" type="dict[str, AgentBase]" toc={true}>
+  Dictionary mapping route strings to registered [`AgentBase`][agentbase] instances.
+</ParamField>
+
+<ParamField path="host" type="str" toc={true}>
+  The host address the server binds to.
+</ParamField>
+
+<ParamField path="port" type="int" toc={true}>
+  The port the server listens on.
+</ParamField>
+
+<ParamField path="log_level" type="str" toc={true}>
+  The logging level for the server.
+</ParamField>
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="get_agent" href="/docs/server-sdks/reference/python/agents/agent-server/get-agent">
+    Retrieve a specific registered agent by its route.
+  </Card>
+  <Card title="get_agents" href="/docs/server-sdks/reference/python/agents/agent-server/get-agents">
+    Return all registered agents as a list of route/agent tuples.
+  </Card>
+  <Card title="register" href="/docs/server-sdks/reference/python/agents/agent-server/register">
+    Register an agent at a URL route on the server.
+  </Card>
+  <Card title="register_global_routing_callback" href="/docs/server-sdks/reference/python/agents/agent-server/routing-callback">
+    Register a routing callback across all agents for custom request routing.
+  </Card>
+  <Card title="run" href="/docs/server-sdks/reference/python/agents/agent-server/run">
+    Start the multi-agent server with automatic environment detection.
+  </Card>
+  <Card title="serve_static_files" href="/docs/server-sdks/reference/python/agents/agent-server/static-files">
+    Serve static files from a directory alongside agent routes.
+  </Card>
+  <Card title="setup_sip_routing" href="/docs/server-sdks/reference/python/agents/agent-server/sip-routing">
+    Configure SIP-based routing to direct calls to specific agents by username.
+  </Card>
+  <Card title="unregister" href="/docs/server-sdks/reference/python/agents/agent-server/unregister">
+    Remove an agent from the server's registry by route.
+  </Card>
+</CardGroup>
+
+## **Example**
+
+```python {17}
+from signalwire import AgentServer
+from signalwire import AgentBase
+
+class SalesAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="sales-agent", route="/sales")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a sales representative.")
+
+class SupportAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="support-agent", route="/support")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a support specialist.")
+
+if __name__ == "__main__":
+    server = AgentServer(host="0.0.0.0", port=3000)
+    server.register(SalesAgent(), "/sales")
+    server.register(SupportAgent(), "/support")
+    server.run()
+```
+
+After starting, agents are available at:
+
+| Endpoint | Description |
+|----------|-------------|
+| `http://localhost:3000/sales` | Sales agent |
+| `http://localhost:3000/support` | Support agent |
+| `http://localhost:3000/health` | Health check |
+| `http://localhost:3000/ready` | Readiness check |

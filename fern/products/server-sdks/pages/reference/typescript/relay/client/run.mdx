@@ -1,0 +1,55 @@
+---
+title: "run"
+slug: /reference/typescript/relay/client/run
+description: "Start the client with automatic reconnection."
+max-toc-depth: 3
+---
+
+[connect]: /docs/server-sdks/reference/typescript/relay/client/connect
+[disconnect]: /docs/server-sdks/reference/typescript/relay/client/disconnect
+[ref-relayclient]: /docs/server-sdks/reference/typescript/relay/client
+
+Async entry point that connects to RELAY and runs the event loop until
+interrupted. This is the recommended way to start a [`RelayClient`][ref-relayclient] for long-running
+services. It calls [`connect()`][connect]
+internally and automatically reconnects with exponential backoff (1 second initial
+delay, up to 30 seconds maximum) if the connection is lost.
+
+The method awaits until shutdown is requested. Press `Ctrl+C` to trigger a clean shutdown --
+the client handles `SIGINT` and `SIGTERM` gracefully.
+
+<Note>
+For async contexts where you need manual control over the connection lifecycle,
+use [`connect()`][connect] and
+[`disconnect()`][disconnect] directly.
+</Note>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`Promise<void>` -- resolves when the client is stopped via `Ctrl+C` or a programmatic shutdown.
+
+## **Example**
+
+```typescript {17}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+  const action = await call.play([{ type: 'tts', text: 'Welcome! Goodbye.' }]);
+  await action.wait();
+  await call.hangup();
+});
+
+// Awaits forever, reconnects on connection loss
+await client.run();
+```

@@ -1,0 +1,86 @@
+---
+title: "RunContext"
+slug: /reference/typescript/agents/livewire/run-context
+description: "Context object available inside tool handler functions."
+max-toc-depth: 3
+---
+
+[agentsession]: /docs/server-sdks/reference/typescript/agents/livewire/agent-session
+[functiontool]: /docs/server-sdks/reference/typescript/agents/livewire/function-tool
+
+`RunContext<UserData>` is passed to tool handler functions via the `context`
+parameter's `ctx` property. It provides access to the current
+[`AgentSession`][agentsession] and its user data, letting tools read and modify
+session state.
+
+```typescript {7}
+import { tool, RunContext } from '@signalwire/sdk/livewire';
+
+const savePreference = tool<{ color: string }>({
+  description: 'Save the user\'s favorite color.',
+  parameters: { color: { type: 'string' } },
+  execute: (params, { ctx }) => {
+    const data = ctx.userData as Record<string, string>;
+    data.favoriteColor = params.color;
+    return `Got it, your favorite color is ${params.color}.`;
+  },
+});
+```
+
+## **Constructor**
+
+```typescript {1}
+new RunContext<UserData>(session: AgentSession<UserData>)
+```
+
+The `RunContext` is constructed internally by `AgentSession` when dispatching tool
+calls. You do not need to create it manually.
+
+## **Properties**
+
+<ParamField path="session" type="AgentSession<UserData>" toc={true}>
+  The [`AgentSession`][agentsession] that owns this context.
+</ParamField>
+
+<ParamField path="userData" type="UserData" toc={true}>
+  Shortcut for `session.userData`. Returns the user data attached to the session.
+</ParamField>
+
+## **Example**
+
+```typescript {13}
+import {
+  Agent, AgentSession, tool, RunContext, defineAgent, runApp, JobContext,
+} from '@signalwire/sdk/livewire';
+
+interface SessionData {
+  notes: string[];
+}
+
+const addNote = tool<{ note: string }>({
+  description: 'Add a note to the session.',
+  parameters: { note: { type: 'string' } },
+  execute: (params, { ctx }) => {
+    const data = ctx.userData as SessionData;
+    data.notes.push(params.note);
+    return `Note saved. You have ${data.notes.length} note(s).`;
+  },
+});
+
+const agentDef = defineAgent({
+  entry: async (ctx: JobContext) => {
+    const agent = new Agent({
+      instructions: 'You are a note-taking assistant.',
+      tools: { addNote },
+    });
+
+    const session = new AgentSession<SessionData>({
+      userData: { notes: [] },
+    });
+
+    await session.start({ agent });
+  },
+});
+
+runApp(agentDef);
+```
