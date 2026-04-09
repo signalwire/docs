@@ -1,0 +1,59 @@
+---
+title: "execute"
+slug: /reference/typescript/agents/swaig-function/execute
+description: Execute the function with the given arguments.
+max-toc-depth: 3
+---
+
+[ref-functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+
+Execute the function with the given arguments. Calls the handler and normalizes
+the return value into a serialized result dictionary.
+
+## **Parameters**
+
+<ParamField path="args" type={"Record<string, unknown>"} required={true} toc={true}>
+  Parsed arguments for the function, matching the parameter schema.
+</ParamField>
+
+<ParamField path="rawData" type={"Record<string, unknown>"} toc={true}>
+  Full raw request data including `global_data`, `call_id`, `caller_id_number`,
+  `meta_data`, and `ai_session_id`.
+</ParamField>
+
+## **Returns**
+
+`Promise<Record<string, unknown>>` -- The function result as a dictionary (from
+`FunctionResult.toDict()`). If the handler throws an exception, returns a
+generic error message rather than exposing internal details.
+
+<Note>
+The handler can return a [`FunctionResult`][ref-functionresult], an object with a `"response"` key,
+or a plain string. All formats are normalized to a result dictionary.
+</Note>
+
+## **Example**
+
+```typescript {20}
+import { SwaigFunction, FunctionResult } from '@signalwire/sdk';
+
+const func = new SwaigFunction({
+  name: "lookup_account",
+  handler: async (args, rawData) => {
+    const accountId = (args.account_id as string) ?? "";
+    return new FunctionResult(`Account ${accountId} is active.`);
+  },
+  description: "Look up account status",
+  parameters: {
+    type: "object",
+    properties: {
+      account_id: { type: "string", description: "Account ID" },
+    },
+    required: ["account_id"],
+  },
+});
+
+const result = await func.execute({ account_id: "12345" });
+console.log(result);
+// { response: "Account 12345 is active.", action: [] }
+```

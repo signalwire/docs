@@ -1,0 +1,125 @@
+---
+title: "ContextBuilder"
+slug: /reference/typescript/agents/context-builder
+description: "Build multi-step conversation workflows with structured contexts and steps."
+max-toc-depth: 3
+---
+
+[context]: /docs/server-sdks/reference/typescript/agents/context-builder/context
+[step]: /docs/server-sdks/reference/typescript/agents/context-builder/step
+[agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+[addcontext]: /docs/server-sdks/reference/typescript/agents/context-builder/add-context
+[getcontext]: /docs/server-sdks/reference/typescript/agents/context-builder/get-context
+[todict]: /docs/server-sdks/reference/typescript/agents/context-builder/to-dict
+[validate]: /docs/server-sdks/reference/typescript/agents/context-builder/validate
+
+ContextBuilder is the top-level container for defining structured conversation
+workflows. It holds one or more [`Context`][context]
+objects, each containing a sequence of [`Step`][step]
+objects. Use it when your agent needs guided, multi-step conversations instead of
+free-form prompting.
+
+Access the builder by calling `defineContexts()` on an
+[`AgentBase`][agentbase] instance. The builder
+validates the entire context tree when the SWML document is rendered.
+
+<Note>
+You rarely create a ContextBuilder directly. Call `defineContexts()` inside
+your agent class, which creates the builder and wires it into SWML generation
+automatically.
+</Note>
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="addContext" href="/docs/server-sdks/reference/typescript/agents/context-builder/add-context">
+    Create a new named context and add it to the builder.
+  </Card>
+  <Card title="getContext" href="/docs/server-sdks/reference/typescript/agents/context-builder/get-context">
+    Retrieve an existing context by name.
+  </Card>
+  <Card title="toDict" href="/docs/server-sdks/reference/typescript/agents/context-builder/to-dict">
+    Convert all contexts to a dictionary for SWML generation.
+  </Card>
+  <Card title="validate" href="/docs/server-sdks/reference/typescript/agents/context-builder/validate">
+    Validate the entire context configuration tree.
+  </Card>
+</CardGroup>
+
+---
+
+## **Limits**
+
+| Limit | Value |
+|-------|-------|
+| Maximum contexts per builder | 50 |
+| Maximum steps per context | 100 |
+
+---
+
+## **Examples**
+
+### Single context with sequential steps
+
+```typescript {4}
+import { ContextBuilder } from '@signalwire/sdk';
+
+const builder = new ContextBuilder();
+const order = builder.addContext('default');
+
+order.addStep('get_item')
+  .setText('Ask what item they want to order.')
+  .setStepCriteria('Customer has specified an item')
+  .setValidSteps(['get_quantity']);
+
+order.addStep('get_quantity')
+  .setText('Ask how many they want.')
+  .setStepCriteria('Customer has specified a quantity')
+  .setValidSteps(['confirm']);
+
+order.addStep('confirm')
+  .setText('Confirm the order details and thank them.')
+  .setStepCriteria('Order has been confirmed')
+  .setEnd(true);
+
+const swml = builder.toDict();
+console.log(JSON.stringify(swml, null, 2));
+```
+
+### Multiple contexts
+
+```typescript {6,13,24}
+import { ContextBuilder } from '@signalwire/sdk';
+
+const builder = new ContextBuilder();
+
+// Main menu
+const main = builder.addContext('default');
+main.addStep('menu')
+  .setText('Ask whether they need sales, support, or billing help.')
+  .setFunctions('none')
+  .setValidContexts(['sales', 'support']);
+
+// Sales context
+const sales = builder.addContext('sales');
+sales.setSystemPrompt('You are a friendly sales representative.');
+sales.addStep('qualify')
+  .setText('Understand what product the caller is interested in.')
+  .setFunctions(['check_inventory', 'get_pricing'])
+  .setValidSteps(['close']);
+sales.addStep('close')
+  .setText('Close the sale or schedule a follow-up.')
+  .setValidContexts(['default']);
+
+// Support context
+const support = builder.addContext('support');
+support.setSystemPrompt('You are a patient support engineer.');
+support.addStep('diagnose')
+  .setText('Understand the customer\'s issue.')
+  .setFunctions(['lookup_account', 'check_status'])
+  .setValidSteps(['resolve']);
+support.addStep('resolve')
+  .setText('Resolve the issue or escalate.')
+  .setFunctions(['create_ticket', 'transfer_call'])
+  .setValidContexts(['default']);
+```

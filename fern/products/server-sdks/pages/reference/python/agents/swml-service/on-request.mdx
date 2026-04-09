@@ -1,0 +1,75 @@
+---
+title: "on_request"
+slug: /reference/python/agents/swml-service/on-request
+description: "Request handling hook for customizing SWML output per request."
+max-toc-depth: 3
+---
+
+[register-routing-callback]: /docs/server-sdks/reference/python/agents/swml-service/register-routing-callback
+
+Hook method called every time SWML is requested, before the document is returned to
+the caller. Override this in a subclass to inspect the incoming request and optionally
+modify the SWML document on a per-request basis. This enables dynamic SWML generation
+where the document content varies based on who is calling, what SIP route was matched,
+or any data in the POST body.
+
+The default implementation returns `None` (no modifications). When you return a
+dictionary, its keys are merged into the top-level SWML document, allowing you to
+replace entire sections.
+
+<Note>
+This method is called on both GET and POST requests. For GET requests, `request_data`
+is an empty dictionary. For POST requests, it contains the parsed JSON body sent by
+SignalWire.
+</Note>
+
+## **Parameters**
+
+<ParamField path="request_data" type="Optional[dict]" default="None" toc={true}>
+  The parsed POST body as a dictionary, or an empty dict for GET requests. Typically
+  contains call metadata from SignalWire (e.g., `call.to`, `call.from`, `call.headers`).
+</ParamField>
+
+<ParamField path="callback_path" type="Optional[str]" default="None" toc={true}>
+  The routing callback path that matched this request, if any. This is set when the
+  request came through a path registered via
+  [`register_routing_callback()`][register-routing-callback].
+  `None` for requests to the main route.
+</ParamField>
+
+## **Returns**
+
+`Optional[dict]` — Return `None` to serve the document unchanged. Return a dictionary
+to merge modifications into the top-level SWML document (keys in the returned dict
+replace corresponding keys in the document).
+
+## **Example**
+
+```python {9}
+from signalwire import SWMLService
+
+class DynamicService(SWMLService):
+    def __init__(self):
+        super().__init__(name="dynamic-ivr", route="/")
+        self.add_verb("answer", {})
+        self.add_verb("play", {"url": "https://example.com/default.mp3"})
+
+    def on_request(self, request_data=None, callback_path=None):
+        """Customize the greeting based on the caller."""
+        if request_data and "call" in request_data:
+            caller = request_data["call"].get("from", "")
+            if caller.startswith("+1555"):
+                # Return modified sections for VIP callers
+                return {
+                    "sections": {
+                        "main": [
+                            {"answer": {}},
+                            {"play": {"url": "https://example.com/vip-greeting.mp3"}}
+                        ]
+                    }
+                }
+        return None  # Use default document
+
+service = DynamicService()
+service.serve()
+```

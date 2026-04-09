@@ -1,0 +1,127 @@
+---
+title: "runApp"
+slug: /reference/typescript/agents/livewire/run-app
+description: "Main entry point that starts a LiveWire agent."
+max-toc-depth: 3
+---
+
+[jobcontext]: /docs/server-sdks/reference/typescript/agents/livewire/job-context
+[defineagent]: #defineagent
+[jobprocess]: /docs/server-sdks/reference/typescript/agents/livewire/job-context
+
+## **runApp**
+
+```typescript {1}
+function runApp(options: any): void
+```
+
+The main entry point for a LiveWire application. It prints the ASCII banner, runs
+the prewarm function (if defined), creates a `JobContext`, prints a random tip,
+invokes the registered entry function, and starts the underlying SignalWire agent.
+
+This mirrors `cli.runApp()` from `@livekit/agents-js`. It is also available as
+`cli.runApp`.
+
+### Parameters
+
+<ParamField path="options" type="any" required={true} toc={true}>
+  The agent definition returned by [`defineAgent()`](#defineagent), or an object
+  with `entry` and optional `prewarm` functions.
+</ParamField>
+
+### Returns
+
+`void` -- This function runs the agent lifecycle asynchronously.
+
+### Lifecycle
+
+1. Prints the LiveWire ASCII banner to stderr.
+2. If the agent definition has a `prewarm` function, calls it with a fresh
+   [`JobProcess`][jobprocess] instance. Logs an informational message noting that
+   warm process pools are not needed on SignalWire.
+3. Creates a [`JobContext`][jobcontext].
+4. Prints a random "Did you know?" tip to stderr.
+5. Calls the `entry` function with the `JobContext`. If the entry function is async,
+   it is awaited.
+6. After entry completes, starts the underlying SignalWire agent if one was bound.
+
+### Example
+
+```typescript {27}
+import {
+  Agent, AgentSession, JobContext, tool, defineAgent, runApp,
+} from '@signalwire/sdk/livewire';
+
+const getTime = tool({
+  description: 'Get the current time.',
+  execute: () => new Date().toISOString(),
+});
+
+const agentDef = defineAgent({
+  entry: async (ctx: JobContext) => {
+    await ctx.connect();
+    await ctx.waitForParticipant();
+
+    const agent = new Agent({
+      instructions: 'You are a helpful assistant that can tell the time.',
+      tools: { getTime },
+    });
+
+    const session = new AgentSession();
+    await session.start({ agent, room: ctx.room });
+    session.generateReply({ instructions: 'Greet the user.' });
+  },
+});
+
+runApp(agentDef);
+```
+
+---
+
+## **defineAgent**
+
+```typescript {1}
+function defineAgent(agent: {
+  entry: (ctx: JobContext) => Promise<void>;
+  prewarm?: (proc: JobProcess) => any;
+}): { entry: (ctx: JobContext) => Promise<void>; prewarm?: (proc: JobProcess) => any }
+```
+
+Wraps an entry function (and optional prewarm function) into an agent definition
+object that can be passed to `runApp()`. This mirrors `defineAgent()` from
+`@livekit/agents-js`.
+
+### Parameters
+
+<ParamField path="entry" type="(ctx: JobContext) => Promise<void>" required={true} toc={true}>
+  The main entry function for the agent. Receives a [`JobContext`][jobcontext] and
+  should create an `Agent`, an `AgentSession`, and call `session.start()`.
+</ParamField>
+
+<ParamField path="prewarm" type="(proc: JobProcess) => any" default="undefined" toc={true}>
+  Optional setup function called before the entry function. Receives a
+  [`JobProcess`][jobprocess] whose `userData` object can be used to share state
+  with the entry function.
+</ParamField>
+
+### Returns
+
+The same object, for passing to `runApp()`.
+
+### Example
+
+```typescript {3}
+import { defineAgent, runApp, JobContext, JobProcess } from '@signalwire/sdk/livewire';
+
+const agentDef = defineAgent({
+  prewarm: (proc: JobProcess) => {
+    proc.userData.greeting = 'Welcome to Acme Corp!';
+  },
+  entry: async (ctx: JobContext) => {
+    const greeting = ctx.proc.userData.greeting ?? 'Hello!';
+    // ... set up agent and session
+  },
+});
+
+runApp(agentDef);
+```

@@ -13,7 +13,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/resources/{id}/sip_endpoints")
-namespace SignalWireAPI.Fabric.SipEndpoints.Resource {
+namespace SignalWireAPI.Fabric.SipEndpoint.Resource {
   @tag(FABRIC_SIP_ENDPOINTS_TAG)
   interface ResourceSipEndpoints {
     @operationId("assign_resource_to_sip_credential")

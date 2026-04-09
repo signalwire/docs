@@ -1,0 +1,75 @@
+---
+title: "send_fax"
+slug: /reference/python/relay/call/send-fax
+description: "Send a fax document on a call."
+max-toc-depth: 3
+---
+
+[faxaction]: /docs/server-sdks/reference/python/relay/actions
+[calling-call-fax]: /docs/server-sdks/reference/python/relay/call#events
+[call-events]: /docs/server-sdks/reference/python/relay/call#events
+
+Send a fax document on the call. The document must be accessible via URL.
+Returns a [`FaxAction`][faxaction] that you can
+use to stop the fax or wait for it to complete.
+
+<Info>
+This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="document" type="str" required={true} toc={true}>
+  URL of the document to fax (PDF or TIFF format).
+</ParamField>
+
+<ParamField path="identity" type="Optional[str]" toc={true}>
+  Caller identity string (TSI) transmitted with the fax.
+</ParamField>
+
+<ParamField path="header_info" type="Optional[str]" toc={true}>
+  Header text printed at the top of each fax page.
+</ParamField>
+
+<ParamField path="control_id" type="Optional[str]" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable[[RelayEvent], Any]]" toc={true}>
+  Callback invoked when the fax operation completes.
+</ParamField>
+
+## **Returns**
+
+[`FaxAction`][faxaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```python {14}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    action = await call.send_fax(
+        document="https://example.com/invoice.pdf",
+        identity="+15559876543",
+        header_info="Invoice #12345",
+    )
+    event = await action.wait()
+
+    fax_result = event.params.get("fax", {})
+    print(f"Fax sent: {fax_result.get('pages', 0)} pages")
+    await call.hangup()
+
+client.run()
+```

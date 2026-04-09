@@ -1,0 +1,196 @@
+---
+title: "SWMLBuilder"
+slug: /reference/python/agents/swml-builder
+description: "Fluent builder API for constructing SWML documents with method chaining."
+max-toc-depth: 3
+---
+
+[swmlservice]: /docs/server-sdks/reference/python/agents/swml-service
+[swml]: /docs/swml/reference/ai
+[swml-reference]: /docs/swml/reference/ai
+[addsection]: /docs/server-sdks/reference/python/agents/swml-builder/add-section
+[ai]: /docs/server-sdks/reference/python/agents/swml-builder/ai
+[answer]: /docs/server-sdks/reference/python/agents/swml-builder/answer
+[build]: /docs/server-sdks/reference/python/agents/swml-builder/build
+[hangup]: /docs/server-sdks/reference/python/agents/swml-builder/hangup
+[play]: /docs/server-sdks/reference/python/agents/swml-builder/play
+[render]: /docs/server-sdks/reference/python/agents/swml-builder/render
+[reset]: /docs/server-sdks/reference/python/agents/swml-builder/reset
+[say]: /docs/server-sdks/reference/python/agents/swml-builder/say
+
+SWMLBuilder provides a fluent interface for constructing SWML documents by chaining
+method calls. It wraps a [`SWMLService`][swmlservice]
+instance and delegates all document operations to it, while returning `self` from every
+verb method to enable chaining. Use SWMLBuilder when you want concise, readable document
+construction in a single expression.
+
+In addition to the explicitly defined methods below, SWMLBuilder automatically generates
+methods for every SWML verb in the schema (e.g., `connect()`, `record()`, `denoise()`,
+`goto()`). These dynamic methods accept keyword arguments matching the verb's SWML
+parameters and return `self` for chaining.
+
+<Info>
+SWMLBuilder constructs [SWML][swml] documents programmatically. See the
+[SWML reference][swml-reference] for the full specification of all supported verbs.
+</Info>
+
+## **Properties**
+
+<ParamField path="service" type="SWMLService" required={true} toc={true}>
+  The [`SWMLService`][swmlservice] instance that
+  handles actual document storage, validation, and rendering. The builder delegates
+  all operations to this service.
+</ParamField>
+
+## **Dynamic Verb Methods**
+
+SWMLBuilder auto-generates chaining methods for every verb defined in the SWML schema
+that does not already have an explicit method. These dynamic methods accept keyword
+arguments matching the verb's SWML parameters and return `Self`.
+
+Examples of dynamic verbs: `connect()`, `record()`, `record_call()`, `denoise()`,
+`transfer()`, `goto()`, `cond()`, `execute()`, `tap()`, and many more.
+
+```python {6-8}
+from signalwire import SWMLService, SWMLBuilder
+
+service = SWMLService(name="dynamic-demo")
+builder = SWMLBuilder(service)
+
+builder.connect(to="+15551234567", from_="+15559876543")
+builder.record_call(format="mp4", stereo=True)
+builder.denoise()
+
+print(builder.build())
+```
+
+The `sleep` verb is a special case -- it accepts a positional `duration` argument
+(milliseconds) instead of keyword arguments:
+
+```python {6}
+from signalwire import SWMLBuilder, SWMLService
+
+service = SWMLService(name="demo")
+builder = SWMLBuilder(service)
+builder.add_section("main")
+builder.sleep(duration=2000)
+
+print(builder.render())
+```
+
+<Info>
+If a verb name is not found in the SWML schema, calling it raises an `AttributeError`.
+</Info>
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="add_section" href="/docs/server-sdks/reference/python/agents/swml-builder/add-section">
+    Add a new named section to the SWML document.
+  </Card>
+  <Card title="ai" href="/docs/server-sdks/reference/python/agents/swml-builder/ai">
+    Add an AI verb to start an AI-powered conversation.
+  </Card>
+  <Card title="answer" href="/docs/server-sdks/reference/python/agents/swml-builder/answer">
+    Add an answer verb to the SWML document.
+  </Card>
+  <Card title="build" href="/docs/server-sdks/reference/python/agents/swml-builder/build">
+    Build and return the complete SWML document as a dictionary.
+  </Card>
+  <Card title="hangup" href="/docs/server-sdks/reference/python/agents/swml-builder/hangup">
+    Add a hangup verb to end the current call.
+  </Card>
+  <Card title="play" href="/docs/server-sdks/reference/python/agents/swml-builder/play">
+    Add a play verb to play audio or text-to-speech.
+  </Card>
+  <Card title="render" href="/docs/server-sdks/reference/python/agents/swml-builder/render">
+    Build and render the complete SWML document as a JSON string.
+  </Card>
+  <Card title="reset" href="/docs/server-sdks/reference/python/agents/swml-builder/reset">
+    Reset the SWML document to an empty state.
+  </Card>
+  <Card title="say" href="/docs/server-sdks/reference/python/agents/swml-builder/say">
+    Add text-to-speech playback to the SWML document.
+  </Card>
+</CardGroup>
+
+---
+
+## **Examples**
+
+### Basic IVR Flow
+
+```python {8-12}
+from signalwire import SWMLService, SWMLBuilder
+
+service = SWMLService(name="ivr")
+builder = SWMLBuilder(service)
+
+doc = (
+    builder
+    .answer()
+    .play(url="https://example.com/welcome.mp3")
+    .sleep(duration=1000)
+    .hangup()
+    .build()
+)
+print(doc)
+```
+
+### AI Agent with SWAIG
+
+```python {8-9}
+from signalwire import SWMLService, SWMLBuilder
+
+service = SWMLService(name="ai-agent")
+builder = SWMLBuilder(service)
+
+swml_json = (
+    builder
+    .answer()
+    .ai(
+        prompt_text="You are a helpful customer service assistant.",
+        post_prompt="Summarize what was discussed.",
+        post_prompt_url="https://example.com/post_prompt",
+        swaig={
+            "defaults": {"web_hook_url": "https://example.com/swaig"},
+            "functions": [
+                {
+                    "function": "check_order",
+                    "description": "Check order status",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "order_id": {"type": "string", "description": "The order ID"}
+                        },
+                        "required": ["order_id"]
+                    }
+                }
+            ]
+        },
+        hints=["order", "tracking", "refund"],
+        params={"end_of_speech_timeout": 500}
+    )
+    .render()
+)
+print(swml_json)
+```
+
+### Text-to-Speech Greeting
+
+```python {9,11}
+from signalwire import SWMLService, SWMLBuilder
+
+service = SWMLService(name="greeting")
+builder = SWMLBuilder(service)
+
+doc = (
+    builder
+    .answer()
+    .say("Welcome to our service. Please hold.", voice="rime.spore")
+    .sleep(duration=500)
+    .say("Connecting you now.", voice="rime.spore")
+    .build()
+)
+print(doc)
+```

@@ -1,0 +1,511 @@
+---
+title: "Helper Functions & Utilities"
+slug: /reference/typescript/agents/helpers
+description: Top-level convenience functions for creating contexts, server-side API tools, expression tools, environment variable expansion, security, and type inference.
+max-toc-depth: 3
+---
+
+[context]: /docs/server-sdks/reference/typescript/agents/context-builder/context
+[contextbuilder]: /docs/server-sdks/reference/typescript/agents/context-builder
+[datamap]: /docs/server-sdks/reference/typescript/agents/data-map
+[ref-functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[ref-pombuilder]: /docs/server-sdks/reference/typescript/agents/pom-builder
+[ref-skillregistry]: /docs/server-sdks/reference/typescript/agents/skill-registry
+
+The SignalWire Agents SDK exports helper functions and utilities at the top level for common
+tasks like creating standalone contexts, building server-side API tools,
+managing environment variable expansion, security, and type inference.
+All are imported directly from `@signalwire/sdk`.
+
+```typescript {2-11}
+import {
+  createSimpleContext,
+  createSimpleApiTool,
+  createExpressionTool,
+  setAllowedEnvPrefixes,
+  getAllowedEnvPrefixes,
+  safeAssign,
+  filterSensitiveHeaders,
+  redactUrl,
+  inferSchema,
+  registerBuiltinSkills,
+} from '@signalwire/sdk';
+```
+
+---
+
+## **createSimpleContext**
+
+```typescript {1}
+createSimpleContext(name?: string): Context
+```
+
+Create a standalone [`Context`][context] object
+without needing a full [`ContextBuilder`][contextbuilder].
+Useful for quick single-context agents.
+
+#### Parameters
+
+<ParamField path="name" type="string" default="default" toc={true}>
+  Context name. For single-context agents this is typically `"default"`.
+</ParamField>
+
+#### Returns
+
+[`Context`][context] -- A new Context
+object ready for adding steps.
+
+#### Example
+
+```typescript {3}
+import { createSimpleContext } from '@signalwire/sdk';
+
+const ctx = createSimpleContext();
+ctx.addStep('greet', { task: 'Say hello to the caller.' });
+ctx.addStep('help', { task: 'Ask how you can help today.' });
+```
+
+---
+
+## **createSimpleApiTool**
+
+```typescript {1}
+createSimpleApiTool(opts: {
+  name: string;
+  url: string;
+  responseTemplate: string;
+  parameters?: Record<string, {
+    type?: string;
+    description?: string;
+    required?: boolean;
+  }>;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: Record<string, unknown>;
+  errorKeys?: string[];
+}): DataMap
+```
+
+Create a server-side API tool with minimal configuration. Returns a configured
+[`DataMap`][datamap] that executes an HTTP
+request on the SignalWire server without requiring a webhook endpoint.
+
+#### Parameters
+
+<ParamField path="opts.name" type="string" required={true} toc={true}>
+  The name for the SWAIG tool.
+</ParamField>
+
+<ParamField path="opts.url" type="string" required={true} toc={true}>
+  API endpoint URL. Supports `$&#123;args.paramName&#125;` substitution for injecting parameter
+  values (e.g., `"https://api.example.com/search?q=$&#123;args.query&#125;"`).
+</ParamField>
+
+<ParamField path="opts.responseTemplate" type="string" required={true} toc={true}>
+  Template string for formatting the API response. Uses `$&#123;response.field&#125;`
+  syntax to reference fields from the API response JSON.
+</ParamField>
+
+<ParamField path="opts.parameters" type="Record<string, object>" toc={true}>
+  Parameter definitions. Each key is a parameter name, and each value is an object
+  with `type` (default `"string"`), `description`, and optionally `required`.
+</ParamField>
+
+<ParamField path="opts.method" type="string" default="GET" toc={true}>
+  HTTP method for the API call.
+</ParamField>
+
+<ParamField path="opts.headers" type="Record<string, string>" toc={true}>
+  HTTP headers to include in the request.
+</ParamField>
+
+<ParamField path="opts.body" type="Record<string, unknown>" toc={true}>
+  Request body for POST/PUT requests.
+</ParamField>
+
+<ParamField path="opts.errorKeys" type="string[]" toc={true}>
+  JSON keys whose presence in the response indicates an error.
+</ParamField>
+
+#### Returns
+
+[`DataMap`][datamap] -- A configured DataMap
+ready to be registered with an agent.
+
+#### Example
+
+```typescript {3}
+import { AgentBase, createSimpleApiTool } from '@signalwire/sdk';
+
+const weatherTool = createSimpleApiTool({
+  name: 'get_weather',
+  url: 'https://api.weather.com/v1/current?key=API_KEY&q=${args.location}',
+  responseTemplate:
+    'Weather in ${args.location}: ${response.current.condition.text}, ${response.current.temp_f}F',
+  parameters: {
+    location: {
+      type: 'string',
+      description: 'City name',
+      required: true,
+    },
+  },
+});
+
+const agent = new AgentBase({ name: 'weather-agent' });
+weatherTool.registerWithAgent(agent);
+```
+
+<Tip>
+For more complex API integrations with multiple webhooks, fallback outputs, or
+array processing, use the [`DataMap`][datamap]
+builder directly.
+</Tip>
+
+---
+
+## **createExpressionTool**
+
+```typescript {1}
+createExpressionTool(opts: {
+  name: string;
+  patterns: Record<string, [string, FunctionResult]>;
+  parameters?: Record<string, {
+    type?: string;
+    description?: string;
+    required?: boolean;
+  }>;
+}): DataMap
+```
+
+Create a pattern-matching tool that evaluates expressions locally on the
+SignalWire server without making any HTTP requests. Useful for command routing
+and conditional responses.
+
+#### Parameters
+
+<ParamField path="opts.name" type="string" required={true} toc={true}>
+  The name for the SWAIG tool.
+</ParamField>
+
+<ParamField path="opts.patterns" type="Record<string, [string, FunctionResult]>" required={true} toc={true}>
+  A record mapping test values to `[pattern, FunctionResult]` tuples. The key is a template
+  string (e.g., `"$&#123;args.command&#125;"`), and the pattern is a regex string matched against it.
+</ParamField>
+
+<ParamField path="opts.parameters" type="Record<string, object>" toc={true}>
+  Parameter definitions, same format as `createSimpleApiTool`.
+</ParamField>
+
+#### Returns
+
+[`DataMap`][datamap] -- A configured DataMap
+with expression-based routing.
+
+#### Example
+
+```typescript {3}
+import { AgentBase, FunctionResult, createExpressionTool } from '@signalwire/sdk';
+
+const routingTool = createExpressionTool({
+  name: 'route_command',
+  patterns: {
+    '${args.command}': [
+      'play.*',
+      new FunctionResult('Starting playback.'),
+    ],
+  },
+  parameters: {
+    command: { type: 'string', description: 'The command to route', required: true },
+    filename: { type: 'string', description: 'File to play' },
+  },
+});
+
+const agent = new AgentBase({ name: 'router' });
+routingTool.registerWithAgent(agent);
+```
+
+<Note>
+Since object keys must be unique, you cannot map multiple patterns against the same
+test value using `createExpressionTool`. For that case, use the [`DataMap`][datamap]
+builder and call `.expression()` multiple times.
+</Note>
+
+---
+
+## **setAllowedEnvPrefixes**
+
+```typescript {1}
+setAllowedEnvPrefixes(prefixes: string[]): void
+```
+
+Set the global allowed environment variable prefixes for `$&#123;ENV.*&#125;` expansion
+in DataMap URLs, bodies, and outputs. Only environment variables whose names
+start with one of these prefixes will be expanded.
+
+The default prefixes are `['SIGNALWIRE_', 'SWML_', 'SW_']`.
+
+#### Parameters
+
+<ParamField path="prefixes" type="string[]" required={true} toc={true}>
+  Array of prefix strings to allow. Pass an empty array to allow all environment variables
+  (escape hatch -- use with caution).
+</ParamField>
+
+#### Example
+
+```typescript {4}
+import { setAllowedEnvPrefixes } from '@signalwire/sdk';
+
+// Allow custom prefixes in addition to defaults
+setAllowedEnvPrefixes(['SIGNALWIRE_', 'SWML_', 'SW_', 'MY_APP_']);
+```
+
+---
+
+## **getAllowedEnvPrefixes**
+
+```typescript {1}
+getAllowedEnvPrefixes(): string[]
+```
+
+Get a copy of the current global allowed environment variable prefixes.
+
+#### Returns
+
+`string[]` -- A copy of the current prefix list.
+
+#### Example
+
+```typescript {3}
+import { getAllowedEnvPrefixes } from '@signalwire/sdk';
+
+const prefixes = getAllowedEnvPrefixes();
+console.log(prefixes);
+// ['SIGNALWIRE_', 'SWML_', 'SW_']
+```
+
+---
+
+## **safeAssign**
+
+Copy properties from `source` to `target`, filtering out prototype-pollution
+keys (`__proto__`, `constructor`, `prototype`). Drop-in replacement for
+`Object.assign()` where `source` is untrusted.
+
+## **Parameters**
+
+<ParamField path="target" type={"Record<string, unknown>"} required={true} toc={true}>
+  The object to assign into.
+</ParamField>
+
+<ParamField path="source" type={"Record<string, unknown>"} required={true} toc={true}>
+  The object to copy properties from.
+</ParamField>
+
+## **Returns**
+
+The `target` object.
+
+## **Example**
+
+```typescript {4}
+import { safeAssign } from '@signalwire/sdk';
+
+const target = { a: 1 };
+safeAssign(target, { b: 2, __proto__: 'blocked' });
+console.log(target); // { a: 1, b: 2 }
+```
+
+---
+
+## **filterSensitiveHeaders**
+
+Return a copy of `headers` with sensitive entries removed (`authorization`,
+`cookie`, `x-api-key`, `proxy-authorization`, `set-cookie`).
+
+## **Parameters**
+
+<ParamField path="headers" type={"Record<string, string>"} required={true} toc={true}>
+  Original header record.
+</ParamField>
+
+## **Returns**
+
+`Record<string, string>` -- A new record with sensitive headers removed.
+
+## **Example**
+
+```typescript {4}
+import { filterSensitiveHeaders } from '@signalwire/sdk';
+
+const raw = { 'content-type': 'application/json', authorization: 'Bearer secret' };
+const safe = filterSensitiveHeaders(raw);
+console.log(safe); // { 'content-type': 'application/json' }
+```
+
+---
+
+## **redactUrl**
+
+Redact credentials embedded in a URL. Replaces the password portion with `****`.
+
+## **Parameters**
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  The URL string to redact.
+</ParamField>
+
+## **Returns**
+
+`string` -- The URL with the password replaced by `****`.
+
+## **Example**
+
+```typescript {3}
+import { redactUrl } from '@signalwire/sdk';
+
+console.log(redactUrl('https://admin:secret@example.com/api'));
+// "https://admin:****@example.com/api"
+```
+
+---
+
+## **MAX_SKILL_INPUT_LENGTH**
+
+Maximum allowed input length for skill handler arguments (characters). Value: `1000`.
+
+## **Example**
+
+```typescript {3}
+import { MAX_SKILL_INPUT_LENGTH } from '@signalwire/sdk';
+
+console.log(MAX_SKILL_INPUT_LENGTH); // 1000
+```
+
+---
+
+## **inferSchema**
+
+Infer a JSON Schema from a function's source code by parsing parameter names
+and default values. Used internally by `defineTypedTool()`.
+
+## **Parameters**
+
+<ParamField path="fn" type="Function" required={true} toc={true}>
+  The function to analyze.
+</ParamField>
+
+## **Returns**
+
+`InferredSchema | null` -- The inferred schema with `parameters`,
+`required`, `paramNames`, and `hasRawData` fields, or `null` if inference fails.
+
+## **Example**
+
+```typescript {3}
+import { inferSchema } from '@signalwire/sdk';
+
+const schema = inferSchema((city: string, units = 'metric') => {});
+console.log(schema?.parameters);
+// { city: { type: 'string' }, units: { type: 'string' } }
+console.log(schema?.required); // ['city']
+```
+
+---
+
+## **parseFunctionParams**
+
+Parse function parameter names and default values from source code text.
+
+## **Parameters**
+
+<ParamField path="source" type="string" required={true} toc={true}>
+  The function source code string (via `fn.toString()`).
+</ParamField>
+
+## **Returns**
+
+`ParsedParam[]` -- Array of `{ name: string; defaultValue?: string }` objects.
+
+---
+
+## **createTypedHandlerWrapper**
+
+Create a wrapper function that unpacks a `Record<string, unknown>` args dict
+into named positional parameters for a typed handler.
+
+## **Parameters**
+
+<ParamField path="fn" type="Function" required={true} toc={true}>
+  The original typed handler function.
+</ParamField>
+
+<ParamField path="paramNames" type="string[]" required={true} toc={true}>
+  Ordered parameter names to extract from args.
+</ParamField>
+
+<ParamField path="hasRawData" type="boolean" required={true} toc={true}>
+  Whether the handler accepts a rawData parameter.
+</ParamField>
+
+## **Returns**
+
+`SwaigHandler` -- A wrapped handler with the standard `(args, rawData)` signature.
+
+---
+
+## **PomSection**
+
+A single section in a Prompt Object Model, with a title, body, bullets, and
+nested subsections. Returned by [`PomBuilder.getSection()`][ref-pombuilder] and [`PomBuilder.findSection()`][ref-pombuilder].
+
+## **Properties**
+
+<ParamField path="title" type="string | null" toc={true}>
+  Section heading text, or `null` if untitled.
+</ParamField>
+
+<ParamField path="body" type="string" toc={true}>
+  Section body paragraph text.
+</ParamField>
+
+<ParamField path="bullets" type="string[]" toc={true}>
+  List of bullet point strings.
+</ParamField>
+
+<ParamField path="subsections" type="PomSection[]" toc={true}>
+  Nested child sections.
+</ParamField>
+
+<ParamField path="numbered" type="boolean | null" toc={true}>
+  Whether this section is numbered when rendered.
+</ParamField>
+
+<ParamField path="numberedBullets" type="boolean" toc={true}>
+  Whether bullet points are rendered as a numbered list.
+</ParamField>
+
+---
+
+## **registerBuiltinSkills**
+
+Register all 19 built-in skills with the global [`SkillRegistry`][ref-skillregistry]. Call this once
+at startup if you want to use `SkillRegistry.create('datetime')` style registration.
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {3}
+import { registerBuiltinSkills, SkillRegistry } from '@signalwire/sdk';
+
+registerBuiltinSkills();
+const registry = SkillRegistry.getInstance();
+console.log(registry.listRegistered()); // ['datetime', 'math', 'joke', ...]
+```
