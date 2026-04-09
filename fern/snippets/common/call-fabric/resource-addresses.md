@@ -33,7 +33,7 @@ If you were to change the `alias` to `John-AI` the address would become `/public
 
 <Tip>
 If you are interacting with a resource from within the same context, you can omit the context from the address.
-For example, if you are interacting with a `Subscribers` resource named `Bob` from within the `private` context,
+For example, if you are interacting with a [Subscribers](/docs/platform/subscribers) resource named `Bob` from within the `private` context,
 you can use the address `/Bob` instead of `/private/Bob`.
 </Tip>
 
