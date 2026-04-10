@@ -19,8 +19,8 @@ namespace SignalWireAPI.Fabric.SubscriberRefreshTokens {
     @operationId("refresh_subscriber_token")
     @summary("Refresh Subscriber token")
     @doc("""
-      Exchanges a valid refresh token for a new subscriber access token and a new refresh token. The new access token is valid for 2 hours, and the new refresh token is valid for 2 hours and 5 minutes.
-      
+      Exchanges a valid refresh token for a new [subscriber](/docs/platform/subscribers) access token and a new refresh token. The new access token is valid for 2 hours, and the new refresh token is valid for 2 hours and 5 minutes.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post

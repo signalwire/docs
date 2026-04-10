@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
     @operationId("list_resource_addresses_client")
     @summary("List Resource Addresses from a Client")
     @doc("""
-      Lists resource addresses visible to the authenticated subscriber. This endpoint uses bearer token authentication with a SAT (Subscriber Access Token),
+      Lists resource addresses visible to the authenticated [subscriber](/docs/platform/subscribers). This endpoint uses bearer token authentication with a SAT (Subscriber Access Token),
       which can be generated using the [Create Subscriber Token endpoint](/docs/apis/rest/subscribers/tokens/create-subscriber-token).
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
@@ -32,7 +32,7 @@ namespace SignalWireAPI.Fabric.FabricAddresses {
     @operationId("get_resource_address_client")
     @summary("Get Resource Address from a Client")
     @doc("""
-      Returns a resource address by ID. This endpoint uses bearer token authentication with a SAT (Subscriber Access Token),
+      Returns a resource address by ID. This endpoint uses bearer token authentication with a SAT ([Subscriber](/docs/platform/subscribers) Access Token),
       which can be generated using the [Create Subscriber Token endpoint](/docs/apis/rest/subscribers/tokens/create-subscriber-token).
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}

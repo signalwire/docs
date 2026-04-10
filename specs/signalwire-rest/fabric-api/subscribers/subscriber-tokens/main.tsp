@@ -19,8 +19,8 @@ namespace SignalWireAPI.Fabric.SubscriberTokens {
     @operationId("create_subscriber_token")
     @summary("Create Subscriber token")
     @doc("""
-      Create a Subscriber Token
-      
+      Create a [Subscriber](/docs/platform/subscribers) Token.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     create(...SubscriberTokenRequest):
