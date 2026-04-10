@@ -1,0 +1,62 @@
+---
+title: "receive_fax"
+slug: /reference/python/relay/call/receive-fax
+description: "Receive a fax on a call."
+max-toc-depth: 3
+---
+
+[faxaction]: /docs/server-sdks/reference/python/relay/actions
+[calling-call-fax]: /docs/server-sdks/reference/python/relay/call#events
+[call-events]: /docs/server-sdks/reference/python/relay/call#events
+
+Start receiving a fax on the call. Returns a
+[`FaxAction`][faxaction] that resolves when the
+fax is fully received or an error occurs.
+
+<Info>
+This method emits [`calling.call.fax`][calling-call-fax] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="control_id" type="Optional[str]" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="on_completed" type="Optional[Callable[[RelayEvent], Any]]" toc={true}>
+  Callback invoked when the fax reception completes. The event contains
+  the received document URL and page count.
+</ParamField>
+
+## **Returns**
+
+[`FaxAction`][faxaction] -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```python {14}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+
+    action = await call.receive_fax()
+    event = await action.wait()
+
+    fax_result = event.params.get("fax", {})
+    document_url = fax_result.get("document", "")
+    pages = fax_result.get("pages", 0)
+    print(f"Received fax: {pages} pages, document: {document_url}")
+    await call.hangup()
+
+client.run()
+```

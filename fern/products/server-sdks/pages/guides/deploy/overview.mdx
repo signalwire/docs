@@ -1,0 +1,215 @@
+---
+title: "Deploy"
+description: Deploy your agents as local servers, production services, or serverless functions.
+slug: /guides/deploy
+max-toc-depth: 3
+---
+
+[local-development]: /docs/server-sdks/guides/local-development
+[production]: /docs/server-sdks/guides/production
+[serverless]: /docs/server-sdks/guides/serverless
+[docker-kubernetes]: /docs/server-sdks/guides/docker-kubernetes
+[cgi-mode]: /docs/server-sdks/guides/cgi-mode
+
+This chapter covers deployment options from development to production.
+
+## What you'll learn
+
+1. **Local Development** - Running agents during development
+2. **Production** - Deploying to production servers
+3. **Serverless** - AWS Lambda, Google Cloud Functions, Azure Functions
+4. **Docker & Kubernetes** - Container-based deployment
+5. **CGI Mode** - Traditional web server deployment
+
+## Deployment options overview
+
+| Environment | Options |
+|-------------|---------|
+| **Development** | `agent.run()` on localhost, ngrok for public testing, auto-reload on changes |
+| **Production** | Uvicorn with workers, HTTPS with certificates, load balancing, health monitoring |
+| **Serverless** | AWS Lambda, Google Cloud Functions, Azure Functions, auto-scaling, pay per invocation |
+| **Container** | Docker, Kubernetes, auto-scaling, rolling updates, service mesh |
+| **Traditional** | CGI mode, Apache/nginx integration, shared hosting compatible |
+
+## Environment detection
+
+The SDK automatically detects your deployment environment:
+
+| Environment Variable | Detected Mode |
+|---------------------|---------------|
+| `GATEWAY_INTERFACE` | CGI mode |
+| `AWS_LAMBDA_FUNCTION_NAME` | AWS Lambda |
+| `LAMBDA_TASK_ROOT` | AWS Lambda |
+| `FUNCTION_TARGET` | Google Cloud Functions |
+| `K_SERVICE` | Google Cloud Functions |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud Functions |
+| `AZURE_FUNCTIONS_ENVIRONMENT` | Azure Functions |
+| `FUNCTIONS_WORKER_RUNTIME` | Azure Functions |
+| (none of above) | Server mode (default) |
+
+## Chapter contents
+
+| Section | Description |
+|---------|-------------|
+| [Local Development][local-development] | Development server and testing |
+| [Production][production] | Production server deployment |
+| [Serverless][serverless] | Lambda, Cloud Functions, Azure |
+| [Docker & Kubernetes][docker-kubernetes] | Container deployment |
+| [CGI Mode][cgi-mode] | Traditional CGI deployment |
+
+## Quick start
+
+<Tabs>
+<Tab title="Python">
+```python
+#!/usr/bin/env python3
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.add_language("English", "en-US", "rime.spore")
+        self.prompt_add_section("Role", "You are a helpful assistant.")
+
+if __name__ == "__main__":
+    agent = MyAgent()
+    agent.run()
+```
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import { AgentBase } from 'signalwire-agents';
+
+const agent = new AgentBase({ name: 'my-agent' });
+agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
+agent.promptAddSection('Role', { body: 'You are a helpful assistant.' });
+
+agent.run();
+```
+</Tab>
+</Tabs>
+{/*
+
+<Tab title="Go">
+```go
+package main
+
+import "github.com/signalwire/signalwire-agents-go/pkg/agent"
+
+func main() {
+    a := agent.NewAgentBase(
+        agent.WithName("my-agent"),
+    )
+    a.AddLanguage("English", "en-US", "rime.spore")
+    a.PromptAddSection("Role", "You are a helpful assistant.")
+
+    a.Run()
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire'
+
+agent = SignalWireAgents::AgentBase.new(name: "my-agent")
+agent.add_language("English", "en-US", "rime.spore")
+agent.prompt_add_section("Role", "You are a helpful assistant.")
+
+agent.run
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.agent.AgentBase;
+
+public class MyAgent {
+    public static void main(String[] args) {
+        AgentBase agent = AgentBase.builder()
+            .name("my-agent")
+            .build();
+        agent.addLanguage("English", "en-US", "rime.spore");
+        agent.promptAddSection("Role", "You are a helpful assistant.");
+
+        agent.run();
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::Agent::AgentBase;
+
+my $agent = AgentBase->new(name => "my-agent");
+$agent->add_language("English", "en-US", "rime.spore");
+$agent->prompt_add_section("Role", "You are a helpful assistant.");
+
+$agent->run;
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agent/agent_base.hpp>
+
+int main() {
+    agent::AgentBase agent("my-agent");
+    agent.addLanguage("English", "en-US", "rime.spore");
+    agent.promptAddSection("Role", "You are a helpful assistant.");
+
+    agent.run();
+    return 0;
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\Agent\AgentBase;
+
+$agent = new AgentBase(name: 'my-agent');
+$agent->addLanguage('English', 'en-US', 'rime.spore');
+$agent->promptAddSection('Role', 'You are a helpful assistant.');
+
+$agent->run();
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.Agent;
+
+var agent = new AgentBase(new AgentOptions { Name = "my-agent" });
+agent.AddLanguage("English", "en-US", "rime.spore");
+agent.PromptAddSection("Role", "You are a helpful assistant.");
+
+agent.Run();
+```
+</Tab>
+
+*/}
+
+The `run()` method automatically:
+
+- Detects serverless environments (Lambda, Cloud Functions, Azure)
+- Starts a development server on localhost for local development
+- Handles CGI mode when deployed to traditional web servers
+
+## Starting the development server
+
+The simplest way to run your agent locally:
+
+| Language | Run Command |
+|----------|-------------|
+| Python | `python my_agent.py` |
+| TypeScript | `npx ts-node my_agent.ts` or `node my_agent.js` |
+{/*
+
+| Go | `go run my_agent.go` |
+| Ruby | `ruby my_agent.rb` |
+| Java | `java -jar my-agent.jar` or `mvn exec:java` |
+| Perl | `perl my_agent.pl` |
+| C++ | `./my_agent` (after compilation) |
+| PHP | `php my_agent.php` |
+| C# | `dotnet run` |
+
+*/}
+
+All languages default to `http://localhost:3000`.

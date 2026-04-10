@@ -1,0 +1,141 @@
+---
+title: "Helper Functions"
+sidebar-title: "helpers"
+slug: /reference/typescript/agents/data-map/helper-functions
+description: Convenience functions for creating common DataMap patterns.
+max-toc-depth: 3
+---
+
+[ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
+[ref-functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+
+```typescript {3}
+import { createSimpleApiTool } from '@signalwire/sdk';
+
+const weatherTool = createSimpleApiTool({
+  name: 'get_weather',
+  url: 'https://api.weather.com/v1/current?q=${args.location}',
+  responseTemplate: 'Weather: ${response.current.condition.text}, ${response.current.temp_f}F',
+  parameters: {
+    location: { type: 'string', description: 'City name', required: true },
+  },
+});
+```
+
+Create a DataMap for a straightforward single-endpoint API call with minimal
+configuration.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Function name.
+</ParamField>
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  API endpoint URL.
+</ParamField>
+
+<ParamField path="responseTemplate" type="string" required={true} toc={true}>
+  Template string for formatting the response.
+</ParamField>
+
+<ParamField path="parameters" type={'Record<string, { type?: string; description?: string; required?: boolean }>'} toc={true}>
+  Parameter definitions. Keys are parameter names, values are objects with
+  `"type"`, `"description"`, and optional `"required"` keys.
+</ParamField>
+
+<ParamField path="method" type="string" default="GET" toc={true}>
+  HTTP method.
+</ParamField>
+
+<ParamField path="headers" type={"Record<string, string>"} toc={true}>
+  HTTP headers.
+</ParamField>
+
+<ParamField path="body" type={"Record<string, unknown>"} toc={true}>
+  Request body for POST/PUT.
+</ParamField>
+
+<ParamField path="errorKeys" type="string[]" toc={true}>
+  Keys indicating an error response.
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- A fully configured DataMap ready for further chaining or conversion.
+
+---
+
+```typescript {3}
+import { createExpressionTool, FunctionResult } from '@signalwire/sdk';
+
+const controlTool = createExpressionTool({
+  name: 'playback_control',
+  patterns: {
+    '${args.command}': ['play.*', new FunctionResult('Playing.')],
+  },
+  parameters: {
+    command: { type: 'string', description: 'Playback command', required: true },
+  },
+});
+```
+
+Create a DataMap for pattern-matching responses without API calls.
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Function name.
+</ParamField>
+
+<ParamField path="patterns" type={"Record<string, [string, FunctionResult]>"} required={true} toc={true}>
+  Object mapping test values to `[pattern, FunctionResult]` tuples.
+</ParamField>
+
+<ParamField path="parameters" type={'Record<string, { type?: string; description?: string; required?: boolean }>'} toc={true}>
+  Parameter definitions (same format as `createSimpleApiTool`).
+</ParamField>
+
+## **Returns**
+
+[`DataMap`][ref-datamap] -- A fully configured DataMap.
+
+## **Example**
+
+```typescript {9}
+import {
+  AgentBase,
+  FunctionResult,
+  createSimpleApiTool,
+  createExpressionTool,
+} from '@signalwire/sdk';
+
+// Simple API tool -- one line instead of a full DataMap chain
+const weather = createSimpleApiTool({
+  name: 'get_weather',
+  url: 'https://api.weatherapi.com/v1/current.json?key=KEY&q=${enc:args.city}',
+  responseTemplate: 'Weather in ${args.city}: ${response.current.condition.text}',
+  parameters: {
+    city: { type: 'string', description: 'City name', required: true },
+  },
+  errorKeys: ['error'],
+});
+
+// Expression tool -- pattern matching without API calls
+const greeting = createExpressionTool({
+  name: 'greet',
+  patterns: {
+    '${args.language}': ['spanish|espanol', new FunctionResult('Hola!')],
+  },
+  parameters: {
+    language: { type: 'string', description: 'Language to greet in' },
+  },
+});
+
+const agent = new AgentBase({ name: 'helper-demo' });
+agent.setPromptText('You are a helpful assistant.');
+agent.registerSwaigFunction(weather.toSwaigFunction());
+agent.registerSwaigFunction(greeting.toSwaigFunction());
+
+agent.run();
+```

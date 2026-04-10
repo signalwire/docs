@@ -1,0 +1,87 @@
+---
+title: "add_gather_question"
+slug: /reference/python/agents/context-builder/step/add-gather-question
+description: Add a question to this step's gather_info configuration.
+max-toc-depth: 3
+---
+
+[set-gather-info]: /docs/server-sdks/reference/python/agents/context-builder/step/set-gather-info
+[ref-step]: /docs/server-sdks/reference/python/agents/context-builder/step
+
+Add a question to this step's gather_info configuration.
+[`set_gather_info()`][set-gather-info]
+must be called before this method.
+
+## **Parameters**
+
+<ParamField path="key" type="str" required={true} toc={true}>
+  Key name for storing the answer in `global_data`. Must be unique within
+  this step's gather questions.
+</ParamField>
+
+<ParamField path="question" type="str" required={true} toc={true}>
+  The question text to present to the caller.
+</ParamField>
+
+<ParamField path="type" type="str" default="string" toc={true}>
+  JSON schema type for the answer parameter.
+
+  - `"string"` -- text value
+  - `"integer"` -- whole number value
+  - `"number"` -- numeric value including decimals
+  - `"boolean"` -- true or false value
+</ParamField>
+
+<ParamField path="confirm" type="bool" default="false" toc={true}>
+  When `True`, the AI must confirm the answer with the caller before accepting it.
+</ParamField>
+
+<ParamField path="prompt" type="str" toc={true}>
+  Extra instruction text appended for this specific question.
+</ParamField>
+
+<ParamField path="functions" type="list[str]" toc={true}>
+  Additional function names to make visible while asking this question.
+</ParamField>
+
+## **Returns**
+
+[`Step`][ref-step] -- Self for method chaining. Raises `ValueError` if `set_gather_info()`
+has not been called first.
+
+## **Example**
+
+```python {14,19,25}
+from signalwire import AgentBase
+
+agent = AgentBase(name="my-agent", route="/agent")
+
+contexts = agent.define_contexts()
+ctx = contexts.add_context("default")
+intake = ctx.add_step("intake")
+intake.set_text("Collect patient information.")
+intake.set_gather_info(
+    output_key="patient_info",
+    completion_action="next_step",
+    prompt="Be friendly and professional when collecting information."
+)
+intake.add_gather_question(
+    key="full_name",
+    question="What is your full name?",
+    confirm=True
+)
+intake.add_gather_question(
+    key="date_of_birth",
+    question="What is your date of birth?",
+    type="string",
+    prompt="Spell it back to confirm."
+)
+intake.add_gather_question(
+    key="insurance_id",
+    question="What is your insurance ID number?",
+    functions=["verify_insurance"]
+)
+ctx.add_step("review").set_text("Review the collected information with the patient.")
+
+agent.serve()
+```

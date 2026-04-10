@@ -1,0 +1,57 @@
+---
+title: "run"
+slug: /reference/python/relay/client/run
+description: "Start the client with automatic reconnection."
+max-toc-depth: 3
+---
+
+[connect]: /docs/server-sdks/reference/python/relay/client/connect
+[disconnect]: /docs/server-sdks/reference/python/relay/client/disconnect
+[ref-relayclient]: /docs/server-sdks/reference/python/relay/client
+
+Blocking entry point that connects to RELAY and runs the event loop until
+interrupted. This is the recommended way to start a [`RelayClient`][ref-relayclient] for long-running
+services. It calls [`connect()`][connect]
+internally and automatically reconnects with exponential backoff (1 second initial
+delay, up to 30 seconds maximum) if the connection is lost.
+
+The method blocks the current thread. Press `Ctrl+C` to trigger a clean shutdown --
+the client handles `SIGINT` gracefully without dumping a stack trace.
+
+<Note>
+`run()` is synchronous and creates its own `asyncio` event loop via `asyncio.run()`.
+Do not call it from inside an already-running async event loop. For async contexts,
+use [`connect()`][connect] and
+[`disconnect()`][disconnect] directly.
+</Note>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`None` -- blocks until the client is stopped via `Ctrl+C` or a programmatic shutdown.
+
+## **Example**
+
+```python {18}
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+@client.on_call
+async def handle_call(call):
+    await call.answer()
+    action = await call.play([{"type": "tts", "text": "Welcome! Goodbye."}])
+    await action.wait()
+    await call.hangup()
+
+# Blocks forever, reconnects on connection loss
+client.run()
+```

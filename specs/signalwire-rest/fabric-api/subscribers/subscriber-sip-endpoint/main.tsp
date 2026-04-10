@@ -20,8 +20,8 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
     @operationId("list_subscriber_sip_credentials")
     @summary("List Subscriber SIP credentials")
     @doc("""
-      A list of SIP Credentials for the Subscriber
-      
+      A list of SIP Credentials for the [Subscriber](/docs/platform/subscribers).
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     list(...FabricSubscriberID):
@@ -33,8 +33,8 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
     @operationId("get_subscriber_sip_credential")
     @summary("Get Subscriber SIP credential")
     @doc("""
-      Returns a Subscriber SIP Credential by ID
-      
+      Returns a [Subscriber](/docs/platform/subscribers) SIP Credential by ID.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     read(...SIPEndpointID, ...FabricSubscriberID):
@@ -49,8 +49,8 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
     @operationId("create_subscriber_sip_credential")
     @summary("Create Subscriber SIP credential")
     @doc("""
-      Creates a Subscriber SIP Credential
-      
+      Creates a [Subscriber](/docs/platform/subscribers) SIP Credential.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @post
@@ -67,8 +67,8 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
     @operationId("update_subscriber_sip_credential")
     @summary("Update Subscriber SIP credential")
     @doc("""
-      Updates a Subscriber SIP Credential by ID
-      
+      Updates a [Subscriber](/docs/platform/subscribers) SIP Credential by ID.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @patch(#{ implicitOptionality: true })
@@ -89,8 +89,8 @@ namespace SignalWireAPI.Fabric.Subscribers.SipEndpoints {
     @operationId("delete_subscriber_sip_credential")
     @summary("Delete Subscriber SIP credential")
     @doc("""
-      Deletes a Subscriber SIP Credential by ID
-      
+      Deletes a [Subscriber](/docs/platform/subscribers) SIP Credential by ID.
+
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)
     @delete

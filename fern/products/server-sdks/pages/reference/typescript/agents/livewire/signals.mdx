@@ -1,0 +1,141 @@
+---
+title: "Signals"
+slug: /reference/typescript/agents/livewire/signals
+description: "Error and signal classes for controlling tool behavior and multi-agent handoffs."
+max-toc-depth: 3
+---
+
+[agent]: /docs/server-sdks/reference/typescript/agents/livewire/agent
+
+LiveWire provides error and signal classes that tool handlers can throw or return
+to control agent behavior.
+
+## **StopResponse**
+
+Extends `Error`. When thrown inside a tool handler, signals that the tool should
+**not** trigger another LLM reply. Use this when the tool's side effect is the
+final action and no further conversation is needed.
+
+```typescript {8}
+import { tool, StopResponse } from '@signalwire/sdk/livewire';
+
+const endCall = tool({
+  description: 'End the current call.',
+  parameters: { reason: { type: 'string' } },
+  execute: (params) => {
+    // Perform cleanup...
+    throw new StopResponse(`Call ended: ${params.reason}`);
+  },
+});
+```
+
+### Constructor
+
+```typescript {1}
+new StopResponse(message?: string)
+```
+
+<ParamField path="message" type="string" default='"StopResponse"' toc={true}>
+  Optional error message. Defaults to `"StopResponse"`.
+</ParamField>
+
+---
+
+## **ToolError**
+
+Extends `Error`. Signals a tool execution failure. Throw this when a tool
+encounters a problem that should be reported back to the LLM so it can
+communicate the issue to the user or retry.
+
+```typescript {11}
+import { tool, ToolError } from '@signalwire/sdk/livewire';
+
+const transferFunds = tool<{ amount: number; toAccount: string }>({
+  description: 'Transfer funds to another account.',
+  parameters: {
+    amount: { type: 'number' },
+    toAccount: { type: 'string' },
+  },
+  execute: (params) => {
+    if (params.amount <= 0) {
+      throw new ToolError('Amount must be positive.');
+    }
+    return `Transferred $${params.amount} to ${params.toAccount}.`;
+  },
+});
+```
+
+### Constructor
+
+```typescript {1}
+new ToolError(message: string)
+```
+
+<ParamField path="message" type="string" required={true} toc={true}>
+  Error message describing what went wrong. This is sent back to the LLM.
+</ParamField>
+
+---
+
+## **AgentHandoff**
+
+A signal class for handing off a conversation to a different agent in multi-agent
+scenarios. Created via the `handoff()` helper function.
+
+```typescript {7-9}
+import { Agent, handoff, tool } from '@signalwire/sdk/livewire';
+
+const billingAgent = new Agent({
+  instructions: 'You handle billing questions.',
+});
+
+const transferToBilling = handoff({
+  agent: billingAgent,
+  returns: 'Transferred to billing department.',
+});
+```
+
+### Properties
+
+<ParamField path="agent" type="Agent" toc={true}>
+  The target [`Agent`][agent] for the handoff.
+</ParamField>
+
+<ParamField path="returns" type="string | undefined" toc={true}>
+  Optional return message for the handoff.
+</ParamField>
+
+### handoff()
+
+```typescript {1}
+function handoff(options: { agent: Agent; returns?: string }): AgentHandoff
+```
+
+Factory function that creates an `AgentHandoff` instance.
+
+<ParamField path="agent" type="Agent" required={true} toc={true}>
+  The target agent to hand off to.
+</ParamField>
+
+<ParamField path="returns" type="string | undefined" toc={true}>
+  Optional return value for the handoff.
+</ParamField>
+
+---
+
+## **ChatContext**
+
+A minimal empty class mirroring the LiveKit `ChatContext`. Exists for API
+compatibility. On SignalWire, conversation history is managed by the platform.
+
+```typescript {3}
+import { llm } from '@signalwire/sdk/livewire';
+
+const chat = new llm.ChatContext();
+```
+
+<Note>
+`ChatContext` has no methods or properties in the LiveWire implementation. It is an
+empty stub provided solely so that existing livekit-agents code that references
+`ChatContext` compiles without errors.
+</Note>
