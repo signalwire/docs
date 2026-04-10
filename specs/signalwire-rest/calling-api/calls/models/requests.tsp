@@ -449,6 +449,10 @@ model CallCreateParamsBase {
   @doc("The HTTP method to use when requesting the URL.")
   @example("POST")
   url_method?: string = "POST";
+
+  @doc("A list of codecs to use for the call. Can be an array of codec strings or a comma-separated string. Valid codecs are: `PCMU`, `PCMA`, `G722`, `G729`, `OPUS`, `VP8`, `H264`. For PSTN calls, `PCMA` and `PCMU` are recommended as many other codecs are not supported by PSTN gateways. If a SIP URI with included codecs is passed in the `to` field along with this parameter, the SIP URI codecs will be prioritized.")
+  @example(#["OPUS", "G729", "VP8", "PCMA"])
+  codecs?: string[] | string;
 }
 
 @summary("dial (URL)")
