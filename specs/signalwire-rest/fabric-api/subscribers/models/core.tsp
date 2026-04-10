@@ -45,10 +45,6 @@ model Subscriber {
   @example("United States")
   country: string;
 
-  @doc("Region of the Subscriber.")
-  @example("New York")
-  region: string;
-
   @doc("Company name of the Subscriber.")
   @example("SignalWire")
   company_name: string;
