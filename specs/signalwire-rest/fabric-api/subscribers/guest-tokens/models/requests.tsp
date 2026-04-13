@@ -7,11 +7,11 @@ model SubscriberGuestTokenCreateRequest {
   @example(1725513600)
   expire_at?: integer;
 
-  @doc("A routing override that controls which regional cluster the SDK connects to. Validated against a supported list. Currently supported values: `us-central`.")
+  @doc("A routing override that controls which regional cluster the SDK connects to.")
   @example("us-central")
-  region?: string;
+  region?: "us-central";
 
   @doc("A direct routing override specifying the regional cluster endpoint, set as the `ch` claim in the SAT JWE header.")
   @example("us-central")
-  ch?: string;
+  ch?: "us-central";
 }
