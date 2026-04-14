@@ -42,9 +42,9 @@ model SubscriberTokenRequest {
   @example("US")
   country?: string;
 
-  @doc("Set or update the region of the subscriber.")
-  @example("CA")
-  region?: string;
+  @doc("A routing override that controls which regional cluster the SDK connects to.")
+  @example("us-central")
+  region?: "us-central";
 
   @doc("Set or update the company name of the subscriber.")
   @example("SignalWire")
