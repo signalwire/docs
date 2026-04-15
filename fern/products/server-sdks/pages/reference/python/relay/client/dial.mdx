@@ -1,0 +1,164 @@
+---
+title: "dial"
+slug: /reference/python/relay/client/dial
+description: "Initiate an outbound call."
+max-toc-depth: 3
+---
+
+[call]: /docs/server-sdks/reference/python/relay/call
+
+Initiate an outbound call. Sends a `calling.dial` JSON-RPC request and waits for the
+server to return a `calling.call.dial` event confirming the call was answered or failed.
+Returns a fully-initialized [`Call`][call] object
+with valid `call_id` and `node_id`.
+
+The `devices` parameter supports both serial and parallel dialing strategies. Each
+inner list represents a set of devices to ring simultaneously (parallel). The outer
+list represents sequential attempts -- if the first group fails, the next group is
+tried.
+
+<Warning>
+Raises `RelayError` if the dial fails or if no answer is received within the
+`dial_timeout` period. The default timeout is 120 seconds.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="devices" type="list[list[dict[str, Any]]]" required={true} toc={true}>
+  Nested array of device definitions for serial and parallel dialing. Each device is
+  a dict with `type` and `params` keys.
+
+  - **Serial dial** (try one after another): each inner list has one device
+  - **Parallel dial** (ring simultaneously): one inner list with multiple devices
+</ParamField>
+
+<Indent>
+<ParamField path="devices[][].type" type="str" required={true} toc={true}>
+  Device type. Valid values:
+  - `"phone"` -- PSTN phone number
+  - `"sip"` -- SIP endpoint
+</ParamField>
+
+<ParamField path="devices[][].params" type="dict" required={true} toc={true}>
+  Device-specific parameters.
+</ParamField>
+
+<Indent>
+<ParamField path="devices[][].params.to_number" type="str" required={true} toc={true}>
+  Destination phone number in E.164 format (for `"phone"` type).
+</ParamField>
+
+<ParamField path="devices[][].params.from_number" type="str" required={true} toc={true}>
+  Caller ID phone number in E.164 format (for `"phone"` type).
+</ParamField>
+
+<ParamField path="devices[][].params.timeout" type="int" toc={true}>
+  Per-device ring timeout in seconds.
+</ParamField>
+</Indent>
+</Indent>
+
+<ParamField path="tag" type="Optional[str]" toc={true}>
+  Client-provided correlation tag for event matching. Auto-generated as a UUID if
+  not supplied.
+</ParamField>
+
+<ParamField path="max_duration" type="Optional[int]" toc={true}>
+  Maximum call duration in seconds. The call is automatically ended when this
+  limit is reached.
+</ParamField>
+
+<ParamField path="dial_timeout" type="Optional[float]" default="120.0" toc={true}>
+  How long in seconds to wait for the dial to complete (answer or failure) before
+  raising a timeout error.
+</ParamField>
+
+## **Returns**
+
+[`Call`][call] -- A call object with all properties populated and ready for call control operations.
+
+## **Examples**
+
+### Simple outbound call
+
+```python {13}
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        call = await client.dial(
+            devices=[[{
+                "type": "phone",
+                "params": {
+                    "from_number": "+15551234567",
+                    "to_number": "+15559876543",
+                    "timeout": 30,
+                },
+            }]],
+        )
+        action = await call.play([{"type": "tts", "text": "Hello!"}])
+        await action.wait()
+        await call.hangup()
+
+asyncio.run(main())
+```
+
+### Serial dial (failover)
+
+```python {14}
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        # Try the first number, then fall back to the second
+        call = await client.dial(
+            devices=[
+                [{"type": "phone", "params": {"to_number": "+15551111111", "from_number": "+15550000000"}}],
+                [{"type": "phone", "params": {"to_number": "+15552222222", "from_number": "+15550000000"}}],
+            ],
+        )
+
+asyncio.run(main())
+```
+
+### Parallel dial (ring all)
+
+```python {14}
+import asyncio
+from signalwire.relay import RelayClient
+
+client = RelayClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+    contexts=["default"],
+)
+
+async def main():
+    async with client:
+        # Ring both numbers simultaneously, first to answer wins
+        call = await client.dial(
+            devices=[[
+                {"type": "phone", "params": {"to_number": "+15551111111", "from_number": "+15550000000"}},
+                {"type": "phone", "params": {"to_number": "+15552222222", "from_number": "+15550000000"}},
+            ]],
+        )
+
+asyncio.run(main())
+```

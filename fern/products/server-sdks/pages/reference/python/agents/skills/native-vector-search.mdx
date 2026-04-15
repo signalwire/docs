@@ -1,0 +1,165 @@
+---
+title: "native_vector_search"
+slug: /reference/python/agents/skills/native-vector-search
+description: Search local .swsearch vector index files.
+---
+
+[sw-search]: /docs/server-sdks/reference/python/agents/cli/sw-search
+
+Search document indexes using vector similarity and keyword search. Supports three
+modes: local SQLite (`.swsearch` files), local PostgreSQL via pgvector, and remote
+search servers. Indexes are built with the [`sw-search`][sw-search] CLI tool.
+
+**Tools:** `search_knowledge` (default, customizable via `tool_name`)
+
+**Requirements:** Search extras installed (`pip install "signalwire-sdk[search]"`)
+
+**Multi-instance:** Yes
+
+## Core Parameters
+
+<ParamField path="index_file" type="str" toc={true}>
+  Path to the `.swsearch` index file (SQLite backend only).
+</ParamField>
+
+<ParamField path="tool_name" type="str" default="search_knowledge" toc={true}>
+  Custom function name for this skill instance. Required when using multiple instances.
+</ParamField>
+
+<ParamField path="build_index" type="bool" default="False" toc={true}>
+  Whether to build the index from source files on startup.
+</ParamField>
+
+<ParamField path="source_dir" type="str" toc={true}>
+  Directory containing documents to index. Required when `build_index=True`.
+</ParamField>
+
+<ParamField path="remote_url" type="str" toc={true}>
+  URL of a remote search server for network mode (e.g., `http://localhost:8001`).
+</ParamField>
+
+<ParamField path="index_name" type="str" default="default" toc={true}>
+  Name of the index on a remote server. Only used with `remote_url`.
+</ParamField>
+
+## Search Parameters
+
+<ParamField path="count" type="int" default="5" toc={true}>
+  Number of search results to return (1–20).
+</ParamField>
+
+<ParamField path="similarity_threshold" type="float" default="0.0" toc={true}>
+  Minimum similarity score for results (0.0–1.0).
+</ParamField>
+
+<ParamField path="keyword_weight" type="float" toc={true}>
+  Manual keyword weight (0.0–1.0). Overrides automatic weight detection.
+</ParamField>
+
+<ParamField path="model_name" type="str" default="mini" toc={true}>
+  Embedding model. Shortcuts: `"mini"` (fastest, 384 dims), `"base"` or `"large"`
+  (768 dims). Full model names also accepted.
+</ParamField>
+
+## Content Parameters
+
+<ParamField path="tags" type="list[str]" default="[]" toc={true}>
+  Tags to filter search results.
+</ParamField>
+
+<ParamField path="global_tags" type="list[str]" default="[]" toc={true}>
+  Tags applied to all documents when building the index.
+</ParamField>
+
+<ParamField path="file_types" type="list[str]" toc={true}>
+  File extensions to include when building the index.
+</ParamField>
+
+<ParamField path="exclude_patterns" type="list[str]" toc={true}>
+  Glob patterns to exclude when building the index.
+</ParamField>
+
+<ParamField path="max_content_length" type="int" default="32768" toc={true}>
+  Maximum total response size in characters.
+</ParamField>
+
+## Response Parameters
+
+<ParamField path="no_results_message" type="str" toc={true}>
+  Message returned when no results are found. Supports `{query}` placeholder.
+</ParamField>
+
+<ParamField path="response_prefix" type="str" default="" toc={true}>
+  Text prepended to the search response.
+</ParamField>
+
+<ParamField path="response_postfix" type="str" default="" toc={true}>
+  Text appended to the search response.
+</ParamField>
+
+<ParamField path="response_format_callback" type="callable" toc={true}>
+  Optional callback to format the response. Must return a string.
+</ParamField>
+
+<ParamField path="description" type="str" default="Search the knowledge base for information" toc={true}>
+  Description of the tool presented to the AI.
+</ParamField>
+
+<ParamField path="hints" type="list[str]" default="[]" toc={true}>
+  Additional speech recognition hints for the tool.
+</ParamField>
+
+## NLP Parameters
+
+<ParamField path="nlp_backend" type="str" default="basic" toc={true}>
+  NLP backend for query processing: `"basic"`, `"spacy"`, or `"nltk"`.
+  **Deprecated** — use `query_nlp_backend` and `index_nlp_backend` instead.
+</ParamField>
+
+<ParamField path="query_nlp_backend" type="str" toc={true}>
+  NLP backend for query expansion: `"basic"`, `"spacy"`, or `"nltk"`.
+</ParamField>
+
+<ParamField path="index_nlp_backend" type="str" toc={true}>
+  NLP backend for indexing: `"basic"`, `"spacy"`, or `"nltk"`.
+</ParamField>
+
+## Backend Parameters
+
+<ParamField path="backend" type="str" default="sqlite" toc={true}>
+  Storage backend: `"sqlite"` or `"pgvector"`. Ignored when `remote_url` is set.
+</ParamField>
+
+<ParamField path="connection_string" type="str" toc={true}>
+  PostgreSQL connection string. Required when `backend="pgvector"`.
+</ParamField>
+
+<ParamField path="collection_name" type="str" toc={true}>
+  PostgreSQL collection name. Required when `backend="pgvector"`.
+</ParamField>
+
+## Other Parameters
+
+<ParamField path="verbose" type="bool" default="False" toc={true}>
+  Enable verbose logging during indexing and search.
+</ParamField>
+
+<ParamField path="overwrite" type="bool" default="False" toc={true}>
+  Overwrite existing pgvector collection when building the index.
+</ParamField>
+
+```python
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="assistant", route="/assistant")
+        self.set_prompt_text("You are a helpful assistant.")
+        self.add_skill("native_vector_search", {
+            "index_file": "/path/to/knowledge.swsearch",
+            "tool_name": "search_docs"
+        })
+
+agent = MyAgent()
+agent.serve()
+```

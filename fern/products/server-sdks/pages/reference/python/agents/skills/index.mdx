@@ -1,0 +1,186 @@
+---
+title: "Skills"
+slug: /reference/python/agents/skills
+description: Built-in skills catalog with configuration parameters and usage patterns.
+max-toc-depth: 3
+---
+
+[add-skill]: /docs/server-sdks/reference/python/agents/agent-base/add-skill
+[skillbase]: /docs/server-sdks/reference/python/agents/skill-base
+
+Skills are pluggable capabilities that add tools to your agent. Add a skill with
+[`add_skill()`][add-skill] and it registers
+one or more SWAIG functions automatically. Skills handle setup, parameter validation,
+and tool registration so you can add features like weather, search, or math with a
+single call.
+
+```python
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="my-agent")
+        self.set_prompt_text("You are a helpful assistant.")
+
+        # No-config skill
+        self.add_skill("datetime")
+
+        # Skill with parameters
+        self.add_skill("web_search", {
+            "api_key": "YOUR_KEY",
+            "search_engine_id": "YOUR_ENGINE_ID"
+        })
+
+if __name__ == "__main__":
+    MyAgent().run()
+```
+
+## Skills Summary
+
+| Skill | Functions | API Required | Multi-Instance |
+|-------|-----------|--------------|----------------|
+| [`datetime`](/docs/server-sdks/reference/python/agents/skills/datetime) | 2 | No | No |
+| [`math`](/docs/server-sdks/reference/python/agents/skills/math) | 1 | No | No |
+| [`web_search`](/docs/server-sdks/reference/python/agents/skills/web-search) | 1 | Yes | Yes |
+| [`wikipedia_search`](/docs/server-sdks/reference/python/agents/skills/wikipedia-search) | 1 | No | No |
+| [`weather_api`](/docs/server-sdks/reference/python/agents/skills/weather-api) | 1 | Yes | No |
+| [`joke`](/docs/server-sdks/reference/python/agents/skills/joke) | 1 | Yes | No |
+| [`play_background_file`](/docs/server-sdks/reference/python/agents/skills/play-background-file) | 1 | No | Yes |
+| [`swml_transfer`](/docs/server-sdks/reference/python/agents/skills/swml-transfer) | 1 | No | Yes |
+| [`datasphere`](/docs/server-sdks/reference/python/agents/skills/datasphere) | 1 | Yes | Yes |
+| [`datasphere_serverless`](/docs/server-sdks/reference/python/agents/skills/datasphere-serverless) | 1 | Yes | Yes |
+| [`native_vector_search`](/docs/server-sdks/reference/python/agents/skills/native-vector-search) | 1 | No | Yes |
+| [`mcp_gateway`](/docs/server-sdks/reference/python/agents/skills/mcp-gateway) | Dynamic | No | Yes |
+| [`google_maps`](/docs/server-sdks/reference/python/agents/skills/google-maps) | 2 | Yes | No |
+| [`info_gatherer`](/docs/server-sdks/reference/python/agents/skills/info-gatherer) | 2 | No | Yes |
+| [`claude_skills`](/docs/server-sdks/reference/python/agents/skills/claude-skills) | Dynamic | No | Yes |
+| [`spider`](/docs/server-sdks/reference/python/agents/skills/spider) | 3 | No | Yes |
+| [`api_ninjas_trivia`](/docs/server-sdks/reference/python/agents/skills/api-ninjas-trivia) | 1 | Yes | Yes |
+
+## Configuration
+
+All skills accept configuration via a dictionary passed to `add_skill()`. Skills can also
+read values from environment variables when a parameter defines an `env_var` fallback.
+
+```python
+# Direct configuration
+self.add_skill("web_search", {"api_key": "KEY", "search_engine_id": "ID"})
+
+# Environment variable fallback
+import os
+self.add_skill("web_search", {
+    "api_key": os.getenv("GOOGLE_API_KEY"),
+    "search_engine_id": os.getenv("SEARCH_ENGINE_ID")
+})
+```
+
+### SWAIG Field Overrides
+
+Override SWAIG function metadata for any skill by including a `swaig_fields` key:
+
+```python
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="assistant", route="/assistant")
+        self.set_prompt_text("You are a helpful assistant.")
+        self.add_skill("datetime", {
+            "swaig_fields": {
+                "fillers": {"en-US": ["Let me check the time...", "One moment..."]},
+                "secure": False
+            }
+        })
+
+agent = MyAgent()
+agent.serve()
+```
+
+### Multi-Instance Skills
+
+Skills that support multiple instances require unique `tool_name` values:
+
+```python
+from signalwire import AgentBase
+
+class MyAgent(AgentBase):
+    def __init__(self):
+        super().__init__(name="assistant", route="/assistant")
+        self.set_prompt_text("You are a helpful assistant.")
+        self.add_skill("native_vector_search", {
+            "tool_name": "search_products",
+            "index_file": "/data/products.swsearch"
+        })
+        self.add_skill("native_vector_search", {
+            "tool_name": "search_faqs",
+            "index_file": "/data/faqs.swsearch"
+        })
+
+agent = MyAgent()
+agent.serve()
+```
+
+---
+
+## Extending SkillBase
+
+For creating custom skills, see [`SkillBase`][skillbase].
+
+---
+
+<CardGroup cols={3}>
+  <Card title="datetime" href="/docs/server-sdks/reference/python/agents/skills/datetime">
+    Date and time with timezone support.
+  </Card>
+  <Card title="math" href="/docs/server-sdks/reference/python/agents/skills/math">
+    Secure mathematical calculations.
+  </Card>
+  <Card title="joke" href="/docs/server-sdks/reference/python/agents/skills/joke">
+    Tell jokes via API Ninjas.
+  </Card>
+  <Card title="weather_api" href="/docs/server-sdks/reference/python/agents/skills/weather-api">
+    Current weather conditions.
+  </Card>
+  <Card title="web_search" href="/docs/server-sdks/reference/python/agents/skills/web-search">
+    Google Custom Search.
+  </Card>
+  <Card title="wikipedia_search" href="/docs/server-sdks/reference/python/agents/skills/wikipedia-search">
+    Wikipedia factual search.
+  </Card>
+  <Card title="google_maps" href="/docs/server-sdks/reference/python/agents/skills/google-maps">
+    Address validation and routes.
+  </Card>
+  <Card title="play_background_file" href="/docs/server-sdks/reference/python/agents/skills/play-background-file">
+    Background audio/video playback.
+  </Card>
+  <Card title="swml_transfer" href="/docs/server-sdks/reference/python/agents/skills/swml-transfer">
+    Call transfer with pattern matching.
+  </Card>
+  <Card title="datasphere" href="/docs/server-sdks/reference/python/agents/skills/datasphere">
+    DataSphere document search.
+  </Card>
+  <Card title="datasphere_serverless" href="/docs/server-sdks/reference/python/agents/skills/datasphere-serverless">
+    DataSphere serverless search.
+  </Card>
+  <Card title="native_vector_search" href="/docs/server-sdks/reference/python/agents/skills/native-vector-search">
+    Local vector index search.
+  </Card>
+  <Card title="info_gatherer" href="/docs/server-sdks/reference/python/agents/skills/info-gatherer">
+    Configurable question collection.
+  </Card>
+  <Card title="api_ninjas_trivia" href="/docs/server-sdks/reference/python/agents/skills/api-ninjas-trivia">
+    Trivia questions from API Ninjas.
+  </Card>
+  <Card title="spider" href="/docs/server-sdks/reference/python/agents/skills/spider">
+    Web scraping and crawling.
+  </Card>
+  <Card title="claude_skills" href="/docs/server-sdks/reference/python/agents/skills/claude-skills">
+    Load SKILL.md files as tools.
+  </Card>
+  <Card title="custom_skills" href="/docs/server-sdks/reference/python/agents/skills/custom-skills">
+    Create and register custom skills.
+  </Card>
+  <Card title="mcp_gateway" href="/docs/server-sdks/reference/python/agents/skills/mcp-gateway">
+    MCP server integration.
+  </Card>
+</CardGroup>

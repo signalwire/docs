@@ -1,0 +1,97 @@
+---
+title: "tap"
+slug: /reference/typescript/relay/call/tap
+description: "Intercept call media and stream it to an external destination."
+max-toc-depth: 3
+---
+
+[tapaction]: /docs/server-sdks/reference/typescript/relay/actions
+[calling-call-tap]: /docs/server-sdks/reference/typescript/relay/call#events
+[call-events]: /docs/server-sdks/reference/typescript/relay/call#events
+
+Intercept call media (audio) and stream it to an external destination such as a
+WebSocket or RTP endpoint. Returns a
+[`TapAction`][tapaction] that you can use to stop
+the tap or wait for it to finish.
+
+<Info>
+This method emits [`calling.call.tap`][calling-call-tap] events. See [Call Events][call-events] for payload details.
+</Info>
+
+## **Parameters**
+
+<ParamField path="tap" type="Record<string, unknown>" required={true} toc={true}>
+  Tap configuration specifying which audio to intercept.
+</ParamField>
+
+<Indent>
+<ParamField path="tap.type" type="string" required={true} toc={true}>
+  Tap type. Valid values: `"audio"`.
+</ParamField>
+
+<ParamField path="tap.params" type="Record<string, unknown>" toc={true}>
+  Tap parameters. Supports a `direction` key with the following values:
+
+  - `"listen"` -- capture audio heard by the caller
+  - `"speak"` -- capture audio spoken by the caller
+  - `"both"` -- capture audio in both directions
+</ParamField>
+</Indent>
+
+<ParamField path="device" type="Record<string, unknown>" required={true} toc={true}>
+  Destination device for the tapped media.
+</ParamField>
+
+<Indent>
+<ParamField path="device.type" type="string" required={true} toc={true}>
+  Device type.
+
+  - `"ws"` -- WebSocket endpoint
+  - `"rtp"` -- RTP endpoint
+</ParamField>
+
+<ParamField path="device.params" type="Record<string, unknown>" required={true} toc={true}>
+  Device-specific parameters (e.g., `uri` for WebSocket, `addr`/`port` for RTP).
+</ParamField>
+</Indent>
+
+<ParamField path="controlId" type="string | undefined" toc={true}>
+  Custom control ID. Auto-generated if not provided.
+</ParamField>
+
+<ParamField path="onCompleted" type="(event: RelayEvent) => void | Promise<void>" toc={true}>
+  Callback invoked when the tap operation ends.
+</ParamField>
+
+## **Returns**
+
+`Promise<`[`TapAction`][tapaction]`>` -- An action handle with
+`stop()` and `wait()` methods.
+
+## **Example**
+
+```typescript {13}
+import { RelayClient } from '@signalwire/sdk';
+
+const client = new RelayClient({
+  project: process.env.SIGNALWIRE_PROJECT_ID!,
+  token: process.env.SIGNALWIRE_TOKEN!,
+  contexts: ['default']
+});
+
+client.onCall(async (call) => {
+  await call.answer();
+
+  // Tap audio and stream to a WebSocket endpoint
+  const action = await call.tap(
+    { type: 'audio', params: { direction: 'both' } },
+    { type: 'ws', params: { uri: 'wss://example.com/tap' } }
+  );
+
+  // Tap runs in background; stop it later
+  await new Promise((resolve) => setTimeout(resolve, 30_000));
+  await action.stop();
+});
+
+await client.run();
+```

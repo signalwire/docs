@@ -1,0 +1,134 @@
+---
+title: "Infrastructure"
+slug: /reference/typescript/agents/livewire/job-context
+description: "JobContext, JobProcess, and Room stubs for connection lifecycle."
+max-toc-depth: 3
+---
+
+[runapp]: /docs/server-sdks/reference/typescript/agents/livewire/run-app
+
+These classes mirror the LiveKit infrastructure types used in agent entrypoints.
+On SignalWire, connection lifecycle and room management are handled automatically
+by the control plane, so these are lightweight stubs that maintain API compatibility.
+
+## **JobContext**
+
+Mirrors a LiveKit `JobContext`. Provides access to the room and process objects,
+and lifecycle methods that the entrypoint calls before starting a session.
+
+```typescript {3}
+import { JobContext, Agent, AgentSession } from '@signalwire/sdk/livewire';
+
+async function entry(ctx: JobContext) {
+  await ctx.connect();                        // No-op on SignalWire
+  const participant = await ctx.waitForParticipant();
+
+  const agent = new Agent({ instructions: 'You are a helpful assistant.' });
+  const session = new AgentSession();
+  await session.start({ agent, room: ctx.room });
+}
+```
+
+### Properties
+
+<ParamField path="room" type="any" toc={true}>
+  A room stub object with a `name` property (defaults to `"livewire-room"`).
+</ParamField>
+
+<ParamField path="proc" type="JobProcess" toc={true}>
+  A [`JobProcess`](#jobprocess) instance with a `userData` object, populated by the
+  prewarm function if one was registered via `defineAgent()`.
+</ParamField>
+
+### Methods
+
+#### connect
+
+```typescript {1}
+async connect(): Promise<void>
+```
+
+<Note>
+No-op. SignalWire's control plane handles connection lifecycle automatically. The
+agent connects when the platform invokes the SWML endpoint.
+</Note>
+
+---
+
+#### waitForParticipant
+
+```typescript {1}
+async waitForParticipant(): Promise<any>
+```
+
+<Note>
+No-op. SignalWire handles participant management automatically. Returns
+`{ identity: 'caller' }`.
+</Note>
+
+---
+
+## **JobProcess**
+
+Mirrors a LiveKit `JobProcess`. Used for prewarm and setup tasks. The prewarm
+function registered in `defineAgent({ prewarm })` receives a `JobProcess` instance.
+
+```typescript {4-5}
+import { defineAgent, JobProcess } from '@signalwire/sdk/livewire';
+
+const agentDef = defineAgent({
+  prewarm: (proc: JobProcess) => {
+    proc.userData.dbConnection = connectToDb();
+  },
+  entry: async (ctx) => {
+    const db = ctx.proc.userData.dbConnection;
+    // ...
+  },
+});
+```
+
+### Properties
+
+<ParamField path="userData" type="Record<string, any>" toc={true}>
+  Arbitrary data object for sharing state between the prewarm function and the
+  entry function. Defaults to an empty object.
+</ParamField>
+
+---
+
+## **Full Example**
+
+```typescript {31}
+import {
+  Agent, AgentSession, JobContext, JobProcess,
+  tool, defineAgent, runApp,
+} from '@signalwire/sdk/livewire';
+
+const getGreeting = tool({
+  description: 'Get the configured greeting message.',
+  execute: (_params, { ctx }) => {
+    return (ctx.userData as Record<string, any>).greeting ?? 'Hello!';
+  },
+});
+
+const agentDef = defineAgent({
+  prewarm: (proc: JobProcess) => {
+    proc.userData.greeting = 'Welcome to Acme Corp!';
+  },
+  entry: async (ctx: JobContext) => {
+    await ctx.connect();
+    await ctx.waitForParticipant();
+
+    const agent = new Agent({
+      instructions: 'You are a helpful assistant.',
+      tools: { getGreeting },
+    });
+
+    const session = new AgentSession();
+    await session.start({ agent, room: ctx.room });
+    session.say(ctx.proc.userData.greeting);
+  },
+});
+
+runApp(agentDef);
+```

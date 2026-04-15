@@ -53,7 +53,7 @@ const SWML_WEBHOOK_TAG_METADATA = #{
 const FABRIC_ADDRESS_TAG = "Addresses";
 
 const FABRIC_ADDRESS_TAG_METADATA = #{
-  description: "Client-side endpoints for listing and retrieving resource addresses using subscriber access tokens (SAT). Intended for use with the Browser SDK to resolve addresses from the client.",
+  description: "Client-side endpoints for listing and retrieving resource addresses using [subscriber](/docs/platform/subscribers) access tokens (SAT). Intended for use with the Browser SDK to resolve addresses from the client.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Fabric Address, Fabric API endpoints",
@@ -143,7 +143,7 @@ const SIP_GATEWAY_TAG_METADATA = #{
 const SUBSCRIBERS_TAG = "Subscribers";
 
 const SUBSCRIBERS_TAG_METADATA = #{
-  description: "Endpoints related to creating & managing Subscribers",
+  description: "Endpoints related to creating & managing [Subscribers](/docs/platform/subscribers).",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Subscriber, Fabric API endpoints",
@@ -153,7 +153,7 @@ const SUBSCRIBERS_TAG_METADATA = #{
 const SUBSCRIBERS_TOKENS_TAG = "Subscriber Tokens";
 
 const SUBSCRIBERS_TOKENS_TAG_METADATA = #{
-  description: "Endpoints related to creating & managing Subscriber tokens",
+  description: "Endpoints related to creating & managing [Subscriber](/docs/platform/subscribers) tokens.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Subscriber token, Fabric API endpoints",
@@ -163,7 +163,7 @@ const SUBSCRIBERS_TOKENS_TAG_METADATA = #{
 const SUBSCRIBER_SIP_ENDPOINT_TAG = "Subscriber SIP Credentials";
 
 const SUBSCRIBER_SIP_ENDPOINT_TAG_METADATA = #{
-  description: "Endpoints related to creating & managing Subscriber SIP Endpoints",
+  description: "Endpoints related to creating & managing [Subscriber](/docs/platform/subscribers) SIP Endpoints.",
   externalDocs: #{
     url: "https://signalwire.com/docs/apis",
     description: "Developer documentation on Subscriber SIP Endpoint, Fabric API endpoints",

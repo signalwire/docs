@@ -1,6 +1,6 @@
 {/* Shared component: Resource Subscribers */}
 
-Subscribers are a special type of Resource that represent internal account-holders.
+[Subscribers](/docs/platform/subscribers) are a special type of Resource that represent internal account-holders.
 
 Subscribers always use the `private` context by default, though `public` Aliases can be added.
 

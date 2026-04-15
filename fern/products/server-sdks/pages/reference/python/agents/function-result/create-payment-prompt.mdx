@@ -1,0 +1,68 @@
+---
+title: "create_payment_prompt"
+slug: /reference/python/agents/function-result/create-payment-prompt
+description: Build a payment prompt object for use with pay().
+max-toc-depth: 3
+---
+
+[pay]: /docs/server-sdks/reference/python/agents/function-result/pay
+[create-payment-action]: /docs/server-sdks/reference/python/agents/function-result/create-payment-action
+[ref-functionresult]: /docs/server-sdks/reference/python/agents/function-result
+
+Static helper that builds a payment prompt object for use with the `prompts`
+parameter of [`pay()`][pay].
+Payment prompts customize the TTS messages played during different stages of
+payment collection.
+
+## **Parameters**
+
+<ParamField path="for_situation" type="str" required={true} toc={true}>
+  The payment stage this prompt applies to (e.g., `"payment-card-number"`,
+  `"expiration-date"`, `"security-code"`, `"postal-code"`).
+</ParamField>
+
+<ParamField path="actions" type="list[dict[str, str]]" required={true} toc={true}>
+  List of prompt actions. Use [`create_payment_action()`][create-payment-action]
+  to build each entry.
+</ParamField>
+
+<ParamField path="card_type" type="Optional[str]" default="None" toc={true}>
+  Space-separated card types this prompt applies to (e.g., `"visa mastercard"`).
+</ParamField>
+
+<ParamField path="error_type" type="Optional[str]" default="None" toc={true}>
+  Space-separated error types this prompt handles.
+</ParamField>
+
+## **Returns**
+
+`dict[str, Any]` — prompt dictionary to pass in the `prompts` list of [`pay()`][pay].
+
+## **Example**
+
+```python {9}
+from signalwire import AgentBase
+from signalwire import FunctionResult
+
+agent = AgentBase(name="my-agent", route="/agent")
+agent.set_prompt_text("You are a helpful assistant.")
+
+@agent.tool(name="collect_card", description="Collect card payment")
+def collect_card(args, raw_data):
+    prompt = FunctionResult.create_payment_prompt(
+        for_situation="payment-card-number",
+        actions=[
+            FunctionResult.create_payment_action("Say", "Please enter your credit card number.")
+        ]
+    )
+    return (
+        FunctionResult("I'll collect your payment now.")
+        .pay(
+            payment_connector_url="https://api.example.com/pay",
+            charge_amount="49.99",
+            prompts=[prompt]
+        )
+    )
+
+agent.serve()
+```

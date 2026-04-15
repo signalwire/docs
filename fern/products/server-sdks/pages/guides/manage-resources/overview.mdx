@@ -1,0 +1,606 @@
+---
+title: REST Client
+description: Use the REST client to manage SignalWire resources programmatically.
+slug: /guides/rest-client
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/python/agents/agent-base
+[ref-datasphere]: /docs/server-sdks/reference/python/rest/datasphere
+
+### What Is the REST Client?
+
+The `SignalWireClient` provides a synchronous Python interface to all SignalWire REST APIs. It organizes the platform's HTTP endpoints into namespaced resource objects with standard CRUD operations.
+
+#### When to Use REST vs RELAY vs Agents
+
+| Approach | Best For |
+|----------|----------|
+| **[AgentBase][ref-agentbase]** (SWML) | AI-driven voice agents |
+| **RELAY Client** | Real-time call control over WebSocket |
+| **REST Client** | Resource management, provisioning, log queries, admin tasks |
+
+Use the REST client for tasks like purchasing phone numbers, managing fabric resources, querying call logs, or any operation that doesn't require real-time event handling.
+
+### Quick Start
+
+<Tabs>
+<Tab title="Python">
+```python
+#!/usr/bin/env python3
+"""REST client quick start."""
+
+from signalwire.rest import SignalWireClient
+
+client = SignalWireClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+)
+
+# List AI agents in your fabric
+agents = client.fabric.ai_agents.list()
+print(agents)
+
+# Search for available phone numbers
+available = client.phone_numbers.search(area_code="512")
+print(available)
+```
+</Tab>
+{/*
+<Tab title="TypeScript">
+```typescript
+import { RestClient } from 'signalwire-agents';
+
+const client = new RestClient({
+  projectId: 'your-project-id',
+  apiToken: 'your-api-token',
+  spaceName: 'your-space.signalwire.com',
+});
+
+// List AI agents
+const agents = await client.fabric.aiAgents.list();
+console.log(agents);
+
+// Search for available phone numbers
+const available = await client.phoneNumbers.search({ areaCode: '512' });
+console.log(available);
+```
+</Tab>
+*/}
+</Tabs>
+{/*
+
+<Tab title="Go">
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/signalwire/signalwire-agents-go/pkg/rest"
+)
+
+func main() {
+    client := rest.NewClient(
+        rest.WithProjectID("your-project-id"),
+        rest.WithAPIToken("your-api-token"),
+        rest.WithSpaceName("your-space.signalwire.com"),
+    )
+
+    agents, _ := client.Fabric.AIAgents.List()
+    fmt.Println(agents)
+
+    available, _ := client.PhoneNumbers.Search("512")
+    fmt.Println(available)
+}
+```
+</Tab>
+<Tab title="Ruby">
+```ruby
+require 'signalwire'
+
+client = RestClient.new(
+  project_id: 'your-project-id',
+  api_token: 'your-api-token',
+  space_name: 'your-space.signalwire.com'
+)
+
+agents = client.fabric.ai_agents.list
+puts agents
+
+available = client.phone_numbers.search(area_code: '512')
+puts available
+```
+</Tab>
+<Tab title="Java">
+```java
+import com.signalwire.agents.RestClient;
+
+public class RestQuickStart {
+    public static void main(String[] args) {
+        var client = RestClient.builder()
+            .projectId("your-project-id")
+            .apiToken("your-api-token")
+            .spaceName("your-space.signalwire.com")
+            .build();
+
+        var agents = client.fabric().aiAgents().list();
+        System.out.println(agents);
+
+        var available = client.phoneNumbers().search("512");
+        System.out.println(available);
+    }
+}
+```
+</Tab>
+<Tab title="Perl">
+```perl
+use SignalWire::Agents::RestClient;
+
+my $client = SignalWire::Agents::RestClient->new(
+    project_id => 'your-project-id',
+    api_token  => 'your-api-token',
+    space_name => 'your-space.signalwire.com',
+);
+
+my $agents = $client->fabric->ai_agents->list;
+print $agents;
+
+my $available = $client->phone_numbers->search(area_code => '512');
+print $available;
+```
+</Tab>
+<Tab title="C++">
+```cpp
+#include <signalwire/agents/rest_client.h>
+using namespace signalwire::rest;
+
+int main() {
+    SignalWireClient client("your-project-id", "your-api-token", "your-space.signalwire.com");
+
+    auto agents = client.fabric().ai_agents().list();
+    auto available = client.phone_numbers().search("512");
+}
+```
+</Tab>
+<Tab title="PHP">
+```php
+<?php
+use SignalWire\REST\RestClient;
+
+$client = new RestClient(
+    project: 'your-project-id',
+    token: 'your-api-token',
+    host: 'your-space.signalwire.com'
+);
+
+// List AI agents
+$agents = $client->fabric->aiAgents->list();
+print_r($agents);
+
+// Search for available phone numbers
+$available = $client->phoneNumbers->search(['area_code' => '512']);
+print_r($available);
+```
+</Tab>
+<Tab title="C#">
+```csharp
+using SignalWire.REST;
+
+var client = new RestClient(new RestClientOptions
+{
+    Host = Environment.GetEnvironmentVariable("SIGNALWIRE_SPACE") ?? "",
+    ProjectId = Environment.GetEnvironmentVariable("SIGNALWIRE_PROJECT_ID") ?? "",
+    ApiToken = Environment.GetEnvironmentVariable("SIGNALWIRE_API_TOKEN") ?? "",
+});
+
+// List AI agents
+var agents = client.Fabric.AiAgents.List();
+Console.WriteLine(agents);
+
+// Search for available phone numbers
+var available = client.PhoneNumbers.Search(areaCode: "512");
+Console.WriteLine(available);
+```
+</Tab>
+
+*/}
+
+### Authentication
+
+#### Constructor Arguments
+
+| Language | Syntax |
+|----------|--------|
+| Python | `SignalWireClient(project="...", token="...", host="...")` |
+| TypeScript | `new RestClient({ projectId: '...', apiToken: '...', spaceName: '...' })` |
+{/*
+
+| Go | `rest.NewClient(rest.WithProjectID("..."), rest.WithAPIToken("..."), rest.WithSpaceName("..."))` |
+| Ruby | `RestClient.new(project_id: '...', api_token: '...', space_name: '...')` |
+| Java | `RestClient.builder().projectId("...").apiToken("...").spaceName("...").build()` |
+| Perl | `RestClient->new(project_id => '...', api_token => '...', space_name => '...')` |
+| C++ | `rest::SignalWireClient client("project_id", "api_token", "space_name")` |
+| PHP | `new RestClient(project: '...', token: '...', host: '...')` |
+| C# | `new RestClient(new RestClientOptions { ProjectId = "...", ApiToken = "...", Host = "..." })` |
+
+*/}
+
+```python
+client = SignalWireClient(
+    project="your-project-id",
+    token="your-api-token",
+    host="your-space.signalwire.com",
+)
+```
+
+#### Environment Variables
+
+All credentials can be provided via environment variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `SIGNALWIRE_PROJECT_ID` | Project ID |
+| `SIGNALWIRE_API_TOKEN` | API token |
+| `SIGNALWIRE_SPACE` | Space hostname |
+
+```python
+# With env vars set, no arguments needed
+client = SignalWireClient()
+```
+
+### Namespaced Resources
+
+The client exposes all SignalWire APIs through typed namespace properties:
+
+```python
+client.fabric          # AI agents, SWML scripts, subscribers, call flows
+client.calling         # REST-based call control (37 commands)
+client.phone_numbers   # Search, purchase, manage numbers
+client.video           # Rooms, sessions, recordings, conferences
+client.datasphere      # Document management and semantic search
+client.compat          # Twilio-compatible LAML API
+client.logs            # Message, voice, fax, conference logs
+client.registry        # 10DLC brand/campaign management
+client.queues          # Call queue management
+client.recordings      # Recording management
+client.project         # Project-level token management
+client.mfa             # Multi-factor authentication
+client.lookup          # Phone number carrier/CNAM lookup
+client.pubsub          # PubSub token management
+client.chat            # Chat token management
+```
+
+### CRUD Pattern
+
+Most resources follow a standard CRUD pattern:
+
+| Operation | Python |
+|-----------|--------|
+| List | `client.phone_numbers.list()` |
+| Create | `client.fabric.ai_agents.create(name="x")` |
+| Get | `client.fabric.ai_agents.get("id")` |
+| Update | `client.fabric.ai_agents.update("id", name="y")` |
+| Delete | `client.fabric.ai_agents.delete("id")` |
+
+{/*
+| Operation | Ruby | Java | Perl | C++ | PHP | C# |
+|-----------|------|------|------|-----|-----|-----|
+| List | `client.phone_numbers.list` | `client.phoneNumbers().list()` | `$client->phone_numbers->list` | `client.phone_numbers().list()` | `$client->phoneNumbers->list()` | `client.PhoneNumbers.List()` |
+| Create | `client.fabric.ai_agents.create(name: 'x')` | `client.fabric().aiAgents().create("x")` | `$client->fabric->ai_agents->create(name=>'x')` | `client.fabric().ai_agents().create("x")` | `$client->fabric->aiAgents->create([...])` | `client.Fabric.AiAgents.Create("x")` |
+| Get | `client.fabric.ai_agents.get('id')` | `client.fabric().aiAgents().get("id")` | `$client->fabric->ai_agents->get('id')` | `client.fabric().ai_agents().get("id")` | `$client->fabric->aiAgents->fetch($id)` | `client.Fabric.AiAgents.Get("id")` |
+| Delete | `client.fabric.ai_agents.delete('id')` | `client.fabric().aiAgents().delete("id")` | `$client->fabric->ai_agents->delete('id')` | `client.fabric().ai_agents().del("id")` | `$client->fabric->aiAgents->delete($id)` | `client.Fabric.AiAgents.Delete("id")` |
+*/}
+
+```python
+# List resources
+result = client.phone_numbers.list(page_size=10)
+
+# Create a resource
+new = client.fabric.ai_agents.create(name="my-agent", type="ai_agent")
+
+# Get a single resource
+agent = client.fabric.ai_agents.get("resource-id")
+
+# Update a resource
+client.fabric.ai_agents.update("resource-id", name="updated-name")
+
+# Delete a resource
+client.fabric.ai_agents.delete("resource-id")
+```
+
+### Fabric Namespace
+
+Manage SignalWire Fabric resources -- AI agents, SWML scripts, [subscribers](/docs/platform/subscribers), and call flows:
+
+```python
+# AI agents
+agents = client.fabric.ai_agents.list()
+agent = client.fabric.ai_agents.create(name="support-bot", type="ai_agent")
+
+# SWML scripts
+scripts = client.fabric.swml_scripts.list()
+
+# SWML webhooks
+webhooks = client.fabric.swml_webhooks.list()
+
+# Subscribers
+subs = client.fabric.subscribers.list()
+
+# Subscriber SIP endpoints
+endpoints = client.fabric.subscribers.list_sip_endpoints("subscriber-id")
+client.fabric.subscribers.create_sip_endpoint("subscriber-id", username="ext100")
+
+# Call flows with versioning
+flows = client.fabric.call_flows.list()
+versions = client.fabric.call_flows.list_versions("flow-id")
+client.fabric.call_flows.deploy_version("flow-id", version_id="v2")
+
+# Tokens (subscriber, guest, invite, embed)
+token = client.fabric.tokens.create_subscriber_token(subscriber_id="sub-id")
+guest = client.fabric.tokens.create_guest_token(name="Guest User")
+```
+
+### Phone Numbers
+
+Search, purchase, and manage phone numbers:
+
+```python
+# Search for available numbers
+available = client.phone_numbers.search(
+    area_code="512",
+    quantity=5,
+)
+
+# List your numbers
+numbers = client.phone_numbers.list()
+
+# Get a specific number
+number = client.phone_numbers.get("number-id")
+
+# Update number configuration
+client.phone_numbers.update("number-id", name="Support Line")
+```
+
+### Calling Namespace
+
+REST-based call control with 37+ commands. All commands are dispatched via POST:
+
+```python
+# Initiate a call
+result = client.calling.dial(
+    call_id="call-id",
+    devices=[[{"type": "phone", "params": {"to_number": "+15559876543"}}]],
+)
+
+# Play audio on a call
+client.calling.play(call_id="call-id", play=[
+    {"type": "tts", "text": "Hello from REST!"}
+])
+
+# Record a call
+client.calling.record(call_id="call-id", record={"audio": {}})
+
+# Control playback
+client.calling.play_pause(call_id="call-id", control_id="ctrl-id")
+client.calling.play_resume(call_id="call-id", control_id="ctrl-id")
+client.calling.play_stop(call_id="call-id", control_id="ctrl-id")
+
+# AI commands
+client.calling.ai_message(call_id="call-id", message_text="New instruction")
+client.calling.ai_hold(call_id="call-id")
+client.calling.ai_unhold(call_id="call-id")
+
+# End a call
+client.calling.end(call_id="call-id", reason="hangup")
+```
+
+### Video Namespace
+
+Manage video rooms, conferences, sessions, and recordings:
+
+```python
+# Create a video room
+room = client.video.rooms.create(name="standup", max_participants=10)
+
+# List room sessions
+sessions = client.video.room_sessions.list()
+
+# Get session members
+members = client.video.room_sessions.list_members("session-id")
+
+# Manage conferences
+conf = client.video.conferences.create(name="team-conf")
+client.video.conferences.list_streams("conference-id")
+```
+
+### [Datasphere][ref-datasphere] Namespace
+
+Manage documents and run semantic search:
+
+```python
+# List documents
+docs = client.datasphere.documents.list()
+
+# Upload a document
+doc = client.datasphere.documents.create(
+    name="FAQ",
+    content="Your FAQ content here...",
+)
+
+# Semantic search
+results = client.datasphere.documents.search(
+    query_string="How do I reset my password?",
+    count=5,
+)
+
+# Manage chunks
+chunks = client.datasphere.documents.list_chunks("document-id")
+client.datasphere.documents.delete_chunk("document-id", "chunk-id")
+```
+
+### Logs Namespace
+
+Query message, voice, fax, and conference logs:
+
+```python
+# Voice call logs
+calls = client.logs.voice.list(page_size=20)
+call = client.logs.voice.get("log-id")
+events = client.logs.voice.list_events("log-id")
+
+# Message logs
+messages = client.logs.messages.list()
+
+# Fax logs
+faxes = client.logs.fax.list()
+
+# Conference logs
+confs = client.logs.conferences.list()
+```
+
+### Registry Namespace (10DLC)
+
+Manage 10DLC brands and campaigns for A2P messaging compliance:
+
+```python
+# List brands
+brands = client.registry.brands.list()
+
+# Create a brand
+brand = client.registry.brands.create(
+    entity_type="PRIVATE_PROFIT",
+    display_name="My Company",
+)
+
+# Create a campaign under a brand
+campaign = client.registry.brands.create_campaign(
+    "brand-id",
+    description="Customer notifications",
+    usecase="MIXED",
+)
+
+# Assign numbers to campaigns
+order = client.registry.campaigns.create_order(
+    "campaign-id",
+    phone_number_ids=["number-id-1"],
+)
+```
+
+### Compatibility (LAML) Namespace
+
+Twilio-compatible REST API for migrating existing applications:
+
+```python
+# List calls
+calls = client.compat.calls.list()
+
+# Send an SMS
+msg = client.compat.messages.create(
+    To="+15559876543",
+    From="+15551234567",
+    Body="Hello from SignalWire!",
+)
+
+# Manage phone numbers
+numbers = client.compat.phone_numbers.list()
+
+# Start call recording
+client.compat.calls.start_recording("call-sid")
+```
+
+### Other Resources
+
+```python
+# Queue management
+queues = client.queues.list()
+members = client.queues.list_members("queue-id")
+next_member = client.queues.get_next_member("queue-id")
+
+# Recordings
+recordings = client.recordings.list()
+
+# Phone number lookup
+info = client.lookup.phone_number("+15551234567")
+
+# Multi-factor authentication
+client.mfa.sms(to="+15551234567", from_="+15550000000", message="Your code: {code}")
+client.mfa.verify(request_id="req-id", token="123456")
+
+# SIP profile
+profile = client.sip_profile.get()
+client.sip_profile.update(username="my-sip-user")
+
+# Verified caller IDs
+callers = client.verified_callers.list()
+```
+
+### Pagination
+
+For endpoints that return paginated results, use `PaginatedIterator`:
+
+```python
+from signalwire.rest._pagination import PaginatedIterator
+
+# Iterate all phone numbers across pages
+for number in PaginatedIterator(
+    client._http,
+    "/api/relay/rest/phone_numbers",
+    data_key="data",
+):
+    print(number["name"], number["number"])
+```
+
+The iterator automatically follows `links.next` URLs to fetch subsequent pages.
+
+### Error Handling
+
+REST errors raise `SignalWireRestError`:
+
+```python
+from signalwire.rest import SignalWireClient, SignalWireRestError
+
+client = SignalWireClient()
+
+try:
+    client.phone_numbers.get("nonexistent-id")
+except SignalWireRestError as e:
+    print(f"HTTP {e.status_code}: {e.body}")
+    print(f"URL: {e.method} {e.url}")
+```
+
+### Practical Example: Provision and Configure
+
+```python
+#!/usr/bin/env python3
+"""Provision a phone number and assign it to an AI agent."""
+
+from signalwire.rest import SignalWireClient, SignalWireRestError
+
+client = SignalWireClient()
+
+# Search for a local number
+available = client.phone_numbers.search(area_code="512", quantity=1)
+numbers = available.get("data", [])
+
+if not numbers:
+    print("No numbers available")
+    exit(1)
+
+# Purchase the first available number
+number_id = numbers[0]["id"]
+print(f"Purchasing: {numbers[0].get('number', number_id)}")
+
+# List AI agents
+agents = client.fabric.ai_agents.list()
+agent_list = agents.get("data", [])
+
+if agent_list:
+    agent_id = agent_list[0]["id"]
+    print(f"Found agent: {agent_list[0].get('name', agent_id)}")
+
+# Query recent call logs
+logs = client.logs.voice.list(page_size=5)
+for log in logs.get("data", []):
+    print(f"  Call: {log.get('from')} -> {log.get('to')} ({log.get('status')})")
+```

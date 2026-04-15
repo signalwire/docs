@@ -24,7 +24,7 @@ namespace SignalWireAPI.Fabric.EmbedsTokens {
     @operationId("create_guest_embed_token")
     @summary("Create guest embed token")
     @doc("""
-      Creates a guest subscriber token from a public Click-to-Call (C2C) token. The returned short-lived token authorizes a guest subscriber to place a call through the C2C embed widget without exposing sensitive credentials or requiring a full subscriber account.
+      Creates a guest [subscriber](/docs/platform/subscribers) token from a public Click-to-Call (C2C) token. The returned short-lived token authorizes a guest subscriber to place a call through the C2C embed widget without exposing sensitive credentials or requiring a full subscriber account.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

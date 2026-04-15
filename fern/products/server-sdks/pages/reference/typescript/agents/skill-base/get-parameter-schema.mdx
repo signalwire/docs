@@ -1,0 +1,74 @@
+---
+title: "getParameterSchema"
+slug: /reference/typescript/agents/skill-base/get-parameter-schema
+description: Return metadata about all parameters the skill accepts.
+max-toc-depth: 3
+---
+
+Static class method that returns metadata about all parameters the skill accepts.
+Subclasses should override this method and merge their own parameters with the
+result of `super.getParameterSchema()`.
+
+Takes no parameters.
+
+## **Returns**
+
+`Record<string, ParameterSchemaEntry>` -- Parameter schema where keys are parameter names
+and values describe the parameter.
+
+**ParameterSchemaEntry fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | `"string"`, `"integer"`, `"number"`, `"boolean"`, `"object"`, `"array"` |
+| `description` | string | Human-readable description |
+| `default` | any | Default value |
+| `required` | boolean | Whether the parameter is required |
+| `hidden` | boolean | Hide in UIs (for secrets like API keys) |
+| `env_var` | string | Environment variable that can provide this value |
+| `enum` | unknown[] | Allowed values |
+| `min` / `max` | number | Bounds for numeric types |
+| `items` | object | Schema for array item types |
+
+## **Example**
+
+```typescript {8}
+import { SkillBase, SkillManifest, SkillToolDefinition, ParameterSchemaEntry } from '@signalwire/sdk';
+
+class WeatherSkill extends SkillBase {
+  constructor(config?: Record<string, unknown>) {
+    super('weather', config);
+  }
+
+  static getParameterSchema(): Record<string, ParameterSchemaEntry> {
+    return {
+      ...super.getParameterSchema(),
+      units: {
+        type: 'string',
+        description: 'Temperature units',
+        default: 'fahrenheit',
+        enum: ['fahrenheit', 'celsius'],
+      },
+      api_key: {
+        type: 'string',
+        description: 'Weather API key',
+        required: true,
+        hidden: true,
+        env_var: 'WEATHER_API_KEY',
+      },
+    };
+  }
+
+  getManifest(): SkillManifest {
+    return { name: 'weather', description: 'Provides weather information', version: '1.0.0' };
+  }
+
+  getTools(): SkillToolDefinition[] {
+    return [];
+  }
+}
+
+// Inspect the schema (includes base params swaig_fields, skip_prompt)
+console.log(WeatherSkill.getParameterSchema());
+// { swaig_fields: { ... }, skip_prompt: { ... }, units: { ... }, api_key: { ... } }
+```

@@ -80,7 +80,7 @@ model FabricAddressCall {
 model FabricAddressSubscriber {
   ...OmitProperties<FabricAddress, "type">;
 
-  @doc("The display type of a fabric address pointing to a Subscriber.")
+  @doc("The display type of a fabric address pointing to a [Subscriber](/docs/platform/subscribers).")
   @example(DisplayTypes.Subscriber)
   type: DisplayTypes.Subscriber;
 }
