@@ -1,38 +1,37 @@
-# `<one-layout>`
+# `<sw-ui-call-layout>`
 
-Responsive split layout: video pane + controls bar + animated transcript panel. Switches from side-by-side to stacked below 600 px.
+Fluid grid layout. Aspect-ratio-driven (side transcript on landscape, bottom on portrait).
 
 ## Props
 
 | prop | type | default | description |
 |------|------|---------|-------------|
-| `transcript` | `boolean` | `false` | Open the transcript panel |
-| `shadow` | `boolean` | `false` | Apply drop shadow to host |
+| `transcript` | `boolean` | `false` | Show transcript pane |
+| `loading` | `boolean` | `false` | Show spinner overlay |
+| `shadow` | `boolean` | `false` | Drop shadow |
 
 ## Methods
 
 | method | description |
 |--------|-------------|
-| `toggleTranscript()` | Animates transcript panel open/closed |
+| `toggleTranscript()` | Toggle transcript panel |
+| `toggleFullscreen()` | Toggle fullscreen |
 
 ## Slots
 
 | slot | description |
 |------|-------------|
-| `video` | Main video area |
-| `background` | Background image/picture behind video |
-| `floating-video` | PiP overlay (bottom-right of video) |
-| `controls` | Controls bar below video |
-| `transcript` | Transcript side panel |
+| `video` | Remote video |
+| `background` | Background image |
+| `floating-video` | PiP overlay |
+| `controls` | Control bar |
+| `transcript` | Transcript panel |
 
 ## CSS custom properties
 
-| property | default | description |
-|----------|---------|-------------|
-| `--transcript-toggle-duration` | `350ms` | Panel animation duration |
-| `--transcript-toggle-easing` | `ease-in-out` | Panel animation easing |
-| `--transcript-toggle-blackout` | `black` | Overlay colour during transition |
-| `--roundness` | `0` | Corner radius |
-| `--drop-shadow` | — | Box shadow (when `shadow` is set) |
-| `--video-bg-thumb` | — | Blurred background data URI |
-| `--video-bg-blur` | `20px` | Background blur radius |
+| property | default |
+|----------|---------|
+| `--roundness` | `var(--sw-radius)` |
+| `--pip-width` | `clamp(80px, 20%, 200px)` |
+| `--pip-bottom` | `12px` |
+| `--pip-right` | `12px` |

@@ -1,9 +1,9 @@
 # `<sw-self-media>`
 
-Local video preview. Consumes `callContext` from a parent `<sw-call-media>`.
+Local video positioned by layout layers. Consumes `callStateContext`.
 
 ## Props
 
 | prop | type | default | description |
 |------|------|---------|-------------|
-| `mirror` | `boolean` | `false` | Horizontally flip the video (selfie mode) |
+| `mirror` | `boolean` | `false` | Mirror video horizontally |

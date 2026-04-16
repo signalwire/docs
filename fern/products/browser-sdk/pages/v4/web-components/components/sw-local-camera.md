@@ -1,10 +1,11 @@
 # `<sw-local-camera>`
 
-Local camera preview with a muted overlay.
+Local camera PiP. Adaptive aspect ratio from video track. Consumes `callStateContext` + `devicesContext`.
 
 ## Props
 
-| prop | type | default | description |
-|------|------|---------|-------------|
-| `stream` | `MediaStream \| null` | `null` | Local media stream |
-| `videoMuted` | `boolean` | `false` | Show camera-off overlay |
+| prop | type | description |
+|------|------|-------------|
+| `stream` | `MediaStream` | Explicit stream (bypasses context) |
+| `videoMuted` | `boolean` | Explicit mute (bypasses context) |
+| `mirror` | `boolean` | Mirror video horizontally |

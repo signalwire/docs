@@ -1,23 +1,19 @@
-# `<sw-transcript-view>`
+# `<sw-ui-transcript-view>`
 
-Renders AI transcript bubbles. Consumes `transcriptContext` — must be inside a host that uses `TranscriptController`.
+Scrollable chat-bubble list with auto-scroll.
 
 ## Props
 
-None.
-
-## Behaviour
-
-- User bubbles right-aligned (blue), agent bubbles left-aligned (grey)
-- Partial entries shown at reduced opacity
-- New entries animate in with a scale pop
-- Auto-scrolls to bottom when near the bottom
+| prop | type | default | description |
+|------|------|---------|-------------|
+| `entries` | `TranscriptEntry[]` | `[]` | Transcript entries to display |
+| `header` | `string` | `'Transcript'` | Panel header text |
+| `empty-text` | `string` | `'Transcript will appear here'` | Placeholder when no entries |
 
 ## CSS parts
 
 | part | description |
 |------|-------------|
+| `header` | Panel header |
 | `messages` | Scrollable message container |
 | `bubble` | Any message bubble |
-| `bubble-user` | User bubble |
-| `bubble-agent` | Agent bubble |

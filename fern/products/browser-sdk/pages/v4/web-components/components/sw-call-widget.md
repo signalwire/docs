@@ -1,44 +1,29 @@
 # `<sw-call-widget>`
 
-All-in-one call widget. Handles client init, dialling, media, controls, and optional AI transcript. Works inline or in a modal overlay.
+All-in-one call widget. Creates client, manages call lifecycle, and provides `callStateContext`, `devicesContext`, and `transcriptContext` to all descendants. Works inline or in a modal overlay.
 
 ## Props
 
 | prop | type | default | description |
 |------|------|---------|-------------|
-| `token` | `string` | `''` | SignalWire SAT or embed token (`c2c_` / `c2t_`) |
-| `host` | `string` | `''` | Server host (defaults to `embeds.signalwire.com`) |
-| `destination` | `string` | `''` | Call destination address |
-| `modal` | `boolean` | `false` | Render in a `<sw-modal>` overlay |
-| `transcription` | `boolean` | `false` | Show AI transcript panel |
+| `token` | `string` | `''` | SAT or embed token |
+| `host` | `string` | `''` | Server host |
+| `destination` | `string` | `''` | Call destination |
+| `modal` | `boolean` | `false` | Render in modal overlay |
+| `transcription` | `boolean` | `false` | Show transcript panel |
+| `user-events` | `boolean` | `false` | Inject AI `user_event` payloads (links, code) into transcript |
+| `allow-incoming-calls` | `boolean` | `false` | Listen for inbound calls and prompt to accept/reject |
 
 ## Methods
 
 | method | description |
 |--------|-------------|
-| `dial()` | Imperatively start a call (also triggered by clicking a slotted element) |
-
-## Events
-
-| event | detail | description |
-|-------|--------|-------------|
-| `user_event` | signaling payload | Forwarded `user_event` from the signaling stream |
+| `dial()` | Initiate call |
+| `hangup()` | End call |
 
 ## Slots
 
 | slot | description |
 |------|-------------|
-| *(default)* | Trigger element (button) — click starts the call / opens modal |
-
-## CSS custom properties
-
-All `--ctrl-*` tokens are set on `:host` and inherited by inner controls. Override any of them to retheme the entire widget.
-
-| property | default |
-|----------|---------|
-| `--ctrl-size` | `40px` |
-| `--ctrl-bg` | `rgba(255,255,255,0.12)` |
-| `--ctrl-active-bg` | `#ef4444` |
-| `--ctrl-primary-bg` | `#044cf6` |
-| `--ctrl-danger-bg` | `#ef4444` |
-| `--ctrl-menu-bg` | `#1a1a2a` |
+| `background` | Background element (e.g. `<sw-ui-background>`) |
+| *(default)* | Trigger element (click to dial) |

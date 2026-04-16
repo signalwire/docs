@@ -1,31 +1,9 @@
-# `<sw-prompt>` / `showPrompt()`
+# `<sw-ui-alert>`
 
-Confirm/alert dialog. Use the element directly or the `showPrompt` helper.
+Prompt/alert dialog. Programmatic: `showPrompt({ title, description, type })`.
 
-## Props
-
-| prop | type | default | description |
-|------|------|---------|-------------|
-| `title` | `string` | — | Dialog heading |
-| `description` | `string` | `''` | Body text (or use default slot) |
-| `type` | `'confirm' \| 'alert'` | `'confirm'` | `confirm` shows Accept/Reject; `alert` shows OK |
-
-## Methods
-
-| method | returns | description |
-|--------|---------|-------------|
-| `show()` | `Promise<boolean>` | Open and await user choice |
-
-## Helper function
+## Programmatic usage
 
 ```ts
-import { showPrompt } from '@signalwire/web-components';
-
-const ok = await showPrompt({ title: 'Delete?', type: 'confirm' });
+showPrompt({ title, description, type })
 ```
-
-## Slots
-
-| slot | description |
-|------|-------------|
-| *(default)* | Body content (falls back to `description` prop) |
