@@ -1269,50 +1269,6 @@ model CallDenoiseStopRequest {
 }
 
 // ============================================
-// Transcribe Commands (distinct from Live Transcribe)
-// ============================================
-
-@summary("calling.transcribe")
-model CallTranscribeRequest {
-  @doc(uuidDescription)
-  @example(CallIdExample)
-  id: uuid;
-
-  @doc("The `calling.transcribe` command starts transcription on an active call.")
-  @example("calling.transcribe")
-  command: "calling.transcribe";
-
-  @doc(paramsDescription)
-  params: {
-    @doc("Unique identifier for this transcribe operation, used to control it later.")
-    @example("transcribe-control-1")
-    control_id?: string;
-
-    @doc("A URL to receive status update callbacks for the transcription.")
-    @example("https://example.com/status_callback")
-    status_url?: url;
-  };
-}
-
-@summary("calling.transcribe.stop")
-model CallTranscribeStopRequest {
-  @doc(uuidDescription)
-  @example(CallIdExample)
-  id: uuid;
-
-  @doc("The `calling.transcribe.stop` command stops an active transcription.")
-  @example("calling.transcribe.stop")
-  command: "calling.transcribe.stop";
-
-  @doc(paramsDescription)
-  params: {
-    @doc("The control ID of the transcription to stop.")
-    @example("transcribe-control-1")
-    control_id: string;
-  };
-}
-
-// ============================================
 // AI Stop Command
 // ============================================
 
@@ -1500,8 +1456,6 @@ union CallRequest {
   `calling.stream.stop`: CallStreamStopRequest,
   `calling.denoise`: CallDenoiseRequest,
   `calling.denoise.stop`: CallDenoiseStopRequest,
-  `calling.transcribe`: CallTranscribeRequest,
-  `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.live_transcribe`: CallLiveTranscribeRequest,
   `calling.live_translate`: CallLiveTranslateRequest,
   `calling.transfer`: CallTransferRequest,
