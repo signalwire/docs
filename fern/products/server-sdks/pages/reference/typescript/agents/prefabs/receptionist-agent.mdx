@@ -1,15 +1,14 @@
 ---
 title: "ReceptionistAgent"
 slug: /reference/typescript/agents/prefabs/receptionist-agent
-description: A front-desk agent that handles visitor check-in, department directory lookup, and call transfers by extension.
+description: A front-desk agent that greets callers, looks up departments, and transfers calls. Optional visitor check-in.
 ---
 
 [agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
 [functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
 
-A front-desk agent that handles visitor check-in, department directory lookup, and
-call transfers by extension. The `check_in_visitor` tool is enabled by default and
-fires an optional callback when a visitor checks in.
+A front-desk agent that greets callers and transfers them to the correct
+department by phone number or SIP address. Visitor check-in is opt-in.
 
 ```typescript {3}
 import { ReceptionistAgent } from '@signalwire/sdk';
@@ -19,33 +18,43 @@ const agent = new ReceptionistAgent({ /* ReceptionistConfig */ });
 
 ## ReceptionistConfig
 
-<ParamField path="companyName" type="string" required={true} toc={true}>
-  Company name displayed in greetings and prompts.
-</ParamField>
-
 <ParamField path="departments" type="ReceptionistDepartment[]" required={true} toc={true}>
-  Departments with extensions for the directory. Each `ReceptionistDepartment` object has:
+  Departments the agent can transfer callers to. Each `ReceptionistDepartment`
+  has:
 
-  - `name` (string, required) -- Department name (e.g., `"Engineering"`).
-  - `extension` (string, required) -- Internal extension number or SIP address.
-  - `description` (string) -- Optional description of the department.
+  - `name` (string, required) — department identifier (e.g. `"sales"`).
+  - `description` (string, required) — description shown to the AI.
+  - `number` (string, required) — phone number or SIP address dialed by
+    `transfer_call`.
 </ParamField>
 
-<ParamField path="welcomeMessage" type="string" toc={true}>
-  Custom welcome message. Defaults to `"Welcome to {companyName}! How may I help you today?"`.
+<ParamField path="greeting" type="string" default={'"Thank you for calling. How can I help you today?"'} toc={true}>
+  Initial greeting spoken when the call starts.
 </ParamField>
 
-<ParamField path="checkInEnabled" type="boolean" default="true" toc={true}>
-  Whether visitor check-in functionality is enabled. When `true`, the `check_in_visitor` tool is registered.
+<ParamField path="voice" type="string" default={'"rime.spore"'} toc={true}>
+  Voice identifier passed to `addLanguage`.
+</ParamField>
+
+<ParamField path="companyName" type="string" toc={true}>
+  Optional company name appended to the greeting.
+</ParamField>
+
+<ParamField path="checkInEnabled" type="boolean" default="false" toc={true}>
+  When `true`, registers the `check_in_visitor` tool.
 </ParamField>
 
 <ParamField path="onVisitorCheckIn" type="(visitor: Record<string, string>) => void | Promise<void>" toc={true}>
-  Callback fired when a visitor checks in. Receives a record with `visitor_name`, `purpose`,
-  `visiting`, and `checked_in_at` fields.
+  Callback fired when a visitor checks in. Receives a record with the fields
+  collected during check-in.
 </ParamField>
 
-<ParamField path="name" type="string" default="Receptionist" toc={true}>
+<ParamField path="name" type="string" default={'"receptionist"'} toc={true}>
   Agent display name.
+</ParamField>
+
+<ParamField path="route" type="string" default={'"/receptionist"'} toc={true}>
+  HTTP route for the agent.
 </ParamField>
 
 <ParamField path="agentOptions" type="Partial<AgentOptions>" toc={true}>
@@ -54,15 +63,15 @@ const agent = new ReceptionistAgent({ /* ReceptionistConfig */ });
 
 ## Built-in Tools
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_department_list` | List all departments with extensions and descriptions | (none) |
-| `transfer_to_department` | Transfer the caller to a department by dialing its extension | `department_name` (string) |
-| `check_in_visitor` | Check in a visitor (only when `checkInEnabled` is `true`) | `visitor_name` (string), `purpose` (string), `visiting` (string) |
+| Tool | Description |
+|------|-------------|
+| `get_department_list` | List all departments with descriptions and numbers. |
+| `transfer_call` | Dial a department's number and transfer the caller. |
+| `check_in_visitor` | Record a visitor check-in (only when `checkInEnabled` is `true`). |
 
 <Note>
-The `transfer_to_department` tool uses [`FunctionResult.connect()`][functionresult] to
-dial the department's extension and transfer the call.
+`transfer_call` uses [`FunctionResult.connect()`][functionresult] to dial the
+department's configured `number`.
 </Note>
 
 ## Example
@@ -72,20 +81,16 @@ import { ReceptionistAgent } from '@signalwire/sdk';
 
 const agent = new ReceptionistAgent({
   companyName: 'Acme Corporation',
+  greeting: 'Thank you for calling Acme Corporation. How may I direct your call?',
   departments: [
-    { name: 'Sales', extension: '1001', description: 'New orders and pricing' },
-    { name: 'Support', extension: '1002', description: 'Technical issues' },
-    { name: 'Billing', extension: '1003', description: 'Invoices and payments' },
-    { name: 'HR', extension: '1004', description: 'Employment and benefits' },
+    { name: 'sales', description: 'New orders and pricing', number: '+15551001001' },
+    { name: 'support', description: 'Technical issues', number: '+15551001002' },
+    { name: 'billing', description: 'Invoices and payments', number: '+15551001003' },
   ],
-  welcomeMessage: 'Thank you for calling Acme Corporation. How may I direct your call?',
+  checkInEnabled: true,
   onVisitorCheckIn: (visitor) => {
-    console.log(`Visitor checked in: ${visitor.visitor_name} visiting ${visitor.visiting}`);
+    console.log(`Visitor checked in: ${JSON.stringify(visitor)}`);
   },
-});
-
-agent.promptAddSection('Company', {
-  body: 'You are the receptionist for Acme Corporation.',
 });
 
 agent.serve();
@@ -97,10 +102,8 @@ agent.serve();
 import { createReceptionistAgent } from '@signalwire/sdk';
 
 const agent = createReceptionistAgent({
-  companyName: 'Acme Corporation',
   departments: [
-    { name: 'Sales', extension: '1001', description: 'New orders' },
-    { name: 'Support', extension: '1002' },
+    { name: 'sales', description: 'Orders', number: '+15551001001' },
   ],
 });
 ```

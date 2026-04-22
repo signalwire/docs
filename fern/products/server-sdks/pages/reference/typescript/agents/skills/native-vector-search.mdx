@@ -1,56 +1,119 @@
 ---
 title: "NativeVectorSearchSkill"
 slug: /reference/typescript/agents/skills/native-vector-search
-description: In-memory document search using TF-IDF-like word overlap scoring.
+description: Vector + keyword document search against a local .swsearch index or remote search server.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-In-memory document search using TF-IDF-like word overlap scoring. No external
-dependencies or API keys required. Documents are provided via config and indexed
-at construction time.
+Search documents using vector similarity and keyword matching. Supports two
+backends:
+
+- **Local (SQLite)** — point `index_file` at a `.swsearch` index, or set
+  `build_index: true` and `source_dir` to index at startup.
+- **Remote (network)** — point `remote_url` at a search server and optionally
+  name the index via `index_name`.
+
+The remote mode enforces an SSRF guard before each request and uses a 5-second
+health-check timeout.
 
 **Class:** `NativeVectorSearchSkill`
 
-**Tools:** `search_documents`
+**Tools:** `search_documents` (default — `tool_name` override supported)
 
 **Env vars:** None
 
-**Multi-instance:** Yes
+**Multi-instance:** yes
 
 <ParamField path="tool_name" type="string" toc={true}>
-  Custom tool name for this instance. Required when using multiple instances.
+  Custom tool name for this instance. Set when registering multiple
+  NativeVectorSearch instances on the same agent.
 </ParamField>
 
-<ParamField path="documents" type={"Record<string, unknown>[]"} toc={true}>
-  Array of documents to index. Each object has:
-  - `id` (string, required) -- Unique document identifier.
-  - `text` (string, required) -- Full text content of the document.
-  - `metadata` (object, optional) -- Metadata associated with the document.
+<ParamField path="index_file" type="string" toc={true}>
+  Path to a local `.swsearch` SQLite index file.
 </ParamField>
 
-<ParamField path="num_results" type="number" default="3" toc={true}>
-  Default number of top results to return.
+<ParamField path="build_index" type="boolean" default="false" toc={true}>
+  When `true`, the skill builds an in-process index at startup from
+  `source_dir`.
 </ParamField>
 
-<ParamField path="distance_threshold" type="number" default="0" toc={true}>
-  Minimum relevance score threshold.
+<ParamField path="source_dir" type="string" toc={true}>
+  Directory containing documents to index. Required when `build_index` is
+  `true`.
 </ParamField>
 
-```typescript {6-13}
+<ParamField path="remote_url" type="string" toc={true}>
+  URL of the remote search server (network mode). Validated by the SSRF guard.
+</ParamField>
+
+<ParamField path="index_name" type="string" default={'"default"'} toc={true}>
+  Name of the index on the remote server (network mode only).
+</ParamField>
+
+<ParamField path="count" type="integer" default="5" toc={true}>
+  Number of results to return (range `1-20`).
+</ParamField>
+
+<ParamField path="similarity_threshold" type="number" default="0.0" toc={true}>
+  Minimum similarity score (0.0 — no limit, 1.0 — exact match).
+</ParamField>
+
+<ParamField path="tags" type="string[]" default="[]" toc={true}>
+  Tag filter applied to search queries.
+</ParamField>
+
+<ParamField path="global_tags" type="string[]" default="[]" toc={true}>
+  Tags applied to every indexed document at build time.
+</ParamField>
+
+<ParamField path="file_types" type="string[]" default={'["md", "txt", "pdf", "docx", "html"]'} toc={true}>
+  File extensions to include when building an index.
+</ParamField>
+
+<ParamField path="exclude_patterns" type="string[]" toc={true}>
+  Glob patterns excluded from index builds. Defaults include `**/node_modules/**`,
+  `**/.git/**`, `**/dist/**`, `**/build/**`.
+</ParamField>
+
+<ParamField path="no_results_message" type="string" toc={true}>
+  Message returned when no results match. Supports `{query}` placeholder.
+  Defaults to `"No information found for '{query}'"`.
+</ParamField>
+
+<ParamField path="response_prefix" type="string" default={'""'} toc={true}>
+  Prefix prepended to the search response.
+</ParamField>
+
+<ParamField path="response_postfix" type="string" default={'""'} toc={true}>
+  Suffix appended to the search response.
+</ParamField>
+
+## Example — local index
+
+```typescript {6-10}
 import { AgentBase, NativeVectorSearchSkill } from '@signalwire/sdk';
 
-const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
-agent.setPromptText('You are a helpful assistant.');
+const agent = new AgentBase({ name: 'kb-bot', route: '/kb' });
+agent.setPromptText('Answer questions from the knowledge base.');
 
 await agent.addSkill(new NativeVectorSearchSkill({
-  tool_name: 'search_faqs',
-  documents: [
-    { id: 'faq-1', text: 'To reset your password, visit the settings page...' },
-    { id: 'faq-2', text: 'Refund requests must be submitted within 30 days...' },
-  ],
-  num_results: 3,
+  tool_name: 'search_kb',
+  index_file: './kb.swsearch',
+  count: 5,
 }));
 
 agent.run();
+```
+
+## Example — remote server
+
+```typescript {6-9}
+await agent.addSkill(new NativeVectorSearchSkill({
+  remote_url: 'https://search.internal.example.com',
+  index_name: 'support-kb',
+  count: 3,
+  similarity_threshold: 0.4,
+}));
 ```

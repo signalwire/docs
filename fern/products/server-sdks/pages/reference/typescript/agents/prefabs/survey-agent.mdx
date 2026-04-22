@@ -19,6 +19,10 @@ const agent = new SurveyAgent({ /* SurveyConfig */ });
 
 ## SurveyConfig
 
+<ParamField path="surveyName" type="string" required={true} toc={true}>
+  Human-readable survey name used in prompts and global data.
+</ParamField>
+
 <ParamField path="questions" type="SurveyQuestion[]" required={true} toc={true}>
   Ordered list of survey questions. Each `SurveyQuestion` object has:
 
@@ -26,24 +30,38 @@ const agent = new SurveyAgent({ /* SurveyConfig */ });
   - `text` (string, required) -- The question text to ask the caller.
   - `type` (string, required) -- One of `"multiple_choice"`, `"open_ended"`, `"rating"`, or `"yes_no"`.
   - `options` (string[]) -- Required for `multiple_choice` questions.
+  - `scale` (number, default `5`) -- For `rating` questions, the upper bound of the scale (1..scale).
+  - `required` (boolean, default `true`) -- Whether the question must be answered.
   - `nextQuestion` (string | Record&lt;string, string&gt;) -- Next question ID, or a map from answer value to next question ID for branching. If omitted, proceeds in array order.
   - `points` (number | Record&lt;string, number&gt;) -- Fixed points for any answer, or per-answer scoring map.
 </ParamField>
 
-<ParamField path="introMessage" type="string" default="Thank you for taking our survey. I have a few questions for you." toc={true}>
-  Opening message before the first question.
+<ParamField path="introduction" type="string" toc={true}>
+  Opening message before the first question. Defaults to a generic intro.
 </ParamField>
 
-<ParamField path="completionMessage" type="string" default="Thank you for completing the survey! Your responses have been recorded." toc={true}>
-  Message after the survey is complete.
+<ParamField path="conclusion" type="string" toc={true}>
+  Closing message spoken after the survey completes.
+</ParamField>
+
+<ParamField path="brandName" type="string" default={'"Our Company"'} toc={true}>
+  Brand or company name the agent represents. Used in prompt sections.
+</ParamField>
+
+<ParamField path="maxRetries" type="number" default="2" toc={true}>
+  Maximum number of times to retry invalid answers before moving on.
 </ParamField>
 
 <ParamField path="onComplete" type="(responses: Record<string, unknown>, score: number) => void | Promise<void>" toc={true}>
   Callback fired when the survey is finished. Receives all responses and the total score.
 </ParamField>
 
-<ParamField path="name" type="string" default="SurveyAgent" toc={true}>
+<ParamField path="name" type="string" default={'"survey"'} toc={true}>
   Agent display name.
+</ParamField>
+
+<ParamField path="route" type="string" default={'"/survey"'} toc={true}>
+  HTTP route for the agent.
 </ParamField>
 
 <ParamField path="agentOptions" type="Partial<AgentOptions>" toc={true}>
@@ -73,8 +91,10 @@ for any answer. A `Record<string, number>` awards different points per answer va
 import { SurveyAgent } from '@signalwire/sdk';
 
 const agent = new SurveyAgent({
-  introMessage: 'Thank you for purchasing our product. We\'d love your feedback!',
-  completionMessage: 'Thanks for your time. Your feedback helps us improve!',
+  surveyName: 'Product Feedback',
+  brandName: 'Acme Corporation',
+  introduction: 'Thank you for purchasing our product. We\'d love your feedback!',
+  conclusion: 'Thanks for your time. Your feedback helps us improve!',
   questions: [
     {
       id: 'overall_rating',
@@ -125,6 +145,7 @@ agent.serve();
 import { createSurveyAgent } from '@signalwire/sdk';
 
 const agent = createSurveyAgent({
+  surveyName: 'Quick Feedback',
   questions: [
     { id: 'q1', text: 'How was your experience?', type: 'rating' },
     { id: 'q2', text: 'Any comments?', type: 'open_ended' },

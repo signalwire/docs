@@ -1,0 +1,68 @@
+---
+title: "getTools"
+slug: /reference/typescript/agents/skill-base/get-tools
+description: Return the SWAIG tool definitions this skill exposes.
+max-toc-depth: 3
+---
+
+[ref-skillbase]: /docs/server-sdks/reference/typescript/agents/skill-base
+
+Return the SWAIG tool definitions this skill exposes. Called by the
+`SkillManager` at SWML render time to collect every tool that should appear in
+the agent's SWAIG block.
+
+The default implementation returns tools registered imperatively via
+`defineTool()`. Skills that build their tool list declaratively should
+override this method to return a static array.
+
+<Info>
+This replaces the Python `register_tools()` abstract method. TS uses a pull
+model: you return the list, rather than calling back into the agent once per
+tool.
+</Info>
+
+## **Returns**
+
+`SkillToolDefinition[]` — array of tool definitions.
+
+## **Example — declarative override**
+
+```typescript {8-17}
+import { SkillBase, type SkillToolDefinition } from '@signalwire/sdk';
+
+class WeatherSkill extends SkillBase {
+  static override SKILL_NAME = 'weather';
+  static override SKILL_DESCRIPTION = 'Provides weather information';
+
+  override getTools(): SkillToolDefinition[] {
+    return [{
+      name: 'get_weather',
+      description: 'Get current weather for a location',
+      parameters: {
+        location: { type: 'string', description: 'City name' },
+      },
+      required: ['location'],
+      handler: async (args) => ({ response: `Weather in ${args.location}: sunny, 72F` }),
+    }];
+  }
+}
+```
+
+## **Example — imperative via defineTool()**
+
+```typescript {5-13}
+class ConfigurableSkill extends SkillBase {
+  static override SKILL_NAME = 'configurable';
+  static override SKILL_DESCRIPTION = 'Tools depend on config';
+
+  override async setup(): Promise<boolean> {
+    this.defineTool({
+      name: this.getConfig('tool_name', 'run'),
+      description: this.getConfig('description', 'Run the action'),
+      parameters: {},
+      handler: async () => ({ response: 'done' }),
+    });
+    return true;
+  }
+}
+```

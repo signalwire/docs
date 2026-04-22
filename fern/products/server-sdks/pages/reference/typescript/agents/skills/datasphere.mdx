@@ -1,59 +1,88 @@
 ---
 title: "DataSphereSkill"
 slug: /reference/typescript/agents/skills/datasphere
-description: Search documents uploaded to SignalWire DataSphere using semantic search.
+description: Search a SignalWire DataSphere knowledge document via the RAG stack.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Search documents uploaded to SignalWire DataSphere using semantic search.
-Executes the search via a webhook call from the agent process.
+Search a document uploaded to SignalWire DataSphere using the RAG stack.
+The skill issues the search via a webhook call from the agent process.
+
+Credentials (`space_name`, `project_id`, `token`, `document_id`) are all
+required — `setup()` fails closed if any are missing.
 
 **Class:** `DataSphereSkill`
 
-**Tools:** `search_datasphere`
+**Tools:** Custom per instance via `tool_name` (default `search_knowledge`)
 
 **Env vars:** `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_TOKEN`, `SIGNALWIRE_SPACE`
 
-**Multi-instance:** Yes
+**Multi-instance:** yes
 
-<ParamField path="tool_name" type="string" toc={true}>
-  Custom tool name for this instance. Required when using multiple instances.
+<ParamField path="tool_name" type="string" default={'"search_knowledge"'} toc={true}>
+  Custom tool name for this DataSphere instance.
 </ParamField>
 
-<ParamField path="space_name" type="string" toc={true}>
-  SignalWire space name. Falls back to the `SIGNALWIRE_SPACE` environment variable.
+<ParamField path="space_name" type="string" required={true} toc={true}>
+  SignalWire space name (e.g., `"mycompany"` from
+  `mycompany.signalwire.com`). Falls back to `SIGNALWIRE_SPACE`.
 </ParamField>
 
-<ParamField path="project_id" type="string" toc={true}>
-  SignalWire project ID. Falls back to the `SIGNALWIRE_PROJECT_ID` environment variable.
+<ParamField path="project_id" type="string" required={true} toc={true}>
+  SignalWire project ID. Falls back to `SIGNALWIRE_PROJECT_ID`.
 </ParamField>
 
-<ParamField path="token" type="string" toc={true}>
-  SignalWire auth token. Falls back to the `SIGNALWIRE_TOKEN` environment variable.
+<ParamField path="token" type="string" required={true} toc={true}>
+  SignalWire API token. Falls back to `SIGNALWIRE_TOKEN`.
 </ParamField>
 
-<ParamField path="document_id" type="string" toc={true}>
-  Restrict search to a specific document ID.
+<ParamField path="document_id" type="string" required={true} toc={true}>
+  DataSphere document ID to search within.
 </ParamField>
 
-<ParamField path="max_results" type="number" default="5" toc={true}>
-  Maximum number of results to return.
+<ParamField path="count" type="integer" default="1" toc={true}>
+  Number of results to return (range `1-10`).
 </ParamField>
 
-<ParamField path="distance_threshold" type="number" default="0.7" toc={true}>
-  Maximum distance threshold for results (0-1, lower is more similar).
+<ParamField path="distance" type="number" default="3.0" toc={true}>
+  Maximum distance threshold (range `0-10`; lower is more relevant).
 </ParamField>
 
-```typescript {6-9}
+<ParamField path="tags" type="string[]" toc={true}>
+  Tags to filter search results.
+</ParamField>
+
+<ParamField path="language" type="string" toc={true}>
+  Language code for query expansion (e.g., `"en"`, `"es"`).
+</ParamField>
+
+<ParamField path="pos_to_expand" type="string[]" toc={true}>
+  Parts of speech to expand with synonyms. Each entry must be one of
+  `"NOUN"`, `"VERB"`, `"ADJ"`, `"ADV"`.
+</ParamField>
+
+<ParamField path="max_synonyms" type="integer" toc={true}>
+  Maximum number of synonyms used for query expansion (range `1-10`).
+</ParamField>
+
+<ParamField path="no_results_message" type="string" toc={true}>
+  Message returned when no results match the query.
+</ParamField>
+
+## Example
+
+```typescript {6-11}
 import { AgentBase, DataSphereSkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
 agent.setPromptText('You are a helpful assistant.');
 
 await agent.addSkill(new DataSphereSkill({
-  max_results: 3,
-  distance_threshold: 0.5,
+  document_id: 'doc_1234',
+  count: 3,
+  distance: 2.5,
+  tool_name: 'search_product_docs',
 }));
 
 agent.run();

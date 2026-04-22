@@ -1,45 +1,80 @@
 ---
 title: "WebSearchSkill"
 slug: /reference/typescript/agents/skills/web-search
-description: Search the web using the Google Custom Search JSON API.
+description: Search the web via Google Custom Search, scrape results, and quality-filter the output.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Search the web using the Google Custom Search JSON API. Returns titles, links,
-and snippets.
+Search the web using the Google Custom Search JSON API. The skill fetches
+more results than requested, scrapes each page, scores the extracted
+content, and returns only the highest-quality matches to the AI.
 
 **Class:** `WebSearchSkill`
 
 **Tools:** `web_search`
 
-**Env vars:** `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_CX`
+**Env vars:** `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_ENGINE_ID` (legacy
+`GOOGLE_SEARCH_CX` is still accepted)
 
 <ParamField path="api_key" type="string" required={true} toc={true}>
-  Google Custom Search API key. Falls back to the `GOOGLE_SEARCH_API_KEY` environment variable.
+  Google Custom Search API key. Falls back to the `GOOGLE_SEARCH_API_KEY`
+  environment variable.
 </ParamField>
 
 <ParamField path="search_engine_id" type="string" required={true} toc={true}>
-  Google Custom Search Engine ID (CX). Falls back to the `GOOGLE_SEARCH_CX` environment variable.
+  Google Custom Search Engine ID. Falls back to the
+  `GOOGLE_SEARCH_ENGINE_ID` environment variable (or the legacy
+  `GOOGLE_SEARCH_CX`).
 </ParamField>
 
-<ParamField path="max_results" type="number" default="5" toc={true}>
-  Maximum number of results to return (1-10).
+<ParamField path="tool_name" type="string" toc={true}>
+  Custom tool name for this Web Search instance (useful when registering
+  multiple instances at once).
 </ParamField>
 
-<ParamField path="safe_search" type="string" default="medium" toc={true}>
-  Safe search level: `"off"`, `"medium"`, or `"high"`.
+<ParamField path="num_results" type="integer" default="3" toc={true}>
+  Number of high-quality results to return (range `1-10`).
 </ParamField>
 
-```typescript {6-9}
+<ParamField path="delay" type="number" default="0.5" toc={true}>
+  Delay between scraping pages in seconds (minimum `0`).
+</ParamField>
+
+<ParamField path="max_content_length" type="integer" default="32768" toc={true}>
+  Maximum total response size in characters (minimum `1000`).
+</ParamField>
+
+<ParamField path="oversample_factor" type="number" default="2.5" toc={true}>
+  How many extra results to fetch for quality filtering — e.g. `2.5` fetches
+  2.5× the requested `num_results` before scoring. Range `1.0-3.5`.
+</ParamField>
+
+<ParamField path="min_quality_score" type="number" default="0.3" toc={true}>
+  Minimum quality score (0–1) required to include a result.
+</ParamField>
+
+<ParamField path="no_results_message" type="string" toc={true}>
+  Message returned when no quality results are found. Use `{query}` as a
+  placeholder for the original search term.
+</ParamField>
+
+<ParamField path="safe_search" type="string" default={'"medium"'} toc={true}>
+  Safe-search level. One of `"off"`, `"medium"`, `"high"`.
+</ParamField>
+
+## Example
+
+```typescript {6-10}
 import { AgentBase, WebSearchSkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
 agent.setPromptText('You are a helpful assistant.');
 
 await agent.addSkill(new WebSearchSkill({
-  max_results: 3,
+  num_results: 3,
   safe_search: 'high',
+  min_quality_score: 0.4,
 }));
 
 agent.run();

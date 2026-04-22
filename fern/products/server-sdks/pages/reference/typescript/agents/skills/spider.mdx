@@ -1,36 +1,95 @@
 ---
 title: "SpiderSkill"
 slug: /reference/typescript/agents/skills/spider
-description: Scrape webpage content using the Spider API.
+description: Fast web scraping and crawling using cheerio-based extraction with SSRF protection.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Scrape webpage content using the Spider API. Extracts text or markdown from any
-public URL, with optional CSS selector filtering.
+Fast web scraping and crawling. Extracts text, markdown, or structured data
+from any public URL, optionally following links up to a bounded depth. Uses
+`cheerio` for parsing and enforces an SSRF guard on crawl hops.
 
 **Class:** `SpiderSkill`
 
 **Tools:** `scrape_url`
 
-**Env vars:** `SPIDER_API_KEY`
+**Required packages:** `cheerio`
 
-<ParamField path="api_key" type="string" required={true} toc={true}>
-  Spider API key. Falls back to the `SPIDER_API_KEY` environment variable.
+**Env vars:** None
+
+<ParamField path="delay" type="number" default="0.1" toc={true}>
+  Delay between requests in seconds (minimum `0`).
 </ParamField>
 
-<ParamField path="max_content_length" type="number" default="5000" toc={true}>
-  Maximum length of returned content in characters.
+<ParamField path="concurrent_requests" type="integer" default="5" toc={true}>
+  Number of concurrent requests allowed (range `1-20`).
 </ParamField>
 
-```typescript {6-8}
+<ParamField path="timeout" type="integer" default="5" toc={true}>
+  Per-request timeout in seconds (range `1-60`).
+</ParamField>
+
+<ParamField path="max_pages" type="integer" default="1" toc={true}>
+  Maximum number of pages to scrape (range `1-100`).
+</ParamField>
+
+<ParamField path="max_depth" type="integer" default="0" toc={true}>
+  Maximum crawl depth. `0` restricts to a single page; range `0-5`.
+</ParamField>
+
+<ParamField path="extract_type" type="string" default={'"fast_text"'} toc={true}>
+  Content extraction method. One of `"fast_text"`, `"clean_text"`,
+  `"full_text"`, `"html"`, `"markdown"`, `"structured"`, `"custom"`.
+</ParamField>
+
+<ParamField path="max_text_length" type="integer" default="3000" toc={true}>
+  Maximum extracted text length in characters (range `100-100000`).
+</ParamField>
+
+<ParamField path="clean_text" type="boolean" default="true" toc={true}>
+  Whether to clean extracted text (trim whitespace, collapse runs, etc.).
+</ParamField>
+
+<ParamField path="selectors" type={"Record<string, string>"} default="{}" toc={true}>
+  Map of name → CSS selector used for structured extraction.
+</ParamField>
+
+<ParamField path="follow_patterns" type="string[]" default="[]" toc={true}>
+  URL patterns to follow when crawling.
+</ParamField>
+
+<ParamField path="user_agent" type="string" toc={true}>
+  User-Agent header for outbound requests. Defaults to a Chrome-compatible
+  UA string.
+</ParamField>
+
+<ParamField path="headers" type={"Record<string, string>"} default="{}" toc={true}>
+  Additional HTTP headers sent with each request.
+</ParamField>
+
+<ParamField path="follow_robots_txt" type="boolean" default="false" toc={true}>
+  Whether to respect `robots.txt`. Defaults to `false` to match Python's
+  runtime behavior.
+</ParamField>
+
+<ParamField path="cache_enabled" type="boolean" default="true" toc={true}>
+  Whether to cache scraped pages in memory.
+</ParamField>
+
+## Example
+
+```typescript {6-11}
 import { AgentBase, SpiderSkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
-agent.setPromptText('You are a helpful assistant.');
+agent.setPromptText('You are a research assistant.');
 
 await agent.addSkill(new SpiderSkill({
-  max_content_length: 10000,
+  extract_type: 'markdown',
+  max_pages: 5,
+  max_depth: 1,
+  follow_patterns: ['/docs/'],
 }));
 
 agent.run();
