@@ -19,6 +19,8 @@ const dialCallExample = #{
       status_url: "https://example.com/status_callback",
       status_events: #["answered", "ended"],
       codecs: #["PCMU", "PCMA"],
+      timeout: 30,
+      max_price_per_minute: 0.05,
     },
   },
 };
@@ -38,16 +40,24 @@ const hangupCallExample = #{
   request: #{
     command: "calling.end",
     id: callId,
-    params: #{ reason: HangupReason.hangup },
+    params: #{ reason: HangupReason.hangup, async: false },
   },
 };
 
 const holdCallExample = #{
-  request: #{ command: "calling.ai_hold", id: callId, params: #{} },
+  request: #{
+    command: "calling.ai_hold",
+    id: callId,
+    params: #{ timeout: "300", async: false },
+  },
 };
 
 const unholdCallExample = #{
-  request: #{ command: "calling.ai_unhold", id: callId, params: #{} },
+  request: #{
+    command: "calling.ai_unhold",
+    id: callId,
+    params: #{ async: false },
+  },
 };
 
 const aiMessageExample = #{
@@ -57,6 +67,7 @@ const aiMessageExample = #{
     params: #{
       role: "system",
       message_text: "You are now in expert mode. Provide detailed technical responses and use industry terminology.",
+      async: false,
     },
   },
 };
@@ -178,7 +189,7 @@ const disconnectCallExample = #{
   request: #{
     command: "calling.disconnect",
     id: callId,
-    params: #{},
+    params: #{ async: false },
   },
 };
 
@@ -189,9 +200,16 @@ const playCallExample = #{
     id: callId,
     params: #{
       control_id: "play-control-1",
-      play: #[#{ type: PlayMediaType.audio, params: #{ url: "https://example.com/audio.mp3" } }],
+      play: #[
+        #{
+          type: PlayMediaType.audio,
+          params: #{ url: "https://example.com/audio.mp3" },
+        }
+      ],
       volume: 0,
-      direction: PlayDirection.both,
+      direction: PlayDirection.listen,
+      loop: 1,
+      async: false,
     },
   },
 };
@@ -200,7 +218,7 @@ const playPauseCallExample = #{
   request: #{
     command: "calling.play.pause",
     id: callId,
-    params: #{ control_id: "play-control-1" },
+    params: #{ control_id: "play-control-1", async: false },
   },
 };
 
@@ -208,7 +226,7 @@ const playResumeCallExample = #{
   request: #{
     command: "calling.play.resume",
     id: callId,
-    params: #{ control_id: "play-control-1" },
+    params: #{ control_id: "play-control-1", async: false },
   },
 };
 
@@ -216,7 +234,7 @@ const playStopCallExample = #{
   request: #{
     command: "calling.play.stop",
     id: callId,
-    params: #{ control_id: "play-control-1" },
+    params: #{ control_id: "play-control-1", async: false },
   },
 };
 
@@ -224,7 +242,7 @@ const playVolumeCallExample = #{
   request: #{
     command: "calling.play.volume",
     id: callId,
-    params: #{ control_id: "play-control-1", volume: 5 },
+    params: #{ control_id: "play-control-1", volume: 5, async: false },
   },
 };
 
@@ -235,7 +253,9 @@ const recordCallExample = #{
     id: callId,
     params: #{
       control_id: "record-control-1",
-      audio: #{ format: RecordFormat.mp3, direction: PlayDirection.both, stereo: false },
+      record: #{
+        audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false },
+      },
     },
   },
 };
@@ -273,6 +293,12 @@ const collectCallExample = #{
       control_id: "collect-control-1",
       initial_timeout: 5,
       digits: #{ max: 4, terminators: "#" },
+      continuous: false,
+      partial_results: false,
+      send_start_of_input: false,
+      start_input_timers: false,
+      status_url: "https://example.com/collect_callback",
+      async: false,
     },
   },
 };
@@ -281,7 +307,7 @@ const collectStopCallExample = #{
   request: #{
     command: "calling.collect.stop",
     id: callId,
-    params: #{ control_id: "collect-control-1" },
+    params: #{ control_id: "collect-control-1", async: false },
   },
 };
 
@@ -289,7 +315,7 @@ const collectStartInputTimersCallExample = #{
   request: #{
     command: "calling.collect.start_input_timers",
     id: callId,
-    params: #{ control_id: "collect-control-1" },
+    params: #{ control_id: "collect-control-1", async: false },
   },
 };
 
@@ -300,8 +326,12 @@ const detectCallExample = #{
     id: callId,
     params: #{
       control_id: "detect-control-1",
-      detect: #{ type: DetectType.machine },
+      detect: #{
+        type: DetectType.machine,
+        params: #{ initial_timeout: 4.5, end_silence_timeout: 1.0 },
+      },
       timeout: 30,
+      async: false,
     },
   },
 };
@@ -310,7 +340,7 @@ const detectStopCallExample = #{
   request: #{
     command: "calling.detect.stop",
     id: callId,
-    params: #{ control_id: "detect-control-1" },
+    params: #{ control_id: "detect-control-1", async: false },
   },
 };
 
@@ -322,7 +352,11 @@ const tapCallExample = #{
     params: #{
       control_id: "tap-control-1",
       tap: #{ type: "audio", params: #{ direction: PlayDirection.both } },
-      device: #{ type: TapDeviceType.rtp, params: #{ addr: "192.168.1.100", port: 5060 } },
+      device: #{
+        type: TapDeviceType.rtp,
+        params: #{ addr: "198.51.100.42", port: 5060 },
+      },
+      async: false,
     },
   },
 };
@@ -331,7 +365,7 @@ const tapStopCallExample = #{
   request: #{
     command: "calling.tap.stop",
     id: callId,
-    params: #{ control_id: "tap-control-1" },
+    params: #{ control_id: "tap-control-1", async: false },
   },
 };
 
@@ -343,7 +377,8 @@ const streamCallExample = #{
     params: #{
       control_id: "stream-control-1",
       url: "wss://example.com/stream",
-      track: StreamTrack.both_tracks,
+      track: StreamTrack.inbound_track,
+      async: false,
     },
   },
 };
@@ -352,7 +387,7 @@ const streamStopCallExample = #{
   request: #{
     command: "calling.stream.stop",
     id: callId,
-    params: #{ control_id: "stream-control-1" },
+    params: #{ control_id: "stream-control-1", async: false },
   },
 };
 
@@ -361,7 +396,7 @@ const denoiseCallExample = #{
   request: #{
     command: "calling.denoise",
     id: callId,
-    params: #{},
+    params: #{ async: false },
   },
 };
 
@@ -369,7 +404,7 @@ const denoiseStopCallExample = #{
   request: #{
     command: "calling.denoise.stop",
     id: callId,
-    params: #{},
+    params: #{ async: false },
   },
 };
 
@@ -378,7 +413,7 @@ const aiStopCallExample = #{
   request: #{
     command: "calling.ai.stop",
     id: callId,
-    params: #{ control_id: "ai-control-1" },
+    params: #{ control_id: "ai-control-1", async: false },
   },
 };
 
@@ -387,7 +422,7 @@ const sendFaxStopCallExample = #{
   request: #{
     command: "calling.send_fax.stop",
     id: callId,
-    params: #{ control_id: "fax-send-control-1" },
+    params: #{ control_id: "fax-send-control-1", async: false },
   },
 };
 
@@ -395,7 +430,7 @@ const receiveFaxStopCallExample = #{
   request: #{
     command: "calling.receive_fax.stop",
     id: callId,
-    params: #{ control_id: "fax-receive-control-1" },
+    params: #{ control_id: "fax-receive-control-1", async: false },
   },
 };
 
@@ -406,6 +441,7 @@ const referCallExample = #{
     id: callId,
     params: #{
       device: #{ type: "sip", params: #{ to: "sip:destination@example.com" } },
+      async: false,
     },
   },
 };
@@ -415,7 +451,7 @@ const transferCallExample = #{
   request: #{
     command: "calling.transfer",
     id: callId,
-    params: #{ dest: "sip:destination@example.com" },
+    params: #{ dest: "sip:destination@example.com", async: false },
   },
 };
 
@@ -424,6 +460,9 @@ const userEventCallExample = #{
   request: #{
     command: "calling.user_event",
     id: callId,
-    params: #{ event: #{ action: "custom_action", data: "example" } },
+    params: #{
+      event: #{ action: "custom_action", data: "example" },
+      async: false,
+    },
   },
 };
