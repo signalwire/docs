@@ -5,10 +5,28 @@ description: "Search for a config file in standard locations and load it if foun
 max-toc-depth: 3
 ---
 
-Static method that searches for a config file in standard locations: the
-current working directory, `./config/`, and `~/.signalwire/`. Returns a
-loaded `ConfigLoader` if found, or `null` if the file does not exist in
-any search path.
+Static method that searches for a config file across service-specific paths,
+caller-supplied directories, and default standard locations. Returns a loaded
+`ConfigLoader` as soon as the first existing file is found, or `null` if none
+of the candidates exist.
+
+Default search paths (joined with `filename`, in order):
+
+- `${cwd}/${filename}`
+- `${cwd}/config/${filename}`
+- `$HOME/.signalwire/${filename}`
+- `${cwd}/.swml/${filename}`
+- `$HOME/.swml/${filename}`
+- `/etc/swml/${filename}`
+
+When `serviceName` is provided, two service-specific variants are checked
+*before* any other path:
+
+- `${cwd}/${serviceName}_${filename}`
+- `${cwd}/.swml/${serviceName}_${filename}`
+
+When `additionalPaths` is provided, those directories are checked (joined
+with `filename`) after the service-specific variants but before the defaults.
 
 ## **Parameters**
 
@@ -16,16 +34,28 @@ any search path.
   The config file name to search for (e.g., `"config.json"`).
 </ParamField>
 
+<ParamField path="additionalPaths" type="string[]" toc={true}>
+  Extra directories to search before the default locations. Each directory
+  is joined with `filename` to form a candidate path.
+</ParamField>
+
+<ParamField path="serviceName" type="string" toc={true}>
+  Optional service name. When provided, adds `${serviceName}_${filename}`
+  variants to the front of the search order so a service can override the
+  generic config file.
+</ParamField>
+
 ## **Returns**
 
-`ConfigLoader | null` -- A loaded ConfigLoader instance, or `null` if not found.
+`ConfigLoader | null` -- A loaded ConfigLoader instance, or `null` if no
+candidate path exists.
 
 ## **Example**
 
 ```typescript {3}
 import { ConfigLoader } from '@signalwire/sdk';
 
-const config = ConfigLoader.search('agent-config.json');
+const config = ConfigLoader.search('agent-config.json', ['/etc/myapp'], 'myservice');
 if (config) {
   console.log('Config found at:', config.getFilePath());
   console.log('Port:', config.get<number>('server.port', 3000));
