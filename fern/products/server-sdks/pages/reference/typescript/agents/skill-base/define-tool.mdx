@@ -1,0 +1,79 @@
+---
+title: "defineTool"
+slug: /reference/typescript/agents/skill-base/define-tool
+description: "Imperatively register a tool with this skill."
+max-toc-depth: 3
+---
+
+[ref-gettools]: /docs/server-sdks/reference/typescript/agents/skill-base/get-tools
+
+Imperatively register a SWAIG tool with this skill. The tool definition is
+merged with the skill's `swaigFields` (explicit fields on `toolDef` take
+precedence) and then appended to the internal dynamic tool list. The default
+[`getTools()`][ref-gettools] implementation returns these dynamic tools at
+SWML render time.
+
+<Tip>
+Use `defineTool()` from `setup()` when the tool shape depends on config
+evaluated at setup time (e.g., an API key that changes the available
+actions). Skills with a static tool list should override `getTools()`
+directly instead.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="toolDef" type="SkillToolDefinition" required={true} toc={true}>
+  The tool definition. Must include at minimum `name`, `description`,
+  `parameters`, and `handler`.
+</ParamField>
+
+<Indent>
+<ParamField path="toolDef.name" type="string" required={true} toc={true}>
+  Tool name exposed to the AI.
+</ParamField>
+
+<ParamField path="toolDef.description" type="string" required={true} toc={true}>
+  One-sentence summary the AI sees when choosing whether to call the tool.
+</ParamField>
+
+<ParamField path="toolDef.parameters" type="Record<string, unknown>" required={true} toc={true}>
+  JSON-Schema-style parameter description.
+</ParamField>
+
+<ParamField path="toolDef.handler" type="(args, raw) => Promise<FunctionResult>" required={true} toc={true}>
+  Async function invoked when the AI calls the tool.
+</ParamField>
+
+<ParamField path="toolDef.secure" type="boolean" toc={true}>
+  When `true`, the tool requires signed tokens for invocation.
+</ParamField>
+</Indent>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {9-17}
+import { SkillBase, FunctionResult } from '@signalwire/sdk';
+
+export class TimeSkill extends SkillBase {
+  static SKILL_NAME = 'time';
+  static SKILL_DESCRIPTION = 'Tells the current time.';
+
+  async setup(): Promise<boolean> {
+    const timezone = this.getConfig<string>('timezone', 'UTC');
+    this.defineTool({
+      name: 'get_time',
+      description: `Get the current time in ${timezone}.`,
+      parameters: { type: 'object', properties: {} },
+      handler: async () => {
+        const now = new Date().toLocaleString('en-US', { timeZone: timezone });
+        return new FunctionResult().setResponse(`It's ${now}`);
+      },
+    });
+    return true;
+  }
+}
+```

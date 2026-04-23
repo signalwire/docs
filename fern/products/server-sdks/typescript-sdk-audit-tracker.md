@@ -1035,4 +1035,83 @@ Key verified behaviors:
 2. Options object pass-through (where TS SDK wraps an opaque `Record<string, unknown>` passed to a RELAY server) must document the server-side key casing, not the TS idiomatic casing — the SDK doesn't translate.
 3. Examples that show typed event handlers need explicit type imports — language-specific issue that Python doesn't have.
 
+---
+
+## Coverage Gap Follow-up (2026-04-23 session 6)
+
+Addressed the P4 coverage gaps flagged across the agents/ audits. Created 48
+new method pages across 7 classes. All pages follow the standard format
+(frontmatter → link refs → overview → params → returns → example) and were
+cross-verified against the Python counterparts where available, with TS-
+specific notes where behavior diverges.
+
+### New pages by class
+
+**swml-service/ (14 new)** — `reset-document`, `stop`, `get-document`,
+`render-document`, `get-basic-auth-credentials`, `serve`, `as-router`,
+`add-section`, `add-verb-to-section`, `register-verb-handler`,
+`register-routing-callback`, `extract-sip-username`, `manual-set-proxy-url`,
+`on-request`. Index CardGroup expanded from 6 to 20 cards. Notes key
+TS/Python divergences: `resetDocument()` returns fluent `this` vs Python
+`None`; TS `stop()` actually closes the server (Python only flips a flag);
+TS `onRequest()` receives (queryParams, bodyParams, headers, callbackPath)
+and returns a `SwmlBuilder` or null (vs Python's `(request_data,
+callback_path)` returning a merge dict); TS `RoutingCallback` signature lacks
+Python's `Request` arg.
+
+**configuration/auth-handler/ (5 new)** — `verify-basic-auth`,
+`verify-bearer-token`, `verify-api-key`, `get-auth-info`, `express-middleware`.
+TS `expressMiddleware` is the framework-agnostic equivalent of Python's
+`get_fastapi_dependency`. Index CardGroup expanded from 5 to 10 cards.
+
+**configuration/config-loader/ (8 new)** — `find-config-file`, `get-config`,
+`get-config-file`, `has-config`, `get-section`, `substitute-vars`,
+`merge-with-env`, `interpolate-env-vars`. `findConfigFile` documented as
+static; `interpolateEnvVars` flagged as TS-specific (no Python equivalent).
+Noted deliberate `hasConfig()` divergence from Python (TS treats
+object-loaded data as configured because `loadFromObject` is TS-only). Index
+CardGroup expanded from 8 to 17 cards.
+
+**pom-builder/ (5 new)** — `reset`, `add-pom-as-subsection`, `to-json`,
+`from-sections` (static), `render-xml`. Index CardGroup expanded from 8 to
+13 cards.
+
+**swml-builder/ (5 new)** — `build`, `render`, `document` (getter),
+`set-validation`, `add-section`. `build`/`render` documented as Python-compat
+aliases for `getDocument`/`renderDocument`. Index CardGroup expanded from 10
+to 15 cards.
+
+**skill-base/ (7 new)** — `get-agent`, `set-agent`, `get-config`,
+`define-tool`, `has-all-env-vars`, `has-all-packages`, `validate-packages`.
+`validatePackages` noted as async (dynamic `import()`). Index CardGroup
+expanded from 15 to 22 cards.
+
+**skill-registry/ (3 new)** — `get-skill-class`, `list-skills`,
+`reset-instance` (test helper). Index CardGroup expanded from 15 to 18
+cards.
+
+**skill-manager/ (1 new)** — `loaded-skills` (getter). Index CardGroup
+expanded from 16 to 17 cards.
+
+### Coverage summary
+
+Before: ~410 TS SDK doc files. After: ~458 files (+48 new pages).
+All previously-flagged P4 coverage gaps in the tracker are now closed. Remaining
+P4 notes: `Call.toString()` (intentional internal repr), unexported constants
+in `relay/constants.mdx` (flagged via Note, not fixed — requires SDK change).
+
+### Writing patterns used
+
+- Every new page matches the format of existing docs (frontmatter →
+  link-ref list at top → overview prose → `## **Parameters**` with ParamField
+  entries → `## **Returns**` → `## **Example**` with highlighted line).
+- Python-compat aliases (e.g., `build()`, `render()`, `getConfig()`,
+  `serve()`, `asRouter()`) explicitly noted with a pointer to the
+  non-alias method so users can pick one convention and stick with it.
+- TS/Python behavioral divergences documented as `<Note>` or `<Warning>`
+  blocks rather than buried in prose, following the convention used in the
+  rest of the audited docs.
+- Every example uses the corrected `SIGNALWIRE_API_TOKEN` env var (from
+  the relay-audit sweep) — no examples reintroduce the old token name.
+
 
