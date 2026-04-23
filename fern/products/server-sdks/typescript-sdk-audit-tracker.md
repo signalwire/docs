@@ -1120,4 +1120,50 @@ exports the same public subset.
 - Every example uses the corrected `SIGNALWIRE_API_TOKEN` env var (from
   the relay-audit sweep) — no examples reintroduce the old token name.
 
+---
+
+## Core audit session (2026-04-23)
+
+Scope: `pages/reference/typescript/core/` — 1 file (`overview.mdx`).
+
+### core/ — AUDITED -- NO ISSUES (1/1)
+
+`overview.mdx` is a nav landing page: frontmatter + shared snippet include
+(`/snippets/server-sdks/reference-overview.mdx`) + 3-card CardGroup linking
+to `agents/`, `relay/`, `rest/` section overviews.
+
+**Checks:**
+
+| Check | Result |
+|-------|--------|
+| Frontmatter title | "SignalWire TypeScript Server SDK" — language-appropriate ✓ |
+| Frontmatter slug | `/reference/typescript` ✓ |
+| Frontmatter description | "SDK reference overview for SignalWire Agents, RELAY, and REST APIs." ✓ |
+| sidebar-title / subtitle / max-toc-depth / position | Match Python counterpart ✓ |
+| Shared-snippet path | `/snippets/server-sdks/reference-overview.mdx` resolves to `fern/snippets/server-sdks/reference-overview.mdx` ✓ |
+| CardGroup href -- agents | `/docs/server-sdks/reference/typescript/agents` — target overview slug `/reference/typescript/agents` exists ✓ |
+| CardGroup href -- relay | `/docs/server-sdks/reference/typescript/relay` — target overview slug `/reference/typescript/relay` exists ✓ |
+| CardGroup href -- rest | `/docs/server-sdks/reference/typescript/rest` — target overview slug `/reference/typescript/rest` exists ✓ |
+| Content drift vs Python `core/overview.mdx` | Identical except for language-adapted title + slug. No drift. ✓ |
+
+**Behavioral verification for `overview.mdx`:**
+
+- "AI voice agents with SWML, SWAIG tools, skills, and multi-step workflows." → `src/AgentBase.ts` (SWML rendering via `SwmlBuilder`, SWAIG dispatch, `SkillManager`, multi-step `ContextBuilder`) ✓ confirmed
+- "Real-time WebSocket client for call and message control." → `src/relay/RelayClient.ts` (WebSocket JSON-RPC 2.0) ✓ confirmed
+- "HTTP client for phone numbers, fabric, video, logs, and more." → `src/rest/index.ts` + `src/rest/namespaces/{phone-numbers,fabric,video,logs,...}.ts` ✓ confirmed
+
+Shared snippet (`reference-overview.mdx`) is language-agnostic — references
+`AgentBase`, `RelayClient`, `RestClient` all exist as exported symbols in
+`src/index.ts`, `src/relay/RelayClient.ts`, `src/rest/index.ts`
+respectively. No TS-specific drift possible in a shared snippet.
+
+**Fixes applied:** 0. **New pages created:** 0.
+
+### Cumulative totals
+
+~459 TS SDK doc files audited across all namespaces (agents + relay + rest +
+core). Every namespace in `pages/reference/typescript/` now marked
+AUDITED + FIXED or AUDITED -- NO ISSUES.
+
+
 
