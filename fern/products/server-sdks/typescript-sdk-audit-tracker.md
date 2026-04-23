@@ -1008,7 +1008,7 @@ Key verified behaviors:
 
 - `[overview.mdx]` clean — IVR example matches Python counterpart (same `transfer(dest=phone)` pattern — accepted per Python parity even though transfer doc says context/URL).
 - `[relay-error.mdx]` FIXED — `code` ParamField had `default="0"`; source RelayError.ts:9 constructor requires `code: number` (no default). Removed wrong default. Other fields (message, name) match source 6-13.
-- `[constants.mdx]` FIXED — added `<Note>` clarifying only `CALL_STATE_*`, `CONNECT_STATE_*`, `EVENT_CALL_*`, `EVENT_MESSAGING_*`, `EVENT_CONFERENCE`, `EVENT_CALLING_ERROR`, `MESSAGE_STATE_*` are re-exported from `@signalwire/sdk` (verified against `src/relay/index.ts:66-107`). All other constants listed (PROTOCOL_VERSION, AGENT_STRING, DEFAULT_RELAY_HOST, METHOD_*, END_REASON_*, PLAY_STATE_*, RECORD_STATE_*, DETECT_TYPE_*, ROOM_STATE_*, RECONNECT_*, MESSAGE_TERMINAL_STATES, CALL_STATES, EVENT_AUTHORIZATION_STATE) exist in constants.ts but aren't re-exported — note prevents user confusion about import failures. Values checked individually against constants.ts and all match.
+- `[constants.mdx]` FIXED (session 6 follow-up) — trimmed to the 39 symbols actually re-exported from `@signalwire/sdk` root (verified against `src/relay/index.ts:67-107`). Dropped all internal-only sections: Protocol (PROTOCOL_VERSION/AGENT_STRING/DEFAULT_RELAY_HOST), JSON-RPC Methods, End Reasons, Play/Record/Detect/Room States, Reconnect Settings, Authorization Event, `CALL_STATES`/`MESSAGE_TERMINAL_STATES` arrays. Rationale: Python reference SDK (`signalwire/relay/__init__.py` `__all__`) exports the same subset — the un-re-exported constants are internal implementation in both SDKs and not part of the public API surface. String enum values users encounter at runtime (`endReason`, play/record/detect states, etc.) are already documented inline on `events.mdx` where they appear. Previous `<Note>` removed (no longer needed — doc surface now matches import surface). No inbound anchor links were broken (verified via grep for `constants#`).
 - `[events.mdx]` FIXED (P2 x 19 systematic) — RelayEvent base (eventType/params/callId/timestamp) matches src 12-40. 19 event-class examples used typed event classes in handler signatures (e.g., `(event: PlayEvent) => …`) but didn't import those classes — examples would fail TS type check as written. Used Python AST-style script to backtrack from each handler to the preceding `import { RelayClient } from '@signalwire/sdk';` and add the referenced event class. All 21 examples now import their event class correctly.
 
 ### Relay Audit Summary
@@ -1027,8 +1027,10 @@ Key verified behaviors:
 8. **on-call/on-message Returns type** — both documented `void` but source returns the handler (decorator pattern support).
 
 **Coverage gaps (P4) not fixed:**
-- `Call.toString()` — internal repr; intentional.
-- Constants doc lists constants not re-exported from `@signalwire/sdk` root — flagged via Note rather than removing.
+- `Call.toString()` — internal repr; intentional (matches Python which also doesn't doc `__repr__`).
+
+**Previously flagged, now resolved in session 6:**
+- `relay/constants.mdx` — trimmed to re-exported symbols only (matches Python `__all__` surface).
 
 **Systematic patterns uncovered (for future SDK doc authoring):**
 1. Timeout units must be stated explicitly in both prose AND matching examples; TS/JS conventions default to milliseconds, Python SDK convention is seconds, and TS mirrored Python — a steady source of confusion.
@@ -1097,8 +1099,12 @@ expanded from 16 to 17 cards.
 
 Before: ~410 TS SDK doc files. After: ~458 files (+48 new pages).
 All previously-flagged P4 coverage gaps in the tracker are now closed. Remaining
-P4 notes: `Call.toString()` (intentional internal repr), unexported constants
-in `relay/constants.mdx` (flagged via Note, not fixed — requires SDK change).
+P4 note: `Call.toString()` (intentional internal repr — matches Python SDK
+convention of not documenting `__repr__`). The earlier `relay/constants.mdx`
+flag was resolved by trimming the doc to match the re-exported symbol set;
+root cause was a doc-scope decision (over-documentation of internal-only
+constants), not an SDK bug — Python's `signalwire/relay/__init__.py` `__all__`
+exports the same public subset.
 
 ### Writing patterns used
 
