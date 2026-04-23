@@ -53,8 +53,6 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.stream.stop` | Stop active stream |
       | `calling.denoise` | Start noise reduction on a call |
       | `calling.denoise.stop` | Stop noise reduction |
-      | `calling.transcribe` | Start call transcription |
-      | `calling.transcribe.stop` | Stop active transcription |
       | `calling.ai_hold` | Place an AI call on hold |
       | `calling.ai_unhold` | Resume an AI call from hold |
       | `calling.ai_message` | Inject a message into an active AI conversation |
@@ -101,20 +99,6 @@ namespace SignalWireAPI.Calling.Calls {
       #{
         title: "calling.ai.stop",
         description: "Stop an active AI session on the call",
-      }
-    )
-    @opExample(
-      #{ parameters: transcribeStopCallExample },
-      #{
-        title: "calling.transcribe.stop",
-        description: "Stop an active transcription",
-      }
-    )
-    @opExample(
-      #{ parameters: transcribeCallExample },
-      #{
-        title: "calling.transcribe",
-        description: "Start transcription on an active call",
       }
     )
     @opExample(
