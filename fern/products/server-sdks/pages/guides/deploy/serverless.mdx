@@ -90,16 +90,15 @@ def lambda_handler(event, context):
     return agent.handle_serverless_request(event, context)
 ```
 </Tab>
-{/*
 <Tab title="TypeScript">
-`handler.ts`:
+`handler.ts` (deploy as `handler.mjs` or ensure `package.json` has `"type": "module"` — `@signalwire/sdk` is ESM-only):
 
 ```typescript
-import { AgentBase, FunctionResult } from 'signalwire-agents';
+import { AgentBase, FunctionResult } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: "my-agent" });
-agent.addLanguage("English", "en-US", "rime.spore");
-agent.promptAddSection("Role", "You are a helpful assistant.");
+agent.addLanguage({ name: "English", code: "en-US", voice: "rime.spore" });
+agent.promptAddSection("Role", { body: "You are a helpful assistant." });
 
 agent.defineTool({
   name: "say_hello",
@@ -111,18 +110,17 @@ agent.defineTool({
     },
     required: ["name"]
   },
-  handler: (args: any) => {
-    const name = args.name || "World";
+  handler: (args: Record<string, unknown>) => {
+    const name = (args['name'] as string) || "World";
     return new FunctionResult(`Hello ${name}!`);
   }
 });
 
-export const handler = async (event: any, context: any) => {
-  return agent.handleRequest(event, context);
+export const handler = async (event: unknown, context: unknown) => {
+  return agent.runServerless(event, context);
 };
 ```
 </Tab>
-*/}
 </Tabs>
 {/*
 
@@ -302,13 +300,12 @@ def main(request):
     return agent.handle_serverless_request(request)
 ```
 </Tab>
-{/*
 <Tab title="TypeScript">
-`index.ts`:
+`index.ts` (deploy as `.mjs` or ensure `package.json` has `"type": "module"` — `@signalwire/sdk` is ESM-only):
 
 ```typescript
-import { AgentBase, FunctionResult } from 'signalwire-agents';
-import { HttpFunction } from '@google-cloud/functions-framework';
+import { AgentBase, FunctionResult, ServerlessAdapter } from '@signalwire/sdk';
+import type { HttpFunction } from '@google-cloud/functions-framework';
 
 const agent = new AgentBase({ name: 'my-agent' });
 agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
@@ -324,17 +321,14 @@ agent.defineTool({
     },
     required: ['name'],
   },
-  handler: (args: any) => {
-    return new FunctionResult(`Hello ${args.name || 'World'}!`);
+  handler: (args: Record<string, unknown>) => {
+    return new FunctionResult(`Hello ${(args['name'] as string) || 'World'}!`);
   },
 });
 
-export const main: HttpFunction = (req, res) => {
-  return agent.handleRequest(req, res);
-};
+export const main: HttpFunction = ServerlessAdapter.createGcfHandler(agent.getApp());
 ```
 </Tab>
-*/}
 </Tabs>
 {/*
 
@@ -468,13 +462,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     return agent.handle_serverless_request(req)
 ```
 </Tab>
-{/*
 <Tab title="TypeScript">
-`src/functions/agent.ts`:
+`src/functions/agent.ts` (deploy as `.mjs` or set `"type": "module"` in `package.json` — `@signalwire/sdk` is ESM-only). This example uses the Azure Functions v3 programming model with `function.json` (shown below). The SDK's Azure helper follows that shape.
 
 ```typescript
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { AgentBase, FunctionResult } from 'signalwire-agents';
+import { AgentBase, FunctionResult, ServerlessAdapter } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'my-agent' });
 agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
@@ -490,19 +482,15 @@ agent.defineTool({
     },
     required: ['name'],
   },
-  handler: (args: any) => {
-    return new FunctionResult(`Hello ${args.name || 'World'}!`);
+  handler: (args: Record<string, unknown>) => {
+    return new FunctionResult(`Hello ${(args['name'] as string) || 'World'}!`);
   },
 });
 
-export async function main(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  return agent.handleRequest(req);
-}
-
-app.http('agent', { methods: ['GET', 'POST'], authLevel: 'anonymous', handler: main });
+// Azure Functions v3 entry point — `context.res` is populated by the adapter.
+export default ServerlessAdapter.createAzureHandler(agent.getApp());
 ```
 </Tab>
-*/}
 </Tabs>
 {/*
 
