@@ -373,26 +373,6 @@ const denoiseStopCallExample = #{
   },
 };
 
-// Transcribe examples (distinct from live_transcribe)
-const transcribeCallExample = #{
-  request: #{
-    command: "calling.transcribe",
-    id: callId,
-    params: #{
-      control_id: "transcribe-control-1",
-      status_url: "https://example.com/status_callback",
-    },
-  },
-};
-
-const transcribeStopCallExample = #{
-  request: #{
-    command: "calling.transcribe.stop",
-    id: callId,
-    params: #{ control_id: "transcribe-control-1" },
-  },
-};
-
 // AI Stop example
 const aiStopCallExample = #{
   request: #{
