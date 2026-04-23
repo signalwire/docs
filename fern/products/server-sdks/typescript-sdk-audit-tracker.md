@@ -882,3 +882,157 @@ Key verified behaviors:
 - `NumberGroups.getMembership` / `deleteMembership` correctly document the top-level `/number_group_memberships/{id}` endpoint (not nested).
 - Calling namespace: all 37 commands dispatch POST `/api/calling/calls`; signature shape `(params)` for `dial`/`update`, `(callId, params)` for the rest.
 
+---
+
+## Relay Audit (in progress — 2026-04-22 session 5)
+
+**Scope:** `pages/reference/typescript/relay/**` — 91 MDX files against
+`src/relay/**` at commit `ba6d5b1`.
+
+**Source files:**
+- `src/relay/RelayClient.ts` (1036 lines) → `relay/client/`
+- `src/relay/Call.ts` (854 lines) → `relay/call/`
+- `src/relay/Message.ts` (148 lines) → `relay/message/`
+- `src/relay/Action.ts` (314 lines) → `relay/actions/*/` (11 subclasses)
+- `src/relay/RelayError.ts` (14 lines) → `relay/relay-error.mdx`
+- `src/relay/RelayEvent.ts` (892 lines) → `relay/events.mdx`
+- `src/relay/constants.ts` (132 lines) → `relay/constants.mdx`
+- `src/relay/index.ts` + `types.ts` + `Deferred.ts` → internal
+
+### Full Inventory — Relay
+
+| Status | Namespace | Files | Source |
+|--------|-----------|-------|--------|
+| AUDITED -- NO ISSUES | `call/` | 45 | `src/relay/Call.ts` |
+| AUDITED + FIXED | `actions/` | 31 | `src/relay/Action.ts` (base) |
+| AUDITED + FIXED | `client/` | 10 | `src/relay/RelayClient.ts` |
+| AUDITED + FIXED | `message/` | 3 | `src/relay/Message.ts` |
+| AUDITED + FIXED | root (overview, relay-error, constants, events) | 4 | various |
+
+### Findings Log
+
+#### call/ (45 files) — AUDITED -- NO ISSUES
+
+- `[call/index.mdx]` clean — 9 properties + 44-card CardGroup match src Call.ts line 40-48, 107-835. Content drift vs Python: only legitimate (type syntax, casing, example idioms). Behavioral: "created automatically by RelayClient" ✓ line 1-5; "JSON-RPC via WebSocket" ✓ line 83-85; "long-running ops return Action" ✓ line 208.
+- `[call/on.mdx]` clean — `on(eventType, handler): void` (src 107). EventHandler type matches. Behavioral: handlers pushed to `_listeners`, invoked on dispatch (src 140-147).
+- `[call/wait-for.mdx]` clean — `waitFor(eventType, predicate?, timeout?)` (src 151). One-shot handler removed in finally block (src 179-185). Throws on timeout (src 170).
+- `[call/wait-for-ended.mdx]` clean — `waitForEnded(timeout?)` (src 190). Resolves on `_ended` deferred, set when state === 'ended' (src 122-123).
+- `[call/answer.mdx]` clean — `answer(extra?)` (src 247). `extra` intentional pass-through omission (matches Python parity).
+- `[call/hangup.mdx]` clean — `hangup(reason = 'hangup')` (src 252). Reason default + enum values documented.
+- `[call/pass.mdx]` clean — `pass()` no args (src 257). Delegates to `_execute('pass')`.
+- `[call/play.mdx]` clean — `play(media, options)` with 5 options (src 264). PlayAction has stop/pause/resume/volume + wait. All 3 example highlights verified.
+- `[call/record.mdx]` clean — `record(audio?, options)` (src 286). Nested audio.* params correctly documented with Indent.
+- `[call/play-and-collect.mdx]` clean — `playAndCollect(media, collect, options)` (src 303). Nested collect.digits/speech Indents correct.
+- `[call/collect.mdx]` clean — `collect(options)` 9 options (src 324). All documented incl. digits/speech nested.
+- `[call/connect.mdx]` clean — `connect(devices, options)` 5 options (src 351).
+- `[call/disconnect.mdx]` clean — `disconnect()` no args (src 371).
+- `[call/send-digits.mdx]` clean — `sendDigits(digits, controlId?)` (src 378).
+- `[call/detect.mdx]` clean — `detect(detect, options)` 3 options (src 386). DetectAction resolves on first detection event (src 169-175).
+- `[call/refer.mdx]` clean — `refer(device, options)` (src 404). device.type/params nested.
+- `[call/pay.mdx]` clean — `pay(paymentConnectorUrl, options)` 18 options (src 416). All documented.
+- `[call/send-fax.mdx]` clean — `sendFax(document, options)` 4 options (src 469).
+- `[call/receive-fax.mdx]` clean — `receiveFax(options)` 2 options (src 487).
+- `[call/tap.mdx]` clean — `tap(tap, device, options)` (src 502). Nested tap + device Indents.
+- `[call/stream.mdx]` clean — `stream(url, options)` 8 options (src 519).
+- `[call/transfer.mdx]` clean — `transfer(dest, extra?)` (src 549). `extra` pass-through (Python parity).
+- `[call/join-conference.mdx]` clean — `joinConference(name, options)` 19 options (src 557).
+- `[call/leave-conference.mdx]` clean — `leaveConference(conferenceId, extra?)` (src 605).
+- `[call/hold.mdx]` / `[call/unhold.mdx]` clean — no args (src 612/617).
+- `[call/denoise.mdx]` / `[call/denoise-stop.mdx]` clean — no args (src 624/629). RPC `denoise` / `denoise.stop`.
+- `[call/transcribe.mdx]` clean — `transcribe(options)` 3 options (src 636). TranscribeAction.
+- `[call/echo.mdx]` clean — `echo({timeout?, statusUrl?})` (src 653).
+- `[call/bind-digit.mdx]` clean — `bindDigit(digits, bindMethod, options)` 3 options (src 663).
+- `[call/clear-digit-bindings.mdx]` clean — `clearDigitBindings(realm?)` (src 683).
+- `[call/live-transcribe.mdx]` clean — `liveTranscribe(action, extra?)` (src 692). `extra` pass-through.
+- `[call/live-translate.mdx]` clean — `liveTranslate(action, {statusUrl?})` (src 697).
+- `[call/join-room.mdx]` clean — `joinRoom(name, {statusUrl?})` (src 709).
+- `[call/leave-room.mdx]` clean — `leaveRoom(extra?)` (src 719). `extra` pass-through.
+- `[call/ai.mdx]` clean — `ai(options)` 14 options (src 726). All documented.
+- `[call/amazon-bedrock.mdx]` clean — `amazonBedrock(options)` 6 options (src 761).
+- `[call/ai-message.mdx]` clean — `aiMessage(options)` 4 options (src 780).
+- `[call/ai-hold.mdx]` clean — `aiHold({timeout?, prompt?})` (src 795).
+- `[call/ai-unhold.mdx]` clean — `aiUnhold({prompt?})` (src 803).
+- `[call/user-event.mdx]` clean — `userEvent(options)` event field (src 812). Doc correctly notes extra keys ignored.
+- `[call/queue-enter.mdx]` clean — `queueEnter(queueName, {controlId?, statusUrl?})` (src 821). RPC `queue.enter`.
+- `[call/queue-leave.mdx]` clean — `queueLeave(queueName, {controlId?, queueId?, statusUrl?})` (src 835). RPC `queue.leave`.
+
+**Coverage gap (P4):** `toString()` (src 851) not documented — intentional, internal repr.
+**Content drift vs Python:** 44 method slugs + filenames match exactly. Only legitimate drift (camelCase titles, TS type syntax, example idioms).
+
+#### actions/ (31 files) — AUDITED + FIXED
+
+- `[actions/index.mdx]` FIXED (P1) — `wait(timeout)` claimed "Maximum milliseconds"; source Action.ts:91/95 is **seconds** (JSDoc: "matches Python SDK convention", line 95: `timeout * 1000` converts to ms). Fixed description to "Maximum seconds" per Python parity.
+- `[actions/detect-action/index.mdx]` FIXED (P2) — example `action.wait(10000)` interpreted timeout as ms; source is seconds (10000 = 2.7 hours). Fixed to `wait(10)` matching Python counterpart.
+- `[actions/standalone-collect-action/index.mdx]` FIXED (P1) — example `speech: { endSilenceTimeout: 2.0 }` — the `speech` obj is pass-through to RELAY server (Call.ts:338). RELAY server uses snake_case `end_silence_timeout`. CamelCase key would be ignored by server. Fixed.
+- `[actions/standalone-collect-action/stop.mdx]` FIXED (P1) — same `endSilenceTimeout` → `end_silence_timeout` pass-through fix.
+- `[actions/standalone-collect-action/start-input-timers.mdx]` FIXED (P1) — same `endSilenceTimeout` → `end_silence_timeout` pass-through fix.
+- Other 26 action files clean. Per-action-class verification:
+  - `play-action/*` (5 files) — PlayAction src 117-137; 4 methods (stop/pause/resume/volume) all RPC `play.*`. Terminal `PLAY_STATE_FINISHED, PLAY_STATE_ERROR`.
+  - `record-action/*` (4 files) — RecordAction src 141-159; 3 methods (stop/pause/resume) RPC `record.*`. Terminal `RECORD_STATE_FINISHED, RECORD_STATE_NO_INPUT`. `pause(behavior?)` optional arg documented.
+  - `collect-action/*` (4 files) — CollectAction src 184-214; 3 methods (stop/volume/startInputTimers) RPC mix `play_and_collect.*` + `collect.start_input_timers`. Note about collect-only events (src 193-201) accurate.
+  - `detect-action/*` (2 files) — DetectAction src 163-180; 1 method. Note about first-detection-resolve accurate (src 169-175).
+  - `fax-action/*` (2 files) — FaxAction src 243-254; 1 method. RPC prefix `send_fax.stop` or `receive_fax.stop` depending on source method.
+  - `tap-action/*` / `stream-action/*` / `pay-action/*` / `transcribe-action/*` / `ai-action/*` — all single-stop classes, terminal states match src.
+  - `standalone-collect-action/*` (3 files) — terminal states match src 220. Two distinct RPC paths: `collect.stop` + `collect.start_input_timers`.
+
+**Systematic issue (project-wide):** Two distinct timeout-unit bugs surfaced in this audit. (1) Doc prose claimed `wait(timeout)` is ms — fixed in base Action page. (2) Example code passed `10000` assuming ms — fixed in detect-action. Worth spot-checking other SDK pages that mention wait-with-timeout, in case the unit confusion propagated. **Followup audit confirmed the pattern extended to `dialTimeout` (client/dial.mdx) and `message.wait(30_000)` (client/send-message.mdx) — also fixed.**
+
+#### client/ (10 files) — AUDITED + FIXED
+
+- `[client/index.mdx]` FIXED (P0 x 1 + drift) —
+  - `token` env var was `SIGNALWIRE_TOKEN`; source `RelayClient.ts:132` uses `SIGNALWIRE_API_TOKEN`. **P0 wrong env var.**
+  - Missing `maxActiveCalls` property (source ctor 152-158 + `_maxActiveCalls` field 118; default 1000 via `DEFAULT_MAX_ACTIVE_CALLS`; `RELAY_MAX_ACTIVE_CALLS` env fallback). Added per Python counterpart.
+  - `jwtToken` description was "Read from env var" only; source 133 also accepts constructor. Fixed to "Set via constructor or ...".
+  - `host` missing `default="relay.signalwire.com"` attribute; `contexts` missing `default="[]"`. Added to match Python.
+  - No "Async Disposable" section; source implements `Symbol.asyncDispose` (line 182) for `await using`. Added section with full example.
+- `[client/on-call.mdx]` FIXED (P1) — Returns was `void`; source `onCall(handler: CallHandler): CallHandler` — returns the handler to support decorator usage. Fixed.
+- `[client/on-message.mdx]` FIXED (P1) — same Returns-type bug as on-call; source returns `MessageHandler`. Fixed.
+- `[client/connect.mdx]` clean — `connect()` no args; behavioral claims (wss://host, signalwire.connect, contexts auto-subscribe via `_authenticate` 304-306, ping loop) all verified.
+- `[client/disconnect.mdx]` FIXED (P0 in example) — example used `client.sendMessage({ to, from, body })`; sendMessage options (src 437) are `toNumber`/`fromNumber`. Fixed both keys.
+- `[client/execute.mdx]` clean — `(method, params): Promise<Record>` matches src 365. Warning about 30s timeout + reconnect matches REQUEST_TIMEOUT constant.
+- `[client/dial.mdx]` FIXED (P0) — `options.dialTimeout` claimed `default="120000"` in milliseconds; source 401-402 uses seconds (default 120, then `* 1000` to ms internally). JSDoc line 375 confirms seconds. Fixed doc + default.
+- `[client/send-message.mdx]` FIXED (P0 x 5) — (a) ParamField `to` should be `toNumber` (src 438); (b) ParamField `from` should be `fromNumber` (src 439); (c) all 3 examples used `to`/`from` as sendMessage options — would fail at runtime; (d) `await message.wait(30_000)` — Message.wait uses seconds convention (Message.ts:79/83 `timeout * 1000`). Fixed to `wait(30)`.
+- `[client/receive.mdx]` clean — `receive(contexts: string[])` src 487; empty list short-circuits.
+- `[client/unreceive.mdx]` clean — `unreceive(contexts: string[])` src 494.
+- `[client/run.mdx]` clean — `run(): Promise<void>` src 503. Backoff claim "1s initial, 30s max" verified against `RECONNECT_MIN_DELAY=1.0`, `RECONNECT_MAX_DELAY=30.0` (constants.ts:118-119).
+
+**Systematic project-wide fix:** Swept `process.env.SIGNALWIRE_TOKEN` → `SIGNALWIRE_API_TOKEN` across 91 relay `.mdx` files. This was the env-var name the SDK auto-fallback reads, and prior examples had propagated a different env-var name that wouldn't be auto-loaded. Users copying examples and setting `SIGNALWIRE_API_TOKEN` now get the SDK's expected default behavior.
+
+#### message/ (3 files) — AUDITED + FIXED
+
+- `[message/index.mdx]` FIXED (P0 in examples) — 11 properties (messageId, context, direction, fromNumber, toNumber, body, media, segments, state, reason, tags + isDone/result getters) all match Message.ts:18-28/61-70. Three example code blocks used `to`/`from` sendMessage options — wrong per source 437-439 (actual: `toNumber`/`fromNumber`). Also `message.wait(30_000)` passes 30000 seconds — wait uses seconds (Message.ts:79/83); fixed to `wait(30)`.
+- `[message/on.mdx]` FIXED (P0 in example) — `on(handler): void` matches src 73; example used `to`/`from` — fixed to `toNumber`/`fromNumber`.
+- `[message/wait.mdx]` FIXED (P1 + P0 in example) — (a) ParamField `timeout` claimed "milliseconds"; source 81-96 uses seconds (`timeout * 1000` internally). (b) example used `to`/`from` + `wait(30_000)`. All fixed.
+
+#### root/ (4 files) — AUDITED + FIXED
+
+- `[overview.mdx]` clean — IVR example matches Python counterpart (same `transfer(dest=phone)` pattern — accepted per Python parity even though transfer doc says context/URL).
+- `[relay-error.mdx]` FIXED — `code` ParamField had `default="0"`; source RelayError.ts:9 constructor requires `code: number` (no default). Removed wrong default. Other fields (message, name) match source 6-13.
+- `[constants.mdx]` FIXED — added `<Note>` clarifying only `CALL_STATE_*`, `CONNECT_STATE_*`, `EVENT_CALL_*`, `EVENT_MESSAGING_*`, `EVENT_CONFERENCE`, `EVENT_CALLING_ERROR`, `MESSAGE_STATE_*` are re-exported from `@signalwire/sdk` (verified against `src/relay/index.ts:66-107`). All other constants listed (PROTOCOL_VERSION, AGENT_STRING, DEFAULT_RELAY_HOST, METHOD_*, END_REASON_*, PLAY_STATE_*, RECORD_STATE_*, DETECT_TYPE_*, ROOM_STATE_*, RECONNECT_*, MESSAGE_TERMINAL_STATES, CALL_STATES, EVENT_AUTHORIZATION_STATE) exist in constants.ts but aren't re-exported — note prevents user confusion about import failures. Values checked individually against constants.ts and all match.
+- `[events.mdx]` FIXED (P2 x 19 systematic) — RelayEvent base (eventType/params/callId/timestamp) matches src 12-40. 19 event-class examples used typed event classes in handler signatures (e.g., `(event: PlayEvent) => …`) but didn't import those classes — examples would fail TS type check as written. Used Python AST-style script to backtrack from each handler to the preceding `import { RelayClient } from '@signalwire/sdk';` and add the referenced event class. All 21 examples now import their event class correctly.
+
+### Relay Audit Summary
+
+**Total:** 93 files audited (45 call/ + 31 actions/ + 10 client/ + 3 message/ + 4 root).
+**Fixes:** ~25 distinct per-file fixes + 1 systematic 91-file sweep (SIGNALWIRE_API_TOKEN) + 1 systematic 19-file sweep (event class imports).
+
+**Highest-impact fixes:**
+1. **wait(timeout) unit confusion (seconds not ms)** — surfaced on Action.wait (prose), DetectAction example, `dialTimeout`, `message.wait` prose, and 3 example calls. Would have produced apparent hangs in user code (timeouts many orders of magnitude too long).
+2. **SIGNALWIRE_API_TOKEN env var** — client/index doc claimed `SIGNALWIRE_TOKEN`; SDK falls back to `SIGNALWIRE_API_TOKEN`. Without user setting the right env var, the SDK's auto-fallback silently did nothing.
+3. **sendMessage `to`/`from` vs `toNumber`/`fromNumber`** — 6 examples + 2 ParamFields incorrectly showed `to`/`from`; actual SDK options are `toNumber`/`fromNumber`. Would fail at runtime since the SDK strictly validates body/media.
+4. **Event class imports missing** — 19 typed-event examples referenced classes (CallStateEvent, PlayEvent, etc.) without importing them.
+5. **speech object keys in collect pass-through** — 3 files had `speech: { endSilenceTimeout: 2.0 }` (camelCase); the `speech` object is passed unchanged to the RELAY server which expects snake_case (`end_silence_timeout`).
+6. **maxActiveCalls missing from client/index docs** — documented in Python, source of truth in src/RelayClient.ts:118/152-158, default 1000, env var `RELAY_MAX_ACTIVE_CALLS`. Added.
+7. **Async Disposable missing** — TS `Symbol.asyncDispose` implementation (src 182) wasn't documented; Python counterpart has `async with` section. Added TS equivalent with `await using` example.
+8. **on-call/on-message Returns type** — both documented `void` but source returns the handler (decorator pattern support).
+
+**Coverage gaps (P4) not fixed:**
+- `Call.toString()` — internal repr; intentional.
+- Constants doc lists constants not re-exported from `@signalwire/sdk` root — flagged via Note rather than removing.
+
+**Systematic patterns uncovered (for future SDK doc authoring):**
+1. Timeout units must be stated explicitly in both prose AND matching examples; TS/JS conventions default to milliseconds, Python SDK convention is seconds, and TS mirrored Python — a steady source of confusion.
+2. Options object pass-through (where TS SDK wraps an opaque `Record<string, unknown>` passed to a RELAY server) must document the server-side key casing, not the TS idiomatic casing — the SDK doesn't translate.
+3. Examples that show typed event handlers need explicit type imports — language-specific issue that Python doesn't have.
+
+

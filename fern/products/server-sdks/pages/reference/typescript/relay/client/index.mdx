@@ -32,21 +32,28 @@ token. Credentials can be passed directly or read from environment variables.
 </ParamField>
 
 <ParamField path="token" type="string" toc={true}>
-  API token for authentication. Set via constructor or `SIGNALWIRE_TOKEN` environment variable.
+  API token for authentication. Set via constructor or `SIGNALWIRE_API_TOKEN` environment variable.
 </ParamField>
 
 <ParamField path="jwtToken" type="string" toc={true}>
-  JWT token for alternative authentication. Read from the `SIGNALWIRE_JWT_TOKEN` environment variable.
+  JWT token for alternative authentication. Set via constructor or `SIGNALWIRE_JWT_TOKEN` environment variable.
   When provided, `project` and `token` are not required.
 </ParamField>
 
-<ParamField path="host" type="string" toc={true}>
+<ParamField path="host" type="string" default="relay.signalwire.com" toc={true}>
   SignalWire space hostname (e.g., `your-space.signalwire.com`). Set via constructor or `SIGNALWIRE_SPACE`
-  environment variable. Defaults to `relay.signalwire.com`.
+  environment variable.
 </ParamField>
 
-<ParamField path="contexts" type="string[]" toc={true}>
+<ParamField path="contexts" type="string[]" default="[]" toc={true}>
   List of contexts to subscribe to for inbound call and message events.
+</ParamField>
+
+<ParamField path="maxActiveCalls" type="number | undefined" default="1000" toc={true}>
+  Maximum number of concurrent inbound calls the client will track. Calls
+  arriving beyond this limit are dropped with a log warning. Set via constructor
+  or `RELAY_MAX_ACTIVE_CALLS` environment variable. Constructor-only -- not
+  accessible as a public attribute after initialization.
 </ParamField>
 
 <ParamField path="relayProtocol" type="string" toc={true}>
@@ -89,6 +96,34 @@ token. Credentials can be passed directly or read from environment variables.
   </Card>
 </CardGroup>
 
+## **Async Disposable**
+
+`RelayClient` implements `Symbol.asyncDispose`, so it can be used with the
+`await using` statement for scoped connections. The client disconnects
+automatically when the scope exits.
+
+```typescript {4-5}
+import { RelayClient } from '@signalwire/sdk';
+
+async function main() {
+  await using client = new RelayClient({
+    project: process.env.SIGNALWIRE_PROJECT_ID!,
+    token: process.env.SIGNALWIRE_API_TOKEN!,
+    contexts: ['default'],
+  });
+  await client.connect();
+  const call = await client.dial([
+    [{ type: 'phone', params: { to_number: '+15559876543', from_number: '+15551234567' } }],
+  ]);
+  // Automatically disconnects on exit
+}
+
+await main();
+```
+
+For environments without `await using` support, use try/finally with
+`disconnect()`.
+
 ## **Example**
 
 ```typescript {3}
@@ -96,7 +131,7 @@ import { RelayClient } from '@signalwire/sdk';
 
 const client = new RelayClient({
   project: process.env.SIGNALWIRE_PROJECT_ID!,
-  token: process.env.SIGNALWIRE_TOKEN!,
+  token: process.env.SIGNALWIRE_API_TOKEN!,
   contexts: ['default']
 });
 
