@@ -42,11 +42,7 @@ Get current date and time information with timezone support. This is one of the 
 
 **Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `default_timezone` | string | Default timezone if none specified | "UTC" |
-| `tool_name_time` | string | Custom name for time function | "get_current_time" |
-| `tool_name_date` | string | Custom name for date function | "get_current_date" |
+This skill takes no configuration parameters. Timezone is specified per call via the `timezone` argument on `get_current_time`; UTC is the default when omitted.
 
 **Output format:**
 
@@ -66,18 +62,18 @@ Get current date and time information with timezone support. This is one of the 
 - Doesn't do time math or calculate durations
 - Doesn't handle historical dates
 
-| Language | Adding datetime with config |
-|----------|----------------------------|
-| Python | `self.add_skill("datetime", {"default_timezone": "America/New_York"})` |
-| TypeScript | `await agent.addSkillByName('datetime', { default_timezone: 'America/New_York' })` |
+| Language | Adding datetime |
+|----------|-----------------|
+| Python | `self.add_skill("datetime")` |
+| TypeScript | `await agent.addSkillByName('datetime')` |
 {/*
 
-| Go | `a.AddSkill("datetime", map[string]any{"default_timezone": "America/New_York"})` |
-| Ruby | `agent.add_skill('datetime', default_timezone: 'America/New_York')` |
-| Java | `agent.addSkill("datetime", Map.of("default_timezone", "America/New_York"))` |
-| Perl | `$agent->add_skill('datetime', { default_timezone => 'America/New_York' })` |
-| C++ | `agent.add_skill("datetime", {{"default_timezone", "America/New_York"}})` |
-| PHP | `$agent->addSkill('datetime', ['default_timezone' => 'America/New_York'])` |
+| Go | `a.AddSkill("datetime", nil)` |
+| Ruby | `agent.add_skill('datetime')` |
+| Java | `agent.addSkill("datetime")` |
+| Perl | `$agent->add_skill('datetime')` |
+| C++ | `agent.add_skill("datetime")` |
+| PHP | `$agent->addSkill('datetime')` |
 
 */}
 
@@ -89,9 +85,7 @@ class TimeAgent(AgentBase):
         super().__init__(name="time-agent")
         self.add_language("English", "en-US", "rime.spore")
 
-        self.add_skill("datetime", {
-            "default_timezone": "America/New_York"
-        })
+        self.add_skill("datetime")
 
         self.prompt_add_section(
             "Role",
@@ -111,10 +105,7 @@ Perform mathematical calculations safely. The skill uses a secure expression eva
 
 **Parameters:**
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `tool_name` | string | Custom function name | "calculate" |
-| `tool_description` | string | Custom description | "Perform calculations" |
+This skill takes no configuration parameters. The registered tool is always named `calculate`.
 
 **Supported operations:**
 
@@ -177,14 +168,18 @@ Search the web using Google Custom Search API. Results are filtered for quality 
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `api_key` | string | Google API key | Required |
-| `search_engine_id` | string | Search engine ID | Required |
+| `api_key` | string | Google API key (falls back to `GOOGLE_SEARCH_API_KEY`) | Required |
+| `search_engine_id` | string | Search engine ID (falls back to `GOOGLE_SEARCH_ENGINE_ID`) | Required |
+| `tool_name` | string | Custom function name (set per instance) | "web_search" |
 | `num_results` | integer | Results to return | 3 |
+| `delay` | number | Seconds between requests | 0.5 |
+| `max_content_length` | integer | Max characters of scraped page content | 32768 |
+| `oversample_factor` | number | Fetch extra results then re-rank | 2.5 |
 | `min_quality_score` | number | Quality threshold (0-1) | 0.3 |
-| `tool_name` | string | Custom function name | "web_search" |
-| `tool_description` | string | Custom description | "Search the web" |
+| `no_results_message` | string | Message returned when nothing matches | default |
+| `safe_search` | string | `"off"`, `"medium"`, or `"high"` | "medium" |
 
-**Multi-instance support:** Yes - add multiple instances for different search engines (news, docs, etc.)
+**Multi-instance support:** Yes - add multiple instances with unique `tool_name` values (e.g. `search_news`, `search_docs`).
 
 ```python
 from signalwire import AgentBase
@@ -220,9 +215,8 @@ Search Wikipedia for information. A free, no-API-key alternative to web search f
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `language` | string | Wikipedia language code | "en" |
-| `sentences` | integer | Sentences to return per result | 3 |
-| `tool_name` | string | Custom function name | "search_wikipedia" |
+| `num_results` | integer | Max articles returned (1-5) | 1 |
+| `no_results_message` | string | Message returned when nothing matches | default template |
 
 ```python
 from signalwire import AgentBase
@@ -233,7 +227,7 @@ class WikiAgent(AgentBase):
         self.add_language("English", "en-US", "rime.spore")
 
         self.add_skill("wikipedia_search", {
-            "sentences": 5  # More detailed summaries
+            "num_results": 3  # Return up to three articles
         })
 
         self.prompt_add_section(
@@ -262,9 +256,9 @@ Get current weather information for locations worldwide. Commonly used for small
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `api_key` | string | WeatherAPI.com API key | Required |
+| `api_key` | string | WeatherAPI.com API key (falls back to `WEATHER_API_KEY`) | Required |
 | `tool_name` | string | Custom function name | "get_weather" |
-| `tool_description` | string | Custom description | "Get weather" |
+| `units` | string | `"metric"`, `"imperial"`, `"standard"`, `"celsius"`, or `"fahrenheit"` | "fahrenheit" |
 
 ```python
 from signalwire import AgentBase
@@ -298,7 +292,6 @@ Tell jokes to lighten the mood or entertain callers. Uses a curated joke databas
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `category` | string | Joke category filter | None (random) |
 | `tool_name` | string | Custom function name | "tell_joke" |
 
 ```python
@@ -330,13 +323,21 @@ Play audio files in the background during calls. Audio plays while conversation 
 
 **Parameters:**
 
+This skill supports two configuration styles:
+
+- **Catalog mode** — preload named files via `files`, caller selects by `key`:
+
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `audio_url` | string | URL of audio file to play | Required |
-| `volume` | number | Playback volume (0.0-1.0) | 0.5 |
-| `loop` | boolean | Loop the audio | false |
-| `tool_name_play` | string | Custom play function name | "play_background_file" |
-| `tool_name_stop` | string | Custom stop function name | "stop_background_file" |
+| `tool_name` | string | Custom play function name | "play_background_file" |
+| `files` | array | List of `{ key, description, url, wait? }` entries | Required |
+
+- **Free-form mode** — caller supplies a URL at call time (gated by `allowed_domains`):
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `default_file_url` | string | URL played when no argument is provided | Required |
+| `allowed_domains` | array | Whitelisted domains for caller-supplied URLs | Required |
 
 **Supported formats:** MP3, WAV, OGG
 
@@ -349,9 +350,13 @@ class MusicAgent(AgentBase):
         self.add_language("English", "en-US", "rime.spore")
 
         self.add_skill("play_background_file", {
-            "audio_url": "https://example.com/hold-music.mp3",
-            "volume": 0.3,  # Lower volume for background
-            "loop": True
+            "files": [
+                {
+                    "key": "hold_music",
+                    "description": "Looping hold music",
+                    "url": "https://example.com/hold-music.mp3",
+                }
+            ]
         })
 ```
 
@@ -361,9 +366,24 @@ Transfer calls to another SWML endpoint.
 
 **Functions:**
 
-- `transfer_to_swml` - Transfer to SWML URL
+- `transfer_call` (default name) - Transfer based on matched pattern
 
 **Requirements:** None
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `transfers` | object | Pattern → `{ url \| address, message?, return_message?, post_process?, final?, from_addr? }` | Required (or use `patterns`) |
+| `patterns` | array | Alternative shape: list of pattern entries | Required (or use `transfers`) |
+| `allow_arbitrary` | boolean | Accept caller-supplied URL instead of matching a pattern | false |
+| `tool_name` | string | Custom function name | "transfer_call" |
+| `description` | string | Tool description | default |
+| `parameter_name` | string | Argument name the LLM supplies | "transfer_type" |
+| `parameter_description` | string | Argument description | default |
+| `default_message` | string | Message when no pattern matches | default |
+| `default_post_process` | boolean | Default for transferred calls returning to the agent | false |
+| `required_fields` | object | Extra per-pattern required fields | `{}` |
 
 ```python
 from signalwire import AgentBase
@@ -374,8 +394,12 @@ class TransferAgent(AgentBase):
         self.add_language("English", "en-US", "rime.spore")
 
         self.add_skill("swml_transfer", {
-            "swml_url": "https://your-server.com/other-agent",
-            "description": "Transfer to specialist"
+            "transfers": {
+                "specialist": {
+                    "url": "https://your-server.com/other-agent",
+                    "message": "Transferring you to a specialist."
+                }
+            }
         })
 ```
 
@@ -385,9 +409,26 @@ Search SignalWire DataSphere documents.
 
 **Functions:**
 
-- `search_datasphere` - Search uploaded documents
+- `search_knowledge` (default name) - Search uploaded documents
 
 **Requirements:** DataSphere API credentials
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `space_name` | string | DataSphere space name | Required |
+| `project_id` | string | Project ID (falls back to `SIGNALWIRE_PROJECT_ID`) | Required |
+| `token` | string | API token (falls back to `SIGNALWIRE_TOKEN`) | Required |
+| `document_id` | string | Document ID to search within | Required |
+| `tool_name` | string | Custom function name | "search_knowledge" |
+| `count` | integer | Results to return (1-10) | 1 |
+| `distance` | number | Distance threshold (0-10) | 3.0 |
+| `tags` | array | Filter by document tags | — |
+| `language` | string | Language filter | — |
+| `pos_to_expand` | array | POS tags to expand (`NOUN`, `VERB`, `ADJ`, `ADV`) | — |
+| `max_synonyms` | integer | Synonym expansion limit (1-10) | — |
+| `no_results_message` | string | Message when nothing matches | default |
 
 ```python
 from signalwire import AgentBase
@@ -400,7 +441,8 @@ class KnowledgeAgent(AgentBase):
         self.add_skill("datasphere", {
             "space_name": "your-space",
             "project_id": "YOUR_PROJECT_ID",
-            "api_token": "YOUR_API_TOKEN"
+            "token": "YOUR_API_TOKEN",
+            "document_id": "your-document-id"
         })
 ```
 
@@ -410,9 +452,34 @@ Local vector search using .swsearch index files.
 
 **Functions:**
 
-- `search_knowledge` - Search local vector index
+- Dynamic name (default `search_knowledge`) - Search a local vector index
 
 **Requirements:** Search extras installed (`pip install "signalwire-sdk[search]"`)
+
+**Parameters:**
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `tool_name` | string | Custom function name | "search_knowledge" |
+| `index_file` | string | SQLite `.swsearch` path (SQLite backend) | — |
+| `backend` | string | `"sqlite"` or `"pgvector"` | "sqlite" |
+| `connection_string` | string | PostgreSQL URL (pgvector backend) | — |
+| `collection_name` | string | Table/collection name (pgvector backend) | — |
+| `build_index` | boolean | Rebuild index on startup | false |
+| `source_dir` | string | Source directory when building | — |
+| `remote_url` | string | Remote search-server URL (alternative to local index) | — |
+| `index_name` | string | Named index on remote server | "default" |
+| `count` | integer | Results to return (1-20) | 5 |
+| `similarity_threshold` | number | Minimum score (0.0-1.0) | 0.0 |
+| `tags` | array | Filter results by tag | `[]` |
+| `global_tags` | array | Always-applied tag filter | `[]` |
+| `file_types` | array | File extensions to index | `["md","txt","pdf","docx","html"]` |
+| `exclude_patterns` | array | Glob patterns to skip | defaults |
+| `no_results_message` | string | Message when nothing matches | default template |
+| `response_prefix` | string | Prepended to result text | — |
+| `response_postfix` | string | Appended to result text | — |
+| `max_content_length` | integer | Max result chars | 32768 |
+| `description` | string | Tool description override | — |
 
 ```python
 from signalwire import AgentBase
@@ -423,7 +490,7 @@ class LocalSearchAgent(AgentBase):
         self.add_language("English", "en-US", "rime.spore")
 
         self.add_skill("native_vector_search", {
-            "index_path": "/path/to/knowledge.swsearch",
+            "index_file": "/path/to/knowledge.swsearch",
             "tool_name": "search_docs"
         })
 ```
@@ -500,9 +567,12 @@ Validate addresses and compute driving routes using Google Maps. Supports geocod
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `api_key` | string | Google Maps API key | Required |
-| `lookup_tool_name` | string | Custom name for address lookup function | "lookup_address" |
-| `route_tool_name` | string | Custom name for route computation function | "compute_route" |
+| `api_key` | string | Google Maps API key (falls back to `GOOGLE_MAPS_API_KEY`) | Required |
+| `lookup_tool_name` | string | Address lookup function name | "lookup_address" |
+| `route_tool_name` | string | Route computation function name | "compute_route" |
+| `geocode_tool_name` | string | Reverse-geocoding function name | "geocode_address" |
+| `route_by_coords_tool_name` | string | Coord-based route function name | "compute_route_by_coords" |
+| `default_mode` | string | `"driving"`, `"walking"`, `"bicycling"`, or `"transit"` | "driving" |
 
 ```python
 from signalwire import AgentBase
@@ -537,8 +607,9 @@ Gather answers to a configurable list of questions. This is the skill version of
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
-| `questions` | list | List of question dictionaries (key_name, question_text, confirm) | Required |
+| `questions` | list | List of question dictionaries (`key_name`, `question_text`, `confirm`, `prompt_add`) | Required |
 | `prefix` | string | Prefix for tool names and namespace (enables multi-instance) | None |
+| `completion_message` | string | Message read after the last question | default template |
 
 **Multi-instance support:** Yes - use the `prefix` parameter to run multiple question sets on a single agent. With `prefix="intake"`, tools become `intake_start_questions` and `intake_submit_answer`, and state is stored under `skill:intake` in global_data.
 
@@ -582,7 +653,18 @@ Load Claude Code-style SKILL.md files as agent tools. Each SKILL.md file in the 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `skills_path` | string | Path to directory containing SKILL.md files | Required |
+| `include` | array | Glob patterns of SKILL.md files to load | `["*"]` |
+| `exclude` | array | Glob patterns to skip | `[]` |
 | `tool_prefix` | string | Prefix for generated function names | "claude_" |
+| `prompt_title` | string | Section title added to agent prompt | "Claude Skills" |
+| `prompt_intro` | string | Prose introducing the loaded skills | default template |
+| `skill_descriptions` | object | Override descriptions, keyed by skill name | `{}` |
+| `response_prefix` | string | Prepended to each skill response | — |
+| `response_postfix` | string | Appended to each skill response | — |
+| `allow_shell_injection` | boolean | Permit shell metacharacters in arguments | false |
+| `allow_script_execution` | boolean | Permit running scripts referenced by a skill | false |
+| `ignore_invocation_control` | boolean | Bypass per-skill invocation gating | false |
+| `shell_timeout` | integer | Shell command timeout (seconds) | 30 |
 
 ```python
 from signalwire import AgentBase
