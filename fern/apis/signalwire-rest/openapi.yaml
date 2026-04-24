@@ -291,6 +291,11 @@ tags:
     externalDocs:
       url: https://signalwire.com/docs/apis
       description: Developer documentation on Message API endpoints
+  - name: Messages
+    description: Endpoints for sending and redacting messages
+    externalDocs:
+      url: https://signalwire.com/docs/apis
+      description: Developer documentation on Message API endpoints
   - name: Voice Logs
     description: Endpoints related to accessing voice logs
     externalDocs:
@@ -6053,6 +6058,121 @@ paths:
                 $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
       tags:
         - Message Logs
+  /api/messaging/messages:
+    post:
+      operationId: create_message
+      summary: Send a message
+      description: |-
+        Create and queue an outbound SMS or MMS message for delivery. The system determines whether the message is SMS or MMS based on the presence of `media` or the `send_as_mms` flag. The `from` number must be a purchased SignalWire phone number on the authenticated project.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Messaging_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters: []
+      responses:
+        '201':
+          description: Response returned when a message is successfully created and queued for delivery.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message.Message'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message.MessagesCreateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Messages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message.CreateMessageRequest'
+  /api/messaging/messages/{message_id}:
+    patch:
+      operationId: update_message
+      summary: Redact a message
+      description: |-
+        Redact the body of a previously sent message. This endpoint clears the message body for compliance, privacy, or moderation purposes — it does not support arbitrary updates to message attributes. The only accepted value for `body` is an empty string (`""`); any other value is rejected.
+
+        Messages that are still in progress (`queued` or `initiated`) cannot be redacted. Messages in terminal states such as `delivered`, `undelivered`, or `failed` are eligible. Once redacted, the original body is overwritten and cannot be recovered.
+
+        The `:message_id` path parameter accepts either a `MessageSegment` ID (the ID returned by the create endpoint and shown in `/api/messaging/logs`) or the underlying `RelayMessage` ID.
+
+        #### Permissions
+
+        The API token used to authenticate must have the following scope(s) enabled to make a successful request: _Messaging_.
+
+        [Learn more about API scopes](/docs/platform/your-signalwire-api-space).
+      parameters:
+        - $ref: '#/components/parameters/Message.MessagePathID'
+      responses:
+        '200':
+          description: Response returned when a message has been successfully redacted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message.Message'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode400'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode401'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode404'
+        '422':
+          description: The request contains invalid parameters. See errors for details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message.MessagesUpdateStatusCode422'
+        '500':
+          description: An internal server error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Types.StatusCodes.StatusCode500'
+      tags:
+        - Messages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message.UpdateMessageRequest'
   /api/project/tokens:
     post:
       operationId: create_token
@@ -12184,6 +12304,14 @@ components:
       description: Unique ID of the log.
       schema:
         $ref: '#/components/schemas/uuid'
+        format: uuid
+    Message.MessagePathID:
+      name: message_id
+      in: path
+      required: true
+      description: The unique ID of the message. Accepts either a `MessageSegment` ID (the ID returned by create and shown in logs) or the underlying `RelayMessage` ID.
+      schema:
+        type: string
         format: uuid
     MfaRequestIdPath:
       name: mfa_request_id
@@ -28884,6 +29012,48 @@ components:
           examples:
             - 0.00415
       description: Details on charges associated with this log.
+    Message.CreateMessageRequest:
+      type: object
+      required:
+        - to
+        - from
+      properties:
+        to:
+          type: string
+          description: Destination phone number in E.164 format (`+` followed by 5-17 digits). Also accepts passthrough numbers like `988`/`+988`.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Source phone number. Must be a purchased SignalWire phone number on the project in E.164 format, or a shortcode (5-6 digits). Verified caller IDs are not permitted.
+          examples:
+            - '+15559876543'
+        body:
+          type: string
+          description: Message body text. Required if `media` is not provided. Subject to provider-specific character limits.
+          examples:
+            - 'Your order #12345 has shipped!'
+        media:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Array of HTTP or HTTPS URLs for media attachments. Presence of media makes the message MMS. Maximum 8 items.
+          examples:
+            - - https://example.com/tracking.png
+        send_as_mms:
+          type: boolean
+          description: Force the message to be sent as MMS even when no media attachments are provided.
+          examples:
+            - false
+          default: false
+        status_callback:
+          type: string
+          format: uri
+          description: A valid URL to receive message status callback events at each state change.
+          examples:
+            - https://example.com/webhooks/message-status
+      description: Request body for sending a new SMS or MMS message.
     Message.LogListResponse:
       type: object
       required:
@@ -29037,6 +29207,135 @@ components:
           examples:
             - '2024-05-06T12:20:00Z'
       description: Response model for message log retrieve endpoint
+    Message.Message:
+      type: object
+      required:
+        - id
+        - from
+        - to
+        - body
+        - status
+        - direction
+        - kind
+        - media
+        - number_of_segments
+        - error_code
+        - error_message
+        - created_at
+        - project_id
+        - status_callback_url
+        - message_uri
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The unique ID of the message. This is the `MessageSegment` ID, consistent with the dashboard and the `/api/messaging/logs` endpoint.
+          examples:
+            - c2d3e4f5-a6b7-8901-cdef-234567890abc
+        from:
+          type: string
+          description: The source phone number.
+          examples:
+            - '+15559876543'
+        to:
+          type: string
+          description: The destination phone number.
+          examples:
+            - '+15551234567'
+        body:
+          type: string
+          description: The message body text. Returns an empty string when the message has been redacted.
+          examples:
+            - 'Your order #12345 has shipped!'
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Message.MessageStatus'
+          description: Delivery state of the message.
+          examples:
+            - queued
+        direction:
+          allOf:
+            - $ref: '#/components/schemas/Message.MessageDirection'
+          description: The direction of the message.
+          examples:
+            - outbound
+        kind:
+          allOf:
+            - $ref: '#/components/schemas/Message.MessageKind'
+          description: The kind of message.
+          examples:
+            - sms
+        media:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Array of URLs for any media attachments on the message. Empty for SMS.
+          examples:
+            - []
+        number_of_segments:
+          type: integer
+          format: int32
+          description: Number of segments the message body was split into for delivery.
+          examples:
+            - 1
+        error_code:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Provider-specific error code if delivery failed. Null when no error occurred.
+          examples:
+            - null
+        error_message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Human-readable error message if delivery failed. Null when no error occurred.
+          examples:
+            - null
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the message was created.
+          examples:
+            - '2024-05-06T12:20:00Z'
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The ID of the project the message belongs to.
+          examples:
+            - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        status_callback_url:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+          description: Callback URL configured to receive message status events. Null if no callback was configured.
+          examples:
+            - null
+        message_uri:
+          type: string
+          description: Relative URL for retrieving the message via the `/api/messaging/logs` endpoint.
+          examples:
+            - /api/messaging/logs/c2d3e4f5-a6b7-8901-cdef-234567890abc
+      description: A message record. Returned by the create and update endpoints.
+    Message.MessageDirection:
+      type: string
+      enum:
+        - inbound
+        - outbound
+        - outbound-api
+        - outbound-call
+        - outbound-reply
+      description: The direction of a message.
+    Message.MessageKind:
+      type: string
+      enum:
+        - sms
+        - mms
+      description: The kind of message.
     Message.MessageLog:
       type: object
       required:
@@ -29187,6 +29486,71 @@ components:
               message: This value must be a DateTime
               attribute: created_before
               url: https://signalwire.com/docs/apis/error-codes
+    Message.MessageStatus:
+      type: string
+      enum:
+        - queued
+        - initiated
+        - sent
+        - delivered
+        - undelivered
+        - failed
+        - read
+      description: Delivery state of a message.
+    Message.MessagesCreateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: invalid_from_number
+              message: From must be a valid purchased phone number or WhatsApp business number from your SignalWire project.
+              attribute: from
+              url: https://developer.signalwire.com/rest/overview/error-codes/#invalid_from_number
+    Message.MessagesUpdateStatusCode422:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Types.StatusCodes.RestApiErrorItem'
+          description: List of validation errors.
+      description: The request contains invalid parameters. See errors for details.
+      examples:
+        - statusCode: 422
+          errors:
+            - type: validation_error
+              code: body_must_be_empty
+              message: must be an empty string to redact the message
+              attribute: body
+              url: https://developer.signalwire.com/rest/overview/error-codes/#body_must_be_empty
+            - type: validation_error
+              code: cannot_redact_in_progress_message
+              message: Cannot redact a message that is in progress.
+              attribute: base
+              url: https://developer.signalwire.com/rest/overview/error-codes/#cannot_redact_in_progress_message
+    Message.UpdateMessageRequest:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+          description: Must be an empty string (`""`) to redact the message. Any non-empty value is rejected with `body_must_be_empty`. This is the only field that can be updated.
+          examples:
+            - ''
+      description: Request body for redacting the body of a previously sent message. Only `body` may be updated, and it must be an empty string.
     MessagingChannel:
       type: object
       required:
