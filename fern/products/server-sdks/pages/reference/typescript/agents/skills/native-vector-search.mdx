@@ -1,56 +1,211 @@
 ---
 title: "NativeVectorSearchSkill"
 slug: /reference/typescript/agents/skills/native-vector-search
-description: In-memory document search using TF-IDF-like word overlap scoring.
+description: Vector + keyword document search against a local .swsearch index, an in-memory document array, or a remote search server.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-In-memory document search using TF-IDF-like word overlap scoring. No external
-dependencies or API keys required. Documents are provided via config and indexed
-at construction time.
+Search documents using vector similarity and keyword matching. Supports three
+modes:
+
+- **In-memory (TF-IDF)** — supply a `documents` array in config; the skill
+  tokenizes and indexes at startup (TypeScript-specific fast path).
+- **Local (SQLite)** — point `index_file` at a `.swsearch` index, or set
+  `build_index: true` and `source_dir` to index at startup.
+- **Remote (network)** — point `remote_url` at a search server and optionally
+  name the index via `index_name`. Validated by the SSRF guard before each
+  request; health check uses a 5-second timeout.
 
 **Class:** `NativeVectorSearchSkill`
 
-**Tools:** `search_documents`
+**Tools:** `search_knowledge` (default — `tool_name` override supported)
 
 **Env vars:** None
 
-**Multi-instance:** Yes
+**Multi-instance:** yes (distinguished by `tool_name` + `index_file`)
 
-<ParamField path="tool_name" type="string" toc={true}>
-  Custom tool name for this instance. Required when using multiple instances.
+## Core Parameters
+
+<ParamField path="tool_name" type="string" default="search_knowledge" toc={true}>
+  Custom tool name for this skill instance. Required when registering multiple
+  instances on the same agent.
 </ParamField>
 
-<ParamField path="documents" type={"Record<string, unknown>[]"} toc={true}>
-  Array of documents to index. Each object has:
-  - `id` (string, required) -- Unique document identifier.
-  - `text` (string, required) -- Full text content of the document.
-  - `metadata` (object, optional) -- Metadata associated with the document.
+<ParamField path="index_file" type="string" toc={true}>
+  Path to a local `.swsearch` SQLite index file.
 </ParamField>
 
-<ParamField path="num_results" type="number" default="3" toc={true}>
-  Default number of top results to return.
+<ParamField path="build_index" type="boolean" default="false" toc={true}>
+  Whether to build the index from source files at startup.
 </ParamField>
 
-<ParamField path="distance_threshold" type="number" default="0" toc={true}>
-  Minimum relevance score threshold.
+<ParamField path="source_dir" type="string" toc={true}>
+  Directory containing documents to index. Required when `build_index` is
+  `true`.
 </ParamField>
 
-```typescript {6-13}
+<ParamField path="remote_url" type="string" toc={true}>
+  URL of a remote search server (network mode). Validated by the SSRF guard —
+  private, loopback, and cloud-metadata endpoints are rejected.
+</ParamField>
+
+<ParamField path="index_name" type="string" default="default" toc={true}>
+  Name of the index on a remote server. Only used with `remote_url`.
+</ParamField>
+
+<ParamField path="documents" type="object[]" toc={true}>
+  In-memory array of documents to index (TypeScript-specific). Each entry has
+  `id` (string), `text` (string), optional `metadata` (object), and optional
+  `tags` (string[]).
+</ParamField>
+
+## Search Parameters
+
+<ParamField path="count" type="integer" default="5" toc={true}>
+  Number of search results to return (range `1-20`).
+</ParamField>
+
+<ParamField path="similarity_threshold" type="number" default="0.0" toc={true}>
+  Minimum similarity score for results (`0.0` — no limit, `1.0` — exact match).
+</ParamField>
+
+<ParamField path="keyword_weight" type="number" toc={true}>
+  Manual keyword weight in the hybrid TF-IDF + keyword score
+  (range `0.0-1.0`). Overrides the automatic default of `0.3`.
+</ParamField>
+
+<ParamField path="model_name" type="string" default="mini" toc={true}>
+  Embedding model for remote/SQLite modes. Shortcuts: `"mini"` (fastest,
+  384 dims), `"base"` or `"large"` (768 dims). Full model names also accepted.
+</ParamField>
+
+## Content Parameters
+
+<ParamField path="tags" type="string[]" default="[]" toc={true}>
+  Tag filter applied to search queries. Only documents carrying at least one
+  matching tag are returned.
+</ParamField>
+
+<ParamField path="global_tags" type="string[]" default="[]" toc={true}>
+  Tags applied to every document at index-build time.
+</ParamField>
+
+<ParamField path="file_types" type="string[]" default={'["md", "txt", "pdf", "docx", "html"]'} toc={true}>
+  File extensions to include when building an index from `source_dir`.
+</ParamField>
+
+<ParamField path="exclude_patterns" type="string[]" toc={true}>
+  Glob patterns excluded from index builds. Defaults include
+  `**/node_modules/**`, `**/.git/**`, `**/dist/**`, `**/build/**`.
+</ParamField>
+
+<ParamField path="max_content_length" type="integer" default="32768" toc={true}>
+  Maximum total response size in characters (distributed across all results).
+</ParamField>
+
+## Response Parameters
+
+<ParamField path="no_results_message" type="string" default="No information found for '{query}'" toc={true}>
+  Message returned when no results match. Supports a `{query}` placeholder
+  that is substituted with the user's query text.
+</ParamField>
+
+<ParamField path="response_prefix" type="string" default="" toc={true}>
+  Text prepended to the search response.
+</ParamField>
+
+<ParamField path="response_postfix" type="string" default="" toc={true}>
+  Text appended to the search response.
+</ParamField>
+
+<ParamField path="response_format_callback" type="function" toc={true}>
+  Optional callback to transform the final response. Receives
+  `{ response, agent, query, results, args, count, skill }` and must return a
+  string.
+</ParamField>
+
+<ParamField path="description" type="string" default="Search the knowledge base for information" toc={true}>
+  Description of the search tool presented to the AI.
+</ParamField>
+
+<ParamField path="hints" type="string[]" default="[]" toc={true}>
+  Additional speech recognition hints for the tool.
+</ParamField>
+
+## NLP Parameters
+
+<ParamField path="nlp_backend" type="string" default="basic" toc={true}>
+  NLP backend for query processing: `"basic"`, `"spacy"`, or `"nltk"`.
+  **Deprecated** — use `query_nlp_backend` and `index_nlp_backend` instead.
+</ParamField>
+
+<ParamField path="query_nlp_backend" type="string" toc={true}>
+  NLP backend for query expansion: `"basic"`, `"spacy"`, or `"nltk"`.
+</ParamField>
+
+<ParamField path="index_nlp_backend" type="string" toc={true}>
+  NLP backend for indexing: `"basic"`, `"spacy"`, or `"nltk"`.
+</ParamField>
+
+## Backend Parameters
+
+<ParamField path="backend" type="string" default="sqlite" toc={true}>
+  Storage backend for local database mode: `"sqlite"` or `"pgvector"`. Ignored
+  when `remote_url` is set. SQLite and pgvector backends require native
+  Python-only dependencies; configurations written for the Python SDK remain
+  valid but the TypeScript SDK only exercises the in-memory (`documents`) and
+  remote (`remote_url`) paths.
+</ParamField>
+
+<ParamField path="connection_string" type="string" toc={true}>
+  PostgreSQL connection string. Required when `backend="pgvector"`.
+</ParamField>
+
+<ParamField path="collection_name" type="string" toc={true}>
+  PostgreSQL collection name. Required when `backend="pgvector"`.
+</ParamField>
+
+## Other Parameters
+
+<ParamField path="verbose" type="boolean" default="false" toc={true}>
+  Enable verbose logging during indexing and search.
+</ParamField>
+
+<ParamField path="overwrite" type="boolean" default="false" toc={true}>
+  Overwrite existing pgvector collection when building the index.
+</ParamField>
+
+## Example — in-memory documents
+
+```typescript {6-16}
 import { AgentBase, NativeVectorSearchSkill } from '@signalwire/sdk';
 
-const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
-agent.setPromptText('You are a helpful assistant.');
+const agent = new AgentBase({ name: 'kb-bot', route: '/kb' });
+agent.setPromptText('Answer questions from the knowledge base.');
 
 await agent.addSkill(new NativeVectorSearchSkill({
-  tool_name: 'search_faqs',
+  tool_name: 'search_kb',
   documents: [
-    { id: 'faq-1', text: 'To reset your password, visit the settings page...' },
-    { id: 'faq-2', text: 'Refund requests must be submitted within 30 days...' },
+    { id: 'faq-1', text: 'Hours are 9am to 5pm Monday to Friday.', tags: ['hours'] },
+    { id: 'faq-2', text: 'Returns are accepted within 30 days.', tags: ['returns'] },
   ],
-  num_results: 3,
+  count: 3,
+  similarity_threshold: 0.1,
+  keyword_weight: 0.5,
 }));
 
 agent.run();
+```
+
+## Example — remote server
+
+```typescript {6-10}
+await agent.addSkill(new NativeVectorSearchSkill({
+  remote_url: 'https://search.internal.example.com',
+  index_name: 'support-kb',
+  count: 3,
+  similarity_threshold: 0.4,
+  tags: ['public'],
+}));
 ```

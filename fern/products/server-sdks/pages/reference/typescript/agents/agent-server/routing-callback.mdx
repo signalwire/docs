@@ -1,0 +1,66 @@
+---
+title: "registerGlobalRoutingCallback"
+slug: /reference/typescript/agents/agent-server/routing-callback
+description: Register a routing callback across all agents for custom request routing.
+max-toc-depth: 3
+---
+
+[setup-sip-routing]: /docs/server-sdks/reference/typescript/agents/agent-server/sip-routing
+
+Register a custom routing callback on every registered agent at the specified path.
+When a request arrives at that path on any agent, the callback is invoked to determine
+whether to redirect the request to a different agent route.
+
+Use this alongside or instead of [`setupSipRouting()`][setup-sip-routing] when you
+need custom routing logic — for example, routing based on request body content,
+tenant IDs, or feature flags.
+
+<Note>
+The callback is also applied to agents registered **after** this method is called.
+The server stores each callback internally so new agents automatically receive it.
+</Note>
+
+## **Parameters**
+
+<ParamField path="callbackFn" type="RoutingCallback" required={true} toc={true}>
+  A function that receives the parsed request body and returns a route string
+  (e.g., `"/sales"`) to redirect the request, or `null` / `undefined` to let the
+  current agent handle it. May return a `Promise` for asynchronous routing decisions.
+  Signature: `(body: Record<string, unknown>) => string | null | undefined | Promise<string | null | undefined>`.
+</ParamField>
+
+<ParamField path="path" type="string" required={true} toc={true}>
+  The URL path where the callback is triggered (e.g., `"/route"`). Leading slashes are
+  added and trailing slashes are stripped automatically.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {21}
+import { AgentBase, AgentServer } from '@signalwire/sdk';
+
+function routeByLanguage(body: Record<string, unknown>): string | undefined {
+  const lang = (body['lang'] as string | undefined) ?? 'en';
+  if (lang.startsWith('es')) return '/spanish-agent';
+  if (lang.startsWith('fr')) return '/french-agent';
+  return undefined;
+}
+
+const english = new AgentBase({ name: 'english', route: '/english-agent' });
+english.setPromptText('You are a helpful assistant. Respond in English.');
+const spanish = new AgentBase({ name: 'spanish', route: '/spanish-agent' });
+spanish.setPromptText('You are a helpful assistant. Respond in Spanish.');
+const french = new AgentBase({ name: 'french', route: '/french-agent' });
+french.setPromptText('You are a helpful assistant. Respond in French.');
+
+const server = new AgentServer({ port: 3000 });
+server.register(english);
+server.register(spanish);
+server.register(french);
+server.registerGlobalRoutingCallback(routeByLanguage, '/route');
+await server.run();
+```

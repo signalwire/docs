@@ -1,0 +1,71 @@
+---
+title: "registerRoutingCallback"
+slug: /reference/typescript/agents/swml-service/register-routing-callback
+description: "Register routing callbacks for dynamic request handling and SIP routing."
+max-toc-depth: 3
+---
+
+[ref-serve]: /docs/server-sdks/reference/typescript/agents/swml-service/serve
+[ref-asrouter]: /docs/server-sdks/reference/typescript/agents/swml-service/as-router
+[ref-extractsipusername]: /docs/server-sdks/reference/typescript/agents/swml-service/extract-sip-username
+
+Register a callback for dynamic request routing. When a request arrives at the
+specified path, the callback inspects the POST body and decides whether to
+route the request to a different endpoint (via HTTP 307 redirect) or let
+normal SWML serving continue. Commonly used for SIP-based routing where the
+destination depends on the incoming SIP URI.
+
+A Hono endpoint is registered immediately for the specified path, serving both
+GET and POST.
+
+<Note>
+Unlike the Python SDK, the TypeScript `RoutingCallback` receives only the
+parsed request body -- not the underlying `Request` object. If you need access
+to headers or URL, use `asRouter()` and install custom middleware on the Hono
+app directly.
+</Note>
+
+## **Parameters**
+
+<ParamField path="callbackFn" type="RoutingCallback" required={true} toc={true}>
+  A function that receives the parsed JSON request body. Return a route string
+  to redirect the request (HTTP 307 preserves the POST method and body), or
+  `null` / `undefined` to continue with normal SWML document serving. May be
+  async.
+
+  Type: `(body: Record<string, unknown>) => string | null | undefined | Promise<string | null | undefined>`
+</ParamField>
+
+<ParamField path="path" type="string" default="/sip" toc={true}>
+  The URL path where this routing endpoint is created. The path is normalized:
+  a leading `/` is added if missing, trailing slashes are stripped.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+### Routing callback with SIP username
+
+```typescript {15}
+import { SWMLService } from '@signalwire/sdk';
+
+const service = new SWMLService({ name: 'sip-router', route: '/' });
+
+function routeSipCall(body: Record<string, unknown>): string | null {
+  const username = SWMLService.extractSipUsername(body);
+  if (username === 'sales') return '/agents/sales';
+  if (username === 'support') return '/agents/support';
+  return null; // Default handling
+}
+
+service.addVerb('answer', {});
+service.registerRoutingCallback(routeSipCall, '/sip');
+
+await service.serve();
+```
+
+See also [`extractSipUsername()`][ref-extractsipusername] and
+[`serve()`][ref-serve] / [`asRouter()`][ref-asrouter].

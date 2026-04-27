@@ -1,0 +1,60 @@
+---
+title: "expressMiddleware"
+slug: /reference/typescript/agents/configuration/auth-handler/express-middleware
+description: "Create an Express/Connect-compatible middleware adapter."
+max-toc-depth: 3
+---
+
+[ref-middleware]: /docs/server-sdks/reference/typescript/agents/configuration/auth-handler/middleware
+[ref-validate]: /docs/server-sdks/reference/typescript/agents/configuration/auth-handler/validate
+
+Create an Express/Connect-compatible middleware function that validates
+incoming requests against the configured authentication methods and returns a
+`401 Unauthorized` response when auth fails. Framework-agnostic equivalent of
+the Python SDK's `get_fastapi_dependency`.
+
+<Note>
+For Hono apps, use [`middleware()`][ref-middleware] instead. For standalone
+validation without a framework, use [`validate()`][ref-validate] directly.
+</Note>
+
+## **Parameters**
+
+<ParamField path="optional" type="boolean" default="false" toc={true}>
+  When `true`, unauthenticated requests are allowed through instead of being
+  rejected. Useful for progressive-auth flows where the handler downstream
+  decides whether to require credentials.
+</ParamField>
+
+## **Returns**
+
+An async Express-compatible middleware:
+`(req, res, next) => Promise<void>`.
+
+On failed auth with `optional=false`, responds with HTTP 401 and body
+`{ error: 'Unauthorized' }`. On success or when `optional=true`, calls `next()`.
+
+## **Example**
+
+```typescript {11}
+import express from 'express';
+import { AuthHandler } from '@signalwire/sdk';
+
+const auth = new AuthHandler({
+  bearerToken: 'sk_live_abc123',
+});
+
+const app = express();
+
+// Protect all /api/* routes
+app.use('/api', auth.expressMiddleware());
+
+app.get('/api/status', (req, res) => {
+  res.json({ ok: true });
+});
+
+// Public route with optional auth
+app.get('/public', auth.expressMiddleware(true), (req, res) => {
+  res.json({ authenticated: false });
+});
+```

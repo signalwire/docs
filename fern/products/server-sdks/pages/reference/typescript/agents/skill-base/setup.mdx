@@ -1,31 +1,45 @@
 ---
 title: "setup"
 slug: /reference/typescript/agents/skill-base/setup
-description: Initialize the skill and prepare resources.
+description: Initialize the skill and prepare resources. Return false to fail closed.
 max-toc-depth: 3
 ---
 
 [ref-skillbase]: /docs/server-sdks/reference/typescript/agents/skill-base
+[ref-addskill]: /docs/server-sdks/reference/typescript/agents/skill-manager/add-skill
 
 Initialize the skill: validate environment variables, initialize API clients, and
-prepare resources. Called once when the skill is loaded.
+prepare resources. Called once when the skill is loaded, before any tool
+registration.
 
-This is a concrete method with a default no-op implementation. Override it in your
-[SkillBase][ref-skillbase] subclass if you need initialization logic.
+This is a concrete method with a default that returns `true`. Override it in
+your [SkillBase][ref-skillbase] subclass when you need initialization logic or
+need to short-circuit loading on invalid config.
+
+<Note>
+Returning `false` from `setup()` causes [`SkillManager.addSkill()`][ref-addskill]
+(and `AgentBase.addSkill()`) to **fail closed**: the skill is not registered
+and the call throws. This matches the Python SDK's behavior — never silently
+continue with a half-initialized skill.
+</Note>
 
 Takes no parameters.
 
 ## **Returns**
 
-`Promise<void>`
+`Promise<boolean>` — `true` on success, `false` to signal that the skill
+cannot be loaded (invalid config, missing credentials, failed handshake, etc.).
 
 ## **Example**
 
-```typescript {2}
+```typescript {2-9}
 class MySkill extends SkillBase {
-  async setup(): Promise<void> {
-    // Initialize API connections, validate config
-    console.log('Skill setup complete');
+  override async setup(): Promise<boolean> {
+    if (!this.hasAllEnvVars()) return false;
+    const missing = await this.validatePackages();
+    if (missing.length) return false;
+    // Initialize API connections here
+    return true;
   }
 }
 ```

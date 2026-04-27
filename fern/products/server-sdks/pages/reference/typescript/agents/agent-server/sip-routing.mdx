@@ -1,0 +1,116 @@
+---
+title: "setupSipRouting"
+slug: /reference/typescript/agents/agent-server/sip-routing
+description: Configure SIP-based routing to direct calls to specific agents by username.
+max-toc-depth: 3
+---
+
+Enable SIP-based routing across all registered agents. When a SIP call arrives, the server
+extracts the username from the SIP address and routes the request to the matching agent.
+
+With `autoMap` enabled, the server automatically creates username-to-route mappings from
+each agent's name and route path. You can add explicit mappings with
+[`registerSipUsername()`](#manual-username-registration).
+
+<Note>
+Call this method **after** registering agents. Agents registered after `setupSipRouting()`
+also receive SIP routing automatically.
+</Note>
+
+## **Parameters**
+
+<ParamField path="route" type="string" default="/sip" toc={true}>
+  The URL path where SIP routing requests are handled. Each registered agent receives a
+  routing callback at this path.
+</ParamField>
+
+<ParamField path="autoMap" type="boolean" default="true" toc={true}>
+  Automatically generate SIP username mappings from agent names and route paths. For example,
+  an agent named `"sales-agent"` at route `"/sales"` gets two mappings:
+  - `"salesagent"` (agent name, lowercase alphanumeric and underscores only)
+  - `"sales"` (route path without leading slash)
+</ParamField>
+
+## **Returns**
+
+`void`
+
+<Warning>
+Calling `setupSipRouting()` more than once logs a warning and returns early.
+SIP routing can only be configured once per server.
+</Warning>
+
+---
+
+## **registerSipUsername**
+
+Create an explicit mapping from a SIP username to an agent route. The username is
+stored lowercase for case-insensitive matching. Routes are normalized: leading `/`
+is added if missing and trailing slashes are stripped.
+
+<Note>
+SIP routing must be enabled via `setupSipRouting()` before calling this method.
+If routing is not enabled, a warning is logged and the call is a no-op.
+</Note>
+
+## **Parameters**
+
+<ParamField path="username" type="string" required={true} toc={true}>
+  The SIP username to map (e.g., `"sales-team"`). Matched case-insensitively.
+</ParamField>
+
+<ParamField path="route" type="string" required={true} toc={true}>
+  The target agent route (e.g., `"/sales"`). A warning is logged if the route
+  does not correspond to a registered agent.
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Examples**
+
+### SIP routing with auto-mapping
+
+```typescript {13}
+import { AgentBase, AgentServer } from '@signalwire/sdk';
+
+const sales = new AgentBase({ name: 'sales', route: '/sales' });
+sales.setPromptText('You are a sales assistant.');
+const support = new AgentBase({ name: 'support', route: '/support' });
+support.setPromptText('You are a support assistant.');
+
+const server = new AgentServer({ port: 3000 });
+server.register(sales);
+server.register(support);
+
+server.setupSipRouting('/sip', true);
+server.registerSipUsername('help-desk', '/support');
+
+await server.run();
+```
+
+With this configuration, SIP calls are routed as follows:
+
+| SIP Address | Resolves To |
+|-------------|-------------|
+| `sip:sales@example.com` | `/sales` (auto-mapped from route) |
+| `sip:salesagent@example.com` | `/sales` (auto-mapped from agent name) |
+| `sip:help-desk@example.com` | `/support` (manual mapping) |
+
+### Manual username registration
+
+```typescript {10-12}
+import { AgentBase, AgentServer } from '@signalwire/sdk';
+
+const sales = new AgentBase({ name: 'sales', route: '/sales' });
+sales.setPromptText('You are a sales assistant.');
+
+const server = new AgentServer({ port: 3000 });
+server.register(sales);
+server.setupSipRouting('/sip');
+server.registerSipUsername('sales-team', '/sales');
+server.registerSipUsername('tech-support', '/support');
+server.registerSipUsername('accounts', '/billing');
+await server.run();
+```
