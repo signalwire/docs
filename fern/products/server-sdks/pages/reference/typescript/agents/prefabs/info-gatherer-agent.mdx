@@ -1,15 +1,15 @@
 ---
 title: "InfoGathererAgent"
 slug: /reference/typescript/agents/prefabs/info-gatherer-agent
-description: An info gatherer agent that sequentially collects named fields from a caller through conversational interaction with validation and completion callbacks.
+description: A prefab agent that collects answers to a series of questions — supporting both static and dynamic (per-request callback) modes.
 ---
 
 [agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
 [functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
 
-Sequentially collects named fields from a caller through conversational interaction.
-Tracks fields per call, validates values with optional regex patterns, and fires an
-`onComplete` callback once all required fields are gathered.
+Sequentially asks a caller a list of questions and stores each answer in
+`global_data`. Supports **static mode** (questions provided at construction)
+and **dynamic mode** (questions resolved per request via a callback).
 
 ```typescript {3}
 import { InfoGathererAgent } from '@signalwire/sdk';
@@ -19,83 +19,92 @@ const agent = new InfoGathererAgent({ /* InfoGathererConfig */ });
 
 ## InfoGathererConfig
 
-<ParamField path="fields" type="InfoGathererField[]" required={true} toc={true}>
-  Fields to collect from the caller. Each `InfoGathererField` object has:
+<ParamField path="questions" type="InfoGathererQuestion[]" toc={true}>
+  Questions to ask (static mode). Each `InfoGathererQuestion` has:
 
-  - `name` (string, required) -- Unique field name used as the key in collected data.
-  - `description` (string, required) -- Human-readable description shown to the AI agent.
-  - `required` (boolean, default `true`) -- Whether this field must be collected before completion.
-  - `validation` (RegExp | string) -- Optional validation pattern. Strings are compiled to `RegExp`.
+  - `key_name` (string, required) — key used to store the caller's answer.
+  - `question_text` (string, required) — the question to ask.
+  - `confirm` (boolean) — when `true`, the agent insists the caller confirms
+    the answer before moving on.
+
+  Omit this field to run the agent in dynamic mode (see `questionCallback` /
+  `setQuestionCallback()`).
 </ParamField>
 
-<ParamField path="introMessage" type="string" default="Hello! I need to collect some information from you. Let me walk you through it." toc={true}>
-  Opening message the agent speaks when the call starts.
+<ParamField path="questionCallback" type="InfoGathererQuestionCallback" toc={true}>
+  Convenience alternative to calling `setQuestionCallback()` after
+  construction. Consulted only when `questions` is not provided. Signature:
+
+  ```typescript
+  (queryParams, bodyParams, headers) => InfoGathererQuestion[] | Promise<InfoGathererQuestion[]>
+  ```
+
+  If the callback throws or is not registered in dynamic mode, the agent
+  falls back to a built-in two-question list (name + "how can I help").
 </ParamField>
 
-<ParamField path="confirmationMessage" type="string" default="Thank you! I have collected all the required information." toc={true}>
-  Message spoken after all required fields are gathered.
-</ParamField>
-
-<ParamField path="onComplete" type="(data: Record<string, string>) => void | Promise<void>" toc={true}>
-  Callback fired when all required fields have been collected. Receives a record of
-  field names to their collected values.
-</ParamField>
-
-<ParamField path="name" type="string" default="InfoGatherer" toc={true}>
+<ParamField path="name" type="string" default={'"info_gatherer"'} toc={true}>
   Agent display name.
+</ParamField>
+
+<ParamField path="route" type="string" default={'"/info_gatherer"'} toc={true}>
+  HTTP route for the agent.
 </ParamField>
 
 <ParamField path="agentOptions" type="Partial<AgentOptions>" toc={true}>
   Additional [`AgentBase`][agentbase] options forwarded to the constructor.
 </ParamField>
 
+## **Methods**
+
+### setQuestionCallback
+
+```typescript
+setQuestionCallback(callback: InfoGathererQuestionCallback): this
+```
+
+Register (or replace) the callback that resolves questions per request. Only
+used in dynamic mode (when `questions` was not supplied at construction).
+
 ## Built-in Tools
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `save_field` | Save a collected field value, validating against the field's pattern if configured | `field_name` (string), `value` (string) |
-| `get_status` | Get the current collection status showing collected and remaining fields | (none) |
+| Tool | Description |
+|------|-------------|
+| `start_questions` | Begin the question sequence with the first question. |
+| `submit_answer` | Submit the caller's answer to the current question and advance. |
 
-## Example
+## Example — static mode
 
 ```typescript {3}
 import { InfoGathererAgent } from '@signalwire/sdk';
 
 const agent = new InfoGathererAgent({
-  fields: [
-    { name: 'full_name', description: 'Full legal name' },
-    {
-      name: 'email',
-      description: 'Email address',
-      validation: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    },
-    {
-      name: 'phone',
-      description: 'Phone number',
-      validation: '^\\+?\\d{10,15}$',
-    },
-    {
-      name: 'preferred_date',
-      description: 'Preferred appointment date',
-    },
-    {
-      name: 'notes',
-      description: 'Any additional notes',
-      required: false,
-    },
+  questions: [
+    { key_name: 'full_name', question_text: 'What is your full name?' },
+    { key_name: 'email', question_text: 'What is your email address?', confirm: true },
+    { key_name: 'issue', question_text: 'How can we help you today?' },
   ],
-  introMessage: 'Hi! I need a few details to schedule your appointment.',
-  confirmationMessage: 'All set! Your appointment details have been recorded.',
-  onComplete: (data) => {
-    console.log('Collected data:', data);
-    // { full_name: "Jane Doe", email: "jane@example.com", ... }
-  },
-  name: 'appointment-scheduler',
+  name: 'intake-agent',
 });
 
-agent.addLanguage({ name: 'English', code: 'en-US', voice: 'rime.spore' });
-agent.promptAddSection('Brand', {
-  body: 'You are scheduling appointments for Dr. Smith\'s office.',
+agent.serve();
+```
+
+## Example — dynamic mode
+
+```typescript {3-14}
+import { InfoGathererAgent, type InfoGathererQuestion } from '@signalwire/sdk';
+
+const agent = new InfoGathererAgent({
+  questionCallback: async (queryParams) => {
+    const tenant = queryParams['tenant'] ?? 'default';
+    const rows = await db.loadQuestions(tenant);
+    return rows.map<InfoGathererQuestion>((r) => ({
+      key_name: r.key,
+      question_text: r.prompt,
+      confirm: r.requiresConfirmation,
+    }));
+  },
 });
 
 agent.serve();
@@ -107,9 +116,9 @@ agent.serve();
 import { createInfoGathererAgent } from '@signalwire/sdk';
 
 const agent = createInfoGathererAgent({
-  fields: [
-    { name: 'name', description: 'Full name' },
-    { name: 'issue', description: 'Describe your issue' },
+  questions: [
+    { key_name: 'name', question_text: 'What is your name?' },
+    { key_name: 'issue', question_text: 'Describe your issue' },
   ],
 });
 ```

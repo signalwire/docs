@@ -1,45 +1,92 @@
 ---
 title: "McpGatewaySkill"
 slug: /reference/typescript/agents/skills/mcp-gateway
-description: Placeholder skill for future Model Context Protocol (MCP) server integration.
+description: Bridge an MCP Gateway server into SWAIG functions for the agent.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Placeholder skill for future Model Context Protocol (MCP) server integration.
-Currently provides a stub `mcp_invoke` tool.
+Bridge a Model Context Protocol (MCP) Gateway service with SWAIG functions.
+The skill connects to the gateway at load time, enumerates the configured
+services and tools, and registers each as a SWAIG function on the agent.
+
+The gateway URL is validated by an SSRF guard — private, loopback, and
+cloud-metadata endpoints are rejected. Requests use retry semantics with
+`retry_attempts` and a per-request timeout of `request_timeout` seconds.
 
 **Class:** `McpGatewaySkill`
 
-**Tools:** `mcp_invoke` (placeholder, not yet functional)
+**Tools:** Dynamically registered from the gateway (prefixed by `tool_prefix`)
 
-**Env vars:** None
+**Required packages:** `undici`
 
-<ParamField path="gateway_url" type="string" toc={true}>
-  URL of the MCP gateway server.
-</ParamField>
+**Env vars:** `MCP_GATEWAY_AUTH_TOKEN`, `MCP_GATEWAY_AUTH_USER`,
+`MCP_GATEWAY_AUTH_PASSWORD`
 
-<ParamField path="tool_prefix" type="string" toc={true}>
-  Prefix for tool names from this gateway.
+<ParamField path="gateway_url" type="string" required={true} toc={true}>
+  URL of the MCP Gateway service. Must pass the SSRF guard.
 </ParamField>
 
 <ParamField path="auth_token" type="string" toc={true}>
-  Authentication token for the MCP gateway.
+  Bearer token for authentication. Falls back to the
+  `MCP_GATEWAY_AUTH_TOKEN` environment variable. Takes precedence over
+  basic auth when provided.
 </ParamField>
 
-<Note>
-This skill is a placeholder. The `mcp_invoke` tool returns a "not yet implemented"
-message. Full MCP integration is planned for a future release.
-</Note>
+<ParamField path="auth_user" type="string" toc={true}>
+  Basic-auth username (used when `auth_token` is not supplied). Falls back
+  to `MCP_GATEWAY_AUTH_USER`.
+</ParamField>
 
-```typescript {6-8}
+<ParamField path="auth_password" type="string" toc={true}>
+  Basic-auth password. Falls back to `MCP_GATEWAY_AUTH_PASSWORD`.
+</ParamField>
+
+<ParamField path="services" type="McpServiceConfig[]" default="[]" toc={true}>
+  Services to expose. Each entry has:
+
+  - `name` (string) — service name registered on the gateway.
+  - `tools` (`"*"` or `string[]`) — which tools to expose from that service.
+
+  Empty array exposes every available service/tool.
+</ParamField>
+
+<ParamField path="session_timeout" type="integer" default="300" toc={true}>
+  Gateway session timeout in seconds.
+</ParamField>
+
+<ParamField path="tool_prefix" type="string" default="mcp_" toc={true}>
+  Prefix prepended to each SWAIG function name registered from the gateway
+  (e.g., `mcp_todo_add_todo`).
+</ParamField>
+
+<ParamField path="retry_attempts" type="integer" default="3" toc={true}>
+  Number of retry attempts for failed requests.
+</ParamField>
+
+<ParamField path="request_timeout" type="integer" default="30" toc={true}>
+  Per-request timeout in seconds.
+</ParamField>
+
+<ParamField path="verify_ssl" type="boolean" default="true" toc={true}>
+  Whether to verify SSL certificates on outbound requests.
+</ParamField>
+
+## Example
+
+```typescript {6-13}
 import { AgentBase, McpGatewaySkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
 agent.setPromptText('You are a helpful assistant.');
 
 await agent.addSkill(new McpGatewaySkill({
-  gateway_url: 'http://localhost:8080',
+  gateway_url: 'https://mcp.internal.example.com',
+  services: [
+    { name: 'search', tools: '*' },
+    { name: 'calendar', tools: ['list_events', 'create_event'] },
+  ],
+  tool_prefix: 'mcp_',
 }));
 
 agent.run();

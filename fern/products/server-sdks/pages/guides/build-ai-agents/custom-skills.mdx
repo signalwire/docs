@@ -98,10 +98,9 @@ class GreetingSkill(SkillBase):
         return FunctionResult(greeting)
 ```
 </Tab>
-{/*
 <Tab title="TypeScript">
 ```typescript
-import { SkillBase, FunctionResult, AgentBase } from 'signalwire-agents';
+import { SkillBase, FunctionResult } from '@signalwire/sdk';
 
 class GreetingSkill extends SkillBase {
   static SKILL_NAME = 'greeting';
@@ -110,24 +109,25 @@ class GreetingSkill extends SkillBase {
 
   private greetingStyle: string = 'friendly';
 
-  setup(agent: AgentBase): boolean {
-    this.greetingStyle = this.params.style || 'friendly';
-    return true;
-  }
-
-  registerTools(): void {
+  async setup(): Promise<boolean> {
+    this.greetingStyle = (this.getConfig('style') as string) || 'friendly';
     this.defineTool({
       name: 'greet_user',
       description: 'Generate a personalized greeting',
       parameters: {
-        name: { type: 'string', description: 'Name of the person to greet' },
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Name of the person to greet' },
+        },
+        required: ['name'],
       },
       handler: this.greetHandler.bind(this),
     });
+    return true;
   }
 
-  greetHandler(args: Record<string, any>, rawData: any): FunctionResult {
-    const name = args.name || 'friend';
+  greetHandler(args: Record<string, unknown>): FunctionResult {
+    const name = (args['name'] as string) || 'friend';
     const greeting = this.greetingStyle === 'formal'
         ? `Good day, ${name}. How may I assist you?`
         : `Hey ${name}! Great to hear from you!`;
@@ -136,7 +136,6 @@ class GreetingSkill extends SkillBase {
 }
 ```
 </Tab>
-*/}
 </Tabs>
 {/*
 
@@ -382,7 +381,7 @@ class GreetingSkill : SkillBase {
 |-----------|------|-------------|
 | `REQUIRED_PACKAGES` | `List[str]` | Python packages needed |
 | `REQUIRED_ENV_VARS` | `List[str]` | Environment variables needed |
-| `SUPPORTS_MULTIPLE` | `bool` | Allow multiple instances |
+| `SUPPORTS_MULTIPLE_INSTANCES` | `bool` | Allow multiple instances |
 
 ### Required Methods
 
@@ -545,7 +544,7 @@ Register the skill directory and use the custom skill in your agent:
 | Language | Register & use custom skill |
 |----------|----------------------------|
 | Python | `skill_registry.add_skill_directory("/path/to/skills")` then `agent.add_skill("product_search", {...})` |
-| TypeScript | `skillRegistry.addSkillDirectory('/path/to/skills')` then `agent.addSkill('product_search', {...})` |
+| TypeScript | `await SkillRegistry.getInstance().discoverFromDirectory('/path/to/skills')` then `await agent.addSkillByName('product_search', {...})` |
 {/*
 
 | Go | `skills.AddSkillDirectory("/path/to/skills")` then `a.AddSkill("product_search", map[string]any{...})` |

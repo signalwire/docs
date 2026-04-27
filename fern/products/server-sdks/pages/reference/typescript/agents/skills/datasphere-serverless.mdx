@@ -1,61 +1,97 @@
 ---
 title: "DataSphereServerlessSkill"
 slug: /reference/typescript/agents/skills/datasphere-serverless
-description: Search SignalWire DataSphere documents using a DataMap for serverless execution.
+description: Search a SignalWire DataSphere document via a serverless DataMap tool — no agent webhook round-trip.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 [ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
 
-Search SignalWire DataSphere documents using a [DataMap][ref-datamap] for
-serverless execution. Unlike the standard `datasphere` skill, this version
-executes entirely server-side without a webhook round-trip.
+Same DataSphere search as
+[`DataSphereSkill`](/docs/server-sdks/reference/typescript/agents/skills/datasphere),
+but the tool is registered as a [DataMap][ref-datamap] — the SignalWire
+platform executes the search directly, without calling back to your agent
+process.
+
+Credentials and URL are **baked into the DataMap** from config at registration
+time, so the same parameters are required here as on DataSphereSkill.
 
 **Class:** `DataSphereServerlessSkill`
 
-**Tools:** `search_datasphere`
+**Tools:** Custom per instance via `tool_name` (default `search_knowledge`),
+registered as a DataMap-style SWAIG function.
 
-**Env vars:** `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_TOKEN`, `SIGNALWIRE_SPACE`
+**Env vars:** None. `space_name`, `project_id`, and `token` must be supplied as
+config values — the serverless build path reads config only, not environment
+variables.
 
-**Multi-instance:** Yes
+**Multi-instance:** yes
 
-<ParamField path="tool_name" type="string" toc={true}>
-  Custom tool name for this instance. Required when using multiple instances.
+<ParamField path="tool_name" type="string" default="search_knowledge" toc={true}>
+  Custom tool name for this instance. Required when registering multiple
+  instances on the same agent.
 </ParamField>
 
-<ParamField path="space_name" type="string" toc={true}>
-  SignalWire space name. Falls back to the `SIGNALWIRE_SPACE` environment variable.
+<ParamField path="space_name" type="string" required={true} toc={true}>
+  SignalWire space name (e.g., `"mycompany"` from `mycompany.signalwire.com`).
 </ParamField>
 
-<ParamField path="project_id" type="string" toc={true}>
-  SignalWire project ID. Falls back to the `SIGNALWIRE_PROJECT_ID` environment variable.
+<ParamField path="project_id" type="string" required={true} toc={true}>
+  SignalWire project ID.
 </ParamField>
 
-<ParamField path="token" type="string" toc={true}>
-  SignalWire auth token. Falls back to the `SIGNALWIRE_TOKEN` environment variable.
+<ParamField path="token" type="string" required={true} toc={true}>
+  SignalWire API token.
 </ParamField>
 
-<ParamField path="document_id" type="string" toc={true}>
-  Restrict search to a specific document ID.
+<ParamField path="document_id" type="string" required={true} toc={true}>
+  DataSphere document ID to search within.
 </ParamField>
 
-<ParamField path="max_results" type="number" default="5" toc={true}>
-  Maximum number of results to return.
+<ParamField path="count" type="integer" default="1" toc={true}>
+  Number of results to return (range `1-10`).
 </ParamField>
 
-<ParamField path="distance_threshold" type="number" default="0.7" toc={true}>
-  Maximum distance threshold for results (0-1, lower is more similar).
+<ParamField path="distance" type="number" default="3.0" toc={true}>
+  Maximum distance threshold (range `0-10`; lower is more relevant).
 </ParamField>
 
-```typescript {6-9}
+<ParamField path="tags" type="string[]" toc={true}>
+  Tags to filter results.
+</ParamField>
+
+<ParamField path="language" type="string" toc={true}>
+  Language code for query expansion (e.g., `"en"`, `"es"`).
+</ParamField>
+
+<ParamField path="pos_to_expand" type="string[]" toc={true}>
+  Parts of speech to expand with synonyms. Entries must be one of `"NOUN"`,
+  `"VERB"`, `"ADJ"`, `"ADV"`.
+</ParamField>
+
+<ParamField path="max_synonyms" type="integer" toc={true}>
+  Maximum number of synonyms used for query expansion (range `1-10`).
+</ParamField>
+
+<ParamField path="no_results_message" type="string" toc={true}>
+  Message returned when no results match the query. Supports a `{query}`
+  placeholder that is substituted with the user's query text at registration
+  time.
+</ParamField>
+
+## Example
+
+```typescript {6-11}
 import { AgentBase, DataSphereServerlessSkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
 agent.setPromptText('You are a helpful assistant.');
 
 await agent.addSkill(new DataSphereServerlessSkill({
-  document_id: 'YOUR_DOCUMENT_ID',
-  max_results: 3,
+  space_name: 'mycompany',
+  document_id: 'doc_1234',
+  count: 3,
+  tool_name: 'search_product_docs',
 }));
 
 agent.run();

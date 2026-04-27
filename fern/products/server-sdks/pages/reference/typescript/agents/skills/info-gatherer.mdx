@@ -1,61 +1,64 @@
 ---
 title: "InfoGathererSkill"
 slug: /reference/typescript/agents/skills/info-gatherer
-description: Collect structured information from the user based on configurable fields.
+description: Gather answers to a configurable list of questions, one at a time.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Collect structured information from the user based on configurable fields. Fields
-support optional validation patterns and required/optional flags. Collected data
-can be stored in global data.
+Collect answers to a configured list of questions. The skill registers a
+`start_questions` tool and a `submit_answer` tool; the agent advances through
+the question list and reports completion when every question is answered.
+
+Fails closed during `setup()` when `questions` is missing or invalid.
 
 **Class:** `InfoGathererSkill`
 
-**Tools:** `save_info`, `get_gathered_info`
+**Tools:** `start_questions`, `submit_answer` (names are prefixed when
+`prefix` is set)
 
 **Env vars:** None
 
-<ParamField path="fields" type={"Record<string, unknown>[]"} toc={true}>
-  Array of field definitions to collect. Each object has:
-  - `name` (string, required) -- Field name used as the parameter key.
-  - `description` (string, required) -- Description of what this field collects.
-  - `required` (boolean, optional) -- Whether this field must be provided.
-  - `validation` (string, optional) -- Regex pattern for validating the field value.
-  - `type` (string, optional) -- Parameter type for the tool schema (defaults to `"string"`).
+**Multi-instance:** yes
+
+<ParamField path="questions" type="QuestionDefinition[]" required={true} toc={true}>
+  Ordered list of questions to ask. Each question has:
+
+  - `key_name` (string, required) — key used to store the caller's answer.
+  - `question_text` (string, required) — the question to ask.
+  - `confirm` (boolean) — when `true`, the agent asks the caller to confirm
+    the answer before moving on.
+  - `prompt_add` (string) — optional extra prompt text appended while this
+    question is active.
 </ParamField>
 
-<ParamField path="purpose" type="string" toc={true}>
-  A description of why this information is being collected (shown in prompt).
+<ParamField path="prefix" type="string" toc={true}>
+  Optional prefix for tool names and the global-data namespace. When set,
+  tools are named `<prefix>_start_questions` / `<prefix>_submit_answer` and
+  state is stored under `skill:<prefix>`. Required when loading multiple
+  `InfoGathererSkill` instances on the same agent.
 </ParamField>
 
-<ParamField path="confirmation_message" type="string" default="Information has been saved successfully." toc={true}>
-  Custom message returned after successful info collection.
+<ParamField path="completion_message" type="string" toc={true}>
+  Message returned after every question has been answered. Defaults to a
+  generic completion message.
 </ParamField>
 
-<ParamField path="store_globally" type="boolean" default="false" toc={true}>
-  Whether to store gathered info in global data.
-</ParamField>
+## Example
 
-```typescript {6-15}
+```typescript {6-14}
 import { AgentBase, InfoGathererSkill } from '@signalwire/sdk';
 
-const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
-agent.setPromptText('You are a helpful assistant.');
+const agent = new AgentBase({ name: 'intake', route: '/intake' });
+agent.setPromptText('Collect contact information for follow-up.');
 
 await agent.addSkill(new InfoGathererSkill({
-  purpose: 'Collect contact information for follow-up.',
-  fields: [
-    { name: 'name', description: 'Full name', required: true },
-    {
-      name: 'email',
-      description: 'Email address',
-      required: true,
-      validation: '^[\\w.+-]+@[\\w-]+\\.[\\w.]+$',
-    },
-    { name: 'phone', description: 'Phone number', required: false },
+  questions: [
+    { key_name: 'full_name', question_text: 'What is your full name?' },
+    { key_name: 'email', question_text: 'What is your email address?', confirm: true },
+    { key_name: 'phone', question_text: 'What is your phone number?' },
   ],
-  store_globally: true,
+  completion_message: 'Thanks — we will be in touch shortly.',
 }));
 
 agent.run();

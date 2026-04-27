@@ -1,12 +1,21 @@
 ---
 title: "debugToken"
 slug: /reference/typescript/agents/configuration/session-manager/debug-token
-description: "Decode token components for debugging without validating the signature."
+description: "Decode token components for inspection without validating the signature."
 max-toc-depth: 3
 ---
 
-Decode token components for debugging without validating the signature. Useful
-for inspecting token contents and checking expiration.
+Decode token components for inspection without validating the signature. Useful
+for debugging token contents and checking expiration.
+
+<Warning>
+  `debugToken` returns diagnostic data only when
+  [`debugMode`](/docs/server-sdks/reference/typescript/agents/configuration/session-manager#properties)
+  is `true`. With `debugMode: false` (the default), it returns
+  `{ valid_format: false, error: "debug mode not enabled" }` — matching the
+  Python SDK's behavior. Enable `debugMode` at runtime only when you need to
+  inspect tokens.
+</Warning>
 
 ## **Parameters**
 
@@ -16,19 +25,93 @@ for inspecting token contents and checking expiration.
 
 ## **Returns**
 
-`{ callId: string; functionName: string; expiry: number; nonce: string; signature: string; expired: boolean } | null`
--- The decoded token fields and expiration status, or `null` if malformed.
+`DebugTokenResult` — a nested object with the following optional fields:
+
+<ParamField path="valid_format" type="boolean" toc={true}>
+  `true` when the token decoded into five dot-separated parts; `false` otherwise.
+</ParamField>
+
+<ParamField path="components" type="object" toc={true}>
+  Present only when `valid_format` is `true`.
+</ParamField>
+
+<Indent>
+<ParamField path="components.call_id" type="string">
+  Call ID extracted from the token. Truncated to 8 characters followed by `...`
+  when longer than 8 characters.
+</ParamField>
+
+<ParamField path="components.function" type="string">
+  Function name encoded in the token.
+</ParamField>
+
+<ParamField path="components.expiry" type="string">
+  Token expiry as a Unix timestamp string.
+</ParamField>
+
+<ParamField path="components.expiry_date" type="string | null">
+  ISO 8601 string representation of the expiry, or `null` when the expiry
+  component did not parse as a number.
+</ParamField>
+
+<ParamField path="components.nonce" type="string">
+  The random nonce component of the token.
+</ParamField>
+
+<ParamField path="components.signature" type="string">
+  Token signature. Truncated to 8 characters followed by `...` when longer than
+  8 characters.
+</ParamField>
+</Indent>
+
+<ParamField path="status" type="object" toc={true}>
+  Present only when `valid_format` is `true`.
+</ParamField>
+
+<Indent>
+<ParamField path="status.current_time" type="number">
+  Current Unix timestamp in seconds.
+</ParamField>
+
+<ParamField path="status.is_expired" type="boolean | null">
+  `true` if expired, `false` if still valid, `null` if the expiry component
+  did not parse.
+</ParamField>
+
+<ParamField path="status.expires_in_seconds" type="number | null">
+  Seconds remaining until expiry, or `0` when expired, or `null` when expiry
+  did not parse.
+</ParamField>
+</Indent>
+
+<ParamField path="parts_count" type="number" toc={true}>
+  Only populated when `valid_format` is `false` because the decoded token had
+  an unexpected number of dot-separated parts.
+</ParamField>
+
+<ParamField path="token_length" type="number" toc={true}>
+  Length of the raw token string. Populated when `valid_format` is `false`.
+</ParamField>
+
+<ParamField path="error" type="string" toc={true}>
+  Set to `"debug mode not enabled"` when `debugMode` is `false`, or to the
+  caught error message when decoding failed.
+</ParamField>
 
 ## **Example**
 
-```typescript {5}
+```typescript {4,6}
 import { SessionManager } from '@signalwire/sdk';
 
 const sm = new SessionManager();
+sm.debugMode = true; // enable before calling debugToken
 const token = sm.generateToken('get_weather', 'call-abc123');
 const info = sm.debugToken(token);
-if (info) {
-  console.log('Function:', info.functionName);
-  console.log('Expired:', info.expired);
+
+if (info.valid_format) {
+  console.log('Function:', info.components!.function);
+  console.log('Expired:', info.status!.is_expired);
+} else {
+  console.log('Error:', info.error);
 }
 ```
