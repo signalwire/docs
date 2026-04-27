@@ -1,14 +1,28 @@
 ---
 title: "addSkill"
 slug: /reference/typescript/agents/skill-manager/add-skill
-description: "Add and initialize a skill instance."
+description: "Add and initialize a skill instance. Fails closed on invalid config."
 ---
 
 [ref-skillbase]: /docs/server-sdks/reference/typescript/agents/skill-base
+[ref-setup]: /docs/server-sdks/reference/typescript/agents/skill-base/setup
 
-Add a skill to the manager. Validates env vars, calls `setup()`, and marks
-the skill as initialized. Throws `Error` if a duplicate non-multi-instance
-skill is added.
+Add a skill to the manager. The call sequence is:
+
+1. Deduplicate by instance key (multi-instance skills with the same key are
+   skipped with a warning; single-instance duplicates throw).
+2. Validate required environment variables — throws if any are missing.
+3. Validate that the skill's `getParameterSchema()` returns a non-empty object.
+4. Validate required NPM packages — throws if any cannot be imported.
+5. Call [`setup()`][ref-setup] — **throws if it returns `false`**.
+6. Mark the skill initialized and register it.
+
+<Note>
+`addSkill` **fails closed**: any validation miss or a `setup()` returning
+`false` throws and the skill is not registered. The wrapper methods
+`loadSkill` / `loadSkillByName` catch and convert the throw into a
+`[false, message]` tuple that matches the Python SDK's `load_skill` contract.
+</Note>
 
 ## **Parameters**
 
@@ -19,3 +33,11 @@ skill is added.
 ## **Returns**
 
 `Promise<void>`
+
+## **Throws**
+
+- `Error` — duplicate single-instance skill already loaded.
+- `Error` — missing required environment variables.
+- `Error` — `getParameterSchema()` returns an empty object.
+- `Error` — missing required NPM packages.
+- `Error` — `setup()` returned `false`.

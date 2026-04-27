@@ -1,7 +1,7 @@
 ---
 title: "Phone Numbers"
 slug: /reference/python/rest/phone-numbers
-description: "Search and manage phone numbers."
+description: "Search and manage phone numbers, and bind inbound calls to handlers."
 max-toc-depth: 3
 ---
 
@@ -12,10 +12,19 @@ max-toc-depth: 3
 [update]: /docs/server-sdks/reference/python/rest/phone-numbers/update
 [delete]: /docs/server-sdks/reference/python/rest/phone-numbers/delete
 [search]: /docs/server-sdks/reference/python/rest/phone-numbers/search
+[setswml]: /docs/server-sdks/reference/python/rest/phone-numbers/set-swml-webhook
+[setcxml]: /docs/server-sdks/reference/python/rest/phone-numbers/set-cxml-webhook
+[setcxmlapp]: /docs/server-sdks/reference/python/rest/phone-numbers/set-cxml-application
+[setai]: /docs/server-sdks/reference/python/rest/phone-numbers/set-ai-agent
+[setflow]: /docs/server-sdks/reference/python/rest/phone-numbers/set-call-flow
+[setrelayapp]: /docs/server-sdks/reference/python/rest/phone-numbers/set-relay-application
+[setrelaytopic]: /docs/server-sdks/reference/python/rest/phone-numbers/set-relay-topic
 
 Search for available phone numbers, purchase them, and manage the numbers in your
 SignalWire project. This resource extends the standard CRUD pattern with a `search()`
-method for discovering available numbers and uses PUT for updates.
+method for discovering available numbers, uses PUT for updates, and provides typed
+helpers for binding inbound calls to a handler (SWML webhook, cXML webhook, AI agent,
+call flow, RELAY application/topic).
 
 Access via `client.phone_numbers` on a [`RestClient`][restclient] instance.
 
@@ -34,6 +43,8 @@ for number in available.get("data", []):
 ```
 
 ## **Methods**
+
+### Standard CRUD
 
 <CardGroup cols={3}>
   <Card title="list" href="/docs/server-sdks/reference/python/rest/phone-numbers/list">
@@ -55,3 +66,66 @@ for number in available.get("data", []):
     Search for available phone numbers to purchase.
   </Card>
 </CardGroup>
+
+### Typed Binding Helpers
+
+Each helper is a one-line wrapper over [`update`][update] that sets `call_handler` to
+the right value and populates the handler-specific companion field for you. Pass extra
+keyword arguments through to `update` for fields the helper doesn't name explicitly.
+Setting a binding auto-materializes the matching Fabric resource on the server.
+
+<CardGroup cols={3}>
+  <Card title="set_swml_webhook" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-swml-webhook">
+    Route inbound calls to an SWML webhook URL.
+  </Card>
+  <Card title="set_cxml_webhook" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-cxml-webhook">
+    Route inbound calls to a cXML (LAML) webhook.
+  </Card>
+  <Card title="set_cxml_application" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-cxml-application">
+    Route inbound calls to an existing cXML application by ID.
+  </Card>
+  <Card title="set_ai_agent" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-ai-agent">
+    Route inbound calls to an AI Agent Fabric resource by ID.
+  </Card>
+  <Card title="set_call_flow" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-call-flow">
+    Route inbound calls to a Call Flow by ID.
+  </Card>
+  <Card title="set_relay_application" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-relay-application">
+    Route inbound calls to a named RELAY application.
+  </Card>
+  <Card title="set_relay_topic" href="/docs/server-sdks/reference/python/rest/phone-numbers/set-relay-topic">
+    Route inbound calls to a RELAY topic.
+  </Card>
+</CardGroup>
+
+## **PhoneCallHandler enum**
+
+For callers passing `call_handler` directly to [`update`][update], the
+`PhoneCallHandler` enum provides typed values. Each member is a `str` subclass, so
+passing the enum member serializes to the wire value without `.value` indirection.
+
+```python
+from signalwire.rest import PhoneCallHandler
+
+client.phone_numbers.update(
+    "phone-number-id",
+    call_handler=PhoneCallHandler.AI_AGENT,
+    call_ai_agent_id="ai-agent-id",
+)
+```
+
+| Enum member        | Wire value           | Companion field            | Auto-creates        |
+|--------------------|----------------------|----------------------------|---------------------|
+| `RELAY_SCRIPT`     | `relay_script`       | `call_relay_script_url`    | `swml_webhook`      |
+| `LAML_WEBHOOKS`    | `laml_webhooks`      | `call_request_url`         | `cxml_webhook`      |
+| `LAML_APPLICATION` | `laml_application`   | `call_laml_application_id` | `cxml_application`  |
+| `AI_AGENT`         | `ai_agent`           | `call_ai_agent_id`         | `ai_agent`          |
+| `CALL_FLOW`        | `call_flow`          | `call_flow_id`             | `call_flow`         |
+| `RELAY_APPLICATION`| `relay_application`  | `call_relay_application`   | `relay_application` |
+| `RELAY_TOPIC`      | `relay_topic`        | `call_relay_topic`         | (routes via RELAY)  |
+
+<Note>
+`LAML_WEBHOOKS` (wire value `laml_webhooks`) produces a **cXML** handler, not a
+generic webhook. For SWML, use `RELAY_SCRIPT` -- or, more conveniently, the
+[`set_swml_webhook`][setswml] helper.
+</Note>

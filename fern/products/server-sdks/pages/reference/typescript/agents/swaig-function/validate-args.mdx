@@ -1,0 +1,54 @@
+---
+title: "validateArgs"
+slug: /reference/typescript/agents/swaig-function/validate-args
+description: Validate arguments against the parameter JSON Schema.
+max-toc-depth: 3
+---
+
+Validate arguments against the parameter JSON Schema. Uses
+[Ajv](https://ajv.js.org/) to compile and run the schema. When the function
+has no parameters declared (empty schema), validation is skipped and the
+arguments are treated as valid — matching the Python SDK's early-return
+behavior.
+
+## **Parameters**
+
+<ParamField path="args" type="Record<string, unknown>" required={true} toc={true}>
+  Arguments to validate.
+</ParamField>
+
+## **Returns**
+
+`[boolean, string[]]` -- A tuple of `[isValid, errors]`. When no validation is
+needed (empty schema), returns `[true, []]`. Error strings include the
+offending property path where available (e.g., `"'account_id' is a required
+property"`).
+
+## **Example**
+
+```typescript {18,22}
+import { SwaigFunction, FunctionResult } from '@signalwire/sdk';
+
+const fn = new SwaigFunction({
+  name: 'lookup_account',
+  handler: async () => new FunctionResult('ok'),
+  description: 'Look up account status',
+  parameters: {
+    type: 'object',
+    properties: {
+      account_id: { type: 'string', description: 'Account ID' },
+    },
+    required: ['account_id'],
+  },
+});
+
+// Valid arguments
+const [ok1, errs1] = fn.validateArgs({ account_id: '12345' });
+console.log(`Valid: ${ok1}, Errors: ${JSON.stringify(errs1)}`);
+// Valid: true, Errors: []
+
+// Missing required argument
+const [ok2, errs2] = fn.validateArgs({});
+console.log(`Valid: ${ok2}, Errors: ${JSON.stringify(errs2)}`);
+// Valid: false, Errors: ["must have required property 'account_id'"]
+```

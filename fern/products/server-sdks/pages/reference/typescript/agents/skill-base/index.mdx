@@ -7,6 +7,7 @@ max-toc-depth: 3
 
 [agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
 [skills]: /docs/server-sdks/reference/typescript/agents/skills
+[skillregistry]: /docs/server-sdks/reference/typescript/agents/skill-registry
 [cleanup]: /docs/server-sdks/reference/typescript/agents/skill-base/cleanup
 [getglobaldata]: /docs/server-sdks/reference/typescript/agents/skill-base/get-global-data
 [gethints]: /docs/server-sdks/reference/typescript/agents/skill-base/get-hints
@@ -23,22 +24,51 @@ max-toc-depth: 3
 
 SkillBase is the abstract base class for all agent skills. Skills are modular,
 reusable capabilities -- such as weather lookup, web search, or calendar access --
-that can be added to any [`AgentBase`][agentbase]
-agent with a single call to `agent.addSkill()`.
+that can be added to any [`AgentBase`][agentbase] agent with a single call to
+`agent.addSkill()`.
 
-Extend SkillBase to create custom skills. You must implement the abstract methods
-`getManifest()` and `getTools()`, and optionally override lifecycle and prompt methods.
+Extend SkillBase to create custom skills. Metadata (name, description, version,
+required packages, required environment variables, multi-instance support) is
+declared as **static class constants** on the subclass — the [`SkillRegistry`][skillregistry]
+and `SkillManager` read these constants directly. You override `getTools()` to
+expose SWAIG tools and optionally override lifecycle and prompt methods.
 
 <Info>
 For the catalog of built-in skills and their configuration parameters, see
 the [Skills][skills] page.
 </Info>
 
-## **Static Members**
+## **Static Class Constants**
+
+Subclasses declare their identity and requirements by overriding these static
+members. The [`SkillRegistry`][skillregistry] reads them directly — no manifest
+object is exchanged.
+
+<ParamField path="SKILL_NAME" type="string" required={true} toc={true}>
+  Unique skill name used for registration. Subclasses **must** override with a
+  non-empty string; the constructor throws otherwise.
+</ParamField>
+
+<ParamField path="SKILL_DESCRIPTION" type="string" required={true} toc={true}>
+  Human-readable description. Subclasses **must** override with a non-empty
+  string; the constructor throws otherwise.
+</ParamField>
+
+<ParamField path="SKILL_VERSION" type="string" default="1.0.0" toc={true}>
+  Semantic version string.
+</ParamField>
+
+<ParamField path="REQUIRED_PACKAGES" type={"readonly string[]"} default="[]" toc={true}>
+  NPM packages the skill depends on. Checked at load time by `validatePackages()`.
+</ParamField>
+
+<ParamField path="REQUIRED_ENV_VARS" type={"readonly string[]"} default="[]" toc={true}>
+  Environment variables the skill requires. Checked at load time by `validateEnvVars()`.
+</ParamField>
 
 <ParamField path="SUPPORTS_MULTIPLE_INSTANCES" type="boolean" default="false" toc={true}>
   When `true`, the same skill can be added to an agent multiple times with
-  different configurations.
+  different configurations (distinguished by `tool_name`).
 </ParamField>
 
 <ParamField path="getParameterSchema()" type="static method" toc={true}>
@@ -49,21 +79,22 @@ the [Skills][skills] page.
 ## **Constructor**
 
 ```typescript {1}
-constructor(skillName: string, config?: SkillConfig)
+constructor(config?: SkillConfig)
 ```
 
-<ParamField path="skillName" type="string" required={true} toc={true}>
-  Unique identifier for the skill (e.g., `"weather"`, `"web_search"`).
-</ParamField>
+The skill name, description, and version come from the subclass's static
+constants — not from constructor arguments.
 
 <ParamField path="config" type="SkillConfig" toc={true}>
-  Optional configuration key-value pairs for the skill instance.
+  Optional configuration key-value pairs for the skill instance. Any
+  `swaig_fields` entry is extracted and automatically merged into tool
+  definitions.
 </ParamField>
 
 ## **Instance Properties**
 
 <ParamField path="skillName" type="string" toc={true}>
-  The registered name for this skill instance (readonly).
+  The registered name for this skill instance, copied from `SKILL_NAME` (readonly).
 </ParamField>
 
 <ParamField path="instanceId" type="string" toc={true}>
@@ -83,10 +114,16 @@ constructor(skillName: string, config?: SkillConfig)
 
 <CardGroup cols={3}>
   <Card title="setup" href="/docs/server-sdks/reference/typescript/agents/skill-base/setup">
-    Initialize the skill and prepare resources.
+    Initialize the skill. Return `false` to fail-closed on missing config.
   </Card>
   <Card title="cleanup" href="/docs/server-sdks/reference/typescript/agents/skill-base/cleanup">
     Release resources when the skill is removed or the agent shuts down.
+  </Card>
+  <Card title="getTools" href="/docs/server-sdks/reference/typescript/agents/skill-base/get-tools">
+    Return SWAIG tool definitions this skill exposes.
+  </Card>
+  <Card title="getDataMapTools" href="/docs/server-sdks/reference/typescript/agents/skill-base/get-data-map-tools">
+    Return fully-built SWAIG function dicts (DataMap style).
   </Card>
   <Card title="getParameterSchema" href="/docs/server-sdks/reference/typescript/agents/skill-base/get-parameter-schema">
     Return metadata about all parameters the skill accepts.
@@ -121,25 +158,40 @@ constructor(skillName: string, config?: SkillConfig)
   <Card title="validateEnvVars" href="/docs/server-sdks/reference/typescript/agents/skill-base/validate-env-vars">
     Validate that required environment variables are set.
   </Card>
+  <Card title="hasAllEnvVars" href="/docs/server-sdks/reference/typescript/agents/skill-base/has-all-env-vars">
+    Check whether all required env vars are present.
+  </Card>
+  <Card title="validatePackages" href="/docs/server-sdks/reference/typescript/agents/skill-base/validate-packages">
+    Validate that required packages can be imported.
+  </Card>
+  <Card title="hasAllPackages" href="/docs/server-sdks/reference/typescript/agents/skill-base/has-all-packages">
+    Check whether all required packages are importable.
+  </Card>
+  <Card title="getConfig" href="/docs/server-sdks/reference/typescript/agents/skill-base/get-config">
+    Look up a configuration value by key.
+  </Card>
+  <Card title="getAgent" href="/docs/server-sdks/reference/typescript/agents/skill-base/get-agent">
+    Get the agent this skill is attached to.
+  </Card>
+  <Card title="setAgent" href="/docs/server-sdks/reference/typescript/agents/skill-base/set-agent">
+    Attach the skill to an agent.
+  </Card>
+  <Card title="defineTool" href="/docs/server-sdks/reference/typescript/agents/skill-base/define-tool">
+    Imperatively register a tool with this skill.
+  </Card>
 </CardGroup>
 
-### getManifest (abstract)
+### defineTool (protected)
 
 ```typescript {1}
-abstract getManifest(): SkillManifest
+protected defineTool(toolDef: SkillToolDefinition): void
 ```
 
-Returns the skill's metadata including name, description, version, required environment
-variables, and required packages. You **must** implement this in every subclass.
-
-### getTools (abstract)
-
-```typescript {1}
-abstract getTools(): SkillToolDefinition[]
-```
-
-Returns the SWAIG tool definitions this skill provides. You **must** implement this
-in every subclass. Each tool is registered with the agent when the skill is loaded.
+Imperatively register a tool. Use from `setup()` when the tool shape depends on
+config evaluated at runtime. The method merges `this.swaigFields` into the
+definition and pushes it onto the internal dynamic-tools list; the default
+`getTools()` returns that list. Skills with a static tool list should override
+`getTools()` directly instead.
 
 ### getConfig
 
@@ -147,8 +199,7 @@ in every subclass. Each tool is registered with the agent when the skill is load
 getConfig<T = unknown>(key: string, defaultValue?: T): T
 ```
 
-Read a configuration value by key, with an optional fallback default. Returns the
-value cast to type `T`, or `defaultValue` if the key is not present.
+Read a configuration value by key, with an optional fallback default.
 
 <ParamField path="key" type="string" required={true} toc={true}>
   The configuration key to look up.
@@ -158,23 +209,28 @@ value cast to type `T`, or `defaultValue` if the key is not present.
   Value to return if the key is not present in the config.
 </ParamField>
 
+### hasAllEnvVars / hasAllPackages
+
+```typescript {1-2}
+hasAllEnvVars(): boolean
+async hasAllPackages(): Promise<boolean>
+```
+
+Boolean wrappers around `validateEnvVars()` and `validatePackages()`.
+
 ## **Examples**
 
 ### Custom skill
 
-```typescript {3}
-import { SkillBase, SkillManifest, SkillToolDefinition } from '@signalwire/sdk';
+```typescript {4-6}
+import { SkillBase, type SkillToolDefinition } from '@signalwire/sdk';
 
 class MyWeatherSkill extends SkillBase {
-  constructor(config?: Record<string, unknown>) {
-    super('my_weather', config);
-  }
+  static override SKILL_NAME = 'my_weather';
+  static override SKILL_DESCRIPTION = 'Look up weather';
+  static override SKILL_VERSION = '1.0.0';
 
-  getManifest(): SkillManifest {
-    return { name: 'my_weather', description: 'Look up weather', version: '1.0.0' };
-  }
-
-  getTools(): SkillToolDefinition[] {
+  override getTools(): SkillToolDefinition[] {
     return [{
       name: 'get_weather',
       description: 'Get current weather for a city',
@@ -191,12 +247,11 @@ class MyWeatherSkill extends SkillBase {
 import { AgentBase } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'weather-agent' });
-agent.setPromptText("You are a helpful assistant.")
-agent.addSkill("weather")
+agent.setPromptText("You are a helpful assistant.");
+agent.addSkill("weather");
 
 // Or with custom configuration
-agent.addSkill("weather", { units: "celsius" })
+agent.addSkill("weather", { units: "celsius" });
 
-// Entry point
-agent.run()
+agent.run();
 ```

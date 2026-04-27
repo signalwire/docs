@@ -29,7 +29,7 @@ await agent.addSkill(new DateTimeSkill());
 
 // Skill with parameters
 await agent.addSkill(new WebSearchSkill({
-  max_results: 5,
+  num_results: 5,
   safe_search: 'high',
 }));
 
@@ -40,21 +40,21 @@ agent.run();
 
 | Skill | Class | Tools | Env Vars Required | Multi-Instance |
 |-------|-------|-------|-------------------|----------------|
-| [`datetime`](/docs/server-sdks/reference/typescript/agents/skills/datetime) | `DateTimeSkill` | 1 | No | No |
+| [`datetime`](/docs/server-sdks/reference/typescript/agents/skills/datetime) | `DateTimeSkill` | 2 | No | No |
 | [`math`](/docs/server-sdks/reference/typescript/agents/skills/math) | `MathSkill` | 1 | No | No |
 | [`joke`](/docs/server-sdks/reference/typescript/agents/skills/joke) | `JokeSkill` | 1 | No | No |
 | [`weather_api`](/docs/server-sdks/reference/typescript/agents/skills/weather-api) | `WeatherApiSkill` | 1 | Yes | No |
-| [`web_search`](/docs/server-sdks/reference/typescript/agents/skills/web-search) | `WebSearchSkill` | 1 | Yes | No |
+| [`web_search`](/docs/server-sdks/reference/typescript/agents/skills/web-search) | `WebSearchSkill` | 1 | Yes | Yes |
 | [`wikipedia_search`](/docs/server-sdks/reference/typescript/agents/skills/wikipedia-search) | `WikipediaSearchSkill` | 1 | No | No |
-| [`google_maps`](/docs/server-sdks/reference/typescript/agents/skills/google-maps) | `GoogleMapsSkill` | 2 | Yes | No |
-| [`play_background_file`](/docs/server-sdks/reference/typescript/agents/skills/play-background-file) | `PlayBackgroundFileSkill` | 2 | No | No |
-| [`swml_transfer`](/docs/server-sdks/reference/typescript/agents/skills/swml-transfer) | `SwmlTransferSkill` | 1-2 | No | No |
+| [`google_maps`](/docs/server-sdks/reference/typescript/agents/skills/google-maps) | `GoogleMapsSkill` | 4 | Yes | No |
+| [`play_background_file`](/docs/server-sdks/reference/typescript/agents/skills/play-background-file) | `PlayBackgroundFileSkill` | 1-3 | No | Yes |
+| [`swml_transfer`](/docs/server-sdks/reference/typescript/agents/skills/swml-transfer) | `SwmlTransferSkill` | 1-2 | No | Yes |
 | [`datasphere`](/docs/server-sdks/reference/typescript/agents/skills/datasphere) | `DataSphereSkill` | 1 | Yes | Yes |
 | [`datasphere_serverless`](/docs/server-sdks/reference/typescript/agents/skills/datasphere-serverless) | `DataSphereServerlessSkill` | 1 | Yes | Yes |
 | [`native_vector_search`](/docs/server-sdks/reference/typescript/agents/skills/native-vector-search) | `NativeVectorSearchSkill` | 1 | No | Yes |
-| [`info_gatherer`](/docs/server-sdks/reference/typescript/agents/skills/info-gatherer) | `InfoGathererSkill` | 2 | No | No |
-| [`api_ninjas_trivia`](/docs/server-sdks/reference/typescript/agents/skills/api-ninjas-trivia) | `ApiNinjasTriviaSkill` | 1 | Yes | No |
-| [`spider`](/docs/server-sdks/reference/typescript/agents/skills/spider) | `SpiderSkill` | 1 | Yes | No |
+| [`info_gatherer`](/docs/server-sdks/reference/typescript/agents/skills/info-gatherer) | `InfoGathererSkill` | 2 | No | Yes |
+| [`api_ninjas_trivia`](/docs/server-sdks/reference/typescript/agents/skills/api-ninjas-trivia) | `ApiNinjasTriviaSkill` | 1 | Yes | Yes |
+| [`spider`](/docs/server-sdks/reference/typescript/agents/skills/spider) | `SpiderSkill` | 3 | No | Yes |
 | [`ask_claude`](/docs/server-sdks/reference/typescript/agents/skills/ask-claude) | `AskClaudeSkill` | 1 | Yes | No |
 | [`claude_skills`](/docs/server-sdks/reference/typescript/agents/skills/claude-skills) | `ClaudeSkillsSkill` | Dynamic | No | Yes |
 | [`custom_skills`](/docs/server-sdks/reference/typescript/agents/skills/custom-skills) | `CustomSkillsSkill` | Dynamic | No | No |
@@ -70,13 +70,13 @@ parameter is not provided directly.
 import { WebSearchSkill } from '@signalwire/sdk';
 
 // Direct configuration
-const skill = new WebSearchSkill({ max_results: 5, safe_search: 'high' });
+const skill = new WebSearchSkill({ num_results: 5, safe_search: 'high' });
 
 // Environment variable fallback (api_key falls back to GOOGLE_SEARCH_API_KEY,
 // search_engine_id falls back to GOOGLE_SEARCH_CX)
 process.env.GOOGLE_SEARCH_API_KEY = 'YOUR_KEY';
 process.env.GOOGLE_SEARCH_CX = 'YOUR_ENGINE_ID';
-const skillWithEnv = new WebSearchSkill({ max_results: 5 });
+const skillWithEnv = new WebSearchSkill({ num_results: 5 });
 ```
 
 ### SWAIG Field Overrides
@@ -112,11 +112,13 @@ agent.setPromptText('You are a helpful assistant.');
 
 await agent.addSkill(new DataSphereSkill({
   tool_name: 'search_products',
-  max_results: 3,
+  document_id: 'doc_products',
+  count: 3,
 }));
 await agent.addSkill(new DataSphereSkill({
   tool_name: 'search_policies',
-  max_results: 5,
+  document_id: 'doc_policies',
+  count: 5,
 }));
 
 agent.run();
@@ -144,20 +146,20 @@ them with the `SkillRegistry`.
 
 ### Defining a Custom Skill
 
-```typescript {10}
+```typescript {10-14}
 import { SkillBase, FunctionResult } from '@signalwire/sdk';
 import type {
-  SkillManifest,
   SkillToolDefinition,
   SkillPromptSection,
-  SkillConfig,
   ParameterSchemaEntry,
 } from '@signalwire/sdk';
 
 export class StockPriceSkill extends SkillBase {
-  constructor(config?: SkillConfig) {
-    super('stock_price', config);
-  }
+  // Identity is declared with static class constants.
+  static override SKILL_NAME = 'stock_price';
+  static override SKILL_DESCRIPTION = 'Look up current stock prices.';
+  static override SKILL_VERSION = '1.0.0';
+  static override REQUIRED_ENV_VARS = ['STOCK_API_KEY'] as const;
 
   static override getParameterSchema(): Record<string, ParameterSchemaEntry> {
     return {
@@ -172,16 +174,7 @@ export class StockPriceSkill extends SkillBase {
     };
   }
 
-  getManifest(): SkillManifest {
-    return {
-      name: 'stock_price',
-      description: 'Look up current stock prices.',
-      version: '1.0.0',
-      requiredEnvVars: ['STOCK_API_KEY'],
-    };
-  }
-
-  getTools(): SkillToolDefinition[] {
+  override getTools(): SkillToolDefinition[] {
     return [
       {
         name: 'get_stock_price',
@@ -226,7 +219,7 @@ import { SkillRegistry } from '@signalwire/sdk';
 import { StockPriceSkill } from './stock-price-skill.js';
 
 const registry = SkillRegistry.getInstance();
-registry.register('stock_price', (config) => new StockPriceSkill(config));
+registry.register(StockPriceSkill); // pass the class; name comes from SKILL_NAME
 ```
 
 ### Using a Custom Skill

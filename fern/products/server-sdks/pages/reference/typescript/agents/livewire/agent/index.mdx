@@ -9,8 +9,8 @@ max-toc-depth: 3
 [agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
 [functiontool]: /docs/server-sdks/reference/typescript/agents/livewire/function-tool
 
-The `Agent<UserData>` class mirrors a LiveKit voice agent. It holds the system prompt
-(instructions), a map of tools, and optional user data. When bound to an
+The `Agent<UserData>` class mirrors a LiveKit voice agent. It holds the system
+prompt (instructions), a set of tools, and optional user data. When bound to an
 [`AgentSession`][agentsession], the session translates this into a SignalWire
 [`AgentBase`][agentbase] under the hood.
 
@@ -27,33 +27,77 @@ const getWeather = tool({
 
 const agent = new Agent({
   instructions: 'You are a helpful weather assistant.',
-  tools: { getWeather },
+  tools: [getWeather],
 });
 ```
 
 ## **Constructor**
 
-```typescript {1}
-new Agent<UserData>(options: {
-  instructions: string;
-  tools?: Record<string, FunctionTool>;
+```typescript {1-13}
+new Agent<UserData>(options?: {
+  instructions?: string;
+  tools?: FunctionTool[];
   userData?: UserData;
+  chatCtx?: unknown;
+  stt?: unknown;
+  tts?: unknown;
+  llm?: unknown;
+  vad?: unknown;
+  turnDetection?: unknown;
+  mcpServers?: unknown;
+  allowInterruptions?: boolean;
+  minEndpointingDelay?: number;
+  maxEndpointingDelay?: number;
 })
 ```
 
-<ParamField path="instructions" type="string" required={true} toc={true}>
-  The system prompt text for the agent. Mapped to the SignalWire prompt when the
-  session starts.
+<Info>
+The constructor options are source-compatible with LiveKit's `Agent`
+constructor, including pipeline fields like `stt`, `tts`, `vad`,
+`turnDetection`, and `mcpServers`. SignalWire handles speech, TTS, and VAD on
+the control plane, so those fields are accepted but logged as a no-op the
+first time they are supplied.
+</Info>
+
+<ParamField path="instructions" type="string" default={'""'} toc={true}>
+  System prompt text. Mapped to the SignalWire prompt when the session starts.
 </ParamField>
 
-<ParamField path="tools" type="Record<string, FunctionTool>" default="{}" toc={true}>
-  A map of tool names to [`FunctionTool`][functiontool] definitions. Each tool is
-  registered as a SWAIG function on the underlying SignalWire agent.
+<ParamField path="tools" type="FunctionTool[]" default="[]" toc={true}>
+  Array of [`FunctionTool`][functiontool] objects. Stored internally as a
+  name-keyed record; each tool is registered as a SWAIG function on the
+  underlying agent.
 </ParamField>
 
 <ParamField path="userData" type="UserData" default="undefined" toc={true}>
   Arbitrary data attached to the agent. Accessible from tool handlers via
   `RunContext.userData`.
+</ParamField>
+
+<ParamField path="llm" type="unknown" toc={true}>
+  Accepted for LiveKit parity. Pipeline mapping hint — SignalWire selects the
+  model from the SWML `ai.params`.
+</ParamField>
+
+<ParamField path="allowInterruptions" type="boolean" toc={true}>
+  Accepted for LiveKit parity. Forwarded to the SignalWire AI params when the
+  session starts.
+</ParamField>
+
+<ParamField path="minEndpointingDelay" type="number" toc={true}>
+  Accepted for LiveKit parity. Forwarded to the SignalWire AI params when the
+  session starts.
+</ParamField>
+
+<ParamField path="maxEndpointingDelay" type="number" toc={true}>
+  Accepted for LiveKit parity. Forwarded to the SignalWire AI params when the
+  session starts.
+</ParamField>
+
+<ParamField path="stt / tts / vad / turnDetection / mcpServers" type="unknown" toc={true}>
+  Accepted for LiveKit source compatibility. SignalWire handles these
+  capabilities on the control plane; passing a value logs a one-time
+  "no-op" advisory and does not affect behavior.
 </ParamField>
 
 ## **Properties**
@@ -63,11 +107,16 @@ new Agent<UserData>(options: {
 </ParamField>
 
 <ParamField path="tools" type="Record<string, FunctionTool>" toc={true}>
-  The map of registered tools.
+  Internal name-keyed map of registered tools.
 </ParamField>
 
 <ParamField path="userData" type="UserData | undefined" toc={true}>
   The user data attached to this agent.
+</ParamField>
+
+<ParamField path="session" type="AgentSession | undefined" toc={true}>
+  The [`AgentSession`][agentsession] bound to this agent, if any. Set when
+  `session.start({ agent })` is called.
 </ParamField>
 
 ## **Example**
@@ -87,7 +136,7 @@ const agentDef = defineAgent({
   entry: async (ctx: JobContext) => {
     const agent = new Agent({
       instructions: 'You are a customer support agent. Help users with their accounts.',
-      tools: { lookupAccount },
+      tools: [lookupAccount],
       userData: { department: 'support' },
     });
 

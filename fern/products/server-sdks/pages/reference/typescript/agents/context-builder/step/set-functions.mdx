@@ -7,13 +7,38 @@ max-toc-depth: 3
 
 [ref-step]: /docs/server-sdks/reference/typescript/agents/context-builder/step
 
-Set which SWAIG functions are available during this step. Restricting functions
-per step prevents the AI from calling irrelevant tools.
+Set which non-internal functions are callable while this step is active.
+Restricting functions per step prevents the AI from calling irrelevant tools
+and keeps the per-step active set small — LLM tool selection accuracy
+degrades noticeably past ~7–8 simultaneously-active tools per call.
+
+<Warning>
+**Step toolsets inherit from the previous step.** If you do not call
+`setFunctions()` on a step, it inherits whichever function set was active on
+the previous step (or the previous context's last step). The server-side
+runtime only resets the active set when a step explicitly declares its
+`functions` field. This is the most common source of bugs in multi-step
+agents — forgetting `setFunctions()` on a later step lets the previous
+step's tools leak through. Best practice: call `setFunctions()` explicitly
+on every step that should have a different toolset than the previous one.
+</Warning>
+
+<Note>
+Internal functions (`startup_hook`, `hangup_hook`, `gather_submit`, etc.)
+are always protected and cannot be deactivated by this whitelist. The
+native navigation tools `next_step` and `change_context` are injected
+automatically when `setValidSteps()` / `setValidContexts()` is set; they
+are not affected by this list and do not need to appear in it.
+</Note>
 
 ## **Parameters**
 
 <ParamField path="functions" type="string | string[]" required={true} toc={true}>
-  Either `"none"` to disable all functions, or a list of function names to allow.
+  One of:
+  - `string[]` — whitelist of function names allowed in this step. Functions
+    not in the list become inactive.
+  - `[]` — explicit disable-all (no user functions callable).
+  - `"none"` — synonym for `[]`, same effect.
 </ParamField>
 
 ## **Returns**

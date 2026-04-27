@@ -1,40 +1,94 @@
 ---
 title: "PlayBackgroundFileSkill"
 slug: /reference/typescript/agents/skills/play-background-file
-description: Control background audio playback during calls.
+description: Control background audio/video playback during calls. Supports pre-configured file list or free-form URL playback.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Control background audio playback during calls. Play hold music, ambient sounds,
-or any audio file using SWML playback actions.
+Control background audio/video playback during calls using SWML playback
+actions. Two configuration modes are supported:
+
+- **Pre-configured mode (matches Python)** — supply `files` and the skill
+  emits a single tool whose `action` enum includes `start_<key>` for each
+  configured file plus `stop`.
+- **Free-form mode (TypeScript-specific)** — omit `files` and supply
+  `default_file_url` and/or `allowed_domains`. The skill emits two tools,
+  `play_background` and `stop_background`, which accept arbitrary URLs (with
+  optional domain allowlist).
 
 **Class:** `PlayBackgroundFileSkill`
 
-**Tools:** `play_background`, `stop_background`
+**Tools (pre-configured mode):** `play_background_file` (configurable via
+`tool_name`)
+
+**Tools (free-form mode):** `play_background`, `stop_background`
 
 **Env vars:** None
 
+**Multi-instance:** yes — set a distinct `tool_name` per instance.
+
+<ParamField path="tool_name" type="string" default="play_background_file" toc={true}>
+  Custom name for the generated SWAIG tool in pre-configured mode. Required
+  when registering multiple instances on the same agent.
+</ParamField>
+
+<ParamField path="files" type="object[]" toc={true}>
+  Array of pre-configured file entries that become selectable via the tool's
+  `action` enum. When supplied (and non-empty), the skill runs in
+  pre-configured mode; when omitted or empty, the skill falls back to
+  free-form mode.
+
+  Each entry has:
+
+  - `key` (string, required) — unique identifier (alphanumeric, underscores,
+    hyphens); mapped to `start_<key>` in the `action` enum.
+  - `description` (string, required) — human-readable description shown to
+    the AI.
+  - `url` (string, required) — URL of the audio/video file.
+  - `wait` (boolean, optional, default `false`) — whether to wait for the
+    file to finish playing.
+</ParamField>
+
 <ParamField path="default_file_url" type="string" toc={true}>
-  Default audio file URL to use when no URL is specified by the caller.
-  When set, the `file_url` parameter becomes optional on the `play_background` tool.
+  Default audio file URL for free-form mode. When set, the `file_url`
+  parameter on the `play_background` tool becomes optional.
 </ParamField>
 
 <ParamField path="allowed_domains" type="string[]" toc={true}>
-  List of allowed domains for audio file URLs. If set, only URLs from these
-  domains are accepted.
+  Allowlist of domains for audio file URLs in free-form mode. When set, only
+  URLs whose hostname matches or is a subdomain of one of these entries are
+  accepted.
 </ParamField>
 
-```typescript {6-9}
+## Example — pre-configured files
+
+```typescript {6-14}
 import { AgentBase, PlayBackgroundFileSkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
 agent.setPromptText('You are a helpful assistant.');
 
 await agent.addSkill(new PlayBackgroundFileSkill({
-  default_file_url: 'https://example.com/hold-music.mp3',
-  allowed_domains: ['example.com', 'cdn.example.com'],
+  tool_name: 'play_testimonial',
+  files: [
+    {
+      key: 'massey',
+      description: 'Customer success story from Massey Energy',
+      url: 'https://example.com/massey.mp4',
+      wait: true,
+    },
+  ],
 }));
 
 agent.run();
+```
+
+## Example — free-form URL
+
+```typescript {6-9}
+await agent.addSkill(new PlayBackgroundFileSkill({
+  default_file_url: 'https://example.com/hold-music.mp3',
+  allowed_domains: ['example.com', 'cdn.example.com'],
+}));
 ```

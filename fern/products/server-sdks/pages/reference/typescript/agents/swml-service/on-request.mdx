@@ -1,0 +1,90 @@
+---
+title: "onRequest"
+slug: /reference/typescript/agents/swml-service/on-request
+description: "Subclass override hook for dynamic per-request SWML generation."
+max-toc-depth: 3
+---
+
+[ref-registerroutingcallback]: /docs/server-sdks/reference/typescript/agents/swml-service/register-routing-callback
+[ref-setonrequestcallback]: /docs/server-sdks/reference/typescript/agents/swml-service/set-on-request-callback
+[ref-swmlbuilder]: /docs/server-sdks/reference/typescript/agents/swml-builder
+
+Protected hook method called on every inbound SWML request, before the document
+is returned to SignalWire. Override this in a subclass to inspect the request
+and return a customized [`SwmlBuilder`][ref-swmlbuilder] for this request.
+
+Returning `null` delegates to the next handler in the chain (any callback
+registered via [`setOnRequestCallback()`][ref-setonrequestcallback], or the
+static builder). The default implementation returns `null`.
+
+<Note>
+The TypeScript signature differs from the Python SDK's `on_request(request_data,
+callback_path)` in two ways:
+
+1. TS receives query params, body params, and headers as separate arguments
+   instead of merged `request_data`.
+2. TS returns a full [`SwmlBuilder`][ref-swmlbuilder] instance (or `null`) rather
+   than a dictionary of modifications to merge. This means a TS override replaces
+   the document entirely rather than patching it.
+</Note>
+
+## **Parameters**
+
+<ParamField path="queryParams" type="Record<string, string>" required={true} toc={true}>
+  URL query parameters from the request.
+</ParamField>
+
+<ParamField path="bodyParams" type="Record<string, unknown>" required={true} toc={true}>
+  Parsed POST body. Empty object for GET requests. Typically contains call
+  metadata from SignalWire (e.g., `call.to`, `call.from`, `call.headers`).
+</ParamField>
+
+<ParamField path="headers" type="Record<string, string>" required={true} toc={true}>
+  HTTP request headers.
+</ParamField>
+
+<ParamField path="callbackPath" type="string | undefined" toc={true}>
+  The routing callback path that matched this request, if any. Set when the
+  request arrived through a path registered via
+  [`registerRoutingCallback()`][ref-registerroutingcallback]; `undefined` for
+  requests to the main route.
+</ParamField>
+
+## **Returns**
+
+`SwmlBuilder | null` -- a [`SwmlBuilder`][ref-swmlbuilder] whose document is
+served for this request, or `null` to delegate to the next handler.
+
+## **Example**
+
+```typescript {7}
+import { SWMLService, SwmlBuilder } from '@signalwire/sdk';
+
+class DynamicService extends SWMLService {
+  constructor() {
+    super({ name: 'dynamic-ivr', route: '/' });
+  }
+
+  protected onRequest(
+    _queryParams: Record<string, string>,
+    bodyParams: Record<string, unknown>,
+    _headers: Record<string, string>,
+  ): SwmlBuilder | null {
+    const call = bodyParams?.call as Record<string, unknown> | undefined;
+    const caller = (call?.from as string) ?? '';
+    if (caller.startsWith('+1555')) {
+      // Custom builder for VIP callers
+      const builder = new SwmlBuilder();
+      builder.answer();
+      builder.play({ url: 'https://example.com/vip-greeting.mp3' });
+      return builder;
+    }
+    return null; // Use default document
+  }
+}
+
+const service = new DynamicService();
+service.addVerb('answer', {});
+service.addVerb('play', { url: 'https://example.com/default.mp3' });
+await service.serve();
+```
