@@ -1,4 +1,5 @@
 import { setExtension, getExtensions, getTagsMetadata } from "@typespec/openapi";
+import { serializeValueAsJson } from "@typespec/compiler";
 
 // ── String helpers ───────────────────────────────────────────────────
 
@@ -24,9 +25,22 @@ function getDecoratorArg(type, decoratorName) {
   return undefined;
 }
 
+// Returns the TypeSpec Value (not jsValue) for a decorator argument. Use for
+// values that need to be JSON-serialized via serializeValueAsJson — jsValue
+// for complex args (enum members, scalar constructors like utcDateTime.fromISO)
+// contains cyclic TypeSpec objects that crash the YAML emitter.
+function getDecoratorArgValue(type, decoratorName) {
+  for (const dec of type.decorators || []) {
+    if (dec.definition?.name === decoratorName) {
+      return dec.args?.[0]?.value;
+    }
+  }
+  return undefined;
+}
+
 // ── Schema serialization ─────────────────────────────────────────────
 
-function modelToJsonSchema(model, seen) {
+function modelToJsonSchema(model, seen, program) {
   if (!seen) seen = new Set();
   if (seen.has(model)) return { type: "object" };
   seen.add(model);
@@ -35,11 +49,13 @@ function modelToJsonSchema(model, seen) {
   const required = [];
 
   for (const [name, prop] of model.properties) {
-    const schema = typeToSchema(prop.type, seen);
+    const schema = typeToSchema(prop.type, seen, program);
     const doc = getDecoratorArg(prop, "@doc");
     if (doc) schema.description = doc;
-    const example = getDecoratorArg(prop, "@example");
-    if (example !== undefined) schema.example = example;
+    const exampleValue = getDecoratorArgValue(prop, "@example");
+    if (exampleValue !== undefined && program) {
+      schema.example = serializeValueAsJson(program, exampleValue, prop.type);
+    }
     properties[name] = schema;
     if (!prop.optional) required.push(name);
   }
@@ -53,7 +69,7 @@ function modelToJsonSchema(model, seen) {
   return result;
 }
 
-function typeToSchema(type, seen) {
+function typeToSchema(type, seen, program) {
   if (!seen) seen = new Set();
 
   switch (type.kind) {
@@ -64,7 +80,7 @@ function typeToSchema(type, seen) {
       if (["int32", "int64", "integer", "uint32", "uint64"].includes(n)) return { type: "integer" };
       if (["float", "float32", "float64", "numeric"].includes(n)) return { type: "number" };
       if (n === "utcDateTime") return { type: "string", format: "date-time" };
-      if (type.baseScalar) return typeToSchema(type.baseScalar, seen);
+      if (type.baseScalar) return typeToSchema(type.baseScalar, seen, program);
       return { type: "string" };
     }
     case "Intrinsic":
@@ -79,7 +95,7 @@ function typeToSchema(type, seen) {
         return nullVariant ? { oneOf: [schema, { type: "null" }] } : schema;
       }
 
-      const schemas = variants.map((v) => typeToSchema(v.type, seen));
+      const schemas = variants.map((v) => typeToSchema(v.type, seen, program));
       if (schemas.length === 2 && nullVariant) {
         const s = schemas.find((s) => s.type !== "null");
         if (s) return { ...s, nullable: true };
@@ -94,9 +110,9 @@ function typeToSchema(type, seen) {
       return { type: "boolean", enum: [type.value] };
     case "Model": {
       if (type.indexer?.key?.name === "integer") {
-        return { type: "array", items: type.indexer.value ? typeToSchema(type.indexer.value, seen) : {} };
+        return { type: "array", items: type.indexer.value ? typeToSchema(type.indexer.value, seen, program) : {} };
       }
-      return modelToJsonSchema(type, seen);
+      return modelToJsonSchema(type, seen, program);
     }
     case "Enum":
       return { type: "string", enum: [...type.members.values()].map((m) => m.value ?? m.name) };
@@ -197,7 +213,7 @@ export function $webhook(context, target, name, payload, tag, operationId) {
     summary: getDecoratorArg(payload, "@summary") ?? toHumanReadable(name),
     requestBody: {
       required: true,
-      content: { "application/json": { schema: modelToJsonSchema(payload) } },
+      content: { "application/json": { schema: modelToJsonSchema(payload, undefined, context.program) } },
     },
     responses: { 200: { description: "Webhook received" } },
   };
