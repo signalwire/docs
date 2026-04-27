@@ -6,12 +6,15 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./models/webhooks.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
+import "../../../_shared/webhook/decorator.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+@webhook("messageStatusCallback", MessageStatusCallbackPayload, MESSAGES_TAG)
 @route("/messages")
 namespace SignalWireAPI.Message.Messages {
   @tag(MESSAGES_TAG)

@@ -1,5 +1,4 @@
 import "@typespec/http";
-import "../../../../_shared/webhook/decorator.tsp";
 import "./core.tsp";
 
 using TypeSpec.Http;
@@ -28,8 +27,7 @@ model CreateMessageRequest {
   @example(false)
   send_as_mms?: boolean = false;
 
-  @webhook("messageStatusCallback", MessageStatusCallbackPayload)
-  @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/signalwire-rest/messages/webhooks/message-status-callback) webhook for the payload your URL will receive.")
+  @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/messages/webhooks/message-status-callback) webhook for the payload your URL will receive.")
   @example("https://example.com/webhooks/message-status")
   status_callback?: url;
 }
