@@ -6119,7 +6119,7 @@ paths:
 
         Messages that are still in progress (`queued` or `initiated`) cannot be redacted. Messages in terminal states such as `delivered`, `undelivered`, or `failed` are eligible. Once redacted, the original body is overwritten and cannot be recovered.
 
-        The `:message_id` path parameter accepts either a `MessageSegment` ID (the ID returned by the create endpoint and shown in `/api/messaging/logs`) or the underlying `RelayMessage` ID.
+        The `:message_id` path parameter is the message segment ID — the same ID returned by the create endpoint and shown in `/api/messaging/logs`.
 
         #### Permissions
 
@@ -12309,7 +12309,7 @@ components:
       name: message_id
       in: path
       required: true
-      description: The unique ID of the message. Accepts either a `MessageSegment` ID (the ID returned by create and shown in logs) or the underlying `RelayMessage` ID.
+      description: The message segment ID — the same ID returned by the create endpoint and shown in `/api/messaging/logs`.
       schema:
         type: string
         format: uuid
@@ -29050,7 +29050,7 @@ components:
         status_callback:
           type: string
           format: uri
-          description: A valid URL to receive message status callback events at each state change.
+          description: A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/signalwire-rest/messages/webhooks/message-status-callback) webhook for the payload your URL will receive.
           examples:
             - https://example.com/webhooks/message-status
       description: Request body for sending a new SMS or MMS message.
@@ -29326,9 +29326,6 @@ components:
       enum:
         - inbound
         - outbound
-        - outbound-api
-        - outbound-call
-        - outbound-reply
       description: The direction of a message.
     Message.MessageKind:
       type: string
@@ -29497,6 +29494,83 @@ components:
         - failed
         - read
       description: Delivery state of a message.
+    Message.MessageStatusCallbackPayload:
+      type: object
+      required:
+        - id
+        - project_id
+        - status
+        - to
+        - from
+        - body
+        - number_of_segments
+        - timestamp
+        - error_code
+        - error_message
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The unique ID of the message segment.
+          examples:
+            - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          format: uuid
+          description: The ID of the project the message belongs to.
+          examples:
+            - b2c3d4e5-f6a7-8901-bcde-f12345678901
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Message.MessageStatus'
+          description: The current delivery state of the message.
+          examples:
+            - delivered
+        to:
+          type: string
+          description: The destination phone number.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: The source phone number.
+          examples:
+            - '+15559876543'
+        body:
+          type: string
+          description: The message body text.
+          examples:
+            - Hello World!
+        number_of_segments:
+          type: integer
+          format: int32
+          description: Number of segments the message body was split into for delivery.
+          examples:
+            - 1
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the status transition.
+          examples:
+            - '2026-03-17T22:26:57Z'
+        error_code:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Provider-specific error code if delivery failed. Null when no error occurred.
+          examples:
+            - null
+        error_message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Human-readable error message if delivery failed. Null when no error occurred.
+          examples:
+            - null
+      description: Payload sent by SignalWire to the `status_callback` URL each time a message transitions to a new state. The same payload shape is used for RELAY SDK message callbacks and SWML `send_sms` status callbacks.
+      title: Message status callback
     Message.MessagesCreateStatusCode422:
       type: object
       required:
@@ -42792,3 +42866,81 @@ webhooks:
         | `pending` → `completed` | `number_assignment_activated` | The number has been successfully assigned to the campaign. |
       tags:
         - Campaign Registry
+  messageStatusCallback:
+    post:
+      operationId: message_status_callback
+      summary: Message status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: The unique ID of the message segment.
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                project_id:
+                  type: string
+                  description: The ID of the project the message belongs to.
+                  example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                status:
+                  type: string
+                  enum:
+                    - queued
+                    - initiated
+                    - sent
+                    - delivered
+                    - undelivered
+                    - failed
+                    - read
+                  description: The current delivery state of the message.
+                  example: delivered
+                to:
+                  type: string
+                  description: The destination phone number.
+                  example: '+15551234567'
+                from:
+                  type: string
+                  description: The source phone number.
+                  example: '+15559876543'
+                body:
+                  type: string
+                  description: The message body text.
+                  example: Hello World!
+                number_of_segments:
+                  type: integer
+                  description: Number of segments the message body was split into for delivery.
+                  example: 1
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: Timestamp of the status transition.
+                  example: '2026-03-17T22:26:57Z'
+                error_code:
+                  type: string
+                  nullable: true
+                  description: Provider-specific error code if delivery failed. Null when no error occurred.
+                  example: null
+                error_message:
+                  type: string
+                  nullable: true
+                  description: Human-readable error message if delivery failed. Null when no error occurred.
+                  example: null
+              required:
+                - id
+                - project_id
+                - status
+                - to
+                - from
+                - body
+                - number_of_segments
+                - timestamp
+                - error_code
+                - error_message
+              description: Payload sent by SignalWire to the `status_callback` URL each time a message transitions to a new state. The same payload shape is used for RELAY SDK message callbacks and SWML `send_sms` status callbacks.
+      responses:
+        '200':
+          description: Webhook received
+      description: Payload sent by SignalWire to the `status_callback` URL each time a message transitions to a new state. The same payload shape is used for RELAY SDK message callbacks and SWML `send_sms` status callbacks.

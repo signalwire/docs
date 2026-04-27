@@ -39,7 +39,7 @@ namespace SignalWireAPI.Message.Messages {
       
       Messages that are still in progress (`queued` or `initiated`) cannot be redacted. Messages in terminal states such as `delivered`, `undelivered`, or `failed` are eligible. Once redacted, the original body is overwritten and cannot be recovered.
       
-      The `:message_id` path parameter accepts either a `MessageSegment` ID (the ID returned by the create endpoint and shown in `/api/messaging/logs`) or the underlying `RelayMessage` ID.
+      The `:message_id` path parameter is the message segment ID — the same ID returned by the create endpoint and shown in `/api/messaging/logs`.
       
       ${tokenPermissions<"_Messaging_">}
       """)
