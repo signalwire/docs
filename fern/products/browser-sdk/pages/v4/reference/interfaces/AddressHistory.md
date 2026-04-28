@@ -1,6 +1,6 @@
 # Interface: AddressHistory\<TAddress\>
 
-Defined in: [core/types/conversation.types.ts:14](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L14)
+Defined in: [core/types/conversation.types.ts:14](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L14)
 
 Address history entry from conversation messages
 Contains a reference to the sender address as an observable
@@ -20,9 +20,9 @@ circular dependencies. The Address class provides the concrete type.
 
 | Property | Type | Defined in |
 | ------ | ------ | ------ |
-| <a id="ended"></a> `ended?` | `number` | [core/types/conversation.types.ts:19](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L19) |
-| <a id="fromaddress"></a> `fromAddress$` | `Observable`\<`TAddress`\> \| `undefined` | [core/types/conversation.types.ts:20](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L20) |
-| <a id="id"></a> `id` | `string` | [core/types/conversation.types.ts:15](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L15) |
-| <a id="kind"></a> `kind` | `string` | [core/types/conversation.types.ts:16](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L16) |
-| <a id="started"></a> `started` | `number` | [core/types/conversation.types.ts:18](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L18) |
-| <a id="status"></a> `status` | `string` | [core/types/conversation.types.ts:17](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/types/conversation.types.ts#L17) |
+| <a id="ended"></a> `ended?` | `number` | [core/types/conversation.types.ts:19](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L19) |
+| <a id="fromaddress"></a> `fromAddress$` | `Observable`\<`TAddress`\> \| `undefined` | [core/types/conversation.types.ts:20](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L20) |
+| <a id="id"></a> `id` | `string` | [core/types/conversation.types.ts:15](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L15) |
+| <a id="kind"></a> `kind` | `string` | [core/types/conversation.types.ts:16](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L16) |
+| <a id="started"></a> `started` | `number` | [core/types/conversation.types.ts:18](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L18) |
+| <a id="status"></a> `status` | `string` | [core/types/conversation.types.ts:17](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/conversation.types.ts#L17) |

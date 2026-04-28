@@ -1,0 +1,17 @@
+# addressId
+
+#### Get Signature
+
+> **get** **addressId**(): `string` \| `undefined`
+
+Defined in: [core/entities/Participant.ts:402](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/Participant.ts#L402)
+
+Address ID of this participant, or `undefined` if not available.
+
+##### Returns
+
+`string` \| `undefined`
+
+#### Implementation of
+
+[`CallParticipant`](../../interfaces/CallParticipant.md).[`addressId`](../../interfaces/CallParticipant.md#addressid)

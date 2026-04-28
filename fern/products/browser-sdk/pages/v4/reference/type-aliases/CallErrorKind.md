@@ -2,7 +2,7 @@
 
 > **CallErrorKind** = `"media"` \| `"signaling"` \| `"timeout"` \| `"rejected"` \| `"network"` \| `"internal"`
 
-Defined in: [core/errors.ts:241](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L241)
+Defined in: [core/errors.ts:241](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L241)
 
 Semantic category of a call-lifecycle error.
 

@@ -1,6 +1,6 @@
 # Class: CollectionFetchError
 
-Defined in: [core/errors.ts:357](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L357)
+Defined in: [core/errors.ts:370](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L370)
 
 ## Extends
 
@@ -12,7 +12,7 @@ Defined in: [core/errors.ts:357](https://github.com/signalwire/browser-sdk/blob/
 
 > **new CollectionFetchError**(`operation`, `originalError`): `CollectionFetchError`
 
-Defined in: [core/errors.ts:358](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L358)
+Defined in: [core/errors.ts:371](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L371)
 
 #### Parameters
 
@@ -33,5 +33,5 @@ Defined in: [core/errors.ts:358](https://github.com/signalwire/browser-sdk/blob/
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="operation"></a> `operation` | `public` | `string` | [core/errors.ts:359](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L359) |
-| <a id="originalerror"></a> `originalError` | `public` | `unknown` | [core/errors.ts:360](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L360) |
+| <a id="operation"></a> `operation` | `public` | `string` | [core/errors.ts:372](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L372) |
+| <a id="originalerror"></a> `originalError` | `public` | `unknown` | [core/errors.ts:373](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L373) |

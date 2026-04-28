@@ -1,0 +1,29 @@
+# keyframeCooldown
+
+#### Get Signature
+
+> **get** **keyframeCooldown**(): `number`
+
+Defined in: [containers/PreferencesContainer.ts:756](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/containers/PreferencesContainer.ts#L756)
+
+Cooldown period in ms after keyframe burst limit is reached.
+
+##### Returns
+
+`number`
+
+#### Set Signature
+
+> **set** **keyframeCooldown**(`value`): `void`
+
+Defined in: [containers/PreferencesContainer.ts:759](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/containers/PreferencesContainer.ts#L759)
+
+##### Parameters
+
+| Parameter | Type |
+| ------ | ------ |
+| `value` | `number` |
+
+##### Returns
+
+`void`

@@ -1,6 +1,6 @@
 # Interface: CallAddress
 
-Defined in: [core/entities/types/call.types.ts:139](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L139)
+Defined in: [core/entities/types/call.types.ts:177](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L177)
 
 Minimal address interface for call context
 Avoids circular dependency with full Address class
@@ -9,10 +9,10 @@ Avoids circular dependency with full Address class
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="displayname"></a> `displayName?` | `readonly` | `string` | [core/entities/types/call.types.ts:141](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L141) |
-| <a id="id"></a> `id` | `readonly` | `string` | [core/entities/types/call.types.ts:140](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L140) |
-| <a id="textmessages"></a> `textMessages$` | `readonly` | `Observable`\<`CallTextMessageCollection` \| `undefined`\> | [core/entities/types/call.types.ts:144](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L144) |
-| <a id="type"></a> `type?` | `readonly` | `string` | [core/entities/types/call.types.ts:142](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L142) |
+| <a id="displayname"></a> `displayName?` | `readonly` | `string` | [core/entities/types/call.types.ts:179](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L179) |
+| <a id="id"></a> `id` | `readonly` | `string` | [core/entities/types/call.types.ts:178](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L178) |
+| <a id="textmessages"></a> `textMessages$` | `readonly` | `Observable`\<`CallTextMessageCollection` \| `undefined`\> | [core/entities/types/call.types.ts:182](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L182) |
+| <a id="type"></a> `type?` | `readonly` | `string` | [core/entities/types/call.types.ts:180](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L180) |
 
 ## Methods
 
@@ -20,7 +20,7 @@ Avoids circular dependency with full Address class
 
 > **sendText**(`text`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:143](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L143)
+Defined in: [core/entities/types/call.types.ts:181](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L181)
 
 #### Parameters
 

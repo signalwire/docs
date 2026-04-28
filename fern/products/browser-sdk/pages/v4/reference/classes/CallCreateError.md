@@ -1,6 +1,6 @@
 # Class: CallCreateError
 
-Defined in: [core/errors.ts:264](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L264)
+Defined in: [core/errors.ts:264](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L264)
 
 ## Extends
 
@@ -12,7 +12,7 @@ Defined in: [core/errors.ts:264](https://github.com/signalwire/browser-sdk/blob/
 
 > **new CallCreateError**(`message`, `error?`, `direction?`, `options?`): `CallCreateError`
 
-Defined in: [core/errors.ts:265](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L265)
+Defined in: [core/errors.ts:265](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L265)
 
 #### Parameters
 
@@ -35,6 +35,6 @@ Defined in: [core/errors.ts:265](https://github.com/signalwire/browser-sdk/blob/
 
 | Property | Modifier | Type | Default value | Inherited from | Defined in |
 | ------ | ------ | ------ | ------ | ------ | ------ |
-| <a id="direction"></a> `direction` | `public` | `"inbound"` \| `"outbound"` | `'outbound'` | - | [core/errors.ts:268](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L268) |
-| <a id="error"></a> `error` | `public` | `unknown` | `null` | - | [core/errors.ts:267](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L267) |
-| <a id="message"></a> `message` | `public` | `string` | `undefined` | `Error.message` | [core/errors.ts:266](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L266) |
+| <a id="direction"></a> `direction` | `public` | `"inbound"` \| `"outbound"` | `'outbound'` | - | [core/errors.ts:268](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L268) |
+| <a id="error"></a> `error` | `public` | `unknown` | `null` | - | [core/errors.ts:267](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L267) |
+| <a id="message"></a> `message` | `public` | `string` | `undefined` | `Error.message` | [core/errors.ts:266](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L266) |

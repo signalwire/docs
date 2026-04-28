@@ -1,6 +1,6 @@
 # Class: DeviceTokenError
 
-Defined in: [core/errors.ts:398](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L398)
+Defined in: [core/errors.ts:468](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L468)
 
 ## Extends
 
@@ -12,7 +12,7 @@ Defined in: [core/errors.ts:398](https://github.com/signalwire/browser-sdk/blob/
 
 > **new DeviceTokenError**(`message`, `originalError?`): `DeviceTokenError`
 
-Defined in: [core/errors.ts:399](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L399)
+Defined in: [core/errors.ts:469](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L469)
 
 #### Parameters
 
@@ -33,4 +33,4 @@ Defined in: [core/errors.ts:399](https://github.com/signalwire/browser-sdk/blob/
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="originalerror"></a> `originalError?` | `public` | `unknown` | [core/errors.ts:401](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L401) |
+| <a id="originalerror"></a> `originalError?` | `public` | `unknown` | [core/errors.ts:471](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L471) |

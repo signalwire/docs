@@ -2,13 +2,15 @@
 
 > **setLogger**(`logger`): `void`
 
-Defined in: [utils/logger.ts:55](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/utils/logger.ts#L55)
+Defined in: [utils/logger.ts:79](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/utils/logger.ts#L79)
+
+Replace the built-in logger with a custom implementation. Pass `null` to restore defaults.
 
 ## Parameters
 
 | Parameter | Type |
 | ------ | ------ |
-| `logger` | `SDKLogger` \| `null` |
+| `logger` | [`SDKLogger`](../interfaces/SDKLogger.md) \| `null` |
 
 ## Returns
 

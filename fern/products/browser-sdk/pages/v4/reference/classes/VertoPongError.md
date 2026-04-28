@@ -1,6 +1,6 @@
 # Class: VertoPongError
 
-Defined in: [core/errors.ts:339](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L339)
+Defined in: [core/errors.ts:352](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L352)
 
 ## Extends
 
@@ -12,7 +12,7 @@ Defined in: [core/errors.ts:339](https://github.com/signalwire/browser-sdk/blob/
 
 > **new VertoPongError**(`originalError`): `VertoPongError`
 
-Defined in: [core/errors.ts:340](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L340)
+Defined in: [core/errors.ts:353](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L353)
 
 #### Parameters
 
@@ -32,4 +32,4 @@ Defined in: [core/errors.ts:340](https://github.com/signalwire/browser-sdk/blob/
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="originalerror"></a> `originalError` | `public` | `unknown` | [core/errors.ts:340](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/errors.ts#L340) |
+| <a id="originalerror"></a> `originalError` | `public` | `unknown` | [core/errors.ts:353](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/errors.ts#L353) |

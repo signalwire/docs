@@ -1,6 +1,6 @@
 # Interface: CallState
 
-Defined in: [core/entities/types/call.types.ts:196](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L196)
+Defined in: [core/entities/types/call.types.ts:246](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L246)
 
 Observable state of a call (status, recording, participants, etc.).
 
@@ -12,21 +12,21 @@ Observable state of a call (status, recording, participants, etc.).
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="id"></a> `id` | `readonly` | `string` | [core/entities/types/call.types.ts:197](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L197) |
-| <a id="locked"></a> `locked` | `readonly` | `boolean` | [core/entities/types/call.types.ts:207](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L207) |
-| <a id="locked-1"></a> `locked$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:206](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L206) |
-| <a id="meta"></a> `meta` | `readonly` | `Record`\<`string`, `unknown`\> | [core/entities/types/call.types.ts:209](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L209) |
-| <a id="meta-1"></a> `meta$` | `readonly` | `Observable`\<`Record`\<`string`, `unknown`\>\> | [core/entities/types/call.types.ts:208](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L208) |
-| <a id="participants"></a> `participants` | `readonly` | [`CallParticipant`](CallParticipant.md)[] | [core/entities/types/call.types.ts:211](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L211) |
-| <a id="participants-1"></a> `participants$` | `readonly` | `Observable`\<[`CallParticipant`](CallParticipant.md)[]\> | [core/entities/types/call.types.ts:210](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L210) |
-| <a id="raisehandpriority"></a> `raiseHandPriority` | `readonly` | `boolean` | [core/entities/types/call.types.ts:205](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L205) |
-| <a id="raisehandpriority-1"></a> `raiseHandPriority$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:204](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L204) |
-| <a id="recording"></a> `recording` | `readonly` | `boolean` | [core/entities/types/call.types.ts:201](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L201) |
-| <a id="recording-1"></a> `recording$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:200](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L200) |
-| <a id="status"></a> `status` | `readonly` | [`CallStatus`](../type-aliases/CallStatus.md) | [core/entities/types/call.types.ts:199](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L199) |
-| <a id="status-1"></a> `status$` | `readonly` | `Observable`\<[`CallStatus`](../type-aliases/CallStatus.md)\> | [core/entities/types/call.types.ts:198](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L198) |
-| <a id="streaming"></a> `streaming` | `readonly` | `boolean` | [core/entities/types/call.types.ts:203](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L203) |
-| <a id="streaming-1"></a> `streaming$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:202](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L202) |
+| <a id="id"></a> `id` | `readonly` | `string` | [core/entities/types/call.types.ts:247](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L247) |
+| <a id="locked"></a> `locked` | `readonly` | `boolean` | [core/entities/types/call.types.ts:257](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L257) |
+| <a id="locked-1"></a> `locked$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:256](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L256) |
+| <a id="meta"></a> `meta` | `readonly` | `Record`\<`string`, `unknown`\> | [core/entities/types/call.types.ts:259](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L259) |
+| <a id="meta-1"></a> `meta$` | `readonly` | `Observable`\<`Record`\<`string`, `unknown`\>\> | [core/entities/types/call.types.ts:258](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L258) |
+| <a id="participants"></a> `participants` | `readonly` | [`CallParticipant`](CallParticipant.md)[] | [core/entities/types/call.types.ts:261](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L261) |
+| <a id="participants-1"></a> `participants$` | `readonly` | `Observable`\<[`CallParticipant`](CallParticipant.md)[]\> | [core/entities/types/call.types.ts:260](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L260) |
+| <a id="raisehandpriority"></a> `raiseHandPriority` | `readonly` | `boolean` | [core/entities/types/call.types.ts:255](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L255) |
+| <a id="raisehandpriority-1"></a> `raiseHandPriority$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:254](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L254) |
+| <a id="recording"></a> `recording` | `readonly` | `boolean` | [core/entities/types/call.types.ts:251](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L251) |
+| <a id="recording-1"></a> `recording$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:250](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L250) |
+| <a id="status"></a> `status` | `readonly` | [`CallStatus`](../type-aliases/CallStatus.md) | [core/entities/types/call.types.ts:249](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L249) |
+| <a id="status-1"></a> `status$` | `readonly` | `Observable`\<[`CallStatus`](../type-aliases/CallStatus.md)\> | [core/entities/types/call.types.ts:248](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L248) |
+| <a id="streaming"></a> `streaming` | `readonly` | `boolean` | [core/entities/types/call.types.ts:253](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L253) |
+| <a id="streaming-1"></a> `streaming$` | `readonly` | `Observable`\<`boolean`\> | [core/entities/types/call.types.ts:252](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L252) |
 
 ## Methods
 
@@ -34,7 +34,7 @@ Observable state of a call (status, recording, participants, etc.).
 
 > **setMeta**(`meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:212](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L212)
+Defined in: [core/entities/types/call.types.ts:262](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L262)
 
 #### Parameters
 
@@ -52,7 +52,7 @@ Defined in: [core/entities/types/call.types.ts:212](https://github.com/signalwir
 
 > **updateMeta**(`meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:213](https://github.com/signalwire/browser-sdk/blob/22134db25f9e6e53565f0e7df00bf7f13ab479c3/packages/main/src/core/entities/types/call.types.ts#L213)
+Defined in: [core/entities/types/call.types.ts:263](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/call.types.ts#L263)
 
 #### Parameters
 
