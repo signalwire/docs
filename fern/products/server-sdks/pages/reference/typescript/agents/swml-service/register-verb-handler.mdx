@@ -1,0 +1,63 @@
+---
+title: "registerVerbHandler"
+slug: /reference/typescript/agents/swml-service/register-verb-handler
+description: "Register custom verb handlers for specialized SWML verb processing."
+max-toc-depth: 3
+---
+
+[ref-addverb]: /docs/server-sdks/reference/typescript/agents/swml-service/add-verb
+
+Register a custom verb handler for specialized validation and configuration of
+a SWML verb. When a verb with a registered handler is added via
+[`addVerb()`][ref-addverb], the handler's
+`validateConfig()` method is used instead of generic schema validation.
+
+<Tip>
+Custom verb handlers are useful when a verb has complex validation rules that
+go beyond JSON Schema checks -- for example, mutually exclusive parameters or
+conditional requirements.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="handler" type="SWMLVerbHandler" required={true} toc={true}>
+  An object implementing the `SWMLVerbHandler` interface. Must implement three
+  methods:
+  - `getVerbName(): string` -- returns the verb name this handler manages
+  - `validateConfig(config): [boolean, string[]]` -- returns `[isValid, errors]`
+  - `buildConfig(opts): Record<string, unknown>` -- returns a configuration object
+</ParamField>
+
+## **Returns**
+
+`void`
+
+## **Example**
+
+```typescript {21}
+import { SWMLService } from '@signalwire/sdk';
+import type { SWMLVerbHandler } from '@signalwire/sdk';
+
+const customHandler: SWMLVerbHandler = {
+  getVerbName() {
+    return 'my_verb';
+  },
+  validateConfig(config: Record<string, unknown>) {
+    const errors: string[] = [];
+    if (!('target' in config)) {
+      errors.push("Missing required field 'target'");
+    }
+    return [errors.length === 0, errors];
+  },
+  buildConfig(opts: Record<string, unknown>) {
+    return { target: opts.target };
+  },
+};
+
+const service = new SWMLService({ name: 'custom-service' });
+service.registerVerbHandler(customHandler);
+
+// Now addVerb will use the custom handler for validation
+service.addVerb('my_verb', { target: 'https://example.com' });
+console.log(service.renderDocument());
+```

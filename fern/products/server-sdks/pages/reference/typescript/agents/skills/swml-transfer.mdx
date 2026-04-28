@@ -1,37 +1,89 @@
 ---
 title: "SwmlTransferSkill"
 slug: /reference/typescript/agents/skills/swml-transfer
-description: Transfer calls using SWML transfer actions.
+description: Transfer calls between agents/endpoints based on pattern matching.
 ---
 
 [add-skill]: /docs/server-sdks/reference/typescript/agents/agent-base/add-skill
 
-Transfer calls using SWML transfer actions. Supports named pattern-based transfers
-with friendly destination names, or arbitrary direct-destination transfers.
+Transfer calls between agents or endpoints using SWML transfer actions. The
+skill accepts either a **Python-style `transfers`** config (regex pattern →
+per-entry config) or a **TypeScript-style `patterns`** array of named
+destinations. At least one of the two shapes is required — `setup()` fails
+closed otherwise.
 
 **Class:** `SwmlTransferSkill`
 
-**Tools:** `transfer_call` (always), `list_transfer_destinations` (when `patterns` are configured)
+**Tools:** `transfer_call` always; `list_transfer_destinations` additionally
+registered when at least one entry is supplied in `patterns`.
 
 **Env vars:** None
 
-<ParamField path="patterns" type={"Record<string, unknown>[]"} toc={true}>
-  Array of named transfer patterns. Each object has:
-  - `name` (string, required) -- Friendly name for the destination.
-  - `destination` (string, required) -- SIP URI, phone number, or agent URL.
-  - `description` (string, optional) -- Human-readable description.
+**Multi-instance:** yes — set a distinct `tool_name` per instance.
+
+<ParamField path="transfers" type={"Record<string, TransferConfig>"} toc={true}>
+  Python-style map of transfer configs keyed by regex pattern (or name). Each
+  entry includes either `url` or `address` (not both), plus optional
+  `message`, `return_message`, `post_process`, `final`, and `from_addr`.
+
+  Either `transfers` or `patterns` must be provided; both may be combined.
+  `setup()` fails closed when neither is configured.
+</ParamField>
+
+<ParamField path="patterns" type="TransferPattern[]" toc={true}>
+  TypeScript-style array of named transfer patterns. Each object has:
+
+  - `name` (string, required) — friendly name for the destination.
+  - `destination` (string, required) — SIP URI, phone number, or agent URL.
+  - `description` (string) — optional human-readable description.
+  - `message` / `returnMessage` / `postProcess` / `final` / `fromAddr` —
+    optional per-pattern overrides.
 </ParamField>
 
 <ParamField path="allow_arbitrary" type="boolean" toc={true}>
-  Whether to allow transfers to arbitrary destinations not in the patterns list.
-  Defaults to `true` when no patterns are configured, `false` when patterns exist.
+  Whether to allow transfers to arbitrary destinations not listed in
+  `patterns` / `transfers`. When unset, defaults depend on whether any
+  patterns are configured.
 </ParamField>
 
-<ParamField path="default_message" type="string" default="Transferring your call now." toc={true}>
-  Default message to say before transferring.
+<ParamField path="tool_name" type="string" default="transfer_call" toc={true}>
+  Name of the transfer tool exposed to the AI.
 </ParamField>
 
-```typescript {6-16}
+<ParamField path="description" type="string" default="Transfer call based on pattern matching" toc={true}>
+  Description for the transfer tool shown to the AI.
+</ParamField>
+
+<ParamField path="parameter_name" type="string" default="transfer_type" toc={true}>
+  Name of the parameter that accepts the transfer type.
+</ParamField>
+
+<ParamField path="parameter_description" type="string" default="The type of transfer to perform" toc={true}>
+  Description for the transfer-type parameter.
+</ParamField>
+
+<ParamField path="default_message" type="string" default="Please specify a valid transfer type." toc={true}>
+  Message spoken when no pattern matches.
+</ParamField>
+
+<ParamField path="default_post_process" type="boolean" default="false" toc={true}>
+  Whether to post-process the default message with the AI.
+</ParamField>
+
+<ParamField path="required_fields" type={"Record<string, string>"} default="{}" toc={true}>
+  Map of additional fields (name → description) the agent must collect before
+  a transfer.
+</ParamField>
+
+<Note>
+Regex patterns in `transfers` are matched **case-sensitively**. Use character
+classes or flags in the source pattern when case-insensitive matching is
+needed.
+</Note>
+
+## Example — TypeScript patterns
+
+```typescript {6-20}
 import { AgentBase, SwmlTransferSkill } from '@signalwire/sdk';
 
 const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
@@ -50,7 +102,25 @@ await agent.addSkill(new SwmlTransferSkill({
       description: 'Technical support line',
     },
   ],
-  default_message: 'Let me connect you now.',
+  default_message: 'Please specify sales or support.',
+}));
+
+agent.run();
+```
+
+## Example — Python-style transfers
+
+```typescript {6-14}
+import { AgentBase, SwmlTransferSkill } from '@signalwire/sdk';
+
+const agent = new AgentBase({ name: 'assistant', route: '/assistant' });
+agent.setPromptText('You are a helpful assistant.');
+
+await agent.addSkill(new SwmlTransferSkill({
+  transfers: {
+    '^sales$':   { address: 'sip:sales@signalwire.com' },
+    '^support$': { url: 'https://your-server.com/support-agent' },
+  },
 }));
 
 agent.run();
