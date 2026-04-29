@@ -1,14 +1,28 @@
+---
+title: "sw-ui-split-button"
+slug: "/web-components/sw-ui-split-button"
+---
 # `<sw-ui-split-button>`
 
-Pill-shaped split button: main action + optional chevron dropdown.
+Pill-shaped icon button with an optional chevron dropdown — the
+atomic building block of `<sw-ui-control-bar>`'s mic / camera / speaker
+buttons.
 
-When `items` is non-empty, renders as a unified pill with a subtle
-divider between the icon area and the chevron: `[ 🎤 | ▲ ]`
+Renders in two layouts:
 
-When `items` is empty, renders as a single pill button.
+- **With a chevron menu** (a slotted `<sw-ui-dropup>` or non-empty
+`items`): a unified pill split into a main click zone and a chevron
+click zone with a subtle divider — `[ 🎤 | ▲ ]`. Clicking the icon
+area fires the primary event; clicking the chevron opens the dropup.
+- **Without a chevron menu**: a single pill button.
 
-- **active/inactive** slots → toggle button, dispatches `sw-split-button-toggle`
-- **default** slot only → push button, dispatches `sw-split-button-click`
+Two interaction modes are inferred from which slots have content:
+
+- **Toggle mode** — both `active` and `inactive` slots are populated.
+Each click flips the `active` attribute and fires
+`sw-split-button-toggle` with the **new** state.
+- **Push mode** — only the default slot is populated. Each click fires
+`sw-split-button-click` without toggling.
 
 _Class: `SwUiSplitButton` · Module: `packages/web-components/src/components/UI/controls/sw-ui-split-button.ts`_
 
@@ -31,32 +45,33 @@ _Class: `SwUiSplitButton` · Module: `packages/web-components/src/components/UI/
 
 | Name     | Field  | Inherited From |
 | -------- | ------ | -------------- |
-| `items`  | items  |                |
 | `active` | active |                |
+| `items`  | items  |                |
 
 ### CSS Properties
 
-| Name                         | Default | Description                                          |
-| ---------------------------- | ------- | ---------------------------------------------------- |
-| `--sw-split-button-size`     |         | \[44px]  - height (width auto-fits content)          |
-| `--sw-split-button-bg`       |         | button background (falls back to --bg-surface)       |
-| `--sw-split-button-bg-hover` |         | hover background (falls back to --bg-surface-raised) |
-| `--sw-split-button-color`    |         | icon colour (falls back to --fg-default)             |
-| `--sw-split-button-radius`   |         | border-radius (falls back to --radius-full)          |
+| Name                         | Default | Description                                        |
+| ---------------------------- | ------- | -------------------------------------------------- |
+| `--sw-split-button-size`     |         | \[44px] - Button height (width auto-fits content). |
+| `--sw-split-button-bg`       |         | \[var(--bg-surface)] - Button background.          |
+| `--sw-split-button-bg-hover` |         | \[var(--bg-surface-raised)] - Hover background.    |
+| `--sw-split-button-color`    |         | \[var(--fg-default)] - Icon color.                 |
+| `--sw-split-button-radius`   |         | \[var(--radius-full)] - Border radius.             |
 
 ### Slots
 
-| Name         | Description                  |
-| ------------ | ---------------------------- |
-| `active`     | icon shown when active       |
-| `inactive`   | icon shown when inactive     |
-| `(default)-` | icon for a non-toggle button |
+| Name       | Description                                                               |
+| ---------- | ------------------------------------------------------------------------- |
+| `active`   | Icon shown when \`active\` is \`true\` (toggle mode).                     |
+| `inactive` | Icon shown when \`active\` is \`false\` (toggle mode).                    |
+|            | Default slot used by push-mode buttons (no \`active\`/\`inactive\` slot). |
+| `dropup`   | Optional \`\<sw-ui-dropup>\` to enable the chevron menu.                  |
 
 ### Events
 
 | Name | Detail | Description |
 | ---- | ------ | ----------- |
-| `sw-split-button-click` | — | Fired on push-mode click. No detail. |
-| `sw-split-button-toggle` | — | Fired on toggle-mode click. `detail` is the new active state (boolean). |
+| `sw-split-button-click` | — | Fired in push mode after each click. No detail. |
+| `sw-split-button-toggle` | — | Fired in toggle mode after each click. |
 
 ---

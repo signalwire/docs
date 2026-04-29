@@ -1,3 +1,7 @@
+---
+title: "sw-ui-control-bar"
+slug: "/web-components/sw-ui-control-bar"
+---
 # `<sw-ui-control-bar>`
 
 Call controls bar.

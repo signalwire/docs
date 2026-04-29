@@ -1,3 +1,7 @@
+---
+title: "sw-ui-call-layout"
+slug: "/web-components/sw-ui-call-layout"
+---
 # `<sw-ui-call-layout>`
 
 Fluid call layout that adapts to any container shape.

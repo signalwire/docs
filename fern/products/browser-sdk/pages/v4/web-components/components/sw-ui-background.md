@@ -1,9 +1,24 @@
+---
+title: "sw-ui-background"
+slug: "/web-components/sw-ui-background"
+---
 # `<sw-ui-background>`
 
-Video background with a blurred thumbnail placeholder that crossfades into
-the full-resolution image once it has finished loading.
+Decorative full-bleed background that progressively reveals a
+high-resolution image — a blurred thumbnail shows immediately, then
+crossfades to the full image once it has finished loading.
 
-Slot this into `sw-ui-call-layout`'s `background` slot.
+The component owns two stacked layers:
+
+1. A blurred-thumbnail layer driven by a `data:` URL (small, encoded
+inline) so something visible paints on first frame.
+2. An `<img>` that crossfades in (`opacity: 0 → 1`, slight `transform: scale`
+settle) when its `load` event fires.
+
+Set `default` to use the built-in SignalWire brand background; otherwise
+supply your own `thumbnail` (data URL) and `src` (full image URL).
+Designed to be slotted into `<sw-ui-call-layout>`'s `background` slot or
+`<sw-call-widget>`'s `background` slot.
 
 _Class: `SwUiBackground` · Module: `packages/web-components/src/components/UI/layout/sw-ui-background.ts`_
 
@@ -17,12 +32,12 @@ _Class: `SwUiBackground` · Module: `packages/web-components/src/components/UI/l
 
 ### Fields
 
-| Name         | Privacy | Type      | Default  | Description                                              | Inherited From |
-| ------------ | ------- | --------- | -------- | -------------------------------------------------------- | -------------- |
-| `default`    |         | `boolean` | `false`  | Use the built-in SignalWire background image             |                |
-| `thumbnail`  |         | `string`  |          | Data URL shown immediately as a blurred preview          |                |
-| `src`        |         | `string`  |          | URL of the full-resolution background image              |                |
-| `blurAmount` |         | `string`  | `'20px'` | CSS blur amount applied to the thumbnail (default: 20px) |                |
+| Name         | Privacy | Type                  | Default  | Description | Inherited From |
+| ------------ | ------- | --------------------- | -------- | ----------- | -------------- |
+| `default`    |         | `boolean`             | `false`  |             |                |
+| `thumbnail`  |         | `string \| undefined` |          |             |                |
+| `src`        |         | `string \| undefined` |          |             |                |
+| `blurAmount` |         | `string`              | `'20px'` |             |                |
 
 ### Attributes
 
@@ -35,9 +50,9 @@ _Class: `SwUiBackground` · Module: `packages/web-components/src/components/UI/l
 
 ### CSS Parts
 
-| Name    | Description                                         |
-| ------- | --------------------------------------------------- |
-| `thumb` | Blurred low-res thumbnail layer.                    |
-| `image` | Full-resolution image layer (fades in once loaded). |
+| Name    | Description                                                     |
+| ------- | --------------------------------------------------------------- |
+| `thumb` | The blurred low-res thumbnail layer (initially visible).        |
+| `image` | The full-resolution \`\<img>\` layer that fades in once loaded. |
 
 ---
