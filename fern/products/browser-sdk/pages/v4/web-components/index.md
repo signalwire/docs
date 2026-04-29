@@ -1,6 +1,7 @@
 ---
-title: "Web Components"
+title: "Overview"
 slug: "/web-components"
+position: 0
 ---
 
 # Browser SDK Web Components
