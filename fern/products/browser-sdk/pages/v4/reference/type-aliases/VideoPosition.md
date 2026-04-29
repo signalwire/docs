@@ -1,0 +1,18 @@
+---
+title: "VideoPosition"
+---
+
+# Type Alias: VideoPosition
+
+> **VideoPosition** = `"auto"` \| `` `reserved-${number}` `` \| `` `standard-${number}` `` \| `"off-canvas"` \| `"playback"` \| `"full-screen"`
+
+Defined in: [core/types/call.types.ts:152](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/call.types.ts#L152)
+
+Position of a participant's video within the layout canvas.
+
+- `'auto'` — Automatically positioned by the layout engine.
+- `` `reserved-${number}` `` — A reserved slot in the layout (e.g., `'reserved-0'`).
+- `` `standard-${number}` `` — A standard slot in the layout (e.g., `'standard-1'`).
+- `'off-canvas'` — Participant is not visible in the layout.
+- `'playback'` — Playback position for media streams.
+- `'full-screen'` — Participant occupies the entire canvas.
