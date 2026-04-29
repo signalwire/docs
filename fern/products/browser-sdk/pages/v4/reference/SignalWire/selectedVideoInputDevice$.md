@@ -1,0 +1,43 @@
+---
+title: "selectedVideoInputDevice$"
+---
+
+# selectedVideoInputDevice$
+
+#### Get Signature
+
+> **get** **selectedVideoInputDevice$**(): `Observable`\<`MediaDeviceInfo` \| `null`\>
+
+Defined in: [clients/SignalWire.ts:1154](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1154)
+
+Observable of the currently selected video input device.
+
+##### Returns
+
+`Observable`\<`MediaDeviceInfo` \| `null`\>
+
+Observable of the currently selected video input device, or `null` if none.
+
+#### Implementation of
+
+[`DeviceController`](../interfaces/DeviceController.md).[`selectedVideoInputDevice$`](../interfaces/DeviceController.md#selectedvideoinputdevice-1)
+
+## selectedVideoInputDevice
+
+#### Get Signature
+
+> **get** **selectedVideoInputDevice**(): `MediaDeviceInfo` \| `null`
+
+Defined in: [clients/SignalWire.ts:1166](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1166)
+
+Currently selected video input device, or `null` if none.
+
+##### Returns
+
+`MediaDeviceInfo` \| `null`
+
+Currently selected video input device, or `null` if none.
+
+#### Implementation of
+
+[`DeviceController`](../interfaces/DeviceController.md).[`selectedVideoInputDevice`](../interfaces/DeviceController.md#selectedvideoinputdevice)

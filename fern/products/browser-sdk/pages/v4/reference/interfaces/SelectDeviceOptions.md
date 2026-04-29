@@ -1,6 +1,10 @@
+---
+title: "SelectDeviceOptions"
+---
+
 # Interface: SelectDeviceOptions
 
-Defined in: [core/entities/types/participant.types.ts:11](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/participant.types.ts#L11)
+Defined in: [core/entities/types/participant.types.ts:11](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/participant.types.ts#L11)
 
 Options for selecting a media device.
 
@@ -8,4 +12,4 @@ Options for selecting a media device.
 
 | Property | Type | Defined in |
 | ------ | ------ | ------ |
-| <a id="savepreference"></a> `savePreference?` | `boolean` | [core/entities/types/participant.types.ts:12](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/types/participant.types.ts#L12) |
+| <a id="savepreference"></a> `savePreference?` | `boolean` | [core/entities/types/participant.types.ts:12](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/participant.types.ts#L12) |

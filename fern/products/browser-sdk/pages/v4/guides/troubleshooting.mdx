@@ -1,0 +1,301 @@
+---
+title: "Troubleshooting & FAQ"
+sidebar-title: "Troubleshooting"
+position: 4
+slug: /js/v4/guides/troubleshooting
+max-toc-depth: 3
+---
+
+Common issues and solutions when working with the SignalWire Browser SDK.
+
+## Connection issues
+
+### `InvalidCredentialsError` on connect
+
+**Cause:** Token is expired, malformed, or generated for a different environment.
+
+**Fix:**
+
+1. Generate a fresh token from your backend
+2. Verify the token is for the correct SignalWire space
+3. Check that you're copying the full token string
+
+```js
+import { jwtDecode } from "jwt-decode";
+
+const decoded = jwtDecode(token);
+const expiresAt = new Date(decoded.exp * 1000);
+console.log("Expired?", expiresAt < new Date());
+```
+
+### Connection fails silently
+
+**Cause:** Not subscribing to error streams.
+
+```js
+client.errors$.subscribe((error) => console.error("Client error:", error));
+```
+
+### `NotConnectedError` when calling `dial()`
+
+**Cause:** Trying to make a call before the client is ready.
+
+```js
+import { filter, take } from "rxjs";
+
+client.ready$.pipe(filter(Boolean), take(1)).subscribe(async () => {
+  const call = await client.dial(destination);
+});
+```
+
+### WebSocket disconnects frequently
+
+**Causes:** Unstable network, corporate firewall/proxy blocking WebSocket, server-side timeout.
+
+The SDK reconnects automatically — subscribe to `isConnected$` to track state:
+
+```js
+client.isConnected$.subscribe((connected) => {
+  connected ? hideReconnectingBanner() : showReconnectingBanner();
+});
+```
+
+## Video / Audio issues
+
+### Video is black
+
+**Causes:** Camera permissions denied, camera in use by another app, wrong camera selected, hardware issue.
+
+```js
+const permission = await navigator.permissions.query({ name: "camera" });
+console.log("Camera permission:", permission.state);
+
+client.videoInputDevices$.subscribe((devices) => {
+  console.log("Available cameras:", devices);
+});
+```
+
+### No remote audio
+
+**Causes:** Speaker/headphone issue, audio output not selected, remote muted, autoplay blocked.
+
+```html
+<!-- Wrong - muted blocks remote audio -->
+<video id="remote" autoplay muted></video>
+
+<!-- Right -->
+<video id="remote" autoplay playsinline></video>
+```
+
+Browsers block autoplay with audio until the user interacts with the page.
+
+### Remote can't hear me
+
+```js
+call.self$.subscribe((self) => console.log("Audio muted:", self?.audioMuted));
+
+client.selectedAudioInputDevice$.subscribe((device) => {
+  console.log("Microphone:", device?.label);
+});
+```
+
+### Echo or feedback
+
+Use headphones, or enable echo cancellation:
+
+```js
+call.self$.subscribe(async (self) => {
+  if (self && !self.echoCancellation) await self.toggleEchoCancellation();
+});
+```
+
+### `Permission denied` for camera/microphone
+
+**HTTPS is required.** `getUserMedia` only works on secure contexts (HTTPS or localhost).
+
+```js
+try {
+  await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+} catch (e) {
+  if (e.name === "NotAllowedError") {
+    alert("Click the lock icon in your address bar to reset permissions.");
+  }
+}
+```
+
+## Call issues
+
+### Call stays in `trying` state
+
+**Causes:** Invalid destination, destination not reachable, network/firewall blocking.
+
+```js
+call.errors$.subscribe((error) => console.error("Call error:", error));
+```
+
+### Call connects but no media flows
+
+**Cause:** ICE connection failed (firewall blocking UDP) or TURN server unreachable.
+
+```js
+const pc = call.rtcPeerConnection;
+console.log("ICE state:", pc?.iceConnectionState);
+pc?.addEventListener("iceconnectionstatechange", () => {
+  console.log("ICE state changed:", pc.iceConnectionState);
+});
+```
+
+### Can't receive inbound calls
+
+**Causes:** Not registered, using embed token (no inbound), subscriber not configured.
+
+```js
+client.ready$.subscribe(async (ready) => {
+  if (ready) await client.register();
+});
+```
+
+### DTMF tones not working
+
+Send digits only after the call is connected:
+
+```js
+import { filter, take } from "rxjs";
+
+call.status$
+  .pipe(filter((s) => s === "connected"), take(1))
+  .subscribe(async () => await call.sendDigits("123#"));
+```
+
+## UI issues
+
+### Video element shows nothing
+
+```js
+call.remoteStream$.subscribe((stream) => {
+  const video = document.getElementById("remoteVideo");
+  if (stream && video) {
+    video.srcObject = stream;
+    video.play().catch((e) => console.error("Play failed:", e));
+  }
+});
+```
+
+### UI doesn't update when state changes
+
+Subscribe immediately after getting the object — BehaviorSubjects emit current state on subscribe.
+
+### Memory leak / page slows down
+
+Always unsubscribe. See [RxJS Primer → Cleanup](/js/v4/guides/rxjs-primer#cleanup).
+
+## Browser-specific issues
+
+### Safari: video doesn't play
+
+Safari has strict autoplay policies. Add `playsinline` and handle the play promise:
+
+```html
+<video id="remote" autoplay playsinline></video>
+```
+
+```js
+call.remoteStream$.subscribe(async (stream) => {
+  const video = document.getElementById("remote");
+  video.srcObject = stream;
+  try {
+    await video.play();
+  } catch {
+    showPlayButton(() => video.play());
+  }
+});
+```
+
+### Firefox: no audio output selection
+
+Firefox doesn't fully support `setSinkId`. Audio plays through default output.
+
+### Mobile: camera switches unexpectedly
+
+Device rotation or app switching can reset the camera.
+
+```js
+client.videoInputDevices$.subscribe((devices) => {
+  const preferred = devices.find((d) => d.label.includes("front"));
+  if (preferred) call.self?.selectVideoInputDevice(preferred);
+});
+```
+
+## Debugging
+
+### Verbose logging
+
+The SDK logs at debug level. Filter the browser console by `signalwire`.
+
+### Inspect WebSocket traffic
+
+DevTools → Network → "WS" filter → click the connection → Messages tab.
+
+### Get call statistics
+
+```js
+const stats = await call.rtcPeerConnection.getStats();
+stats.forEach((report) => {
+  if (report.type === "inbound-rtp" && report.kind === "video") {
+    console.log("Packets received:", report.packetsReceived);
+    console.log("Packets lost:", report.packetsLost);
+  }
+});
+```
+
+### Test without real media
+
+Chrome flag: `--use-fake-device-for-media-stream`. Or generate a canvas stream:
+
+```js
+const canvas = document.createElement("canvas");
+canvas.getContext("2d").fillRect(0, 0, 640, 480);
+const fakeStream = canvas.captureStream(30);
+```
+
+## FAQ
+
+### Do I need HTTPS?
+
+Yes for production. WebRTC's `getUserMedia` requires a secure context. Localhost is exempt for development.
+
+### What browsers are supported?
+
+Modern Chrome, Firefox, Safari, and Edge. No IE11.
+
+### Can I use this in Node.js?
+
+No — the SDK is browser-only. Use the SignalWire REST APIs or server-side SDKs.
+
+### How do I implement a mute button?
+
+```js
+muteButton.onclick = () => call.self?.toggleMute();
+```
+
+`call.self` is `null` until the local participant joins — always check.
+
+### How do I get call duration?
+
+```js
+let startTime;
+call.status$.subscribe((status) => {
+  if (status === "connected") startTime = Date.now();
+  if (status === "disconnected" && startTime) {
+    console.log("Lasted:", Math.round((Date.now() - startTime) / 1000), "s");
+  }
+});
+```
+
+### Can I record calls?
+
+Recording is controlled server-side through the SignalWire platform. Check `call.capabilities$` for available features.
+
+### Why "Unimplemented" errors?
+
+Some features require specific server capabilities or are still in development. Check `call.capabilities$`.

@@ -1,0 +1,170 @@
+---
+title: "Authentication"
+sidebar-title: "Authentication"
+position: 2
+slug: /js/v4/guides/authentication
+max-toc-depth: 3
+---
+
+The SDK supports two authentication methods: **Subscriber Access Tokens (SAT)** for full-featured access, and **Embed Tokens** for guest access. This guide explains when to use each and how to implement them.
+
+## Token types
+
+| Token Type                        | Use Case                 | Features                                        | Expires            |
+| --------------------------------- | ------------------------ | ----------------------------------------------- | ------------------ |
+| **Subscriber Access Token (SAT)** | Authenticated users      | Full access: directory, inbound calls, presence | Yes (configurable) |
+| **Embed Token**                   | Guests, embedded widgets | Outbound calls only                             | Yes                |
+
+## Subscriber Access Tokens (SAT)
+
+SATs are JWTs that authenticate a specific subscriber. Use these when your users have accounts in your system.
+
+### Getting a SAT
+
+Generate SATs from your backend using the SignalWire REST API:
+
+```bash
+curl -X POST "https://yourspace.signalwire.com/api/fabric/subscribers/{subscriber_id}/tokens" \
+  -H "Authorization: Basic YOUR_API_CREDENTIALS" \
+  -H "Content-Type: application/json"
+```
+
+The response includes a `token` field containing the SAT.
+
+### Using a SAT
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const credentials = new StaticCredentialProvider({
+  token: "eyJhbGciOiJS...",
+});
+
+const client = new SignalWire(credentials);
+```
+
+### Token refresh
+
+SATs expire. For long-running applications, implement a credential provider that refreshes tokens:
+
+```js
+class RefreshingCredentialProvider {
+  async authenticate(context) {
+    // context.fingerprint - DPoP key fingerprint for client-bound tokens
+    const response = await fetch("/api/signalwire-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fingerprint: context?.fingerprint }),
+    });
+    const { token, expiresAt } = await response.json();
+    return { token, expiry_at: expiresAt };
+  }
+
+  async refresh() {
+    return this.authenticate();
+  }
+}
+
+const client = new SignalWire(new RefreshingCredentialProvider());
+```
+
+The SDK calls `refresh()` automatically before the token expires if the method is defined.
+
+## Embed Tokens
+
+Embed tokens provide guest access without requiring a subscriber account. They're ideal for:
+
+- Public-facing call widgets
+- Customer support embeds
+- One-time meeting links
+
+### Getting an embed token
+
+```bash
+curl -X POST "https://yourspace.signalwire.com/api/fabric/embeds/tokens" \
+  -H "Authorization: Basic YOUR_API_CREDENTIALS" \
+  -H "Content-Type: application/json" \
+  -d '{"resource_id": "YOUR_RESOURCE_ID"}'
+```
+
+### Using an embed token
+
+The simplest approach uses `embeddableCall()`:
+
+```js
+import { embeddableCall } from "@signalwire/js";
+
+const call = await embeddableCall({
+  host: "yourspace.signalwire.com",
+  embedToken: "YOUR_EMBED_TOKEN",
+  to: "/public/room-name",
+});
+```
+
+This handles everything: creating credentials, connecting, and dialing.
+
+## Security best practices
+
+### Never expose credentials in client code
+
+```js
+// Bad - token hardcoded
+const credentials = new StaticCredentialProvider({ token: "eyJhbGciOiJS..." });
+
+// Good - token fetched from your backend
+async function getCredentials() {
+  const response = await fetch("/api/get-signalwire-token", {
+    headers: { Authorization: `Bearer ${userSessionToken}` },
+  });
+  const { token } = await response.json();
+  return new StaticCredentialProvider({ token });
+}
+```
+
+### Use short-lived tokens
+
+- Interactive sessions: 1–4 hours
+- Embed tokens: 15–60 minutes
+- Background services: longer, with refresh
+
+### Validate on your backend
+
+Before issuing tokens, verify the user is authorized in your system, then generate the SAT server-side.
+
+## Connection options
+
+Control automatic behaviors when creating the client:
+
+```js
+const client = new SignalWire(credentials, {
+  skipConnection: true,
+  skipRegister: true,
+  skipDeviceMonitoring: true,
+  reconnectAttachedCalls: true,
+  savePreferences: true,
+  persistSession: true,
+});
+
+await client.connect();
+```
+
+## Debugging authentication
+
+```js
+client.isConnected$.subscribe((c) => console.log("Connected:", c));
+client.isRegistered$.subscribe((r) => console.log("Registered:", r));
+client.ready$.subscribe((r) => console.log("Ready:", r));
+
+client.errors$.subscribe((error) => {
+  if (error.name === "InvalidCredentialsError") {
+    // Redirect to login or refresh token
+  }
+});
+```
+
+| Symptom                       | Likely Cause                     | Solution                         |
+| ----------------------------- | -------------------------------- | -------------------------------- |
+| `InvalidCredentialsError`     | Token expired or malformed       | Generate a new token             |
+| `WebSocketConnectionError`    | Network issue or wrong host      | Check host URL and network       |
+| `NotConnectedError`           | Calling methods before connected | Wait for `ready$` to emit `true` |
+| Connection closes immediately | Token for wrong environment      | Verify token matches host        |

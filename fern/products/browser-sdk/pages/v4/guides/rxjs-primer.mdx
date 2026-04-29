@@ -1,0 +1,229 @@
+---
+title: "RxJS Primer"
+sidebar-title: "RxJS Primer"
+position: 3
+slug: /js/v4/guides/rxjs-primer
+max-toc-depth: 3
+---
+
+The Browser SDK is highly asynchronous. Devices come and go, participants join and leave, capabilities shift mid-call, call status walks through `new` → `trying` → `ringing` → `connected` → `disconnected`. Rather than firing one-shot events that you must catch at the right moment, the SDK exposes most of this state as **RxJS Observables** — streams you can subscribe to that immediately push the current value plus every future change.
+
+## The 30-second model
+
+- **Observable** — a stream of values over time. Nothing happens until you `.subscribe()`.
+- **Subscription** — what `.subscribe()` returns. Call `.unsubscribe()` to stop listening (or you'll leak).
+- **BehaviorSubject** — most SDK Observables behave like this: subscribers immediately receive the current value, then every update.
+- **Operators** (`map`, `filter`, `combineLatest`, `distinctUntilChanged`, …) — pure functions you `.pipe()` through to transform streams.
+
+## The `$` convention
+
+Every observable property in the SDK ends with `$`. The same property without `$` is a plain snapshot of the current value:
+
+```js
+const status = call.status;          // snapshot — current value
+call.status$.subscribe(handler);     // stream — current value + every change
+```
+
+Use the snapshot when you need the value once. Use the observable when you need to react to changes.
+
+## Subscribing
+
+```js
+const sub = client.audioInputDevices$.subscribe((devices) => {
+  console.log("mics:", devices);
+});
+
+// later
+sub.unsubscribe();
+```
+
+You get the current device list immediately, plus a new emission every time devices change.
+
+## Common patterns
+
+### Wait for a condition
+
+```js
+import { filter, take } from "rxjs";
+
+client.ready$
+  .pipe(filter(Boolean), take(1))
+  .subscribe(async () => {
+    const call = await client.dial(destination);
+  });
+```
+
+`take(1)` automatically unsubscribes after the first match.
+
+### React to specific changes
+
+```js
+import { filter } from "rxjs";
+
+call.status$.pipe(filter((s) => s === "connected")).subscribe(() => {
+  showCallControls();
+});
+```
+
+### Combine multiple streams
+
+```js
+import { combineLatest } from "rxjs";
+
+combineLatest([client.audioInputDevices$, client.selectedAudioInputDevice$])
+  .subscribe(([devices, selected]) => {
+    const activeMic = devices.find((d) => d.deviceId === selected?.deviceId);
+  });
+```
+
+### Skip the initial value
+
+```js
+import { skip } from "rxjs";
+
+call.status$.pipe(skip(1)).subscribe((status) => {
+  // only future changes
+  showStatusNotification(status);
+});
+```
+
+### Debounce rapid changes
+
+```js
+import { debounceTime } from "rxjs";
+
+participant.inputVolume$.pipe(debounceTime(100)).subscribe(updateVolumeIndicator);
+```
+
+## Cleanup
+
+Forgetting to unsubscribe causes memory leaks. Two common patterns:
+
+### Subscription array
+
+```js
+class CallManager {
+  subs = [];
+  start(call) {
+    this.subs.push(
+      call.status$.subscribe(this.onStatus),
+      call.participants$.subscribe(this.onParticipants),
+    );
+  }
+  stop() {
+    this.subs.forEach((s) => s.unsubscribe());
+    this.subs = [];
+  }
+}
+```
+
+### `takeUntil`
+
+```js
+import { Subject, takeUntil } from "rxjs";
+
+const destroy$ = new Subject();
+
+call.status$.pipe(takeUntil(destroy$)).subscribe(updateStatus);
+call.participants$.pipe(takeUntil(destroy$)).subscribe(updateParticipants);
+
+// teardown
+destroy$.next();
+destroy$.complete();
+```
+
+## Framework integration
+
+### React
+
+```jsx
+function useObservable(observable, initialValue) {
+  const [value, setValue] = useState(initialValue);
+  useEffect(() => {
+    const sub = observable.subscribe(setValue);
+    return () => sub.unsubscribe();
+  }, [observable]);
+  return value;
+}
+
+function CallStatus({ call }) {
+  const status = useObservable(call.status$, "new");
+  return <div className={status}>{status}</div>;
+}
+```
+
+### Vue 3
+
+```js
+import { ref, onMounted, onUnmounted } from "vue";
+
+setup(props) {
+  const status = ref(props.call.status);
+  let sub;
+  onMounted(() => { sub = props.call.status$.subscribe((s) => (status.value = s)); });
+  onUnmounted(() => sub?.unsubscribe());
+  return { status };
+}
+```
+
+### Angular
+
+```ts
+@Component({
+  template: `<div [class]="status$ | async">{{ status$ | async }}</div>`,
+})
+export class CallStatusComponent {
+  @Input() call: Call;
+  status$ = this.call.status$;
+}
+```
+
+## Quick operator reference
+
+| Operator               | Purpose                       | Example                                |
+| ---------------------- | ----------------------------- | -------------------------------------- |
+| `filter`               | Only pass matching values     | `filter((s) => s === "connected")`     |
+| `map`                  | Transform values              | `map((list) => list.length)`           |
+| `take(n)`              | Take n values then complete   | `take(1)` for one-shot                 |
+| `skip(n)`              | Skip first n values           | `skip(1)` to skip initial              |
+| `takeUntil`            | Complete when signal fires    | `takeUntil(destroy$)`                  |
+| `debounceTime`         | Wait for silence              | `debounceTime(300)`                    |
+| `distinctUntilChanged` | Skip duplicate values         | Avoid redundant updates                |
+| `combineLatest`        | Latest from multiple          | `combineLatest([a$, b$])`              |
+| `merge`                | Any emission from multiple    | `merge(a$, b$)`                        |
+| `switchMap`            | Switch to a new inner stream  | `switchMap(() => call.participants$)`  |
+
+## Common mistakes
+
+**Nested subscribes** — use `switchMap` instead:
+
+```js
+// Bad
+call.status$.subscribe((s) => {
+  if (s === "connected") call.participants$.subscribe(handler);
+});
+
+// Good
+import { switchMap, filter } from "rxjs";
+call.status$
+  .pipe(filter((s) => s === "connected"), switchMap(() => call.participants$))
+  .subscribe(handler);
+```
+
+**Subscribing inside event handlers** — creates a new subscription every click. Subscribe once outside.
+
+**Ignoring errors** — pass an error handler:
+
+```js
+call.someOperation$.subscribe({
+  next: handler,
+  error: (err) => console.error(err),
+});
+```
+
+## Learn more
+
+- [RxJS official docs](https://rxjs.dev/)
+- [Observable guide](https://rxjs.dev/guide/observable)
+- [Operators reference](https://rxjs.dev/guide/operators)
+- [Subjects (incl. BehaviorSubject)](https://rxjs.dev/guide/subject)

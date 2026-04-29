@@ -1,8 +1,12 @@
+---
+title: "VideoPosition"
+---
+
 # Type Alias: VideoPosition
 
 > **VideoPosition** = `"auto"` \| `` `reserved-${number}` `` \| `` `standard-${number}` `` \| `"off-canvas"` \| `"playback"` \| `"full-screen"`
 
-Defined in: [core/types/call.types.ts:152](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/types/call.types.ts#L152)
+Defined in: [core/types/call.types.ts:152](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/call.types.ts#L152)
 
 Position of a participant's video within the layout canvas.
 

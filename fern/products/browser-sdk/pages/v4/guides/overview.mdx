@@ -1,15 +1,22 @@
 ---
-title: "Browser SDK v4 Guides"
-sidebar-title: Overview
+title: "Overview"
+sidebar-title: "Overview"
 position: 0
 slug: /js/v4/guides
 max-toc-depth: 3
 ---
 
-The SignalWire Browser SDK is a JavaScript library that enables WebRTC-based voice, video, and chat applications directly in web browsers.
-Built on WebSocket architecture, it provides real-time communication capabilities without plugins or downloads.
+The SignalWire Browser SDK is a JavaScript library that enables WebRTC-based voice, video, and chat applications directly in web browsers. Built on a WebSocket architecture, it provides real-time communication capabilities without plugins or downloads.
 
-## Installation
+This guide gets you from zero to a working video call in about five minutes.
+
+## Prerequisites
+
+- A SignalWire account ([sign up here](https://signalwire.com))
+- Node.js 18+ (for the npm package) or a modern browser (for CDN usage)
+- A Subscriber Access Token (SAT) or Embed Token from your SignalWire dashboard
+
+## Install
 
 <CardGroup cols={2}>
   <Card title="npm" icon="brands npm" href="https://www.npmjs.com/package/@signalwire/js">
@@ -21,5 +28,92 @@ Built on WebSocket architecture, it provides real-time communication capabilitie
 </CardGroup>
 
 ```bash
-npm install @signalwire/js
+npm install @signalwire/js rxjs
 ```
+
+RxJS is a peer dependency — the SDK uses observables for all reactive state. See the [RxJS Primer](/js/v4/guides/rxjs-primer).
+
+### CDN
+
+```html
+<script src="https://unpkg.com/@signalwire/js@latest/dist/browser.umd.js"></script>
+```
+
+The SDK exposes a global `SignalWire` object.
+
+## Your first call
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const credentials = new StaticCredentialProvider({
+  token: "YOUR_SUBSCRIBER_ACCESS_TOKEN",
+});
+
+const client = new SignalWire(credentials);
+
+client.ready$.subscribe(async (ready) => {
+  if (!ready) return;
+
+  const call = await client.dial("/public/test-room", {
+    audio: true,
+    video: true,
+  });
+
+  call.localStream$.subscribe((stream) => {
+    document.getElementById("localVideo").srcObject = stream;
+  });
+
+  call.remoteStream$.subscribe((stream) => {
+    document.getElementById("remoteVideo").srcObject = stream;
+  });
+
+  call.status$.subscribe((status) => {
+    console.log("Call status:", status);
+  });
+});
+```
+
+```html
+<video id="localVideo" autoplay muted playsinline></video>
+<video id="remoteVideo" autoplay playsinline></video>
+<button id="hangup" onclick="call.hangup()">Hang Up</button>
+```
+
+## Embed tokens (guest access)
+
+For simpler integrations where users don't need accounts, use `embeddableCall`:
+
+```js
+import { embeddableCall } from "@signalwire/js";
+
+const call = await embeddableCall({
+  host: "yourspace.signalwire.com",
+  embedToken: "YOUR_EMBED_TOKEN",
+  to: "/public/test-room",
+});
+```
+
+This handles authentication and dialing in a single call.
+
+## Receiving inbound calls
+
+```js
+await client.register();
+
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.find((c) => c.status === "ringing");
+  if (!ringing) return;
+
+  document.getElementById("accept").onclick = () => ringing.answer();
+  document.getElementById("reject").onclick = () => ringing.reject();
+});
+```
+
+## Next steps
+
+- [Web Components](/js/v4/guides/web-components) — drop-in HTML elements
+- [Authentication](/js/v4/guides/authentication) — token types and refresh
+- [RxJS Primer](/js/v4/guides/rxjs-primer) — reactive state in the SDK
+- [Troubleshooting](/js/v4/guides/troubleshooting) — common issues
+- [API Reference](/js/v4/reference) — complete API docs
