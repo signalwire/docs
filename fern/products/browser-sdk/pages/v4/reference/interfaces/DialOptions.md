@@ -2,7 +2,7 @@
 
 Defined in: [clients/SignalWire.ts:110](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/clients/SignalWire.ts#L110)
 
-Options for [SignalWire.dial](../classes/SignalWire.md#dial). Extends [MediaOptions](MediaOptions.md) with dial-specific settings.
+Options for [SignalWire.dial](../classes/SignalWire/index.md). Extends [MediaOptions](MediaOptions.md) with dial-specific settings.
 
 ## Extends
 

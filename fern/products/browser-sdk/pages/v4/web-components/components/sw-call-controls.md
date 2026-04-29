@@ -1,20 +1,38 @@
 # `<sw-call-controls>`
 
-Bridges `devicesContext` + `callStateContext` → `<sw-ui-control-bar>`. The settings dropdown (echo cancellation, auto-gain, noise suppression) is always rendered — toggles are wired through `devicesContext`.
+_Class: `CallControls` · Module: `packages/web-components/src/components/call-controls.ts`_
 
-## Props
+## class: `CallControls`, `sw-call-controls`
 
-| prop | type | default | description |
-|------|------|---------|-------------|
-| `show-screen-share` | `boolean` | `true` | Show screen share button |
-| `show-hand-raise` | `boolean` | `true` | Show hand raise button |
-| `show-transcript` | `boolean` | `false` | Show transcript toggle |
-| `transcript-active` | `boolean` | `false` | Transcript panel state |
+### Superclass
 
-## Events
+| Name         | Module | Package |
+| ------------ | ------ | ------- |
+| `LitElement` |        | lit     |
 
-| event | detail | description |
-|-------|--------|-------------|
-| `sw-hang-up` | `void` | Hangup pressed |
-| `sw-fullscreen-toggle` | `{ fullscreen }` | Fullscreen toggled |
-| `sw-transcript-toggle` | `void` | Transcript toggle pressed |
+### Fields
+
+| Name           | Privacy | Type                            | Default        | Description                                               | Inherited From |
+| -------------- | ------- | ------------------------------- | -------------- | --------------------------------------------------------- | -------------- |
+| `call`         |         | `CallControlsCall \| undefined` |                | The call object - can be provided via property or context |                |
+| `orientation`  |         | `'horizontal' \| 'vertical'`    | `'horizontal'` | Layout orientation: 'horizontal' or 'vertical'.           |                |
+| `showTooltips` |         | `boolean`                       | `true`         | Whether to display tooltip labels on buttons.             |                |
+
+### Attributes
+
+| Name            | Field        | Inherited From |
+| --------------- | ------------ | -------------- |
+| `call`          | call         |                |
+| `orientation`   | orientation  |                |
+| `show-tooltips` | showTooltips |                |
+
+### Events
+
+| Name | Detail | Description |
+| ---- | ------ | ----------- |
+| `sw-hangup` | — | Fired when the hangup button is clicked. |
+| `sw-mute-audio` | `{ muted: boolean }` | Fired when the mute audio button is clicked |
+| `sw-mute-video` | `{ muted: boolean }` | Fired when the mute video button is clicked |
+| `sw-screen-share` | `{ active: boolean }` | Fired when the screen share button is clicked |
+
+---

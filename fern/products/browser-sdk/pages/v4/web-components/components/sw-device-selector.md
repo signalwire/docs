@@ -1,30 +1,34 @@
 # `<sw-device-selector>`
 
-Compact row of three drop-up buttons for microphone, camera, and speaker selection. Optional live preview.
+_Class: `DeviceSelector` · Module: `packages/web-components/src/components/device-selector.ts`_
 
-## Props
+## class: `DeviceSelector`, `sw-device-selector`
 
-| prop | type | default | description |
-|------|------|---------|-------------|
-| `deviceController` | `DeviceController` | — | SDK device controller |
-| `show-preview` | `boolean` | `false` | Show camera preview and mic level below the bar |
+### Superclass
 
-## Events
+| Name         | Module | Package |
+| ------------ | ------ | ------- |
+| `LitElement` |        | lit     |
 
-| event | detail | description |
-|-------|--------|-------------|
-| `sw-device-change` | `{ type: 'microphone'\|'camera'\|'speaker', device: MediaDeviceInfo }` | Device selected |
-| `sw-test-speaker` | — | Test speaker button pressed |
+### Fields
 
-## CSS custom properties
+| Name               | Privacy | Type                            | Default | Description                                         | Inherited From |
+| ------------------ | ------- | ------------------------------- | ------- | --------------------------------------------------- | -------------- |
+| `deviceController` |         | `DeviceController \| undefined` |         | Device controller with observables for device lists |                |
+| `showPreview`      |         | `boolean`                       | `false` | Whether to show the preview panel                   |                |
 
-| property | description |
-|----------|-------------|
-| `--sw-device-gap` | Gap between drop-ups (default `8px`) |
-| `--sw-device-padding` | Bar padding (default `10px 14px`) |
-| `--sw-device-background` | Bar background (default `transparent`) |
-| `--ctrl-*` | All primitive ctrl tokens |
+### Attributes
 
-## Parts
+| Name               | Field            | Inherited From |
+| ------------------ | ---------------- | -------------- |
+| `deviceController` | deviceController |                |
+| `show-preview`     | showPreview      |                |
 
-`bar`, `dropup-mic`, `dropup-camera`, `dropup-speaker`, `preview`
+### Events
+
+| Name | Detail | Description |
+| ---- | ------ | ----------- |
+| `sw-device-change` | `{ type: DeviceType, device: MediaDeviceInfo }` | Fired when a device selection changes |
+| `sw-test-speaker` | — | Fired when the speaker test button is clicked. |
+
+---

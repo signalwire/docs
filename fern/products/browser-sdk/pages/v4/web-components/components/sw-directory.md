@@ -1,20 +1,32 @@
 # `<sw-directory>`
 
-Searchable contact list. Displays addresses from the SDK directory with dial actions.
+_Class: `DirectoryComponent` · Module: `packages/web-components/src/components/directory.ts`_
 
-## Props
+## class: `DirectoryComponent`, `sw-directory`
 
-| prop | type | description |
-|------|------|-------------|
-| `directory` | `DirectoryService` | SDK directory service |
+### Superclass
 
-## Events
+| Name         | Module | Package |
+| ------------ | ------ | ------- |
+| `LitElement` |        | lit     |
 
-| event | detail | description |
-|-------|--------|-------------|
-| `sw-address-select` | `{ address }` | Address row clicked |
-| `sw-dial` | `{ address }` | Dial button clicked |
+### Fields
 
-## CSS custom properties
+| Name        | Privacy | Type                       | Default | Description                                  | Inherited From |
+| ----------- | ------- | -------------------------- | ------- | -------------------------------------------- | -------------- |
+| `directory` |         | `DirectoryService \| null` | `null`  | Directory service with addresses$ observable |                |
 
-`--sw-color-primary/hover`, `--sw-color-success`, `--sw-color-text/muted`, `--sw-color-background/hover/active`, `--sw-color-border`, `--sw-font-family`, `--sw-font-size-sm/base/lg`, `--sw-space-1/2/3/4`, `--sw-border-radius`
+### Attributes
+
+| Name        | Field     | Inherited From |
+| ----------- | --------- | -------------- |
+| `directory` | directory |                |
+
+### Events
+
+| Name | Detail | Description |
+| ---- | ------ | ----------- |
+| `sw-address-select` | `{ address: Address }` | Fired when an address is selected |
+| `sw-dial` | `{ address: Address, channel: string }` | Fired when the call button on an address is clicked |
+
+---

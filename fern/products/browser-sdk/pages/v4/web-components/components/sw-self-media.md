@@ -1,9 +1,26 @@
 # `<sw-self-media>`
 
-Local video positioned by layout layers. Consumes `callStateContext`.
+_Class: `SelfMedia` · Module: `packages/web-components/src/components/self-media.ts`_
 
-## Props
+## class: `SelfMedia`, `sw-self-media`
 
-| prop | type | default | description |
-|------|------|---------|-------------|
-| `mirror` | `boolean` | `false` | Mirror video horizontally |
+### Superclass
+
+| Name         | Module | Package |
+| ------------ | ------ | ------- |
+| `LitElement` |        | lit     |
+
+### Fields
+
+| Name     | Privacy | Type                | Default | Description                                                                   | Inherited From |
+| -------- | ------- | ------------------- | ------- | ----------------------------------------------------------------------------- | -------------- |
+| `mirror` |         | `boolean`           | `false` | Mirror the local video horizontally                                           |                |
+| `call`   |         | `Call \| undefined` |         | Public call property for direct assignment (when not nested in sw-call-media) |                |
+
+### Attributes
+
+| Name     | Field  | Inherited From |
+| -------- | ------ | -------------- |
+| `mirror` | mirror |                |
+
+---

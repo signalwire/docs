@@ -15,3 +15,21 @@ Observable of the server node ID for this participant.
 #### Implementation of
 
 [`CallParticipant`](../../interfaces/CallParticipant.md).[`nodeId$`](../../interfaces/CallParticipant.md#nodeid-1)
+
+## nodeId
+
+#### Get Signature
+
+> **get** **nodeId**(): `string` \| `undefined`
+
+Defined in: [core/entities/Participant.ts:407](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/Participant.ts#L407)
+
+Server node ID for this participant, or `undefined` if not available.
+
+##### Returns
+
+`string` \| `undefined`
+
+#### Implementation of
+
+[`CallParticipant`](../../interfaces/CallParticipant.md).[`nodeId`](../../interfaces/CallParticipant.md#nodeid)

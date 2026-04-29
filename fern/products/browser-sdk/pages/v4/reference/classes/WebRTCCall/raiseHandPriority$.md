@@ -15,3 +15,21 @@ Observable indicating whether raise-hand priority is active.
 #### Implementation of
 
 `CallManager.raiseHandPriority$`
+
+## raiseHandPriority
+
+#### Get Signature
+
+> **get** **raiseHandPriority**(): `boolean`
+
+Defined in: [core/entities/Call.ts:553](https://github.com/signalwire/browser-sdk/blob/25e5ff424d770291cfeb3801743816b995511140/packages/main/src/core/entities/Call.ts#L553)
+
+Whether raise-hand priority is active.
+
+##### Returns
+
+`boolean`
+
+#### Implementation of
+
+`CallManager.raiseHandPriority`

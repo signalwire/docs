@@ -1,9 +1,25 @@
 # `<sw-call-media>`
 
-Remote video with aspect-ratio management. Consumes `callStateContext` + `devicesContext`.
+_Class: `CallMedia` · Module: `packages/web-components/src/components/call-media.ts`_
 
-## Props
+## class: `CallMedia`, `sw-call-media`
 
-| prop | type | description |
-|------|------|-------------|
-| `call` | `Call` | Legacy: explicit call (bypasses context) |
+### Superclass
+
+| Name         | Module | Package |
+| ------------ | ------ | ------- |
+| `LitElement` |        | lit     |
+
+### Fields
+
+| Name   | Privacy | Type                | Default | Description                                        | Inherited From |
+| ------ | ------- | ------------------- | ------- | -------------------------------------------------- | -------------- |
+| `call` |         | `Call \| undefined` |         | Call object with observable streams and properties |                |
+
+### Attributes
+
+| Name   | Field | Inherited From |
+| ------ | ----- | -------------- |
+| `call` | call  |                |
+
+---

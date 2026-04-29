@@ -4,29 +4,29 @@
 
 | Class | Description |
 | ------ | ------ |
-| [Address](classes/Address.md) | Represents a contact or room in the directory. |
+| [Address](classes/Address/index.md) | Represents a contact or room in the directory. |
 | [CallCreateError](classes/CallCreateError.md) | - |
-| [ClientPreferences](classes/ClientPreferences.md) | Public preferences API for configuring SDK behavior. |
+| [ClientPreferences](classes/ClientPreferences/index.md) | Public preferences API for configuring SDK behavior. |
 | [CollectionFetchError](classes/CollectionFetchError.md) | - |
 | [DeviceTokenError](classes/DeviceTokenError.md) | - |
 | [DPoPInitError](classes/DPoPInitError.md) | - |
-| [EmbedTokenCredentialProvider](classes/EmbedTokenCredentialProvider.md) | Credential provider that exchanges an embed token for a SAT via the host's token endpoint. |
+| [EmbedTokenCredentialProvider](classes/EmbedTokenCredentialProvider/index.md) | Credential provider that exchanges an embed token for a SAT via the host's token endpoint. |
 | [InvalidCredentialsError](classes/InvalidCredentialsError.md) | - |
 | [MediaTrackError](classes/MediaTrackError.md) | - |
 | [MessageParseError](classes/MessageParseError.md) | - |
 | [OverconstrainedFallbackError](classes/OverconstrainedFallbackError.md) | Error thrown when getUserMedia fails with OverconstrainedError and all fallback levels have been exhausted. |
-| [Participant](classes/Participant.md) | Represents a participant in a call. |
+| [Participant](classes/Participant/index.md) | Represents a participant in a call. |
 | [PreflightError](classes/PreflightError.md) | Error thrown when the preflight connectivity test fails. |
 | [RecoveryError](classes/RecoveryError.md) | Error thrown when a recovery attempt fails. |
-| [SelfCapabilities](classes/SelfCapabilities.md) | SelfCapabilities manages the capability state for the self participant. |
-| [SelfParticipant](classes/SelfParticipant.md) | The local participant in a call, with additional device and media control. |
-| [SignalWire](classes/SignalWire.md) | Main entry point for the SignalWire Browser SDK. |
-| [StaticCredentialProvider](classes/StaticCredentialProvider.md) | Credential provider that returns a fixed set of credentials. |
-| [Subscriber](classes/Subscriber.md) | Authenticated subscriber profile. |
+| [SelfCapabilities](classes/SelfCapabilities/index.md) | SelfCapabilities manages the capability state for the self participant. |
+| [SelfParticipant](classes/SelfParticipant/index.md) | The local participant in a call, with additional device and media control. |
+| [SignalWire](classes/SignalWire/index.md) | Main entry point for the SignalWire Browser SDK. |
+| [StaticCredentialProvider](classes/StaticCredentialProvider/index.md) | Credential provider that returns a fixed set of credentials. |
+| [Subscriber](classes/Subscriber/index.md) | Authenticated subscriber profile. |
 | [TokenRefreshError](classes/TokenRefreshError.md) | - |
 | [UnexpectedError](classes/UnexpectedError.md) | - |
 | [VertoPongError](classes/VertoPongError.md) | - |
-| [WebRTCCall](classes/WebRTCCall.md) | Concrete WebRTC call implementation. |
+| [WebRTCCall](classes/WebRTCCall/index.md) | Concrete WebRTC call implementation. |
 
 ## Interfaces
 
@@ -52,7 +52,7 @@
 | [DeviceController](interfaces/DeviceController.md) | Interface for media device management. |
 | [DeviceRecoveryEvent](interfaces/DeviceRecoveryEvent.md) | Event emitted when the SDK auto-switches a device. |
 | [DiagnosticEvent](interfaces/DiagnosticEvent.md) | A single diagnostic event in the session timeline. |
-| [DialOptions](interfaces/DialOptions.md) | Options for [SignalWire.dial](classes/SignalWire.md#dial). Extends [MediaOptions](interfaces/MediaOptions.md) with dial-specific settings. |
+| [DialOptions](interfaces/DialOptions.md) | Options for [SignalWire.dial](classes/SignalWire/index.md). Extends [MediaOptions](interfaces/MediaOptions.md) with dial-specific settings. |
 | [Directory](interfaces/Directory.md) | Directory interface for managing addresses |
 | [JSONRPCErrorResponse](interfaces/JSONRPCErrorResponse.md) | - |
 | [JSONRPCRequest](interfaces/JSONRPCRequest.md) | - |
@@ -76,7 +76,7 @@
 | [SelectDeviceOptions](interfaces/SelectDeviceOptions.md) | Options for selecting a media device. |
 | [SessionDiagnostics](interfaces/SessionDiagnostics.md) | Structured diagnostic bundle for a session. |
 | [SessionState](interfaces/SessionState.md) | Extended session interface that adds call management and authentication state on top of the narrow ClientSession contract. |
-| [SignalWireOptions](interfaces/SignalWireOptions.md) | Options for constructing a [SignalWire](classes/SignalWire.md). |
+| [SignalWireOptions](interfaces/SignalWireOptions.md) | Options for constructing a [SignalWire](classes/SignalWire/index.md). |
 | [Storage](interfaces/Storage.md) | Key-value storage interface for persisting SDK preferences and state. |
 | [StoredDevicePreference](interfaces/StoredDevicePreference.md) | Serializable subset of MediaDeviceInfo for persistence. |
 | [TextMessage](interfaces/TextMessage.md) | Text message from conversation Contains a reference to the sender address as an observable |
@@ -132,7 +132,7 @@ Library version from package.json, injected at build time.
 | ------ | ------ |
 | [embeddableCall](functions/embeddableCall.md) | Creates a call using an embed token for simple, embeddable integrations. |
 | [getLogger](functions/getLogger.md) | - |
-| [isSelfParticipant](functions/isSelfParticipant.md) | Type guard that checks if a participant is the local [SelfParticipant](classes/SelfParticipant.md). |
+| [isSelfParticipant](functions/isSelfParticipant.md) | Type guard that checks if a participant is the local [SelfParticipant](classes/SelfParticipant/index.md). |
 | [setDebugOptions](functions/setDebugOptions.md) | Configure debug options (e.g., `{ logWsTraffic: true }`). |
 | [setLogger](functions/setLogger.md) | Replace the built-in logger with a custom implementation. Pass `null` to restore defaults. |
 | [setLogLevel](functions/setLogLevel.md) | Set the log level for the built-in logger. Has no effect when a custom logger is set via `setLogger()`. |
