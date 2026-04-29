@@ -62,10 +62,6 @@ model CallHangupRequest {
     @doc("Set the reason why the call was hung up.")
     @example(HangupReason.hangup)
     reason?: HangupReason;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the hangup to complete.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 @summary("calling.ai_hold")
@@ -90,10 +86,6 @@ model CallHoldRequest {
       """)
     @example("Please hold while I transfer you to a specialist.")
     prompt?: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the hold to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -108,11 +100,7 @@ model CallUnholdRequest {
   command: "calling.ai_unhold";
 
   @doc(paramsDescription)
-  params: {
-    @doc("If `true`, the HTTP response returns immediately without waiting for the unhold to take effect.")
-    @example(false)
-    async?: boolean = false;
-  };
+  params: {};
 }
 
 @doc("Parameters for resetting the AI conversation state.")
@@ -165,10 +153,6 @@ model CallAIMessageRequest {
     @doc("Arbitrary JSON data to merge into the AI session's global data store.")
     @example(#{ customer_tier: "premium", language: "en" })
     global_data?: TypeSpec.Record<unknown>;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the message to be delivered.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -267,10 +251,6 @@ model CallLiveTranscribeRequest {
   params: {
     @doc("The transcription action to perform: start, stop, or summarize.")
     action: LiveTranscribeAction;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the action to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -411,10 +391,6 @@ model CallLiveTranslateRequest {
     @doc("HTTP or HTTPS URL that receives translation-session webhooks.")
     @example("https://example.com/status_callback")
     status_url?: url;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the action to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -455,19 +431,13 @@ model CallCreateParamsBase {
 
   @doc("Call lifecycle events that will be delivered to `status_url`.")
   @example(#["answered", "ended"])
-  status_events?: (
-    | "queued"
-    | "initiated"
-    | "ringing"
-    | "answered"
-    | "ending"
-    | "ended")[] = #["ended"];
+  status_events?: ("created" | "ringing" | "answered" | "ended")[] = #["ended"];
 
   @doc("HTTP method used when requesting the `url`. Defaults to `POST`.")
   @example("POST")
   url_method?: "GET" | "POST" = "POST";
 
-  @doc("Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `PCMU`, `PCMA`, `G722`, `G729`, `OPUS`, `AMR-WB`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
+  @doc("Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
   @example(#["OPUS", "G729", "VP8", "PCMA"])
   codecs?: string[] | string;
 
@@ -579,11 +549,7 @@ model CallDisconnectRequest {
   command: "calling.disconnect";
 
   @doc(paramsDescription)
-  params: {
-    @doc("If `true`, the HTTP response returns immediately without waiting for the disconnect to take effect.")
-    @example(false)
-    async?: boolean = false;
-  };
+  params: {};
 }
 
 // ============================================
@@ -699,7 +665,7 @@ model PlayTtsParams {
   @example(TtsGender.female)
   gender?: TtsGender;
 
-  @doc("Specific voice name (provider-dependent, 1-60 chars, no special characters except `.` and `-`). Falls back to the request-level `voice`, then to `gender`.")
+  @doc("Specific voice name (provider-dependent, no special characters except `.` and `-`). Falls back to the request-level `voice`, then to `gender`.")
   @example("en-US-Wavenet-C")
   voice?: string;
 }
@@ -824,10 +790,6 @@ model CallPlayRequest {
     @doc("HTTP or HTTPS URL that receives playback lifecycle webhooks (`playing`, `paused`, `finished`, `error`).")
     @example("https://example.com/status_callback")
     status_url?: url;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for playback to start.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -846,10 +808,6 @@ model CallPlayPauseRequest {
     @doc("The control ID of the play operation to pause.")
     @example("play-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the pause to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -868,10 +826,6 @@ model CallPlayResumeRequest {
     @doc("The control ID of the play operation to resume.")
     @example("play-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the resume to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -890,10 +844,6 @@ model CallPlayStopRequest {
     @doc("The control ID of the play operation to stop.")
     @example("play-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -918,10 +868,6 @@ model CallPlayVolumeRequest {
     @minValue(-40)
     @maxValue(40)
     volume: float64;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the volume change to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1005,10 +951,6 @@ model CallRecordRequest {
     @example(#{ audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false } })
     record: RecordParams;
 
-    @doc("If `true`, the request returns immediately without waiting for the recording to start. Defaults to `false`.")
-    @example(true)
-    async?: boolean = false;
-
     @doc("Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
     @example("https://example.com/status_callback")
     status_url?: url;
@@ -1034,10 +976,6 @@ model CallRecordPauseRequest {
     @doc("How the paused audio is handled. `skip` omits paused audio from the output file; `silence` replaces it with silence, preserving timing.")
     @example("skip")
     behavior?: "skip" | "silence" = "skip";
-
-    @doc("If `true`, the request returns immediately. Defaults to `false`.")
-    @example(true)
-    async?: boolean = false;
   };
 }
 
@@ -1056,10 +994,6 @@ model CallRecordResumeRequest {
     @doc("The control ID of the recording to resume.")
     @example("record-control-1")
     control_id: string;
-
-    @doc("If `true`, the request returns immediately. Defaults to `false`.")
-    @example(true)
-    async?: boolean = false;
   };
 }
 
@@ -1078,10 +1012,6 @@ model CallRecordStopRequest {
     @doc("The control ID of the recording to stop.")
     @example("record-control-1")
     control_id: string;
-
-    @doc("If `true`, the request returns immediately. Defaults to `false`.")
-    @example(true)
-    async?: boolean = false;
   };
 }
 
@@ -1089,7 +1019,7 @@ model CallRecordStopRequest {
 // Collect Commands
 // ============================================
 
-@doc("Speech recognition engine for `calling.collect`. Note: values are case-sensitive and differ from the SWML engine names.")
+@doc("Speech recognition engine for `calling.collect`. Note: values are case-sensitive.")
 enum CollectSpeechEngine {
   Google: "Google",
   `Google.V2`: "Google.V2",
@@ -1197,10 +1127,6 @@ model CallCollectRequest {
     @doc("HTTP or HTTPS URL that receives collect result webhooks.")
     @example("https://example.com/collect_callback")
     status_url?: url;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the collect to be set up.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1219,10 +1145,6 @@ model CallCollectStopRequest {
     @doc("The control ID of the collect operation to stop.")
     @example("collect-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1241,10 +1163,6 @@ model CallCollectStartInputTimersRequest {
     @doc("The control ID of the collect operation to start input timers for.")
     @example("collect-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the timers to start.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1386,10 +1304,6 @@ model CallDetectRequest {
     @doc("HTTP or HTTPS URL that receives detection result webhooks.")
     @example("https://example.com/detect_callback")
     status_url?: url;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the detect to be set up.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1408,10 +1322,6 @@ model CallDetectStopRequest {
     @doc("The control ID of the detect operation to stop.")
     @example("detect-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1560,10 +1470,6 @@ model CallTapRequest {
     @doc("HTTP or HTTPS URL that receives tap lifecycle webhooks.")
     @example("https://example.com/tap_callback")
     status_url?: url;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the tap to be set up.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1582,10 +1488,6 @@ model CallTapStopRequest {
     @doc("The control ID of the tap operation to stop.")
     @example("tap-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1667,10 +1569,6 @@ model CallStreamRequest {
     @doc("HTTP method used for the `status_url` webhook.")
     @example(StreamStatusUrlMethod.POST)
     status_url_method?: StreamStatusUrlMethod = StreamStatusUrlMethod.POST;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stream to be set up.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1689,10 +1587,6 @@ model CallStreamStopRequest {
     @doc("The control ID of the stream operation to stop.")
     @example("stream-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1716,11 +1610,7 @@ model CallDenoiseRequest {
   command: "calling.denoise";
 
   @doc(paramsDescription)
-  params: {
-    @doc("If `true`, the HTTP response returns immediately without waiting for the filter to be set up.")
-    @example(false)
-    async?: boolean = false;
-  };
+  params: {};
 }
 
 @summary("calling.denoise.stop")
@@ -1734,11 +1624,7 @@ model CallDenoiseStopRequest {
   command: "calling.denoise.stop";
 
   @doc(paramsDescription)
-  params: {
-    @doc("If `true`, the HTTP response returns immediately without waiting for the filter to be torn down.")
-    @example(false)
-    async?: boolean = false;
-  };
+  params: {};
 }
 
 // ============================================
@@ -1757,13 +1643,9 @@ model CallAIStopRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The control ID of the AI session to stop.")
+    @doc("Reserved field. The handler stops AI on the active session for this call; this value is currently ignored.")
     @example("ai-control-1")
-    control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
+    control_id?: string;
   };
 }
 
@@ -1786,10 +1668,6 @@ model CallSendFaxStopRequest {
     @doc("The control ID of the fax send operation to stop.")
     @example("fax-send-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1808,10 +1686,6 @@ model CallReceiveFaxStopRequest {
     @doc("The control ID of the fax receive operation to stop.")
     @example("fax-receive-control-1")
     control_id: string;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the stop to take effect.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1868,10 +1742,6 @@ model CallReferRequest {
     @doc("HTTP or HTTPS URL that receives refer lifecycle webhooks.")
     @example("https://example.com/status_callback")
     status_url?: url;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the refer to be sent.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1894,10 +1764,6 @@ model CallTransferRequest {
     @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.")
     @example("sip:destination@example.com")
     dest: string | SWMLObject;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the transfer to complete.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
@@ -1916,10 +1782,6 @@ model CallUserEventRequest {
     @doc("Arbitrary JSON event data to fire on the call.")
     @example(#{ action: "custom_action", data: "example" })
     event: TypeSpec.Record<unknown>;
-
-    @doc("If `true`, the HTTP response returns immediately without waiting for the event to fire.")
-    @example(false)
-    async?: boolean = false;
   };
 }
 
