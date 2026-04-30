@@ -19,6 +19,8 @@ const dialCallExample = #{
       status_url: "https://example.com/status_callback",
       status_events: #["answered", "ended"],
       codecs: #["PCMU", "PCMA"],
+      timeout: 30,
+      max_price_per_minute: 0.05,
     },
   },
 };
@@ -43,11 +45,19 @@ const hangupCallExample = #{
 };
 
 const holdCallExample = #{
-  request: #{ command: "calling.ai_hold", id: callId, params: #{} },
+  request: #{
+    command: "calling.ai_hold",
+    id: callId,
+    params: #{ timeout: "300" },
+  },
 };
 
 const unholdCallExample = #{
-  request: #{ command: "calling.ai_unhold", id: callId, params: #{} },
+  request: #{
+    command: "calling.ai_unhold",
+    id: callId,
+    params: #{},
+  },
 };
 
 const aiMessageExample = #{
@@ -189,9 +199,15 @@ const playCallExample = #{
     id: callId,
     params: #{
       control_id: "play-control-1",
-      play: #[#{ type: PlayMediaType.audio, params: #{ url: "https://example.com/audio.mp3" } }],
+      play: #[
+        #{
+          type: PlayMediaType.audio,
+          params: #{ url: "https://example.com/audio.mp3" },
+        }
+      ],
       volume: 0,
-      direction: PlayDirection.both,
+      direction: PlayDirection.listen,
+      loop: 1,
     },
   },
 };
@@ -235,7 +251,9 @@ const recordCallExample = #{
     id: callId,
     params: #{
       control_id: "record-control-1",
-      audio: #{ format: RecordFormat.mp3, direction: PlayDirection.both, stereo: false },
+      record: #{
+        audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false },
+      },
     },
   },
 };
@@ -273,6 +291,11 @@ const collectCallExample = #{
       control_id: "collect-control-1",
       initial_timeout: 5,
       digits: #{ max: 4, terminators: "#" },
+      continuous: false,
+      partial_results: false,
+      send_start_of_input: false,
+      start_input_timers: false,
+      status_url: "https://example.com/collect_callback",
     },
   },
 };
@@ -300,7 +323,10 @@ const detectCallExample = #{
     id: callId,
     params: #{
       control_id: "detect-control-1",
-      detect: #{ type: DetectType.machine },
+      detect: #{
+        type: DetectType.machine,
+        params: #{ initial_timeout: 4.5, end_silence_timeout: 1.0 },
+      },
       timeout: 30,
     },
   },
@@ -322,7 +348,10 @@ const tapCallExample = #{
     params: #{
       control_id: "tap-control-1",
       tap: #{ type: "audio", params: #{ direction: PlayDirection.both } },
-      device: #{ type: TapDeviceType.rtp, params: #{ addr: "192.168.1.100", port: 5060 } },
+      device: #{
+        type: TapDeviceType.rtp,
+        params: #{ addr: "198.51.100.42", port: 5060 },
+      },
     },
   },
 };
@@ -343,7 +372,7 @@ const streamCallExample = #{
     params: #{
       control_id: "stream-control-1",
       url: "wss://example.com/stream",
-      track: StreamTrack.both_tracks,
+      track: StreamTrack.inbound_track,
     },
   },
 };
@@ -424,6 +453,8 @@ const userEventCallExample = #{
   request: #{
     command: "calling.user_event",
     id: callId,
-    params: #{ event: #{ action: "custom_action", data: "example" } },
+    params: #{
+      event: #{ action: "custom_action", data: "example" },
+    },
   },
 };
