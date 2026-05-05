@@ -76,18 +76,16 @@ model CallHoldRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The duration to hold the caller in seconds.")
-    @example(300)
-    @minValue(1)
-    @maxValue(300)
-    timeout?: int32 = 300;
+    @doc("Hold timeout, expressed as a numeric string of seconds. Note: must be sent as a string — integer payloads are rejected.")
+    @example("300")
+    timeout?: string;
 
     @doc("""
       A system message added to the AI conversation before placing the caller on hold.
       The AI will speak this message to the caller before hold music begins.
       """)
     @example("Please hold while I transfer you to a specialist.")
-    prompt?: string = "Tell the user you are putting them on hold.";
+    prompt?: string;
   };
 }
 
@@ -102,14 +100,7 @@ model CallUnholdRequest {
   command: "calling.ai_unhold";
 
   @doc(paramsDescription)
-  params: {
-    @doc("""
-      A system message added to the AI conversation when taking the caller off hold.
-      The AI will use this context when resuming the conversation.
-      """)
-    @example("The user has been connected to a specialist.")
-    prompt?: string = "The user has been taken off hold.";
-  };
+  params: {};
 }
 
 @doc("Parameters for resetting the AI conversation state.")
@@ -140,21 +131,19 @@ model CallAIMessageRequest {
   @doc(paramsDescription)
   params: {
     @doc("""
-      The role that the message is from. Required when `reset` is not provided. Each role type has a different purpose and will influence how the AI will interpret the message.
-      - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it. This could change the AI's personality, add new constraints, provide context about the conversation, or give the AI information it should know going forward.
-      - `user`: Inject a message as if the caller said it. This would appear in the conversation history as coming from the caller, and the AI would respond to it as if the caller just spoke it.
-      - `assistant`: Inject a message as if the AI said it. This would appear as an AI response in the conversation history. The AI would treat this as its own previous response when generating future replies.
+      The role that the message is from. By convention pair with `message_text` (the validator itself does not enforce this).
+      - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it.
+      - `user`: Inject a message as if the caller said it. The AI will respond as if the caller spoke it.
+      - `assistant`: Inject a message as if the AI said it. Appears as an AI response in the conversation history.
       """)
     @example("system")
     role?: "system" | "user" | "assistant";
 
-    @doc("""
-      The text content that will be sent to the AI. Required when `reset` is not provided.
-      """)
+    @doc("The text content sent to the AI. Typically required unless `reset` is provided.")
     @example("You are now in expert mode. Provide detailed technical responses.")
     message_text?: string;
 
-    @doc("Parameters for resetting the AI conversation state. When provided, `role` and `message_text` are optional.")
+    @doc("Parameters for resetting the AI conversation state.")
     @example(#{
       full_reset: true,
       system_prompt: "You are a helpful assistant.",
@@ -399,7 +388,7 @@ model CallLiveTranslateRequest {
     @doc("The translation action to perform: start, stop, summarize, or inject.")
     action: LiveTranslateAction;
 
-    @doc("A URL to receive status update callbacks for the translation session.")
+    @doc("HTTP or HTTPS URL that receives translation-session webhooks.")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
@@ -416,43 +405,60 @@ model CallCreateRequest {
 }
 
 model CallCreateParamsBase {
-  @doc("The address that initiated the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).")
+  @doc("The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.")
   @example("sip:from-sip@example-112233445566.sip.signalwire.com")
   from: string;
 
-  @doc("The address that received the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).")
+  @doc("Destination address. Accepts E.164 (`+xxxxxxxxxxx`), SIP URI (`sip:` / `sips:`), Verto URI (`verto:`), client address (`client:`), or a fabric address. Required unless `to_script` is provided.")
   @example("sip:from-sip@example-112233445567.sip.signalwire.com")
-  to: string;
+  to?: string;
 
-  @doc("The number, in E.164 format, or identifier of the caller.")
+  @doc("Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.")
+  @example("https://example.com/destination.swml.json")
+  to_script?: string | SWMLObject;
+
+  @doc("Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.")
   @example("+1234567890")
   caller_id?: string;
 
-  @doc("The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.")
+  @doc("Fallback URL that returns SWML if the primary `url` fails.")
   @example(CallFallbackURLExample)
   fallback_url?: string;
 
-  @doc("A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.")
+  @doc("HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.")
   @example("https://example.com/status_callback")
   status_url?: url;
 
-  @doc("The call events that will be monitored and sent to the `status_url` when active.")
+  @doc("Call lifecycle events that will be delivered to `status_url`.")
   @example(#["answered", "ended"])
-  status_events?: (
-    | "answered"
-    | "queued"
-    | "initiated"
-    | "ringing"
-    | "ending"
-    | "ended")[] = #["ended"];
+  status_events?: ("created" | "ringing" | "answered" | "ended")[] = #["ended"];
 
-  @doc("The HTTP method to use when requesting the URL.")
+  @doc("HTTP method used when requesting the `url`. Defaults to `POST`.")
   @example("POST")
-  url_method?: string = "POST";
+  url_method?: "GET" | "POST" = "POST";
 
-  @doc("A list of codecs to use for the call. Can be an array of codec strings or a comma-separated string. Valid codecs are: `PCMU`, `PCMA`, `G722`, `G729`, `OPUS`, `VP8`, `H264`. For PSTN calls, `PCMA` and `PCMU` are recommended as many other codecs are not supported by PSTN gateways. If a SIP URI with included codecs is passed in the `to` field along with this parameter, the SIP URI codecs will be prioritized.")
+  @doc("Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
   @example(#["OPUS", "G729", "VP8", "PCMA"])
   codecs?: string[] | string;
+
+  @doc("Ring timeout in seconds. Must be between 1 and 600.")
+  @example(30)
+  @minValue(1)
+  @maxValue(600)
+  timeout?: int32;
+
+  @doc("Maximum per-minute price (in dollars). If the computed billing route exceeds this value, the call is rejected.")
+  @example(0.05)
+  @minValue(0)
+  max_price_per_minute?: float64;
+
+  @doc("DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).")
+  @example("1234#")
+  send_digits?: string;
+
+  @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
+  @example(#["us-east-1", "us-west-2"])
+  region?: string | string[];
 }
 
 @summary("dial (URL)")
@@ -509,6 +515,15 @@ model CallUpdateParamsURL is CallUpdateParamsBase {
   url: string;
 }
 
+/**
+ * Update a call in progress — cancel, complete, or redirect the SWML flow.
+ *
+ * State-transition rules:
+ * - `status: canceled` is only valid while the leg is `queued` or `ringing`.
+ * - `status: completed` is only valid while the leg is `answered` (or in-progress).
+ * - Supplying `url` or `swml` (redirect) is only valid while the leg is `answered`.
+ * - Calls in terminal states (`busy`, `failed`, `no-answer`, `canceled`, `completed`) cannot be updated.
+ */
 @summary("update")
 model CallUpdateCurrentCallRequest {
   @doc(updateCommandDescription)
@@ -541,6 +556,7 @@ model CallDisconnectRequest {
 // Play Commands
 // ============================================
 
+
 @doc("The type of media to play.")
 enum PlayMediaType {
   @doc("Play an audio file from a URL.")
@@ -552,8 +568,8 @@ enum PlayMediaType {
   @doc("Play silence for a specified duration.")
   silence,
 
-  @doc("Play a ringing tone.")
-  ring,
+  @doc("Play a ringtone by country code.")
+  ringtone,
 }
 
 @doc("The direction of audio playback relative to the call participants.")
@@ -568,17 +584,162 @@ enum PlayDirection {
   both,
 }
 
-@doc("A media item to play on the call.")
+@doc("Text-to-speech voice gender.")
+enum TtsGender {
+  male,
+  female,
+}
+
+@doc("Ringtone name. Two-letter country code selects a country-specific ringtone cadence.")
+enum PlayRingtoneName {
+  au,
+  be,
+  ca,
+  cn,
+  cy,
+  cz,
+  de,
+  dk,
+  dz,
+  eg,
+  es,
+  fi,
+  fr,
+  hu,
+  il,
+  `in`,
+  jp,
+  ko,
+  pk,
+  pl,
+  ro,
+  rs,
+  ru,
+  sa,
+  tr,
+  uk,
+  us,
+  at,
+  bg,
+  br,
+  ch,
+  cl,
+  ee,
+  gr,
+  it,
+  lt,
+  mx,
+  my,
+  nl,
+  no,
+  nz,
+  ph,
+  pt,
+  se,
+  sg,
+  th,
+  za,
+  tw,
+  ve,
+  bong,
+}
+
+@doc("Audio file playback parameters.")
+model PlayAudioParams {
+  @doc("HTTP or HTTPS URL of the audio file to play.")
+  @example("https://example.com/audio.mp3")
+  url: url;
+}
+
+@doc("Text-to-speech playback parameters.")
+model PlayTtsParams {
+  @doc("The text to speak.")
+  @example("Hello from SignalWire.")
+  text: string;
+
+  @doc("BCP-47 language tag. Falls back to the request-level `language`, then `en-US`.")
+  @example("en-US")
+  language?: string;
+
+  @doc("Voice gender. Falls back to the request-level `gender`, then `female`.")
+  @example(TtsGender.female)
+  gender?: TtsGender;
+
+  @doc("Specific voice name (provider-dependent, no special characters except `.` and `-`). Falls back to the request-level `voice`, then to `gender`.")
+  @example("en-US-Wavenet-C")
+  voice?: string;
+}
+
+@doc("Silence playback parameters.")
+model PlaySilenceParams {
+  @doc("Duration of silence in seconds (must be positive).")
+  @example(2.0)
+  duration: float64;
+}
+
+@doc("Ringtone playback parameters.")
+model PlayRingtoneParams {
+  @doc("Country code identifying the ringtone cadence.")
+  @example(PlayRingtoneName.us)
+  name: PlayRingtoneName;
+
+  @doc("Maximum ringtone duration in seconds. If omitted, the ringtone plays until stopped.")
+  @example(10.0)
+  duration?: float64;
+}
+
+@doc("A media item to play on the call. The shape of `params` is determined by `type`.")
+@discriminator("type")
 model PlayMediaItem {
   @doc("The type of media to play.")
   @example(PlayMediaType.audio)
   type: PlayMediaType;
-
-  @doc("Type-specific parameters for the media item.")
-  @example(#{ url: "https://example.com/audio.mp3" })
-  params?: TypeSpec.Record<unknown>;
 }
 
+@doc("Play an audio file from a URL.")
+model PlayAudioItem extends PlayMediaItem {
+  type: PlayMediaType.audio;
+
+  @doc("Audio playback parameters.")
+  @example(#{ url: "https://example.com/audio.mp3" })
+  params: PlayAudioParams;
+}
+
+@doc("Play text-to-speech. Per-item `language`/`voice`/`gender` override the request-level fallbacks.")
+model PlayTtsItem extends PlayMediaItem {
+  type: PlayMediaType.tts;
+
+  @doc("TTS parameters.")
+  @example(#{ text: "Hello from SignalWire.", language: "en-US", gender: TtsGender.female })
+  params: PlayTtsParams;
+}
+
+@doc("Play silence for a fixed duration.")
+model PlaySilenceItem extends PlayMediaItem {
+  type: PlayMediaType.silence;
+
+  @doc("Silence parameters.")
+  @example(#{ duration: 2.0 })
+  params: PlaySilenceParams;
+}
+
+@doc("Play a country-coded ringtone cadence.")
+model PlayRingtoneItem extends PlayMediaItem {
+  type: PlayMediaType.ringtone;
+
+  @doc("Ringtone parameters.")
+  @example(#{ name: PlayRingtoneName.us, duration: 10.0 })
+  params: PlayRingtoneParams;
+}
+
+/**
+ * Play media (audio files, text-to-speech, silence, or ringtones) on an active call.
+ *
+ * The HTTP response confirms the command was accepted. Playback lifecycle
+ * is delivered asynchronously via the `status_url` webhook, with payloads
+ * of the form `{control_id, call_id, node_id, state}` where `state` is one
+ * of `playing`, `paused`, `finished`, or `error`.
+ */
 @summary("calling.play")
 model CallPlayRequest {
   @doc(uuidDescription)
@@ -591,29 +752,42 @@ model CallPlayRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Unique identifier for this play operation, used to control it later.")
+    @doc("Unique identifier for this play operation, used to control it later. Must be unique per active play on this call.")
     @example("play-control-1")
-    control_id?: string;
+    control_id: string;
 
-    @doc("Array of media objects to play.")
+    @doc("Ordered list of media items to play. Items play sequentially.")
     @example(#[#{ type: PlayMediaType.audio, params: #{ url: "https://example.com/audio.mp3" } }])
-    play: PlayMediaItem[];
+    play: (PlayAudioItem | PlayTtsItem | PlaySilenceItem | PlayRingtoneItem)[];
 
-    @doc("Volume adjustment in dB (-40 to 40).")
+    @doc("Volume adjustment in dB. Must be between -40 and 40.")
     @example(0)
     @minValue(-40)
     @maxValue(40)
     volume?: float64 = 0;
 
-    @doc("The direction of audio playback.")
-    @example(PlayDirection.both)
-    direction?: PlayDirection = PlayDirection.both;
+    @doc("The direction of audio playback relative to the call participants.")
+    @example(PlayDirection.listen)
+    direction?: PlayDirection = PlayDirection.listen;
 
-    @doc("Number of times to loop playback. 0 for infinite loop.")
+    @doc("Number of times the full `play` sequence is repeated. `0` loops forever; `N > 0` plays a total of N times.")
     @example(1)
-    loop?: int32;
+    @minValue(0)
+    loop?: int32 = 1;
 
-    @doc("A URL to receive status update callbacks for the play operation.")
+    @doc("Default BCP-47 language tag applied to any TTS item that does not set its own `language`.")
+    @example("en-US")
+    language?: string = "en-US";
+
+    @doc("Default voice applied to any TTS item that does not set its own `voice`. Defaults to the request-level `gender` when unset.")
+    @example("en-US-Wavenet-C")
+    voice?: string;
+
+    @doc("Default voice gender applied to any TTS item that does not set its own `gender`.")
+    @example(TtsGender.female)
+    gender?: TtsGender = TtsGender.female;
+
+    @doc("HTTP or HTTPS URL that receives playback lifecycle webhooks (`playing`, `paused`, `finished`, `error`).")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
@@ -689,7 +863,7 @@ model CallPlayVolumeRequest {
     @example("play-control-1")
     control_id: string;
 
-    @doc("Volume adjustment in dB (-40 to 40).")
+    @doc("Volume adjustment in dB. Must be between -40 and 40.")
     @example(5)
     @minValue(-40)
     @maxValue(40)
@@ -701,15 +875,6 @@ model CallPlayVolumeRequest {
 // Record Commands
 // ============================================
 
-@doc("The audio format for recording.")
-enum RecordFormat {
-  @doc("MP3 audio format.")
-  mp3,
-
-  @doc("WAV audio format.")
-  wav,
-}
-
 @doc("Audio recording parameters.")
 model RecordAudioParams {
   @doc("Whether to play a beep before recording starts.")
@@ -717,37 +882,56 @@ model RecordAudioParams {
   beep?: boolean = false;
 
   @doc("The audio format for the recording.")
-  @example(RecordFormat.mp3)
-  format?: RecordFormat = RecordFormat.mp3;
+  @example("mp3")
+  format?: "mp3" | "wav" | "mp4" = "mp3";
 
   @doc("Whether to record in stereo (separate channels for each direction).")
   @example(false)
   stereo?: boolean = false;
 
   @doc("The direction of audio to record.")
-  @example(PlayDirection.both)
-  direction?: PlayDirection = PlayDirection.both;
+  @example(PlayDirection.speak)
+  direction?: PlayDirection = PlayDirection.speak;
 
-  @doc("Maximum time in seconds to wait for speech before stopping.")
+  @doc("Maximum time in seconds to wait for initial speech before stopping.")
   @example(5)
-  initial_timeout?: float64;
+  @minValue(0)
+  initial_timeout?: float64 = 4.0;
 
   @doc("Time in seconds of silence after speech to stop recording.")
   @example(3)
-  end_silence_timeout?: float64;
+  @minValue(0)
+  end_silence_timeout?: float64 = 0.5;
 
-  @doc("DTMF digits that will stop the recording when pressed.")
-  @example("#*")
-  terminators?: string;
+  @doc("Maximum recording duration in seconds. Set to `0` for no limit.")
+  @example(0)
+  @minValue(0)
+  max_length?: int32 = 0;
 
-  @doc("Input sensitivity for voice detection (0-100).")
+  @doc("DTMF digits that terminate the recording when pressed. Accepts `0-9`, `A-D` (case insensitive), `*`, and `#`.")
+  @example("#")
+  terminators?: string = "#";
+
+  @doc("Input sensitivity for voice detection (0.0-100.0).")
   @example(50)
   @minValue(0)
   @maxValue(100)
-  input_sensitivity?: float64;
+  input_sensitivity?: float64 = 44.0;
+}
+
+@doc("Recording configuration wrapper. Currently only audio recording is supported.")
+model RecordParams {
+  @doc("Audio recording configuration parameters.")
+  @example(#{ format: "mp3", direction: PlayDirection.speak, stereo: false })
+  audio: RecordAudioParams;
 }
 
 @summary("calling.record")
+@doc("""
+  Starts recording an active call. The HTTP response returns the call leg — the recording URL
+  is not included. Recording runs asynchronously; provide `status_url` to receive a webhook when
+  the recording finishes (with the final URL), or query the call's events endpoint.
+  """)
 model CallRecordRequest {
   @doc(uuidDescription)
   @example(CallIdExample)
@@ -759,15 +943,15 @@ model CallRecordRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Unique identifier for this record operation, used to control it later.")
+    @doc("Unique identifier for this record operation, used to control it later. Must be unique among active recordings on the call.")
     @example("record-control-1")
-    control_id?: string;
+    control_id: string;
 
-    @doc("Audio recording configuration parameters.")
-    @example(#{ format: RecordFormat.mp3, direction: PlayDirection.both, stereo: false })
-    audio?: RecordAudioParams;
+    @doc("Recording configuration. Wraps the media-type-specific parameters (currently only `audio`).")
+    @example(#{ audio: #{ format: "mp3", direction: PlayDirection.speak, stereo: false } })
+    record: RecordParams;
 
-    @doc("A URL to receive status update callbacks for the record operation.")
+    @doc("Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
@@ -788,6 +972,10 @@ model CallRecordPauseRequest {
     @doc("The control ID of the recording to pause.")
     @example("record-control-1")
     control_id: string;
+
+    @doc("How the paused audio is handled. `skip` omits paused audio from the output file; `silence` replaces it with silence, preserving timing.")
+    @example("skip")
+    behavior?: "skip" | "silence" = "skip";
   };
 }
 
@@ -831,32 +1019,39 @@ model CallRecordStopRequest {
 // Collect Commands
 // ============================================
 
+@doc("Speech recognition engine for `calling.collect`. Note: values are case-sensitive.")
+enum CollectSpeechEngine {
+  Google: "Google",
+  `Google.V2`: "Google.V2",
+  Deepgram: "Deepgram",
+}
+
 @doc("Parameters for collecting DTMF digit input.")
 model CollectDigitsParams {
-  @doc("Maximum number of digits to collect.")
+  @doc("Maximum number of digits to collect. Must be positive.")
   @example(4)
-  max?: int32;
+  max: int32;
 
-  @doc("DTMF digits that signal the end of input.")
+  @doc("DTMF digits that terminate input when pressed. Allowed: `0-9`, `A-D` (case insensitive), `*`, `#`. Empty string disables terminators.")
   @example("#")
   terminators?: string;
 
-  @doc("Time in seconds to wait between digit presses.")
+  @doc("Time in seconds to wait between digit presses. Must be positive. Defaults to the server-configured digit timeout when omitted.")
   @example(5)
   digit_timeout?: float64;
 }
 
 @doc("Parameters for collecting speech input.")
 model CollectSpeechParams {
-  @doc("Time in seconds of silence after speech to consider input complete.")
+  @doc("Time in seconds of silence after speech to consider input complete. Must be positive.")
   @example(3)
   end_silence_timeout?: float64;
 
-  @doc("Maximum time in seconds to wait for speech input.")
+  @doc("Maximum time in seconds to wait for speech input. Must be positive.")
   @example(30)
   speech_timeout?: float64;
 
-  @doc("The language for speech recognition (e.g., 'en-US').")
+  @doc("Speech recognition language. Accepts a BCP-47 tag (e.g. `en-US`) or an `engine:tag` override (e.g. `Deepgram:en-US`) to pick a specific engine. Defaults to the server-configured ASR language when omitted.")
   @example("en-US")
   language?: string;
 
@@ -864,11 +1059,27 @@ model CollectSpeechParams {
   @example(#["yes", "no", "maybe"])
   hints?: string[];
 
-  @doc("The speech recognition engine to use.")
-  @example("default")
-  engine?: string;
+  @doc("Provider-specific ASR model name (e.g. Deepgram `nova-3`). Freeform string; validation is performed by the selected engine.")
+  @example("nova-3")
+  `model`?: string;
+
+  @doc("Speech recognition engine to use.")
+  @example(CollectSpeechEngine.Deepgram)
+  engine?: CollectSpeechEngine;
 }
 
+/**
+ * Collect user input (DTMF digits, speech, or both) on an active call.
+ *
+ * At least one of `digits` or `speech` must be provided; requests missing
+ * both return 400. Results are delivered asynchronously via the `status_url`
+ * webhook. Digit events have the shape `{control_id, call_id, node_id, result: {type:"digit", params: {digits, terminator}}}`
+ * and speech events `{..., result: {type:"speech", params: {text, confidence}}}`.
+ *
+ * When `start_input_timers` is `false`, the `initial_timeout` clock does not
+ * start until you send `calling.collect.start_input_timers` for the same
+ * `control_id`.
+ */
 @summary("calling.collect")
 model CallCollectRequest {
   @doc(uuidDescription)
@@ -881,29 +1092,41 @@ model CallCollectRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Unique identifier for this collect operation, used to control it later.")
+    @doc("Unique identifier for this collect operation, used to control it later. Must be unique per active collect on this call.")
     @example("collect-control-1")
-    control_id?: string;
+    control_id: string;
 
-    @doc("Maximum time in seconds to wait for initial input.")
+    @doc("Maximum time in seconds to wait for initial input. Must be positive. Defaults to the server-configured no-input timeout when omitted.")
     @example(5)
     initial_timeout?: float64;
 
-    @doc("Configuration for collecting DTMF digit input.")
+    @doc("Configuration for collecting DTMF digit input. Provide `digits`, `speech`, or both.")
     @example(#{ max: 4, terminators: "#" })
     digits?: CollectDigitsParams;
 
-    @doc("Configuration for collecting speech input.")
+    @doc("Configuration for collecting speech input. Provide `digits`, `speech`, or both.")
     @example(#{ end_silence_timeout: 3, language: "en-US" })
     speech?: CollectSpeechParams;
 
-    @doc("Whether to continuously collect input (restart after each result).")
+    @doc("If `true`, the collect restarts after each result until `calling.collect.stop` is called. Continuous events include a `state` field indicating collect state.")
     @example(false)
-    continuous?: boolean;
+    continuous?: boolean = false;
 
-    @doc("Whether to send partial results as speech is recognized.")
+    @doc("If `true`, partial results are delivered as they are recognized, and events include a `final` field (`false` for partial, `true` for final).")
     @example(false)
-    partial_results?: boolean;
+    partial_results?: boolean = false;
+
+    @doc("If `true`, a `start_of_input` webhook event is fired when input is first detected.")
+    @example(false)
+    send_start_of_input?: boolean = false;
+
+    @doc("If `false`, the initial-timeout clock does not start until `calling.collect.start_input_timers` is called for this `control_id`.")
+    @example(false)
+    start_input_timers?: boolean = false;
+
+    @doc("HTTP or HTTPS URL that receives collect result webhooks.")
+    @example("https://example.com/collect_callback")
+    status_url?: url;
   };
 }
 
@@ -959,56 +1182,100 @@ enum DetectType {
   digit,
 }
 
-@doc("Parameters for call detection configuration.")
-model DetectParams {
-  @doc("Maximum time in seconds to wait for initial detection.")
-  @example(5)
-  initial_timeout?: float64;
+@doc("Answering-machine detection parameters. Applies only when `detect.type` is `machine`.")
+model DetectMachineParams {
+  @doc("Maximum time in seconds to wait for initial speech/voice.")
+  @example(4.5)
+  initial_timeout?: float64 = 4.5;
 
-  @doc("Time in seconds of silence after detection to finalize the result.")
-  @example(3)
-  end_silence_timeout?: float64;
+  @doc("Time in seconds of silence after voice ends to finalize the result.")
+  @example(1.0)
+  end_silence_timeout?: float64 = 1.0;
 
-  @doc("Time in seconds to wait for the machine to be ready (machine detection only).")
-  @example(5)
+  @doc("Time in seconds to wait for the machine greeting to be ready. Defaults to `end_silence_timeout`.")
+  @example(1.0)
   machine_ready_timeout?: float64;
 
-  @doc("Voice duration threshold in seconds for machine vs. human detection.")
+  @doc("Voice duration threshold in seconds distinguishing machine from human.")
   @example(1.25)
-  machine_voice_threshold?: float64;
+  machine_voice_threshold?: float64 = 1.25;
 
-  @doc("Number of words threshold for machine vs. human detection.")
+  @doc("Word-count threshold distinguishing machine greetings from human speech.")
   @example(6)
-  machine_words_threshold?: int32;
+  machine_words_threshold?: int32 = 6;
 
-  @doc("Whether to detect interruptions during machine greeting playback.")
+  @doc("If `true`, detect the caller interrupting during the machine greeting playback.")
   @example(false)
-  detect_interruptions?: boolean;
+  detect_interruptions?: boolean = false;
 
-  @doc("Whether to detect the end of a machine message.")
-  @example(false)
-  detect_message_end?: boolean;
+  @doc("If `true`, detect when a machine message has finished.")
+  @example(true)
+  detect_message_end?: boolean = true;
+}
 
-  @doc("The DTMF tone to detect (digit detection only).")
-  @example("1")
-  tone?: string;
+@doc("Fax tone to detect.")
+enum DetectFaxTone {
+  CNG: "CNG",
+  CED: "CED",
+  cng: "cng",
+  ced: "ced",
+}
 
-  @doc("The DTMF digits to detect (digit detection only).")
+@doc("Fax-tone detection parameters. Applies only when `detect.type` is `fax`.")
+model DetectFaxParams {
+  @doc("The fax tone to detect. Omitted means either tone matches.")
+  @example(DetectFaxTone.CNG)
+  tone?: DetectFaxTone;
+}
+
+@doc("DTMF-digit detection parameters. Applies only when `detect.type` is `digit`.")
+model DetectDigitParams {
+  @doc("Set of DTMF digits to match. Allowed: `0-9`, `A-D` (case insensitive), `*`, `#`. Empty string matches any digit.")
   @example("0123456789#*")
   digits?: string;
 }
 
-@doc("Detection configuration specifying what to detect and how.")
+@doc("Detection configuration. The shape of `params` depends on `type`.")
+@discriminator("type")
 model DetectConfig {
   @doc("The type of detection to perform.")
   @example(DetectType.machine)
   type: DetectType;
-
-  @doc("Type-specific detection parameters.")
-  @example(#{ initial_timeout: 5, end_silence_timeout: 3 })
-  params?: DetectParams;
 }
 
+@doc("Answering-machine detection configuration.")
+model DetectMachineConfig extends DetectConfig {
+  type: DetectType.machine;
+
+  @doc("Machine-detection parameters.")
+  @example(#{ initial_timeout: 4.5, end_silence_timeout: 1.0 })
+  params?: DetectMachineParams;
+}
+
+@doc("Fax-tone detection configuration.")
+model DetectFaxConfig extends DetectConfig {
+  type: DetectType.fax;
+
+  @doc("Fax-detection parameters.")
+  @example(#{ tone: DetectFaxTone.CNG })
+  params?: DetectFaxParams;
+}
+
+@doc("DTMF-digit detection configuration.")
+model DetectDigitConfig extends DetectConfig {
+  type: DetectType.digit;
+
+  @doc("Digit-detection parameters.")
+  @example(#{ digits: "0123456789#*" })
+  params?: DetectDigitParams;
+}
+
+/**
+ * Start detection (answering machine, fax tone, or DTMF digits) on an active call.
+ *
+ * Detection runs asynchronously up to `timeout` seconds. Results are delivered
+ * via the `status_url` webhook.
+ */
 @summary("calling.detect")
 model CallDetectRequest {
   @doc(uuidDescription)
@@ -1021,17 +1288,22 @@ model CallDetectRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Unique identifier for this detect operation, used to control it later.")
+    @doc("Unique identifier for this detect operation, used to control it later. Must be unique per active detect on this call.")
     @example("detect-control-1")
-    control_id?: string;
+    control_id: string;
 
     @doc("Detection configuration specifying what to detect.")
     @example(#{ type: DetectType.machine })
-    detect: DetectConfig;
+    detect: DetectMachineConfig | DetectFaxConfig | DetectDigitConfig;
 
-    @doc("Maximum time in seconds to run the detection.")
+    @doc("Maximum time in seconds the detection may run before timing out.")
     @example(30)
-    timeout?: float64;
+    @minValue(0)
+    timeout?: float64 = 30;
+
+    @doc("HTTP or HTTPS URL that receives detection result webhooks.")
+    @example("https://example.com/detect_callback")
+    status_url?: url;
   };
 }
 
@@ -1066,59 +1338,111 @@ enum TapDeviceType {
   ws,
 }
 
-@doc("Tap configuration specifying what audio to capture.")
+@doc("RTP/WebSocket audio codec. Case-sensitive; accepted in both upper and lower case.")
+enum TapCodec {
+  PCMA: "PCMA",
+  PCMU: "PCMU",
+  pcma: "pcma",
+  pcmu: "pcmu",
+  OPUS: "OPUS",
+  opus: "opus",
+}
+
+@doc("RTP packetization time in milliseconds. Must be a multiple of 10 between 10 and 120.")
+enum TapPtime {
+  `10`: 10,
+  `20`: 20,
+  `30`: 30,
+  `40`: 40,
+  `50`: 50,
+  `60`: 60,
+  `70`: 70,
+  `80`: 80,
+  `90`: 90,
+  `100`: 100,
+  `110`: 110,
+  `120`: 120,
+}
+
+@doc("Tap configuration — specifies what audio to capture.")
 model TapConfig {
-  @doc("The type of media to tap. Currently only 'audio' is supported.")
+  @doc("Currently only `audio` is supported.")
   @example("audio")
   type: "audio";
 
-  @doc("Tap parameters including audio direction.")
+  @doc("Audio tap parameters.")
   @example(#{ direction: PlayDirection.both })
-  params?: {
+  params: {
     @doc("The direction of audio to tap.")
     @example(PlayDirection.both)
-    direction?: PlayDirection;
+    direction: PlayDirection;
   };
 }
 
-@doc("Parameters for the tap device connection.")
-model TapDeviceParams {
-  @doc("The IP address or hostname of the device (RTP).")
-  @example("192.168.1.100")
-  addr?: string;
+@doc("RTP tap target parameters.")
+model TapRtpParams {
+  @doc("Public IPv4 address of the RTP target. Private/reserved ranges are rejected.")
+  @example("198.51.100.42")
+  addr: string;
 
-  @doc("The port number of the device (RTP).")
+  @doc("UDP port of the RTP target (1-65535).")
   @example(5060)
-  port?: int32;
+  @minValue(1)
+  @maxValue(65535)
+  port: int32;
 
-  @doc("The audio codec to use.")
-  @example("PCMU")
-  codec?: string;
+  @doc("Audio codec to request. Defaults to the call's negotiated codec.")
+  @example(TapCodec.PCMU)
+  codec?: TapCodec;
 
-  @doc("The packetization time in milliseconds.")
-  @example(20)
-  ptime?: int32;
-
-  @doc("The WebSocket URI to stream audio to (WS).")
-  @example("wss://example.com/tap")
-  uri?: string;
-
-  @doc("The audio sample rate in Hz.")
-  @example(8000)
-  rate?: int32;
+  @doc("Packetization time in milliseconds. Defaults to the call's negotiated ptime.")
+  @example(TapPtime.`20`)
+  ptime?: TapPtime;
 }
 
-@doc("Tap device configuration specifying where to stream captured audio.")
+@doc("WebSocket tap target parameters.")
+model TapWsParams {
+  @doc("WebSocket URI of the tap target. Must start with `ws://` or `wss://`.")
+  @example("wss://example.com/tap")
+  uri: string;
+
+  @doc("Audio codec to request. Defaults to the call's negotiated codec.")
+  @example(TapCodec.PCMU)
+  codec?: TapCodec;
+}
+
+@doc("Tap device configuration — specifies where to stream captured audio.")
+@discriminator("type")
 model TapDevice {
   @doc("The type of tap device.")
   @example(TapDeviceType.rtp)
   type: TapDeviceType;
-
-  @doc("Device-specific connection parameters.")
-  @example(#{ addr: "192.168.1.100", port: 5060 })
-  params?: TapDeviceParams;
 }
 
+@doc("RTP tap device configuration.")
+model TapDeviceRtp extends TapDevice {
+  type: TapDeviceType.rtp;
+
+  @doc("RTP connection parameters.")
+  @example(#{ addr: "198.51.100.42", port: 5060 })
+  params: TapRtpParams;
+}
+
+@doc("WebSocket tap device configuration.")
+model TapDeviceWs extends TapDevice {
+  type: TapDeviceType.ws;
+
+  @doc("WebSocket connection parameters.")
+  @example(#{ uri: "wss://example.com/tap" })
+  params: TapWsParams;
+}
+
+/**
+ * Capture audio from an active call and stream it to an external destination.
+ *
+ * Audio is streamed via RTP (to a public IP/port) or WebSocket (to a `ws://`/`wss://` URI).
+ * Stop the tap with `calling.tap.stop` using the same `control_id`.
+ */
 @summary("calling.tap")
 model CallTapRequest {
   @doc(uuidDescription)
@@ -1131,17 +1455,21 @@ model CallTapRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Unique identifier for this tap operation, used to control it later.")
+    @doc("Unique identifier for this tap operation, used to control it later. Must be unique per active tap on this call.")
     @example("tap-control-1")
-    control_id?: string;
+    control_id: string;
 
     @doc("Tap configuration specifying what audio to capture.")
     @example(#{ type: "audio", params: #{ direction: PlayDirection.both } })
     tap: TapConfig;
 
     @doc("Device configuration specifying where to stream captured audio.")
-    @example(#{ type: TapDeviceType.rtp, params: #{ addr: "192.168.1.100", port: 5060 } })
-    device: TapDevice;
+    @example(#{ type: TapDeviceType.rtp, params: #{ addr: "198.51.100.42", port: 5060 } })
+    device: TapDeviceRtp | TapDeviceWs;
+
+    @doc("HTTP or HTTPS URL that receives tap lifecycle webhooks.")
+    @example("https://example.com/tap_callback")
+    status_url?: url;
   };
 }
 
@@ -1179,6 +1507,20 @@ enum StreamTrack {
   both_tracks,
 }
 
+@doc("HTTP method used when invoking the `status_url` webhook.")
+enum StreamStatusUrlMethod {
+  GET,
+  POST,
+}
+
+/**
+ * Stream call audio to an external WebSocket endpoint.
+ *
+ * Audio is sent to a `wss://` URL; `custom_parameters` pass through to the
+ * endpoint as connection metadata. Stream lifecycle webhooks are delivered to
+ * `status_url` (default method `POST`). Stop the stream with
+ * `calling.stream.stop` using the same `control_id`.
+ */
 @summary("calling.stream")
 model CallStreamRequest {
   @doc(uuidDescription)
@@ -1191,30 +1533,42 @@ model CallStreamRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("Unique identifier for this stream operation, used to control it later.")
+    @doc("Unique identifier for this stream operation, used to control it later. Must be unique per active stream on this call.")
     @example("stream-control-1")
-    control_id?: string;
+    control_id: string;
 
-    @doc("The WebSocket URL to stream audio to.")
+    @doc("WebSocket URL to stream audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).")
     @example("wss://example.com/stream")
     @format("uri")
     url: string;
 
-    @doc("The audio codec to use for streaming.")
+    @doc("Optional human-readable name to identify the stream at the endpoint.")
+    @example("customer-support-recording")
+    name?: string;
+
+    @doc("Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `OPUS`.")
     @example("PCMU")
     codec?: string;
 
     @doc("The audio track to stream.")
-    @example(StreamTrack.both_tracks)
-    track?: StreamTrack;
+    @example(StreamTrack.inbound_track)
+    track?: StreamTrack = StreamTrack.inbound_track;
 
-    @doc("Bearer token for WebSocket authentication.")
+    @doc("Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.")
     @example("my-secret-token")
     authorization_bearer_token?: string;
 
-    @doc("Custom parameters to include in the WebSocket connection.")
+    @doc("Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.")
     @example(#{ session_id: "abc123" })
     custom_parameters?: TypeSpec.Record<unknown>;
+
+    @doc("HTTP or HTTPS URL that receives stream lifecycle webhooks.")
+    @example("https://example.com/stream_callback")
+    status_url?: url;
+
+    @doc("HTTP method used for the `status_url` webhook.")
+    @example(StreamStatusUrlMethod.POST)
+    status_url_method?: StreamStatusUrlMethod = StreamStatusUrlMethod.POST;
   };
 }
 
@@ -1240,6 +1594,11 @@ model CallStreamStopRequest {
 // Denoise Commands
 // ============================================
 
+/**
+ * Enable noise reduction on an active call. Denoise is per-call (no
+ * `control_id`); a call has at most one active denoise filter. Use
+ * `calling.denoise.stop` to disable it.
+ */
 @summary("calling.denoise")
 model CallDenoiseRequest {
   @doc(uuidDescription)
@@ -1284,9 +1643,9 @@ model CallAIStopRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The control ID of the AI session to stop.")
+    @doc("Reserved field. The handler stops AI on the active session for this call; this value is currently ignored.")
     @example("ai-control-1")
-    control_id: string;
+    control_id?: string;
   };
 }
 
@@ -1336,9 +1695,13 @@ model CallReceiveFaxStopRequest {
 
 @doc("SIP REFER device parameters.")
 model ReferSipParams {
-  @doc("The SIP URI to refer the call to.")
+  @doc("SIP URI to refer the call to (must start with `sip:`).")
   @example("sip:destination@example.com")
   to: string;
+
+  @doc("Optional SIP From URI (must start with `sip:` when provided).")
+  @example("sip:operator@example.com")
+  from?: string;
 
   @doc("Optional SIP authentication username.")
   @example("user")
@@ -1376,7 +1739,7 @@ model CallReferRequest {
     @example(#{ type: "sip", params: #{ to: "sip:destination@example.com" } })
     device: ReferDevice;
 
-    @doc("A URL to receive status update callbacks for the refer operation.")
+    @doc("HTTP or HTTPS URL that receives refer lifecycle webhooks.")
     @example("https://example.com/status_callback")
     status_url?: url;
   };
@@ -1398,7 +1761,7 @@ model CallTransferRequest {
 
   @doc(paramsDescription)
   params: {
-    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, or an inline SWML object.")
+    @doc("The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.")
     @example("sip:destination@example.com")
     dest: string | SWMLObject;
   };

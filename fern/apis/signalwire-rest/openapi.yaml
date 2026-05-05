@@ -428,6 +428,8 @@ paths:
                     codecs:
                       - PCMU
                       - PCMA
+                    timeout: 30
+                    max_price_per_minute: 0.05
               update:
                 summary: update
                 description: Modify an existing call's parameters in real-time
@@ -451,7 +453,8 @@ paths:
                 value:
                   command: calling.ai_hold
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-                  params: {}
+                  params:
+                    timeout: '300'
               calling.ai_unhold:
                 summary: calling.ai_unhold
                 description: Resume an AI call that was previously put on hold
@@ -535,7 +538,8 @@ paths:
                         params:
                           url: https://example.com/audio.mp3
                     volume: 0
-                    direction: both
+                    direction: listen
+                    loop: 1
               calling.play.pause:
                 summary: calling.play.pause
                 description: Pause an active play operation
@@ -577,10 +581,11 @@ paths:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params:
                     control_id: record-control-1
-                    audio:
-                      format: mp3
-                      direction: both
-                      stereo: false
+                    record:
+                      audio:
+                        format: mp3
+                        direction: speak
+                        stereo: false
               calling.record.pause:
                 summary: calling.record.pause
                 description: Pause an active recording
@@ -617,6 +622,11 @@ paths:
                     digits:
                       max: 4
                       terminators: '#'
+                    continuous: false
+                    partial_results: false
+                    send_start_of_input: false
+                    start_input_timers: false
+                    status_url: https://example.com/collect_callback
               calling.collect.stop:
                 summary: calling.collect.stop
                 description: Stop an active collect operation
@@ -643,6 +653,9 @@ paths:
                     control_id: detect-control-1
                     detect:
                       type: machine
+                      params:
+                        initial_timeout: 4.5
+                        end_silence_timeout: 1
                     timeout: 30
               calling.detect.stop:
                 summary: calling.detect.stop
@@ -667,7 +680,7 @@ paths:
                     device:
                       type: rtp
                       params:
-                        addr: 192.168.1.100
+                        addr: 198.51.100.42
                         port: 5060
               calling.tap.stop:
                 summary: calling.tap.stop
@@ -686,7 +699,7 @@ paths:
                   params:
                     control_id: stream-control-1
                     url: wss://example.com/stream
-                    track: both_tracks
+                    track: inbound_track
               calling.stream.stop:
                 summary: calling.stream.stop
                 description: Stop an active audio stream
@@ -17518,21 +17531,21 @@ components:
                 - user
                 - assistant
               description: |-
-                The role that the message is from. Required when `reset` is not provided. Each role type has a different purpose and will influence how the AI will interpret the message.
-                - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it. This could change the AI's personality, add new constraints, provide context about the conversation, or give the AI information it should know going forward.
-                - `user`: Inject a message as if the caller said it. This would appear in the conversation history as coming from the caller, and the AI would respond to it as if the caller just spoke it.
-                - `assistant`: Inject a message as if the AI said it. This would appear as an AI response in the conversation history. The AI would treat this as its own previous response when generating future replies.
+                The role that the message is from. By convention pair with `message_text` (the validator itself does not enforce this).
+                - `system`: Inject instructions or context that modify the AI's behavior mid-conversation without the caller hearing it.
+                - `user`: Inject a message as if the caller said it. The AI will respond as if the caller spoke it.
+                - `assistant`: Inject a message as if the AI said it. Appears as an AI response in the conversation history.
               examples:
                 - system
             message_text:
               type: string
-              description: The text content that will be sent to the AI. Required when `reset` is not provided.
+              description: The text content sent to the AI. Typically required unless `reset` is provided.
               examples:
                 - You are now in expert mode. Provide detailed technical responses.
             reset:
               allOf:
                 - $ref: '#/components/schemas/Calling.CallAIMessageResetParams'
-              description: Parameters for resetting the AI conversation state. When provided, `role` and `message_text` are optional.
+              description: Parameters for resetting the AI conversation state.
               examples:
                 - full_reset: true
                   system_prompt: You are a helpful assistant.
@@ -17589,11 +17602,9 @@ components:
           properties:
             control_id:
               type: string
-              description: The control ID of the AI session to stop.
+              description: Reserved field. The handler stops AI on the active session for this call; this value is currently ignored.
               examples:
                 - ai-control-1
-          required:
-            - control_id
           description: An object of parameters that will be utilized by the active command.
       title: calling.ai.stop
     Calling.CallBase:
@@ -17691,40 +17702,73 @@ components:
           properties:
             control_id:
               type: string
-              description: Unique identifier for this collect operation, used to control it later.
+              description: Unique identifier for this collect operation, used to control it later. Must be unique per active collect on this call.
               examples:
                 - collect-control-1
             initial_timeout:
               type: number
               format: double
-              description: Maximum time in seconds to wait for initial input.
+              description: Maximum time in seconds to wait for initial input. Must be positive. Defaults to the server-configured no-input timeout when omitted.
               examples:
                 - 5
             digits:
               allOf:
                 - $ref: '#/components/schemas/Calling.CollectDigitsParams'
-              description: Configuration for collecting DTMF digit input.
+              description: Configuration for collecting DTMF digit input. Provide `digits`, `speech`, or both.
               examples:
                 - max: 4
                   terminators: '#'
             speech:
               allOf:
                 - $ref: '#/components/schemas/Calling.CollectSpeechParams'
-              description: Configuration for collecting speech input.
+              description: Configuration for collecting speech input. Provide `digits`, `speech`, or both.
               examples:
                 - end_silence_timeout: 3
                   language: en-US
             continuous:
               type: boolean
-              description: Whether to continuously collect input (restart after each result).
+              description: If `true`, the collect restarts after each result until `calling.collect.stop` is called. Continuous events include a `state` field indicating collect state.
               examples:
                 - false
+              default: false
             partial_results:
               type: boolean
-              description: Whether to send partial results as speech is recognized.
+              description: If `true`, partial results are delivered as they are recognized, and events include a `final` field (`false` for partial, `true` for final).
               examples:
                 - false
+              default: false
+            send_start_of_input:
+              type: boolean
+              description: If `true`, a `start_of_input` webhook event is fired when input is first detected.
+              examples:
+                - false
+              default: false
+            start_input_timers:
+              type: boolean
+              description: If `false`, the initial-timeout clock does not start until `calling.collect.start_input_timers` is called for this `control_id`.
+              examples:
+                - false
+              default: false
+            status_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL that receives collect result webhooks.
+              examples:
+                - https://example.com/collect_callback
+          required:
+            - control_id
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Collect user input (DTMF digits, speech, or both) on an active call.
+
+        At least one of `digits` or `speech` must be provided; requests missing
+        both return 400. Results are delivered asynchronously via the `status_url`
+        webhook. Digit events have the shape `{control_id, call_id, node_id, result: {type:"digit", params: {digits, terminator}}}`
+        and speech events `{..., result: {type:"speech", params: {text, confidence}}}`.
+
+        When `start_input_timers` is `false`, the `initial_timeout` clock does not
+        start until you send `calling.collect.start_input_timers` for the same
+        `control_id`.
       title: calling.collect
     Calling.CallCollectStartInputTimersRequest:
       type: object
@@ -17813,32 +17857,38 @@ components:
       type: object
       required:
         - from
-        - to
       properties:
         from:
           type: string
-          description: The address that initiated the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).
+          description: The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.
           examples:
             - sip:from-sip@example-112233445566.sip.signalwire.com
         to:
           type: string
-          description: The address that received the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).
+          description: Destination address. Accepts E.164 (`+xxxxxxxxxxx`), SIP URI (`sip:` / `sips:`), Verto URI (`verto:`), client address (`client:`), or a fabric address. Required unless `to_script` is provided.
           examples:
             - sip:from-sip@example-112233445567.sip.signalwire.com
+        to_script:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/SWMLObject'
+          description: Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.
+          examples:
+            - https://example.com/destination.swml.json
         caller_id:
           type: string
-          description: The number, in E.164 format, or identifier of the caller.
+          description: Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.
           examples:
             - '+1234567890'
         fallback_url:
           type: string
-          description: The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
+          description: Fallback URL that returns SWML if the primary `url` fails.
           examples:
             - https://example.com/fallback
         status_url:
           type: string
           format: uri
-          description: A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.
+          description: HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.
           examples:
             - https://example.com/status_callback
         status_events:
@@ -17846,13 +17896,11 @@ components:
           items:
             type: string
             enum:
-              - answered
-              - queued
-              - initiated
+              - created
               - ringing
-              - ending
+              - answered
               - ended
-          description: The call events that will be monitored and sent to the `status_url` when active.
+          description: Call lifecycle events that will be delivered to `status_url`.
           examples:
             - - answered
               - ended
@@ -17860,7 +17908,10 @@ components:
             - ended
         url_method:
           type: string
-          description: The HTTP method to use when requesting the URL.
+          enum:
+            - GET
+            - POST
+          description: HTTP method used when requesting the `url`. Defaults to `POST`.
           examples:
             - POST
           default: POST
@@ -17870,43 +17921,79 @@ components:
               items:
                 type: string
             - type: string
-          description: 'A list of codecs to use for the call. Can be an array of codec strings or a comma-separated string. Valid codecs are: `PCMU`, `PCMA`, `G722`, `G729`, `OPUS`, `VP8`, `H264`. For PSTN calls, `PCMA` and `PCMU` are recommended as many other codecs are not supported by PSTN gateways. If a SIP URI with included codecs is passed in the `to` field along with this parameter, the SIP URI codecs will be prioritized.'
+          description: 'Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.'
           examples:
             - - OPUS
               - G729
               - VP8
               - PCMA
+        timeout:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 600
+          description: Ring timeout in seconds. Must be between 1 and 600.
+          examples:
+            - 30
+        max_price_per_minute:
+          type: number
+          format: double
+          minimum: 0
+          description: Maximum per-minute price (in dollars). If the computed billing route exceeds this value, the call is rejected.
+          examples:
+            - 0.05
+        send_digits:
+          type: string
+          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          examples:
+            - 1234#
+        region:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.
+          examples:
+            - - us-east-1
+              - us-west-2
     Calling.CallCreateParamsSWML:
       type: object
       required:
         - from
-        - to
         - swml
       properties:
         from:
           type: string
-          description: The address that initiated the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).
+          description: The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.
           examples:
             - sip:from-sip@example-112233445566.sip.signalwire.com
         to:
           type: string
-          description: The address that received the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).
+          description: Destination address. Accepts E.164 (`+xxxxxxxxxxx`), SIP URI (`sip:` / `sips:`), Verto URI (`verto:`), client address (`client:`), or a fabric address. Required unless `to_script` is provided.
           examples:
             - sip:from-sip@example-112233445567.sip.signalwire.com
+        to_script:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/SWMLObject'
+          description: Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.
+          examples:
+            - https://example.com/destination.swml.json
         caller_id:
           type: string
-          description: The number, in E.164 format, or identifier of the caller.
+          description: Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.
           examples:
             - '+1234567890'
         fallback_url:
           type: string
-          description: The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
+          description: Fallback URL that returns SWML if the primary `url` fails.
           examples:
             - https://example.com/fallback
         status_url:
           type: string
           format: uri
-          description: A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.
+          description: HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.
           examples:
             - https://example.com/status_callback
         status_events:
@@ -17914,13 +18001,11 @@ components:
           items:
             type: string
             enum:
-              - answered
-              - queued
-              - initiated
+              - created
               - ringing
-              - ending
+              - answered
               - ended
-          description: The call events that will be monitored and sent to the `status_url` when active.
+          description: Call lifecycle events that will be delivered to `status_url`.
           examples:
             - - answered
               - ended
@@ -17928,7 +18013,10 @@ components:
             - ended
         url_method:
           type: string
-          description: The HTTP method to use when requesting the URL.
+          enum:
+            - GET
+            - POST
+          description: HTTP method used when requesting the `url`. Defaults to `POST`.
           examples:
             - POST
           default: POST
@@ -17938,12 +18026,42 @@ components:
               items:
                 type: string
             - type: string
-          description: 'A list of codecs to use for the call. Can be an array of codec strings or a comma-separated string. Valid codecs are: `PCMU`, `PCMA`, `G722`, `G729`, `OPUS`, `VP8`, `H264`. For PSTN calls, `PCMA` and `PCMU` are recommended as many other codecs are not supported by PSTN gateways. If a SIP URI with included codecs is passed in the `to` field along with this parameter, the SIP URI codecs will be prioritized.'
+          description: 'Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.'
           examples:
             - - OPUS
               - G729
               - VP8
               - PCMA
+        timeout:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 600
+          description: Ring timeout in seconds. Must be between 1 and 600.
+          examples:
+            - 30
+        max_price_per_minute:
+          type: number
+          format: double
+          minimum: 0
+          description: Maximum per-minute price (in dollars). If the computed billing route exceeds this value, the call is rejected.
+          examples:
+            - 0.05
+        send_digits:
+          type: string
+          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          examples:
+            - 1234#
+        region:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.
+          examples:
+            - - us-east-1
+              - us-west-2
         swml:
           allOf:
             - $ref: '#/components/schemas/SWMLObject'
@@ -17953,33 +18071,39 @@ components:
       type: object
       required:
         - from
-        - to
         - url
       properties:
         from:
           type: string
-          description: The address that initiated the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).
+          description: The address that initiates the call. For PSTN destinations, must be an E.164 number; for SIP/Verto destinations may also be a SIP URI (`sip:user@host`) or a short caller-id token.
           examples:
             - sip:from-sip@example-112233445566.sip.signalwire.com
         to:
           type: string
-          description: The address that received the call. Can be either a E.164 formatted number (`+xxxxxxxxxxx`), or a SIP endpoint (`sip:xxx@yyy.zzz`).
+          description: Destination address. Accepts E.164 (`+xxxxxxxxxxx`), SIP URI (`sip:` / `sips:`), Verto URI (`verto:`), client address (`client:`), or a fabric address. Required unless `to_script` is provided.
           examples:
             - sip:from-sip@example-112233445567.sip.signalwire.com
+        to_script:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/SWMLObject'
+          description: Inline SWML document (JSON or YAML string), or an `http(s)://` URL that returns one, executed at the destination end. Useful for directing the call to a RelayBin / external SWML handler. When present, `to` may be omitted.
+          examples:
+            - https://example.com/destination.swml.json
         caller_id:
           type: string
-          description: The number, in E.164 format, or identifier of the caller.
+          description: Caller ID displayed to the destination. E.164 for PSTN; short caller-id token or SIP URI for SIP/Verto.
           examples:
             - '+1234567890'
         fallback_url:
           type: string
-          description: The Fallback URL to handle the call. This parameter allows you to specify a backup webhook or different route in your code containing SWML instructions for handling the call.
+          description: Fallback URL that returns SWML if the primary `url` fails.
           examples:
             - https://example.com/fallback
         status_url:
           type: string
           format: uri
-          description: A URL that will recieve status updates of the current call. Any call events defined in `status_events` will be delivered to the defined URL.
+          description: HTTP or HTTPS URL that receives call lifecycle webhooks for events listed in `status_events`.
           examples:
             - https://example.com/status_callback
         status_events:
@@ -17987,13 +18111,11 @@ components:
           items:
             type: string
             enum:
-              - answered
-              - queued
-              - initiated
+              - created
               - ringing
-              - ending
+              - answered
               - ended
-          description: The call events that will be monitored and sent to the `status_url` when active.
+          description: Call lifecycle events that will be delivered to `status_url`.
           examples:
             - - answered
               - ended
@@ -18001,7 +18123,10 @@ components:
             - ended
         url_method:
           type: string
-          description: The HTTP method to use when requesting the URL.
+          enum:
+            - GET
+            - POST
+          description: HTTP method used when requesting the `url`. Defaults to `POST`.
           examples:
             - POST
           default: POST
@@ -18011,12 +18136,42 @@ components:
               items:
                 type: string
             - type: string
-          description: 'A list of codecs to use for the call. Can be an array of codec strings or a comma-separated string. Valid codecs are: `PCMU`, `PCMA`, `G722`, `G729`, `OPUS`, `VP8`, `H264`. For PSTN calls, `PCMA` and `PCMU` are recommended as many other codecs are not supported by PSTN gateways. If a SIP URI with included codecs is passed in the `to` field along with this parameter, the SIP URI codecs will be prioritized.'
+          description: 'Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.'
           examples:
             - - OPUS
               - G729
               - VP8
               - PCMA
+        timeout:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 600
+          description: Ring timeout in seconds. Must be between 1 and 600.
+          examples:
+            - 30
+        max_price_per_minute:
+          type: number
+          format: double
+          minimum: 0
+          description: Maximum per-minute price (in dollars). If the computed billing route exceeds this value, the call is rejected.
+          examples:
+            - 0.05
+        send_digits:
+          type: string
+          description: 'DTMF digits to send after the call is answered. Allowed characters: `0-9`, `A-D`, `*`, `#`, `w` (wait), `,` (pause).'
+          examples:
+            - 1234#
+        region:
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.
+          examples:
+            - - us-east-1
+              - us-west-2
         url:
           type: string
           description: |-
@@ -18067,6 +18222,10 @@ components:
         params:
           type: object
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Enable noise reduction on an active call. Denoise is per-call (no
+        `control_id`); a call has at most one active denoise filter. Use
+        `calling.denoise.stop` to disable it.
       title: calling.denoise
     Calling.CallDenoiseStopRequest:
       type: object
@@ -18117,24 +18276,40 @@ components:
           properties:
             control_id:
               type: string
-              description: Unique identifier for this detect operation, used to control it later.
+              description: Unique identifier for this detect operation, used to control it later. Must be unique per active detect on this call.
               examples:
                 - detect-control-1
             detect:
-              allOf:
-                - $ref: '#/components/schemas/Calling.DetectConfig'
+              anyOf:
+                - $ref: '#/components/schemas/Calling.DetectMachineConfig'
+                - $ref: '#/components/schemas/Calling.DetectFaxConfig'
+                - $ref: '#/components/schemas/Calling.DetectDigitConfig'
               description: Detection configuration specifying what to detect.
               examples:
                 - type: machine
             timeout:
               type: number
               format: double
-              description: Maximum time in seconds to run the detection.
+              minimum: 0
+              description: Maximum time in seconds the detection may run before timing out.
               examples:
                 - 30
+              default: 30
+            status_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL that receives detection result webhooks.
+              examples:
+                - https://example.com/detect_callback
           required:
+            - control_id
             - detect
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Start detection (answering machine, fax tone, or DTMF digits) on an active call.
+
+        Detection runs asynchronously up to `timeout` seconds. Results are delivered
+        via the `status_url` webhook.
       title: calling.detect
     Calling.CallDetectStopRequest:
       type: object
@@ -18254,14 +18429,10 @@ components:
           type: object
           properties:
             timeout:
-              type: integer
-              format: int32
-              minimum: 1
-              maximum: 300
-              description: The duration to hold the caller in seconds.
+              type: string
+              description: 'Hold timeout, expressed as a numeric string of seconds. Note: must be sent as a string — integer payloads are rejected.'
               examples:
-                - 300
-              default: 300
+                - '300'
             prompt:
               type: string
               description: |-
@@ -18269,7 +18440,6 @@ components:
                 The AI will speak this message to the caller before hold music begins.
               examples:
                 - Please hold while I transfer you to a specialist.
-              default: Tell the user you are putting them on hold.
           description: An object of parameters that will be utilized by the active command.
       title: calling.ai_hold
     Calling.CallLeg:
@@ -18464,7 +18634,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: A URL to receive status update callbacks for the translation session.
+              description: HTTP or HTTPS URL that receives translation-session webhooks.
               examples:
                 - https://example.com/status_callback
           required:
@@ -18528,14 +18698,18 @@ components:
           properties:
             control_id:
               type: string
-              description: Unique identifier for this play operation, used to control it later.
+              description: Unique identifier for this play operation, used to control it later. Must be unique per active play on this call.
               examples:
                 - play-control-1
             play:
               type: array
               items:
-                $ref: '#/components/schemas/Calling.PlayMediaItem'
-              description: Array of media objects to play.
+                anyOf:
+                  - $ref: '#/components/schemas/Calling.PlayAudioItem'
+                  - $ref: '#/components/schemas/Calling.PlayTtsItem'
+                  - $ref: '#/components/schemas/Calling.PlaySilenceItem'
+                  - $ref: '#/components/schemas/Calling.PlayRingtoneItem'
+              description: Ordered list of media items to play. Items play sequentially.
               examples:
                 - - type: audio
                     params:
@@ -18545,32 +18719,60 @@ components:
               format: double
               minimum: -40
               maximum: 40
-              description: Volume adjustment in dB (-40 to 40).
+              description: Volume adjustment in dB. Must be between -40 and 40.
               examples:
                 - 0
               default: 0
             direction:
               allOf:
                 - $ref: '#/components/schemas/Calling.PlayDirection'
-              description: The direction of audio playback.
+              description: The direction of audio playback relative to the call participants.
               examples:
-                - both
-              default: both
+                - listen
+              default: listen
             loop:
               type: integer
               format: int32
-              description: Number of times to loop playback. 0 for infinite loop.
+              minimum: 0
+              description: Number of times the full `play` sequence is repeated. `0` loops forever; `N > 0` plays a total of N times.
               examples:
                 - 1
+              default: 1
+            language:
+              type: string
+              description: Default BCP-47 language tag applied to any TTS item that does not set its own `language`.
+              examples:
+                - en-US
+              default: en-US
+            voice:
+              type: string
+              description: Default voice applied to any TTS item that does not set its own `voice`. Defaults to the request-level `gender` when unset.
+              examples:
+                - en-US-Wavenet-C
+            gender:
+              allOf:
+                - $ref: '#/components/schemas/Calling.TtsGender'
+              description: Default voice gender applied to any TTS item that does not set its own `gender`.
+              examples:
+                - female
+              default: female
             status_url:
               type: string
               format: uri
-              description: A URL to receive status update callbacks for the play operation.
+              description: HTTP or HTTPS URL that receives playback lifecycle webhooks (`playing`, `paused`, `finished`, `error`).
               examples:
                 - https://example.com/status_callback
           required:
+            - control_id
             - play
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Play media (audio files, text-to-speech, silence, or ringtones) on an active call.
+
+        The HTTP response confirms the command was accepted. Playback lifecycle
+        is delivered asynchronously via the `status_url` webhook, with payloads
+        of the form `{control_id, call_id, node_id, state}` where `state` is one
+        of `playing`, `paused`, `finished`, or `error`.
       title: calling.play
     Calling.CallPlayResumeRequest:
       type: object
@@ -18669,7 +18871,7 @@ components:
               format: double
               minimum: -40
               maximum: 40
-              description: Volume adjustment in dB (-40 to 40).
+              description: Volume adjustment in dB. Must be between -40 and 40.
               examples:
                 - 5
           required:
@@ -18737,6 +18939,15 @@ components:
               description: The control ID of the recording to pause.
               examples:
                 - record-control-1
+            behavior:
+              type: string
+              enum:
+                - skip
+                - silence
+              description: How the paused audio is handled. `skip` omits paused audio from the output file; `silence` replaces it with silence, preserving timing.
+              examples:
+                - skip
+              default: skip
           required:
             - control_id
           description: An object of parameters that will be utilized by the active command.
@@ -18766,24 +18977,32 @@ components:
           properties:
             control_id:
               type: string
-              description: Unique identifier for this record operation, used to control it later.
+              description: Unique identifier for this record operation, used to control it later. Must be unique among active recordings on the call.
               examples:
                 - record-control-1
-            audio:
+            record:
               allOf:
-                - $ref: '#/components/schemas/Calling.RecordAudioParams'
-              description: Audio recording configuration parameters.
+                - $ref: '#/components/schemas/Calling.RecordParams'
+              description: Recording configuration. Wraps the media-type-specific parameters (currently only `audio`).
               examples:
-                - format: mp3
-                  direction: both
-                  stereo: false
+                - audio:
+                    format: mp3
+                    direction: speak
+                    stereo: false
             status_url:
               type: string
               format: uri
-              description: A URL to receive status update callbacks for the record operation.
+              description: Webhook URL invoked with recording events — including a `finished` event that contains the final recording URL. Must begin with `http://` or `https://`.
               examples:
                 - https://example.com/status_callback
+          required:
+            - control_id
+            - record
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Starts recording an active call. The HTTP response returns the call leg — the recording URL
+        is not included. Recording runs asynchronously; provide `status_url` to receive a webhook when
+        the recording finishes (with the final URL), or query the call's events endpoint.
       title: calling.record
     Calling.CallRecordResumeRequest:
       type: object
@@ -18883,7 +19102,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: A URL to receive status update callbacks for the refer operation.
+              description: HTTP or HTTPS URL that receives refer lifecycle webhooks.
               examples:
                 - https://example.com/status_callback
           required:
@@ -19046,18 +19265,23 @@ components:
           properties:
             control_id:
               type: string
-              description: Unique identifier for this stream operation, used to control it later.
+              description: Unique identifier for this stream operation, used to control it later. Must be unique per active stream on this call.
               examples:
                 - stream-control-1
             url:
               type: string
               format: uri
-              description: The WebSocket URL to stream audio to.
+              description: WebSocket URL to stream audio to. Must start with `wss://` (TLS is required; plain `ws://` is rejected).
               examples:
                 - wss://example.com/stream
+            name:
+              type: string
+              description: Optional human-readable name to identify the stream at the endpoint.
+              examples:
+                - customer-support-recording
             codec:
               type: string
-              description: The audio codec to use for streaming.
+              description: Audio codec to request. Freeform; endpoint-specific. Common values include `PCMU`, `PCMA`, `OPUS`.
               examples:
                 - PCMU
             track:
@@ -19065,21 +19289,43 @@ components:
                 - $ref: '#/components/schemas/Calling.StreamTrack'
               description: The audio track to stream.
               examples:
-                - both_tracks
+                - inbound_track
+              default: inbound_track
             authorization_bearer_token:
               type: string
-              description: Bearer token for WebSocket authentication.
+              description: 'Bearer token included as `Authorization: Bearer <token>` when establishing the WebSocket connection.'
               examples:
                 - my-secret-token
             custom_parameters:
               type: object
               unevaluatedProperties: {}
-              description: Custom parameters to include in the WebSocket connection.
+              description: Arbitrary JSON object passed through to the WebSocket endpoint as connection metadata.
               examples:
                 - session_id: abc123
+            status_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL that receives stream lifecycle webhooks.
+              examples:
+                - https://example.com/stream_callback
+            status_url_method:
+              allOf:
+                - $ref: '#/components/schemas/Calling.StreamStatusUrlMethod'
+              description: HTTP method used for the `status_url` webhook.
+              examples:
+                - POST
+              default: POST
           required:
+            - control_id
             - url
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Stream call audio to an external WebSocket endpoint.
+
+        Audio is sent to a `wss://` URL; `custom_parameters` pass through to the
+        endpoint as connection metadata. Stream lifecycle webhooks are delivered to
+        `status_url` (default method `POST`). Stop the stream with
+        `calling.stream.stop` using the same `control_id`.
       title: calling.stream
     Calling.CallStreamStopRequest:
       type: object
@@ -19138,7 +19384,7 @@ components:
           properties:
             control_id:
               type: string
-              description: Unique identifier for this tap operation, used to control it later.
+              description: Unique identifier for this tap operation, used to control it later. Must be unique per active tap on this call.
               examples:
                 - tap-control-1
             tap:
@@ -19150,18 +19396,31 @@ components:
                   params:
                     direction: both
             device:
-              allOf:
-                - $ref: '#/components/schemas/Calling.TapDevice'
+              anyOf:
+                - $ref: '#/components/schemas/Calling.TapDeviceRtp'
+                - $ref: '#/components/schemas/Calling.TapDeviceWs'
               description: Device configuration specifying where to stream captured audio.
               examples:
                 - type: rtp
                   params:
-                    addr: 192.168.1.100
+                    addr: 198.51.100.42
                     port: 5060
+            status_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL that receives tap lifecycle webhooks.
+              examples:
+                - https://example.com/tap_callback
           required:
+            - control_id
             - tap
             - device
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Capture audio from an active call and stream it to an external destination.
+
+        Audio is streamed via RTP (to a public IP/port) or WebSocket (to a `ws://`/`wss://` URI).
+        Stop the tap with `calling.tap.stop` using the same `control_id`.
       title: calling.tap
     Calling.CallTapStopRequest:
       type: object
@@ -19222,7 +19481,7 @@ components:
               anyOf:
                 - type: string
                 - $ref: '#/components/schemas/SWMLObject'
-              description: The destination to transfer the call to. Can be a SIP URI, phone number, or an inline SWML object.
+              description: The destination to transfer the call to. Can be a SIP URI, phone number, SWML URL, or an inline SWML object.
               examples:
                 - sip:destination@example.com
           required:
@@ -19259,15 +19518,6 @@ components:
             - calling.ai_unhold
         params:
           type: object
-          properties:
-            prompt:
-              type: string
-              description: |-
-                A system message added to the AI conversation when taking the caller off hold.
-                The AI will use this context when resuming the conversation.
-              examples:
-                - The user has been connected to a specialist.
-              default: The user has been taken off hold.
           description: An object of parameters that will be utilized by the active command.
       title: calling.ai_unhold
     Calling.CallUpdateCurrentCallRequest:
@@ -19288,6 +19538,14 @@ components:
             - $ref: '#/components/schemas/Calling.CallUpdateParamsURL'
             - $ref: '#/components/schemas/Calling.CallUpdateParamsSWML'
           description: An object of parameters that will be utilized by the active command.
+      description: |-
+        Update a call in progress — cancel, complete, or redirect the SWML flow.
+
+        State-transition rules:
+        - `status: canceled` is only valid while the leg is `queued` or `ringing`.
+        - `status: completed` is only valid while the leg is `answered` (or in-progress).
+        - Supplying `url` or `swml` (redirect) is only valid while the leg is `answered`.
+        - Calls in terminal states (`busy`, `failed`, `no-answer`, `canceled`, `completed`) cannot be updated.
       title: update
     Calling.CallUpdateParamsBase:
       type: object
@@ -19454,43 +19712,52 @@ components:
             - 0.121176
     Calling.CollectDigitsParams:
       type: object
+      required:
+        - max
       properties:
         max:
           type: integer
           format: int32
-          description: Maximum number of digits to collect.
+          description: Maximum number of digits to collect. Must be positive.
           examples:
             - 4
         terminators:
           type: string
-          description: DTMF digits that signal the end of input.
+          description: 'DTMF digits that terminate input when pressed. Allowed: `0-9`, `A-D` (case insensitive), `*`, `#`. Empty string disables terminators.'
           examples:
             - '#'
         digit_timeout:
           type: number
           format: double
-          description: Time in seconds to wait between digit presses.
+          description: Time in seconds to wait between digit presses. Must be positive. Defaults to the server-configured digit timeout when omitted.
           examples:
             - 5
       description: Parameters for collecting DTMF digit input.
+    Calling.CollectSpeechEngine:
+      type: string
+      enum:
+        - Google
+        - Google.V2
+        - Deepgram
+      description: 'Speech recognition engine for `calling.collect`. Note: values are case-sensitive.'
     Calling.CollectSpeechParams:
       type: object
       properties:
         end_silence_timeout:
           type: number
           format: double
-          description: Time in seconds of silence after speech to consider input complete.
+          description: Time in seconds of silence after speech to consider input complete. Must be positive.
           examples:
             - 3
         speech_timeout:
           type: number
           format: double
-          description: Maximum time in seconds to wait for speech input.
+          description: Maximum time in seconds to wait for speech input. Must be positive.
           examples:
             - 30
         language:
           type: string
-          description: The language for speech recognition (e.g., 'en-US').
+          description: Speech recognition language. Accepts a BCP-47 tag (e.g. `en-US`) or an `engine:tag` override (e.g. `Deepgram:en-US`) to pick a specific engine. Defaults to the server-configured ASR language when omitted.
           examples:
             - en-US
         hints:
@@ -19502,11 +19769,17 @@ components:
             - - 'yes'
               - 'no'
               - maybe
-        engine:
+        model:
           type: string
-          description: The speech recognition engine to use.
+          description: Provider-specific ASR model name (e.g. Deepgram `nova-3`). Freeform string; validation is performed by the selected engine.
           examples:
-            - default
+            - nova-3
+        engine:
+          allOf:
+            - $ref: '#/components/schemas/Calling.CollectSpeechEngine'
+          description: Speech recognition engine to use.
+          examples:
+            - Deepgram
       description: Parameters for collecting speech input.
     Calling.DetectConfig:
       type: object
@@ -19519,68 +19792,144 @@ components:
           description: The type of detection to perform.
           examples:
             - machine
+      discriminator:
+        propertyName: type
+        mapping:
+          fax: '#/components/schemas/Calling.DetectFaxConfig'
+          digit: '#/components/schemas/Calling.DetectDigitConfig'
+      description: Detection configuration. The shape of `params` depends on `type`.
+    Calling.DetectDigitConfig:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - digit
         params:
           allOf:
-            - $ref: '#/components/schemas/Calling.DetectParams'
-          description: Type-specific detection parameters.
+            - $ref: '#/components/schemas/Calling.DetectDigitParams'
+          description: Digit-detection parameters.
           examples:
-            - initial_timeout: 5
-              end_silence_timeout: 3
-      description: Detection configuration specifying what to detect and how.
-    Calling.DetectParams:
+            - digits: 0123456789#*
+      allOf:
+        - $ref: '#/components/schemas/Calling.DetectConfig'
+      description: DTMF-digit detection configuration.
+    Calling.DetectDigitParams:
+      type: object
+      properties:
+        digits:
+          type: string
+          description: 'Set of DTMF digits to match. Allowed: `0-9`, `A-D` (case insensitive), `*`, `#`. Empty string matches any digit.'
+          examples:
+            - 0123456789#*
+      description: DTMF-digit detection parameters. Applies only when `detect.type` is `digit`.
+    Calling.DetectFaxConfig:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - fax
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.DetectFaxParams'
+          description: Fax-detection parameters.
+          examples:
+            - tone: CNG
+      allOf:
+        - $ref: '#/components/schemas/Calling.DetectConfig'
+      description: Fax-tone detection configuration.
+    Calling.DetectFaxParams:
+      type: object
+      properties:
+        tone:
+          allOf:
+            - $ref: '#/components/schemas/Calling.DetectFaxTone'
+          description: The fax tone to detect. Omitted means either tone matches.
+          examples:
+            - CNG
+      description: Fax-tone detection parameters. Applies only when `detect.type` is `fax`.
+    Calling.DetectFaxTone:
+      type: string
+      enum:
+        - CNG
+        - CED
+        - cng
+        - ced
+      description: Fax tone to detect.
+    Calling.DetectMachineConfig:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - machine
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.DetectMachineParams'
+          description: Machine-detection parameters.
+          examples:
+            - initial_timeout: 4.5
+              end_silence_timeout: 1
+      allOf:
+        - $ref: '#/components/schemas/Calling.DetectConfig'
+      description: Answering-machine detection configuration.
+    Calling.DetectMachineParams:
       type: object
       properties:
         initial_timeout:
           type: number
           format: double
-          description: Maximum time in seconds to wait for initial detection.
+          description: Maximum time in seconds to wait for initial speech/voice.
           examples:
-            - 5
+            - 4.5
+          default: 4.5
         end_silence_timeout:
           type: number
           format: double
-          description: Time in seconds of silence after detection to finalize the result.
+          description: Time in seconds of silence after voice ends to finalize the result.
           examples:
-            - 3
+            - 1
+          default: 1
         machine_ready_timeout:
           type: number
           format: double
-          description: Time in seconds to wait for the machine to be ready (machine detection only).
+          description: Time in seconds to wait for the machine greeting to be ready. Defaults to `end_silence_timeout`.
           examples:
-            - 5
+            - 1
         machine_voice_threshold:
           type: number
           format: double
-          description: Voice duration threshold in seconds for machine vs. human detection.
+          description: Voice duration threshold in seconds distinguishing machine from human.
           examples:
             - 1.25
+          default: 1.25
         machine_words_threshold:
           type: integer
           format: int32
-          description: Number of words threshold for machine vs. human detection.
+          description: Word-count threshold distinguishing machine greetings from human speech.
           examples:
             - 6
+          default: 6
         detect_interruptions:
           type: boolean
-          description: Whether to detect interruptions during machine greeting playback.
+          description: If `true`, detect the caller interrupting during the machine greeting playback.
           examples:
             - false
+          default: false
         detect_message_end:
           type: boolean
-          description: Whether to detect the end of a machine message.
+          description: If `true`, detect when a machine message has finished.
           examples:
-            - false
-        tone:
-          type: string
-          description: The DTMF tone to detect (digit detection only).
-          examples:
-            - '1'
-        digits:
-          type: string
-          description: The DTMF digits to detect (digit detection only).
-          examples:
-            - 0123456789#*
-      description: Parameters for call detection configuration.
+            - true
+          default: true
+      description: Answering-machine detection parameters. Applies only when `detect.type` is `machine`.
     Calling.DetectType:
       type: string
       enum:
@@ -19949,6 +20298,37 @@ components:
                 - Summarize the key agreements reached in both languages.
           description: Request an on-demand AI summary of the translated conversation.
       title: summarize Action
+    Calling.PlayAudioItem:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - audio
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.PlayAudioParams'
+          description: Audio playback parameters.
+          examples:
+            - url: https://example.com/audio.mp3
+      allOf:
+        - $ref: '#/components/schemas/Calling.PlayMediaItem'
+      description: Play an audio file from a URL.
+    Calling.PlayAudioParams:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: HTTP or HTTPS URL of the audio file to play.
+          examples:
+            - https://example.com/audio.mp3
+      description: Audio file playback parameters.
     Calling.PlayDirection:
       type: string
       enum:
@@ -19967,21 +20347,192 @@ components:
           description: The type of media to play.
           examples:
             - audio
-        params:
-          type: object
-          unevaluatedProperties: {}
-          description: Type-specific parameters for the media item.
-          examples:
-            - url: https://example.com/audio.mp3
-      description: A media item to play on the call.
+      discriminator:
+        propertyName: type
+        mapping:
+          tts: '#/components/schemas/Calling.PlayTtsItem'
+          silence: '#/components/schemas/Calling.PlaySilenceItem'
+          ringtone: '#/components/schemas/Calling.PlayRingtoneItem'
+      description: A media item to play on the call. The shape of `params` is determined by `type`.
     Calling.PlayMediaType:
       type: string
       enum:
         - audio
         - tts
         - silence
-        - ring
+        - ringtone
       description: The type of media to play.
+    Calling.PlayRingtoneItem:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - ringtone
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.PlayRingtoneParams'
+          description: Ringtone parameters.
+          examples:
+            - name: us
+              duration: 10
+      allOf:
+        - $ref: '#/components/schemas/Calling.PlayMediaItem'
+      description: Play a country-coded ringtone cadence.
+    Calling.PlayRingtoneName:
+      type: string
+      enum:
+        - au
+        - be
+        - ca
+        - cn
+        - cy
+        - cz
+        - de
+        - dk
+        - dz
+        - eg
+        - es
+        - fi
+        - fr
+        - hu
+        - il
+        - in
+        - jp
+        - ko
+        - pk
+        - pl
+        - ro
+        - rs
+        - ru
+        - sa
+        - tr
+        - uk
+        - us
+        - at
+        - bg
+        - br
+        - ch
+        - cl
+        - ee
+        - gr
+        - it
+        - lt
+        - mx
+        - my
+        - nl
+        - 'no'
+        - nz
+        - ph
+        - pt
+        - se
+        - sg
+        - th
+        - za
+        - tw
+        - ve
+        - bong
+      description: Ringtone name. Two-letter country code selects a country-specific ringtone cadence.
+    Calling.PlayRingtoneParams:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          allOf:
+            - $ref: '#/components/schemas/Calling.PlayRingtoneName'
+          description: Country code identifying the ringtone cadence.
+          examples:
+            - us
+        duration:
+          type: number
+          format: double
+          description: Maximum ringtone duration in seconds. If omitted, the ringtone plays until stopped.
+          examples:
+            - 10
+      description: Ringtone playback parameters.
+    Calling.PlaySilenceItem:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - silence
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.PlaySilenceParams'
+          description: Silence parameters.
+          examples:
+            - duration: 2
+      allOf:
+        - $ref: '#/components/schemas/Calling.PlayMediaItem'
+      description: Play silence for a fixed duration.
+    Calling.PlaySilenceParams:
+      type: object
+      required:
+        - duration
+      properties:
+        duration:
+          type: number
+          format: double
+          description: Duration of silence in seconds (must be positive).
+          examples:
+            - 2
+      description: Silence playback parameters.
+    Calling.PlayTtsItem:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - tts
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.PlayTtsParams'
+          description: TTS parameters.
+          examples:
+            - text: Hello from SignalWire.
+              language: en-US
+              gender: female
+      allOf:
+        - $ref: '#/components/schemas/Calling.PlayMediaItem'
+      description: Play text-to-speech. Per-item `language`/`voice`/`gender` override the request-level fallbacks.
+    Calling.PlayTtsParams:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The text to speak.
+          examples:
+            - Hello from SignalWire.
+        language:
+          type: string
+          description: BCP-47 language tag. Falls back to the request-level `language`, then `en-US`.
+          examples:
+            - en-US
+        gender:
+          allOf:
+            - $ref: '#/components/schemas/Calling.TtsGender'
+          description: Voice gender. Falls back to the request-level `gender`, then `female`.
+          examples:
+            - female
+        voice:
+          type: string
+          description: Specific voice name (provider-dependent, no special characters except `.` and `-`). Falls back to the request-level `voice`, then to `gender`.
+          examples:
+            - en-US-Wavenet-C
+      description: Text-to-speech playback parameters.
     Calling.RecordAudioParams:
       type: object
       properties:
@@ -19992,8 +20543,11 @@ components:
             - false
           default: false
         format:
-          allOf:
-            - $ref: '#/components/schemas/Calling.RecordFormat'
+          type: string
+          enum:
+            - mp3
+            - wav
+            - mp4
           description: The audio format for the recording.
           examples:
             - mp3
@@ -20009,40 +20563,62 @@ components:
             - $ref: '#/components/schemas/Calling.PlayDirection'
           description: The direction of audio to record.
           examples:
-            - both
-          default: both
+            - speak
+          default: speak
         initial_timeout:
           type: number
           format: double
-          description: Maximum time in seconds to wait for speech before stopping.
+          minimum: 0
+          description: Maximum time in seconds to wait for initial speech before stopping.
           examples:
             - 5
+          default: 4
         end_silence_timeout:
           type: number
           format: double
+          minimum: 0
           description: Time in seconds of silence after speech to stop recording.
           examples:
             - 3
+          default: 0.5
+        max_length:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Maximum recording duration in seconds. Set to `0` for no limit.
+          examples:
+            - 0
+          default: 0
         terminators:
           type: string
-          description: DTMF digits that will stop the recording when pressed.
+          description: DTMF digits that terminate the recording when pressed. Accepts `0-9`, `A-D` (case insensitive), `*`, and `#`.
           examples:
-            - '#*'
+            - '#'
+          default: '#'
         input_sensitivity:
           type: number
           format: double
           minimum: 0
           maximum: 100
-          description: Input sensitivity for voice detection (0-100).
+          description: Input sensitivity for voice detection (0.0-100.0).
           examples:
             - 50
+          default: 44
       description: Audio recording parameters.
-    Calling.RecordFormat:
-      type: string
-      enum:
-        - mp3
-        - wav
-      description: The audio format for recording.
+    Calling.RecordParams:
+      type: object
+      required:
+        - audio
+      properties:
+        audio:
+          allOf:
+            - $ref: '#/components/schemas/Calling.RecordAudioParams'
+          description: Audio recording configuration parameters.
+          examples:
+            - format: mp3
+              direction: speak
+              stereo: false
+      description: Recording configuration wrapper. Currently only audio recording is supported.
     Calling.ReferDevice:
       type: object
       required:
@@ -20070,9 +20646,14 @@ components:
       properties:
         to:
           type: string
-          description: The SIP URI to refer the call to.
+          description: SIP URI to refer the call to (must start with `sip:`).
           examples:
             - sip:destination@example.com
+        from:
+          type: string
+          description: Optional SIP From URI (must start with `sip:` when provided).
+          examples:
+            - sip:operator@example.com
         username:
           type: string
           description: Optional SIP authentication username.
@@ -20084,6 +20665,12 @@ components:
           examples:
             - password
       description: SIP REFER device parameters.
+    Calling.StreamStatusUrlMethod:
+      type: string
+      enum:
+        - GET
+        - POST
+      description: HTTP method used when invoking the `status_url` webhook.
     Calling.StreamTrack:
       type: string
       enum:
@@ -20091,16 +20678,27 @@ components:
         - outbound_track
         - both_tracks
       description: The audio track to stream.
+    Calling.TapCodec:
+      type: string
+      enum:
+        - PCMA
+        - PCMU
+        - pcma
+        - pcmu
+        - OPUS
+        - opus
+      description: RTP/WebSocket audio codec. Case-sensitive; accepted in both upper and lower case.
     Calling.TapConfig:
       type: object
       required:
         - type
+        - params
       properties:
         type:
           type: string
           enum:
             - audio
-          description: The type of media to tap. Currently only 'audio' is supported.
+          description: Currently only `audio` is supported.
           examples:
             - audio
         params:
@@ -20112,10 +20710,12 @@ components:
               description: The direction of audio to tap.
               examples:
                 - both
-          description: Tap parameters including audio direction.
+          required:
+            - direction
+          description: Audio tap parameters.
           examples:
             - direction: both
-      description: Tap configuration specifying what audio to capture.
+      description: Tap configuration — specifies what audio to capture.
     Calling.TapDevice:
       type: object
       required:
@@ -20127,57 +20727,127 @@ components:
           description: The type of tap device.
           examples:
             - rtp
+      discriminator:
+        propertyName: type
+        mapping:
+          ws: '#/components/schemas/Calling.TapDeviceWs'
+      description: Tap device configuration — specifies where to stream captured audio.
+    Calling.TapDeviceRtp:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - rtp
         params:
           allOf:
-            - $ref: '#/components/schemas/Calling.TapDeviceParams'
-          description: Device-specific connection parameters.
+            - $ref: '#/components/schemas/Calling.TapRtpParams'
+          description: RTP connection parameters.
           examples:
-            - addr: 192.168.1.100
+            - addr: 198.51.100.42
               port: 5060
-      description: Tap device configuration specifying where to stream captured audio.
-    Calling.TapDeviceParams:
-      type: object
-      properties:
-        addr:
-          type: string
-          description: The IP address or hostname of the device (RTP).
-          examples:
-            - 192.168.1.100
-        port:
-          type: integer
-          format: int32
-          description: The port number of the device (RTP).
-          examples:
-            - 5060
-        codec:
-          type: string
-          description: The audio codec to use.
-          examples:
-            - PCMU
-        ptime:
-          type: integer
-          format: int32
-          description: The packetization time in milliseconds.
-          examples:
-            - 20
-        uri:
-          type: string
-          description: The WebSocket URI to stream audio to (WS).
-          examples:
-            - wss://example.com/tap
-        rate:
-          type: integer
-          format: int32
-          description: The audio sample rate in Hz.
-          examples:
-            - 8000
-      description: Parameters for the tap device connection.
+      allOf:
+        - $ref: '#/components/schemas/Calling.TapDevice'
+      description: RTP tap device configuration.
     Calling.TapDeviceType:
       type: string
       enum:
         - rtp
         - ws
       description: The type of tap device to stream audio to.
+    Calling.TapDeviceWs:
+      type: object
+      required:
+        - type
+        - params
+      properties:
+        type:
+          type: string
+          enum:
+            - ws
+        params:
+          allOf:
+            - $ref: '#/components/schemas/Calling.TapWsParams'
+          description: WebSocket connection parameters.
+          examples:
+            - uri: wss://example.com/tap
+      allOf:
+        - $ref: '#/components/schemas/Calling.TapDevice'
+      description: WebSocket tap device configuration.
+    Calling.TapPtime:
+      type: number
+      enum:
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 60
+        - 70
+        - 80
+        - 90
+        - 100
+        - 110
+        - 120
+      description: RTP packetization time in milliseconds. Must be a multiple of 10 between 10 and 120.
+    Calling.TapRtpParams:
+      type: object
+      required:
+        - addr
+        - port
+      properties:
+        addr:
+          type: string
+          description: Public IPv4 address of the RTP target. Private/reserved ranges are rejected.
+          examples:
+            - 198.51.100.42
+        port:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 65535
+          description: UDP port of the RTP target (1-65535).
+          examples:
+            - 5060
+        codec:
+          allOf:
+            - $ref: '#/components/schemas/Calling.TapCodec'
+          description: Audio codec to request. Defaults to the call's negotiated codec.
+          examples:
+            - PCMU
+        ptime:
+          allOf:
+            - $ref: '#/components/schemas/Calling.TapPtime'
+          description: Packetization time in milliseconds. Defaults to the call's negotiated ptime.
+          examples:
+            - 20
+      description: RTP tap target parameters.
+    Calling.TapWsParams:
+      type: object
+      required:
+        - uri
+      properties:
+        uri:
+          type: string
+          description: WebSocket URI of the tap target. Must start with `ws://` or `wss://`.
+          examples:
+            - wss://example.com/tap
+        codec:
+          allOf:
+            - $ref: '#/components/schemas/Calling.TapCodec'
+          description: Audio codec to request. Defaults to the call's negotiated codec.
+          examples:
+            - PCMU
+      description: WebSocket tap target parameters.
+    Calling.TtsGender:
+      type: string
+      enum:
+        - male
+        - female
+      description: Text-to-speech voice gender.
     Campaign:
       type: object
       required:
