@@ -8,6 +8,24 @@ position: 0
 
 The Browser SDK contains a suite of flexible web components that can be used to create UI.
 
+## Install
+
+<CardGroup cols={2}>
+  <Card title="npm" icon="brands npm" href="https://www.npmjs.com/package/@signalwire/web-components">
+    @signalwire/web-components
+  </Card>
+</CardGroup>
+
+```bash
+npm install @signalwire/web-components
+```
+
+Or load from a CDN:
+
+```html
+<script type="module" src="https://unpkg.com/@signalwire/web-components"></script>
+```
+
 ---
 
 ## Components
