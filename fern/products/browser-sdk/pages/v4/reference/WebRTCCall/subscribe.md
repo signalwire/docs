@@ -2,11 +2,9 @@
 title: "subscribe"
 ---
 
-# subscribe
-
 > **subscribe**(`eventType`): `Observable`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [core/entities/Call.ts:1133](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1133)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1133)</sub>
 
 Subscribe to a custom signaling event type on this call.
 
@@ -40,6 +38,3 @@ call.subscribe('my.custom.event').subscribe(event => {
 });
 ```
 
-#### Implementation of
-
-`CallManager.subscribe`

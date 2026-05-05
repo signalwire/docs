@@ -2,13 +2,11 @@
 title: "memberUpdated$"
 ---
 
-# memberUpdated$
-
 #### Get Signature
 
 > **get** **memberUpdated$**(): `Observable`\<`MemberUpdatedPayload`\>
 
-Defined in: [core/entities/Call.ts:1055](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1055)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1055)</sub>
 
 Observable of member-updated events (mute, volume, etc.).
 
@@ -16,6 +14,3 @@ Observable of member-updated events (mute, volume, etc.).
 
 `Observable`\<`MemberUpdatedPayload`\>
 
-#### Implementation of
-
-`CallManager.memberUpdated$`

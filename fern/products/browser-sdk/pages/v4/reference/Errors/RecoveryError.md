@@ -2,9 +2,7 @@
 title: "RecoveryError"
 ---
 
-# Class: RecoveryError
-
-Defined in: [core/errors.ts:420](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L420)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L420)</sub>
 
 Error thrown when a recovery attempt fails.
 
@@ -20,7 +18,7 @@ Carries the recovery action and attempt number for diagnostic purposes.
 
 > **new RecoveryError**(`action`, `attempt`, `originalError?`): `RecoveryError`
 
-Defined in: [core/errors.ts:421](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L421)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L421)</sub>
 
 #### Parameters
 
@@ -34,14 +32,10 @@ Defined in: [core/errors.ts:421](https://github.com/signalwire/browser-sdk/blob/
 
 `RecoveryError`
 
-#### Overrides
-
-`Error.constructor`
-
 ## Properties
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="action"></a> `action` | `public` | `string` | [core/errors.ts:422](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L422) |
-| <a id="attempt"></a> `attempt` | `public` | `number` | [core/errors.ts:423](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L423) |
-| <a id="originalerror"></a> `originalError?` | `public` | `unknown` | [core/errors.ts:424](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L424) |
+| `action` | `public` | `string` | [core/errors.ts:422](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L422) |
+| `attempt` | `public` | `number` | [core/errors.ts:423](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L423) |
+| `originalError?` | `public` | `unknown` | [core/errors.ts:424](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L424) |

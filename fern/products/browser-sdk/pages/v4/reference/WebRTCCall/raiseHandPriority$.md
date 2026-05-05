@@ -2,13 +2,11 @@
 title: "raiseHandPriority$"
 ---
 
-# raiseHandPriority$
-
 #### Get Signature
 
 > **get** **raiseHandPriority$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/entities/Call.ts:509](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L509)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L509)</sub>
 
 Observable indicating whether raise-hand priority is active.
 
@@ -16,17 +14,13 @@ Observable indicating whether raise-hand priority is active.
 
 `Observable`\<`boolean`\>
 
-#### Implementation of
-
-`CallManager.raiseHandPriority$`
-
 ## raiseHandPriority
 
 #### Get Signature
 
 > **get** **raiseHandPriority**(): `boolean`
 
-Defined in: [core/entities/Call.ts:553](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L553)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L553)</sub>
 
 Whether raise-hand priority is active.
 
@@ -34,6 +28,3 @@ Whether raise-hand priority is active.
 
 `boolean`
 
-#### Implementation of
-
-`CallManager.raiseHandPriority`

@@ -2,11 +2,9 @@
 title: "setAudioOutputVolume"
 ---
 
-# setAudioOutputVolume
-
 > **setAudioOutputVolume**(`value`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Participant.ts:537](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L537)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L537)</sub>
 
 Sets the **server-side** speaker volume on this participant's bridged call
 leg (FreeSWITCH channel write volume) — what this participant hears from
@@ -25,10 +23,6 @@ code.
 #### Returns
 
 `Promise`\<`void`\>
-
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`setAudioOutputVolume`](../interfaces/CallSelfParticipant.md#setaudiooutputvolume)
 
 #### Inherited from
 

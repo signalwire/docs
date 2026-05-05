@@ -2,13 +2,11 @@
 title: "userVariables"
 ---
 
-# userVariables
-
 #### Get Signature
 
 > **get** **userVariables**(): `Record`\<`string`, `unknown`\>
 
-Defined in: [containers/PreferencesContainer.ts:658](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L658)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L658)</sub>
 
 Custom user variables attached to calls.
 
@@ -20,7 +18,7 @@ Custom user variables attached to calls.
 
 > **set** **userVariables**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:661](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L661)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L661)</sub>
 
 ##### Parameters
 

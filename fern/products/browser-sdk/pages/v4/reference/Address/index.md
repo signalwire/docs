@@ -2,9 +2,7 @@
 title: "Address"
 ---
 
-# Class: Address
-
-Defined in: [core/entities/Address.ts:31](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L31)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L31)</sub>
 
 Represents a contact or room in the directory.
 
@@ -21,7 +19,7 @@ and activity state for an address entry.
 
 > **new Address**(`addressId`, `conversationManager`, `addressProvider`): `Address`
 
-Defined in: [core/entities/Address.ts:67](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L67)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L67)</sub>
 
 #### Parameters
 
@@ -35,19 +33,15 @@ Defined in: [core/entities/Address.ts:67](https://github.com/signalwire/browser-
 
 `Address`
 
-#### Overrides
-
-`Destroyable.constructor`
-
 ## Properties
 
 | Property | Modifier | Type | Default value | Description | Inherited from | Defined in |
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
-| <a id="_destroyed"></a> `_destroyed$` | `protected` | `Subject`\<`void`\> | `undefined` | - | `Destroyable._destroyed$` | [behaviors/Destroyable.ts:8](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L8) |
-| <a id="history"></a> `history$` | `public` | `Observable`\<`EntityCollectionTransformed`\<`GetConversationMessageResponse`, [`AddressHistory`](../interfaces/AddressHistory.md)\<`Address`\>\> \| `undefined`\> | `undefined` | Observable of call history for this address. Lazily loads conversation data. | - | [core/entities/Address.ts:49](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L49) |
-| <a id="subjects"></a> `subjects` | `protected` | `Subject`\<`unknown`\>[] | `[]` | - | `Destroyable.subjects` | [behaviors/Destroyable.ts:7](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L7) |
-| <a id="subscriptions"></a> `subscriptions` | `protected` | `Subscription`[] | `[]` | - | `Destroyable.subscriptions` | [behaviors/Destroyable.ts:6](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L6) |
-| <a id="textmessages"></a> `textMessages$` | `public` | `Observable`\<`EntityCollectionTransformed`\<`GetConversationMessageResponse`, [`TextMessage`](../interfaces/TextMessage.md)\<`Address`\>\> \| `undefined`\> | `undefined` | Observable of text messages for this address. Lazily loads conversation data. | - | [core/entities/Address.ts:43](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L43) |
+| `_destroyed$` | `protected` | `Subject`\<`void`\> | `undefined` | - | `Destroyable._destroyed$` | [behaviors/Destroyable.ts:8](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L8) |
+| `history$` | `public` | `Observable`\<`EntityCollectionTransformed`\<`GetConversationMessageResponse`, [`AddressHistory`](../interfaces/AddressHistory.md)\<`Address`\>\> \| `undefined`\> | `undefined` | Observable of call history for this address. Lazily loads conversation data. | - | [core/entities/Address.ts:49](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L49) |
+| `subjects` | `protected` | `Subject`\<`unknown`\>[] | `[]` | - | `Destroyable.subjects` | [behaviors/Destroyable.ts:7](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L7) |
+| `subscriptions` | `protected` | `Subscription`[] | `[]` | - | `Destroyable.subscriptions` | [behaviors/Destroyable.ts:6](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L6) |
+| `textMessages$` | `public` | `Observable`\<`EntityCollectionTransformed`\<`GetConversationMessageResponse`, [`TextMessage`](../interfaces/TextMessage.md)\<`Address`\>\> \| `undefined`\> | `undefined` | Observable of text messages for this address. Lazily loads conversation data. | - | [core/entities/Address.ts:43](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L43) |
 
 ## Accessors
 

@@ -2,13 +2,11 @@
 title: "preferredVideoCodecs"
 ---
 
-# preferredVideoCodecs
-
 #### Get Signature
 
 > **get** **preferredVideoCodecs**(): `string`[]
 
-Defined in: [containers/PreferencesContainer.ts:989](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L989)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L989)</sub>
 
 Preferred video codecs in priority order.
 
@@ -20,7 +18,7 @@ Preferred video codecs in priority order.
 
 > **set** **preferredVideoCodecs**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:992](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L992)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L992)</sub>
 
 ##### Parameters
 

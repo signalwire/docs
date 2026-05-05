@@ -2,13 +2,11 @@
 title: "iceRestartTimeout"
 ---
 
-# iceRestartTimeout
-
 #### Get Signature
 
 > **get** **iceRestartTimeout**(): `number`
 
-Defined in: [containers/PreferencesContainer.ts:827](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L827)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L827)</sub>
 
 Timeout for a single ICE restart attempt in seconds.
 
@@ -20,7 +18,7 @@ Timeout for a single ICE restart attempt in seconds.
 
 > **set** **iceRestartTimeout**(`seconds`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:830](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L830)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L830)</sub>
 
 ##### Parameters
 

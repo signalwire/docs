@@ -2,11 +2,9 @@
 title: "answer"
 ---
 
-# answer
-
 > **answer**(`options?`): `void`
 
-Defined in: [core/entities/Call.ts:1249](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1249)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1249)</sub>
 
 Accepts an inbound call, optionally overriding media options for the answer.
 
@@ -35,6 +33,3 @@ call.answer({ audio: true, video: false });
  - [reject](#reject) to decline the call instead.
  - [answered$](#answered) to observe the acceptance state.
 
-#### Implementation of
-
-`CallManager.answer`

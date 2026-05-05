@@ -2,13 +2,11 @@
 title: "meta$"
 ---
 
-# meta$
-
 #### Get Signature
 
 > **get** **meta$**(): `Observable`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [core/entities/Call.ts:521](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L521)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L521)</sub>
 
 Observable of custom metadata associated with the call.
 
@@ -16,17 +14,13 @@ Observable of custom metadata associated with the call.
 
 `Observable`\<`Record`\<`string`, `unknown`\>\>
 
-#### Implementation of
-
-`CallManager.meta$`
-
 ## meta
 
 #### Get Signature
 
 > **get** **meta**(): `Record`\<`string`, `unknown`\>
 
-Defined in: [core/entities/Call.ts:563](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L563)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L563)</sub>
 
 Current custom metadata of the call.
 
@@ -34,6 +28,3 @@ Current custom metadata of the call.
 
 `Record`\<`string`, `unknown`\>
 
-#### Implementation of
-
-`CallManager.meta`

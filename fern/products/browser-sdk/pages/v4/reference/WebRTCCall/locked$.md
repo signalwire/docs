@@ -2,13 +2,11 @@
 title: "locked$"
 ---
 
-# locked$
-
 #### Get Signature
 
 > **get** **locked$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/entities/Call.ts:516](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L516)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L516)</sub>
 
 Observable indicating whether the call room is locked.
 
@@ -16,17 +14,13 @@ Observable indicating whether the call room is locked.
 
 `Observable`\<`boolean`\>
 
-#### Implementation of
-
-`CallManager.locked$`
-
 ## locked
 
 #### Get Signature
 
 > **get** **locked**(): `boolean`
 
-Defined in: [core/entities/Call.ts:558](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L558)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L558)</sub>
 
 Whether the call room is locked.
 
@@ -34,6 +28,3 @@ Whether the call room is locked.
 
 `boolean`
 
-#### Implementation of
-
-`CallManager.locked`

@@ -2,11 +2,9 @@
 title: "authenticate"
 ---
 
-# authenticate
-
 > **authenticate**(): `Promise`\<\{ `expiry_at`: `number`; `token`: `string`; \}\>
 
-Defined in: [dependencies/EmbedTokenCredentialProvider.ts:52](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/EmbedTokenCredentialProvider.ts#L52)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/EmbedTokenCredentialProvider.ts#L52)</sub>
 
 Obtains the initial credentials. Called once during client initialization.
 
@@ -24,6 +22,3 @@ SDK behavior:
 
 `Promise`\<\{ `expiry_at`: `number`; `token`: `string`; \}\>
 
-#### Implementation of
-
-[`CredentialProvider`](../../interfaces/CredentialProvider.md).[`authenticate`](../../interfaces/CredentialProvider.md#authenticate)

@@ -2,13 +2,11 @@
 title: "iceGatheringTimeout"
 ---
 
-# iceGatheringTimeout
-
 #### Get Signature
 
 > **get** **iceGatheringTimeout**(): `number`
 
-Defined in: [containers/PreferencesContainer.ts:640](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L640)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L640)</sub>
 
 Timeout for the entire ICE gathering phase, in seconds.
 
@@ -20,7 +18,7 @@ Timeout for the entire ICE gathering phase, in seconds.
 
 > **set** **iceGatheringTimeout**(`seconds`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:643](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L643)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L643)</sub>
 
 ##### Parameters
 

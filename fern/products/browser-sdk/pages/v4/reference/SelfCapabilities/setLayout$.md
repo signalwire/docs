@@ -2,13 +2,11 @@
 title: "setLayout$"
 ---
 
-# setLayout$
-
 #### Get Signature
 
 > **get** **setLayout$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/capabilities/SelfCapabilities.ts:100](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L100)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L100)</sub>
 
 Observable for set layout capability
 
@@ -22,7 +20,7 @@ Observable for set layout capability
 
 > **get** **setLayout**(): `boolean`
 
-Defined in: [core/capabilities/SelfCapabilities.ts:110](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L110)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L110)</sub>
 
 Current set layout capability
 

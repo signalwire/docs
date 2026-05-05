@@ -2,9 +2,7 @@
 title: "SDKLogger"
 ---
 
-# Interface: SDKLogger
-
-Defined in: [utils/logger.ts:14](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L14)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L14)</sub>
 
 Logger interface that consumers can implement to replace the built-in logger.
 All methods accept variadic arguments matching the browser console API.
@@ -15,7 +13,7 @@ All methods accept variadic arguments matching the browser console API.
 
 > **debug**(...`args`): `void`
 
-Defined in: [utils/logger.ts:18](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L18)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L18)</sub>
 
 #### Parameters
 
@@ -33,7 +31,7 @@ Defined in: [utils/logger.ts:18](https://github.com/signalwire/browser-sdk/blob/
 
 > **error**(...`args`): `void`
 
-Defined in: [utils/logger.ts:15](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L15)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L15)</sub>
 
 #### Parameters
 
@@ -51,7 +49,7 @@ Defined in: [utils/logger.ts:15](https://github.com/signalwire/browser-sdk/blob/
 
 > **info**(...`args`): `void`
 
-Defined in: [utils/logger.ts:17](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L17)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L17)</sub>
 
 #### Parameters
 
@@ -69,7 +67,7 @@ Defined in: [utils/logger.ts:17](https://github.com/signalwire/browser-sdk/blob/
 
 > **trace**(...`args`): `void`
 
-Defined in: [utils/logger.ts:19](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L19)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L19)</sub>
 
 #### Parameters
 
@@ -87,7 +85,7 @@ Defined in: [utils/logger.ts:19](https://github.com/signalwire/browser-sdk/blob/
 
 > **warn**(...`args`): `void`
 
-Defined in: [utils/logger.ts:16](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L16)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/utils/logger.ts#L16)</sub>
 
 #### Parameters
 

@@ -2,13 +2,11 @@
 title: "studioAudio$"
 ---
 
-# studioAudio$
-
 #### Get Signature
 
 > **get** **studioAudio$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/entities/Participant.ts:636](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L636)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L636)</sub>
 
 Observable indicating whether studio audio (raw/unprocessed audio) mode is enabled.
 
@@ -16,17 +14,13 @@ Observable indicating whether studio audio (raw/unprocessed audio) mode is enabl
 
 `Observable`\<`boolean`\>
 
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`studioAudio$`](../interfaces/CallSelfParticipant.md#studioaudio-1)
-
 ## studioAudio
 
 #### Get Signature
 
 > **get** **studioAudio**(): `boolean`
 
-Defined in: [core/entities/Participant.ts:641](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L641)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L641)</sub>
 
 Whether studio audio (raw/unprocessed audio) mode is currently enabled.
 
@@ -34,6 +28,3 @@ Whether studio audio (raw/unprocessed audio) mode is currently enabled.
 
 `boolean`
 
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`studioAudio`](../interfaces/CallSelfParticipant.md#studioaudio)

@@ -2,13 +2,11 @@
 title: "position$"
 ---
 
-# position$
-
 #### Get Signature
 
 > **get** **position$**(): `Observable`\<[`LayoutLayer`](../interfaces/LayoutLayer.md) \| `undefined`\>
 
-Defined in: [core/entities/Participant.ts:287](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L287)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L287)</sub>
 
 Observable of the participant's layout position.
 
@@ -16,17 +14,13 @@ Observable of the participant's layout position.
 
 `Observable`\<[`LayoutLayer`](../interfaces/LayoutLayer.md) \| `undefined`\>
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`position$`](../interfaces/CallParticipant.md#position-1)
-
 ## position
 
 #### Get Signature
 
 > **get** **position**(): [`LayoutLayer`](../interfaces/LayoutLayer.md) \| `undefined`
 
-Defined in: [core/entities/Participant.ts:297](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L297)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L297)</sub>
 
 Current layout position.
 
@@ -34,6 +28,3 @@ Current layout position.
 
 [`LayoutLayer`](../interfaces/LayoutLayer.md) \| `undefined`
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`position`](../interfaces/CallParticipant.md#position)

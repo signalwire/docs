@@ -2,8 +2,6 @@
 title: "SignalWire Browser SDK"
 ---
 
-# SignalWire Browser SDK
-
 ## Classes
 
 | Class | Description |
@@ -114,7 +112,7 @@ title: "SignalWire Browser SDK"
 
 > `const` **ready**: `boolean` = `true`
 
-Defined in: [index.ts:196](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/index.ts#L196)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/index.ts#L196)</sub>
 
 Flag indicating the library has been loaded and is ready to use.
 For UMD builds: `window.SignalWire.ready`
@@ -126,7 +124,7 @@ For ES modules: `import { ready } from '@signalwire/js'`
 
 > `const` **version**: `string` = `__VERSION__`
 
-Defined in: [index.ts:189](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/index.ts#L189)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/index.ts#L189)</sub>
 
 Library version from package.json, injected at build time.
 

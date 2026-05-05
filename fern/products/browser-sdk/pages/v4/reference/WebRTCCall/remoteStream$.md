@@ -2,13 +2,11 @@
 title: "remoteStream$"
 ---
 
-# remoteStream$
-
 #### Get Signature
 
 > **get** **remoteStream$**(): `Observable`\<`MediaStream`\>
 
-Defined in: [core/entities/Call.ts:591](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L591)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L591)</sub>
 
 Observable of the remote media stream from the far end.
 
@@ -16,17 +14,13 @@ Observable of the remote media stream from the far end.
 
 `Observable`\<`MediaStream`\>
 
-#### Implementation of
-
-`CallManager.remoteStream$`
-
 ## remoteStream
 
 #### Get Signature
 
 > **get** **remoteStream**(): `MediaStream` \| `null`
 
-Defined in: [core/entities/Call.ts:595](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L595)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L595)</sub>
 
 Current remote media stream, or `null` if not available.
 
@@ -34,6 +28,3 @@ Current remote media stream, or `null` if not available.
 
 `MediaStream` \| `null`
 
-#### Implementation of
-
-`CallManager.remoteStream`

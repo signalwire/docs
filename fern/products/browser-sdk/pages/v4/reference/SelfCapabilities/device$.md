@@ -2,13 +2,11 @@
 title: "device$"
 ---
 
-# device$
-
 #### Get Signature
 
 > **get** **device$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/capabilities/SelfCapabilities.ts:160](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L160)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L160)</sub>
 
 Observable for device capability
 
@@ -22,7 +20,7 @@ Observable for device capability
 
 > **get** **device**(): `boolean`
 
-Defined in: [core/capabilities/SelfCapabilities.ts:170](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L170)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L170)</sub>
 
 Current device capability
 

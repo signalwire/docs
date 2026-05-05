@@ -2,13 +2,11 @@
 title: "isAudience"
 ---
 
-# isAudience
-
 #### Get Signature
 
 > **get** **isAudience**(): `boolean`
 
-Defined in: [core/entities/Participant.ts:302](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L302)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L302)</sub>
 
 Whether the participant is an audience member (view-only).
 
@@ -16,6 +14,3 @@ Whether the participant is an audience member (view-only).
 
 `boolean`
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`isAudience`](../interfaces/CallParticipant.md#isaudience)

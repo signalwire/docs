@@ -2,13 +2,11 @@
 title: "preferredVideoInput"
 ---
 
-# preferredVideoInput
-
 #### Get Signature
 
 > **get** **preferredVideoInput**(): `MediaDeviceInfo` \| `null`
 
-Defined in: [containers/PreferencesContainer.ts:571](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L571)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L571)</sub>
 
 Preferred video input device for new calls.
 
@@ -20,7 +18,7 @@ Preferred video input device for new calls.
 
 > **set** **preferredVideoInput**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:574](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L574)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L574)</sub>
 
 ##### Parameters
 

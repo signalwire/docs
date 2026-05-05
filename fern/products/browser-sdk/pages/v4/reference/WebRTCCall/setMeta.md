@@ -2,11 +2,9 @@
 title: "setMeta"
 ---
 
-# setMeta
-
 > **setMeta**(`_meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Call.ts:386](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L386)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L386)</sub>
 
 Replaces the call's custom metadata.
 
@@ -24,6 +22,3 @@ Replaces the call's custom metadata.
 
 Not yet implemented.
 
-#### Implementation of
-
-`CallManager.setMeta`

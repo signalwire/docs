@@ -2,9 +2,7 @@
 title: "WebRTCCall"
 ---
 
-# Class: WebRTCCall
-
-Defined in: [core/entities/Call.ts:152](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L152)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L152)</sub>
 
 Concrete WebRTC call implementation.
 
@@ -26,7 +24,7 @@ or received as an inbound call.
 
 > **new WebRTCCall**(`clientSession`, `options`, `initialization`, `address?`): `WebRTCCall`
 
-Defined in: [core/entities/Call.ts:191](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L191)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L191)</sub>
 
 #### Parameters
 
@@ -41,22 +39,18 @@ Defined in: [core/entities/Call.ts:191](https://github.com/signalwire/browser-sd
 
 `WebRTCCall`
 
-#### Overrides
-
-`Destroyable.constructor`
-
 ## Properties
 
 | Property | Modifier | Type | Default value | Description | Inherited from | Defined in |
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
-| <a id="_destroyed"></a> `_destroyed$` | `protected` | `Subject`\<`void`\> | `undefined` | - | `Destroyable._destroyed$` | [behaviors/Destroyable.ts:8](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L8) |
-| <a id="address"></a> `address?` | `public` | [`Address`](../Address/index.md) | `undefined` | - | - | [core/entities/Call.ts:195](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L195) |
-| <a id="clientsession"></a> `clientSession` | `public` | `ClientSession` | `undefined` | - | - | [core/entities/Call.ts:192](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L192) |
-| <a id="id"></a> `id` | `readonly` | `string` | `undefined` | Unique identifier for this call. | - | [core/entities/Call.ts:154](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L154) |
-| <a id="options"></a> `options` | `public` | [`CallOptions`](../interfaces/CallOptions.md) | `undefined` | - | - | [core/entities/Call.ts:193](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L193) |
-| <a id="subjects"></a> `subjects` | `protected` | `Subject`\<`unknown`\>[] | `[]` | - | `Destroyable.subjects` | [behaviors/Destroyable.ts:7](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L7) |
-| <a id="subscriptions"></a> `subscriptions` | `protected` | `Subscription`[] | `[]` | - | `Destroyable.subscriptions` | [behaviors/Destroyable.ts:6](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L6) |
-| <a id="to"></a> `to?` | `public` | `string` | `undefined` | Destination URI this call was placed to. | - | [core/entities/Call.ts:156](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L156) |
+| `_destroyed$` | `protected` | `Subject`\<`void`\> | `undefined` | - | `Destroyable._destroyed$` | [behaviors/Destroyable.ts:8](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L8) |
+| `address?` | `public` | [`Address`](../Address/index.md) | `undefined` | - | - | [core/entities/Call.ts:195](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L195) |
+| `clientSession` | `public` | `ClientSession` | `undefined` | - | - | [core/entities/Call.ts:192](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L192) |
+| `id` | `readonly` | `string` | `undefined` | Unique identifier for this call. | - | [core/entities/Call.ts:154](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L154) |
+| `options` | `public` | [`CallOptions`](../interfaces/CallOptions.md) | `undefined` | - | - | [core/entities/Call.ts:193](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L193) |
+| `subjects` | `protected` | `Subject`\<`unknown`\>[] | `[]` | - | `Destroyable.subjects` | [behaviors/Destroyable.ts:7](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L7) |
+| `subscriptions` | `protected` | `Subscription`[] | `[]` | - | `Destroyable.subscriptions` | [behaviors/Destroyable.ts:6](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L6) |
+| `to?` | `public` | `string` | `undefined` | Destination URI this call was placed to. | - | [core/entities/Call.ts:156](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L156) |
 
 ## Accessors
 

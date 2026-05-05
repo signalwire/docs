@@ -2,9 +2,7 @@
 title: "WebRTCMediaDevices"
 ---
 
-# Interface: WebRTCMediaDevices
-
-Defined in: [dependencies/interfaces.ts:122](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L122)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L122)</sub>
 
 Subset of the `MediaDevices` interface actually used by the SDK.
 
@@ -19,7 +17,7 @@ unused APIs.
 
 > **addEventListener**(`type`, `listener`): `void`
 
-Defined in: [dependencies/interfaces.ts:126](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L126)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L126)</sub>
 
 #### Parameters
 
@@ -38,7 +36,7 @@ Defined in: [dependencies/interfaces.ts:126](https://github.com/signalwire/brows
 
 > **enumerateDevices**(): `Promise`\<`MediaDeviceInfo`[]\>
 
-Defined in: [dependencies/interfaces.ts:125](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L125)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L125)</sub>
 
 #### Returns
 
@@ -50,7 +48,7 @@ Defined in: [dependencies/interfaces.ts:125](https://github.com/signalwire/brows
 
 > `optional` **getDisplayMedia**(`options`): `Promise`\<`MediaStream`\>
 
-Defined in: [dependencies/interfaces.ts:124](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L124)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L124)</sub>
 
 #### Parameters
 
@@ -68,7 +66,7 @@ Defined in: [dependencies/interfaces.ts:124](https://github.com/signalwire/brows
 
 > **getUserMedia**(`constraints`): `Promise`\<`MediaStream`\>
 
-Defined in: [dependencies/interfaces.ts:123](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L123)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L123)</sub>
 
 #### Parameters
 
@@ -86,7 +84,7 @@ Defined in: [dependencies/interfaces.ts:123](https://github.com/signalwire/brows
 
 > **removeEventListener**(`type`, `listener`): `void`
 
-Defined in: [dependencies/interfaces.ts:127](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L127)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L127)</sub>
 
 #### Parameters
 

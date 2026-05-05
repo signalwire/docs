@@ -2,13 +2,11 @@
 title: "userVariables$"
 ---
 
-# userVariables$
-
 #### Get Signature
 
 > **get** **userVariables$**(): `Observable`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [core/entities/Call.ts:600](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L600)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L600)</sub>
 
 Observable of custom user variables associated with the call.
 
@@ -16,17 +14,13 @@ Observable of custom user variables associated with the call.
 
 `Observable`\<`Record`\<`string`, `unknown`\>\>
 
-#### Implementation of
-
-`CallManager.userVariables$`
-
 ## userVariables
 
 #### Get Signature
 
 > **get** **userVariables**(): `Record`\<`string`, `unknown`\>
 
-Defined in: [core/entities/Call.ts:605](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L605)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L605)</sub>
 
 a copy of the current custom user variables of the call.
 
@@ -38,7 +32,7 @@ a copy of the current custom user variables of the call.
 
 > **set** **userVariables**(`variables`): `void`
 
-Defined in: [core/entities/Call.ts:610](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L610)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L610)</sub>
 
 Merge current custom user variables of the call.
 
@@ -52,6 +46,3 @@ Merge current custom user variables of the call.
 
 `void`
 
-#### Implementation of
-
-`CallManager.userVariables`

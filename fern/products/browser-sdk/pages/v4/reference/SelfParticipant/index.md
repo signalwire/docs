@@ -2,9 +2,7 @@
 title: "SelfParticipant"
 ---
 
-# Class: SelfParticipant
-
-Defined in: [core/entities/Participant.ts:605](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L605)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L605)</sub>
 
 The local participant in a call, with additional device and media control.
 
@@ -23,13 +21,13 @@ and local media stream management.
 
 | Property | Modifier | Type | Default value | Description | Inherited from | Defined in |
 | ------ | ------ | ------ | ------ | ------ | ------ | ------ |
-| <a id="_destroyed"></a> `_destroyed$` | `protected` | `Subject`\<`void`\> | `undefined` | - | [`Participant`](../Participant/index.md).[`_destroyed$`](../Participant/index.md#_destroyed) | [behaviors/Destroyable.ts:8](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L8) |
-| <a id="capabilities"></a> `capabilities` | `readonly` | [`SelfCapabilities`](../SelfCapabilities/index.md) | `undefined` | Capabilities for this participant. Contains all capability flags as both observables and values. | - | [core/entities/Participant.ts:610](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L610) |
-| <a id="devicecontroller"></a> `deviceController` | `protected` | [`DeviceController`](../interfaces/DeviceController.md) | `undefined` | - | [`Participant`](../Participant/index.md).[`deviceController`](../Participant/index.md#devicecontroller) | [core/entities/Participant.ts:51](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L51) |
-| <a id="executemethod"></a> `executeMethod` | `protected` | [`ExecuteMethod`](../type-aliases/ExecuteMethod.md) | `undefined` | - | [`Participant`](../Participant/index.md).[`executeMethod`](../Participant/index.md#executemethod) | [core/entities/Participant.ts:50](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L50) |
-| <a id="id"></a> `id` | `readonly` | `string` | `undefined` | Unique member ID of this participant. | [`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`id`](../interfaces/CallSelfParticipant.md#id) [`Participant`](../Participant/index.md).[`id`](../Participant/index.md#id) | [core/entities/Participant.ts:46](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L46) |
-| <a id="subjects"></a> `subjects` | `protected` | `Subject`\<`unknown`\>[] | `[]` | - | [`Participant`](../Participant/index.md).[`subjects`](../Participant/index.md#subjects) | [behaviors/Destroyable.ts:7](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L7) |
-| <a id="subscriptions"></a> `subscriptions` | `protected` | `Subscription`[] | `[]` | - | [`Participant`](../Participant/index.md).[`subscriptions`](../Participant/index.md#subscriptions) | [behaviors/Destroyable.ts:6](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L6) |
+| `_destroyed$` | `protected` | `Subject`\<`void`\> | `undefined` | - | [`Participant`](../Participant/index.md).[`_destroyed$`](../Participant/index.md#_destroyed) | [behaviors/Destroyable.ts:8](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L8) |
+| `capabilities` | `readonly` | [`SelfCapabilities`](../SelfCapabilities/index.md) | `undefined` | Capabilities for this participant. Contains all capability flags as both observables and values. | - | [core/entities/Participant.ts:610](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L610) |
+| `deviceController` | `protected` | [`DeviceController`](../interfaces/DeviceController.md) | `undefined` | - | [`Participant`](../Participant/index.md).[`deviceController`](../Participant/index.md#devicecontroller) | [core/entities/Participant.ts:51](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L51) |
+| `executeMethod` | `protected` | [`ExecuteMethod`](../type-aliases/ExecuteMethod.md) | `undefined` | - | [`Participant`](../Participant/index.md).[`executeMethod`](../Participant/index.md#executemethod) | [core/entities/Participant.ts:50](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L50) |
+| `id` | `readonly` | `string` | `undefined` | Unique member ID of this participant. | [`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`id`](../interfaces/CallSelfParticipant.md#id) [`Participant`](../Participant/index.md).[`id`](../Participant/index.md#id) | [core/entities/Participant.ts:46](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L46) |
+| `subjects` | `protected` | `Subject`\<`unknown`\>[] | `[]` | - | [`Participant`](../Participant/index.md).[`subjects`](../Participant/index.md#subjects) | [behaviors/Destroyable.ts:7](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L7) |
+| `subscriptions` | `protected` | `Subscription`[] | `[]` | - | [`Participant`](../Participant/index.md).[`subscriptions`](../Participant/index.md#subscriptions) | [behaviors/Destroyable.ts:6](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L6) |
 
 ## Accessors
 

@@ -2,9 +2,7 @@
 title: "NodeSocketAdapter"
 ---
 
-# Interface: NodeSocketAdapter
-
-Defined in: [core/types/common.types.ts:92](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/common.types.ts#L92)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/common.types.ts#L92)</sub>
 
 There's a difference in `searchParams` between URL from
 `lib` and URL from `url` (node) that makes using the same
@@ -16,7 +14,7 @@ not possible for us.
 
 > **new NodeSocketAdapter**(`address`, `options?`): `NodeSocketClient`
 
-Defined in: [core/types/common.types.ts:93](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/common.types.ts#L93)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/common.types.ts#L93)</sub>
 
 #### Parameters
 
@@ -33,7 +31,7 @@ Defined in: [core/types/common.types.ts:93](https://github.com/signalwire/browse
 
 > **new NodeSocketAdapter**(`address`, `protocols?`, `options?`): `NodeSocketClient`
 
-Defined in: [core/types/common.types.ts:94](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/common.types.ts#L94)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/common.types.ts#L94)</sub>
 
 #### Parameters
 

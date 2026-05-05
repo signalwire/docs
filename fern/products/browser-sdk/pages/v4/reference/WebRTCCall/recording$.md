@@ -2,13 +2,11 @@
 title: "recording$"
 ---
 
-# recording$
-
 #### Get Signature
 
 > **get** **recording$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/entities/Call.ts:499](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L499)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L499)</sub>
 
 Observable indicating whether the call is being recorded.
 
@@ -16,17 +14,13 @@ Observable indicating whether the call is being recorded.
 
 `Observable`\<`boolean`\>
 
-#### Implementation of
-
-`CallManager.recording$`
-
 ## recording
 
 #### Get Signature
 
 > **get** **recording**(): `boolean`
 
-Defined in: [core/entities/Call.ts:543](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L543)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L543)</sub>
 
 Whether the call is currently being recorded.
 
@@ -34,6 +28,3 @@ Whether the call is currently being recorded.
 
 `boolean`
 
-#### Implementation of
-
-`CallManager.recording`

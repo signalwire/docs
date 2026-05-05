@@ -2,13 +2,11 @@
 title: "meta$"
 ---
 
-# meta$
-
 #### Get Signature
 
 > **get** **meta$**(): `Observable`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [core/entities/Participant.ts:232](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L232)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L232)</sub>
 
 Observable of custom metadata for this participant.
 
@@ -16,17 +14,13 @@ Observable of custom metadata for this participant.
 
 `Observable`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`meta$`](../interfaces/CallParticipant.md#meta-1)
-
 ## meta
 
 #### Get Signature
 
 > **get** **meta**(): `Record`\<`string`, `unknown`\> \| `undefined`
 
-Defined in: [core/entities/Participant.ts:392](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L392)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L392)</sub>
 
 Custom metadata for this participant, or `undefined` if not set.
 
@@ -34,6 +28,3 @@ Custom metadata for this participant, or `undefined` if not set.
 
 `Record`\<`string`, `unknown`\> \| `undefined`
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`meta`](../interfaces/CallParticipant.md#meta)

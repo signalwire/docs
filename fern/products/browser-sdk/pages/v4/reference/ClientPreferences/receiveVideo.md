@@ -2,13 +2,11 @@
 title: "receiveVideo"
 ---
 
-# receiveVideo
-
 #### Get Signature
 
 > **get** **receiveVideo**(): `boolean`
 
-Defined in: [containers/PreferencesContainer.ts:537](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L537)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L537)</sub>
 
 Whether to receive remote video by default.
 
@@ -20,7 +18,7 @@ Whether to receive remote video by default.
 
 > **set** **receiveVideo**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:540](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L540)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L540)</sub>
 
 ##### Parameters
 

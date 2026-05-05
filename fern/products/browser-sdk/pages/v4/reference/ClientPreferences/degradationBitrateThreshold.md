@@ -2,13 +2,11 @@
 title: "degradationBitrateThreshold"
 ---
 
-# degradationBitrateThreshold
-
 #### Get Signature
 
 > **get** **degradationBitrateThreshold**(): `number`
 
-Defined in: [containers/PreferencesContainer.ts:967](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L967)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L967)</sub>
 
 Bitrate in kbps below which video is automatically disabled.
 
@@ -20,7 +18,7 @@ Bitrate in kbps below which video is automatically disabled.
 
 > **set** **degradationBitrateThreshold**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:970](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L970)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L970)</sub>
 
 ##### Parameters
 

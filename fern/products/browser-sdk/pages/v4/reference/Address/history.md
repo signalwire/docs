@@ -2,13 +2,11 @@
 title: "history"
 ---
 
-# history
-
 #### Get Signature
 
 > **get** **history**(): `EntityCollectionTransformed`\<`GetConversationMessageResponse`, [`AddressHistory`](../interfaces/AddressHistory.md)\<`Address`\>\> \| `undefined`
 
-Defined in: [core/entities/Address.ts:314](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L314)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L314)</sub>
 
 Collection of call history entries for this address, with pagination support.
 

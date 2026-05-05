@@ -2,11 +2,9 @@
 title: "disconnect"
 ---
 
-# disconnect
-
 > **disconnect**(): `Promise`\<`void`\>
 
-Defined in: [clients/SignalWire.ts:923](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L923)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L923)</sub>
 
 Disconnects the WebSocket and tears down the current session.
 

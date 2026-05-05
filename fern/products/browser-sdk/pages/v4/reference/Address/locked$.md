@@ -2,13 +2,11 @@
 title: "locked$"
 ---
 
-# locked$
-
 #### Get Signature
 
 > **get** **locked$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/entities/Address.ts:249](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L249)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L249)</sub>
 
 Observable indicating whether the address (room) is locked.
 
@@ -22,7 +20,7 @@ Observable indicating whether the address (room) is locked.
 
 > **get** **locked**(): `boolean`
 
-Defined in: [core/entities/Address.ts:241](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L241)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L241)</sub>
 
 Whether the address (room) is locked.
 

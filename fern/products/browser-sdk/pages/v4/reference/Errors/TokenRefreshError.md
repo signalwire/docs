@@ -2,9 +2,7 @@
 title: "TokenRefreshError"
 ---
 
-# Class: TokenRefreshError
-
-Defined in: [core/errors.ts:480](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L480)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L480)</sub>
 
 ## Extends
 
@@ -16,7 +14,7 @@ Defined in: [core/errors.ts:480](https://github.com/signalwire/browser-sdk/blob/
 
 > **new TokenRefreshError**(`message`, `originalError?`): `TokenRefreshError`
 
-Defined in: [core/errors.ts:481](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L481)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L481)</sub>
 
 #### Parameters
 
@@ -29,12 +27,8 @@ Defined in: [core/errors.ts:481](https://github.com/signalwire/browser-sdk/blob/
 
 `TokenRefreshError`
 
-#### Overrides
-
-`Error.constructor`
-
 ## Properties
 
 | Property | Modifier | Type | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="originalerror"></a> `originalError?` | `public` | `unknown` | [core/errors.ts:483](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L483) |
+| `originalError?` | `public` | `unknown` | [core/errors.ts:483](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L483) |

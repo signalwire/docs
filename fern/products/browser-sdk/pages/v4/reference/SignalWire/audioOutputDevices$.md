@@ -2,13 +2,11 @@
 title: "audioOutputDevices$"
 ---
 
-# audioOutputDevices$
-
 #### Get Signature
 
 > **get** **audioOutputDevices$**(): `Observable`\<`MediaDeviceInfo`[]\>
 
-Defined in: [clients/SignalWire.ts:1126](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1126)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1126)</sub>
 
 Observable list of available audio output (speaker) devices.
 
@@ -18,17 +16,13 @@ Observable list of available audio output (speaker) devices.
 
 Observable list of available audio output (speaker) devices.
 
-#### Implementation of
-
-[`DeviceController`](../interfaces/DeviceController.md).[`audioOutputDevices$`](../interfaces/DeviceController.md#audiooutputdevices-1)
-
 ## audioOutputDevices
 
 #### Get Signature
 
 > **get** **audioOutputDevices**(): `MediaDeviceInfo`[]
 
-Defined in: [clients/SignalWire.ts:1131](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1131)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1131)</sub>
 
 Current snapshot of available audio output devices.
 
@@ -38,6 +32,3 @@ Current snapshot of available audio output devices.
 
 Current snapshot of available audio output devices.
 
-#### Implementation of
-
-[`DeviceController`](../interfaces/DeviceController.md).[`audioOutputDevices`](../interfaces/DeviceController.md#audiooutputdevices)

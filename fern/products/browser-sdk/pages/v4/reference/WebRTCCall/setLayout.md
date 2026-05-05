@@ -2,11 +2,9 @@
 title: "setLayout"
 ---
 
-# setLayout
-
 > **setLayout**(`layout`, `positions`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Call.ts:1288](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1288)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L1288)</sub>
 
 Sets the call layout and participant positions.
 
@@ -33,6 +31,3 @@ await call.setLayout('grid-responsive', {
 });
 ```
 
-#### Implementation of
-
-`CallManager.setLayout`

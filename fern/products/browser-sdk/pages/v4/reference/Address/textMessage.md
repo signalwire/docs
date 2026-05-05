@@ -2,13 +2,11 @@
 title: "textMessage"
 ---
 
-# textMessage
-
 #### Get Signature
 
 > **get** **textMessage**(): `EntityCollectionTransformed`\<`GetConversationMessageResponse`, [`TextMessage`](../interfaces/TextMessage.md)\<`Address`\>\> \| `undefined`
 
-Defined in: [core/entities/Address.ts:283](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L283)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L283)</sub>
 
 Collection of text messages for this address, with pagination support.
 

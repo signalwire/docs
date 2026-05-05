@@ -2,13 +2,11 @@
 title: "videoInputDevices$"
 ---
 
-# videoInputDevices$
-
 #### Get Signature
 
 > **get** **videoInputDevices$**(): `Observable`\<`MediaDeviceInfo`[]\>
 
-Defined in: [clients/SignalWire.ts:1136](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1136)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1136)</sub>
 
 Observable list of available video input (camera) devices.
 
@@ -18,17 +16,13 @@ Observable list of available video input (camera) devices.
 
 Observable list of available video input (camera) devices.
 
-#### Implementation of
-
-[`DeviceController`](../interfaces/DeviceController.md).[`videoInputDevices$`](../interfaces/DeviceController.md#videoinputdevices-1)
-
 ## videoInputDevices
 
 #### Get Signature
 
 > **get** **videoInputDevices**(): `MediaDeviceInfo`[]
 
-Defined in: [clients/SignalWire.ts:1141](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1141)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1141)</sub>
 
 Current snapshot of available video input devices.
 
@@ -38,6 +32,3 @@ Current snapshot of available video input devices.
 
 Current snapshot of available video input devices.
 
-#### Implementation of
-
-[`DeviceController`](../interfaces/DeviceController.md).[`videoInputDevices`](../interfaces/DeviceController.md#videoinputdevices)

@@ -2,13 +2,11 @@
 title: "inputAudioConstraints"
 ---
 
-# inputAudioConstraints
-
 #### Get Signature
 
 > **get** **inputAudioConstraints**(): `MediaTrackConstraints` \| `undefined`
 
-Defined in: [containers/PreferencesContainer.ts:579](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L579)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L579)</sub>
 
 Default audio input track constraints.
 
@@ -20,7 +18,7 @@ Default audio input track constraints.
 
 > **set** **inputAudioConstraints**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:582](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L582)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L582)</sub>
 
 ##### Parameters
 

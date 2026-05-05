@@ -2,13 +2,11 @@
 title: "selectedAudioOutputDevice$"
 ---
 
-# selectedAudioOutputDevice$
-
 #### Get Signature
 
 > **get** **selectedAudioOutputDevice$**(): `Observable`\<`MediaDeviceInfo` \| `null`\>
 
-Defined in: [clients/SignalWire.ts:1150](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1150)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1150)</sub>
 
 Observable of the currently selected audio output device.
 
@@ -18,17 +16,13 @@ Observable of the currently selected audio output device.
 
 Observable of the currently selected audio output device, or `null` if none.
 
-#### Implementation of
-
-[`DeviceController`](../interfaces/DeviceController.md).[`selectedAudioOutputDevice$`](../interfaces/DeviceController.md#selectedaudiooutputdevice-1)
-
 ## selectedAudioOutputDevice
 
 #### Get Signature
 
 > **get** **selectedAudioOutputDevice**(): `MediaDeviceInfo` \| `null`
 
-Defined in: [clients/SignalWire.ts:1162](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1162)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1162)</sub>
 
 Currently selected audio output device, or `null` if none.
 
@@ -38,6 +32,3 @@ Currently selected audio output device, or `null` if none.
 
 Currently selected audio output device, or `null` if none.
 
-#### Implementation of
-
-[`DeviceController`](../interfaces/DeviceController.md).[`selectedAudioOutputDevice`](../interfaces/DeviceController.md#selectedaudiooutputdevice)

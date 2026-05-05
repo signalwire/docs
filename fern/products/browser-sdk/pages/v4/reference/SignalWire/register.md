@@ -2,11 +2,9 @@
 title: "register"
 ---
 
-# register
-
 > **register**(): `Promise`\<`void`\>
 
-Defined in: [clients/SignalWire.ts:973](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L973)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L973)</sub>
 
 Registers the subscriber as online to receive inbound calls and events.
 

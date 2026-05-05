@@ -2,11 +2,9 @@
 title: "setAudioInputSensitivity"
 ---
 
-# setAudioInputSensitivity
-
 > **setAudioInputSensitivity**(`value`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Participant.ts:504](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L504)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L504)</sub>
 
 Adjusts the **conference-only** microphone energy gate / sensitivity level
 for this member. Routes through the conferencing mix engine
@@ -26,10 +24,6 @@ server-side mixer decides to open the mic gate on this participant.
 #### Returns
 
 `Promise`\<`void`\>
-
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`setAudioInputSensitivity`](../interfaces/CallSelfParticipant.md#setaudioinputsensitivity)
 
 #### Inherited from
 

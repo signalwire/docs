@@ -2,13 +2,11 @@
 title: "lock$"
 ---
 
-# lock$
-
 #### Get Signature
 
 > **get** **lock$**(): `Observable`\<[`OnOffCapability`](../interfaces/OnOffCapability.md)\>
 
-Defined in: [core/capabilities/SelfCapabilities.ts:145](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L145)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L145)</sub>
 
 Observable for lock capability
 
@@ -22,7 +20,7 @@ Observable for lock capability
 
 > **get** **lock**(): [`OnOffCapability`](../interfaces/OnOffCapability.md)
 
-Defined in: [core/capabilities/SelfCapabilities.ts:155](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L155)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L155)</sub>
 
 Current lock capability
 

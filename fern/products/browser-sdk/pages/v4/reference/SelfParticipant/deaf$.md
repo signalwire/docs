@@ -2,23 +2,17 @@
 title: "deaf$"
 ---
 
-# deaf$
-
 #### Get Signature
 
 > **get** **deaf$**(): `Observable`\<`boolean` \| `undefined`\>
 
-Defined in: [core/entities/Participant.ts:122](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L122)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L122)</sub>
 
 Observable indicating whether the participant is deafened.
 
 ##### Returns
 
 `Observable`\<`boolean` \| `undefined`\>
-
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`deaf$`](../interfaces/CallSelfParticipant.md#deaf-1)
 
 #### Inherited from
 
@@ -30,17 +24,13 @@ Observable indicating whether the participant is deafened.
 
 > **get** **deaf**(): `boolean`
 
-Defined in: [core/entities/Participant.ts:337](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L337)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L337)</sub>
 
 Whether the participant is deafened (incoming audio muted).
 
 ##### Returns
 
 `boolean`
-
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`deaf`](../interfaces/CallSelfParticipant.md#deaf)
 
 #### Inherited from
 

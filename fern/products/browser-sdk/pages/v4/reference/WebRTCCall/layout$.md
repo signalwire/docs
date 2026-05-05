@@ -2,13 +2,11 @@
 title: "layout$"
 ---
 
-# layout$
-
 #### Get Signature
 
 > **get** **layout$**(): `Observable`\<`string`\>
 
-Defined in: [core/entities/Call.ts:533](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L533)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L533)</sub>
 
 Observable of the current layout name.
 
@@ -16,17 +14,13 @@ Observable of the current layout name.
 
 `Observable`\<`string`\>
 
-#### Implementation of
-
-`CallManager.layout$`
-
 ## layout
 
 #### Get Signature
 
 > **get** **layout**(): `string` \| `undefined`
 
-Defined in: [core/entities/Call.ts:568](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L568)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L568)</sub>
 
 Current layout name, or `undefined` if not set.
 
@@ -34,6 +28,3 @@ Current layout name, or `undefined` if not set.
 
 `string` \| `undefined`
 
-#### Implementation of
-
-`CallManager.layout`

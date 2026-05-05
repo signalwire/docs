@@ -2,13 +2,11 @@
 title: "nodeId$"
 ---
 
-# nodeId$
-
 #### Get Signature
 
 > **get** **nodeId$**(): `Observable`\<`string` \| `undefined`\>
 
-Defined in: [core/entities/Participant.ts:262](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L262)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L262)</sub>
 
 Observable of the server node ID for this participant.
 
@@ -16,17 +14,13 @@ Observable of the server node ID for this participant.
 
 `Observable`\<`string` \| `undefined`\>
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`nodeId$`](../interfaces/CallParticipant.md#nodeid-1)
-
 ## nodeId
 
 #### Get Signature
 
 > **get** **nodeId**(): `string` \| `undefined`
 
-Defined in: [core/entities/Participant.ts:407](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L407)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L407)</sub>
 
 Server node ID for this participant, or `undefined` if not available.
 
@@ -34,6 +28,3 @@ Server node ID for this participant, or `undefined` if not available.
 
 `string` \| `undefined`
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`nodeId`](../interfaces/CallParticipant.md#nodeid)

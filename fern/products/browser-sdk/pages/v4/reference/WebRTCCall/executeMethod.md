@@ -2,11 +2,9 @@
 title: "executeMethod"
 ---
 
-# executeMethod
-
 > **executeMethod**\<`T`\>(`target`, `method`, `args`): `Promise`\<`T`\>
 
-Defined in: [core/entities/Call.ts:424](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L424)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L424)</sub>
 
 Executes a Verto RPC method targeting a specific participant.
 
@@ -36,6 +34,3 @@ The RPC response.
 
 If the RPC call returns an error.
 
-#### Implementation of
-
-`CallManager.executeMethod`

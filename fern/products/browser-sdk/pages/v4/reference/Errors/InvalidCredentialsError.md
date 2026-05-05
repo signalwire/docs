@@ -2,9 +2,7 @@
 title: "InvalidCredentialsError"
 ---
 
-# Class: InvalidCredentialsError
-
-Defined in: [core/errors.ts:31](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L31)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L31)</sub>
 
 ## Extends
 
@@ -16,7 +14,7 @@ Defined in: [core/errors.ts:31](https://github.com/signalwire/browser-sdk/blob/2
 
 > **new InvalidCredentialsError**(`reason?`, `options?`): `InvalidCredentialsError`
 
-Defined in: [core/errors.ts:32](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L32)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L32)</sub>
 
 #### Parameters
 
@@ -29,12 +27,8 @@ Defined in: [core/errors.ts:32](https://github.com/signalwire/browser-sdk/blob/2
 
 `InvalidCredentialsError`
 
-#### Overrides
-
-`Error.constructor`
-
 ## Properties
 
 | Property | Modifier | Type | Default value | Defined in |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="reason"></a> `reason` | `public` | `string` | `'Invalid Credentials'` | [core/errors.ts:33](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L33) |
+| `reason` | `public` | `string` | `'Invalid Credentials'` | [core/errors.ts:33](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/errors.ts#L33) |

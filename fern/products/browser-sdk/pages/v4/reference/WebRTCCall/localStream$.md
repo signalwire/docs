@@ -2,13 +2,11 @@
 title: "localStream$"
 ---
 
-# localStream$
-
 #### Get Signature
 
 > **get** **localStream$**(): `Observable`\<`MediaStream`\>
 
-Defined in: [core/entities/Call.ts:583](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L583)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L583)</sub>
 
 Observable of the local media stream (camera/microphone).
 
@@ -16,17 +14,13 @@ Observable of the local media stream (camera/microphone).
 
 `Observable`\<`MediaStream`\>
 
-#### Implementation of
-
-`CallManager.localStream$`
-
 ## localStream
 
 #### Get Signature
 
 > **get** **localStream**(): `MediaStream` \| `null`
 
-Defined in: [core/entities/Call.ts:587](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L587)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L587)</sub>
 
 Current local media stream, or `null` if not available.
 
@@ -34,6 +28,3 @@ Current local media stream, or `null` if not available.
 
 `MediaStream` \| `null`
 
-#### Implementation of
-
-`CallManager.localStream`

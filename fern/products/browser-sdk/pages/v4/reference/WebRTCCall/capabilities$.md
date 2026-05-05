@@ -2,13 +2,11 @@
 title: "capabilities$"
 ---
 
-# capabilities$
-
 #### Get Signature
 
 > **get** **capabilities$**(): `Observable`\<[`Capability`](../type-aliases/Capability.md)[]\>
 
-Defined in: [core/entities/Call.ts:526](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L526)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L526)</sub>
 
 Observable of the call's capability flags.
 
@@ -16,17 +14,13 @@ Observable of the call's capability flags.
 
 `Observable`\<[`Capability`](../type-aliases/Capability.md)[]\>
 
-#### Implementation of
-
-`CallManager.capabilities$`
-
 ## capabilities
 
 #### Get Signature
 
 > **get** **capabilities**(): [`Capability`](../type-aliases/Capability.md)[]
 
-Defined in: [core/entities/Call.ts:331](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L331)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L331)</sub>
 
 List of capabilities available in the current call.
 
@@ -34,6 +28,3 @@ List of capabilities available in the current call.
 
 [`Capability`](../type-aliases/Capability.md)[]
 
-#### Implementation of
-
-`CallManager.capabilities`

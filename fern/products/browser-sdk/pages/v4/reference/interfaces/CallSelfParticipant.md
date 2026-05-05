@@ -2,9 +2,7 @@
 title: "CallSelfParticipant"
 ---
 
-# Interface: CallSelfParticipant
-
-Defined in: [core/entities/types/call.types.ts:121](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L121)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L121)</sub>
 
 Self participant interface with control methods
 Extends CallParticipant with methods for controlling the local participant
@@ -17,54 +15,54 @@ Extends CallParticipant with methods for controlling the local participant
 
 | Property | Modifier | Type | Inherited from | Defined in |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="addressid"></a> `addressId` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`addressId`](CallParticipant.md#addressid) | [core/entities/types/call.types.ts:88](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L88) |
-| <a id="addressid-1"></a> `addressId$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`addressId$`](CallParticipant.md#addressid-1) | [core/entities/types/call.types.ts:65](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L65) |
-| <a id="audiomuted"></a> `audioMuted` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`audioMuted`](CallParticipant.md#audiomuted) | [core/entities/types/call.types.ts:75](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L75) |
-| <a id="audiomuted-1"></a> `audioMuted$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`audioMuted$`](CallParticipant.md#audiomuted-1) | [core/entities/types/call.types.ts:52](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L52) |
-| <a id="autogain"></a> `autoGain` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`autoGain`](CallParticipant.md#autogain) | [core/entities/types/call.types.ts:82](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L82) |
-| <a id="autogain-1"></a> `autoGain$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`autoGain$`](CallParticipant.md#autogain-1) | [core/entities/types/call.types.ts:59](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L59) |
-| <a id="deaf"></a> `deaf` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`deaf`](CallParticipant.md#deaf) | [core/entities/types/call.types.ts:77](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L77) |
-| <a id="deaf-1"></a> `deaf$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`deaf$`](CallParticipant.md#deaf-1) | [core/entities/types/call.types.ts:54](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L54) |
-| <a id="denoise"></a> `denoise` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`denoise`](CallParticipant.md#denoise) | [core/entities/types/call.types.ts:85](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L85) |
-| <a id="denoise-1"></a> `denoise$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`denoise$`](CallParticipant.md#denoise-1) | [core/entities/types/call.types.ts:62](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L62) |
-| <a id="echocancellation"></a> `echoCancellation` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`echoCancellation`](CallParticipant.md#echocancellation) | [core/entities/types/call.types.ts:81](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L81) |
-| <a id="echocancellation-1"></a> `echoCancellation$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`echoCancellation$`](CallParticipant.md#echocancellation-1) | [core/entities/types/call.types.ts:58](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L58) |
-| <a id="handraised"></a> `handraised` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`handraised`](CallParticipant.md#handraised) | [core/entities/types/call.types.ts:73](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L73) |
-| <a id="handraised-1"></a> `handraised$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`handraised$`](CallParticipant.md#handraised-1) | [core/entities/types/call.types.ts:50](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L50) |
-| <a id="id"></a> `id` | `readonly` | `string` | [`CallParticipant`](CallParticipant.md).[`id`](CallParticipant.md#id) | [core/entities/types/call.types.ts:45](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L45) |
-| <a id="inputsensitivity"></a> `inputSensitivity` | `readonly` | `number` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`inputSensitivity`](CallParticipant.md#inputsensitivity) | [core/entities/types/call.types.ts:80](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L80) |
-| <a id="inputsensitivity-1"></a> `inputSensitivity$` | `readonly` | `Observable`\<`number` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`inputSensitivity$`](CallParticipant.md#inputsensitivity-1) | [core/entities/types/call.types.ts:57](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L57) |
-| <a id="inputvolume"></a> `inputVolume` | `readonly` | `number` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`inputVolume`](CallParticipant.md#inputvolume) | [core/entities/types/call.types.ts:78](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L78) |
-| <a id="inputvolume-1"></a> `inputVolume$` | `readonly` | `Observable`\<`number` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`inputVolume$`](CallParticipant.md#inputvolume-1) | [core/entities/types/call.types.ts:55](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L55) |
-| <a id="isaudience"></a> `isAudience` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`isAudience`](CallParticipant.md#isaudience) | [core/entities/types/call.types.ts:92](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L92) |
-| <a id="istalking"></a> `isTalking` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`isTalking`](CallParticipant.md#istalking) | [core/entities/types/call.types.ts:90](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L90) |
-| <a id="istalking-1"></a> `isTalking$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`isTalking$`](CallParticipant.md#istalking-1) | [core/entities/types/call.types.ts:67](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L67) |
-| <a id="lowbitrate"></a> `lowbitrate` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`lowbitrate`](CallParticipant.md#lowbitrate) | [core/entities/types/call.types.ts:84](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L84) |
-| <a id="lowbitrate-1"></a> `lowbitrate$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`lowbitrate$`](CallParticipant.md#lowbitrate-1) | [core/entities/types/call.types.ts:61](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L61) |
-| <a id="meta"></a> `meta` | `readonly` | `Record`\<`string`, `unknown`\> \| `undefined` | [`CallParticipant`](CallParticipant.md).[`meta`](CallParticipant.md#meta) | [core/entities/types/call.types.ts:86](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L86) |
-| <a id="meta-1"></a> `meta$` | `readonly` | `Observable`\<`Record`\<`string`, `unknown`\> \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`meta$`](CallParticipant.md#meta-1) | [core/entities/types/call.types.ts:63](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L63) |
-| <a id="name"></a> `name` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`name`](CallParticipant.md#name) | [core/entities/types/call.types.ts:71](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L71) |
-| <a id="name-1"></a> `name$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`name$`](CallParticipant.md#name-1) | [core/entities/types/call.types.ts:48](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L48) |
-| <a id="nodeid"></a> `nodeId` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`nodeId`](CallParticipant.md#nodeid) | [core/entities/types/call.types.ts:89](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L89) |
-| <a id="nodeid-1"></a> `nodeId$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`nodeId$`](CallParticipant.md#nodeid-1) | [core/entities/types/call.types.ts:66](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L66) |
-| <a id="noisesuppression"></a> `noiseSuppression` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`noiseSuppression`](CallParticipant.md#noisesuppression) | [core/entities/types/call.types.ts:83](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L83) |
-| <a id="noisesuppression-1"></a> `noiseSuppression$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`noiseSuppression$`](CallParticipant.md#noisesuppression-1) | [core/entities/types/call.types.ts:60](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L60) |
-| <a id="outputvolume"></a> `outputVolume` | `readonly` | `number` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`outputVolume`](CallParticipant.md#outputvolume) | [core/entities/types/call.types.ts:79](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L79) |
-| <a id="outputvolume-1"></a> `outputVolume$` | `readonly` | `Observable`\<`number` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`outputVolume$`](CallParticipant.md#outputvolume-1) | [core/entities/types/call.types.ts:56](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L56) |
-| <a id="position"></a> `position` | `readonly` | [`LayoutLayer`](LayoutLayer.md) \| `undefined` | [`CallParticipant`](CallParticipant.md).[`position`](CallParticipant.md#position) | [core/entities/types/call.types.ts:91](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L91) |
-| <a id="position-1"></a> `position$` | `readonly` | `Observable`\<[`LayoutLayer`](LayoutLayer.md) \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`position$`](CallParticipant.md#position-1) | [core/entities/types/call.types.ts:68](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L68) |
-| <a id="screensharestatus"></a> `screenShareStatus` | `readonly` | [`ScreenShareStatus`](../type-aliases/ScreenShareStatus.md) | - | [core/entities/types/call.types.ts:123](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L123) |
-| <a id="screensharestatus-1"></a> `screenShareStatus$` | `readonly` | `Observable`\<[`ScreenShareStatus`](../type-aliases/ScreenShareStatus.md)\> | - | [core/entities/types/call.types.ts:122](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L122) |
-| <a id="studioaudio"></a> `studioAudio` | `readonly` | `boolean` | - | [core/entities/types/call.types.ts:127](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L127) |
-| <a id="studioaudio-1"></a> `studioAudio$` | `readonly` | `Observable`\<`boolean`\> | - | [core/entities/types/call.types.ts:126](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L126) |
-| <a id="subscriberid"></a> `subscriberId` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`subscriberId`](CallParticipant.md#subscriberid) | [core/entities/types/call.types.ts:87](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L87) |
-| <a id="subscriberid-1"></a> `subscriberId$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`subscriberId$`](CallParticipant.md#subscriberid-1) | [core/entities/types/call.types.ts:64](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L64) |
-| <a id="type"></a> `type` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`type`](CallParticipant.md#type) | [core/entities/types/call.types.ts:72](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L72) |
-| <a id="type-1"></a> `type$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`type$`](CallParticipant.md#type-1) | [core/entities/types/call.types.ts:49](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L49) |
-| <a id="videomuted"></a> `videoMuted` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`videoMuted`](CallParticipant.md#videomuted) | [core/entities/types/call.types.ts:76](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L76) |
-| <a id="videomuted-1"></a> `videoMuted$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`videoMuted$`](CallParticipant.md#videomuted-1) | [core/entities/types/call.types.ts:53](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L53) |
-| <a id="visible"></a> `visible` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`visible`](CallParticipant.md#visible) | [core/entities/types/call.types.ts:74](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L74) |
-| <a id="visible-1"></a> `visible$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`visible$`](CallParticipant.md#visible-1) | [core/entities/types/call.types.ts:51](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L51) |
+| `addressId` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`addressId`](CallParticipant.md#addressid) | [core/entities/types/call.types.ts:88](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L88) |
+| `addressId$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`addressId$`](CallParticipant.md#addressid-1) | [core/entities/types/call.types.ts:65](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L65) |
+| `audioMuted` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`audioMuted`](CallParticipant.md#audiomuted) | [core/entities/types/call.types.ts:75](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L75) |
+| `audioMuted$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`audioMuted$`](CallParticipant.md#audiomuted-1) | [core/entities/types/call.types.ts:52](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L52) |
+| `autoGain` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`autoGain`](CallParticipant.md#autogain) | [core/entities/types/call.types.ts:82](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L82) |
+| `autoGain$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`autoGain$`](CallParticipant.md#autogain-1) | [core/entities/types/call.types.ts:59](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L59) |
+| `deaf` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`deaf`](CallParticipant.md#deaf) | [core/entities/types/call.types.ts:77](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L77) |
+| `deaf$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`deaf$`](CallParticipant.md#deaf-1) | [core/entities/types/call.types.ts:54](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L54) |
+| `denoise` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`denoise`](CallParticipant.md#denoise) | [core/entities/types/call.types.ts:85](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L85) |
+| `denoise$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`denoise$`](CallParticipant.md#denoise-1) | [core/entities/types/call.types.ts:62](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L62) |
+| `echoCancellation` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`echoCancellation`](CallParticipant.md#echocancellation) | [core/entities/types/call.types.ts:81](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L81) |
+| `echoCancellation$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`echoCancellation$`](CallParticipant.md#echocancellation-1) | [core/entities/types/call.types.ts:58](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L58) |
+| `handraised` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`handraised`](CallParticipant.md#handraised) | [core/entities/types/call.types.ts:73](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L73) |
+| `handraised$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`handraised$`](CallParticipant.md#handraised-1) | [core/entities/types/call.types.ts:50](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L50) |
+| `id` | `readonly` | `string` | [`CallParticipant`](CallParticipant.md).[`id`](CallParticipant.md#id) | [core/entities/types/call.types.ts:45](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L45) |
+| `inputSensitivity` | `readonly` | `number` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`inputSensitivity`](CallParticipant.md#inputsensitivity) | [core/entities/types/call.types.ts:80](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L80) |
+| `inputSensitivity$` | `readonly` | `Observable`\<`number` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`inputSensitivity$`](CallParticipant.md#inputsensitivity-1) | [core/entities/types/call.types.ts:57](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L57) |
+| `inputVolume` | `readonly` | `number` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`inputVolume`](CallParticipant.md#inputvolume) | [core/entities/types/call.types.ts:78](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L78) |
+| `inputVolume$` | `readonly` | `Observable`\<`number` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`inputVolume$`](CallParticipant.md#inputvolume-1) | [core/entities/types/call.types.ts:55](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L55) |
+| `isAudience` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`isAudience`](CallParticipant.md#isaudience) | [core/entities/types/call.types.ts:92](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L92) |
+| `isTalking` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`isTalking`](CallParticipant.md#istalking) | [core/entities/types/call.types.ts:90](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L90) |
+| `isTalking$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`isTalking$`](CallParticipant.md#istalking-1) | [core/entities/types/call.types.ts:67](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L67) |
+| `lowbitrate` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`lowbitrate`](CallParticipant.md#lowbitrate) | [core/entities/types/call.types.ts:84](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L84) |
+| `lowbitrate$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`lowbitrate$`](CallParticipant.md#lowbitrate-1) | [core/entities/types/call.types.ts:61](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L61) |
+| `meta` | `readonly` | `Record`\<`string`, `unknown`\> \| `undefined` | [`CallParticipant`](CallParticipant.md).[`meta`](CallParticipant.md#meta) | [core/entities/types/call.types.ts:86](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L86) |
+| `meta$` | `readonly` | `Observable`\<`Record`\<`string`, `unknown`\> \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`meta$`](CallParticipant.md#meta-1) | [core/entities/types/call.types.ts:63](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L63) |
+| `name` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`name`](CallParticipant.md#name) | [core/entities/types/call.types.ts:71](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L71) |
+| `name$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`name$`](CallParticipant.md#name-1) | [core/entities/types/call.types.ts:48](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L48) |
+| `nodeId` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`nodeId`](CallParticipant.md#nodeid) | [core/entities/types/call.types.ts:89](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L89) |
+| `nodeId$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`nodeId$`](CallParticipant.md#nodeid-1) | [core/entities/types/call.types.ts:66](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L66) |
+| `noiseSuppression` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`noiseSuppression`](CallParticipant.md#noisesuppression) | [core/entities/types/call.types.ts:83](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L83) |
+| `noiseSuppression$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`noiseSuppression$`](CallParticipant.md#noisesuppression-1) | [core/entities/types/call.types.ts:60](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L60) |
+| `outputVolume` | `readonly` | `number` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`outputVolume`](CallParticipant.md#outputvolume) | [core/entities/types/call.types.ts:79](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L79) |
+| `outputVolume$` | `readonly` | `Observable`\<`number` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`outputVolume$`](CallParticipant.md#outputvolume-1) | [core/entities/types/call.types.ts:56](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L56) |
+| `position` | `readonly` | [`LayoutLayer`](LayoutLayer.md) \| `undefined` | [`CallParticipant`](CallParticipant.md).[`position`](CallParticipant.md#position) | [core/entities/types/call.types.ts:91](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L91) |
+| `position$` | `readonly` | `Observable`\<[`LayoutLayer`](LayoutLayer.md) \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`position$`](CallParticipant.md#position-1) | [core/entities/types/call.types.ts:68](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L68) |
+| `screenShareStatus` | `readonly` | [`ScreenShareStatus`](../type-aliases/ScreenShareStatus.md) | - | [core/entities/types/call.types.ts:123](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L123) |
+| `screenShareStatus$` | `readonly` | `Observable`\<[`ScreenShareStatus`](../type-aliases/ScreenShareStatus.md)\> | - | [core/entities/types/call.types.ts:122](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L122) |
+| `studioAudio` | `readonly` | `boolean` | - | [core/entities/types/call.types.ts:127](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L127) |
+| `studioAudio$` | `readonly` | `Observable`\<`boolean`\> | - | [core/entities/types/call.types.ts:126](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L126) |
+| `subscriberId` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`subscriberId`](CallParticipant.md#subscriberid) | [core/entities/types/call.types.ts:87](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L87) |
+| `subscriberId$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`subscriberId$`](CallParticipant.md#subscriberid-1) | [core/entities/types/call.types.ts:64](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L64) |
+| `type` | `readonly` | `string` \| `undefined` | [`CallParticipant`](CallParticipant.md).[`type`](CallParticipant.md#type) | [core/entities/types/call.types.ts:72](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L72) |
+| `type$` | `readonly` | `Observable`\<`string` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`type$`](CallParticipant.md#type-1) | [core/entities/types/call.types.ts:49](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L49) |
+| `videoMuted` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`videoMuted`](CallParticipant.md#videomuted) | [core/entities/types/call.types.ts:76](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L76) |
+| `videoMuted$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`videoMuted$`](CallParticipant.md#videomuted-1) | [core/entities/types/call.types.ts:53](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L53) |
+| `visible` | `readonly` | `boolean` | [`CallParticipant`](CallParticipant.md).[`visible`](CallParticipant.md#visible) | [core/entities/types/call.types.ts:74](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L74) |
+| `visible$` | `readonly` | `Observable`\<`boolean` \| `undefined`\> | [`CallParticipant`](CallParticipant.md).[`visible$`](CallParticipant.md#visible-1) | [core/entities/types/call.types.ts:51](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L51) |
 
 ## Methods
 
@@ -72,7 +70,7 @@ Extends CallParticipant with methods for controlling the local participant
 
 > **addAdditionalDevice**(`options`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:139](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L139)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L139)</sub>
 
 #### Parameters
 
@@ -90,7 +88,7 @@ Defined in: [core/entities/types/call.types.ts:139](https://github.com/signalwir
 
 > **addAudioInputDevice**(`options?`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:141](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L141)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L141)</sub>
 
 #### Parameters
 
@@ -110,7 +108,7 @@ Defined in: [core/entities/types/call.types.ts:141](https://github.com/signalwir
 
 > **addInputDevices**(`options?`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:149](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L149)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L149)</sub>
 
 #### Parameters
 
@@ -128,7 +126,7 @@ Defined in: [core/entities/types/call.types.ts:149](https://github.com/signalwir
 
 > **addVideoInputDevice**(`options?`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:145](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L145)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L145)</sub>
 
 #### Parameters
 
@@ -148,7 +146,7 @@ Defined in: [core/entities/types/call.types.ts:145](https://github.com/signalwir
 
 > **disableStudioAudio**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:129](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L129)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L129)</sub>
 
 #### Returns
 
@@ -160,7 +158,7 @@ Defined in: [core/entities/types/call.types.ts:129](https://github.com/signalwir
 
 > **enableStudioAudio**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:128](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L128)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L128)</sub>
 
 #### Returns
 
@@ -172,7 +170,7 @@ Defined in: [core/entities/types/call.types.ts:128](https://github.com/signalwir
 
 > **end**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:112](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L112)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L112)</sub>
 
 #### Returns
 
@@ -188,7 +186,7 @@ Defined in: [core/entities/types/call.types.ts:112](https://github.com/signalwir
 
 > **mute**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:97](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L97)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L97)</sub>
 
 #### Returns
 
@@ -204,7 +202,7 @@ Defined in: [core/entities/types/call.types.ts:97](https://github.com/signalwire
 
 > **muteVideo**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:100](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L100)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L100)</sub>
 
 #### Returns
 
@@ -220,7 +218,7 @@ Defined in: [core/entities/types/call.types.ts:100](https://github.com/signalwir
 
 > **remove**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:111](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L111)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L111)</sub>
 
 #### Returns
 
@@ -236,7 +234,7 @@ Defined in: [core/entities/types/call.types.ts:111](https://github.com/signalwir
 
 > **removeAdditionalDevice**(`id`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:140](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L140)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L140)</sub>
 
 #### Parameters
 
@@ -254,7 +252,7 @@ Defined in: [core/entities/types/call.types.ts:140](https://github.com/signalwir
 
 > **selectAudioInputDevice**(`device`, `options?`): `void`
 
-Defined in: [core/entities/types/call.types.ts:134](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L134)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L134)</sub>
 
 #### Parameters
 
@@ -273,7 +271,7 @@ Defined in: [core/entities/types/call.types.ts:134](https://github.com/signalwir
 
 > **selectAudioOutputDevice**(`device`, `options?`): `void`
 
-Defined in: [core/entities/types/call.types.ts:136](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L136)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L136)</sub>
 
 #### Parameters
 
@@ -292,7 +290,7 @@ Defined in: [core/entities/types/call.types.ts:136](https://github.com/signalwir
 
 > **selectVideoInputDevice**(`device`, `options?`): `void`
 
-Defined in: [core/entities/types/call.types.ts:135](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L135)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L135)</sub>
 
 #### Parameters
 
@@ -311,7 +309,7 @@ Defined in: [core/entities/types/call.types.ts:135](https://github.com/signalwir
 
 > **setAudioInputDeviceConstraints**(`constraints`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:152](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L152)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L152)</sub>
 
 #### Parameters
 
@@ -329,7 +327,7 @@ Defined in: [core/entities/types/call.types.ts:152](https://github.com/signalwir
 
 > **setAudioInputSensitivity**(`value`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:107](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L107)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L107)</sub>
 
 #### Parameters
 
@@ -351,7 +349,7 @@ Defined in: [core/entities/types/call.types.ts:107](https://github.com/signalwir
 
 > **setAudioInputVolume**(`value`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:108](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L108)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L108)</sub>
 
 #### Parameters
 
@@ -373,7 +371,7 @@ Defined in: [core/entities/types/call.types.ts:108](https://github.com/signalwir
 
 > **setAudioOutputVolume**(`value`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:109](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L109)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L109)</sub>
 
 #### Parameters
 
@@ -395,7 +393,7 @@ Defined in: [core/entities/types/call.types.ts:109](https://github.com/signalwir
 
 > **setInputDevicesConstraints**(`constraints`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:154](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L154)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L154)</sub>
 
 #### Parameters
 
@@ -415,7 +413,7 @@ Defined in: [core/entities/types/call.types.ts:154](https://github.com/signalwir
 
 > **setMeta**(`meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:113](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L113)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L113)</sub>
 
 #### Parameters
 
@@ -437,7 +435,7 @@ Defined in: [core/entities/types/call.types.ts:113](https://github.com/signalwir
 
 > **setPosition**(`value`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:110](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L110)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L110)</sub>
 
 #### Parameters
 
@@ -459,7 +457,7 @@ Defined in: [core/entities/types/call.types.ts:110](https://github.com/signalwir
 
 > **setVideoInputDeviceConstraints**(`constraints`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:153](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L153)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L153)</sub>
 
 #### Parameters
 
@@ -477,7 +475,7 @@ Defined in: [core/entities/types/call.types.ts:153](https://github.com/signalwir
 
 > **startScreenShare**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:132](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L132)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L132)</sub>
 
 #### Returns
 
@@ -489,7 +487,7 @@ Defined in: [core/entities/types/call.types.ts:132](https://github.com/signalwir
 
 > **stopScreenShare**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:133](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L133)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L133)</sub>
 
 #### Returns
 
@@ -501,7 +499,7 @@ Defined in: [core/entities/types/call.types.ts:133](https://github.com/signalwir
 
 > **toggleAudioInputAutoGain**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:104](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L104)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L104)</sub>
 
 #### Returns
 
@@ -517,7 +515,7 @@ Defined in: [core/entities/types/call.types.ts:104](https://github.com/signalwir
 
 > **toggleDeaf**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:95](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L95)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L95)</sub>
 
 #### Returns
 
@@ -533,7 +531,7 @@ Defined in: [core/entities/types/call.types.ts:95](https://github.com/signalwire
 
 > **toggleEchoCancellation**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:103](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L103)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L103)</sub>
 
 #### Returns
 
@@ -549,7 +547,7 @@ Defined in: [core/entities/types/call.types.ts:103](https://github.com/signalwir
 
 > **toggleHandraise**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:96](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L96)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L96)</sub>
 
 #### Returns
 
@@ -565,7 +563,7 @@ Defined in: [core/entities/types/call.types.ts:96](https://github.com/signalwire
 
 > **toggleLowbitrate**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:106](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L106)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L106)</sub>
 
 #### Returns
 
@@ -581,7 +579,7 @@ Defined in: [core/entities/types/call.types.ts:106](https://github.com/signalwir
 
 > **toggleMute**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:99](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L99)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L99)</sub>
 
 #### Returns
 
@@ -597,7 +595,7 @@ Defined in: [core/entities/types/call.types.ts:99](https://github.com/signalwire
 
 > **toggleMuteVideo**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:102](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L102)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L102)</sub>
 
 #### Returns
 
@@ -613,7 +611,7 @@ Defined in: [core/entities/types/call.types.ts:102](https://github.com/signalwir
 
 > **toggleNoiseSuppression**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:105](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L105)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L105)</sub>
 
 #### Returns
 
@@ -629,7 +627,7 @@ Defined in: [core/entities/types/call.types.ts:105](https://github.com/signalwir
 
 > **unmute**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:98](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L98)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L98)</sub>
 
 #### Returns
 
@@ -645,7 +643,7 @@ Defined in: [core/entities/types/call.types.ts:98](https://github.com/signalwire
 
 > **unmuteVideo**(): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:101](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L101)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L101)</sub>
 
 #### Returns
 
@@ -661,7 +659,7 @@ Defined in: [core/entities/types/call.types.ts:101](https://github.com/signalwir
 
 > **updateMeta**(`meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/types/call.types.ts:114](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L114)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/types/call.types.ts#L114)</sub>
 
 #### Parameters
 

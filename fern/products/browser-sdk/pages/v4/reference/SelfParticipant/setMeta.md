@@ -2,11 +2,9 @@
 title: "setMeta"
 ---
 
-# setMeta
-
 > **setMeta**(`_meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Participant.ts:575](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L575)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L575)</sub>
 
 Replaces custom metadata for this participant.
 
@@ -23,10 +21,6 @@ Replaces custom metadata for this participant.
 #### Throws
 
 Not yet implemented.
-
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`setMeta`](../interfaces/CallSelfParticipant.md#setmeta)
 
 #### Inherited from
 

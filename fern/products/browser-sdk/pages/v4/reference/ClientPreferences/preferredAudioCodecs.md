@@ -2,13 +2,11 @@
 title: "preferredAudioCodecs"
 ---
 
-# preferredAudioCodecs
-
 #### Get Signature
 
 > **get** **preferredAudioCodecs**(): `string`[]
 
-Defined in: [containers/PreferencesContainer.ts:998](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L998)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L998)</sub>
 
 Preferred audio codecs in priority order.
 
@@ -20,7 +18,7 @@ Preferred audio codecs in priority order.
 
 > **set** **preferredAudioCodecs**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:1001](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L1001)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L1001)</sub>
 
 ##### Parameters
 

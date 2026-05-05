@@ -2,11 +2,9 @@
 title: "updateMeta"
 ---
 
-# updateMeta
-
 > **updateMeta**(`_meta`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Participant.ts:585](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L585)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L585)</sub>
 
 Merges values into custom metadata (unlike [setMeta](../Participant/index.md#setmeta) which replaces).
 
@@ -23,10 +21,6 @@ Merges values into custom metadata (unlike [setMeta](../Participant/index.md#set
 #### Throws
 
 Not yet implemented.
-
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`updateMeta`](../interfaces/CallSelfParticipant.md#updatemeta)
 
 #### Inherited from
 

@@ -2,11 +2,9 @@
 title: "applySelectedAudioOutputDevice"
 ---
 
-# applySelectedAudioOutputDevice
-
 > **applySelectedAudioOutputDevice**(`element`): `Promise`\<`boolean`\>
 
-Defined in: [clients/SignalWire.ts:1212](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1212)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1212)</sub>
 
 Apply the currently selected audio output device to an HTMLMediaElement
 (e.g. the `<audio>` or `<video>` element the consumer attached the

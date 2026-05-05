@@ -2,11 +2,9 @@
 title: "setInputDevicesConstraints"
 ---
 
-# setInputDevicesConstraints
-
 > **setInputDevicesConstraints**(`constraints`): `Promise`\<`void`\>
 
-Defined in: [core/entities/Participant.ts:766](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L766)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L766)</sub>
 
 Updates both audio and video input track constraints for the active call.
 
@@ -22,6 +20,3 @@ Updates both audio and video input track constraints for the active call.
 
 `Promise`\<`void`\>
 
-#### Implementation of
-
-[`CallSelfParticipant`](../interfaces/CallSelfParticipant.md).[`setInputDevicesConstraints`](../interfaces/CallSelfParticipant.md#setinputdevicesconstraints)

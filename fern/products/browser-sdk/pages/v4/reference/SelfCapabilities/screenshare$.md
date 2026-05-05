@@ -2,13 +2,11 @@
 title: "screenshare$"
 ---
 
-# screenshare$
-
 #### Get Signature
 
 > **get** **screenshare$**(): `Observable`\<`boolean`\>
 
-Defined in: [core/capabilities/SelfCapabilities.ts:175](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L175)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L175)</sub>
 
 Observable for screenshare capability
 
@@ -22,7 +20,7 @@ Observable for screenshare capability
 
 > **get** **screenshare**(): `boolean`
 
-Defined in: [core/capabilities/SelfCapabilities.ts:185](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L185)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/capabilities/SelfCapabilities.ts#L185)</sub>
 
 Current screenshare capability
 

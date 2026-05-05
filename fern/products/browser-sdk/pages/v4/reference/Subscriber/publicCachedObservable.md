@@ -2,11 +2,9 @@
 title: "publicCachedObservable"
 ---
 
-# publicCachedObservable
-
 > `protected` **publicCachedObservable**\<`T`\>(`key`, `factory`): `Observable`\<`T`\>
 
-Defined in: [behaviors/Destroyable.ts:42](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L42)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L42)</sub>
 
 Like `cachedObservable`, but defers emissions to the microtask queue
 via `observeOn(asapScheduler)`.

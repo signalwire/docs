@@ -2,13 +2,11 @@
 title: "statsPollingInterval"
 ---
 
-# statsPollingInterval
-
 #### Get Signature
 
 > **get** **statsPollingInterval**(): `number`
 
-Defined in: [containers/PreferencesContainer.ts:671](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L671)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L671)</sub>
 
 Stats polling interval in milliseconds.
 
@@ -20,7 +18,7 @@ Stats polling interval in milliseconds.
 
 > **set** **statsPollingInterval**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:674](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L674)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L674)</sub>
 
 ##### Parameters
 

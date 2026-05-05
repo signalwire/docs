@@ -2,13 +2,11 @@
 title: "degradationRecoveryThreshold"
 ---
 
-# degradationRecoveryThreshold
-
 #### Get Signature
 
 > **get** **degradationRecoveryThreshold**(): `number`
 
-Defined in: [containers/PreferencesContainer.ts:976](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L976)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L976)</sub>
 
 Bitrate in kbps above which video is automatically re-enabled.
 
@@ -20,7 +18,7 @@ Bitrate in kbps above which video is automatically re-enabled.
 
 > **set** **degradationRecoveryThreshold**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:979](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L979)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L979)</sub>
 
 ##### Parameters
 

@@ -2,11 +2,9 @@
 title: "execute"
 ---
 
-# execute
-
 > **execute**\<`T`\>(`request`, `options?`): `Promise`\<`T`\>
 
-Defined in: [core/entities/Call.ts:964](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L964)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L964)</sub>
 
 Executes a raw JSON-RPC request on the client session.
 
@@ -35,6 +33,3 @@ The RPC response.
 
 If the RPC call returns an error response.
 
-#### Implementation of
-
-`CallManager.execute`

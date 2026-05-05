@@ -2,11 +2,9 @@
 title: "preflight"
 ---
 
-# preflight
-
 > **preflight**(`destination`, `options?`): `Promise`\<[`PreflightResult`](../interfaces/PreflightResult.md)\>
 
-Defined in: [clients/SignalWire.ts:1087](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1087)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/clients/SignalWire.ts#L1087)</sub>
 
 Runs a multi-phase connectivity test against the given destination.
 

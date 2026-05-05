@@ -2,9 +2,7 @@
 title: "MediaParamsEvent"
 ---
 
-# Interface: MediaParamsEvent
-
-Defined in: [core/types/resilience.types.ts:258](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L258)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L258)</sub>
 
 Event emitted when server-pushed media params are applied.
 
@@ -12,6 +10,6 @@ Event emitted when server-pushed media params are applied.
 
 | Property | Modifier | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ | ------ |
-| <a id="audio"></a> `audio?` | `readonly` | `MediaTrackConstraints` | Audio constraints pushed by the server, if any. | [core/types/resilience.types.ts:260](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L260) |
-| <a id="timestamp"></a> `timestamp` | `readonly` | `number` | Timestamp when the event occurred (epoch ms). | [core/types/resilience.types.ts:264](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L264) |
-| <a id="video"></a> `video?` | `readonly` | `MediaTrackConstraints` | Video constraints pushed by the server, if any. | [core/types/resilience.types.ts:262](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L262) |
+| `audio?` | `readonly` | `MediaTrackConstraints` | Audio constraints pushed by the server, if any. | [core/types/resilience.types.ts:260](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L260) |
+| `timestamp` | `readonly` | `number` | Timestamp when the event occurred (epoch ms). | [core/types/resilience.types.ts:264](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L264) |
+| `video?` | `readonly` | `MediaTrackConstraints` | Video constraints pushed by the server, if any. | [core/types/resilience.types.ts:262](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/resilience.types.ts#L262) |

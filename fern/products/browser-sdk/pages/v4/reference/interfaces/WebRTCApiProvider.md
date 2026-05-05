@@ -2,9 +2,7 @@
 title: "WebRTCApiProvider"
 ---
 
-# Interface: WebRTCApiProvider
-
-Defined in: [dependencies/interfaces.ts:106](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L106)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L106)</sub>
 
 Provides custom WebRTC API implementations for non-standard environments.
 
@@ -33,5 +31,5 @@ const client = new SignalWire(credentialProvider, { webRTCApiProvider: provider 
 
 | Property | Type | Description | Defined in |
 | ------ | ------ | ------ | ------ |
-| <a id="mediadevices"></a> `mediaDevices` | [`WebRTCMediaDevices`](WebRTCMediaDevices.md) | Custom media device access. Only the methods used by the SDK are required. | [dependencies/interfaces.ts:111](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L111) |
-| <a id="rtcpeerconnection"></a> `RTCPeerConnection` | (`configuration?`) => `RTCPeerConnection` | Custom RTCPeerConnection constructor. | [dependencies/interfaces.ts:108](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L108) |
+| `mediaDevices` | [`WebRTCMediaDevices`](WebRTCMediaDevices.md) | Custom media device access. Only the methods used by the SDK are required. | [dependencies/interfaces.ts:111](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L111) |
+| `RTCPeerConnection` | (`configuration?`) => `RTCPeerConnection` | Custom RTCPeerConnection constructor. | [dependencies/interfaces.ts:108](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/dependencies/interfaces.ts#L108) |

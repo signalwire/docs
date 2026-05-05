@@ -2,13 +2,11 @@
 title: "autoGain$"
 ---
 
-# autoGain$
-
 #### Get Signature
 
 > **get** **autoGain$**(): `Observable`\<`boolean` \| `undefined`\>
 
-Defined in: [core/entities/Participant.ts:192](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L192)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L192)</sub>
 
 Observable indicating whether auto-gain control is enabled.
 
@@ -16,17 +14,13 @@ Observable indicating whether auto-gain control is enabled.
 
 `Observable`\<`boolean` \| `undefined`\>
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`autoGain$`](../interfaces/CallParticipant.md#autogain-1)
-
 ## autoGain
 
 #### Get Signature
 
 > **get** **autoGain**(): `boolean`
 
-Defined in: [core/entities/Participant.ts:372](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L372)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Participant.ts#L372)</sub>
 
 Whether automatic gain control is enabled.
 
@@ -34,6 +28,3 @@ Whether automatic gain control is enabled.
 
 `boolean`
 
-#### Implementation of
-
-[`CallParticipant`](../interfaces/CallParticipant.md).[`autoGain`](../interfaces/CallParticipant.md#autogain)

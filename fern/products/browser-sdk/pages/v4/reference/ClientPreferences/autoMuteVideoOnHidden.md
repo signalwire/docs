@@ -2,13 +2,11 @@
 title: "autoMuteVideoOnHidden"
 ---
 
-# autoMuteVideoOnHidden
-
 #### Get Signature
 
 > **get** **autoMuteVideoOnHidden**(): `boolean`
 
-Defined in: [containers/PreferencesContainer.ts:898](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L898)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L898)</sub>
 
 Whether to auto-mute video when the tab becomes hidden.
 
@@ -20,7 +18,7 @@ Whether to auto-mute video when the tab becomes hidden.
 
 > **set** **autoMuteVideoOnHidden**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:901](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L901)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L901)</sub>
 
 ##### Parameters
 

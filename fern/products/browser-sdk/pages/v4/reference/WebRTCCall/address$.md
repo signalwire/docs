@@ -2,13 +2,11 @@
 title: "address$"
 ---
 
-# address$
-
 #### Get Signature
 
 > **get** **address$**(): `Observable`\<[`Address`](../Address/index.md) \| `undefined`\>
 
-Defined in: [core/entities/Call.ts:294](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L294)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Call.ts#L294)</sub>
 
 Observable of the address associated with this call.
 
@@ -16,6 +14,3 @@ Observable of the address associated with this call.
 
 `Observable`\<[`Address`](../Address/index.md) \| `undefined`\>
 
-#### Implementation of
-
-`CallManager.address$`

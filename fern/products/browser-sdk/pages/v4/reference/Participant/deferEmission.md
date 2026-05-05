@@ -2,11 +2,9 @@
 title: "deferEmission"
 ---
 
-# deferEmission
-
 > `protected` **deferEmission**\<`T`\>(`observable`): `Observable`\<`T`\>
 
-Defined in: [behaviors/Destroyable.ts:61](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L61)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/behaviors/Destroyable.ts#L61)</sub>
 
 Wraps an observable so emissions are deferred to the microtask queue.
 

@@ -2,13 +2,11 @@
 title: "relayHost"
 ---
 
-# relayHost
-
 #### Get Signature
 
 > **get** **relayHost**(): `string`
 
-Defined in: [containers/PreferencesContainer.ts:528](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L528)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L528)</sub>
 
 Custom relay host URL. Empty string uses the default.
 
@@ -20,7 +18,7 @@ Custom relay host URL. Empty string uses the default.
 
 > **set** **relayHost**(`value`): `void`
 
-Defined in: [containers/PreferencesContainer.ts:531](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L531)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/containers/PreferencesContainer.ts#L531)</sub>
 
 ##### Parameters
 

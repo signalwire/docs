@@ -2,13 +2,11 @@
 title: "displayName$"
 ---
 
-# displayName$
-
 #### Get Signature
 
 > **get** **displayName$**(): `Observable`\<`string`\>
 
-Defined in: [core/entities/Address.ts:115](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L115)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L115)</sub>
 
 Observable of the human-readable display name.
 
@@ -22,7 +20,7 @@ Observable of the human-readable display name.
 
 > **get** **displayName**(): `string`
 
-Defined in: [core/entities/Address.ts:126](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L126)
+<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/entities/Address.ts#L126)</sub>
 
 Human-readable display name.
 
