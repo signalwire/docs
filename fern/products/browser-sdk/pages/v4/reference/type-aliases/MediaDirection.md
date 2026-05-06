@@ -1,9 +1,0 @@
----
-title: "MediaDirection"
----
-
-> **MediaDirection** = `RTCRtpTransceiverDirection`
-
-<sub>[Go to Code](https://github.com/signalwire/browser-sdk/blob/29c1f6cf3278bb4128a214178e02793719436b60/packages/main/src/core/types/media.types.ts#L2)</sub>
-
-WebRTC transceiver direction for a single media kind.
