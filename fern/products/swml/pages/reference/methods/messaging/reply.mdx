@@ -1,0 +1,265 @@
+---
+id: 0cb03dc2-18ea-4a37-8413-15c1cb56ad83
+title: reply
+slug: /reference/messaging/reply
+description: Create and send an outbound message in response to an inbound message.
+max-toc-depth: 3
+---
+
+Create and send an outbound message in response to the inbound message. Accepts either a string shorthand
+(used as the message body) or an object with body, optional media, and optional routing fields.
+
+`reply` does **not** end execution — subsequent steps in the section continue to run after the reply
+is queued.
+
+## **Properties**
+
+`reply` accepts either a string (used as the message body) or an object with the following properties.
+
+<ParamField path="reply" type="string | object" required={true} toc={true}>
+  String shorthand or an object containing the properties below. At least one of `body` or `media` must
+  be present when using the object form.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reply.body" type="string" toc={true}>
+  The body of the reply message. Required if `media` is not present.
+</ParamField>
+
+
+<ParamField path="reply.media" type="string[]" toc={true}>
+  Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body`
+  is not present.
+</ParamField>
+
+
+<ParamField path="reply.to" type="string" toc={true}>
+  Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+</ParamField>
+
+
+<ParamField path="reply.from" type="string" toc={true}>
+  Sending phone number — must be a PhoneRoute or ShortCode in the project. Defaults to the inbound
+  message's `to`.
+</ParamField>
+
+
+<ParamField path="reply.status_url" type="string" toc={true}>
+  URL to receive delivery status callbacks for the outbound reply message. See
+  [Status callbacks](#status-callbacks) below.
+</ParamField>
+
+</Indent>
+
+## **Variables**
+
+Set by the method:
+
+- **reply_result:** (out) `queued` | `failed`.
+- **reply_message_id:** (out) Message segment ID of the last successful reply.
+
+If `reply` is called multiple times in a single document, these variables reflect the most recent
+reply.
+
+## **Status callbacks**
+
+The `status_url` on `reply` registers a delivery status callback for the **outbound reply message** —
+not for the inbound message that triggered the SWML document. It behaves the same way as the status
+callback on any other outbound message sent through SignalWire.
+
+- Fires as the outbound reply moves through delivery states.
+- Callback delivery is independent of SWML execution: the SWML document completes as soon as the reply
+  is accepted (`reply_result: "queued"`); delivery-state callbacks fire afterwards.
+- If `reply` is called multiple times in a single document, each reply's `status_url` is registered
+  independently for its own outbound message.
+
+When `status_url` is set, SignalWire sends an HTTP `POST` to that URL each time the outbound reply
+transitions to a new state. The callback payload has the following shape:
+
+```json
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "project_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+  "status": "delivered",
+  "to": "+15551234567",
+  "from": "+15559876543",
+  "body": "Hello World!",
+  "number_of_segments": 1,
+  "timestamp": "2026-03-17T22:26:57Z",
+  "error_code": null,
+  "error_message": null
+}
+```
+
+Possible `status` values:
+
+| Status        | Description                                                                  |
+|---------------|------------------------------------------------------------------------------|
+| `queued`      | Message has been created and queued for delivery.                            |
+| `initiated`   | Message delivery has been initiated.                                         |
+| `sent`        | Message has been sent to the carrier network.                                |
+| `delivered`   | Message was successfully delivered to the recipient.                         |
+| `undelivered` | Message could not be delivered to the recipient.                             |
+| `failed`      | Message delivery failed. Check `error_code` and `error_message` for details. |
+| `read`        | Message has been read by the recipient (when supported by the channel).      |
+
+## **Examples**
+
+### Simple-mode string shorthand
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+reply: "Thanks for your message!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "reply": "Thanks for your message!"
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply with body
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Thanks for your message!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "body": "Thanks for your message!"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply with media (MMS)
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Here's the document you requested"
+        media:
+          - "https://example.com/document.pdf"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "body": "Here's the document you requested",
+          "media": [
+            "https://example.com/document.pdf"
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply with a status callback URL
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Your order is confirmed"
+        status_url: "https://example.com/status"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "body": "Your order is confirmed",
+          "status_url": "https://example.com/status"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Forward an inbound message to another number
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        to: "+12223334444"
+        from: "+15559876543"
+        body: "Your number %{message.to} got a message from %{message.from}! The body was: %{message.body}"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "to": "+12223334444",
+          "from": "+15559876543",
+          "body": "Your number %{message.to} got a message from %{message.from}! The body was: %{message.body}"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+`reply` validation failures (invalid `from`, invalid `to`, missing body/media, exceeding the character
+limit, inactive campaign, etc.) mark the inbound message as `failed` with a specific error code and do
+**not** create a partial outbound message. Common error codes include
+`swml_reply_invalid_from_number`, `swml_reply_invalid_to_number`,
+`swml_reply_body_or_media_required`, `swml_reply_media_limit_exceeded`,
+`swml_reply_character_limit_exceeded`, `swml_reply_missing_messaging_capability`, and
+`swml_reply_inactive_campaign`.

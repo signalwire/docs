@@ -1,0 +1,215 @@
+---
+id: 49320334-1c95-452e-b61c-4f5ded4b4d1c
+title: request
+slug: /reference/messaging/request
+description: Make an HTTP request to an external URL during inbound message handling.
+max-toc-depth: 3
+---
+
+Make an HTTP request to an external URL. The response can optionally be parsed and stored as variables
+for use in subsequent steps.
+
+Request failures are **soft** — they set `request_result` but do not stop execution, so the document
+can branch on the outcome without failing the inbound message.
+
+## **Properties**
+
+<ParamField path="request" type="object" required={true} toc={true}>
+  An object containing the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="request.url" type="string" required={true} toc={true}>
+  URL to send the request to.
+</ParamField>
+
+
+<ParamField path="request.method" type="string" default="POST" toc={true}>
+  HTTP method. One of `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`.
+</ParamField>
+
+
+<ParamField path="request.headers" type="object" toc={true}>
+  HTTP headers to include with the request.
+</ParamField>
+
+
+<ParamField path="request.body" type="string | object" toc={true}>
+  Request body. Hashes are JSON-encoded automatically.
+</ParamField>
+
+
+<ParamField path="request.timeout" type="number" default="5.0" toc={true}>
+  Timeout in seconds. Clamped to a maximum of `5.0`.
+</ParamField>
+
+
+<ParamField path="request.save_variables" type="boolean" default="false" toc={true}>
+  If `true`, parse the JSON response into `request_response.*` variables.
+</ParamField>
+
+</Indent>
+
+## **Variables**
+
+Set by the method:
+
+- **request_result:** (out) `success` | `failed` | `timeout` | `limit_exceeded`.
+- **request_response_code:** (out) HTTP response code from the request.
+- **request_response_body:** (out) Raw response body. Truncated to 64 KB.
+- **request_response.`<field>`:** (out) Variables saved from the response when `save_variables` is
+  `true` and the response is parsed as JSON.
+
+For example, if the server responds with the following JSON:
+
+```json
+{ "status": "created", "time": "2 seconds ago", "number": { "home": "n/a" } }
+```
+
+The variables `request_response.status`, `request_response.time`, and
+`request_response.number.home` are set.
+
+## **Examples**
+
+### Look up the inbound sender and reply with the result
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - request:
+        url: "https://api.example.com/lookup"
+        method: POST
+        body:
+          phone: "%{message.from}"
+        save_variables: true
+        timeout: 3
+    - reply:
+        body: "Hi %{request_response.name}, thanks for reaching out!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "method": "POST",
+          "body": {
+            "phone": "%{message.from}"
+          },
+          "save_variables": true,
+          "timeout": 3
+        }
+      },
+      {
+        "reply": {
+          "body": "Hi %{request_response.name}, thanks for reaching out!"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Branch on request_result
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - request:
+        url: "https://api.example.com/lookup"
+        save_variables: true
+    - switch:
+        variable: request_result
+        case:
+          success:
+            - reply:
+                body: "Found you in our system."
+          failed:
+            - reply:
+                body: "Sorry, we couldn't reach the lookup service."
+          timeout:
+            - reply:
+                body: "Lookup timed out — please try again later."
+        default:
+          - reply:
+              body: "Unable to look up your account."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "save_variables": true
+        }
+      },
+      {
+        "switch": {
+          "variable": "request_result",
+          "case": {
+            "success": [
+              {
+                "reply": {
+                  "body": "Found you in our system."
+                }
+              }
+            ],
+            "failed": [
+              {
+                "reply": {
+                  "body": "Sorry, we couldn't reach the lookup service."
+                }
+              }
+            ],
+            "timeout": [
+              {
+                "reply": {
+                  "body": "Lookup timed out — please try again later."
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Unable to look up your account."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+`request` failures are soft — they do not stop execution. Instead, the outcome is recorded in
+`request_result`:
+
+| `request_result`  | Cause                                                              |
+|-------------------|--------------------------------------------------------------------|
+| `success`         | Request completed and returned a 2xx response.                     |
+| `failed`          | Network error or non-2xx response.                                 |
+| `timeout`         | Request exceeded `timeout` (or the 5-second platform maximum).     |
+| `limit_exceeded`  | Document already used the maximum of 10 `request` calls per message. |

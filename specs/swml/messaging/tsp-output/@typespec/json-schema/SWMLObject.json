@@ -81,10 +81,13 @@
                             "type": "string"
                         },
                         {
-                            "$ref": "#/$defs/ReplyHash"
+                            "$ref": "#/$defs/ReplyWithBody"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyWithMedia"
                         }
                     ],
-                    "description": "Create and send an outbound message in response to the inbound message.\nAccepts either a string shorthand (used as the message body) or a hash with body,\noptional media, and optional routing fields.",
+                    "description": "Create and send an outbound message in response to the inbound message.\nAccepts either a string shorthand (used as the message body) or an object with body,\noptional media, and optional routing fields.",
                     "title": "reply"
                 }
             },
@@ -128,6 +131,7 @@
                     "properties": {
                         "url": {
                             "type": "string",
+                            "format": "uri",
                             "examples": [
                                 "https://api.example.com/lookup"
                             ],
@@ -232,14 +236,33 @@
             "type": "object",
             "properties": {
                 "execute": {
-                    "oneOf": [
-                        {
-                            "type": "string"
+                    "type": "object",
+                    "properties": {
+                        "dest": {
+                            "type": "string",
+                            "examples": [
+                                "greet"
+                            ],
+                            "description": "Name of the section to execute. Must reference a section in the current document."
                         },
-                        {
-                            "$ref": "#/$defs/ExecuteHash"
+                        "params": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {},
+                            "examples": [
+                                {
+                                    "name": "%{message.from}"
+                                }
+                            ],
+                            "description": "Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer `params` from the caller."
                         }
+                    },
+                    "required": [
+                        "dest"
                     ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
                     "description": "Call a named section as a subroutine. Execution continues in the called section,\nthen returns to the caller when the section completes. The destination must be\nthe name of a section defined in the current document.",
                     "title": "execute"
                 }
@@ -256,14 +279,63 @@
             "type": "object",
             "properties": {
                 "transfer": {
-                    "oneOf": [
-                        {
-                            "type": "string"
+                    "type": "object",
+                    "properties": {
+                        "dest": {
+                            "type": "string",
+                            "format": "uri",
+                            "examples": [
+                                "https://example.com/handler"
+                            ],
+                            "description": "URL to fetch the new SWML document from."
                         },
-                        {
-                            "$ref": "#/$defs/TransferHash"
+                        "method": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "const": "GET"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "POST"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "PUT"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "PATCH"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "DELETE"
+                                }
+                            ],
+                            "default": "POST",
+                            "examples": [
+                                "POST"
+                            ],
+                            "description": "HTTP method for the fetch request. Default `POST`."
+                        },
+                        "params": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {},
+                            "examples": [
+                                {
+                                    "reason": "escalation"
+                                }
+                            ],
+                            "description": "Parameters to include in the request body of the fetch."
                         }
+                    },
+                    "required": [
+                        "dest"
                     ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
                     "description": "Fetch and execute a new SWML document from a URL. This is a tail call —\nit replaces the current document and does not return. Steps after `transfer`\nare skipped, including steps in calling sections.",
                     "title": "transfer"
                 }
@@ -338,14 +410,32 @@
             "type": "object",
             "properties": {
                 "goto": {
-                    "oneOf": [
-                        {
-                            "type": "string"
+                    "type": "object",
+                    "properties": {
+                        "label": {
+                            "type": "string",
+                            "examples": [
+                                "greeting"
+                            ],
+                            "description": "Mark any point of the SWML section with a label so that goto can jump to it."
                         },
-                        {
-                            "$ref": "#/$defs/GotoHash"
+                        "max": {
+                            "type": "integer",
+                            "default": 100,
+                            "examples": [
+                                3
+                            ],
+                            "minimum": 1,
+                            "maximum": 100,
+                            "description": "Maximum number of jumps before stopping execution. Default `100`."
                         }
+                    },
+                    "required": [
+                        "label"
                     ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
                     "description": "Jump to a named label in the current section. Used for retry loops and conditional\nrepetition. `goto` does not cross subroutine boundaries.",
                     "title": "goto"
                 }
@@ -362,14 +452,6 @@
             "type": "object",
             "properties": {
                 "return": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
                     "examples": [
                         "success"
                     ],
@@ -404,29 +486,9 @@
             },
             "title": "label Method"
         },
-        "ReplyHash": {
+        "ReplyWithBody": {
             "type": "object",
             "properties": {
-                "body": {
-                    "type": "string",
-                    "examples": [
-                        "Thanks for your message!"
-                    ],
-                    "description": "The message body text. Required if `media` is missing."
-                },
-                "media": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "examples": [
-                        [
-                            "https://example.com/image.jpg"
-                        ]
-                    ],
-                    "maxItems": 8,
-                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments."
-                },
                 "to": {
                     "type": "string",
                     "examples": [
@@ -448,101 +510,89 @@
                         "https://example.com/reply-status"
                     ],
                     "description": "URL to receive delivery status callbacks for the outbound reply message."
-                }
-            },
-            "unevaluatedProperties": {
-                "not": {}
-            },
-            "title": "ReplyHash object"
-        },
-        "ExecuteHash": {
-            "type": "object",
-            "properties": {
-                "dest": {
+                },
+                "body": {
                     "type": "string",
                     "examples": [
-                        "greet"
+                        "Thanks for your message!"
                     ],
-                    "description": "Name of the section to execute. Must reference a section in the current document."
+                    "description": "The body of the reply message. Required if `media` is not present."
                 },
-                "params": {
-                    "type": "object",
-                    "properties": {},
-                    "unevaluatedProperties": {},
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
                     "examples": [
-                        {
-                            "name": "%{message.from}"
-                        }
+                        [
+                            "https://example.com/image.jpg"
+                        ]
                     ],
-                    "description": "Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer `params` from the caller."
+                    "maxItems": 8,
+                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments."
                 }
             },
             "required": [
-                "dest"
+                "body"
             ],
             "unevaluatedProperties": {
                 "not": {}
             },
-            "title": "ExecuteHash object"
+            "title": "Reply with body"
         },
-        "TransferHash": {
+        "ReplyWithMedia": {
             "type": "object",
             "properties": {
-                "dest": {
+                "to": {
                     "type": "string",
                     "examples": [
-                        "https://example.com/handler"
+                        "+15551234567"
                     ],
-                    "description": "URL to fetch the new SWML document from."
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
                 },
-                "method": {
-                    "anyOf": [
-                        {
-                            "type": "string",
-                            "const": "GET"
-                        },
-                        {
-                            "type": "string",
-                            "const": "POST"
-                        },
-                        {
-                            "type": "string",
-                            "const": "PUT"
-                        },
-                        {
-                            "type": "string",
-                            "const": "PATCH"
-                        },
-                        {
-                            "type": "string",
-                            "const": "DELETE"
-                        }
-                    ],
-                    "default": "POST",
+                "from": {
+                    "type": "string",
                     "examples": [
-                        "POST"
+                        "+15559876543"
                     ],
-                    "description": "HTTP method for the fetch request. Default `POST`."
+                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
                 },
-                "params": {
-                    "type": "object",
-                    "properties": {},
-                    "unevaluatedProperties": {},
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
                     "examples": [
-                        {
-                            "reason": "escalation"
-                        }
+                        "https://example.com/reply-status"
                     ],
-                    "description": "Parameters to include in the request body of the fetch."
+                    "description": "URL to receive delivery status callbacks for the outbound reply message."
+                },
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "https://example.com/image.jpg"
+                        ]
+                    ],
+                    "maxItems": 8,
+                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present."
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Check out this image!"
+                    ],
+                    "description": "Optional body text included alongside the media attachments."
                 }
             },
             "required": [
-                "dest"
+                "media"
             ],
             "unevaluatedProperties": {
                 "not": {}
             },
-            "title": "TransferHash object"
+            "title": "Reply with media"
         },
         "SwitchTransform": {
             "type": "string",
@@ -555,35 +605,6 @@
             ],
             "description": "Transform applied to the variable value before matching.",
             "title": "SwitchTransform enum"
-        },
-        "GotoHash": {
-            "type": "object",
-            "properties": {
-                "label": {
-                    "type": "string",
-                    "examples": [
-                        "retry"
-                    ],
-                    "description": "Name of the label to jump to. The label must exist in the current section."
-                },
-                "max": {
-                    "type": "integer",
-                    "default": 100,
-                    "examples": [
-                        3
-                    ],
-                    "minimum": 1,
-                    "maximum": 100,
-                    "description": "Maximum number of jumps before stopping execution. Default `100`."
-                }
-            },
-            "required": [
-                "label"
-            ],
-            "unevaluatedProperties": {
-                "not": {}
-            },
-            "title": "GotoHash object"
         }
     }
 }

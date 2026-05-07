@@ -1,0 +1,207 @@
+---
+id: 2e40525b-df0a-4ce3-8c7b-6139df1c6d66
+title: execute
+slug: /reference/messaging/execute
+description: Call a named section as a subroutine and return when it completes.
+max-toc-depth: 3
+---
+
+Call a named section as a subroutine. Execution continues in the called section, then returns to the
+caller when the section completes (via [`return`](/docs/swml/reference/messaging/return) or by
+reaching the end of the section).
+
+The destination must be the **name of a section** defined in the current document — `execute` does not
+accept URLs or inline documents in the messaging context.
+
+## **Properties**
+
+<ParamField path="execute" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="execute.dest" type="string" required={true} toc={true}>
+  Name of the section to execute. Must reference a section defined in the current document.
+</ParamField>
+
+
+<ParamField path="execute.params" type="object" toc={true}>
+  Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer
+  `params` from the caller.
+</ParamField>
+
+</Indent>
+
+## **Variables**
+
+Read by the method:
+
+- **return_value:** (in) After the called section returns, the caller can read `return_value` to access
+  the value supplied to [`return`](/docs/swml/reference/messaging/return).
+
+## **Examples**
+
+### Calling a subroutine
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute:
+        dest: greet
+        params:
+          name: "%{message.from}"
+    - reply:
+        body: "%{return_value}"
+  greet:
+    - return: "Hello, %{params.name}!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute": {
+          "dest": "greet",
+          "params": {
+            "name": "%{message.from}"
+          }
+        }
+      },
+      {
+        "reply": {
+          "body": "%{return_value}"
+        }
+      }
+    ],
+    "greet": [
+      {
+        "return": "Hello, %{params.name}!"
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Branch on the subroutine return value
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - execute:
+        dest: classify
+        params:
+          body: "%{message.body}"
+    - switch:
+        variable: return_value
+        case:
+          opt_out:
+            - reply:
+                body: "You've been unsubscribed."
+          help:
+            - reply:
+                body: "Reply STOP to unsubscribe."
+        default:
+          - reply:
+              body: "Thanks for your message!"
+  classify:
+    - switch:
+        variable: params.body
+        transform: lowercase_trim
+        case:
+          stop:
+            - return: "opt_out"
+          help:
+            - return: "help"
+        default:
+          - return: "other"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "execute": {
+          "dest": "classify",
+          "params": {
+            "body": "%{message.body}"
+          }
+        }
+      },
+      {
+        "switch": {
+          "variable": "return_value",
+          "case": {
+            "opt_out": [
+              {
+                "reply": {
+                  "body": "You've been unsubscribed."
+                }
+              }
+            ],
+            "help": [
+              {
+                "reply": {
+                  "body": "Reply STOP to unsubscribe."
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Thanks for your message!"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "classify": [
+      {
+        "switch": {
+          "variable": "params.body",
+          "transform": "lowercase_trim",
+          "case": {
+            "stop": [
+              {
+                "return": "opt_out"
+              }
+            ],
+            "help": [
+              {
+                "return": "help"
+              }
+            ]
+          },
+          "default": [
+            {
+              "return": "other"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+- `swml_section_not_found` — the section named in `dest` is not defined in the current document.

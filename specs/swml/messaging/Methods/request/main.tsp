@@ -9,7 +9,7 @@ model Request {
   request: {
     @doc("URL to send the request to.")
     @example("https://api.example.com/lookup")
-    url: string;
+    url: url;
 
     @doc("HTTP method. Default `POST`.")
     @example("POST")

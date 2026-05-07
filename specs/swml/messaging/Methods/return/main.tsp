@@ -7,5 +7,5 @@ model Return {
     context. In `main`, stops execution entirely (return value is discarded).
     """)
   @example("success")
-  `return`: string | null;
+  `return`: unknown;
 }

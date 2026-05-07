@@ -2,17 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
-@summary("ReplyHash object")
-model ReplyHash {
-  @doc("The message body text. Required if `media` is missing.")
-  @example("Thanks for your message!")
-  body?: string;
-
-  @doc("Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments.")
-  @maxItems(8)
-  @example(#["https://example.com/image.jpg"])
-  media?: string[];
-
+@summary("ReplyBase object")
+model ReplyBase {
   @doc("Destination phone number in E.164 format. Defaults to the inbound message's `from`.")
   @example("+15551234567")
   to?: string;
@@ -26,14 +17,40 @@ model ReplyHash {
   status_url?: url;
 }
 
+@summary("Reply with body")
+model ReplyWithBody is ReplyBase {
+  @doc("The body of the reply message. Required if `media` is not present.")
+  @example("Thanks for your message!")
+  body: string;
+
+  @doc("Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments.")
+  @maxItems(8)
+  @example(#["https://example.com/image.jpg"])
+  media?: string[];
+}
+
+@summary("Reply with media")
+model ReplyWithMedia is ReplyBase {
+  @doc("Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present.")
+  @maxItems(8)
+  @example(#["https://example.com/image.jpg"])
+  media: string[];
+
+  @doc("Optional body text included alongside the media attachments.")
+  @example("Check out this image!")
+  body?: string;
+}
+
+alias ReplyPlan = ReplyWithBody | ReplyWithMedia;
+
 @summary("reply Method")
 model Reply {
   @oneOf
   @summary("reply")
   @doc("""
     Create and send an outbound message in response to the inbound message.
-    Accepts either a string shorthand (used as the message body) or a hash with body,
+    Accepts either a string shorthand (used as the message body) or an object with body,
     optional media, and optional routing fields.
     """)
-  reply: string | ReplyHash;
+  reply: string | ReplyPlan;
 }
