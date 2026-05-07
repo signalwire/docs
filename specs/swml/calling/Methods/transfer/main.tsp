@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("transfer Method")
 model Transfer {
   @summary("transfer")

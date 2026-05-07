@@ -8,6 +8,8 @@ import "./goto";
 import "./return";
 import "./label";
 
+namespace SWML.Messaging;
+
 @summary("SWML methods")
 union SWMLMethod {
   Reply,

@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("hangup Method")
 model Hangup {
   @doc("End the call with an optional reason.")

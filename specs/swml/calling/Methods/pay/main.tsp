@@ -5,6 +5,8 @@ import "./prompt/main.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("pay Method")
 model Pay {
   @doc("""

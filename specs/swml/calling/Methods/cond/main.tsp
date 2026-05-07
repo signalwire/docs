@@ -4,6 +4,8 @@ import "../..";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("Condition with When/Then")
 model CondReg {
   @doc("The JavaScript condition to act on.")

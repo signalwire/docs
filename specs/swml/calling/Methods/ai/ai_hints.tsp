@@ -3,6 +3,8 @@ import "../../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 model Hint {
   @doc("The hint to match. This will match the string exactly as provided")
   @example("customer service")

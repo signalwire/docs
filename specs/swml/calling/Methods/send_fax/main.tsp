@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("send_fax Method")
 model SendFax {
   @summary("send_fax")

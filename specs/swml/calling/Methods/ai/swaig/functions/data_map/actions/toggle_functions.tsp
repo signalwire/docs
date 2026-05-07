@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("toggle_functions Action")
 model ToggleFunctionsAction {
   @summary("toggle_functions")

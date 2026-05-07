@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("stop_playback_bg Action")
 model StopPlaybackBGAction {
   @summary("stop_playback_bg")

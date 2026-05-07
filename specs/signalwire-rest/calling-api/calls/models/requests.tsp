@@ -7,6 +7,8 @@ using TypeSpec.OpenAPI;
 
 namespace SignalWireAPI.Calling;
 
+using SWML.Calling;
+
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";
 

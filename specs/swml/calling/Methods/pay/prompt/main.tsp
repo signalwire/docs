@@ -3,6 +3,8 @@ import "./actions.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 model PayPrompts {
   @doc("Array of action objects to execute for this prompt. These actions can either play an audio file or speak a phrase.")
   actions: PayPromptAction[];

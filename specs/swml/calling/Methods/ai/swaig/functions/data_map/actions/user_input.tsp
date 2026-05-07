@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("user_input Action")
 model UserInputAction {
   @summary("user_input")

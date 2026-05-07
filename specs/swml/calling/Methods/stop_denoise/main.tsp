@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("stop_denoise Method")
 model StopDenoise {
   @summary("stop_denoise")

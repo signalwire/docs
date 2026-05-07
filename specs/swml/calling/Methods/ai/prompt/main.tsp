@@ -5,6 +5,8 @@ import "../../../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 model AIPromptBase {
   @doc("Limits the amount of tokens that the AI agent may generate when creating its response")
   @minValue(0)

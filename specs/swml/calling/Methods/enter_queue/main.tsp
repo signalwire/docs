@@ -4,6 +4,8 @@ import "../..";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("EnterQueueObject object")
 model EnterQueueObject {
   @doc("Name of the queue to enter. If a queue with this name does not exist, it will be automatically created.")

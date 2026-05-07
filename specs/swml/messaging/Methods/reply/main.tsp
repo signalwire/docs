@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Messaging;
+
 @summary("ReplyBase object")
 model ReplyBase {
   @doc("Destination phone number in E.164 format. Defaults to the inbound message's `from`.")

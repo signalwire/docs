@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("SMSBase object")
 model SMSBase {
   @doc("Phone number to send SMS message to in E.164 format.")

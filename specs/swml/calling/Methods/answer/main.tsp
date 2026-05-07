@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 import "../../../Shared/Types/main.tsp";
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("answer Method")
 model Answer {
   @doc("Answer incoming call and set an optional maximum duration.")

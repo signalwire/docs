@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("set Method")
 model Set {
   @summary("set")

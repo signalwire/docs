@@ -3,6 +3,8 @@ import "../../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @minValue(10000)
 @maxValue(600000)
 scalar AttentionTimeout extends integer;

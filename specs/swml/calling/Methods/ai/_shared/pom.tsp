@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @doc("Base model for common section properties")
 model PomSectionBase {
   @doc("Title for the section")

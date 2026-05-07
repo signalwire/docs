@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("Pronounce object")
 model Pronounce {
   @doc("The expression to replace.")

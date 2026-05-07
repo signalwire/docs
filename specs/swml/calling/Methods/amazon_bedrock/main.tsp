@@ -3,6 +3,8 @@ import "./prompt.tsp";
 import "./swaig";
 import "./params.tsp";
 
+namespace SWML.Calling;
+
 @summary("Ommited properties from AI Type")
 union AmazonBedrockOmitProps {}
 

@@ -1,3 +1,5 @@
+
+namespace SWML.Messaging;
 @summary("receive Method")
 model Receive {
   @summary("receive")

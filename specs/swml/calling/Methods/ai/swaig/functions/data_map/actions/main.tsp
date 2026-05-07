@@ -15,6 +15,8 @@ import "./unset_global_data.tsp";
 import "./unset_meta_data.tsp";
 import "./user_input.tsp";
 
+namespace SWML.Calling;
+
 @summary("Action union")
 union Action {
   SWMLAction,

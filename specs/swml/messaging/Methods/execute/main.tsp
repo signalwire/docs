@@ -1,3 +1,5 @@
+
+namespace SWML.Messaging;
 @summary("execute Method")
 model Execute {
   @summary("execute")

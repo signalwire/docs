@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("sip_refer Method")
 model SIPRefer {
   @summary("sip_refer")

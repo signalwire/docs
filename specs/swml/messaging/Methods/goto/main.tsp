@@ -1,5 +1,7 @@
 import "../label";
 
+namespace SWML.Messaging;
+
 @summary("goto Method")
 model Goto {
   @summary("goto")

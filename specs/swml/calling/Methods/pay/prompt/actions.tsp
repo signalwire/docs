@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 model PayPromptSayAction {
   @doc("When the action `type` is `Say`, this value is the text to be spoken; when the type is `Play`, it should be a URL to the audio file.")
   type: "Say";

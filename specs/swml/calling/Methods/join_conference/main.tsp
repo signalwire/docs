@@ -4,6 +4,8 @@ import "../..";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("JoinConferenceObject object")
 model JoinConferenceObject {
   @doc("Name of conference")

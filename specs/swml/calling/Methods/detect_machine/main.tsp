@@ -1,5 +1,7 @@
 import "../../../Shared/Types/main.tsp";
 
+namespace SWML.Calling;
+
 @summary("detect_machine Method")
 model DetectMachine {
   @doc("""

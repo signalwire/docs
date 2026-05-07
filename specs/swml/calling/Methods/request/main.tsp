@@ -1,5 +1,7 @@
 import "../..";
 
+namespace SWML.Calling;
+
 @summary("request Method")
 model Request {
   @summary("request")

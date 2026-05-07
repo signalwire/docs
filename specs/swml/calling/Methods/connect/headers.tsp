@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("ConnectHeaders object")
 model ConnectHeaders {
   @doc("The name of the header.")

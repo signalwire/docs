@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("context_switch Action")
 model ContextSwitchAction {
   @doc("A JSON object containing the context to switch to. Default is not set.")

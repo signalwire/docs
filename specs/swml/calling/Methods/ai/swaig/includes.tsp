@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("includes")
 model SWAIGIncludes {
   @doc("Remote functions to fetch and include in your AI application.")

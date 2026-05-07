@@ -1,5 +1,7 @@
 import "../_shared/fillers.tsp";
 
+namespace SWML.Calling;
+
 model SWAIGInternalFiller {
   @doc("Filler phrases played when the AI Agent is hanging up the call.")
   hangup?: FunctionFillers;

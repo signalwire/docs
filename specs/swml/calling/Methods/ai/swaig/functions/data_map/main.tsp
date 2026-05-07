@@ -5,6 +5,8 @@ import "./webhook.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("DataMap object")
 model DataMap {
   @doc("""

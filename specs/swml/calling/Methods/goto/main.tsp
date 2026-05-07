@@ -1,5 +1,7 @@
 import "../label";
 import "../../../Shared/Types/main.tsp";
+
+namespace SWML.Calling;
 @summary("goto Method")
 model Goto {
   @doc("""

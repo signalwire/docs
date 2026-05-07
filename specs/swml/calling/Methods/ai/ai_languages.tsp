@@ -3,6 +3,8 @@ import "../../../Shared/Types/main.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("LanguagesBase")
 model LanguagesBase {
   @doc("Name of the language (e.g., 'French', 'English'). This value is used in the system prompt to instruct the LLM what language is being spoken.")

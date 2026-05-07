@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("return Method")
 model Return {
   @summary("return")

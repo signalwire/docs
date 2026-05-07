@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("hold Action")
 model HoldAction {
   @doc("""

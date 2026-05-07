@@ -3,6 +3,8 @@ import "../../_shared/pom.tsp";
 import "../../../../../Shared/Types";
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("Base context step with common properties")
 model ContextStepsBase {
   @doc("The name of the step. The name must be unique within the context. The name is used for referencing the step in the context.")

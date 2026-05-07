@@ -3,6 +3,8 @@ import "./Methods";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("SWML section")
 model Section {
   main: SWMLMethod[];

@@ -1,5 +1,7 @@
 import "../ai";
 
+namespace SWML.Calling;
+
 union BedrockPickedParams {
   "hard_stop_time",
   "inactivity_timeout",

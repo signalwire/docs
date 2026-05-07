@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("send_digits Method")
 model SendDigits {
   @summary("send_digits")

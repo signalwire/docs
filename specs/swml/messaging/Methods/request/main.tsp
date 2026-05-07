@@ -1,3 +1,5 @@
+
+namespace SWML.Messaging;
 @summary("request Method")
 model Request {
   @summary("request")

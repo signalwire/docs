@@ -3,6 +3,8 @@ import "./actions";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("Output object")
 model Output {
   @doc("A static response text or message returned to the AI agent's context.")

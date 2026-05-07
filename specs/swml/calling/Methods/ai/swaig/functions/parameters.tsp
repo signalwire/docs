@@ -3,6 +3,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 // == Formats ==
 
 enum StringFormat {

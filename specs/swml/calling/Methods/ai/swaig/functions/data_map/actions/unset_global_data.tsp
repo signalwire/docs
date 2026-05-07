@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("unset_global_data Action")
 model UnsetGlobalDataAction {
   @summary("unset_global_data")

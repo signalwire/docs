@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("unset_meta_data Action")
 model UnsetMetaDataAction {
   @summary("unset_meta_data")

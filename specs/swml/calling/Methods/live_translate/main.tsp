@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 import "../../../Shared/Types/main.tsp";
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("TranslateDirection enum")
 enum TranslateDirection {
   @doc("Translate the remote caller.")

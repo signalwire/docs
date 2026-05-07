@@ -1,5 +1,7 @@
 import "../..";
 
+namespace SWML.Calling;
+
 @summary("prompt Method")
 model Prompt {
   @summary("prompt")

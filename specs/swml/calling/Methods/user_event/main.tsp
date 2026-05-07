@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("user_event Method")
 model UserEvent {
   @doc("""

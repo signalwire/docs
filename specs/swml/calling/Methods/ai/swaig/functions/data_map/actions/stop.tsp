@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("stop Action")
 model StopAction {
   @summary("stop")

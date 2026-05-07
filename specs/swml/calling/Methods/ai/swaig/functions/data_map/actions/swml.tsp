@@ -1,5 +1,7 @@
 import "../../../../../..";
 
+namespace SWML.Calling;
+
 @summary("SWML Action")
 model SWMLAction {
   @summary("SWML")

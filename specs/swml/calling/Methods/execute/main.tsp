@@ -1,5 +1,7 @@
 import "../..";
 
+namespace SWML.Calling;
+
 @summary("ExecuteSwitch object")
 model ExecuteSwitch {
   @doc("""

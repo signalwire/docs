@@ -1,6 +1,8 @@
 import "../../ai";
 import "./functions.tsp";
 
+namespace SWML.Calling;
+
 union PickedBedrockSWAIG {
   "defaults",
   "native_functions",

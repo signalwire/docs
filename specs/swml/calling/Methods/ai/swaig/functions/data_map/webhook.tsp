@@ -3,6 +3,8 @@ import "./expression.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("Webhook object")
 model Webhook {
   @doc("""

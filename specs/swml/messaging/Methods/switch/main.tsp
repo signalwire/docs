@@ -1,5 +1,7 @@
 import "../..";
 
+namespace SWML.Messaging;
+
 @summary("SwitchTransform enum")
 @doc("Transform applied to the variable value before matching.")
 enum SwitchTransform {

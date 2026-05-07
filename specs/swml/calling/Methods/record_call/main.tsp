@@ -1,5 +1,7 @@
 import "../../../Shared/Types/main.tsp";
 
+namespace SWML.Calling;
+
 @summary("record_call Method")
 model RecordCall {
   @summary("record_call")

@@ -1,3 +1,5 @@
+
+namespace SWML.Messaging;
 @summary("return Method")
 model Return {
   @summary("return")

@@ -37,6 +37,8 @@ import "./detect_machine";
 import "./user_event";
 import "./amazon_bedrock";
 
+namespace SWML.Calling;
+
 @summary("SWML methods")
 union SWMLMethod {
   Answer,
@@ -57,7 +59,7 @@ union SWMLMethod {
   Play,
   Prompt,
   ReceiveFax,
-  global.Record,
+  SWML.Calling.Record,
   RecordCall,
   Request,
   Return,

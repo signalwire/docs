@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("receive_fax Method")
 model ReceiveFax {
   @summary("receive_fax")

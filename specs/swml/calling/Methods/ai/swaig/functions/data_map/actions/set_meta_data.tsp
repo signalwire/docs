@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("set_meta_data Action")
 model SetMetaDataAction {
   @summary("set_meta_data")

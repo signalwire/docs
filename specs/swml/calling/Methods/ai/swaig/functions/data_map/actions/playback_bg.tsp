@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("playback_bg Action")
 model PlaybackBGAction {
   @doc("A JSON object containing the audio file to play.")

@@ -7,6 +7,8 @@ import "./internal_filler.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("swaig")
 model SWAIG {
   @doc("Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set.")

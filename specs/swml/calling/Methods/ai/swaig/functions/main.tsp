@@ -6,6 +6,8 @@ import "../../_shared/fillers.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 const functionDescription: string = "A unique name for the function. This can be any user-defined string or can reference a reserved function. Reserved functions are SignalWire functions that will be executed at certain points in the conversation.";
 
 @summary("functions")

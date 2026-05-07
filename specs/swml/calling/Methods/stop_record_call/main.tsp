@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("stop_record_call Method")
 model StopRecordCall {
   @summary("stop_record_call")

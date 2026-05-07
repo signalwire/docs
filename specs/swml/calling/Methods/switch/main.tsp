@@ -1,5 +1,7 @@
 import "../..";
 
+namespace SWML.Calling;
+
 @summary("switch Method")
 model Switch {
   @summary("switch")

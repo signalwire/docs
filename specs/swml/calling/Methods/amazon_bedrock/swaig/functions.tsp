@@ -1,5 +1,7 @@
 import "../../ai";
 
+namespace SWML.Calling;
+
 union PickedSWAIGFunctionProps {
   "function",
   "description",

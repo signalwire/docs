@@ -3,6 +3,8 @@ import "./output.tsp";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("Expression object")
 model Expression {
   @doc("The actual input or value from the user or system.")

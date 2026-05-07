@@ -7,6 +7,8 @@ import "./swaig";
 import "./ai_hints.tsp";
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @summary("AI Object")
 model AIObject {
   @doc("""

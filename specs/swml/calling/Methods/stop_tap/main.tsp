@@ -1,3 +1,5 @@
+
+namespace SWML.Calling;
 @summary("stop_tap Method")
 model StopTap {
   @summary("stop_tap")

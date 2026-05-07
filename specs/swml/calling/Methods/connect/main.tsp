@@ -4,6 +4,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 union ValidConfirmMethods {
   Cond,
   Set,
@@ -11,7 +13,7 @@ union ValidConfirmMethods {
   Hangup,
   Play,
   Prompt,
-  global.Record,
+  SWML.Calling.Record,
   RecordCall,
   StopRecordCall,
   Tap,

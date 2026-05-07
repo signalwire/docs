@@ -2,6 +2,8 @@ import "@typespec/json-schema";
 
 using TypeSpec.JsonSchema;
 
+namespace SWML.Calling;
+
 @doc("Supported language codes")
 @oneOf
 union FunctionFillers {
