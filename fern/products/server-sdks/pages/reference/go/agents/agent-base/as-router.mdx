@@ -1,0 +1,59 @@
+---
+title: "AsRouter"
+slug: /reference/go/agents/agent-base/as-router
+description: Return the agent's endpoints as an http.Handler for mounting in a custom HTTP server.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+[agentserver]: /docs/server-sdks/reference/go/agents/agent-server
+
+Return an `http.Handler` containing all of this agent's registered routes
+(SWML delivery, SWAIG function handling, post-prompt, debug events, MCP, SIP
+routing). This is the lowest-level integration point for embedding an agent's
+endpoints into an existing Go HTTP application.
+
+Use this when you need fine-grained control over how the agent's routes are
+mounted, or when composing multiple agents into a custom application layout.
+For multi-agent hosting in a single process, consider
+[`AgentServer`][agentserver].
+
+<Note>
+Internally returns `*http.ServeMux` built fresh on each call. The mux honors
+the agent's basic-auth, route, and debug configuration as set at the time
+`AsRouter` is invoked.
+</Note>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+`http.Handler` — handler with all agent endpoints (SWML delivery, SWAIG
+function handling, post-prompt, debug events, MCP, SIP routing).
+
+## **Example**
+
+```go {16-17}
+package main
+
+import (
+	"net/http"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	support := agent.NewAgentBase(agent.WithName("support"), agent.WithRoute("/support"))
+	sales := agent.NewAgentBase(agent.WithName("sales"), agent.WithRoute("/sales"))
+
+	mux := http.NewServeMux()
+
+	// AsRouter handlers cover their full route prefix internally.
+	mux.Handle("/support/", http.StripPrefix("/support", support.AsRouter()))
+	mux.Handle("/sales/", http.StripPrefix("/sales", sales.AsRouter()))
+
+	_ = http.ListenAndServe(":8080", mux)
+}
+```

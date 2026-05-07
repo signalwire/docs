@@ -1,0 +1,45 @@
+---
+title: "ResetContexts"
+slug: /reference/go/agents/agent-base/reset-contexts
+description: Remove all contexts from the agent, returning it to a no-contexts state.
+max-toc-depth: 3
+---
+
+[contextbuilder-reset]: /docs/server-sdks/reference/go/agents/context-builder/reset
+[set-dynamic-config-callback]: /docs/server-sdks/reference/go/agents/agent-base/set-dynamic-config-callback
+[define-contexts]: /docs/server-sdks/reference/go/agents/agent-base/define-contexts
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Remove all contexts from the agent, returning it to a no-contexts state. Convenience wrapper around [`(*ContextBuilder).Reset`][contextbuilder-reset]; safe to call when no `ContextBuilder` has been created yet (no-op).
+
+Use it in a [dynamic config callback][set-dynamic-config-callback] when you need to rebuild contexts from scratch for a specific request before re-populating them with [`DefineContexts`][define-contexts].
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for method chaining.
+
+## **Example**
+
+```go {7}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func onDynamicConfig(query map[string]string, body map[string]any, headers map[string]string, ag *agent.AgentBase) {
+	if query["transfer"] != "" {
+		ag.ResetContexts()
+		ctx := ag.DefineContexts().AddContext("default")
+		ctx.AddStep("route").SetText("Route the caller.")
+	}
+}
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("router"), agent.WithRoute("/router"))
+	a.SetDynamicConfigCallback(onDynamicConfig)
+	_ = a.Serve()
+}
+```

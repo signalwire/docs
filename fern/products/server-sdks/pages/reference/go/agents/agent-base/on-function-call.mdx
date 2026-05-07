@@ -1,0 +1,85 @@
+---
+title: "OnFunctionCall"
+slug: /reference/go/agents/agent-base/on-function-call
+description: Dispatch a SWAIG function call to the registered tool handler.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/go/agents/function-result
+[define-tool]: /docs/server-sdks/reference/go/agents/agent-base/define-tool
+[register-swaig-function]: /docs/server-sdks/reference/go/agents/agent-base/register-swaig-function
+
+The dispatch entry point for SWAIG function invocations. Looks up the tool by name in the agent's tool registry, calls its handler with the AI-supplied arguments and the raw POST body, and returns the handler's result serialized via `FunctionResult.ToMap()`.
+
+The agent's built-in HTTP handler calls this method directly when a SWAIG webhook arrives, so most code never invokes it explicitly — define tools with [`DefineTool`][define-tool] or [`RegisterSwaigFunction`][register-swaig-function] and let the framework handle dispatch.
+
+<Note>
+Unlike Python's `on_function_call`, this method **is not an override hook** — Go has no inheritance. To intercept every tool call for logging, metrics, or pre/post-processing, wrap each tool's `Handler` at registration time, or replace the agent's HTTP handler chain via [`AsRouter`](/docs/server-sdks/reference/go/agents/agent-base/as-router).
+</Note>
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Name of the SWAIG function being invoked.
+</ParamField>
+
+<ParamField path="args" type="map[string]any" required={true} toc={true}>
+  Arguments parsed from the AI's call, conforming to the tool's parameter schema. Pass `nil` for tools with no arguments.
+</ParamField>
+
+<ParamField path="rawData" type="map[string]any" required={true} toc={true}>
+  Complete raw POST body from the SWAIG request, including metadata such as `call_id`, `caller_id_number`, and `global_data`. Pass `nil` if you have no raw payload.
+</ParamField>
+
+## **Returns**
+
+`(any, error)` — the handler's result as `map[string]any` (the JSON shape produced by [`FunctionResult.ToMap`][functionresult]) plus any error.
+
+Errors:
+- `unknown tool: %q` when no tool is registered under `name`.
+- `tool %q has no handler (may be a DataMap tool)` when the tool entry exists but its `Handler` is `nil` (DataMap tools render to SWML and are executed by the platform, not in-process).
+
+## **Example**
+
+### Wrap dispatch via custom handlers
+
+```go {16-22}
+package main
+
+import (
+	"log"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+	"github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+	a := agent.NewAgentBase(agent.WithName("logging-agent"), agent.WithRoute("/logging"))
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.DefineTool(agent.ToolDefinition{
+		Name:        "lookup_order",
+		Description: "Look up an order",
+		Handler: func(args, raw map[string]any) *swaig.FunctionResult {
+			callID, _ := raw["call_id"].(string)
+			log.Printf("[%s] lookup_order(%v)", callID, args)
+			orderID, _ := args["order_id"].(string)
+			return swaig.NewFunctionResult("Order " + orderID + " is in transit.")
+		},
+	})
+
+	_ = a.Serve()
+}
+```
+
+### Manual dispatch for testing
+
+```go {7}
+agent := agent.NewAgentBase(agent.WithName("t"))
+agent.DefineTool(agent.ToolDefinition{
+	Name:    "echo",
+	Handler: func(args, _ map[string]any) *swaig.FunctionResult { return swaig.NewFunctionResult("ok") },
+})
+
+result, err := agent.OnFunctionCall("echo", map[string]any{"text": "hi"}, nil)
+```

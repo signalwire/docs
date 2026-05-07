@@ -1,0 +1,56 @@
+---
+title: "GetFullURL"
+slug: /reference/go/agents/agent-base/get-full-url
+description: Get the full URL for this agent's endpoint, including host, port, and route.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+[manual-set-proxy-url]: /docs/server-sdks/reference/go/agents/agent-base/manual-set-proxy-url
+
+Get the full URL for this agent's endpoint. The URL is constructed from the
+host, port, and route configured on the embedded `swml.Service`. When behind
+a proxy, the `SWML_PROXY_URL_BASE` environment variable or
+[`ManualSetProxyUrl`][manual-set-proxy-url] takes precedence.
+
+<Note>
+Unlike the Python SDK, this method does not auto-detect serverless platforms.
+Serverless URL construction is handled by `pkg/lambda` when the agent is
+mounted through the Lambda adapter; in regular server mode (`Serve` /
+`Run`) `GetFullURL` returns the same URL the local HTTP server is listening
+on.
+</Note>
+
+## **Parameters**
+
+<ParamField path="includeAuth" type="bool" required={true} toc={true}>
+  When `true`, the returned URL embeds the Basic Auth credentials as
+  `https://user:pass@host:port/route`. Pass `false` for a plain URL.
+</ParamField>
+
+## **Returns**
+
+`string` — the fully constructed URL.
+
+## **Example**
+
+```go {12,15}
+package main
+
+import (
+	"fmt"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a := agent.NewAgentBase(agent.WithName("support"), agent.WithRoute("/support"), agent.WithPort(3000))
+	a.SetPromptText("You are a helpful assistant.")
+
+	url := a.GetFullURL(false)
+	fmt.Println(url) // http://0.0.0.0:3000/support
+
+	urlWithAuth := a.GetFullURL(true)
+	fmt.Println(urlWithAuth) // http://user:pass@0.0.0.0:3000/support
+}
+```

@@ -1,0 +1,64 @@
+---
+title: "SetInternalFillers"
+slug: /reference/go/agents/agent-base/set-internal-fillers
+description: Replace the filler phrases the AI speaks while internal SWAIG functions execute.
+max-toc-depth: 3
+---
+
+[add-internal-filler]: /docs/server-sdks/reference/go/agents/agent-base/add-internal-filler
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Replace the agent's full set of internal-filler phrases. Internal fillers are short phrases the AI speaks (via TTS) while a built-in/native SWAIG function is running, so the caller does not hear dead air during transitions or background work.
+
+<Note>
+This method **replaces** all previously registered fillers. Use [`AddInternalFiller`][add-internal-filler] to incrementally add or update phrases for a specific `(funcName, langCode)` pair.
+</Note>
+
+<Warning>
+The runtime only honors fillers for the function names below. Any other name (including `change_step`, `gather_submit`, and user-defined SWAIG names) is **silently ignored at the SWML level**. Go logs a warning at registration time when you pass an unrecognized name so typos surface early — the entry is still stored, but it will never play.
+
+Supported names (the `SupportedInternalFillerNames` set):
+
+- `hangup` — when the agent is hanging up
+- `check_time` — when checking the time
+- `wait_for_user` — when waiting for user input
+- `wait_seconds` — during deliberate pauses
+- `adjust_response_latency` — when adjusting response timing
+- `next_step` — transitioning between steps in `prompt.contexts`
+- `change_context` — switching between contexts in `prompt.contexts`
+- `get_visual_input` — processing visual input (`enable_vision`)
+- `get_ideal_strategy` — thinking (`enable_thinking`)
+</Warning>
+
+## **Parameters**
+
+<ParamField path="fillers" type="map[string]map[string][]string" required={true} toc={true}>
+  Nested map keyed first by supported function name, then by language code, with the value being a slice of TTS phrases. Format: `{"<funcName>": {"<langCode>": []string{"phrase1", "phrase2"}}}`.
+</ParamField>
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for method chaining.
+
+## **Example**
+
+```go {8-16}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("support"), agent.WithRoute("/support"))
+	a.SetPromptText("You are a helpful assistant.")
+	a.SetInternalFillers(map[string]map[string][]string{
+		"next_step": {
+			"en-US": {"Moving on...", "Great, let's continue..."},
+			"es":    {"Pasando al siguiente paso...", "Continuemos..."},
+		},
+		"check_time": {
+			"en-US": {"Let me check the time...", "One moment..."},
+		},
+	})
+	_ = a.Serve()
+}
+```

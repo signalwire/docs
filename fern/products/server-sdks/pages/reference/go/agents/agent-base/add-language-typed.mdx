@@ -1,0 +1,154 @@
+---
+title: "AddLanguageTyped"
+slug: /reference/go/agents/agent-base/add-language-typed
+description: Add a language configuration with typed named parameters.
+max-toc-depth: 3
+---
+
+[ai-languages]: /docs/swml/reference/ai/languages
+[swml-languages-reference]: /docs/swml/reference/ai/languages
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+[add-language]: /docs/server-sdks/reference/go/agents/agent-base/add-language
+
+Add a language configuration using typed positional parameters, matching
+Python's `add_language(name, code, voice, ...)` signature exactly. Use this
+when you want compile-time argument checking instead of the raw-map form
+provided by [`AddLanguage`][add-language].
+
+<Info>
+Language configurations map to the SWML [`ai.languages`][ai-languages] array.
+See the [SWML languages reference][swml-languages-reference] for the full
+specification.
+</Info>
+
+<Tip>
+The `voice` argument supports three formats: a simple voice name, an explicit
+`engine`/`model` pair, or a combined `"engine.voice:model"` string. Explicit
+`engine`/`model` arguments take precedence over the combined string.
+</Tip>
+
+<Tip>
+`AddLanguageTyped` takes seven positional arguments. When you need to pass
+more than three of them, [`AddLanguage`][add-language] with a
+`map[string]any` literal is often easier to read and edit at call sites
+because every value is keyed by name.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="name" type="string" required={true} toc={true}>
+  Human-readable language name (e.g. `"English"`, `"French"`, `"Spanish"`).
+</ParamField>
+
+<ParamField path="code" type="string" required={true} toc={true}>
+  Language code (e.g. `"en-US"`, `"fr-FR"`, `"es-MX"`).
+</ParamField>
+
+<ParamField path="voice" type="string" required={true} toc={true}>
+  TTS voice identifier. Accepts one of three formats:
+  - Simple name: `"en-US-Neural2-F"`
+  - Combined: `"elevenlabs.josh:eleven_turbo_v2_5"` (parsed only when both `.`
+    and `:` are present and `engine`/`model` are empty)
+  - Short name with explicit `engine`/`model`: `"josh"`
+</ParamField>
+
+<ParamField path="speechFillers" type="[]string" toc={true}>
+  Filler phrases for natural speech pauses (e.g.
+  `[]string{"Um...", "Let me see..."}`). Pass `nil` to omit.
+</ParamField>
+
+<ParamField path="functionFillers" type="[]string" toc={true}>
+  Filler phrases spoken while SWAIG functions execute (e.g.
+  `[]string{"One moment please...", "Looking that up..."}`). Pass `nil` to omit.
+</ParamField>
+
+<ParamField path="engine" type="string" toc={true}>
+  Explicit TTS engine (e.g. `"elevenlabs"`, `"rime"`). Pass `""` to skip.
+  Setting either `engine` or `model` disables combined-string parsing of `voice`.
+</ParamField>
+
+<ParamField path="model" type="string" toc={true}>
+  Explicit TTS model (e.g. `"eleven_turbo_v2_5"`, `"arcana"`). Pass `""` to skip.
+</ParamField>
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for fluent chaining.
+
+<Note>
+When only one of `speechFillers` / `functionFillers` is non-empty, the slice
+is rendered as `fillers` in the SWML config (single-list form). When both are
+non-empty, they are rendered as separate `speech_fillers` and
+`function_fillers` arrays.
+</Note>
+
+## **Examples**
+
+### Simple voice
+
+```go {12}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("support"),
+		agent.WithRoute("/support"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.AddLanguageTyped("English", "en-US", "rime.spore", nil, nil, "", "")
+
+	_ = a.Serve()
+}
+```
+
+### Explicit engine and model
+
+```go {12-15}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("support"),
+		agent.WithRoute("/support"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.AddLanguageTyped(
+		"English", "en-US", "josh",
+		nil, nil,
+		"elevenlabs", "eleven_turbo_v2_5",
+	)
+
+	_ = a.Serve()
+}
+```
+
+### With fillers
+
+```go {12-16}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("support"),
+		agent.WithRoute("/support"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.AddLanguageTyped(
+		"English", "en-US", "rime.spore",
+		[]string{"Um...", "Let me think..."},
+		[]string{"One moment please...", "Looking that up..."},
+		"", "",
+	)
+
+	_ = a.Serve()
+}
+```

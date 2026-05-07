@@ -1,0 +1,75 @@
+---
+title: "DefineContexts"
+slug: /reference/go/agents/agent-base/define-contexts
+description: Define multi-step conversation contexts and workflows for complex agent interactions.
+max-toc-depth: 3
+---
+
+[contextbuilder]: /docs/server-sdks/reference/go/agents/context-builder
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+[contexts-alias]: /docs/server-sdks/reference/go/agents/agent-base/contexts
+[reset-contexts]: /docs/server-sdks/reference/go/agents/agent-base/reset-contexts
+
+Return the agent's [`ContextBuilder`][contextbuilder] for defining multi-step
+conversation workflows. Contexts let an agent guide the caller through a
+structured sequence of interactions — gathering information, verifying
+identity, and then performing an action.
+
+The builder is created on first call and reused on subsequent calls. The same
+instance is also accessible through the shorthand
+[`Contexts`][contexts-alias] alias and can be cleared with
+[`ResetContexts`][reset-contexts].
+
+<Note>
+Contexts can coexist with traditional prompts. The only restriction is that
+POM sections and raw text cannot be mixed in the same prompt.
+</Note>
+
+<Tip>
+Unlike the Python SDK, Go's `DefineContexts` does not accept a configuration
+map argument — Go always returns a builder for fluent definition.
+</Tip>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+[`*contexts.ContextBuilder`][contextbuilder] — the agent's attached context
+builder.
+
+## **Example**
+
+```go {11}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("intake"),
+		agent.WithRoute("/intake"),
+	)
+
+	ctx := a.DefineContexts()
+	def := ctx.AddContext("default")
+
+	def.AddStep("greeting").
+		SetText("Greet the caller and ask for their name.").
+		SetStepCriteria("The caller has provided their name.").
+		SetFunctions([]string{"lookup_account"}).
+		SetValidSteps([]string{"verify"})
+
+	def.AddStep("verify").
+		SetText("Verify the caller's identity.").
+		SetStepCriteria("Identity verified.").
+		SetValidSteps([]string{"assist"})
+
+	def.AddStep("assist").
+		SetText("Help the caller with their request.").
+		SetFunctions([]string{"search_orders", "process_return"})
+
+	_ = a.Serve()
+}
+```

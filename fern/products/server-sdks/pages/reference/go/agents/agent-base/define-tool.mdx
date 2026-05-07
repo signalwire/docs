@@ -1,0 +1,143 @@
+---
+title: "DefineTool"
+slug: /reference/go/agents/agent-base/define-tool
+description: Define a SWAIG tool that the AI can invoke during conversations.
+max-toc-depth: 3
+---
+
+[swaig-function]: /docs/swml/reference/ai/swaig/functions
+[swml-swaig-functions-reference]: /docs/swml/reference/ai/swaig/functions
+[functionresult]: /docs/server-sdks/reference/go/agents/function-result
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Register a SWAIG function (tool) that the AI can invoke during a conversation.
+The first call for a given `Name` appends the tool to the agent's ordered tool
+list; later calls with the same `Name` replace the existing definition in
+place.
+
+<Info>
+Tool definitions map to SWML [SWAIG function][swaig-function] entries. See the
+[SWML SWAIG functions reference][swml-swaig-functions-reference] for the full
+specification.
+</Info>
+
+<Tip>
+**Descriptions are prompt engineering, not developer comments.** A vague
+`Description` is the most common cause of "the model has the right tool but
+doesn't call it." On every LLM turn, the SDK serialises each tool's `Name`,
+`Description`, and `Parameters` into the OpenAI tool schema and sends it to
+the model. The model uses `Description` to decide *when* to call the tool, and
+each parameter's `description` to decide *how* to fill in arguments.
+</Tip>
+
+<Note>
+LLM tool-selection accuracy degrades past roughly 7-8 simultaneously-active
+tools per call. Use `Step.SetFunctions()` on a context step to expose only the
+relevant subset of tools for that step.
+</Note>
+
+## **Parameters**
+
+<ParamField path="def" type="ToolDefinition" required={true} toc={true}>
+  Tool descriptor. Fields:
+
+  <Indent>
+    <ParamField path="Name" type="string" required={true}>
+      Function name. Must be unique within the agent. Used as the tool's identifier
+      in both the SWAIG document and the OpenAI tool schema.
+    </ParamField>
+    <ParamField path="Description" type="string" required={true}>
+      What the function does. The AI reads this to decide when to call it.
+    </ParamField>
+    <ParamField path="Parameters" type="map[string]any" required={true}>
+      JSON Schema describing the function arguments (the `properties` object). The
+      AI generates arguments that conform to this schema.
+    </ParamField>
+    <ParamField path="Handler" type="ToolHandler" required={true}>
+      Function called when the AI invokes the tool. Signature:
+      `func(args, rawData map[string]any) *swaig.FunctionResult`. Return a
+      [`*FunctionResult`][functionresult].
+    </ParamField>
+    <ParamField path="Required" type="[]string">
+      Names of required parameters declared in `Parameters`.
+    </ParamField>
+    <ParamField path="Secure" type="bool" default="false">
+      Require per-tool token validation when `true`. Recommended for production.
+    </ParamField>
+    <ParamField path="Fillers" type="map[string][]string">
+      Language-keyed filler phrases spoken while the tool executes.
+      Format: `{"en-US": []string{"Looking that up...", "One moment..."}}`.
+    </ParamField>
+    <ParamField path="WaitFile" type="string">
+      URL to an audio file to play while the tool runs.
+    </ParamField>
+    <ParamField path="WaitFileLoops" type="int" default="0">
+      Number of times to loop `WaitFile`. `0` means no loop.
+    </ParamField>
+    <ParamField path="WebhookURL" type="string">
+      Per-tool webhook URL. When set, the platform calls this URL instead of the
+      agent-level webhook.
+    </ParamField>
+    <ParamField path="MetaData" type="map[string]any">
+      Arbitrary metadata attached to the tool definition.
+    </ParamField>
+    <ParamField path="SwaigFields" type="map[string]any">
+      Extra per-function SWAIG fields merged into the rendered definition
+      (e.g. `meta_data`, custom flags).
+    </ParamField>
+    <ParamField path="IsTypedHandler" type="bool" default="false">
+      Set to `true` when the handler is a typed wrapper rather than the standard
+      `(args, rawData)` signature.
+    </ParamField>
+  </Indent>
+</ParamField>
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for fluent chaining.
+
+## **Example**
+
+```go {17}
+package main
+
+import (
+	"github.com/signalwire/signalwire-go/pkg/agent"
+	"github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("weather-agent"),
+		agent.WithRoute("/weather"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.DefineTool(agent.ToolDefinition{
+		Name:        "get_weather",
+		Description: "Get the current weather for a city",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"city": map[string]any{
+					"type":        "string",
+					"description": "City name",
+				},
+			},
+		},
+		Required: []string{"city"},
+		Fillers: map[string][]string{
+			"en-US": {"Checking the weather...", "Let me look that up..."},
+		},
+		Handler: func(args, raw map[string]any) *swaig.FunctionResult {
+			city, _ := args["city"].(string)
+			if city == "" {
+				city = "unknown"
+			}
+			return swaig.NewFunctionResult("The weather in " + city + " is 72F and sunny.")
+		},
+	})
+
+	_ = a.Serve()
+}
+```

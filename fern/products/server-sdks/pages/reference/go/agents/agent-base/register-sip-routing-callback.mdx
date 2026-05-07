@@ -1,0 +1,71 @@
+---
+title: "RegisterSipRoutingCallback"
+slug: /reference/go/agents/agent-base/register-sip-routing-callback
+description: Register a callback whose string return triggers an HTTP 307 redirect for SIP routing.
+max-toc-depth: 3
+---
+
+[register-routing-callback]: /docs/server-sdks/reference/go/agents/agent-base/register-routing-callback
+[enable-sip-routing]: /docs/server-sdks/reference/go/agents/agent-base/enable-sip-routing
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Register a callback for redirect-based SIP routing. When a POST request arrives at the registered path, the callback inspects the request and parsed body and returns a route string; the framework responds with `HTTP 307 Temporary Redirect` to that route, preserving the request method and body. An empty string return lets normal SWML processing continue at the same endpoint.
+
+For routing that returns a response document override instead of issuing a redirect, use [`RegisterRoutingCallback`][register-routing-callback].
+
+<Note>
+Dispatch fires only for `POST` requests with a non-`nil` parsed body. `GET` requests and bodyless `POST` requests skip the callback and fall through to normal SWML rendering, so the same endpoint can serve as both a redirector and a document source.
+</Note>
+
+<Tip>
+For simpler SIP routing where the destination is determined by SIP username matching, use [`EnableSipRouting`][enable-sip-routing] and [`RegisterSipUsername`](/docs/server-sdks/reference/go/agents/agent-base/register-sip-username) instead.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="callbackFn" type="func(r *http.Request, body map[string]any) string" required={true} toc={true}>
+  A function that receives the inbound `*http.Request` and the parsed JSON body. Return a route string (absolute path or full URL) to issue an HTTP 307 redirect, or return `""` to fall through to normal SWML rendering.
+</ParamField>
+
+<ParamField path="path" type="string" toc={true} default="/sip">
+  The URL path where this routing endpoint is created. An empty string is replaced with `"/sip"`. The path is normalized: trailing slashes are stripped and a leading `/` is prepended if missing.
+</ParamField>
+
+## **Returns**
+
+No return value. The receiver is not returned, so this method does not chain.
+
+## **Example**
+
+### Redirect SIP requests by username
+
+```go {26}
+package main
+
+import (
+	"net/http"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("router"), agent.WithRoute("/"))
+
+	routeSip := func(r *http.Request, body map[string]any) string {
+		username, _ := body["sip_username"].(string)
+		if username == "" {
+			username, _ = body["to"].(string)
+		}
+		switch username {
+		case "sales":
+			return "/agents/sales"
+		case "support":
+			return "/agents/support"
+		}
+		return ""
+	}
+
+	a.RegisterSipRoutingCallback(routeSip, "/sip")
+	_ = a.Serve()
+}
+```

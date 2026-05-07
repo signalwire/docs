@@ -1,0 +1,46 @@
+---
+title: "Serve"
+slug: /reference/go/agents/agent-base/serve
+description: Start the agent's HTTP server. Blocking; alias for Run.
+max-toc-depth: 3
+---
+
+[run]: /docs/server-sdks/reference/go/agents/agent-base/run
+[as-router]: /docs/server-sdks/reference/go/agents/agent-base/as-router
+[setup-graceful-shutdown]: /docs/server-sdks/reference/go/agents/agent-base/setup-graceful-shutdown
+
+Start the agent's `net/http` server. The server registers the SWML route, the `/swaig` dispatcher, the `/post_prompt` summary endpoint, the `/check_for_input` polling endpoint, any registered routing-callback paths, the `/mcp` endpoint when an MCP server has been enabled, and the unauthenticated `/health` and `/ready` endpoints. This call **blocks** until the server stops.
+
+<Note>
+`Serve` is a direct call to [`Run`][run] — the two are interchangeable. For graceful shutdown on signal, call [`SetupGracefulShutdown`][setup-graceful-shutdown] before `Serve`. To embed the agent's HTTP handler in a custom server, use [`AsRouter`][as-router] instead.
+</Note>
+
+## **Parameters**
+
+None. Host, port, route, and basic-auth credentials are configured via functional options on [`NewAgentBase`](/docs/server-sdks/reference/go/agents/agent-base) (`WithHost`, `WithPort`, `WithRoute`, `WithBasicAuth`).
+
+## **Returns**
+
+`error` — the listener error from `(*http.Server).ListenAndServe`. Returns `nil` when the server stops cleanly via [`SetupGracefulShutdown`][setup-graceful-shutdown] (i.e., `http.ErrServerClosed`).
+
+## **Example**
+
+### Bind a host and port and start serving
+
+```go {12}
+package main
+
+import (
+	"log"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithHost("0.0.0.0"), agent.WithPort(3000))
+	a.SetPromptText("You are a helpful assistant.")
+	if err := a.Serve(); err != nil {
+		log.Fatal(err)
+	}
+}
+```

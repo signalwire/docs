@@ -1,0 +1,51 @@
+---
+title: "Run"
+slug: /reference/go/agents/agent-base/run
+description: Start the agent's HTTP server. Blocking; identical to Serve.
+max-toc-depth: 3
+---
+
+[serve]: /docs/server-sdks/reference/go/agents/agent-base/serve
+[as-router]: /docs/server-sdks/reference/go/agents/agent-base/as-router
+[setup-graceful-shutdown]: /docs/server-sdks/reference/go/agents/agent-base/setup-graceful-shutdown
+[lambda-adapter]: /docs/server-sdks/reference/go/agents/configuration/lambda-adapter
+
+Start the agent's `net/http` server. This is a **blocking** call — it returns only when the server is stopped. `Run` is identical to [`Serve`][serve]; both call the same internal `buildAndServe`.
+
+<Note>
+`Run` always starts a long-lived HTTP server — it does not detect serverless environments. For AWS Lambda deployments, wrap the agent's handler with the [Lambda adapter][lambda-adapter] (`lambda.NewHandler(a.AsRouter())`). For embedded server use, call [`AsRouter`][as-router] and mount the returned `http.Handler` in your own server.
+</Note>
+
+<Tip>
+To shut the server down cleanly on `SIGINT`/`SIGTERM`, call [`SetupGracefulShutdown`][setup-graceful-shutdown] before `Run`. The graceful shutdown path returns `nil` from `Run`; an unexpected listener error returns the underlying error.
+</Tip>
+
+## **Parameters**
+
+None. Host, port, route, and basic-auth credentials are configured via functional options on [`NewAgentBase`](/docs/server-sdks/reference/go/agents/agent-base) (`WithHost`, `WithPort`, `WithRoute`, `WithBasicAuth`).
+
+## **Returns**
+
+`error` — the listener error from `(*http.Server).ListenAndServe`. Returns `nil` when the server stops cleanly via [`SetupGracefulShutdown`][setup-graceful-shutdown] (i.e., `http.ErrServerClosed`).
+
+## **Example**
+
+### Standard entry point
+
+```go {12}
+package main
+
+import (
+	"log"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("my-agent"), agent.WithRoute("/agent"))
+	a.SetPromptText("You are a helpful assistant.")
+	if err := a.Run(); err != nil {
+		log.Fatal(err)
+	}
+}
+```

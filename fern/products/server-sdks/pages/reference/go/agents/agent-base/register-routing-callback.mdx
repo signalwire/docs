@@ -1,0 +1,72 @@
+---
+title: "RegisterRoutingCallback"
+slug: /reference/go/agents/agent-base/register-routing-callback
+description: Register a callback that overrides the SWML response document for requests at a given path.
+max-toc-depth: 3
+---
+
+[register-sip-routing-callback]: /docs/server-sdks/reference/go/agents/agent-base/register-sip-routing-callback
+[enable-sip-routing]: /docs/server-sdks/reference/go/agents/agent-base/enable-sip-routing
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Register a callback function for dynamic request routing. When a request arrives at the specified path, the callback inspects the parsed body and returns a response document map to override normal SWML rendering, or `nil` to let normal processing continue.
+
+For redirect-based routing — where the callback returns a route string and the framework issues an HTTP 307 — use [`RegisterSipRoutingCallback`][register-sip-routing-callback] instead.
+
+<Note>
+The callback path is registered on the underlying [`swml.Service`][ref-agentbase]; the actual HTTP route is wired up when [`Serve`](/docs/server-sdks/reference/go/agents/agent-base/serve) (or [`AsRouter`](/docs/server-sdks/reference/go/agents/agent-base/as-router)) is called. Register all callbacks before starting the server.
+</Note>
+
+<Tip>
+For simpler SIP routing where the destination is determined by SIP username matching, use [`EnableSipRouting`][enable-sip-routing] and [`RegisterSipUsername`](/docs/server-sdks/reference/go/agents/agent-base/register-sip-username) instead of writing a routing callback by hand.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="callbackFn" type="func(r *http.Request, body map[string]any) map[string]any" required={true} toc={true}>
+  A function invoked when a request arrives at the registered path. Return a non-nil `map[string]any` response document to override the served SWML, or `nil` to continue with normal SWML processing for this request.
+
+  <Warning>
+  The `r *http.Request` argument is always `nil` — the framework calls the callback through [`swml.Service.OnRequest`](/docs/server-sdks/reference/go/agents/swml-service/on-request), which only forwards the parsed body. Read routing inputs from `body`, not from `r`.
+  </Warning>
+</ParamField>
+
+<ParamField path="path" type="string" toc={true} default="/sip">
+  The URL path where this routing callback is invoked. An empty string is replaced with `"/sip"`. Slashes are not normalized — supply the canonical path you want registered.
+</ParamField>
+
+## **Returns**
+
+No return value. The receiver is not returned, so this method does not chain.
+
+## **Example**
+
+### Override the response document for SIP requests
+
+```go {22}
+package main
+
+import (
+	"net/http"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("router"), agent.WithRoute("/"))
+
+	routeSip := func(r *http.Request, body map[string]any) map[string]any {
+		username, _ := body["sip_username"].(string)
+		if username == "" {
+			username, _ = body["to"].(string)
+		}
+		if username == "sales" {
+			return map[string]any{"version": "1.0.0", "sections": map[string]any{"main": []any{map[string]any{"transfer": map[string]any{"dest": "sip:sales@example.com"}}}}}
+		}
+		return nil
+	}
+
+	a.RegisterRoutingCallback(routeSip, "/sip")
+	_ = a.Serve()
+}
+```

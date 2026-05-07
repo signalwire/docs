@@ -1,0 +1,69 @@
+---
+title: "EnableMcpServer"
+slug: /reference/go/agents/agent-base/enable-mcp-server
+description: Expose this agent's SWAIG tools as a JSON-RPC MCP server endpoint.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+[add-mcp-server]: /docs/server-sdks/reference/go/agents/agent-base/add-mcp-server
+[define-tool]: /docs/server-sdks/reference/go/agents/agent-base/define-tool
+
+Expose this agent's SWAIG tools as a Model Context Protocol (MCP) server. When
+enabled, the agent registers an `<agent-route>/mcp` HTTP handler (or `/mcp` if
+the agent's route is `/`) that speaks JSON-RPC 2.0 and supports the
+`initialize`, `tools/list`, `tools/call`, and `ping` methods. External MCP
+clients (Claude Desktop, other agents, etc.) can use that endpoint to
+discover and invoke the same tools registered with [`DefineTool`][define-tool].
+
+<Note>
+This method only flips the in-memory flag and registers the `/mcp` HTTP
+route during `Serve`. It does **not** add the endpoint to the agent's SWML
+output. To include the MCP server in the rendered SWML for native tool
+discovery, also call [`AddMcpServer`][add-mcp-server] pointing at the
+agent's own `/mcp` URL.
+</Note>
+
+<Note>
+This method exposes the agent **as** an MCP server. To consume an external
+MCP server **from** the agent, use [`AddMcpServer`][add-mcp-server] instead.
+</Note>
+
+## **Parameters**
+
+None.
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for fluent chaining.
+
+## **Example**
+
+```go {24}
+package main
+
+import (
+	"github.com/signalwire/signalwire-go/pkg/agent"
+	"github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("assistant"),
+		agent.WithRoute("/assistant"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.DefineTool(&agent.ToolDefinition{
+		Name:        "get_weather",
+		Description: "Get weather for a city",
+		Handler: func(args, raw map[string]any) *swaig.FunctionResult {
+			city, _ := args["city"].(string)
+			return swaig.NewFunctionResult("The weather in " + city + " is sunny.")
+		},
+	})
+
+	a.EnableMcpServer()
+	_ = a.Serve()
+}
+```

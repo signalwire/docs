@@ -1,0 +1,166 @@
+---
+title: "Agents"
+sidebar-title: Overview
+subtitle: "Go API reference for AgentBase, SWMLService, SWAIG functions, skills, contexts, LiveWire, and more"
+slug: /reference/go/agents
+description: "Core framework for building AI-powered voice agents."
+max-toc-depth: 3
+position: 0
+---
+
+[swml]: /docs/swml/reference/ai
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+The Agents namespace provides the core framework for building AI-powered voice
+agents with SignalWire. It includes the central [`AgentBase`][ref-agentbase]
+struct, SWML document generation, tool/function definitions, skills, multi-agent
+hosting, and configuration management.
+
+<Info>
+The Agents SDK generates [SWML][swml] documents under the hood.
+Each agent produces a SWML document with the `ai` verb that the SignalWire
+platform executes.
+</Info>
+
+## Example
+
+A complete agent that answers calls, uses an AI prompt, and exposes a custom tool:
+
+```go {9-12}
+package main
+
+import (
+	"github.com/signalwire/signalwire-go/pkg/agent"
+	"github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("support-agent"),
+		agent.WithRoute("/support"),
+	)
+	a.SetPromptText(
+		"You are a friendly support agent for Acme Corp. " +
+			"Help customers check their order status. Be concise and professional.",
+	)
+	a.SetParams(map[string]any{
+		"temperature":            0.5,
+		"end_of_speech_timeout":  800,
+	})
+
+	a.DefineTool(agent.ToolDefinition{
+		Name:        "check_order",
+		Description: "Check an order status by ID",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"order_id": map[string]any{
+					"type":        "string",
+					"description": "The order ID to check",
+				},
+			},
+		},
+		Handler: func(args map[string]any, raw map[string]any) *swaig.FunctionResult {
+			orderID, _ := args["order_id"].(string)
+			return swaig.NewFunctionResult(
+				"Order " + orderID + " shipped on March 28 and arrives tomorrow.",
+			)
+		},
+	})
+
+	a.AddSkill("datetime", nil)
+
+	if err := a.Run(); err != nil {
+		panic(err)
+	}
+}
+```
+
+## Classes
+
+<CardGroup cols={2}>
+  <Card
+    title="AgentBase"
+    href="/docs/server-sdks/reference/go/agents/agent-base"
+  >
+    The central struct for building AI agents. Manages prompts, tools, skills, and serving.
+  </Card>
+  <Card
+    title="SWMLService"
+    href="/docs/server-sdks/reference/go/agents/swml-service"
+  >
+    SWML document generation and `net/http` service for non-AI call flows.
+  </Card>
+  <Card
+    title="SWMLBuilder"
+    href="/docs/server-sdks/reference/go/agents/swml-builder"
+  >
+    Programmatic SWML document construction via `swml.Document`.
+  </Card>
+  <Card
+    title="FunctionResult"
+    href="/docs/server-sdks/reference/go/agents/function-result"
+  >
+    Fluent builder for tool responses and call-control actions.
+  </Card>
+  <Card
+    title="ContextBuilder"
+    href="/docs/server-sdks/reference/go/agents/context-builder"
+  >
+    Multi-step agent workflows with context and step navigation.
+  </Card>
+  <Card
+    title="DataMap"
+    href="/docs/server-sdks/reference/go/agents/data-map"
+  >
+    Server-side API tools that execute REST calls without agent webhooks.
+  </Card>
+  <Card
+    title="SkillBase"
+    href="/docs/server-sdks/reference/go/agents/skill-base"
+  >
+    Interface for building reusable skill plugins.
+  </Card>
+  <Card
+    title="AgentServer"
+    href="/docs/server-sdks/reference/go/agents/agent-server"
+  >
+    Host multiple agents on a single HTTP process with route-based dispatch.
+  </Card>
+  <Card
+    title="BedrockAgent"
+    href="/docs/server-sdks/reference/go/agents/bedrock-agent"
+  >
+    Amazon Bedrock-backed AI agent variant.
+  </Card>
+  <Card
+    title="Prefabs"
+    href="/docs/server-sdks/reference/go/agents/prefabs"
+  >
+    Pre-built agent templates for common conversational patterns.
+  </Card>
+  <Card
+    title="Skills"
+    href="/docs/server-sdks/reference/go/agents/skills"
+  >
+    Built-in skills catalog with 18 pluggable capabilities.
+  </Card>
+  <Card
+    title="Configuration"
+    href="/docs/server-sdks/reference/go/agents/configuration"
+  >
+    Environment variables, logging, Lambda adapter, and session management.
+  </Card>
+  <Card
+    title="LiveWire"
+    href="/docs/server-sdks/reference/go/agents/livewire"
+  >
+    LiveKit-compatible API layer — use familiar livekit-agents classes on SignalWire infrastructure.
+  </Card>
+  <Card
+    title="Helpers & Utilities"
+    href="/docs/server-sdks/reference/go/agents/helpers"
+  >
+    Standalone helper functions for DataMap construction.
+  </Card>
+</CardGroup>

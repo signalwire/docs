@@ -1,0 +1,493 @@
+---
+title: "AgentBase"
+slug: /reference/go/agents/agent-base
+description: The central struct for building AI-powered voice agents with SignalWire.
+max-toc-depth: 3
+---
+
+[ai]: /docs/swml/reference/ai
+[swml-reference]: /docs/swml/reference/ai
+[swmlservice]: /docs/server-sdks/reference/go/agents/swml-service
+[agentserver]: /docs/server-sdks/reference/go/agents/agent-server
+[ref-datamap]: /docs/server-sdks/reference/go/agents/data-map
+[setnativefunctions]: /docs/server-sdks/reference/go/agents/agent-base/set-native-functions
+
+`AgentBase` is the central struct in the SignalWire AI Agents SDK. It provides
+a complete framework for building AI-powered voice agents, combining prompt
+management, tool definitions, skill loading, speech configuration, and HTTP
+serving into a single composable type.
+
+`AgentBase` embeds an [`*swml.Service`][swmlservice] internally and composes
+functionality from `pkg/contexts`, `pkg/skills`, `pkg/security`, and
+`pkg/swaig`. All setter methods return the receiver (`*AgentBase`) for fluent
+method chaining.
+
+<Info>
+AgentBase generates a SWML document with the [`ai`][ai] verb. See the
+[SWML reference][swml-reference] for the full specification of all supported
+parameters and behaviors.
+</Info>
+
+## **Constructor**
+
+```go {6-9}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("support"),
+		agent.WithRoute("/support"),
+	)
+	_ = a.Run()
+}
+```
+
+`NewAgentBase(opts ...AgentOption) *AgentBase` constructs an agent and
+applies the supplied functional options in order. Pass any combination of
+`agent.With*` options below.
+
+### Constructor Parameters
+
+<ParamField path="WithName(name string)" type="AgentOption" toc={true}>
+  Sets the agent's display name. Used in logging, SIP username mapping, and
+  the default prompt fallback. Defaults to `"Agent"`.
+</ParamField>
+
+<ParamField path="WithRoute(route string)" type="AgentOption" toc={true}>
+  HTTP route path where this agent is served. Used by
+  [`AgentServer`][agentserver] when hosting multiple agents on one process.
+  Defaults to `"/"`.
+</ParamField>
+
+<ParamField path="WithHost(host string)" type="AgentOption" toc={true}>
+  Network interface the HTTP server binds to. Defaults to `"0.0.0.0"`.
+</ParamField>
+
+<ParamField path="WithPort(port int)" type="AgentOption" toc={true}>
+  Port the HTTP server listens on. Defaults to `3000`.
+</ParamField>
+
+<ParamField path="WithBasicAuth(user, password string)" type="AgentOption" toc={true}>
+  Explicit Basic Auth credentials for all HTTP endpoints. If not set, the SDK
+  reads `SWML_BASIC_AUTH_USER` / `SWML_BASIC_AUTH_PASSWORD` env vars or
+  auto-generates credentials on startup.
+</ParamField>
+
+<ParamField path="WithAutoAnswer(autoAnswer bool)" type="AgentOption" toc={true}>
+  Automatically emit an `answer` verb before the AI verb in the SWML document.
+  Defaults to `true`.
+</ParamField>
+
+<ParamField path="WithRecordCall(record bool)" type="AgentOption" toc={true}>
+  Enable call recording. When `true`, a `record_call` verb is added to the
+  SWML document. Defaults to `false`.
+</ParamField>
+
+<ParamField path="WithRecordFormat(format string)" type="AgentOption" toc={true}>
+  Recording file format. Common values: `"mp4"`, `"wav"`. Defaults to `"mp4"`.
+</ParamField>
+
+<ParamField path="WithRecordStereo(stereo bool)" type="AgentOption" toc={true}>
+  Record in stereo (separate channels per party) when `true`. Defaults to
+  `true`.
+</ParamField>
+
+<ParamField path="WithTokenExpiry(secs int)" type="AgentOption" toc={true}>
+  Expiration time in seconds for SWAIG function authentication tokens.
+  Defaults to `3600`.
+</ParamField>
+
+<ParamField path="WithAIVerbName(name string)" type="AgentOption" toc={true}>
+  Override the SWML verb name used for the AI section. Default is `"ai"`. Set
+  to `"amazon_bedrock"` for the Bedrock variant.
+</ParamField>
+
+<ParamField path="WithUsePom(usePom bool)" type="AgentOption" toc={true}>
+  Enable Prompt Object Model for structured prompt building. Set to `false`
+  to use plain text prompts only. Defaults to `true`.
+</ParamField>
+
+<ParamField path="WithDefaultWebhookURL(url string)" type="AgentOption" toc={true}>
+  Default webhook URL for SWAIG function callbacks. Used as the fallback for
+  any tool that does not specify its own `WebhookURL`.
+</ParamField>
+
+<ParamField path="WithAgentID(id string)" type="AgentOption" toc={true}>
+  Fixed agent ID. If not provided, a UUID is generated automatically when the
+  agent is constructed.
+</ParamField>
+
+<ParamField path="WithNativeFunctions(names []string)" type="AgentOption" toc={true}>
+  Initial list of native SWAIG function names to enable at construction time
+  (e.g. `[]string{"check_time", "wait_for_user"}`). Can also be set later via
+  [`SetNativeFunctions`][setnativefunctions].
+</ParamField>
+
+<ParamField path="WithSchemaPath(path string)" type="AgentOption" toc={true}>
+  Path to a custom SWML JSON Schema file used for validation. Falls back to
+  the built-in schema when omitted.
+</ParamField>
+
+<ParamField path="WithSuppressLogs(suppress bool)" type="AgentOption" toc={true}>
+  Suppress info-level agent lifecycle logs. Useful in testing or when
+  integrating with external logging.
+</ParamField>
+
+<ParamField path="WithEnablePostPromptOverride(enable bool)" type="AgentOption" toc={true}>
+  Register the `/post_prompt_override` route, allowing external callers to
+  replace post-prompt summary handling at runtime.
+</ParamField>
+
+<ParamField path="WithCheckForInputOverride(enable bool)" type="AgentOption" toc={true}>
+  Register the `/check_for_input` route, allowing external systems to inject
+  input into an active AI session at runtime.
+</ParamField>
+
+<ParamField path="WithConfigFile(path string)" type="AgentOption" toc={true}>
+  Path to a YAML/JSON service configuration file. When provided, its values
+  are merged with explicit constructor options; explicit options always win.
+</ParamField>
+
+<ParamField path="WithSchemaValidation(validate bool)" type="AgentOption" toc={true}>
+  Enable SWML schema validation on rendered documents. Defaults to `true`.
+  Can also be disabled via the `SWML_SKIP_SCHEMA_VALIDATION=1` env var.
+</ParamField>
+
+## **Properties**
+
+<ParamField path="AgentID" type="string" toc={true}>
+  Unique identifier for this agent instance. Auto-generated as a UUID when
+  not supplied via [`WithAgentID`](#withagentidid-string).
+</ParamField>
+
+<ParamField path="Logger" type="*logging.Logger" toc={true}>
+  Structured logger for this agent. Inherited from the embedded
+  [`*swml.Service`][swmlservice].
+</ParamField>
+
+## **Examples**
+
+### Basic agent with a tool
+
+```go {26-43}
+package main
+
+import (
+	"github.com/signalwire/signalwire-go/pkg/agent"
+	"github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("support-agent"),
+		agent.WithRoute("/support"),
+	)
+
+	a.AddLanguage(map[string]any{
+		"name":  "English",
+		"code":  "en-US",
+		"voice": "rime.spore",
+	})
+	a.SetPromptText("You are a friendly customer support agent.")
+	a.AddHints([]string{"SignalWire", "SWML", "SWAIG"})
+	a.SetParams(map[string]any{
+		"temperature":           0.7,
+		"end_of_speech_timeout": 1000,
+	})
+
+	a.DefineTool(agent.ToolDefinition{
+		Name:        "check_order",
+		Description: "Look up the status of a customer order",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"order_id": map[string]any{
+					"type":        "string",
+					"description": "The order ID to look up",
+				},
+			},
+		},
+		Required: []string{"order_id"},
+		Handler: func(args, raw map[string]any) *swaig.FunctionResult {
+			orderID, _ := args["order_id"].(string)
+			return swaig.NewFunctionResult("Order " + orderID + " shipped on March 28.")
+		},
+	})
+
+	if err := a.Run(); err != nil {
+		panic(err)
+	}
+}
+```
+
+### Embedding for a custom agent
+
+```go {6}
+package main
+
+import "github.com/signalwire/signalwire-go/pkg/agent"
+
+type SupportAgent struct {
+	*agent.AgentBase
+}
+
+func NewSupportAgent() *SupportAgent {
+	a := agent.NewAgentBase(
+		agent.WithName("support"),
+		agent.WithRoute("/support"),
+	)
+	a.PromptAddSection("Role", "You are a customer support agent for Acme Corp.", nil)
+	a.PromptAddSection("Guidelines", "", []string{
+		"Be polite and professional",
+		"Escalate billing disputes",
+	})
+	return &SupportAgent{AgentBase: a}
+}
+
+func main() {
+	if err := NewSupportAgent().Run(); err != nil {
+		panic(err)
+	}
+}
+```
+
+## **Methods**
+
+<CardGroup cols={3}>
+  <Card title="AddAnswerVerb" href="/docs/server-sdks/reference/go/agents/agent-base/add-answer-verb">
+    Configure the answer verb that connects the call.
+  </Card>
+  <Card title="AddFunctionInclude" href="/docs/server-sdks/reference/go/agents/agent-base/add-function-include">
+    Add a remote function include to the SWAIG configuration.
+  </Card>
+  <Card title="AddHint" href="/docs/server-sdks/reference/go/agents/agent-base/add-hint">
+    Add a single speech recognition hint to improve transcription accuracy.
+  </Card>
+  <Card title="AddHints" href="/docs/server-sdks/reference/go/agents/agent-base/add-hints">
+    Add multiple speech recognition hints at once.
+  </Card>
+  <Card title="AddInternalFiller" href="/docs/server-sdks/reference/go/agents/agent-base/add-internal-filler">
+    Add filler phrases for a specific native function and language.
+  </Card>
+  <Card title="AddLanguage" href="/docs/server-sdks/reference/go/agents/agent-base/add-language">
+    Add a language configuration as a raw map.
+  </Card>
+  <Card title="AddLanguageTyped" href="/docs/server-sdks/reference/go/agents/agent-base/add-language-typed">
+    Add a language with typed named parameters.
+  </Card>
+  <Card title="AddMcpServer" href="/docs/server-sdks/reference/go/agents/agent-base/add-mcp-server">
+    Add an external MCP server for tool discovery and invocation.
+  </Card>
+  <Card title="AddPatternHint" href="/docs/server-sdks/reference/go/agents/agent-base/add-pattern-hint">
+    Add a speech recognition hint with pattern matching and replacement.
+  </Card>
+  <Card title="AddPostAiVerb" href="/docs/server-sdks/reference/go/agents/agent-base/add-post-ai-verb">
+    Add a SWML verb to run after the AI conversation ends.
+  </Card>
+  <Card title="AddPostAnswerVerb" href="/docs/server-sdks/reference/go/agents/agent-base/add-post-answer-verb">
+    Add a SWML verb to run after the call is answered but before the AI starts.
+  </Card>
+  <Card title="AddPreAnswerVerb" href="/docs/server-sdks/reference/go/agents/agent-base/add-pre-answer-verb">
+    Add a SWML verb to run before the call is answered.
+  </Card>
+  <Card title="AddPronunciation" href="/docs/server-sdks/reference/go/agents/agent-base/add-pronunciation">
+    Add a pronunciation rule to correct how the AI speaks a specific word or phrase.
+  </Card>
+  <Card title="AddSkill" href="/docs/server-sdks/reference/go/agents/agent-base/add-skill">
+    Load and activate a skill on the agent.
+  </Card>
+  <Card title="AddSwaigQueryParams" href="/docs/server-sdks/reference/go/agents/agent-base/add-swaig-query-params">
+    Append query parameters to all SWAIG webhook URLs.
+  </Card>
+  <Card title="AsRouter" href="/docs/server-sdks/reference/go/agents/agent-base/as-router">
+    Return the agent's `http.Handler` for mounting under another HTTP server.
+  </Card>
+  <Card title="AutoMapSipUsernames" href="/docs/server-sdks/reference/go/agents/agent-base/auto-map-sip-usernames">
+    Auto-register SIP usernames derived from the agent's name and route.
+  </Card>
+  <Card title="ClearPostAiVerbs" href="/docs/server-sdks/reference/go/agents/agent-base/clear-post-ai-verbs">
+    Remove all post-AI verbs from the call flow.
+  </Card>
+  <Card title="ClearPostAnswerVerbs" href="/docs/server-sdks/reference/go/agents/agent-base/clear-post-answer-verbs">
+    Remove all post-answer verbs from the call flow.
+  </Card>
+  <Card title="ClearPreAnswerVerbs" href="/docs/server-sdks/reference/go/agents/agent-base/clear-pre-answer-verbs">
+    Remove all pre-answer verbs from the call flow.
+  </Card>
+  <Card title="ClearSwaigQueryParams" href="/docs/server-sdks/reference/go/agents/agent-base/clear-swaig-query-params">
+    Remove every SWAIG query-param override.
+  </Card>
+  <Card title="Contexts" href="/docs/server-sdks/reference/go/agents/agent-base/contexts">
+    Return the agent's underlying `*ContextBuilder`.
+  </Card>
+  <Card title="DefineContexts" href="/docs/server-sdks/reference/go/agents/agent-base/define-contexts">
+    Define multi-step conversation contexts and workflows.
+  </Card>
+  <Card title="DefineTool" href="/docs/server-sdks/reference/go/agents/agent-base/define-tool">
+    Define a SWAIG tool that the AI can invoke during conversations.
+  </Card>
+  <Card title="DefineTools" href="/docs/server-sdks/reference/go/agents/agent-base/define-tools">
+    Override hook that registers tools during construction.
+  </Card>
+  <Card title="EnableDebugEvents" href="/docs/server-sdks/reference/go/agents/agent-base/enable-debug-events">
+    Enable real-time debug event webhooks from the AI module during calls.
+  </Card>
+  <Card title="EnableDebugRoutes" href="/docs/server-sdks/reference/go/agents/agent-base/enable-debug-routes">
+    Expose the agent's debug HTTP endpoints.
+  </Card>
+  <Card title="EnableMcpServer" href="/docs/server-sdks/reference/go/agents/agent-base/enable-mcp-server">
+    Expose the agent's tools as an MCP server endpoint.
+  </Card>
+  <Card title="EnableSipRouting" href="/docs/server-sdks/reference/go/agents/agent-base/enable-sip-routing">
+    Enable SIP-based call routing for this agent.
+  </Card>
+  <Card title="GetBasicAuthCredentials" href="/docs/server-sdks/reference/go/agents/agent-base/get-basic-auth-credentials">
+    Retrieve the agent's Basic Auth credentials and their origin.
+  </Card>
+  <Card title="GetFullURL" href="/docs/server-sdks/reference/go/agents/agent-base/get-full-url">
+    Get the full URL for this agent's endpoint.
+  </Card>
+  <Card title="GetName" href="/docs/server-sdks/reference/go/agents/agent-base/get-name">
+    Get the agent's display name.
+  </Card>
+  <Card title="GetPostPrompt" href="/docs/server-sdks/reference/go/agents/agent-base/get-post-prompt">
+    Retrieve the current post-prompt text.
+  </Card>
+  <Card title="GetPrompt" href="/docs/server-sdks/reference/go/agents/agent-base/get-prompt">
+    Retrieve the current rendered prompt text.
+  </Card>
+  <Card title="GetRoute" href="/docs/server-sdks/reference/go/agents/agent-base/get-route">
+    Get the agent's HTTP route path.
+  </Card>
+  <Card title="HasSkill" href="/docs/server-sdks/reference/go/agents/agent-base/has-skill">
+    Check whether a specific skill is currently loaded.
+  </Card>
+  <Card title="ListSkills" href="/docs/server-sdks/reference/go/agents/agent-base/list-skills">
+    List all currently loaded skills.
+  </Card>
+  <Card title="ListToolNames" href="/docs/server-sdks/reference/go/agents/agent-base/list-tool-names">
+    List the names of all registered tools.
+  </Card>
+  <Card title="ManualSetProxyUrl" href="/docs/server-sdks/reference/go/agents/agent-base/manual-set-proxy-url">
+    Manually set the proxy URL base for webhook callbacks.
+  </Card>
+  <Card title="OnDebugEvent" href="/docs/server-sdks/reference/go/agents/agent-base/on-debug-event">
+    Register a callback for debug events received at /debug_events.
+  </Card>
+  <Card title="OnFunctionCall" href="/docs/server-sdks/reference/go/agents/agent-base/on-function-call">
+    Pre-execution hook called before each SWAIG function invocation.
+  </Card>
+  <Card title="OnRequest" href="/docs/server-sdks/reference/go/agents/agent-base/on-request">
+    Lifecycle hook called on every HTTP request before routing.
+  </Card>
+  <Card title="OnSummary" href="/docs/server-sdks/reference/go/agents/agent-base/on-summary">
+    Handle post-prompt summaries generated after a conversation ends.
+  </Card>
+  <Card title="OnSwmlRequest" href="/docs/server-sdks/reference/go/agents/agent-base/on-swml-request">
+    Lifecycle hook called on every SWML request before rendering.
+  </Card>
+  <Card title="PromptAddSection" href="/docs/server-sdks/reference/go/agents/agent-base/prompt-add-section">
+    Add a new section to the agent's structured prompt.
+  </Card>
+  <Card title="PromptAddSubsection" href="/docs/server-sdks/reference/go/agents/agent-base/prompt-add-subsection">
+    Add a subsection to an existing prompt section.
+  </Card>
+  <Card title="PromptAddToSection" href="/docs/server-sdks/reference/go/agents/agent-base/prompt-add-to-section">
+    Append content to an existing prompt section.
+  </Card>
+  <Card title="PromptHasSection" href="/docs/server-sdks/reference/go/agents/agent-base/prompt-has-section">
+    Check whether a named section exists in the agent's prompt.
+  </Card>
+  <Card title="RegisterRoutingCallback" href="/docs/server-sdks/reference/go/agents/agent-base/register-routing-callback">
+    Register a callback for dynamic request routing.
+  </Card>
+  <Card title="RegisterSipRoutingCallback" href="/docs/server-sdks/reference/go/agents/agent-base/register-sip-routing-callback">
+    Register a SIP-specific routing callback.
+  </Card>
+  <Card title="RegisterSipUsername" href="/docs/server-sdks/reference/go/agents/agent-base/register-sip-username">
+    Register a SIP username to route calls to this agent.
+  </Card>
+  <Card title="RegisterSwaigFunction" href="/docs/server-sdks/reference/go/agents/agent-base/register-swaig-function">
+    Register a raw SWAIG function descriptor, typically from a DataMap.
+  </Card>
+  <Card title="RemoveSkill" href="/docs/server-sdks/reference/go/agents/agent-base/remove-skill">
+    Unload a skill from the agent.
+  </Card>
+  <Card title="RenderSWML" href="/docs/server-sdks/reference/go/agents/agent-base/render-swml">
+    Render the complete SWML document.
+  </Card>
+  <Card title="ResetContexts" href="/docs/server-sdks/reference/go/agents/agent-base/reset-contexts">
+    Clear every context from the agent's `ContextBuilder`.
+  </Card>
+  <Card title="Run" href="/docs/server-sdks/reference/go/agents/agent-base/run">
+    Start the HTTP server (alias for Serve).
+  </Card>
+  <Card title="Serve" href="/docs/server-sdks/reference/go/agents/agent-base/serve">
+    Start the HTTP server to serve SWML and SWAIG endpoints.
+  </Card>
+  <Card title="SetDynamicConfigCallback" href="/docs/server-sdks/reference/go/agents/agent-base/set-dynamic-config-callback">
+    Set a callback for per-request dynamic agent configuration.
+  </Card>
+  <Card title="SetFunctionIncludes" href="/docs/server-sdks/reference/go/agents/agent-base/set-function-includes">
+    Replace the SWAIG function-includes list.
+  </Card>
+  <Card title="SetGlobalData" href="/docs/server-sdks/reference/go/agents/agent-base/set-global-data">
+    Replace the global data object available to the AI.
+  </Card>
+  <Card title="SetInternalFillers" href="/docs/server-sdks/reference/go/agents/agent-base/set-internal-fillers">
+    Set every internal-filler entry in one call.
+  </Card>
+  <Card title="SetLanguages" href="/docs/server-sdks/reference/go/agents/agent-base/set-languages">
+    Replace all language configurations at once.
+  </Card>
+  <Card title="SetNativeFunctions" href="/docs/server-sdks/reference/go/agents/agent-base/set-native-functions">
+    Set the list of native platform functions.
+  </Card>
+  <Card title="SetParam" href="/docs/server-sdks/reference/go/agents/agent-base/set-param">
+    Set a single AI parameter by key.
+  </Card>
+  <Card title="SetParams" href="/docs/server-sdks/reference/go/agents/agent-base/set-params">
+    Configure AI model parameters such as temperature and timeouts.
+  </Card>
+  <Card title="SetPostPrompt" href="/docs/server-sdks/reference/go/agents/agent-base/set-post-prompt">
+    Set the post-prompt for generating call summaries.
+  </Card>
+  <Card title="SetPostPromptLlmParams" href="/docs/server-sdks/reference/go/agents/agent-base/set-post-prompt-llm-params">
+    Set LLM parameters for the post-prompt.
+  </Card>
+  <Card title="SetPostPromptUrl" href="/docs/server-sdks/reference/go/agents/agent-base/set-post-prompt-url">
+    Override the URL where post-prompt summaries are delivered.
+  </Card>
+  <Card title="SetPromptLlmParams" href="/docs/server-sdks/reference/go/agents/agent-base/set-prompt-llm-params">
+    Set LLM parameters for the main prompt.
+  </Card>
+  <Card title="SetPromptPom" href="/docs/server-sdks/reference/go/agents/agent-base/set-prompt-pom">
+    Replace the prompt with a POM section list.
+  </Card>
+  <Card title="SetPromptText" href="/docs/server-sdks/reference/go/agents/agent-base/set-prompt-text">
+    Set the agent's system prompt as raw text.
+  </Card>
+  <Card title="SetPromptTransformer" href="/docs/server-sdks/reference/go/agents/agent-base/set-prompt-transformer">
+    Install a function that rewrites the assembled prompt before rendering.
+  </Card>
+  <Card title="SetPronunciations" href="/docs/server-sdks/reference/go/agents/agent-base/set-pronunciations">
+    Replace every pronunciation rule in a single call.
+  </Card>
+  <Card title="SetWebHookUrl" href="/docs/server-sdks/reference/go/agents/agent-base/set-web-hook-url">
+    Override the default webhook URL for SWAIG function calls.
+  </Card>
+  <Card title="SetupGracefulShutdown" href="/docs/server-sdks/reference/go/agents/agent-base/setup-graceful-shutdown">
+    Register signal handlers for graceful shutdown.
+  </Card>
+  <Card title="UpdateGlobalData" href="/docs/server-sdks/reference/go/agents/agent-base/update-global-data">
+    Merge data into the global data object.
+  </Card>
+  <Card title="ValidateBasicAuth" href="/docs/server-sdks/reference/go/agents/agent-base/validate-basic-auth">
+    Custom basic-auth validation hook.
+  </Card>
+  <Card title="ValidateToolToken" href="/docs/server-sdks/reference/go/agents/agent-base/validate-tool-token">
+    Validate a per-tool HMAC token.
+  </Card>
+</CardGroup>

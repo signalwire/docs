@@ -1,0 +1,90 @@
+---
+title: "OnSwmlRequest"
+slug: /reference/go/agents/agent-base/on-swml-request
+description: Per-request customization hook called during SWML rendering.
+max-toc-depth: 3
+---
+
+[set-dynamic-config-callback]: /docs/server-sdks/reference/go/agents/agent-base/set-dynamic-config-callback
+[on-request]: /docs/server-sdks/reference/go/agents/agent-base/on-request
+
+The framework's per-request modification hook. Called by the agent's built-in HTTP handler on every SWML request, before the rendered document is returned. The default implementation returns `nil` (no modifications). When a non-nil map is returned, it is deep-merged into the rendered document — `global_data` keys merge into `ai.params.global_data`, other keys overwrite at the verb level.
+
+<Note>
+Unlike Python, Go has no inheritance, so this method cannot be overridden by subclassing `AgentBase`. The exported method is invoked by the framework but always returns `nil` for the default `*AgentBase`. For real per-request customization, use [`SetDynamicConfigCallback`][set-dynamic-config-callback] — the framework invokes it on every request and exposes query params, body, headers, and the active agent instance.
+</Note>
+
+<Tip>
+[`OnRequest`][on-request] is a thin wrapper around this method that drops the `*http.Request` argument. Prefer `OnSwmlRequest` whenever the HTTP request is available — query parameters, headers, and other metadata are only reachable through `r`.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="requestData" type="map[string]any" required={true} toc={true}>
+  Parsed POST body from the incoming request. Pass `nil` when no body is available.
+</ParamField>
+
+<ParamField path="callbackPath" type="string" required={true} toc={true}>
+  Path segment that triggered the request. Pass `""` for the root SWML route.
+</ParamField>
+
+<ParamField path="r" type="*http.Request" required={true} toc={true}>
+  The active HTTP request. Pass `nil` if you are calling this method outside of an HTTP context.
+</ParamField>
+
+## **Returns**
+
+`map[string]any` — modifications merged into the rendered SWML document, or `nil` for no modifications. The default implementation always returns `nil`.
+
+## **Example**
+
+### Read the default no-op behavior
+
+```go {12}
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a := agent.NewAgentBase(agent.WithName("default"))
+	mods := a.OnSwmlRequest(nil, "", (*http.Request)(nil))
+	fmt.Println(mods == nil) // true
+}
+```
+
+### Multi-tenant pattern via SetDynamicConfigCallback
+
+```go {15-22}
+package main
+
+import (
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a := agent.NewAgentBase(
+		agent.WithName("multi-tenant"),
+		agent.WithRoute("/agent"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	a.SetDynamicConfigCallback(func(qp map[string]string, body map[string]any, headers map[string]string, ag *agent.AgentBase) {
+		tenant := headers["X-Tenant-ID"]
+		if tenant == "" {
+			return
+		}
+		tier := "standard"
+		if tenant == "acme" {
+			tier = "premium"
+		}
+		ag.SetGlobalData(map[string]any{"tenant_id": tenant, "tier": tier})
+	})
+
+	_ = a.Serve()
+}
+```

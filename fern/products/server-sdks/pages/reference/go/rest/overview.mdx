@@ -1,0 +1,174 @@
+---
+title: "REST Client"
+sidebar-title: Overview
+subtitle: "Go API reference for RestClient and resource namespaces"
+slug: /reference/go/rest
+description: "HTTP client for SignalWire REST API resource management."
+max-toc-depth: 3
+position: 0
+---
+
+[client]: /docs/server-sdks/reference/go/rest/client
+
+The REST namespace provides an HTTP client for the SignalWire platform APIs. It
+organizes every HTTP endpoint into namespaced resource objects with standard
+CRUD operations (`List`, `Create`, `Get`, `Update`, `Delete`), letting you
+manage phone numbers, fabric resources, call logs, video rooms, datasphere
+documents, and more from Go.
+
+The constructor `rest.NewRestClient(project, token, space)` returns a
+`*rest.RestClient` and a non-nil error when any of the three credentials is
+empty.
+
+## Example
+
+Search for available phone numbers, purchase one, and list AI agent fabric
+resources:
+
+```go {10}
+package main
+
+import (
+	"fmt"
+
+	"github.com/signalwire/signalwire-go/pkg/rest"
+)
+
+func main() {
+	client, err := rest.NewRestClient("your-project-id", "your-api-token", "your-space.signalwire.com")
+	if err != nil {
+		panic(err)
+	}
+
+	// Search for available numbers in area code 512
+	available, err := client.PhoneNumbers.Search(map[string]any{
+		"area_code": "512",
+		"quantity":  3,
+	})
+	if err != nil {
+		panic(err)
+	}
+	if data, ok := available["data"].([]any); ok {
+		for _, n := range data {
+			number, _ := n.(map[string]any)
+			fmt.Printf("%v - %v\n", number["number"], number["region"])
+		}
+	}
+
+	// List your AI agent resources
+	agents, err := client.Fabric.AIAgents.List(nil)
+	if err != nil {
+		panic(err)
+	}
+	if data, ok := agents["data"].([]any); ok {
+		for _, a := range data {
+			agent, _ := a.(map[string]any)
+			fmt.Printf("Agent: %v (%v)\n", agent["name"], agent["id"])
+		}
+	}
+
+	// Query recent voice call logs
+	logs, err := client.Logs.Voice.List(map[string]string{"page_size": "5"})
+	if err != nil {
+		panic(err)
+	}
+	if data, ok := logs["data"].([]any); ok {
+		for _, l := range data {
+			log, _ := l.(map[string]any)
+			fmt.Printf("Call from %v to %v\n", log["from"], log["to"])
+		}
+	}
+}
+```
+
+## Error Handling
+
+REST errors are returned as `*rest.SignalWireRestError`:
+
+```go {14-15}
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/signalwire/signalwire-go/pkg/rest"
+)
+
+func main() {
+	client, _ := rest.NewRestClient("project", "token", "space.signalwire.com")
+	_, err := client.PhoneNumbers.Get("nonexistent-id")
+	if err != nil {
+		var rerr *rest.SignalWireRestError
+		if errors.As(err, &rerr) {
+			fmt.Printf("HTTP %d: %s\n", rerr.StatusCode, rerr.Body)
+			fmt.Printf("URL: %s %s\n", rerr.Method, rerr.URL)
+		}
+	}
+}
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="RestClient"
+    href="/docs/server-sdks/reference/go/rest/client"
+  >
+    Constructor, authentication, and all namespace properties.
+  </Card>
+  <Card
+    title="Phone Numbers"
+    href="/docs/server-sdks/reference/go/rest/phone-numbers"
+  >
+    Search, purchase, and manage phone numbers.
+  </Card>
+  <Card
+    title="Fabric"
+    href="/docs/server-sdks/reference/go/rest/fabric"
+  >
+    AI agents, SWML scripts, [subscribers](/docs/platform/subscribers), call flows, and tokens.
+  </Card>
+  <Card
+    title="Calling"
+    href="/docs/server-sdks/reference/go/rest/calling"
+  >
+    REST-based call control with 37+ commands.
+  </Card>
+  <Card
+    title="Video"
+    href="/docs/server-sdks/reference/go/rest/video"
+  >
+    Rooms, conferences, sessions, recordings, and streams.
+  </Card>
+  <Card
+    title="Datasphere"
+    href="/docs/server-sdks/reference/go/rest/datasphere"
+  >
+    Document management and semantic search.
+  </Card>
+  <Card
+    title="Logs"
+    href="/docs/server-sdks/reference/go/rest/logs"
+  >
+    Message, voice, fax, and conference log queries.
+  </Card>
+  <Card
+    title="Registry"
+    href="/docs/server-sdks/reference/go/rest/registry"
+  >
+    10DLC brand and campaign registration.
+  </Card>
+  <Card
+    title="Compatibility"
+    href="/docs/server-sdks/reference/go/rest/compat"
+  >
+    Twilio-compatible LAML API for migration.
+  </Card>
+  <Card
+    title="MFA"
+    href="/docs/server-sdks/reference/go/rest/mfa"
+  >
+    Multi-factor authentication via SMS and voice.
+  </Card>
+</CardGroup>

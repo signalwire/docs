@@ -1,0 +1,51 @@
+---
+title: "RemoveSkill"
+slug: /reference/go/agents/agent-base/remove-skill
+description: Unload a skill from the agent.
+max-toc-depth: 3
+---
+
+[add-skill]: /docs/server-sdks/reference/go/agents/agent-base/add-skill
+[has-skill]: /docs/server-sdks/reference/go/agents/agent-base/has-skill
+[list-skills]: /docs/server-sdks/reference/go/agents/agent-base/list-skills
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Unload a skill from this agent. The skill is removed from the loaded-skills map and the skill's `Cleanup` hook is invoked so it can release internal resources (most built-ins use the no-op default).
+
+<Warning>
+Unlike Python's `remove_skill`, **this call does not undo the side effects of [`AddSkill`][add-skill]**. Tools, hints, global-data entries, and prompt sections registered when the skill was loaded remain on the agent and continue to appear in rendered SWML. After unloading you must explicitly remove anything you no longer want — there is no API surface to remove a single tool by name, so this is most reliable for skills loaded with `params["skip_prompt"] = true` and no tools.
+</Warning>
+
+<Note>
+The call is a silent no-op when the skill is not currently loaded — the underlying `SkillManager.UnloadSkill` returns a `bool` indicating whether anything was removed, but [`*AgentBase`][ref-agentbase] discards that return for chaining. Pair with [`HasSkill`][has-skill] if you need to verify presence first.
+</Note>
+
+## **Parameters**
+
+<ParamField path="skillName" type="string" required={true} toc={true}>
+  Name of the skill instance to remove. Matches the key produced by [`AddSkill`][add-skill] (skill name, optionally suffixed with the instance tool from `params["tool"]`).
+</ParamField>
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for method chaining.
+
+## **Example**
+
+```go {13}
+package main
+
+import (
+	"fmt"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("assistant"), agent.WithRoute("/assistant"))
+	a.AddSkill("datetime", nil)
+	a.AddSkill("math", nil)
+	a.RemoveSkill("math")
+	fmt.Println(a.ListSkills()) // ["datetime"]
+}
+```

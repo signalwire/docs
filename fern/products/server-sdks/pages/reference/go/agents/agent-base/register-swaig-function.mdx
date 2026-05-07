@@ -1,0 +1,60 @@
+---
+title: "RegisterSwaigFunction"
+slug: /reference/go/agents/agent-base/register-swaig-function
+description: Register a raw SWAIG function definition, typically from a DataMap.
+max-toc-depth: 3
+---
+
+[datamap]: /docs/server-sdks/reference/go/agents/data-map
+[to-swaig-function]: /docs/server-sdks/reference/go/agents/data-map/to-swaig-function
+[define-tool]: /docs/server-sdks/reference/go/agents/agent-base/define-tool
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Register a raw SWAIG function definition (`map[string]any`). This is the primary way to register server-side functions created by [`DataMap`][datamap], which generates complete SWAIG definitions including URL mappings, expressions, and output templates.
+
+Unlike [`DefineTool`][define-tool], this method does not take a `Handler` — the function executes on the SignalWire platform (for DataMap functions) or at an external webhook URL declared in the function definition.
+
+<Note>
+The function name is read from `funcDef["function"]`. If that key is missing or empty, the call is a silent no-op — nothing is stored and the receiver is returned unchanged. Always confirm the map has a `"function": "<name>"` entry; the canonical way is to call [`(*DataMap).ToSwaigFunction()`][to-swaig-function], which fills the field for you.
+</Note>
+
+## **Parameters**
+
+<ParamField path="funcDef" type="map[string]any" required={true} toc={true}>
+  Complete SWAIG function definition. Must follow the SWAIG function schema and include a `"function"` key with the tool name; typically produced by [`(*DataMap).ToSwaigFunction()`][to-swaig-function]. Stored as the `SwaigFields` of the resulting `ToolDefinition`; insertion order is preserved across subsequent calls.
+</ParamField>
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for method chaining.
+
+## **Example**
+
+### Register a DataMap-backed SWAIG function
+
+```go {22}
+package main
+
+import (
+	"github.com/signalwire/signalwire-go/pkg/agent"
+	"github.com/signalwire/signalwire-go/pkg/datamap"
+	"github.com/signalwire/signalwire-go/pkg/swaig"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(
+		agent.WithName("weather-agent"),
+		agent.WithRoute("/weather"),
+	)
+	a.SetPromptText("You are a helpful assistant.")
+
+	weatherTool := datamap.New("get_weather").
+		Description("Get the current weather").
+		Parameter("city", "string", "City name", true, nil).
+		Webhook("GET", "https://api.weather.example.com/current?city=${args.city}", nil, "", false, nil).
+		Output(swaig.NewFunctionResult("The weather in ${args.city} is ${response.temp}F."))
+
+	a.RegisterSwaigFunction(weatherTool.ToSwaigFunction())
+	_ = a.Serve()
+}
+```

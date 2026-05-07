@@ -1,0 +1,48 @@
+---
+title: "OnRequest"
+slug: /reference/go/agents/agent-base/on-request
+description: Inspect or transform a SWML request before rendering.
+max-toc-depth: 3
+---
+
+[on-swml-request]: /docs/server-sdks/reference/go/agents/agent-base/on-swml-request
+[set-dynamic-config-callback]: /docs/server-sdks/reference/go/agents/agent-base/set-dynamic-config-callback
+
+Convenience wrapper around [`OnSwmlRequest`][on-swml-request] that omits the `*http.Request`. The default implementation returns `nil` (no modifications).
+
+<Note>
+Unlike Python, Go has no inheritance, so this method cannot be overridden in the usual sense. It is exposed for forward compatibility and for callers that want to invoke the dispatch chain manually from custom HTTP handlers. For per-request customization, use [`SetDynamicConfigCallback`][set-dynamic-config-callback], which the framework invokes on every request and supports query params, body, headers, and the active agent instance.
+</Note>
+
+## **Parameters**
+
+<ParamField path="requestData" type="map[string]any" required={true} toc={true}>
+  Parsed POST body from the incoming request. Pass `nil` if no body is available.
+</ParamField>
+
+<ParamField path="callbackPath" type="string" required={true} toc={true}>
+  Path segment that triggered the request. Pass `""` for the root SWML route.
+</ParamField>
+
+## **Returns**
+
+`map[string]any` — modifications to merge into the rendered SWML document, or `nil` for no modifications. The default implementation always returns `nil`.
+
+## **Example**
+
+### Manual dispatch from a custom handler
+
+```go {10}
+package main
+
+import (
+	"net/http"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func handle(a *agent.AgentBase, w http.ResponseWriter, r *http.Request) {
+	mods := a.OnRequest(map[string]any{"caller": "anon"}, "")
+	_ = mods // merge into your rendered document
+}
+```

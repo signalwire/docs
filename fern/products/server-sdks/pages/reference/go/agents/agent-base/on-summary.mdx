@@ -1,0 +1,63 @@
+---
+title: "OnSummary"
+slug: /reference/go/agents/agent-base/on-summary
+description: Register a callback to handle post-prompt summaries.
+max-toc-depth: 3
+---
+
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+[set-post-prompt]: /docs/server-sdks/reference/go/agents/agent-base/set-post-prompt
+[set-post-prompt-url]: /docs/server-sdks/reference/go/agents/agent-base/set-post-prompt-url
+
+Register a callback that runs when a post-prompt summary is received after a conversation ends. Use it to process summaries — saving them to a CRM, triggering follow-up workflows, or logging call outcomes.
+
+A post-prompt must be configured via [`SetPostPrompt`][set-post-prompt] for summaries to be generated.
+
+<Note>
+Unlike Python, where `on_summary` is an override hook on the class, Go uses a setter that takes a `SummaryCallback`. The default behavior is to do nothing — call this method to register a handler, or call [`SetPostPromptUrl`][set-post-prompt-url] to receive summaries at an external endpoint instead.
+</Note>
+
+<Note>
+The Go SDK does not split `summary` and `rawData` — the callback receives the same raw POST body for both arguments. Extract the summary fields you care about (`call_id`, `summary`, the AI's structured response) directly from the map.
+</Note>
+
+## **Parameters**
+
+<ParamField path="cb" type="SummaryCallback" required={true} toc={true}>
+  Callback signature: `func(summary map[string]any, rawData map[string]any)`. Both arguments are populated from the raw POST body.
+</ParamField>
+
+## **Returns**
+
+[`*AgentBase`][ref-agentbase] — returns the receiver for method chaining.
+
+## **Example**
+
+```go {17-22}
+package main
+
+import (
+	"log"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a := agent.NewAgentBase(agent.WithName("support"), agent.WithRoute("/support"))
+	a.SetPromptText("You are a helpful customer support agent.")
+	a.SetPostPrompt(`Summarize this call as JSON:
+- intent: caller's primary intent
+- resolved: yes/no/partial
+- sentiment: positive/neutral/negative`)
+
+	a.OnSummary(func(summary, raw map[string]any) {
+		callID, _ := raw["call_id"].(string)
+		if callID == "" {
+			callID = "unknown"
+		}
+		log.Printf("Call %s summary: %v", callID, summary)
+	})
+
+	_ = a.Serve()
+}
+```

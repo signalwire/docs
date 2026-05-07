@@ -1,0 +1,55 @@
+---
+title: "RenderSWML"
+slug: /reference/go/agents/agent-base/render-swml
+description: Build the complete SWML document for the current agent state.
+max-toc-depth: 3
+---
+
+[set-dynamic-config-callback]: /docs/server-sdks/reference/go/agents/agent-base/set-dynamic-config-callback
+[on-swml-request]: /docs/server-sdks/reference/go/agents/agent-base/on-swml-request
+[swml-document]: /docs/server-sdks/reference/go/agents/swml-builder
+[ref-agentbase]: /docs/server-sdks/reference/go/agents/agent-base
+
+Build the complete SWML response document from the agent's current configuration. The document is assembled in this order: registered pre-answer verbs, the `answer` verb (when auto-answer is enabled), `record_call` (when recording is enabled), post-answer verbs, the `ai` verb (with prompt, post-prompt, languages, hints, pronunciations, SWAIG functions, contexts, native functions, MCP servers, and debug-event configuration applied), and finally any post-AI verbs.
+
+<Note>
+The document is built entirely from receiver state — neither argument is read by the current implementation. Per-request modifications are applied **after** `RenderSWML` returns: the framework calls [`OnSwmlRequest`][on-swml-request] separately and merges its result into the rendered document. For per-request *configuration* (different prompts, tools, languages, etc.), use [`SetDynamicConfigCallback`][set-dynamic-config-callback] — the framework clones the agent and calls the callback before invoking `RenderSWML` on the clone.
+</Note>
+
+## **Parameters**
+
+<ParamField path="requestData" type="map[string]any" required={true} toc={true}>
+  Parsed POST body for the current request, or `nil` if no body is available. Currently unread by the implementation; pass through whatever the framework supplied.
+</ParamField>
+
+<ParamField path="request" type="*http.Request" required={true} toc={true}>
+  Inbound HTTP request, or `nil` outside of an HTTP context. Currently unread by the implementation.
+</ParamField>
+
+## **Returns**
+
+`map[string]any` — the complete SWML document, equivalent to [`(*swml.Document).ToMap()`][swml-document]. JSON-serialize the result with `encoding/json` to produce the response body.
+
+## **Example**
+
+### Render the agent's SWML document outside an HTTP handler
+
+```go {14}
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/signalwire/signalwire-go/pkg/agent"
+)
+
+func main() {
+	a, _ := agent.NewAgentBase(agent.WithName("hello"), agent.WithRoute("/"))
+	a.SetPromptText("You are a helpful assistant.")
+
+	doc := a.RenderSWML(nil, nil)
+	out, _ := json.MarshalIndent(doc, "", "  ")
+	fmt.Println(string(out))
+}
+```
