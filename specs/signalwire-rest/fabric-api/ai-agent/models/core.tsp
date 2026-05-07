@@ -4,7 +4,7 @@ import "./ai/main.tsp";
 import "../../../types";
 
 // Import SWML AI types for reuse
-import "../../../../swml/Methods/Calling/ai/main.tsp";
+import "../../../../swml/calling/Methods/ai/main.tsp";
 
 using TypeSpec.Http;
 

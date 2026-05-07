@@ -1,6 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi3";
-import "../../../../swml";
+import "../../../../swml/calling";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
