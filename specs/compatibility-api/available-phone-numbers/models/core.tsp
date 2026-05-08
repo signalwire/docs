@@ -3,9 +3,8 @@ using TypeSpec.Http;
 model AvailablePhoneNumbersAccountSidPath {
   @doc("The Project ID that uniquely identifies the Account to retrieve.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model IsoCountryPath {

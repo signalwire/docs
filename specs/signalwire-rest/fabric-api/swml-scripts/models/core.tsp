@@ -7,7 +7,6 @@ using TypeSpec.Http;
 model SwmlScriptPathID {
   @doc("Unique ID of a SWML Script.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -15,7 +14,6 @@ model SwmlScriptPathID {
 model SwmlScript {
   @doc("Unique ID of a SWML Script.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The SWML script contents")
@@ -36,6 +34,6 @@ model SwmlScript {
   status_callback_url?: url;
 
   @doc("HTTP method to use for status callbacks")
-  @example(UrlMethodType.Post)
-  status_callback_method?: UrlMethodType.Post;
+  @example(RequestUrlMethodType.Post)
+  status_callback_method?: RequestUrlMethodType.Post;
 }

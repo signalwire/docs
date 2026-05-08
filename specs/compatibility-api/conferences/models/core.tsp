@@ -3,33 +3,29 @@ using TypeSpec.Http;
 model ConferencesAccountSidPath {
   @doc("The unique identifier for the account that created this conference.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model ConferenceSidPath {
   @doc("The unique identifier for this conference.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 model ConferenceSidPathForParticipant {
   @doc("The unique identifier for the conference this participant is in.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  ConferenceSid: string;
+  ConferenceSid: uuid;
 }
 
 model ParticipantCallSidPath {
   @doc("The unique identifier for the Participant call connected to this conference.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  CallSid: string;
+  CallSid: uuid;
 }
 
 @doc("Conference region.")
@@ -71,14 +67,12 @@ model ConferenceSubresourceUris {
 @doc("Conference model.")
 model Conference {
   @doc("The unique identifier for this conference.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472cf")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account that created this conference.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The date, in RFC 2822 format, this conference was created.")
   @example("Mon, 24 Sept 2018 21:00:00 +0000")
@@ -114,28 +108,24 @@ model Conference {
 @doc("Conference participant model.")
 model ConferenceParticipant {
   @doc("The unique identifier for the account that created this conference.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The unique identifier for the Participant call connected to this conference.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
-  call_sid: string;
+  call_sid: uuid;
 
   @doc("The unique identifier of the participant who is being coached.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472co")
-  call_sid_to_coach: string | null;
+  call_sid_to_coach: uuid | null;
 
   @doc("Whether the participant is coaching another call.")
   @example(false)
   coaching: boolean;
 
   @doc("The unique identifier for the conference this participant is in.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472cf")
-  conference_sid: string;
+  conference_sid: uuid;
 
   @doc("The date, in RFC 2822 format, this conference participant was created.")
   @example("Mon, 24 Sept 2018 21:00:00 +0000")
@@ -184,14 +174,12 @@ enum ConferenceStreamStatus {
 @doc("Conference stream model.")
 model ConferenceStream {
   @doc("The unique identifier for the account.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The unique identifier for the conference.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472cf")
-  conference_sid: string;
+  conference_sid: uuid;
 
   @doc("The date, in RFC 2822 GMT format, this stream was updated.")
   @example("Tue, 25 Sept 2018 20:00:00 +0000")
@@ -202,9 +190,8 @@ model ConferenceStream {
   name: string | null;
 
   @doc("The unique identifier for the stream.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472st")
-  sid: string;
+  sid: uuid;
 
   @doc("The status of the stream.")
   status: ConferenceStreamStatus;
@@ -217,17 +204,15 @@ model ConferenceStream {
 model ConferenceStreamSidPath {
   @doc("The unique identifier for the stream.")
   @example("b3877c40-da60-4998-90ad-b792e98472st")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 model ConferenceRecordingSidPath {
   @doc("The unique identifier for the recording.")
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("Recording source for conference recordings.")
@@ -257,14 +242,12 @@ model ConferenceRecordingSubresourceUris {
 @doc("Conference recording model.")
 model ConferenceRecording {
   @doc("The unique identifier for the recording.")
-  @format("uuid")
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account that is associated with this recording.")
-  @format("uuid")
   @example("720796a0-8ee9-4350-83bd-2d07a3121f1e")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
@@ -275,9 +258,8 @@ model ConferenceRecording {
   call_sid: string | null;
 
   @doc("The unique identifier for the conference that is associated with this recording.")
-  @format("uuid")
   @example("43bb71ee-553f-4074-bb20-8e2747647cce")
-  conference_sid: string | null;
+  conference_sid: uuid | null;
 
   @doc("The number of channels in a recording (singular key). Returns '1' for mono or '2' for stereo.")
   @example("1")

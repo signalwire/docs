@@ -8,18 +8,16 @@ namespace SignalWireAPI.Video;
 
 model ConferenceTokenPathID {
   @path
-  @format("uuid")
   @doc("Unique ID of the conference token.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 }
 
 @doc("A conference token object.")
 model ConferenceToken {
   @doc("Unique identifier for the conference token.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("Name of the conference token.")
   @example("My First Token")

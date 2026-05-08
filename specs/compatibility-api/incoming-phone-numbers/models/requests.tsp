@@ -16,9 +16,8 @@ model CreateIncomingPhoneNumberRequest {
   FriendlyName?: string;
 
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472sa")
-  SmsApplicationSid?: string;
+  SmsApplicationSid?: uuid;
 
   @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
@@ -49,9 +48,8 @@ model CreateIncomingPhoneNumberRequest {
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472va")
-  VoiceApplicationSid?: string;
+  VoiceApplicationSid?: uuid;
 
   @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
@@ -79,14 +77,12 @@ model CreateIncomingPhoneNumberRequest {
 @doc("Request body for updating an incoming phone number.")
 model UpdateIncomingPhoneNumberRequest {
   @doc("The unique identifier for an account to which the number should be transferred. Must be within the same Space.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
-  AccountSid?: string;
+  AccountSid?: uuid;
 
   @doc("The unique identifier of the address associated with E911 for this phone number. Not supported for toll-free numbers or certain providers.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ad")
-  EmergencyAddressSid?: string;
+  EmergencyAddressSid?: uuid;
 
   @doc("A friendly name for the phone number.")
   @minLength(1)
@@ -95,9 +91,8 @@ model UpdateIncomingPhoneNumberRequest {
   FriendlyName?: string;
 
   @doc("The unique identifier for the application associated with SMS handling on this phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472sa")
-  SmsApplicationSid?: string;
+  SmsApplicationSid?: uuid;
 
   @doc("Whether the request to `SmsFallbackUrl` is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")
@@ -127,9 +122,8 @@ model UpdateIncomingPhoneNumberRequest {
   StatusCallbackMethod?: "GET" | "POST" = "POST";
 
   @doc("The unique identifier for the application associated with call handling on this phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472va")
-  VoiceApplicationSid?: string;
+  VoiceApplicationSid?: uuid;
 
   @doc("Whether the request to VoiceFallbackUrl is a `GET` or a `POST`. Default is `POST`.")
   @example("POST")

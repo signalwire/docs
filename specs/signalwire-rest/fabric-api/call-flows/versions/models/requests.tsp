@@ -20,6 +20,5 @@ model CallFlowVersionDeployByDocumentVersion {
 model CallFlowVersionDeployByVersionId {
   @doc("Any call flow version ID for this call flow.")
   @example("1313fe58-5e14-4c11-bbe7-6fdfa11fe780")
-  @format("uuid")
   call_flow_version_id: uuid;
 }

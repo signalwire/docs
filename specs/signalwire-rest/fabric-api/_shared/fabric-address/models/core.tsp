@@ -8,7 +8,6 @@ using TypeSpec.Http;
 model FabricAddressID {
   @doc("Unique ID of a FabricAddress.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -16,7 +15,6 @@ model FabricAddressID {
 model FabricAddress {
   @doc("Unique ID of the Fabric Address.")
   @example("691af061-cd86-4893-a605-173f47afc4c2")
-  @format("uuid")
   id: uuid;
 
   @doc("Name of the Fabric Address.")

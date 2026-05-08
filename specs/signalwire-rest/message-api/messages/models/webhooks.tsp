@@ -6,17 +6,15 @@ namespace SignalWireAPI.Message;
 
 @summary("Message status callback")
 @doc("""
-  Payload sent by SignalWire to the `status_callback` URL each time a message transitions to a new state. The same payload shape is used for RELAY SDK message callbacks and SWML `send_sms` status callbacks.
+  Payload sent by SignalWire to the `status_callback` URL each time a message transitions to a new state. The same payload shape is used for RELAY SDK message callbacks, SWML `send_sms` status callbacks, and SWML messaging `reply.status_url` callbacks.
 
   Configure `status_callback` when [sending a message](/docs/apis/rest/messages/create-message).
   """)
 model MessageStatusCallbackPayload {
-  @format("uuid")
   @doc("The unique ID of the message segment.")
   @example("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
   id: uuid;
 
-  @format("uuid")
   @doc("The ID of the project the message belongs to.")
   @example("b2c3d4e5-f6a7-8901-bcde-f12345678901")
   project_id: uuid;

@@ -3,25 +3,22 @@ using TypeSpec.Http;
 model FaxesAccountSidPath {
   @doc("The Project ID that uniquely identifies the Account.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model FaxSidPath {
   @doc("The Fax ID that uniquely identifies the Fax.")
   @example("b3877c40-da60-4998-90ad-b792e98472fx")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 model FaxSidPathForMedia {
   @doc("The Fax ID that uniquely identifies the Fax.")
   @example("b3877c40-da60-4998-90ad-b792e98472fx")
-  @format("uuid")
   @path
-  FaxSid: string;
+  FaxSid: uuid;
 }
 
 @doc("Fax direction.")

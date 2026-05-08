@@ -18,9 +18,8 @@ model CreateCallRequest {
   Url?: string;
 
   @doc("The unique identifier of the application used to handle the call. Required if `Url` and `Laml`/`Twiml` are not used.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ap")
-  ApplicationSid?: string;
+  ApplicationSid?: uuid;
 
   // Commented out pending verification - may be internal only
   // @doc("Inline cXML/LAML document to execute. Required if `Url` and `ApplicationSid` are not used.")

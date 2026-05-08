@@ -55,10 +55,9 @@ namespace SignalWireAPI.Project.Tokens {
     @patch(#{ implicitOptionality: true })
     update(
       @path
-      @format("uuid")
       @doc("The unique identifier of the token to update.")
       @example("ea14556a-984f-11ee-b9d1-0242ac120002")
-      token_id: string,
+      token_id: uuid,
 
       ...UpdateTokenRequest,
     ):
@@ -81,10 +80,9 @@ namespace SignalWireAPI.Project.Tokens {
     @delete
     delete(
       @path
-      @format("uuid")
       @doc("The unique identifier of the token that you want to delete.")
       @example("ea14556a-984f-11ee-b9d1-0242ac120002")
-      token_id: string,
+      token_id: uuid,
     ):
       | {
           @statusCode statusCode: 204;

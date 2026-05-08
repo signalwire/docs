@@ -49,6 +49,11 @@ sections:
 
 SWML provides several variable scopes that are available throughout your scripts. These scopes give you access to call information, script parameters, and stored data.
 
+<Tabs>
+<Tab title="Calling">
+
+Variables exposed to a calling SWML document. Calling SWML uses `${variable}` for variable substitution.
+
 <ParamField path="call" type="object" toc={true}>
   Information about the current call. Contains the following properties. 
   
@@ -192,7 +197,7 @@ The `envs` object is included in POST request bodies to external servers, but th
   **Example keys:** `envs.api_key`, `envs.webhook_url`, `envs.account_setting`
 
 <ParamField path="params" type="object" toc={true}>
-  Parameters that are user-defined and set by the calling the [`execute`](/docs/swml/reference/execute) or [`transfer`](/docs/swml/reference/transfer) method.
+  Parameters that are user-defined and set by the calling the [`execute`](/docs/swml/reference/calling/execute) or [`transfer`](/docs/swml/reference/calling/transfer) method.
 </ParamField>
 
   **Scope:** Section-scoped and read-only. Each section has its own independent `params` that must be explicitly passed via `execute` or `transfer`. Params do not persist after a section completes.
@@ -205,11 +210,11 @@ The `envs` object is included in POST request bodies to external servers, but th
 </ParamField>
 
   **Created by:**
-  - [`set`](/docs/swml/reference/set) method - Create or update user-defined variables
+  - [`set`](/docs/swml/reference/calling/set) method - Create or update user-defined variables
   - Method outputs - Many methods automatically create variables (e.g., `prompt_value`, `record_url`, `return_value`)
 
   **Managed with:**
-  - [`unset`](/docs/swml/reference/unset) method - Remove variables
+  - [`unset`](/docs/swml/reference/calling/unset) method - Remove variables
 
   **Example keys:** `vars.user_choice`, `vars.counter`, `vars.prompt_value`, `vars.record_url`
 
@@ -219,53 +224,145 @@ The `envs` object is included in POST request bodies to external servers, but th
   **Variable access:** Variables can be accessed with or without the `vars.` prefix.
   When you reference a variable without a scope prefix (e.g., `${my_variable}`), SWML first checks `vars`. If not found in `vars`, it automatically falls back to `envs`.
 
+</Tab>
+<Tab title="Messaging">
+
+Variables exposed to a messaging SWML document handling an inbound message.
+Messaging SWML uses `%{variable.path}` for variable substitution (rather than the `${variable}` syntax used by calling SWML).
+
+<ParamField path="message" type="object" toc={true}>
+  Information about the inbound message that triggered the SWML document.
+
+  **Scope:** Message-specific and read-only. Each inbound message produces its own `message` object.
+  There is no persistent state between inbound messages.
+</ParamField>
+
+  <Indent>
+
+    <ParamField path="message.message_id" type="string" toc={true}>
+      Unique identifier for the message.
+    </ParamField>
+
+    <ParamField path="message.project_id" type="string" toc={true}>
+      The Project ID this message belongs to.
+    </ParamField>
+
+    <ParamField path="message.space_id" type="string" toc={true}>
+      The Space ID this message belongs to.
+    </ParamField>
+
+    <ParamField path="message.direction" type="string" toc={true}>
+      Always `inbound` for messages handled by an SWML messaging script.
+    </ParamField>
+
+    <ParamField path="message.type" type="string" toc={true}>
+      The message channel type. Possible values: `sms`, `mms`.
+    </ParamField>
+
+    <ParamField path="message.from" type="string" toc={true}>
+      Sender phone number in E.164 format.
+    </ParamField>
+
+    <ParamField path="message.to" type="string" toc={true}>
+      Recipient phone number in E.164 format.
+    </ParamField>
+
+    <ParamField path="message.body" type="string" toc={true}>
+      The text content of the message.
+    </ParamField>
+
+    <ParamField path="message.media" type="object[]" toc={true}>
+      Array of MMS media attachments. Empty for SMS-only messages.
+    </ParamField>
+
+      <Indent>
+
+        <ParamField path="message.media[].url" type="string" toc={true}>
+          URL to download the media file.
+        </ParamField>
+
+        <ParamField path="message.media[].content_type" type="string" toc={true}>
+          MIME type of the media file.
+        </ParamField>
+
+        <ParamField path="message.media[].size" type="integer" toc={true}>
+          File size in bytes.
+        </ParamField>
+
+      </Indent>
+
+    <ParamField path="message.segments" type="integer" toc={true}>
+      Number of SMS segments the message was split into.
+    </ParamField>
+
+    <ParamField path="message.timestamp" type="string" toc={true}>
+      ISO 8601 timestamp of when the message was received.
+    </ParamField>
+
+  </Indent>
+
+<ParamField path="params" type="object" toc={true}>
+  Parameters passed via the [`execute`](/docs/swml/reference/messaging/execute) or [`transfer`](/docs/swml/reference/messaging/transfer) method.
+</ParamField>
+
+  **Scope:** Section-scoped and read-only. Each `execute` or `transfer` call replaces (does not merge with) the caller's `params`. When the called section returns, the caller's original `params` are restored.
+
+  **Example keys:** `params.reason`, `params.source`, `params.body`
+
+<ParamField path="reply_result" type="string" toc={true}>
+  Result of the most recent [`reply`](/docs/swml/reference/messaging/reply) step. Possible values: `queued`, `failed`.
+</ParamField>
+
+<ParamField path="reply_message_id" type="string" toc={true}>
+  Message segment ID of the most recent successful `reply`.
+</ParamField>
+
+<ParamField path="request_result" type="string" toc={true}>
+  Result of the most recent [`request`](/docs/swml/reference/messaging/request) step. Possible values: `success`, `failed`, `timeout`, `limit_exceeded`.
+</ParamField>
+
+<ParamField path="request_response" type="object" toc={true}>
+  Parsed JSON response from the most recent `request`, populated only when `save_variables: true` was set on the `request` step.
+  Access individual fields with dot notation, e.g. `%{request_response.field_name}`.
+</ParamField>
+
+<ParamField path="request_response_code" type="integer" toc={true}>
+  HTTP response code from the most recent `request`.
+</ParamField>
+
+<ParamField path="request_response_body" type="string" toc={true}>
+  Raw response body from the most recent `request`. Truncated to 64 KB.
+</ParamField>
+
+<ParamField path="return_value" type="any" toc={true}>
+  Value passed by the most recent [`return`](/docs/swml/reference/messaging/return) from a section called via `execute`.
+</ParamField>
+
+</Tab>
+</Tabs>
+
 ### Example: Variables in JSON format
 
-When SWML communicates with your SWML server, the following request body format is used to represent variables:
+When SWML communicates with your SWML server, the following request body format is used to represent variables. The shape differs between calling and messaging documents.
 
-```json
-{
-  "call": {
-    "call_id": "<CALL_UUID>",
-    "node_id": "<NODE_ID>",
-    "segment_id": "<SEGMENT_ID>",
-    "call_state": "created",
-    "direction": "inbound",
-    "type": "sip",
-    "from": "sip:user@example.com",
-    "to": "sip:destination@yourdomain.com",
-    "headers": [],
-    "sip_data": {
-      "sip_req_user": "destination",
-      "sip_req_uri": "destination@yourdomain.com",
-      "sip_req_host": "yourdomain.com",
-      "sip_from_user": "user",
-      "sip_from_uri": "user@example.com",
-      "sip_from_host": "example.com",
-      "sip_to_user": "destination",
-      "sip_to_uri": "destination@yourdomain.com",
-      "sip_to_host": "yourdomain.com",
-      "sip_contact_user": "user",
-      "sip_contact_port": "5060",
-      "sip_contact_uri": "user@192.168.1.100:5060",
-      "sip_contact_host": "192.168.1.100",
-      "sip_contact_params": {}
-    },
-    "project_id": "<YOUR PROJECT ID>",
-    "space_id": "<YOUR SPACE ID>"
-  },
-  "vars": {
-    "user_selection": "1"
-  },
-  "envs": {
-    "api_key": "<YOUR_API_KEY>",
-    "webhook_url": "https://example.com/webhook"
-  },
-  "params": {
-    "department": "sales"
-  }
-}
-```
+<Tabs>
+<Tab title="Calling">
+
+<WebhookPayloadSnippet webhook="inboundCallWebhook" />
+
+See the [SWML inbound call webhook](/docs/apis/rest/swml-webhook/webhooks/inbound-call-webhook)
+page for the full field reference.
+
+</Tab>
+<Tab title="Messaging">
+
+<WebhookPayloadSnippet webhook="inboundMessageWebhook" />
+
+See the [SWML inbound message webhook](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
+page for the full field reference.
+
+</Tab>
+</Tabs>
 
 ## Variables in serverless and server-based SWML
 

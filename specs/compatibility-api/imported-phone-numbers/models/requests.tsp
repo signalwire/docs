@@ -3,9 +3,8 @@ using TypeSpec.Http;
 model ImportedPhoneNumbersAccountSidPath {
   @doc("The unique identifier for the account that is associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 @doc("The type of phone number being imported.")

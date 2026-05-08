@@ -28,7 +28,6 @@ model UpdateShortCodeRequest {
 
   @doc("The ID of the LāML application to handle messages when using laml_application handler.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   message_laml_application_id?: uuid;
 
   @doc("The Relay context to use when using relay_context handler.")

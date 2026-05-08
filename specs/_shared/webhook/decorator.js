@@ -1,7 +1,47 @@
-import { setExtension, getExtensions, getTagsMetadata } from "@typespec/openapi";
-import { serializeValueAsJson } from "@typespec/compiler";
+// @webhook decorator implementation.
+//
+// Two-phase design that follows the canonical TypeSpec library pattern:
+//
+//   1. $webhook (decorator phase) — pure registration. Resolves the
+//      enclosing service namespace via the compiler's listServices/
+//      getService accessors, validates the target/payload, and stores a
+//      per-namespace Map<name, entry> via useStateMap. No schema work,
+//      no module-level mutables, no array of pending tasks.
+//
+//   2. $onValidate — post-checking phase, runs once after all types and
+//      @tagMetadata are known. Resolves tag inheritance through getTags
+//      (handling namespace/interface chains), builds the JSON Schema for
+//      each payload via the schema module, and injects the consolidated
+//      `webhooks` object onto the service namespace through the OpenAPI
+//      extension hook (setExtension).
+//
+// The `setExtension(program, namespace, "webhooks", ...)` call exploits
+// the fact that @typespec/openapi3 spreads the extension map onto the
+// emitted document root via attachExtensions. ExtensionKey is typed
+// `\`x-${string}\`` for type-checking only — the runtime accepts any
+// string and lands at the OpenAPI 3.1 `webhooks` slot. This is the only
+// supported integration point for injecting top-level fields without
+// owning the emitter.
 
-// ── String helpers ───────────────────────────────────────────────────
+import {
+  getDoc,
+  getSummary,
+  getTags,
+  getService,
+  listServices,
+  isService,
+} from "@typespec/compiler";
+import { useStateMap } from "@typespec/compiler/utils";
+import { setExtension, getTagsMetadata } from "@typespec/openapi";
+import { reportDiagnostic, stateKeys } from "./lib.js";
+import { buildPayloadSchema } from "./schema.js";
+
+// ── State ─────────────────────────────────────────────────────────────
+
+// Per-service-namespace map: webhook name → { name, target, payload, explicitTag, operationId }.
+const [getWebhooks, setWebhooks] = useStateMap(stateKeys.webhooks);
+
+// ── String helpers ────────────────────────────────────────────────────
 
 function toSnakeCase(str) {
   return str.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, "");
@@ -10,189 +50,11 @@ function toSnakeCase(str) {
 function toHumanReadable(str) {
   const words = str.replace(/([A-Z])/g, " $1").trim().split(/\s+/);
   return words
-    .map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
+    .map((w, i) =>
+      i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase(),
+    )
     .join(" ");
 }
-
-// ── Decorator reading ────────────────────────────────────────────────
-
-function getDecoratorArg(type, decoratorName) {
-  for (const dec of type.decorators || []) {
-    if (dec.definition?.name === decoratorName) {
-      return dec.args?.[0]?.jsValue;
-    }
-  }
-  return undefined;
-}
-
-// Returns the TypeSpec Value (not jsValue) for a decorator argument. Use for
-// values that need to be JSON-serialized via serializeValueAsJson — jsValue
-// for complex args (enum members, scalar constructors like utcDateTime.fromISO)
-// contains cyclic TypeSpec objects that crash the YAML emitter.
-function getDecoratorArgValue(type, decoratorName) {
-  for (const dec of type.decorators || []) {
-    if (dec.definition?.name === decoratorName) {
-      return dec.args?.[0]?.value;
-    }
-  }
-  return undefined;
-}
-
-// ── Schema serialization ─────────────────────────────────────────────
-
-function modelToJsonSchema(model, seen, program) {
-  if (!seen) seen = new Set();
-  if (seen.has(model)) return { type: "object" };
-  seen.add(model);
-
-  const properties = {};
-  const required = [];
-
-  for (const [name, prop] of model.properties) {
-    const schema = typeToSchema(prop.type, seen, program);
-    const doc = getDecoratorArg(prop, "@doc");
-    if (doc) schema.description = doc;
-    const exampleValue = getDecoratorArgValue(prop, "@example");
-    if (exampleValue !== undefined && program) {
-      schema.example = serializeValueAsJson(program, exampleValue, prop.type);
-    }
-    properties[name] = schema;
-    if (!prop.optional) required.push(name);
-  }
-
-  const result = { type: "object", properties };
-  if (required.length > 0) result.required = required;
-  const doc = getDecoratorArg(model, "@doc");
-  if (doc) result.description = doc;
-
-  seen.delete(model);
-  return result;
-}
-
-function typeToSchema(type, seen, program) {
-  if (!seen) seen = new Set();
-
-  switch (type.kind) {
-    case "Scalar": {
-      const n = type.name;
-      if (n === "string" || n === "url") return { type: "string" };
-      if (n === "boolean") return { type: "boolean" };
-      if (["int32", "int64", "integer", "uint32", "uint64"].includes(n)) return { type: "integer" };
-      if (["float", "float32", "float64", "numeric"].includes(n)) return { type: "number" };
-      if (n === "utcDateTime") return { type: "string", format: "date-time" };
-      if (type.baseScalar) return typeToSchema(type.baseScalar, seen, program);
-      return { type: "string" };
-    }
-    case "Intrinsic":
-      return type.name === "null" ? { type: "null" } : {};
-    case "Union": {
-      const variants = [...type.variants.values()];
-      const nullVariant = variants.find((v) => v.type.kind === "Intrinsic" && v.type.name === "null");
-      const nonNull = variants.filter((v) => !(v.type.kind === "Intrinsic" && v.type.name === "null"));
-
-      if (nonNull.every((v) => v.type.kind === "String") && nonNull.length > 0) {
-        const schema = { type: "string", enum: nonNull.map((v) => v.type.value) };
-        return nullVariant ? { oneOf: [schema, { type: "null" }] } : schema;
-      }
-
-      const schemas = variants.map((v) => typeToSchema(v.type, seen, program));
-      if (schemas.length === 2 && nullVariant) {
-        const s = schemas.find((s) => s.type !== "null");
-        if (s) return { ...s, nullable: true };
-      }
-      return { oneOf: schemas };
-    }
-    case "String":
-      return { type: "string", enum: [type.value] };
-    case "Number":
-      return { type: "number", enum: [type.value] };
-    case "Boolean":
-      return { type: "boolean", enum: [type.value] };
-    case "Model": {
-      if (type.indexer?.key?.name === "integer") {
-        return { type: "array", items: type.indexer.value ? typeToSchema(type.indexer.value, seen, program) : {} };
-      }
-      return modelToJsonSchema(type, seen, program);
-    }
-    case "Enum":
-      return { type: "string", enum: [...type.members.values()].map((m) => m.value ?? m.name) };
-    default:
-      return {};
-  }
-}
-
-// ── Namespace resolution ─────────────────────────────────────────────
-
-function findServiceNamespace(target, program) {
-  // Walk up from the target
-  let current = target;
-  while (current) {
-    if (current.kind === "Namespace" && current.decorators?.some((d) => d.definition?.name === "@service")) {
-      return current;
-    }
-    current =
-      current.kind === "ModelProperty" ? current.model :
-      current.kind === "Model" ? (current.namespace || current.model) :
-      current.namespace ?? null;
-  }
-
-  // Fallback: search all top-level namespaces
-  for (const ns of program.checker.getGlobalNamespaceType().namespaces.values()) {
-    if (ns.decorators?.some((d) => d.definition?.name === "@service")) return ns;
-  }
-  return null;
-}
-
-// ── Tag creation ────────────────────────────────────────────────────
-
-function ensureTag(program, namespace, tagName, tagMetadata) {
-  const tags = getTagsMetadata(program, namespace);
-  if (!tags) return;
-  if (tags[tagName]) return;
-  tags[tagName] = tagMetadata || {};
-}
-
-// ── Tag resolution (deferred to $onValidate) ─────────────────────────
-
-const pendingTags = [];
-
-function collectModelsFromType(type, models, seen) {
-  if (!type || seen.has(type)) return;
-  seen.add(type);
-
-  if (type.kind === "Model") {
-    models.add(type);
-    for (const prop of type.properties?.values() || []) collectModelsFromType(prop.type, models, seen);
-    for (const src of type.sourceModels || []) collectModelsFromType(src.model, models, seen);
-    if (type.baseModel) collectModelsFromType(type.baseModel, models, seen);
-  } else if (type.kind === "Union") {
-    for (const v of type.variants?.values() || []) collectModelsFromType(v.type, models, seen);
-  }
-}
-
-function buildModelTagMap(ns, map) {
-  if (!map) map = new Map();
-
-  for (const iface of ns.interfaces?.values() || []) {
-    const tag = getDecoratorArg(iface, "@tag");
-    if (!tag) continue;
-    for (const op of iface.operations?.values() || []) {
-      const models = new Set();
-      const seen = new Set();
-      for (const param of op.parameters?.properties?.values() || []) {
-        collectModelsFromType(param.type, models, seen);
-      }
-      for (const model of models) {
-        if (!map.has(model)) map.set(model, tag);
-      }
-    }
-  }
-
-  for (const child of ns.namespaces?.values() || []) buildModelTagMap(child, map);
-  return map;
-}
-
-// ── Decorator entry point ────────────────────────────────────────────
 
 function parseTag(tag) {
   if (!tag) return null;
@@ -200,58 +62,216 @@ function parseTag(tag) {
   return tag;
 }
 
-export function $webhook(context, target, name, payload, tag, operationId) {
-  const namespace = findServiceNamespace(target, context.program);
-  if (!namespace) return;
+// ── Service resolution ────────────────────────────────────────────────
 
-  // Deduplicate — first declaration wins
-  const existing = getExtensions(context.program, namespace).get("webhooks");
-  if (existing?.[name]) return;
-
-  const post = {
-    operationId: operationId ?? toSnakeCase(name),
-    summary: getDecoratorArg(payload, "@summary") ?? toHumanReadable(name),
-    requestBody: {
-      required: true,
-      content: { "application/json": { schema: modelToJsonSchema(payload, undefined, context.program) } },
-    },
-    responses: { 200: { description: "Webhook received" } },
-  };
-
-  const description = getDecoratorArg(payload, "@doc");
-  if (description) post.description = description;
-
-  // Tag resolution deferred to $onValidate — @tagMetadata not yet available at decorator time
-  pendingTags.push({ post, target, namespace, explicitTag: parseTag(tag) });
-
-  setExtension(context.program, namespace, "webhooks", { ...(existing || {}), [name]: { post } });
+// Walk parent chain looking for a @service namespace. If the target is
+// orphaned from any service (e.g., a free-floating Namespace), fall back
+// to the single-service shortcut so common cases still work.
+function findServiceNamespace(target, program) {
+  let current = target;
+  while (current) {
+    if (current.kind === "Namespace" && isService(program, current)) return current;
+    current =
+      current.kind === "ModelProperty" ? current.model :
+      current.kind === "Model" ? (current.namespace || current.model) :
+      current.namespace ?? null;
+  }
+  const services = listServices(program);
+  return services.length === 1 ? services[0].type : null;
 }
 
-// ── $onValidate: resolve tags after all types are ready ──────────────
+// ── Decorator entry point ─────────────────────────────────────────────
 
-export function $onValidate(program) {
-  if (pendingTags.length === 0) return;
+export function $webhook(context, target, name, payload, tag, operationId) {
+  const { program } = context;
 
-  const cache = new Map();
-  for (const { post, target, namespace, explicitTag } of pendingTags) {
-    let tagName;
-    let tagMetadata;
-
-    if (explicitTag) {
-      tagName = explicitTag.name;
-      const { name: _, ...meta } = explicitTag;
-      tagMetadata = Object.keys(meta).length > 0 ? meta : undefined;
-    } else {
-      if (!cache.has(namespace)) cache.set(namespace, buildModelTagMap(namespace));
-      const model = target.kind === "ModelProperty" ? target.model : null;
-      tagName = model ? cache.get(namespace).get(model) : undefined;
-    }
-
-    if (tagName) {
-      post.tags = [tagName];
-      ensureTag(program, namespace, tagName, tagMetadata);
-    }
+  if (payload?.kind !== "Model") {
+    reportDiagnostic(program, {
+      code: "invalid-payload",
+      target: context.decoratorTarget,
+    });
+    return;
   }
 
-  pendingTags.length = 0;
+  const namespace = findServiceNamespace(target, program);
+  if (!namespace) {
+    reportDiagnostic(program, {
+      code: "not-in-service",
+      target: context.decoratorTarget,
+    });
+    return;
+  }
+
+  let webhooks = getWebhooks(program, namespace);
+  if (!webhooks) {
+    webhooks = new Map();
+    setWebhooks(program, namespace, webhooks);
+  }
+
+  // Dedup is a feature: the same webhook name can be referenced from
+  // multiple request fields without producing duplicate entries. Only
+  // diagnose when a second declaration would actually change the
+  // emitted shape (different payload model).
+  const existing = webhooks.get(name);
+  if (existing) {
+    if (existing.payload !== payload) {
+      reportDiagnostic(program, {
+        code: "duplicate-name",
+        format: { name },
+        target: context.decoratorTarget,
+      });
+    }
+    return;
+  }
+
+  webhooks.set(name, {
+    name,
+    target,
+    payload,
+    explicitTag: parseTag(tag),
+    operationId,
+  });
+}
+
+// ── Tag inheritance ───────────────────────────────────────────────────
+//
+// Build a Model → tag map by walking every operation under the service
+// namespace and assigning each model reachable through the operation's
+// parameters the tag returned by getTags(program, op). getTags handles
+// namespace/interface inheritance natively, so we no longer have to
+// special-case interface vs. namespace operations the way the previous
+// implementation did.
+
+function collectModelsFromType(type, models, seen) {
+  if (!type || seen.has(type)) return;
+  seen.add(type);
+
+  if (type.kind === "Model") {
+    models.add(type);
+    for (const prop of type.properties?.values() || []) {
+      collectModelsFromType(prop.type, models, seen);
+    }
+    for (const src of type.sourceModels || []) {
+      collectModelsFromType(src.model, models, seen);
+    }
+    if (type.baseModel) collectModelsFromType(type.baseModel, models, seen);
+  } else if (type.kind === "Union") {
+    for (const v of type.variants?.values() || []) {
+      collectModelsFromType(v.type, models, seen);
+    }
+  }
+}
+
+function buildModelTagMap(program, ns, map) {
+  for (const op of ns.operations?.values() || []) {
+    assignTagToOpModels(program, op, map);
+  }
+  for (const iface of ns.interfaces?.values() || []) {
+    for (const op of iface.operations?.values() || []) {
+      assignTagToOpModels(program, op, map);
+    }
+  }
+  for (const child of ns.namespaces?.values() || []) {
+    buildModelTagMap(program, child, map);
+  }
+  return map;
+}
+
+function assignTagToOpModels(program, op, map) {
+  const tags = getTags(program, op);
+  if (!tags || tags.length === 0) return;
+  const tagName = tags[0];
+
+  const models = new Set();
+  const seen = new Set();
+  for (const param of op.parameters?.properties?.values() || []) {
+    collectModelsFromType(param.type, models, seen);
+  }
+  for (const model of models) {
+    if (!map.has(model)) map.set(model, tagName);
+  }
+}
+
+function inheritedTagFor(target, modelTagMap) {
+  if (target.kind !== "ModelProperty") return undefined;
+  return modelTagMap.get(target.model);
+}
+
+// Auto-create a tag entry on the service namespace's @tagMetadata map
+// if the resolved tag isn't already declared. Mutates the live state-map
+// reference returned by getTagsMetadata — @typespec/openapi does not
+// export setTagsMetadata, so this is the only avenue. The reference
+// contract is stable because @typespec/openapi's useStateMap getter
+// returns the underlying object directly.
+function ensureTag(program, namespace, tagName, tagMetadata) {
+  const tags = getTagsMetadata(program, namespace);
+  if (!tags) return;
+  if (tags[tagName]) return;
+  tags[tagName] = tagMetadata || {};
+}
+
+// ── OpenAPI version detection ─────────────────────────────────────────
+//
+// Mirrors @typespec/openapi3's own resolution path. When multi-version
+// emit is configured, pick the highest version — schemas are emitted
+// once, regardless of how many versions the emitter is asked to produce.
+
+function getOpenAPIVersion(program) {
+  const versions =
+    program?.compilerOptions?.options?.["@typespec/openapi3"]?.["openapi-versions"];
+  if (!Array.isArray(versions) || versions.length === 0) return "3.0.0";
+  if (versions.includes("3.2.0")) return "3.2.0";
+  if (versions.includes("3.1.0")) return "3.1.0";
+  return "3.0.0";
+}
+
+// ── $onValidate: assemble webhooks and inject ─────────────────────────
+
+export function $onValidate(program) {
+  const services = listServices(program);
+  if (services.length === 0) return;
+  const version = getOpenAPIVersion(program);
+
+  for (const service of services) {
+    const webhooks = getWebhooks(program, service.type);
+    if (!webhooks || webhooks.size === 0) continue;
+
+    const modelTagMap = buildModelTagMap(program, service.type, new Map());
+    const out = {};
+
+    for (const [name, entry] of webhooks) {
+      const post = {
+        operationId: entry.operationId ?? toSnakeCase(name),
+        summary: getSummary(program, entry.payload) ?? toHumanReadable(name),
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: buildPayloadSchema(program, entry.payload, version),
+            },
+          },
+        },
+        responses: { 200: { description: "Webhook received" } },
+      };
+
+      const description = getDoc(program, entry.payload);
+      if (description) post.description = description;
+
+      const tagName =
+        entry.explicitTag?.name ?? inheritedTagFor(entry.target, modelTagMap);
+      if (tagName) {
+        post.tags = [tagName];
+        let metadata;
+        if (entry.explicitTag) {
+          const { name: _ignored, ...rest } = entry.explicitTag;
+          metadata = Object.keys(rest).length > 0 ? rest : undefined;
+        }
+        ensureTag(program, service.type, tagName, metadata);
+      }
+
+      out[name] = { post };
+    }
+
+    setExtension(program, service.type, "webhooks", out);
+  }
 }

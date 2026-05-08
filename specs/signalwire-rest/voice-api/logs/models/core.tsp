@@ -9,7 +9,6 @@ namespace SignalWireAPI.Voice;
 
 
 model LogPathID {
-  @format("uuid")
   @path
   @doc("Unique ID of the log. This is the segment_id you can find in Relay call details in your Dashboard UI or in return objects when using the SDK.")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
@@ -29,7 +28,6 @@ model ChargeDetail {
 
 @doc("Common fields shared across all voice log types.")
 model VoiceLogCommon {
-  @format("uuid")
   @doc("A unique identifier for the log.")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
   id: uuid;
@@ -174,7 +172,6 @@ model FabricVoiceLog {
 @summary("Deleted Log")
 @doc("A discarded/deleted voice log entry. Returned when the log has been deleted. Only present when `include_deleted` is `true`.")
 model DiscardedVoiceLog {
-  @format("uuid")
   @doc("A unique identifier for the log.")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
   id: uuid;
@@ -215,12 +212,10 @@ model LogEvent {
   @example(#{})
   details: {};
 
-  @format("uuid")
   @doc("Unique identifier for the project.")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
   project_id: uuid;
 
-  @format("uuid")
   @doc("Unique identifier for the log.")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
   log_id: uuid;
