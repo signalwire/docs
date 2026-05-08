@@ -210,19 +210,30 @@ function ensureTag(program, namespace, tagName, tagMetadata) {
   tags[tagName] = tagMetadata || {};
 }
 
-// ── OpenAPI version detection ─────────────────────────────────────────
+// ── OpenAPI emitter options ───────────────────────────────────────────
 //
-// Mirrors @typespec/openapi3's own resolution path. When multi-version
-// emit is configured, pick the highest version — schemas are emitted
-// once, regardless of how many versions the emitter is asked to produce.
+// Mirrors what @typespec/openapi3's resolveOptions(EmitContext) returns,
+// but read directly from compilerOptions because $onValidate runs before
+// any EmitContext exists. We pull only the options the schema walker
+// cares about. When multi-version emit is configured, pick the highest
+// version — schemas are emitted once, regardless of how many versions
+// the emitter is asked to produce. Defaults match @typespec/openapi3:
+// version "3.0.0", seal-object-schemas false.
 
-function getOpenAPIVersion(program) {
-  const versions =
-    program?.compilerOptions?.options?.["@typespec/openapi3"]?.["openapi-versions"];
-  if (!Array.isArray(versions) || versions.length === 0) return "3.0.0";
-  if (versions.includes("3.2.0")) return "3.2.0";
-  if (versions.includes("3.1.0")) return "3.1.0";
-  return "3.0.0";
+function getOpenAPI3Options(program) {
+  const raw = program?.compilerOptions?.options?.["@typespec/openapi3"] ?? {};
+
+  let version = "3.0.0";
+  const versions = raw["openapi-versions"];
+  if (Array.isArray(versions) && versions.length > 0) {
+    if (versions.includes("3.2.0")) version = "3.2.0";
+    else if (versions.includes("3.1.0")) version = "3.1.0";
+  }
+
+  return {
+    version,
+    sealObjectSchemas: raw["seal-object-schemas"] === true,
+  };
 }
 
 // ── $onValidate: assemble webhooks and inject ─────────────────────────
@@ -230,7 +241,7 @@ function getOpenAPIVersion(program) {
 export function $onValidate(program) {
   const services = listServices(program);
   if (services.length === 0) return;
-  const version = getOpenAPIVersion(program);
+  const options = getOpenAPI3Options(program);
 
   for (const service of services) {
     const webhooks = getWebhooks(program, service.type);
@@ -247,7 +258,7 @@ export function $onValidate(program) {
           required: true,
           content: {
             "application/json": {
-              schema: buildPayloadSchema(program, entry.payload, version),
+              schema: buildPayloadSchema(program, entry.payload, options),
             },
           },
         },

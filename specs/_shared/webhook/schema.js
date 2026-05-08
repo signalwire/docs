@@ -26,6 +26,8 @@ import {
   getEncode,
   isSecret,
   isArrayModelType,
+  isNeverType,
+  isTemplateDeclaration,
   getDeprecated,
   getExamples,
   serializeValueAsJson,
@@ -212,9 +214,60 @@ function applyExamples(program, type, schema) {
   schema.example = serializeValueAsJson(program, examples[0].value, type);
 }
 
+// ── Indexers + sealing ────────────────────────────────────────────────
+//
+// Mirrors @typespec/openapi3's shouldSealSchema + applyModelIndexer.
+// Three cases produce an `additionalProperties` keyword on a model:
+//
+//   1. Model has a string-keyed indexer (e.g., spread of `Record<T>`):
+//      additionalProperties = <T schema>.
+//   2. Model has `Record<never>` indexer (explicit "no extras"):
+//      additionalProperties = { not: {} }, regardless of the seal option.
+//   3. seal-object-schemas option is true AND the model has no indexer
+//      AND no derived (non-template) subclasses: additionalProperties =
+//      { not: {} }.
+//
+// We don't emit `allOf` for inherited models (see comment in modelToSchema),
+// so the official emitter's "copy down baseModel properties when sealed"
+// branch isn't applicable here.
+
+function shouldSealSchema(model, options) {
+  if (!model.indexer) {
+    if (!options.sealObjectSchemas) return false;
+    const derived = model.derivedModels.filter(
+      (m) => !isTemplateDeclaration(m) &&
+        (m.templateMapper?.args === undefined ||
+          m.templateMapper.args?.length === 0 ||
+          m.derivedModels.length > 0),
+    );
+    return derived.length === 0;
+  }
+  return isNeverType(model.indexer.value);
+}
+
+function applyModelIndexer(program, model, schema, seen, options) {
+  const sealed = shouldSealSchema(model, options);
+  if (!sealed && !model.indexer) return;
+
+  const value = sealed
+    ? { not: {} }
+    : typeToSchema(program, model.indexer.value, seen, options);
+
+  // Match @typespec/openapi3's per-version dispatch:
+  //   3.0   → additionalProperties (Draft 7; schema-emitter.ts:208)
+  //   3.1+  → unevaluatedProperties (JSON Schema 2020-12; schema-emitter-3-1.ts:160)
+  // unevaluatedProperties is composition-aware (sees across allOf/oneOf
+  // subschemas) — irrelevant for our inline-only payloads, but matches
+  // the rest of the document's emit and is the keyword OAS 3.1 webhook
+  // tooling expects. OAS 3.0 has no `webhooks` root anyway, so the 3.0
+  // branch is mostly defensive.
+  const key = options.version === "3.0.0" ? "additionalProperties" : "unevaluatedProperties";
+  schema[key] = value;
+}
+
 // ── Walkers ───────────────────────────────────────────────────────────
 
-function modelToSchema(program, model, seen, version) {
+function modelToSchema(program, model, seen, options) {
   if (seen.has(model)) return { type: "object" };
   seen.add(model);
 
@@ -223,7 +276,7 @@ function modelToSchema(program, model, seen, version) {
 
   for (const [, prop] of model.properties) {
     const wireName = resolveEncodedName(program, prop, "application/json") ?? prop.name;
-    const propSchema = typeToSchema(program, prop.type, seen, version);
+    const propSchema = typeToSchema(program, prop.type, seen, options);
 
     const doc = getDoc(program, prop);
     if (doc) propSchema.description = doc;
@@ -249,6 +302,8 @@ function modelToSchema(program, model, seen, version) {
   const result = { type: "object", properties };
   if (required.length > 0) result.required = required;
 
+  applyModelIndexer(program, model, result, seen, options);
+
   const doc = getDoc(program, model);
   if (doc) result.description = doc;
   applyConstraints(program, model, result);
@@ -260,7 +315,7 @@ function modelToSchema(program, model, seen, version) {
   return result;
 }
 
-function typeToSchema(program, type, seen, version) {
+function typeToSchema(program, type, seen, options) {
   switch (type.kind) {
     case "Scalar": {
       // Match @typespec/openapi3's applyIntrinsicDecorators: apply
@@ -272,7 +327,7 @@ function typeToSchema(program, type, seen, version) {
       const base = std
         ? std
         : type.baseScalar
-          ? typeToSchema(program, type.baseScalar, seen, version)
+          ? typeToSchema(program, type.baseScalar, seen, options)
           : { type: "string" };
       applyConstraints(program, type, base);
       return base;
@@ -280,7 +335,7 @@ function typeToSchema(program, type, seen, version) {
 
     case "Intrinsic":
       if (type.name !== "null") return {};
-      return nullSchema(version);
+      return nullSchema(options.version);
 
     case "Union": {
       const variants = [...type.variants.values()];
@@ -294,18 +349,18 @@ function typeToSchema(program, type, seen, version) {
       // Homogeneous string-literal union → enum.
       if (nonNull.length > 0 && nonNull.every((v) => v.type.kind === "String")) {
         const schema = { type: "string", enum: nonNull.map((v) => v.type.value) };
-        return nullVariant ? makeNullable(schema, version) : schema;
+        return nullVariant ? makeNullable(schema, options.version) : schema;
       }
 
       // T | null → version-appropriate nullable form.
       if (variants.length === 2 && nullVariant) {
         return makeNullable(
-          typeToSchema(program, nonNull[0].type, seen, version),
-          version,
+          typeToSchema(program, nonNull[0].type, seen, options),
+          options.version,
         );
       }
 
-      const schemas = variants.map((v) => typeToSchema(program, v.type, seen, version));
+      const schemas = variants.map((v) => typeToSchema(program, v.type, seen, options));
       return { oneOf: schemas };
     }
 
@@ -324,11 +379,11 @@ function typeToSchema(program, type, seen, version) {
       // `Array<T>` variants) we'd otherwise miss.
       if (isArrayModelType(program, type)) {
         const items = type.indexer?.value
-          ? typeToSchema(program, type.indexer.value, seen, version)
+          ? typeToSchema(program, type.indexer.value, seen, options)
           : {};
         return { type: "array", items };
       }
-      return modelToSchema(program, type, seen, version);
+      return modelToSchema(program, type, seen, options);
     }
 
     case "Enum":
@@ -347,8 +402,8 @@ function typeToSchema(program, type, seen, version) {
  *
  * @param {import("@typespec/compiler").Program} program
  * @param {import("@typespec/compiler").Model} model
- * @param {"3.0.0" | "3.1.0" | "3.2.0"} version
+ * @param {{ version: "3.0.0" | "3.1.0" | "3.2.0", sealObjectSchemas: boolean }} options
  */
-export function buildPayloadSchema(program, model, version) {
-  return modelToSchema(program, model, new Set(), version);
+export function buildPayloadSchema(program, model, options) {
+  return modelToSchema(program, model, new Set(), options);
 }
