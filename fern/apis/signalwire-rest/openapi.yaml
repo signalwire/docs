@@ -37630,6 +37630,407 @@ components:
     SWML.Calling.play_url:
       type: string
       pattern: '^(http://.*|https://.*|ring: ?[0-9.]*: ?[a-zA-Z]{2}|say: ?.*|silence: ?[0-9.]*|ring: ?[a-zA-Z]{2})$'
+    SWML.Messaging.Execute:
+      type: object
+      required:
+        - execute
+      properties:
+        execute:
+          type: object
+          properties:
+            dest:
+              type: string
+              description: Name of the section to execute. Must reference a section in the current document.
+              examples:
+                - greet
+            params:
+              type: object
+              unevaluatedProperties: {}
+              description: Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer `params` from the caller.
+              examples:
+                - name: '%{message.from}'
+          required:
+            - dest
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Call a named section as a subroutine. Execution continues in the called section,
+            then returns to the caller when the section completes. The destination must be
+            the name of a section defined in the current document.
+          title: execute
+      unevaluatedProperties:
+        not: {}
+      title: execute Method
+    SWML.Messaging.Goto:
+      type: object
+      required:
+        - goto
+      properties:
+        goto:
+          type: object
+          properties:
+            label:
+              type: string
+              description: Mark any point of the SWML section with a label so that goto can jump to it.
+              examples:
+                - greeting
+            max:
+              type: integer
+              minimum: 1
+              maximum: 100
+              description: Maximum number of jumps before stopping execution. Default `100`.
+              examples:
+                - 3
+              default: 100
+          required:
+            - label
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Jump to a named label in the current section. Used for retry loops and conditional
+            repetition. `goto` does not cross subroutine boundaries.
+          title: goto
+      unevaluatedProperties:
+        not: {}
+      title: goto Method
+    SWML.Messaging.Label:
+      type: object
+      required:
+        - label
+      properties:
+        label:
+          type: string
+          description: Mark any point of the SWML section with a label so that goto can jump to it.
+          examples:
+            - greeting
+      unevaluatedProperties:
+        not: {}
+      title: label Method
+    SWML.Messaging.Receive:
+      type: object
+      required:
+        - receive
+      properties:
+        receive:
+          type: object
+          unevaluatedProperties:
+            not: {}
+          description: Accept the inbound message without sending a reply. No-op step.
+          title: receive
+          examples:
+            - {}
+      unevaluatedProperties:
+        not: {}
+      title: receive Method
+    SWML.Messaging.Reply:
+      type: object
+      required:
+        - reply
+      properties:
+        reply:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
+            - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
+          description: |-
+            Create and send an outbound message in response to the inbound message.
+            Accepts either a string shorthand (used as the message body) or an object with body,
+            optional media, and optional routing fields.
+          title: reply
+      unevaluatedProperties:
+        not: {}
+      title: reply Method
+    SWML.Messaging.ReplyWithBody:
+      type: object
+      required:
+        - body
+      properties:
+        to:
+          type: string
+          description: Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`.
+          examples:
+            - '+15559876543'
+        status_url:
+          type: string
+          format: uri
+          description: URL to receive delivery status callbacks for the outbound reply message.
+          examples:
+            - https://example.com/reply-status
+        body:
+          type: string
+          description: The body of the reply message. Required if `media` is not present.
+          examples:
+            - Thanks for your message!
+        media:
+          type: array
+          items:
+            type: string
+          maxItems: 8
+          description: Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments.
+          examples:
+            - - https://example.com/image.jpg
+      unevaluatedProperties:
+        not: {}
+      title: Reply with body
+    SWML.Messaging.ReplyWithMedia:
+      type: object
+      required:
+        - media
+      properties:
+        to:
+          type: string
+          description: Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+          examples:
+            - '+15551234567'
+        from:
+          type: string
+          description: Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`.
+          examples:
+            - '+15559876543'
+        status_url:
+          type: string
+          format: uri
+          description: URL to receive delivery status callbacks for the outbound reply message.
+          examples:
+            - https://example.com/reply-status
+        media:
+          type: array
+          items:
+            type: string
+          maxItems: 8
+          description: Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present.
+          examples:
+            - - https://example.com/image.jpg
+        body:
+          type: string
+          description: Optional body text included alongside the media attachments.
+          examples:
+            - Check out this image!
+      unevaluatedProperties:
+        not: {}
+      title: Reply with media
+    SWML.Messaging.Request:
+      type: object
+      required:
+        - request
+      properties:
+        request:
+          type: object
+          properties:
+            url:
+              type: string
+              format: uri
+              description: URL to send the request to.
+              examples:
+                - https://api.example.com/lookup
+            method:
+              type: string
+              enum:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+              description: HTTP method. Default `POST`.
+              examples:
+                - POST
+              default: POST
+            headers:
+              type: object
+              unevaluatedProperties: {}
+              description: HTTP headers to include with the request.
+              examples:
+                - Authorization: Bearer token
+            body:
+              anyOf:
+                - type: string
+                - type: object
+                  unevaluatedProperties: {}
+              description: Request body. Hashes are JSON-encoded automatically.
+              examples:
+                - phone: '%{message.from}'
+            timeout:
+              type: number
+              minimum: 0
+              maximum: 5
+              description: Timeout in seconds. Default `5.0`. Clamped to a maximum of `5.0`.
+              examples:
+                - 3
+              default: 5
+            save_variables:
+              type: boolean
+              description: If `true`, parse the JSON response into `request_response.*` variables. Default `false`.
+              examples:
+                - true
+              default: false
+          required:
+            - url
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Make an HTTP request to an external URL. The response can optionally be parsed and
+            stored as variables for use in subsequent steps. Request failures are soft —
+            they set `request_result` but do not stop execution.
+          title: request
+      unevaluatedProperties:
+        not: {}
+      title: request Method
+    SWML.Messaging.Return:
+      type: object
+      required:
+        - return
+      properties:
+        return:
+          description: |-
+            Return from the current section. Inside a subroutine called via `execute`, control
+            returns to the caller and the value is accessible as `return_value` in the caller's
+            context. In `main`, stops execution entirely (return value is discarded).
+          title: return
+          examples:
+            - success
+      unevaluatedProperties:
+        not: {}
+      title: return Method
+    SWML.Messaging.SWMLMethod:
+      anyOf:
+        - $ref: '#/components/schemas/SWML.Messaging.Reply'
+        - $ref: '#/components/schemas/SWML.Messaging.Receive'
+        - $ref: '#/components/schemas/SWML.Messaging.Request'
+        - $ref: '#/components/schemas/SWML.Messaging.Execute'
+        - $ref: '#/components/schemas/SWML.Messaging.Transfer'
+        - $ref: '#/components/schemas/SWML.Messaging.Switch'
+        - $ref: '#/components/schemas/SWML.Messaging.Goto'
+        - $ref: '#/components/schemas/SWML.Messaging.Return'
+        - $ref: '#/components/schemas/SWML.Messaging.Label'
+      title: SWML methods
+    SWML.Messaging.SWMLObject:
+      type: object
+      required:
+        - sections
+      properties:
+        version:
+          type: string
+          enum:
+            - 1.0.0
+        sections:
+          $ref: '#/components/schemas/SWML.Messaging.Section'
+      unevaluatedProperties:
+        not: {}
+      title: SWML Object
+    SWML.Messaging.Section:
+      type: object
+      required:
+        - main
+      properties:
+        main:
+          type: array
+          items:
+            $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
+      unevaluatedProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
+      title: SWML section
+    SWML.Messaging.Switch:
+      type: object
+      required:
+        - switch
+      properties:
+        switch:
+          type: object
+          properties:
+            variable:
+              type: string
+              description: Variable path to match. Specified without `%{}` wrapper (e.g. `message.body`).
+              examples:
+                - message.body
+            transform:
+              allOf:
+                - $ref: '#/components/schemas/SWML.Messaging.SwitchTransform'
+              description: Transform to apply to the value before matching.
+              examples:
+                - lowercase_trim
+            case:
+              type: object
+              unevaluatedProperties:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
+              description: Map of values to arrays of SWML methods to execute.
+            default:
+              description: Array of SWML methods to execute if no cases match.
+              type: array
+              items:
+                $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
+          required:
+            - variable
+            - case
+          unevaluatedProperties:
+            not: {}
+          description: Branch based on a variable value with optional text transforms.
+          title: switch
+      unevaluatedProperties:
+        not: {}
+      title: switch Method
+    SWML.Messaging.SwitchTransform:
+      type: string
+      enum:
+        - lowercase
+        - uppercase
+        - trim
+        - lowercase_trim
+        - uppercase_trim
+      description: Transform applied to the variable value before matching.
+      title: SwitchTransform enum
+    SWML.Messaging.Transfer:
+      type: object
+      required:
+        - transfer
+      properties:
+        transfer:
+          type: object
+          properties:
+            dest:
+              type: string
+              format: uri
+              description: URL to fetch the new SWML document from.
+              examples:
+                - https://example.com/handler
+            method:
+              type: string
+              enum:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+              description: HTTP method for the fetch request. Default `POST`.
+              examples:
+                - POST
+              default: POST
+            params:
+              type: object
+              unevaluatedProperties: {}
+              description: Parameters to include in the request body of the fetch.
+              examples:
+                - reason: escalation
+          required:
+            - dest
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Fetch and execute a new SWML document from a URL. This is a tail call —
+            it replaces the current document and does not return. Steps after `transfer`
+            are skipped, including steps in calling sections.
+          title: transfer
+      unevaluatedProperties:
+        not: {}
+      title: transfer Method
     SWMLScriptAddressListResponse:
       type: object
       required:
@@ -40153,9 +40554,10 @@ components:
       type: object
       required:
         - id
-        - contents
-        - request_url
         - display_name
+        - script_type
+        - request_url
+        - contents
       properties:
         id:
           allOf:
@@ -40163,22 +40565,35 @@ components:
           description: Unique ID of a SWML Script.
           examples:
             - 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        contents:
+        display_name:
           type: string
-          description: The SWML script contents
+          description: The displayed name of the SWML script.
           examples:
-            - '{ "version": "1.0.0", "sections": { "main": [{ "play": { "url": "https://cdn.signalwire.com/swml/audio.mp3" }}]}};'
+            - Booking Assistant
+        script_type:
+          type: string
+          enum:
+            - calling
+            - messaging
+          description: 'Indicates whether this SWML Script handles inbound calls or inbound messages. Determines the shape of `contents`: `calling` scripts must use [calling SWML methods](/docs/swml/reference/calling); `messaging` scripts must use [messaging SWML methods](/docs/swml/reference/messaging).'
+          examples:
+            - calling
         request_url:
           type: string
           format: uri
           description: The url where the SWML script is hosted at.
           examples:
             - https://example.com/swml_script
-        display_name:
-          type: string
-          description: The displayed name of the SWML scipt
+        contents:
+          allOf:
+            - $ref: '#/components/schemas/SwmlScriptContents'
+          description: The SWML document executed when this script runs. The shape is discriminated by `script_type` — `calling` scripts contain a [calling SWML object](/docs/swml/reference/calling); `messaging` scripts contain a [messaging SWML object](/docs/swml/reference/messaging).
           examples:
-            - Booking Assistant
+            - version: 1.0.0
+              sections:
+                main:
+                  - play:
+                      url: https://cdn.signalwire.com/swml/audio.mp3
         status_callback_url:
           type: string
           format: uri
@@ -40194,6 +40609,10 @@ components:
             - POST
       unevaluatedProperties:
         not: {}
+    SwmlScriptContents:
+      oneOf:
+        - $ref: '#/components/schemas/SWML.Calling.SWMLObject'
+        - $ref: '#/components/schemas/SWML.Messaging.SWMLObject'
     SwmlScriptCreateRequest:
       type: object
       required:
@@ -40205,11 +40624,25 @@ components:
           description: Display name of the SWML Script
           examples:
             - Welcome Script
-        contents:
+        script_type:
           type: string
-          description: The contents of the SWML script.
+          enum:
+            - calling
+            - messaging
+          description: 'Indicates whether this SWML Script handles inbound calls or inbound messages. Determines the shape of `contents`: `calling` scripts must use [calling SWML methods](/docs/swml/reference/calling); `messaging` scripts must use [messaging SWML methods](/docs/swml/reference/messaging).'
           examples:
-            - '{ "version": "1.0.0", "sections": { "main": [{ "play": { "url": "https://cdn.signalwire.com/swml/audio.mp3" }}]}};'
+            - calling
+          default: calling
+        contents:
+          allOf:
+            - $ref: '#/components/schemas/SwmlScriptContents'
+          description: The SWML document executed when this script runs. The shape is discriminated by `script_type` — `calling` scripts contain a [calling SWML object](/docs/swml/reference/calling); `messaging` scripts contain a [messaging SWML object](/docs/swml/reference/messaging).
+          examples:
+            - version: 1.0.0
+              sections:
+                main:
+                  - play:
+                      url: https://cdn.signalwire.com/swml/audio.mp3
         status_callback_url:
           type: string
           format: uri
@@ -40349,11 +40782,18 @@ components:
           description: Display name of the SWML Script
           examples:
             - Welcome Script
-        contents:
+        script_type:
           type: string
-          description: The contents of the SWML script.
+          enum:
+            - calling
+            - messaging
+          description: 'Indicates whether this SWML Script handles inbound calls or inbound messages. Determines the shape of `contents`: `calling` scripts must use [calling SWML methods](/docs/swml/reference/calling); `messaging` scripts must use [messaging SWML methods](/docs/swml/reference/messaging).'
           examples:
-            - '{ "version": "1.0.0", "sections": { "main": [{ "play": { "url": "https://cdn.signalwire.com/swml/audio.mp3" }}]}};'
+            - calling
+        contents:
+          allOf:
+            - $ref: '#/components/schemas/SwmlScriptContents'
+          description: The SWML document executed when this script runs. The shape is discriminated by `script_type` — `calling` scripts contain a [calling SWML object](/docs/swml/reference/calling); `messaging` scripts contain a [messaging SWML object](/docs/swml/reference/messaging).
         status_callback_url:
           type: string
           format: uri

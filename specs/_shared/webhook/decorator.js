@@ -9,11 +9,12 @@
 //      no module-level mutables, no array of pending tasks.
 //
 //   2. $onValidate — post-checking phase, runs once after all types and
-//      @tagMetadata are known. Resolves tag inheritance through getTags
-//      (handling namespace/interface chains), builds the JSON Schema for
-//      each payload via the schema module, and injects the consolidated
-//      `webhooks` object onto the service namespace through the OpenAPI
-//      extension hook (setExtension).
+//      @tagMetadata are known. Resolves tag inheritance through getAllTags
+//      (which walks operation → interface → namespace, the same chain
+//      @typespec/openapi3 uses), builds the JSON Schema for each payload
+//      via the schema module, and injects the consolidated `webhooks`
+//      object onto the service namespace through the OpenAPI extension
+//      hook (setExtension).
 //
 // The `setExtension(program, namespace, "webhooks", ...)` call exploits
 // the fact that @typespec/openapi3 spreads the extension map onto the
@@ -26,7 +27,7 @@
 import {
   getDoc,
   getSummary,
-  getTags,
+  getAllTags,
   getService,
   listServices,
   isService,
@@ -178,7 +179,11 @@ function buildModelTagMap(program, ns, map) {
 }
 
 function assignTagToOpModels(program, op, map) {
-  const tags = getTags(program, op);
+  // getAllTags walks operation → interface → namespace and returns the
+  // union of every @tag on the chain. getTags (which we used previously)
+  // returns only direct tags, which silently dropped interface-level tags
+  // like @tag(CALLS_TAG) on `interface Calls`.
+  const tags = getAllTags(program, op);
   if (!tags || tags.length === 0) return;
   const tagName = tags[0];
 
