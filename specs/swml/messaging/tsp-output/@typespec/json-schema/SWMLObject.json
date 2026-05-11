@@ -1,24 +1,49 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "SWMLObject.json",
-    "type": "object",
-    "properties": {
-        "version": {
-            "type": "string",
-            "const": "1.0.0"
+    "oneOf": [
+        {
+            "$ref": "#/$defs/SWMLFullDocument"
         },
-        "sections": {
-            "$ref": "#/$defs/Section"
+        {
+            "$ref": "#/$defs/SWMLLightDocument"
         }
-    },
-    "required": [
-        "sections"
     ],
-    "unevaluatedProperties": {
-        "not": {}
-    },
-    "title": "SWML Object",
+    "description": "A SWML document for handling inbound SMS or MMS messages. Use one of these shapes:\n- **Full document** — a top-level `sections` map for multi-step flows with branching,\n  subroutines, retries, and external HTTP requests. Execution starts at `sections.main`.\n- **Light document** — a single top-level `reply` or `receive` for one-shot handling.\n  The receive form accepts both `{ receive: {} }` and an empty `{}` document.\n\nSee the [Messaging SWML reference](/docs/swml/reference/messaging) for the full list of\navailable methods.",
+    "title": "Messaging SWML Document",
     "$defs": {
+        "SWMLFullDocument": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "const": "1.0.0"
+                },
+                "sections": {
+                    "$ref": "#/$defs/Section"
+                }
+            },
+            "required": [
+                "sections"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A multi-step SWML document with a top-level `sections` map. Execution starts at\n`sections.main`, and each section contains an array of methods that run sequentially.\nUse this form when your message handler needs branching, subroutines, retries, or\nexternal HTTP requests.",
+            "title": "Full SWML document"
+        },
+        "SWMLLightDocument": {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/Reply"
+                },
+                {
+                    "$ref": "#/$defs/LightReceive"
+                }
+            ],
+            "description": "A single-step SWML document — either a `reply` (send an outbound message) or a `receive`\n(accept the inbound message without replying; can be written as `{ receive: {} }` or as an\nempty `{}` document). Use this form for one-shot handling. For multi-step flows with\nbranching, subroutines, or retries, use the full document form instead.",
+            "title": "Light SWML document"
+        },
         "Section": {
             "type": "object",
             "properties": {
@@ -39,6 +64,48 @@
                 }
             },
             "title": "SWML section"
+        },
+        "Reply": {
+            "type": "object",
+            "properties": {
+                "reply": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyWithBody"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyWithMedia"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyInlineSwitch"
+                        }
+                    ],
+                    "description": "Create and send an outbound message in response to the inbound message. Accepts one of:\na string (used as the message body), an object with body, media, and routing fields, or\nan inline `switch` that branches the reply on a variable value.",
+                    "title": "reply"
+                }
+            },
+            "required": [
+                "reply"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "reply Method"
+        },
+        "LightReceive": {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/Receive"
+                },
+                {
+                    "$ref": "#/$defs/ImplicitReceive"
+                }
+            ],
+            "description": "Accept the inbound message without sending a reply. Can be written either way:\n- `{ receive: {} }` — explicit `receive` method.\n- `{}` — empty document; treated as a `receive`.",
+            "title": "Light document receive"
         },
         "SWMLMethod": {
             "anyOf": [
@@ -72,32 +139,166 @@
             ],
             "title": "SWML methods"
         },
-        "Reply": {
+        "ReplyWithBody": {
             "type": "object",
             "properties": {
-                "reply": {
-                    "oneOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "$ref": "#/$defs/ReplyWithBody"
-                        },
-                        {
-                            "$ref": "#/$defs/ReplyWithMedia"
-                        }
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
                     ],
-                    "description": "Create and send an outbound message in response to the inbound message.\nAccepts either a string shorthand (used as the message body) or an object with body,\noptional media, and optional routing fields.",
-                    "title": "reply"
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "URL to receive delivery status callbacks for the outbound reply message."
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Thanks for your message!"
+                    ],
+                    "description": "The body of the reply message. Required if `media` is not present."
+                },
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "examples": [
+                        [
+                            "https://example.com/image.jpg"
+                        ]
+                    ],
+                    "maxItems": 8,
+                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments."
                 }
             },
             "required": [
-                "reply"
+                "body"
             ],
             "unevaluatedProperties": {
                 "not": {}
             },
-            "title": "reply Method"
+            "title": "Reply with body"
+        },
+        "ReplyWithMedia": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
+                    ],
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "URL to receive delivery status callbacks for the outbound reply message."
+                },
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "examples": [
+                        [
+                            "https://example.com/image.jpg"
+                        ]
+                    ],
+                    "maxItems": 8,
+                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present."
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Check out this image!"
+                    ],
+                    "description": "Optional body text included alongside the media attachments."
+                }
+            },
+            "required": [
+                "media"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "Reply with media"
+        },
+        "ReplyInlineSwitch": {
+            "type": "object",
+            "properties": {
+                "switch": {
+                    "type": "object",
+                    "properties": {
+                        "variable": {
+                            "type": "string",
+                            "examples": [
+                                "message.body"
+                            ],
+                            "description": "Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`)."
+                        },
+                        "transform": {
+                            "$ref": "#/$defs/SwitchTransform",
+                            "examples": [
+                                "lowercase_trim"
+                            ],
+                            "description": "Transform to apply to the value before matching."
+                        },
+                        "case": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {
+                                "type": "string"
+                            },
+                            "description": "Map of values to reply bodies. The matched value is used as the reply body."
+                        },
+                        "default": {
+                            "type": "string",
+                            "description": "Fallback reply body used when no `case` value matches."
+                        }
+                    },
+                    "required": [
+                        "variable",
+                        "case"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    }
+                }
+            },
+            "required": [
+                "switch"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Branch the reply body based on a variable value. The matching case (or `default`) provides\nthe reply body. When using an inline `switch`, you cannot also set `body`, `media`, `to`,\n`from`, or `status_url` on the same `reply`.",
+            "title": "Reply with inline switch"
         },
         "Receive": {
             "type": "object",
@@ -122,6 +323,15 @@
                 "not": {}
             },
             "title": "receive Method"
+        },
+        "ImplicitReceive": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "An empty document `{}`. Accepts the inbound message without sending a reply — equivalent to `{ receive: {} }`.",
+            "title": "Empty SWML document"
         },
         "Request": {
             "type": "object",
@@ -169,13 +379,15 @@
                         "headers": {
                             "type": "object",
                             "properties": {},
-                            "unevaluatedProperties": {},
+                            "unevaluatedProperties": {
+                                "type": "string"
+                            },
                             "examples": [
                                 {
                                     "Authorization": "Bearer token"
                                 }
                             ],
-                            "description": "HTTP headers to include with the request."
+                            "description": "HTTP headers to include with the request. Each value must be a string."
                         },
                         "body": {
                             "anyOf": [
@@ -425,8 +637,6 @@
                             "examples": [
                                 3
                             ],
-                            "minimum": 1,
-                            "maximum": 100,
                             "description": "Maximum number of jumps before stopping execution. Default `100`."
                         }
                     },
@@ -485,114 +695,6 @@
                 "not": {}
             },
             "title": "label Method"
-        },
-        "ReplyWithBody": {
-            "type": "object",
-            "properties": {
-                "to": {
-                    "type": "string",
-                    "examples": [
-                        "+15551234567"
-                    ],
-                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
-                },
-                "from": {
-                    "type": "string",
-                    "examples": [
-                        "+15559876543"
-                    ],
-                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
-                },
-                "status_url": {
-                    "type": "string",
-                    "format": "uri",
-                    "examples": [
-                        "https://example.com/reply-status"
-                    ],
-                    "description": "URL to receive delivery status callbacks for the outbound reply message."
-                },
-                "body": {
-                    "type": "string",
-                    "examples": [
-                        "Thanks for your message!"
-                    ],
-                    "description": "The body of the reply message. Required if `media` is not present."
-                },
-                "media": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "examples": [
-                        [
-                            "https://example.com/image.jpg"
-                        ]
-                    ],
-                    "maxItems": 8,
-                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments."
-                }
-            },
-            "required": [
-                "body"
-            ],
-            "unevaluatedProperties": {
-                "not": {}
-            },
-            "title": "Reply with body"
-        },
-        "ReplyWithMedia": {
-            "type": "object",
-            "properties": {
-                "to": {
-                    "type": "string",
-                    "examples": [
-                        "+15551234567"
-                    ],
-                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
-                },
-                "from": {
-                    "type": "string",
-                    "examples": [
-                        "+15559876543"
-                    ],
-                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
-                },
-                "status_url": {
-                    "type": "string",
-                    "format": "uri",
-                    "examples": [
-                        "https://example.com/reply-status"
-                    ],
-                    "description": "URL to receive delivery status callbacks for the outbound reply message."
-                },
-                "media": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "examples": [
-                        [
-                            "https://example.com/image.jpg"
-                        ]
-                    ],
-                    "maxItems": 8,
-                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present."
-                },
-                "body": {
-                    "type": "string",
-                    "examples": [
-                        "Check out this image!"
-                    ],
-                    "description": "Optional body text included alongside the media attachments."
-                }
-            },
-            "required": [
-                "media"
-            ],
-            "unevaluatedProperties": {
-                "not": {}
-            },
-            "title": "Reply with media"
         },
         "SwitchTransform": {
             "type": "string",

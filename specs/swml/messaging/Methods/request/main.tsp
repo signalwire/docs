@@ -17,10 +17,10 @@ model Request {
     @example("POST")
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "POST";
 
-    @doc("HTTP headers to include with the request.")
+    @doc("HTTP headers to include with the request. Each value must be a string.")
     @example(#{ Authorization: "Bearer token" })
     headers?: {
-      ...TypeSpec.Record<unknown>;
+      ...TypeSpec.Record<string>;
     };
 
     @doc("Request body. Hashes are JSON-encoded automatically.")

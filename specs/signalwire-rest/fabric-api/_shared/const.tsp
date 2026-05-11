@@ -13,6 +13,15 @@ const SWML_CONTENTS_EXAMPLE = #{
   }
 };
 
+const SWML_MESSAGING_CONTENTS_EXAMPLE = #{
+  version: "1.0.0",
+  sections: #{
+    main: #[
+      #{ reply: "Thanks for your message!" }
+    ]
+  }
+};
+
 const CXML_EXAMPLE = """
   <?xml version="1.0" encoding="UTF-8"?><Response><Say>Hello World</Say></Response>
   """;

@@ -6,19 +6,35 @@ description: Create and send an outbound message in response to an inbound messa
 max-toc-depth: 3
 ---
 
-Create and send an outbound message in response to the inbound message. Accepts either a string shorthand
-(used as the message body) or an object with body, optional media, and optional routing fields.
+Create and send an outbound message in response to the inbound message. `reply` accepts three
+shapes: a string shorthand, an object with body/media/routing fields, or an inline `switch` that
+branches the reply body on a variable's value.
 
 `reply` does **not** end execution — subsequent steps in the section continue to run after the reply
 is queued.
 
 ## **Properties**
 
-`reply` accepts either a string (used as the message body) or an object with the following properties.
+`reply` accepts one of three shapes — pick the one that fits your use case:
 
-<ParamField path="reply" type="string | object" required={true} toc={true}>
-  String shorthand or an object containing the properties below. At least one of `body` or `media` must
-  be present when using the object form.
+<Tabs>
+<Tab title="String shorthand">
+
+The simplest form: a single string used as the reply body. The reply is sent to the inbound
+message's `from` number, using the inbound `to` as the sender.
+
+<ParamField path="reply" type="string" required={true} toc={true}>
+  The body of the reply message.
+</ParamField>
+
+</Tab>
+<Tab title="Object">
+
+Full control over the reply — set the body, attach media, override the routing fields, or configure
+a delivery status callback. At least one of `body` or `media` must be present.
+
+<ParamField path="reply" type="object" required={true} toc={true}>
+  An object containing the properties below.
 </ParamField>
 
 <Indent>
@@ -27,23 +43,19 @@ is queued.
   The body of the reply message. Required if `media` is not present.
 </ParamField>
 
-
 <ParamField path="reply.media" type="string[]" toc={true}>
-  Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body`
-  is not present.
+  Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if
+  `body` is not present.
 </ParamField>
-
 
 <ParamField path="reply.to" type="string" toc={true}>
   Destination phone number in E.164 format. Defaults to the inbound message's `from`.
 </ParamField>
 
-
 <ParamField path="reply.from" type="string" toc={true}>
   Sending phone number — must be a PhoneRoute or ShortCode in the project. Defaults to the inbound
   message's `to`.
 </ParamField>
-
 
 <ParamField path="reply.status_url" type="string" toc={true}>
   URL to receive delivery status callbacks for the outbound reply message. See
@@ -51,6 +63,53 @@ is queued.
 </ParamField>
 
 </Indent>
+
+</Tab>
+<Tab title="Inline switch">
+
+Branch the reply body on a variable's value — useful for keyword-driven replies without writing a
+full multi-step document. The matched `case` (or `default`) provides the reply body.
+
+<ParamField path="reply" type="object" required={true} toc={true}>
+  An object with a single `switch` property.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reply.switch" type="object" required={true} toc={true}>
+  An object that accepts the properties below.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reply.switch.variable" type="string" required={true} toc={true}>
+  Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).
+</ParamField>
+
+<ParamField path="reply.switch.transform" type="string" toc={true}>
+  Transform to apply to the value before matching. One of `lowercase`, `uppercase`, `trim`,
+  `lowercase_trim`, or `uppercase_trim`.
+</ParamField>
+
+<ParamField path="reply.switch.case" type="object" required={true} toc={true}>
+  Map of values to reply bodies. The matched value is used as the reply body.
+</ParamField>
+
+<ParamField path="reply.switch.default" type="string" toc={true}>
+  Fallback reply body when no `case` value matches. If omitted and no case matches, the inbound
+  message is marked as `failed` with `swml_switch_no_match`.
+</ParamField>
+
+</Indent>
+
+</Indent>
+
+When using an inline `switch`, you cannot also set `body`, `media`, `to`, `from`, or `status_url`
+on the same `reply`. For more complex branching (e.g. selecting media or routing per case), use
+the top-level [`switch`](/docs/swml/reference/messaging/switch) step inside a full-mode document.
+
+</Tab>
+</Tabs>
 
 ## **Variables**
 
@@ -193,6 +252,45 @@ sections:
         }
       }
     ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Keyword-driven reply with inline switch
+
+Use the inline `switch` form to branch the reply body on a variable's value — typically the
+inbound `message.body`. No `sections` needed.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+reply:
+  switch:
+    variable: message.body
+    transform: lowercase_trim
+    case:
+      help: "Reply STOP to unsubscribe, or visit https://example.com/help."
+      stop: "You've been unsubscribed."
+      start: "Welcome back!"
+    default: "Thanks for your message!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "reply": {
+    "switch": {
+      "variable": "message.body",
+      "transform": "lowercase_trim",
+      "case": {
+        "help": "Reply STOP to unsubscribe, or visit https://example.com/help.",
+        "stop": "You've been unsubscribed.",
+        "start": "Welcome back!"
+      },
+      "default": "Thanks for your message!"
+    }
   }
 }
 ```
