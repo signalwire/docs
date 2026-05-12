@@ -3,25 +3,22 @@ using TypeSpec.Http;
 model CxmlScriptsAccountSidPath {
   @doc("The unique identifier for the account this script is associated with.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model CxmlScriptSidPath {
   @doc("The unique identifier of the cXML script.")
   @example("5184b831-184f-4209-872d-ccdccc80f2f1")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("cXML Script model.")
 model CxmlScript {
   @doc("The unique identifier of the cXML script on SignalWire.")
-  @format("uuid")
   @example("5184b831-184f-4209-872d-ccdccc80f2f1")
-  sid: string;
+  sid: uuid;
 
   @doc("The date and time, in ISO 8601 format, the script was created.")
   @example("2019-11-26T20:00:00Z")
@@ -36,9 +33,8 @@ model CxmlScript {
   date_last_accessed: string | null;
 
   @doc("The unique identifier for the account this script is associated with.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("A friendly name given to the cXML script.")
   @example("Death Star IVR")

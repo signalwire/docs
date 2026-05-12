@@ -9,10 +9,9 @@ namespace SignalWireAPI.Message;
 @doc("Path parameter identifying the target message by its segment ID.")
 model MessagePathID {
   @path
-  @format("uuid")
   @doc("The message segment ID — the same ID returned by the create endpoint and shown in `/api/messaging/logs`.")
   @example("c2d3e4f5-a6b7-8901-cdef-234567890abc")
-  message_id: string;
+  message_id: uuid;
 }
 
 @doc("Delivery state of a message.")
@@ -59,7 +58,6 @@ enum MessageKind {
 
 @doc("A message record. Returned by the create and update endpoints.")
 model Message {
-  @format("uuid")
   @doc("The unique ID of the message. This is the `MessageSegment` ID, consistent with the dashboard and the `/api/messaging/logs` endpoint.")
   @example("c2d3e4f5-a6b7-8901-cdef-234567890abc")
   id: uuid;
@@ -108,7 +106,6 @@ model Message {
   @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
-  @format("uuid")
   @doc("The ID of the project the message belongs to.")
   @example("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
   project_id: uuid;

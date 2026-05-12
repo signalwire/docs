@@ -6,7 +6,6 @@ using Types;
 model AddressPathID {
   @doc("Unique ID of the address.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -29,7 +28,6 @@ enum AddressType {
 model Address {
   @doc("The unique identifier of the Address on SignalWire.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("A friendly name given to the address to help distinguish and search for different addresses within your project.")

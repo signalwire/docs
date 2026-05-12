@@ -80,7 +80,6 @@ model CreateDomainApplicationRequest {
 
   @doc("A string representing the ID of the Video Room to forward incoming calls to. Required when call_handler is video_room.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_video_room_id?: uuid;
 
   @doc("A string representing the URL of the Relay script to execute when a call is received. Required when call_handler is relay_script.")
@@ -89,17 +88,14 @@ model CreateDomainApplicationRequest {
 
   @doc("A string representing the ID of the Dialogflow Agent to forward incoming calls to. Required when call_handler is dialogflow.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_dialogflow_agent_id?: uuid;
 
   @doc("A string representing the ID of the AI Agent to forward incoming calls to. Required when call_handler is ai_agent.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_ai_agent_id?: uuid;
 
   @doc("A string representing the ID of the Call Flow to forward incoming calls to. Required when call_handler is call_flow.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_flow_id?: uuid;
 
   @doc("A string representing the version of your Call Flow you'd like to use.")
@@ -188,7 +184,6 @@ model UpdateDomainApplicationRequest {
 
   @doc("A string representing the ID of the Video Room to forward incoming calls to.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_video_room_id?: uuid;
 
   @doc("A string representing the URL of the Relay script to execute when a call is received.")
@@ -197,17 +192,14 @@ model UpdateDomainApplicationRequest {
 
   @doc("A string representing the ID of the Dialogflow Agent to forward incoming calls to.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_dialogflow_agent_id?: uuid;
 
   @doc("A string representing the ID of the AI Agent to forward incoming calls to.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_ai_agent_id?: uuid;
 
   @doc("A string representing the ID of the Call Flow to forward incoming calls to.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_flow_id?: uuid;
 
   @doc("A string representing the version of your Call Flow you'd like to use.")

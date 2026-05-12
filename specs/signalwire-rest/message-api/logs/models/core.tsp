@@ -9,7 +9,6 @@ namespace SignalWireAPI.Message;
 
 @doc("Unique ID of the log.")
 model LogPathID {
-  @format("uuid")
   @doc("Unique ID of the log.")
   @path
   id: uuid;
@@ -28,7 +27,6 @@ model ChargeDetail {
 
 @doc("Message log entry with all activity details")
 model MessageLog {
-  @format("uuid")
   @doc("A unique identifier for the log.")
   id: uuid;
 

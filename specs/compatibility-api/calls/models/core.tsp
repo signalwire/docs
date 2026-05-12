@@ -5,25 +5,22 @@ using TypeSpec.Http;
 model CallsAccountSidPath {
   @doc("The Project ID that uniquely identifies the Account.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model CallSidPath {
   @doc("The unique identifier for the call.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 model CallSidPathForRecording {
   @doc("The unique identifier for the call.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  CallSid: string;
+  CallSid: uuid;
 }
 
 @doc("Call status.")
@@ -78,14 +75,12 @@ model CallSubresourceUris {
 @doc("Call model representing a voice call.")
 model Call {
   @doc("The unique identifier for the call.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account that created this call.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The date, in RFC 2822 GMT format, this call was created.")
   @example("Wed, 19 Sep 2018 20:00:00 +0000")
@@ -96,9 +91,8 @@ model Call {
   date_updated: string;
 
   @doc("The unique identifier for the call that created this call.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  parent_call_sid: string | null;
+  parent_call_sid: uuid | null;
 
   @doc("The address that received the call.")
   @example("+13105678901")
@@ -125,9 +119,8 @@ model Call {
   from_formatted: string;
 
   @doc("The unique identifier for the phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472pn")
-  phone_number_sid: string | null;
+  phone_number_sid: uuid | null;
 
   @doc("The status of the call.")
   status: CallStatus;
@@ -225,28 +218,24 @@ model Call {
 @doc("Call recording model.")
 model CallRecording {
   @doc("The unique identifier for the recording.")
-  @format("uuid")
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account that is associated with this recording.")
-  @format("uuid")
   @example("720796a0-8ee9-4350-83bd-2d07a3121f1e")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
   api_version: string;
 
   @doc("The unique identifier for the call that is associated with this recording. Null if this is a conference recording.")
-  @format("uuid")
   @example("43bb71ee-553f-4074-bb20-8e2747647cce")
-  call_sid: string | null;
+  call_sid: uuid | null;
 
   @doc("The unique identifier for the conference that is associated with this recording. Null if this is a call recording.")
-  @format("uuid")
   @example(null)
-  conference_sid: string | null;
+  conference_sid: uuid | null;
 
   @doc("The number of channels in a recording (singular key). Returns '1' for mono or '2' for stereo.")
   @example("1")
@@ -313,19 +302,16 @@ model CallRecording {
 @doc("Call stream model.")
 model CallStream {
   @doc("The unique identifier for the stream.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472st")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The unique identifier for the call.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
-  call_sid: string;
+  call_sid: uuid;
 
   @doc("The name of the stream.")
   @example("my_first_stream")

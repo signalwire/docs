@@ -6,7 +6,6 @@ using Types;
 model BrandPathID {
   @doc("Unique ID of the brand.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -14,7 +13,6 @@ model BrandPathID {
 model CampaignPathID {
   @doc("Unique ID of the campaign.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -22,7 +20,6 @@ model CampaignPathID {
 model AssignedNumberPathID {
   @doc("Unique ID of the assigned number.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -30,7 +27,6 @@ model AssignedNumberPathID {
 model OrderPathID {
   @doc("Unique ID of the order.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -68,7 +64,6 @@ enum AssignmentState {
 model Brand {
   @doc("The unique identifier of the brand.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The current state of the brand.")
@@ -137,7 +132,6 @@ model Brand {
 model Campaign {
   @doc("The unique identifier of the campaign.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("A name for the campaign.")
@@ -255,7 +249,6 @@ model Campaign {
 @doc("Phone number details in an assignment.")
 model AssignedPhoneNumber {
   @doc("The unique identifier of the phone number.")
-  @format("uuid")
   id?: uuid;
 
   @doc("The name of the phone number.")
@@ -275,7 +268,6 @@ model AssignedPhoneNumber {
 model AssignedNumber {
   @doc("The unique identifier of the assignment.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The current state of the assignment.")
@@ -284,7 +276,6 @@ model AssignedNumber {
 
   @doc("The campaign ID associated with the number.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   campaign_id?: uuid;
 
   @doc("The phone number details.")
@@ -301,7 +292,6 @@ model AssignedNumber {
 model Order {
   @doc("The unique identifier of the order.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The current state of the order.")
