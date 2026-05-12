@@ -92,21 +92,26 @@ full multi-step document. The matched `case` (or `default`) provides the reply b
 </ParamField>
 
 <ParamField path="reply.switch.case" type="object" required={true} toc={true}>
-  Map of values to reply bodies. The matched value is used as the reply body.
+  Map of values to reply outcomes. Each entry's value is either:
+  - a **string** — used as the reply body, sent back to the original sender as SMS, or
+  - a **full reply object** with `body`, `media`, `to`, `from`, `status_url` — for cases that
+    need media, a different destination, or a per-branch `status_url`.
+
+  `%{…}` placeholders inside the matched value are expanded before the reply is sent.
 </ParamField>
 
-<ParamField path="reply.switch.default" type="string" toc={true}>
-  Fallback reply body when no `case` value matches. If omitted and no case matches, the inbound
-  message is marked as `failed` with `swml_switch_no_match`.
+<ParamField path="reply.switch.default" type="string | object" toc={true}>
+  Fallback used when no `case` value matches. Accepts the same string-or-reply-object shape as a
+  `case` value. If omitted and no case matches, the inbound message is marked as `failed` with
+  `swml_switch_no_match`.
 </ParamField>
 
 </Indent>
 
 </Indent>
 
-When using an inline `switch`, you cannot also set `body`, `media`, `to`, `from`, or `status_url`
-on the same `reply`. For more complex branching (e.g. selecting media or routing per case), use
-the top-level [`switch`](/docs/swml/reference/messaging/switch) step inside a full-mode document.
+When using an inline `switch`, do not set `body`, `media`, `to`, `from`, or `status_url` directly
+on the same `reply` — put them inside each `case` value (or `default`) instead.
 
 </Tab>
 </Tabs>
@@ -290,6 +295,62 @@ reply:
         "start": "Welcome back!"
       },
       "default": "Thanks for your message!"
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Per-case media and routing with inline switch
+
+When a case needs more than a body string — different media, a different destination, or a
+per-branch `status_url` — supply a full reply object for that case instead of a bare string.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+reply:
+  switch:
+    variable: message.body
+    transform: lowercase_trim
+    case:
+      menu:
+        body: "Here's our menu."
+        media:
+          - "https://example.com/menu.pdf"
+      directions:
+        body: "Tap below for directions."
+        media:
+          - "https://example.com/map.jpg"
+      agent:
+        body: "Connecting you with a human — they'll text from a different number."
+        from: "+15559876543"
+    default: "Reply MENU, DIRECTIONS, or AGENT."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "reply": {
+    "switch": {
+      "variable": "message.body",
+      "transform": "lowercase_trim",
+      "case": {
+        "menu": {
+          "body": "Here's our menu.",
+          "media": ["https://example.com/menu.pdf"]
+        },
+        "directions": {
+          "body": "Tap below for directions.",
+          "media": ["https://example.com/map.jpg"]
+        },
+        "agent": {
+          "body": "Connecting you with a human — they'll text from a different number.",
+          "from": "+15559876543"
+        }
+      },
+      "default": "Reply MENU, DIRECTIONS, or AGENT."
     }
   }
 }
