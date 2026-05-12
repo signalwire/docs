@@ -1,0 +1,342 @@
+---
+id: 0cb03dc2-18ea-4a37-8413-15c1cb56ad83
+title: reply
+slug: /reference/messaging/reply
+description: Create and send an outbound message in response to an inbound message.
+max-toc-depth: 3
+---
+
+Create and send an outbound message in response to the inbound message. `reply` accepts three
+shapes: a string shorthand, an object with body/media/routing fields, or an inline `switch` that
+branches the reply body on a variable's value.
+
+`reply` does **not** end execution — subsequent steps in the section continue to run after the reply
+is queued.
+
+## **Properties**
+
+`reply` accepts one of three shapes — pick the one that fits your use case:
+
+<Tabs>
+<Tab title="String shorthand">
+
+The simplest form: a single string used as the reply body. The reply is sent to the inbound
+message's `from` number, using the inbound `to` as the sender.
+
+<ParamField path="reply" type="string" required={true} toc={true}>
+  The body of the reply message.
+</ParamField>
+
+</Tab>
+<Tab title="Object">
+
+Full control over the reply — set the body, attach media, override the routing fields, or configure
+a delivery status callback. At least one of `body` or `media` must be present.
+
+<ParamField path="reply" type="object" required={true} toc={true}>
+  An object containing the properties below.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reply.body" type="string" toc={true}>
+  The body of the reply message. Required if `media` is not present.
+</ParamField>
+
+<ParamField path="reply.media" type="string[]" toc={true}>
+  Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if
+  `body` is not present.
+</ParamField>
+
+<ParamField path="reply.to" type="string" toc={true}>
+  Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+</ParamField>
+
+<ParamField path="reply.from" type="string" toc={true}>
+  Sending phone number — must be a PhoneRoute or ShortCode in the project. Defaults to the inbound
+  message's `to`.
+</ParamField>
+
+<ParamField path="reply.status_url" type="string" toc={true}>
+  URL to receive delivery status callbacks for the outbound reply message. See
+  [Status callbacks](#status-callbacks) below.
+</ParamField>
+
+</Indent>
+
+</Tab>
+<Tab title="Inline switch">
+
+Branch the reply body on a variable's value — useful for keyword-driven replies without writing a
+full multi-step document. The matched `case` (or `default`) provides the reply body.
+
+<ParamField path="reply" type="object" required={true} toc={true}>
+  An object with a single `switch` property.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reply.switch" type="object" required={true} toc={true}>
+  An object that accepts the properties below.
+</ParamField>
+
+<Indent>
+
+<ParamField path="reply.switch.variable" type="string" required={true} toc={true}>
+  Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).
+</ParamField>
+
+<ParamField path="reply.switch.transform" type="string" toc={true}>
+  Transform to apply to the value before matching. One of `lowercase`, `uppercase`, `trim`,
+  `lowercase_trim`, or `uppercase_trim`.
+</ParamField>
+
+<ParamField path="reply.switch.case" type="object" required={true} toc={true}>
+  Map of values to reply bodies. The matched value is used as the reply body.
+</ParamField>
+
+<ParamField path="reply.switch.default" type="string" toc={true}>
+  Fallback reply body when no `case` value matches. If omitted and no case matches, the inbound
+  message is marked as `failed` with `swml_switch_no_match`.
+</ParamField>
+
+</Indent>
+
+</Indent>
+
+When using an inline `switch`, you cannot also set `body`, `media`, `to`, `from`, or `status_url`
+on the same `reply`. For more complex branching (e.g. selecting media or routing per case), use
+the top-level [`switch`](/docs/swml/reference/messaging/switch) step inside a full-mode document.
+
+</Tab>
+</Tabs>
+
+## **Variables**
+
+Set by the method:
+
+- **reply_result:** (out) `queued` | `failed`.
+- **reply_message_id:** (out) Message segment ID of the last successful reply.
+
+If `reply` is called multiple times in a single document, these variables reflect the most recent
+reply.
+
+## **Status callbacks**
+
+The `status_url` on `reply` registers a delivery status callback for the **outbound reply message** —
+not for the inbound message that triggered the SWML document. It behaves the same way as the status
+callback on any other outbound message sent through SignalWire.
+
+- Fires as the outbound reply moves through delivery states.
+- Callback delivery is independent of SWML execution: the SWML document completes as soon as the reply
+  is accepted (`reply_result: "queued"`); delivery-state callbacks fire afterwards.
+- If `reply` is called multiple times in a single document, each reply's `status_url` is registered
+  independently for its own outbound message.
+
+When `status_url` is set, SignalWire sends an HTTP `POST` to that URL each time the outbound reply
+transitions to a new state. The callback uses the same payload as other outbound messages sent
+through SignalWire:
+
+<WebhookPayloadSnippet webhook="messageStatusCallback" />
+
+See the [Message status callback](/docs/apis/rest/messages/webhooks/message-status-callback)
+webhook page for the full field reference and the list of possible `status` values.
+
+## **Examples**
+
+### Simple-mode string shorthand
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+reply: "Thanks for your message!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "reply": "Thanks for your message!"
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply with body
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Thanks for your message!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "body": "Thanks for your message!"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply with media (MMS)
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Here's the document you requested"
+        media:
+          - "https://example.com/document.pdf"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "body": "Here's the document you requested",
+          "media": [
+            "https://example.com/document.pdf"
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Reply with a status callback URL
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        body: "Your order is confirmed"
+        status_url: "https://example.com/status"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "body": "Your order is confirmed",
+          "status_url": "https://example.com/status"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Keyword-driven reply with inline switch
+
+Use the inline `switch` form to branch the reply body on a variable's value — typically the
+inbound `message.body`. No `sections` needed.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+reply:
+  switch:
+    variable: message.body
+    transform: lowercase_trim
+    case:
+      help: "Reply STOP to unsubscribe, or visit https://example.com/help."
+      stop: "You've been unsubscribed."
+      start: "Welcome back!"
+    default: "Thanks for your message!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "reply": {
+    "switch": {
+      "variable": "message.body",
+      "transform": "lowercase_trim",
+      "case": {
+        "help": "Reply STOP to unsubscribe, or visit https://example.com/help.",
+        "stop": "You've been unsubscribed.",
+        "start": "Welcome back!"
+      },
+      "default": "Thanks for your message!"
+    }
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Forward an inbound message to another number
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - reply:
+        to: "+12223334444"
+        from: "+15559876543"
+        body: "Your number %{message.to} got a message from %{message.from}! The body was: %{message.body}"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "reply": {
+          "to": "+12223334444",
+          "from": "+15559876543",
+          "body": "Your number %{message.to} got a message from %{message.from}! The body was: %{message.body}"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+`reply` validation failures (invalid `from`, invalid `to`, missing body/media, exceeding the character
+limit, inactive campaign, etc.) mark the inbound message as `failed` with a specific error code and do
+**not** create a partial outbound message. Common error codes include
+`swml_reply_invalid_from_number`, `swml_reply_invalid_to_number`,
+`swml_reply_body_or_media_required`, `swml_reply_media_limit_exceeded`,
+`swml_reply_character_limit_exceeded`, `swml_reply_missing_messaging_capability`, and
+`swml_reply_inactive_campaign`.

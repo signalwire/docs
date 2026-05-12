@@ -1,0 +1,207 @@
+---
+id: b38d533f-6de0-43b6-894e-471b52a20311
+title: switch
+slug: /reference/messaging/switch
+description: Branch on a variable's value, with optional text transforms.
+max-toc-depth: 3
+---
+
+Branch on a variable's value, with optional text transforms applied before matching. Useful for
+keyword-driven inbound message handling.
+
+## **Properties**
+
+<ParamField path="switch" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="switch.variable" type="string" required={true} toc={true}>
+  Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).
+</ParamField>
+
+
+<ParamField path="switch.transform" type="string" toc={true}>
+  Transform to apply to the value before matching. One of `lowercase`, `uppercase`, `trim`,
+  `lowercase_trim`, or `uppercase_trim`.
+</ParamField>
+
+
+<ParamField path="switch.case" type="object" required={true} toc={true}>
+  Map of values to arrays of [SWML methods](/docs/swml/reference) to execute. The key is the value to
+  compare against `variable` (after applying `transform`); the value is the array of methods to run on
+  match.
+</ParamField>
+
+
+<ParamField path="switch.default" type="object[]" toc={true}>
+  Array of [SWML methods](/docs/swml/reference) to execute if no `case` matches. If omitted and no
+  case matches, the inbound message is marked as `failed` with `swml_switch_no_match`.
+</ParamField>
+
+</Indent>
+
+## **Examples**
+
+### Keyword-based reply
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - switch:
+        variable: message.body
+        transform: lowercase_trim
+        case:
+          help:
+            - reply:
+                body: "Reply STOP to unsubscribe, or visit https://example.com/help."
+          stop:
+            - reply:
+                body: "You've been unsubscribed."
+          start:
+            - reply:
+                body: "Welcome back!"
+        default:
+          - reply:
+              body: "Sorry, I didn't understand that. Reply HELP for assistance."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "switch": {
+          "variable": "message.body",
+          "transform": "lowercase_trim",
+          "case": {
+            "help": [
+              {
+                "reply": {
+                  "body": "Reply STOP to unsubscribe, or visit https://example.com/help."
+                }
+              }
+            ],
+            "stop": [
+              {
+                "reply": {
+                  "body": "You've been unsubscribed."
+                }
+              }
+            ],
+            "start": [
+              {
+                "reply": {
+                  "body": "Welcome back!"
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Sorry, I didn't understand that. Reply HELP for assistance."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Branch on a saved request response
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - request:
+        url: "https://api.example.com/customer"
+        body:
+          phone: "%{message.from}"
+        save_variables: true
+    - switch:
+        variable: request_response.tier
+        case:
+          gold:
+            - reply:
+                body: "Welcome back, valued customer!"
+          silver:
+            - reply:
+                body: "Thanks for being a member."
+        default:
+          - reply:
+              body: "Thanks for your message."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "request": {
+          "url": "https://api.example.com/customer",
+          "body": {
+            "phone": "%{message.from}"
+          },
+          "save_variables": true
+        }
+      },
+      {
+        "switch": {
+          "variable": "request_response.tier",
+          "case": {
+            "gold": [
+              {
+                "reply": {
+                  "body": "Welcome back, valued customer!"
+                }
+              }
+            ],
+            "silver": [
+              {
+                "reply": {
+                  "body": "Thanks for being a member."
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Thanks for your message."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+- `swml_switch_no_match` — `switch` matched no case and no `default` was provided.
+- `swml_switch_invalid_transform` — `transform` was not one of the allowed values.
+
+## **See Also**
+
+- **[Variables](/docs/swml/reference/variables)**: Reference for SWML variables and the `message.*`
+  variable context.

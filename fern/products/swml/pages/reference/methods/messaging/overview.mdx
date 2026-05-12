@@ -1,0 +1,99 @@
+---
+id: 07af2f82-a8e9-4a94-a679-1be31dfe0a2e
+slug: /reference/messaging
+description: Overview of SWML methods for handling inbound messages.
+title: Messaging methods overview
+sidebar-title: Overview
+position: 0
+max-toc-depth: 3
+---
+
+SWML messaging methods control the program flow when handling **inbound messages** (SMS and MMS).
+When a message arrives on a phone number configured with a SWML message handler, SignalWire fetches
+and processes the SWML document, optionally sending an outbound reply.
+
+For methods that handle calls instead of messages, see the
+[Calling methods overview](/docs/swml/reference/calling).
+
+## Document modes
+
+- **Simple mode** — a single top-level [`reply`](/docs/swml/reference/messaging/reply) or
+  [`receive`](/docs/swml/reference/messaging/receive) key. An empty document (`{}`) is treated as an
+  implicit `receive`.
+- **Full mode** — a top-level `sections` key with named sections. Execution starts at `sections.main`,
+  and each section contains an array of steps that execute sequentially.
+
+## Reply methods
+
+### `reply` and `receive`
+
+The [`reply`](/docs/swml/reference/messaging/reply) method creates and sends an outbound message in
+response to the inbound message. It accepts three shapes — a string shorthand, an object with
+body/media/routing fields, or an inline `switch` that branches the reply body on a variable's value.
+`reply` does **not** end execution — subsequent steps continue to run after the reply is queued.
+
+The [`receive`](/docs/swml/reference/messaging/receive) method accepts the inbound message without
+sending a reply. It is a no-op step.
+
+## Control-flow methods
+
+### `execute` and `return`
+
+The [`execute`](/docs/swml/reference/messaging/execute) method calls a named section as a subroutine.
+Execution continues in the called section, then returns to the caller when the section completes.
+Subroutines can accept `params` and produce a `return_value` via
+[`return`](/docs/swml/reference/messaging/return). In `main`, `return` stops execution entirely.
+
+In the messaging context, `execute` accepts a section name only — not a URL or inline document.
+
+### `transfer`
+
+The [`transfer`](/docs/swml/reference/messaging/transfer) method fetches and executes a new SWML
+document from a URL. Unlike `execute`, `transfer` is a **tail call** — it replaces the current
+document and does not return.
+
+In the messaging context, `transfer.dest` must be a URL — section names and inline documents are not
+supported.
+
+### `goto` and `label`
+
+The [`goto`](/docs/swml/reference/messaging/goto) method jumps to a
+[`label`](/docs/swml/reference/messaging/label) within the current section, useful for retry loops
+and conditional repetition. `goto` does not cross subroutine boundaries.
+
+### `switch`
+
+The [`switch`](/docs/swml/reference/messaging/switch) method branches based on a variable's value,
+with optional text transforms (`lowercase`, `uppercase`, `trim`, `lowercase_trim`, `uppercase_trim`).
+This is ideal for keyword-driven inbound message handling.
+
+## External integrations
+
+### `request`
+
+The [`request`](/docs/swml/reference/messaging/request) method sends an HTTP request to an external
+URL. The response can optionally be parsed and stored as variables for use in subsequent steps.
+
+Request failures are **soft** — they set `request_result` but do not stop execution, so the document
+can branch on the outcome without failing the inbound message.
+
+## Variable expansion
+
+SWML supports `%{variable.path}` placeholders in string values. Variables are expanded after the
+document is parsed, before methods execute. Expansion is **pure substitution only** — no expressions,
+method calls, or operators. Unresolvable paths are replaced with an empty string.
+
+The inbound `message.*` context (`message.to`, `message.from`, `message.body`, `message.kind`,
+`message.project_id`, `message.status`) is available throughout the document. See
+[Variables](/docs/swml/reference/variables) for the full variable reference.
+
+## Platform limits
+
+| Limit                           | Value     | On exceed                                          |
+|---------------------------------|-----------|----------------------------------------------------|
+| Max steps per message           | 100       | Stop execution                                     |
+| Default `goto.max`              | 100       | Fall through to next step (each `goto` can override) |
+| Max `request` calls             | 10        | Skip request, `request_result: "limit_exceeded"`   |
+| Max `request` timeout           | 5 seconds | `request_result: "timeout"`                        |
+| Max `request_response_body`     | 64 KB     | Truncate                                           |
+| Max media attachments per reply | 8         | Reply fails                                        |

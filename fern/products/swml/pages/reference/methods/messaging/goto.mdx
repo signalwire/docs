@@ -1,0 +1,124 @@
+---
+id: ee492ba1-97b1-4942-9c7c-e7d42603ebbc
+title: goto
+slug: /reference/messaging/goto
+description: Jump to a labeled position in the current section.
+max-toc-depth: 3
+---
+
+Jump to a [`label`](/docs/swml/reference/messaging/label) within the current section. Used for retry
+loops and conditional repetition.
+
+`goto` does **not** cross subroutine boundaries — it can only jump within the section that contains
+the matching `label`.
+
+## **Properties**
+
+<ParamField path="goto" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="goto.label" type="string" required={true} toc={true}>
+  The name of the label in the current section to jump to.
+</ParamField>
+
+
+<ParamField path="goto.max" type="integer" default="100" toc={true}>
+  Maximum number of jumps to this label before execution falls through to the next step.
+</ParamField>
+
+</Indent>
+
+## **Examples**
+
+### Retry a request up to three times
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - label: try_lookup
+    - request:
+        url: "https://api.example.com/lookup"
+        body:
+          phone: "%{message.from}"
+        save_variables: true
+    - switch:
+        variable: request_result
+        case:
+          success:
+            - reply:
+                body: "Hi %{request_response.name}!"
+          timeout:
+            - goto:
+                label: try_lookup
+                max: 3
+        default:
+          - reply:
+              body: "Sorry, we couldn't look up your account."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "label": "try_lookup"
+      },
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "body": {
+            "phone": "%{message.from}"
+          },
+          "save_variables": true
+        }
+      },
+      {
+        "switch": {
+          "variable": "request_result",
+          "case": {
+            "success": [
+              {
+                "reply": {
+                  "body": "Hi %{request_response.name}!"
+                }
+              }
+            ],
+            "timeout": [
+              {
+                "goto": {
+                  "label": "try_lookup",
+                  "max": 3
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Sorry, we couldn't look up your account."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+- `swml_goto_label_not_found` — no `label` matching `goto.label` exists in the current section.
+
+The maximum-jumps limit (`max`) is enforced per-label. Once `max` is reached, execution falls through
+to the next step instead of jumping again.

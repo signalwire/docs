@@ -1,0 +1,161 @@
+---
+id: a86b1e82-0cdd-4c54-8b35-932839347bcb
+title: transfer
+slug: /reference/messaging/transfer
+description: Tail-call to a new SWML document fetched from a URL.
+max-toc-depth: 3
+---
+
+Fetch and execute a new SWML document from a URL. This is a **tail call** — it replaces the current
+document and does not return. Steps after `transfer`, including steps in calling sections, are
+skipped.
+
+In the messaging context, `transfer.dest` must be a URL — it does not accept a section name or an
+inline document.
+
+## **Properties**
+
+<ParamField path="transfer" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="transfer.dest" type="string" required={true} toc={true}>
+  URL (`http` or `https`) to fetch the new SWML document from. Authentication can be set in the URL in
+  the format `username:password@url`.
+</ParamField>
+
+
+<ParamField path="transfer.method" type="string" default="POST" toc={true}>
+  HTTP method for the fetch request. One of `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`.
+</ParamField>
+
+
+<ParamField path="transfer.params" type="object" toc={true}>
+  Parameters to include in the request body of the fetch. Available as `params.*` in the transferred
+  document.
+</ParamField>
+
+</Indent>
+
+## **Examples**
+
+### Transfer to an external SWML handler
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - transfer:
+        dest: "https://example.com/messaging-handler"
+        params:
+          reason: "escalation"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "transfer": {
+          "dest": "https://example.com/messaging-handler",
+          "params": {
+            "reason": "escalation"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Route to different handlers based on keyword
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - switch:
+        variable: message.body
+        transform: lowercase_trim
+        case:
+          sales:
+            - transfer:
+                dest: "https://example.com/sales-handler"
+                params:
+                  source: "sms"
+          support:
+            - transfer:
+                dest: "https://example.com/support-handler"
+                params:
+                  source: "sms"
+        default:
+          - reply:
+              body: "Reply SALES or SUPPORT to be routed to the right team."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "switch": {
+          "variable": "message.body",
+          "transform": "lowercase_trim",
+          "case": {
+            "sales": [
+              {
+                "transfer": {
+                  "dest": "https://example.com/sales-handler",
+                  "params": {
+                    "source": "sms"
+                  }
+                }
+              }
+            ],
+            "support": [
+              {
+                "transfer": {
+                  "dest": "https://example.com/support-handler",
+                  "params": {
+                    "source": "sms"
+                  }
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Reply SALES or SUPPORT to be routed to the right team."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+## **Failure behavior**
+
+- `swml_transfer_failed` — the `dest` field is missing or empty.
+- `swml_transfer_fetch_failed` — the transferred SWML document could not be fetched.
+- `swml_transfer_document_invalid` — the transferred SWML document is not a valid messaging document.
+
+When `transfer` fetches an external document, SignalWire `POST`s the same payload shape used during
+the initial document fetch (the inbound `message` object plus any `params` from the `transfer` step).
