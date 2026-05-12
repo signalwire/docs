@@ -16,7 +16,7 @@ model Receive {
 @doc("An empty document `{}`. Accepts the inbound message without sending a reply — equivalent to `{ receive: {} }`.")
 model ImplicitReceive {}
 
-@summary("Light document receive")
+@summary("receive Method Variants")
 @doc("""
   Accept the inbound message without sending a reply. Can be written either way:
   - `{ receive: {} }` — explicit `receive` method.
