@@ -40,11 +40,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # collection_id values are looked up from repo Variables at matrix
+        # expansion time (static `vars.X` references, not dynamic indexing).
+        # UIDs are not sensitive — they appear in public Postman URLs — so
+        # they live in Variables, not Secrets.
         include:
           - name: signalwire-rest
             spec: fern/apis/signalwire-rest/openapi.yaml
+            collection_id: ${{ vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID }}
           - name: compatibility
             spec: fern/apis/compatibility/openapi.yaml
+            collection_id: ${{ vars.POSTMAN_COMPATIBILITY_COLLECTION_ID }}
     steps:
       - name: Checkout
         # Pinned to commit SHA (v4.2.2) — tags are mutable and a tag
@@ -124,31 +130,17 @@ jobs:
 
       - name: PUT collection to Postman
         if: steps.changed.outputs.changed == 'true'
-        # Both vars are pre-bound via static dot notation (always supported).
-        # The shell picks the right one based on matrix.name. This avoids the
-        # dynamic context-indexing pattern `vars[matrix.collection_var]`,
-        # which is documented to fail silently for `secrets[matrix.x]` inside
-        # `env:` blocks; `vars` may behave the same. The case dispatch below
-        # is unambiguous and bulletproof.
+        # Both env vars are required. The matrix supplies COLLECTION_ID per
+        # entry (static `vars.X` resolved at matrix-expansion time); the
+        # secret supplies the API key. Both are validated below before any
+        # network call.
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
-          NAME: ${{ matrix.name }}
-          SIGNALWIRE_REST_COLLECTION_ID: ${{ vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID }}
-          COMPATIBILITY_COLLECTION_ID: ${{ vars.POSTMAN_COMPATIBILITY_COLLECTION_ID }}
+          COLLECTION_ID: ${{ matrix.collection_id }}
         run: |
-          case "$NAME" in
-            signalwire-rest) COLLECTION_ID="$SIGNALWIRE_REST_COLLECTION_ID"; VAR_NAME=POSTMAN_SIGNALWIRE_REST_COLLECTION_ID ;;
-            compatibility)   COLLECTION_ID="$COMPATIBILITY_COLLECTION_ID";   VAR_NAME=POSTMAN_COMPATIBILITY_COLLECTION_ID ;;
-            *) echo "::error::Unknown matrix entry: $NAME"; exit 1 ;;
-          esac
-          if [[ -z "$COLLECTION_ID" ]]; then
-            echo "::error::Missing repo variable $VAR_NAME"
-            exit 1
-          fi
-          if [[ -z "$POSTMAN_API_KEY" ]]; then
-            echo "::error::Missing secret POSTMAN_API_KEY"
-            exit 1
-          fi
+          : "${POSTMAN_API_KEY:?missing repo secret POSTMAN_API_KEY}"
+          : "${COLLECTION_ID:?missing repo variable for ${{ matrix.name }} collection ID — check Settings → Variables}"
+
           curl --fail-with-body -sS -X PUT \
             "https://api.getpostman.com/collections/$COLLECTION_ID" \
             -H "X-Api-Key: $POSTMAN_API_KEY" \
