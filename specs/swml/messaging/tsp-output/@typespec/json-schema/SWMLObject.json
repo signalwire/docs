@@ -1,0 +1,712 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "SWMLObject.json",
+    "oneOf": [
+        {
+            "$ref": "#/$defs/SWMLFullDocument"
+        },
+        {
+            "$ref": "#/$defs/SWMLLightDocument"
+        }
+    ],
+    "description": "A SWML document for handling inbound SMS or MMS messages. Use one of these shapes:\n- **Full document** — a top-level `sections` map for multi-step flows with branching,\n  subroutines, retries, and external HTTP requests. Execution starts at `sections.main`.\n- **Light document** — a single top-level `reply` or `receive` for one-shot handling.\n  The receive form accepts both `{ receive: {} }` and an empty `{}` document.\n\nSee the [Messaging SWML reference](/docs/swml/reference/messaging) for the full list of\navailable methods.",
+    "title": "Messaging SWML Document",
+    "$defs": {
+        "SWMLFullDocument": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "const": "1.0.0"
+                },
+                "sections": {
+                    "$ref": "#/$defs/Section"
+                }
+            },
+            "required": [
+                "sections"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "A multi-step SWML document with a top-level `sections` map. Execution starts at\n`sections.main`, and each section contains an array of methods that run sequentially.\nUse this form when your message handler needs branching, subroutines, retries, or\nexternal HTTP requests.",
+            "title": "Full SWML document"
+        },
+        "SWMLLightDocument": {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/Reply"
+                },
+                {
+                    "$ref": "#/$defs/LightReceive"
+                }
+            ],
+            "description": "A single-step SWML document — either a `reply` (send an outbound message) or a `receive`\n(accept the inbound message without replying; can be written as `{ receive: {} }` or as an\nempty `{}` document). Use this form for one-shot handling. For multi-step flows with\nbranching, subroutines, or retries, use the full document form instead.",
+            "title": "Light SWML document"
+        },
+        "Section": {
+            "type": "object",
+            "properties": {
+                "main": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/SWMLMethod"
+                    }
+                }
+            },
+            "required": [
+                "main"
+            ],
+            "unevaluatedProperties": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/$defs/SWMLMethod"
+                }
+            },
+            "title": "SWML section"
+        },
+        "Reply": {
+            "type": "object",
+            "properties": {
+                "reply": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyWithBody"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyWithMedia"
+                        },
+                        {
+                            "$ref": "#/$defs/ReplyInlineSwitch"
+                        }
+                    ],
+                    "description": "Create and send an outbound message in response to the inbound message. Accepts one of:\na string (used as the message body), an object with body, media, and routing fields, or\nan inline `switch` that branches the reply on a variable value.",
+                    "title": "reply"
+                }
+            },
+            "required": [
+                "reply"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "reply Method"
+        },
+        "LightReceive": {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/Receive"
+                },
+                {
+                    "$ref": "#/$defs/ImplicitReceive"
+                }
+            ],
+            "description": "Accept the inbound message without sending a reply. Can be written either way:\n- `{ receive: {} }` — explicit `receive` method.\n- `{}` — empty document; treated as a `receive`.",
+            "title": "Light document receive"
+        },
+        "SWMLMethod": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/Reply"
+                },
+                {
+                    "$ref": "#/$defs/Receive"
+                },
+                {
+                    "$ref": "#/$defs/Request"
+                },
+                {
+                    "$ref": "#/$defs/Execute"
+                },
+                {
+                    "$ref": "#/$defs/Transfer"
+                },
+                {
+                    "$ref": "#/$defs/Switch"
+                },
+                {
+                    "$ref": "#/$defs/Goto"
+                },
+                {
+                    "$ref": "#/$defs/Return"
+                },
+                {
+                    "$ref": "#/$defs/Label"
+                }
+            ],
+            "title": "SWML methods"
+        },
+        "ReplyWithBody": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
+                    ],
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "URL to receive delivery status callbacks for the outbound reply message."
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Thanks for your message!"
+                    ],
+                    "description": "The body of the reply message. Required if `media` is not present."
+                },
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "examples": [
+                        [
+                            "https://example.com/image.jpg"
+                        ]
+                    ],
+                    "maxItems": 8,
+                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments."
+                }
+            },
+            "required": [
+                "body"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "Reply with body"
+        },
+        "ReplyWithMedia": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "type": "string",
+                    "examples": [
+                        "+15551234567"
+                    ],
+                    "description": "Destination phone number in E.164 format. Defaults to the inbound message's `from`."
+                },
+                "from": {
+                    "type": "string",
+                    "examples": [
+                        "+15559876543"
+                    ],
+                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
+                },
+                "status_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/reply-status"
+                    ],
+                    "description": "URL to receive delivery status callbacks for the outbound reply message."
+                },
+                "media": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "examples": [
+                        [
+                            "https://example.com/image.jpg"
+                        ]
+                    ],
+                    "maxItems": 8,
+                    "description": "Array of media URLs to attach. Converts the message to MMS. Maximum 8 attachments. Required if `body` is not present."
+                },
+                "body": {
+                    "type": "string",
+                    "examples": [
+                        "Check out this image!"
+                    ],
+                    "description": "Optional body text included alongside the media attachments."
+                }
+            },
+            "required": [
+                "media"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "Reply with media"
+        },
+        "ReplyInlineSwitch": {
+            "type": "object",
+            "properties": {
+                "switch": {
+                    "type": "object",
+                    "properties": {
+                        "variable": {
+                            "type": "string",
+                            "examples": [
+                                "message.body"
+                            ],
+                            "description": "Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`)."
+                        },
+                        "transform": {
+                            "$ref": "#/$defs/SwitchTransform",
+                            "examples": [
+                                "lowercase_trim"
+                            ],
+                            "description": "Transform to apply to the value before matching."
+                        },
+                        "case": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {
+                                "type": "string"
+                            },
+                            "description": "Map of values to reply bodies. The matched value is used as the reply body."
+                        },
+                        "default": {
+                            "type": "string",
+                            "description": "Fallback reply body used when no `case` value matches."
+                        }
+                    },
+                    "required": [
+                        "variable",
+                        "case"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    }
+                }
+            },
+            "required": [
+                "switch"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "Branch the reply body based on a variable value. The matching case (or `default`) provides\nthe reply body. When using an inline `switch`, you cannot also set `body`, `media`, `to`,\n`from`, or `status_url` on the same `reply`.",
+            "title": "Reply with inline switch"
+        },
+        "Receive": {
+            "type": "object",
+            "properties": {
+                "receive": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
+                    "examples": [
+                        {}
+                    ],
+                    "description": "Accept the inbound message without sending a reply. No-op step.",
+                    "title": "receive"
+                }
+            },
+            "required": [
+                "receive"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "receive Method"
+        },
+        "ImplicitReceive": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "description": "An empty document `{}`. Accepts the inbound message without sending a reply — equivalent to `{ receive: {} }`.",
+            "title": "Empty SWML document"
+        },
+        "Request": {
+            "type": "object",
+            "properties": {
+                "request": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "examples": [
+                                "https://api.example.com/lookup"
+                            ],
+                            "description": "URL to send the request to."
+                        },
+                        "method": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "const": "GET"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "POST"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "PUT"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "PATCH"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "DELETE"
+                                }
+                            ],
+                            "default": "POST",
+                            "examples": [
+                                "POST"
+                            ],
+                            "description": "HTTP method. Default `POST`."
+                        },
+                        "headers": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {
+                                "type": "string"
+                            },
+                            "examples": [
+                                {
+                                    "Authorization": "Bearer token"
+                                }
+                            ],
+                            "description": "HTTP headers to include with the request. Each value must be a string."
+                        },
+                        "body": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {},
+                                    "unevaluatedProperties": {}
+                                }
+                            ],
+                            "examples": [
+                                {
+                                    "phone": "%{message.from}"
+                                }
+                            ],
+                            "description": "Request body. Hashes are JSON-encoded automatically."
+                        },
+                        "timeout": {
+                            "type": "number",
+                            "default": 5,
+                            "examples": [
+                                3
+                            ],
+                            "minimum": 0,
+                            "maximum": 5,
+                            "description": "Timeout in seconds. Default `5.0`. Clamped to a maximum of `5.0`."
+                        },
+                        "save_variables": {
+                            "type": "boolean",
+                            "default": false,
+                            "examples": [
+                                true
+                            ],
+                            "description": "If `true`, parse the JSON response into `request_response.*` variables. Default `false`."
+                        }
+                    },
+                    "required": [
+                        "url"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
+                    "description": "Make an HTTP request to an external URL. The response can optionally be parsed and\nstored as variables for use in subsequent steps. Request failures are soft —\nthey set `request_result` but do not stop execution.",
+                    "title": "request"
+                }
+            },
+            "required": [
+                "request"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "request Method"
+        },
+        "Execute": {
+            "type": "object",
+            "properties": {
+                "execute": {
+                    "type": "object",
+                    "properties": {
+                        "dest": {
+                            "type": "string",
+                            "examples": [
+                                "greet"
+                            ],
+                            "description": "Name of the section to execute. Must reference a section in the current document."
+                        },
+                        "params": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {},
+                            "examples": [
+                                {
+                                    "name": "%{message.from}"
+                                }
+                            ],
+                            "description": "Parameters accessible as `params.*` in the called section. Replaces (does not merge with) any outer `params` from the caller."
+                        }
+                    },
+                    "required": [
+                        "dest"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
+                    "description": "Call a named section as a subroutine. Execution continues in the called section,\nthen returns to the caller when the section completes. The destination must be\nthe name of a section defined in the current document.",
+                    "title": "execute"
+                }
+            },
+            "required": [
+                "execute"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "execute Method"
+        },
+        "Transfer": {
+            "type": "object",
+            "properties": {
+                "transfer": {
+                    "type": "object",
+                    "properties": {
+                        "dest": {
+                            "type": "string",
+                            "format": "uri",
+                            "examples": [
+                                "https://example.com/handler"
+                            ],
+                            "description": "URL to fetch the new SWML document from."
+                        },
+                        "method": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "const": "GET"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "POST"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "PUT"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "PATCH"
+                                },
+                                {
+                                    "type": "string",
+                                    "const": "DELETE"
+                                }
+                            ],
+                            "default": "POST",
+                            "examples": [
+                                "POST"
+                            ],
+                            "description": "HTTP method for the fetch request. Default `POST`."
+                        },
+                        "params": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {},
+                            "examples": [
+                                {
+                                    "reason": "escalation"
+                                }
+                            ],
+                            "description": "Parameters to include in the request body of the fetch."
+                        }
+                    },
+                    "required": [
+                        "dest"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
+                    "description": "Fetch and execute a new SWML document from a URL. This is a tail call —\nit replaces the current document and does not return. Steps after `transfer`\nare skipped, including steps in calling sections.",
+                    "title": "transfer"
+                }
+            },
+            "required": [
+                "transfer"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "transfer Method"
+        },
+        "Switch": {
+            "type": "object",
+            "properties": {
+                "switch": {
+                    "type": "object",
+                    "properties": {
+                        "variable": {
+                            "type": "string",
+                            "examples": [
+                                "message.body"
+                            ],
+                            "description": "Variable path to match. Specified without `%{}` wrapper (e.g. `message.body`)."
+                        },
+                        "transform": {
+                            "$ref": "#/$defs/SwitchTransform",
+                            "examples": [
+                                "lowercase_trim"
+                            ],
+                            "description": "Transform to apply to the value before matching."
+                        },
+                        "case": {
+                            "type": "object",
+                            "properties": {},
+                            "unevaluatedProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/$defs/SWMLMethod"
+                                }
+                            },
+                            "description": "Map of values to arrays of SWML methods to execute."
+                        },
+                        "default": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/SWMLMethod"
+                            },
+                            "description": "Array of SWML methods to execute if no cases match."
+                        }
+                    },
+                    "required": [
+                        "variable",
+                        "case"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
+                    "description": "Branch based on a variable value with optional text transforms.",
+                    "title": "switch"
+                }
+            },
+            "required": [
+                "switch"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "switch Method"
+        },
+        "Goto": {
+            "type": "object",
+            "properties": {
+                "goto": {
+                    "type": "object",
+                    "properties": {
+                        "label": {
+                            "type": "string",
+                            "examples": [
+                                "greeting"
+                            ],
+                            "description": "Mark any point of the SWML section with a label so that goto can jump to it."
+                        },
+                        "max": {
+                            "type": "integer",
+                            "default": 100,
+                            "examples": [
+                                3
+                            ],
+                            "description": "Maximum number of jumps before stopping execution. Default `100`."
+                        }
+                    },
+                    "required": [
+                        "label"
+                    ],
+                    "unevaluatedProperties": {
+                        "not": {}
+                    },
+                    "description": "Jump to a named label in the current section. Used for retry loops and conditional\nrepetition. `goto` does not cross subroutine boundaries.",
+                    "title": "goto"
+                }
+            },
+            "required": [
+                "goto"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "goto Method"
+        },
+        "Return": {
+            "type": "object",
+            "properties": {
+                "return": {
+                    "examples": [
+                        "success"
+                    ],
+                    "description": "Return from the current section. Inside a subroutine called via `execute`, control\nreturns to the caller and the value is accessible as `return_value` in the caller's\ncontext. In `main`, stops execution entirely (return value is discarded).",
+                    "title": "return"
+                }
+            },
+            "required": [
+                "return"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "return Method"
+        },
+        "Label": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string",
+                    "examples": [
+                        "greeting"
+                    ],
+                    "description": "Mark any point of the SWML section with a label so that goto can jump to it."
+                }
+            },
+            "required": [
+                "label"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "label Method"
+        },
+        "SwitchTransform": {
+            "type": "string",
+            "enum": [
+                "lowercase",
+                "uppercase",
+                "trim",
+                "lowercase_trim",
+                "uppercase_trim"
+            ],
+            "description": "Transform applied to the variable value before matching.",
+            "title": "SwitchTransform enum"
+        }
+    }
+}

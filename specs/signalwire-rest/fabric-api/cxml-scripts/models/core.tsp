@@ -5,7 +5,6 @@ using TypeSpec.Http;
 model CXMLScriptPathID {
   @doc("Unique ID of a cXML Script.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -13,7 +12,6 @@ model CXMLScriptPathID {
 model CXMLScript {
   @doc("Unique ID of a cXML Script.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The cXML script contents")
@@ -45,6 +43,6 @@ model CXMLScript {
   status_callback_url?: url | null;
 
   @doc("HTTP method for status callback URL")
-  @example(UrlMethodType.Post)
-  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
+  @example(RequestUrlMethodType.Post)
+  status_callback_method?: RequestUrlMethodType;
 }
