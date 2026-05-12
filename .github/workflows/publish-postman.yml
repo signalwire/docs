@@ -84,31 +84,35 @@ jobs:
         # below still validate against any new major.
         run: npm install -g openapi-to-postmanv2@6.0.1
 
+      - name: Rewrite relative docs links for Postman
+        if: steps.changed.outputs.changed == 'true'
+        # Rewrites markdown links like [foo](/docs/...) to absolute
+        # [foo](https://signalwire.com/docs/...) so the published collection
+        # links to the live docs site. The OpenAPI source-of-truth stays
+        # relative (correct for Fern); only the workflow's checkout copy is
+        # rewritten. Absolute URLs already in the spec (externalDocs.url,
+        # /company/contact, my.signalwire.com, etc.) are untouched because
+        # the rewrite is anchored on `](/` — see the script for details.
+        run: node scripts/postman/rewrite-links.js "${{ matrix.spec }}"
+
       - name: Convert OpenAPI to Postman Collection
         if: steps.changed.outputs.changed == 'true'
-        # Options chosen for both signalwire-rest and compatibility:
-        #   folderStrategy=Tags                  group requests by OpenAPI tag (not raw paths)
-        #   requestParametersResolution=Example  populate request bodies from spec examples
-        #   exampleParametersResolution=Example  populate response examples from spec examples
-        #   alwaysInheritAuthentication=true     define auth once at collection level, inherit per-request
+        # Conversion options live in scripts/postman/convert-options.json so
+        # they're identical here and in any local invocation.
         #
-        # Left at library defaults (intentional):
-        #   includeDeprecated=true        keep deprecated ops visible so end users
-        #                                 see them with their deprecation status
-        #                                 rather than silently dropping requests
-        #                                 they may already be calling.
-        #   preferredRequestBodyType=first-listed
-        #                                 setting this to `raw` strips request
-        #                                 bodies from compatibility-api endpoints
-        #                                 (form-urlencoded Twilio convention).
-        #                                 first-listed correctly picks form for
-        #                                 compat and JSON for signalwire-rest.
+        # We pass them via `-c` (config file) rather than `-O key=value` because
+        # the CLI's `-O` parser filters its accepted-option list against an
+        # OpenAPI version that defaults to 3.0, dropping any 3.1-only option
+        # like `includeWebhooks` with a stderr warning and continuing. The
+        # `-c` path reads the JSON as-is and bypasses the filter, so 3.1
+        # webhooks (3 in signalwire-rest, 5 in compatibility) come through.
+        # Tracked as a quirk of openapi-to-postmanv2 v6.0.1.
         run: |
           openapi2postmanv2 \
             -s "${{ matrix.spec }}" \
             -o collection.json \
             -p \
-            -O 'folderStrategy=Tags,requestParametersResolution=Example,exampleParametersResolution=Example,alwaysInheritAuthentication=true'
+            -c scripts/postman/convert-options.json
 
       - name: Strip generated IDs and wrap for PUT
         if: steps.changed.outputs.changed == 'true'
