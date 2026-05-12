@@ -8,7 +8,6 @@ namespace SignalWireAPI.Fax;
 
 model LogPathID {
   @doc("Unique ID of the log")
-  @format("uuid")
   @path
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
   id: uuid;
@@ -26,7 +25,6 @@ model ChargeDetail {
 
 model FaxLog {
   @doc("A unique identifier for the log")
-  @format("uuid")
   @example("b7182dc2-00f3-40e4-a5ce-20f164b329df")
   id: uuid;
 

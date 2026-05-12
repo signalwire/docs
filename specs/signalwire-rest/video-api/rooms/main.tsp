@@ -100,10 +100,9 @@ namespace SignalWireAPI.Video.Rooms {
     @route("/{id}")
     read(
       @path
-      @format("uuid")
       @doc("Unique ID of the room.")
       @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-      id: string,
+      id: uuid,
 
       @query
       @doc("Specifies whether or not to include information about the room's active session (if any).")
@@ -124,10 +123,9 @@ namespace SignalWireAPI.Video.Rooms {
     @put
     update(
       @path
-      @format("uuid")
       @doc("Unique ID of the room.")
       @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-      id: string,
+      id: uuid,
 
       @body body: UpdateRoomRequest,
     ):
@@ -145,10 +143,9 @@ namespace SignalWireAPI.Video.Rooms {
     @delete
     delete(
       @path
-      @format("uuid")
       @doc("Unique ID of the room.")
       @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-      id: string,
+      id: uuid,
     ):
       | {
           @statusCode statusCode: 204;

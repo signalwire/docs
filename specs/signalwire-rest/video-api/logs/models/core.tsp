@@ -8,10 +8,9 @@ namespace SignalWireAPI.Video;
 @doc("Path parameter for log ID.")
 model LogPathID {
   @path
-  @format("uuid")
   @doc("Unique ID of the log.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 }
 
 @doc("Source of a video log entry.")
@@ -52,9 +51,8 @@ model ChargeDetail {
 @doc("Log object representing a video activity entry.")
 model Log {
   @doc("A unique identifier for the log.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("Source of this log entry.")
   @example(LogSource.realtime_api)
@@ -104,10 +102,9 @@ model Log {
 @summary("Deleted Log")
 @doc("A discarded/deleted video log entry. Returned when the log has been deleted. Only present when `include_deleted` is `true`.")
 model DiscardedLog {
-  @format("uuid")
   @doc("A unique identifier for the log.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("Date and time when the log was discarded.")
   @example(utcDateTime.fromISO("2022-01-01T10:00:00Z"))

@@ -3,6 +3,7 @@ import "@typespec/openapi";
 import "@typespec/openapi3";
 
 import "../_shared/auth.tsp";
+import "../_shared/types/main.tsp";
 import "./tags.tsp";
 import "./accounts/main.tsp";
 import "./applications/main.tsp";

@@ -3,39 +3,34 @@ using TypeSpec.Http;
 model TranscriptionsAccountSidPath {
   @doc("The unique identifier for the account that created this transcription.")
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model TranscriptionSidPath {
   @doc("The unique identifier for the transcription.")
   @example("b3877c40-da60-4998-90ad-b792e98472tr")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("Transcription model.")
 model Transcription {
   @doc("The unique identifier for the transcription.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472tr")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account that created this transcription.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
   api_version: string;
 
   @doc("The unique identifier for the recording that this transcription was created from.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472re")
-  recording_sid: string;
+  recording_sid: uuid;
 
   @doc("The date, in RFC 2822 format, this transcription was created.")
   @example("Thu, 27 Sep 2018 02:00:00 +0000")

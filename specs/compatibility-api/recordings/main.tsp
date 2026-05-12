@@ -41,15 +41,13 @@ namespace CompatibilityAPI.Recordings {
 
       @query
       @doc("Filter by recordings associated with a specific call.")
-      @format("uuid")
       @example("43bb71ee-553f-4074-bb20-8e2747647cce")
-      CallSid?: string,
+      CallSid?: uuid,
 
       @query
       @doc("Filter by recordings associated with a specific conference.")
-      @format("uuid")
       @example("b3877c40-da60-4998-90ad-b792e98472cf")
-      ConferenceSid?: string,
+      ConferenceSid?: uuid,
 
       @query
       @doc("The page number to retrieve (zero-indexed).")

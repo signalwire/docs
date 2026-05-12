@@ -4,8 +4,7 @@ namespace SignalWireAPI.Logs;
 model Conference {
   @doc("Unique identifier for the conference.")
   @example("b9028451-b1d3-4690-b5d3-37b19d25f573")
-  @format("uuid")
-  id: string;
+  id: uuid;
 
   @doc("Creation timestamp.")
   @example(utcDateTime.fromISO("2025-03-11T01:49:49.630Z"))

@@ -47,9 +47,8 @@ namespace CompatibilityAPI.Calls {
 
       @query
       @doc("The unique identifier for the call that created this call.")
-      @format("uuid")
       @example("b3877c40-da60-4998-90ad-b792e98472af")
-      ParentCallSid?: string,
+      ParentCallSid?: uuid,
 
       @query
       @doc("The time, in RFC 2822 GMT format, on which the call began.")

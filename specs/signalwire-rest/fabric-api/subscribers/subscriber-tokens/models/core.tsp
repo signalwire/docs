@@ -3,7 +3,6 @@ import "../../../../types";
 model SubscriberToken {
   @doc("The ID of the subscriber that the token is associated with.")
   @example("32d94154-9297-418c-9a85-4a69e0c67c30")
-  @format("uuid")
   subscriber_id: uuid;
 
   @doc("The token that is associated with the subscriber.")

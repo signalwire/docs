@@ -81,7 +81,6 @@ model UpdatePhoneNumberRequest {
   call_verto_resource?: string;
 
   @doc("The ID of the Video Room to forward incoming calls to when using the video_room call handler.")
-  @format("uuid")
   call_video_room_id?: uuid;
 
   @doc("The message handler for the phone number.")

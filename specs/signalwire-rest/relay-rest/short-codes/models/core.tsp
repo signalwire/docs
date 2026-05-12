@@ -7,7 +7,6 @@ using Types;
 model ShortCodePathID {
   @doc("Unique ID of the short code.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -46,7 +45,6 @@ enum ShortCodeMessageHandler {
 model ShortCode {
   @doc("The unique identifier of the short code.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The name given to the short code.")
@@ -106,7 +104,6 @@ model ShortCode {
 
   @doc("The ID of the LāML application to handle messages when using laml_application handler.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   message_laml_application_id: uuid | null;
 
   @doc("The Relay context to use when using relay_context handler.")

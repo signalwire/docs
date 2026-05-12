@@ -3,25 +3,22 @@ using TypeSpec.Http;
 model MessagesAccountSidPath {
   @doc("The unique identifier of the project that sent or received this message.")
   @example("ea108133-d6b3-407c-9536-9fad8a929a6a")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model MessageSidPath {
   @doc("A unique ID that identifies this specific message.")
   @example("0a059168-ead0-41af-9d1f-343dae832527")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 model MessageSidPathForMedia {
   @doc("A unique ID that identifies this specific message.")
   @example("0a059168-ead0-41af-9d1f-343dae832527")
-  @format("uuid")
   @path
-  MessageSid: string;
+  MessageSid: uuid;
 }
 
 @doc("Message status.")
@@ -53,9 +50,8 @@ model MessageSubresourceUris {
 @doc("Message model.")
 model Message {
   @doc("The unique identifier of the project that sent or received this message.")
-  @format("uuid")
   @example("ea108133-d6b3-407c-9536-9fad8a929a6a")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The version number of the SignalWire cXML REST API used to handle this message.")
   @example("2010-04-01")
@@ -109,9 +105,8 @@ model Message {
   price_unit: string;
 
   @doc("A unique ID that identifies this specific message.")
-  @format("uuid")
   @example("0a059168-ead0-41af-9d1f-343dae832527")
-  sid: string;
+  sid: uuid;
 
   @doc("Current status of the message.")
   status: MessageStatus;
@@ -121,9 +116,8 @@ model Message {
   to: string;
 
   @doc("If a number group was used when sending an outbound message, the number group's ID will be present, or null otherwise.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ms")
-  messaging_service_sid: string | null;
+  messaging_service_sid: uuid | null;
 
   @doc("The URI of this particular message.")
   @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527.json")
@@ -136,9 +130,8 @@ model Message {
 @doc("Message media model.")
 model MessageMedia {
   @doc("The unique identifier for the account.")
-  @format("uuid")
   @example("ea108133-d6b3-407c-9536-9fad8a929a6a")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The content type of the media.")
   @example("image/jpeg")
@@ -153,14 +146,12 @@ model MessageMedia {
   date_updated: string;
 
   @doc("The unique identifier for the message.")
-  @format("uuid")
   @example("0a059168-ead0-41af-9d1f-343dae832527")
-  parent_sid: string;
+  parent_sid: uuid;
 
   @doc("The unique identifier for the media.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472me")
-  sid: string;
+  sid: uuid;
 
   @doc("The URI for the media.")
   @example("/api/laml/2010-04-01/Accounts/ea108133-d6b3-407c-9536-9fad8a929a6a/Messages/0a059168-ead0-41af-9d1f-343dae832527/Media/b3877c40-da60-4998-90ad-b792e98472me.json")
