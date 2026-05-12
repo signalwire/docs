@@ -24,9 +24,12 @@ enum SwitchTransform {
 @summary("switch Method")
 model Switch {
   @summary("switch")
-  @doc("Branch based on a variable value with optional text transforms.")
+  @doc("""
+    Branch on a variable's value, with optional text transforms applied before matching.
+    Useful for keyword-driven inbound message handling.
+    """)
   switch: {
-    @doc("Variable path to match. Specified without `%{}` wrapper (e.g. `message.body`).")
+    @doc("Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).")
     @example("message.body")
     variable: string;
 
@@ -34,12 +37,19 @@ model Switch {
     @example(SwitchTransform.lowercase_trim)
     transform?: SwitchTransform;
 
-    @doc("Map of values to arrays of SWML methods to execute.")
+    @doc("""
+      Map of values to arrays of SWML methods to execute. The key is the value to compare
+      against `variable` (after applying `transform`); the value is the array of methods
+      to run on match.
+      """)
     case: {
       ...TypeSpec.Record<SWMLMethod[]>;
     };
 
-    @doc("Array of SWML methods to execute if no cases match.")
+    @doc("""
+      Array of SWML methods to execute if no `case` matches. If omitted and no case
+      matches, execution stops with an error.
+      """)
     default?: SWMLMethod[];
   };
 }

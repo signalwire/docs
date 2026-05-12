@@ -10,9 +10,14 @@ model Goto {
     repetition. `goto` does not cross subroutine boundaries.
     """)
   goto: {
-    label: Label.label;
+    @doc("Label to jump to. Must reference a `label` step in the current section.")
+    @example("greeting")
+    label: string;
 
-    @doc("Maximum number of jumps before stopping execution. Default `100`.")
+    @doc("""
+      Maximum number of times this `goto` can jump to its label. Once the limit is reached,
+      the section ends without running any further steps.
+      """)
     @example(3)
     max?: integer = 100;
   };

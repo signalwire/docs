@@ -83,7 +83,7 @@
                             "$ref": "#/$defs/ReplyInlineSwitch"
                         }
                     ],
-                    "description": "Create and send an outbound message in response to the inbound message. Accepts one of:\na string (used as the message body), an object with body, media, and routing fields, or\nan inline `switch` that branches the reply on a variable value.",
+                    "description": "Create and send an outbound message in response to the inbound message. Accepts one of:\na string (used as the message body), an object with body, media, and routing fields, or\nan inline `switch` that branches the reply on a variable value.\n\n`reply` does not end execution — subsequent steps in the section continue to run after\nthe reply is queued.",
                     "title": "reply"
                 }
             },
@@ -154,7 +154,7 @@
                     "examples": [
                         "+15559876543"
                     ],
-                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
+                    "description": "Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`."
                 },
                 "status_url": {
                     "type": "string",
@@ -210,7 +210,7 @@
                     "examples": [
                         "+15559876543"
                     ],
-                    "description": "Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`."
+                    "description": "Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`."
                 },
                 "status_url": {
                     "type": "string",
@@ -301,7 +301,7 @@
                                     "$ref": "#/$defs/ReplyWithMedia"
                                 }
                             ],
-                            "description": "Fallback used when no `case` value matches. Same string-or-reply-object shape as a `case` value."
+                            "description": "Fallback used when no `case` value matches. Same string-or-reply-object shape as a\n`case` value. If omitted and no case matches, the `reply` step fails and execution\nstops."
                         }
                     },
                     "required": [
@@ -367,7 +367,7 @@
                             "examples": [
                                 "https://api.example.com/lookup"
                             ],
-                            "description": "URL to send the request to."
+                            "description": "Endpoint to call. Must be a publicly reachable URL."
                         },
                         "method": {
                             "anyOf": [
@@ -396,7 +396,7 @@
                             "examples": [
                                 "POST"
                             ],
-                            "description": "HTTP method. Default `POST`."
+                            "description": "HTTP method."
                         },
                         "headers": {
                             "type": "object",
@@ -409,7 +409,7 @@
                                     "Authorization": "Bearer token"
                                 }
                             ],
-                            "description": "HTTP headers to include with the request. Each value must be a string."
+                            "description": "HTTP headers to include with the request, as a map of header name to value. Each value must be a string."
                         },
                         "body": {
                             "anyOf": [
@@ -427,7 +427,7 @@
                                     "phone": "%{message.from}"
                                 }
                             ],
-                            "description": "Request body. Hashes are JSON-encoded automatically."
+                            "description": "Request body. Objects are JSON-encoded automatically."
                         },
                         "timeout": {
                             "type": "number",
@@ -437,7 +437,7 @@
                             ],
                             "minimum": 0,
                             "maximum": 5,
-                            "description": "Timeout in seconds. Default `5.0`. Clamped to a maximum of `5.0`."
+                            "description": "Timeout in seconds. Clamped to a maximum of `5.0`."
                         },
                         "save_variables": {
                             "type": "boolean",
@@ -445,7 +445,7 @@
                             "examples": [
                                 true
                             ],
-                            "description": "If `true`, parse the JSON response into `request_response.*` variables. Default `false`."
+                            "description": "If `true`, parse the JSON response into `request_response.*` variables."
                         }
                     },
                     "required": [
@@ -497,7 +497,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Call a named section as a subroutine. Execution continues in the called section,\nthen returns to the caller when the section completes. The destination must be\nthe name of a section defined in the current document.",
+                    "description": "Call a named section as a subroutine. Execution continues in the called section,\nthen returns to the caller when the section completes — either via `return` or by\nreaching the end of the section. The destination must be the name of a section\ndefined in the current document; URLs and inline documents are not accepted in the\nmessaging context.",
                     "title": "execute"
                 }
             },
@@ -521,7 +521,7 @@
                             "examples": [
                                 "https://example.com/handler"
                             ],
-                            "description": "URL to fetch the new SWML document from."
+                            "description": "URL (`http` or `https`) to fetch the new SWML document from. Authentication can\nbe embedded in the URL as `username:password@url`."
                         },
                         "method": {
                             "anyOf": [
@@ -550,7 +550,7 @@
                             "examples": [
                                 "POST"
                             ],
-                            "description": "HTTP method for the fetch request. Default `POST`."
+                            "description": "HTTP method for the fetch request."
                         },
                         "params": {
                             "type": "object",
@@ -561,7 +561,7 @@
                                     "reason": "escalation"
                                 }
                             ],
-                            "description": "Parameters to include in the request body of the fetch."
+                            "description": "Parameters to include in the request body of the fetch. Available as `params.*` in the transferred document."
                         }
                     },
                     "required": [
@@ -570,7 +570,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Fetch and execute a new SWML document from a URL. SignalWire POSTs the\n[inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)\nto `dest`: `message` describes the original inbound message, `params` carries\nthe values supplied here, and `vars` carries the propagated runtime variables\n(`request_result`, `reply_result`, etc.) accumulated by the current document.\n\nThis is a tail call — it replaces the current document and does not return.\nSteps after `transfer` are skipped, including steps in calling sections.",
+                    "description": "Fetch and execute a new SWML document from a URL. SignalWire POSTs the\n[inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)\nto `dest`: `message` describes the original inbound message, `params` carries\nthe values supplied here, and `vars` carries the propagated runtime variables\n(`request_result`, `reply_result`, etc.) accumulated by the current document.\n\nThis is a tail call — it replaces the current document and does not return.\nSteps after `transfer` are skipped, including steps in calling sections. In the\nmessaging context, `transfer.dest` must be a URL — section names and inline\ndocuments are not accepted.",
                     "title": "transfer"
                 }
             },
@@ -593,7 +593,7 @@
                             "examples": [
                                 "message.body"
                             ],
-                            "description": "Variable path to match. Specified without `%{}` wrapper (e.g. `message.body`)."
+                            "description": "Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`)."
                         },
                         "transform": {
                             "$ref": "#/$defs/SwitchTransform",
@@ -611,14 +611,14 @@
                                     "$ref": "#/$defs/SWMLMethod"
                                 }
                             },
-                            "description": "Map of values to arrays of SWML methods to execute."
+                            "description": "Map of values to arrays of SWML methods to execute. The key is the value to compare\nagainst `variable` (after applying `transform`); the value is the array of methods\nto run on match."
                         },
                         "default": {
                             "type": "array",
                             "items": {
                                 "$ref": "#/$defs/SWMLMethod"
                             },
-                            "description": "Array of SWML methods to execute if no cases match."
+                            "description": "Array of SWML methods to execute if no `case` matches. If omitted and no case\nmatches, execution stops with an error."
                         }
                     },
                     "required": [
@@ -628,7 +628,7 @@
                     "unevaluatedProperties": {
                         "not": {}
                     },
-                    "description": "Branch based on a variable value with optional text transforms.",
+                    "description": "Branch on a variable's value, with optional text transforms applied before matching.\nUseful for keyword-driven inbound message handling.",
                     "title": "switch"
                 }
             },
@@ -651,7 +651,7 @@
                             "examples": [
                                 "greeting"
                             ],
-                            "description": "Mark any point of the SWML section with a label so that goto can jump to it."
+                            "description": "Label to jump to. Must reference a `label` step in the current section."
                         },
                         "max": {
                             "type": "integer",
@@ -659,7 +659,7 @@
                             "examples": [
                                 3
                             ],
-                            "description": "Maximum number of jumps before stopping execution. Default `100`."
+                            "description": "Maximum number of times this `goto` can jump to its label. Once the limit is reached,\nthe section ends without running any further steps."
                         }
                     },
                     "required": [
@@ -687,7 +687,7 @@
                     "examples": [
                         "success"
                     ],
-                    "description": "Return from the current section. Inside a subroutine called via `execute`, control\nreturns to the caller and the value is accessible as `return_value` in the caller's\ncontext. In `main`, stops execution entirely (return value is discarded).",
+                    "description": "Return from the current section. Inside a subroutine called via `execute`, control\nreturns to the caller and the value is accessible as `return_value` in the caller's\ncontext. In `main`, stops execution entirely (return value is discarded). To return\nwithout a value, use `return: null`.",
                     "title": "return"
                 }
             },
@@ -707,7 +707,7 @@
                     "examples": [
                         "greeting"
                     ],
-                    "description": "Mark any point of the SWML section with a label so that goto can jump to it."
+                    "description": "Mark any point of the SWML section with a label so that `goto` can jump to it. Must be\nunique within the section."
                 }
             },
             "required": [

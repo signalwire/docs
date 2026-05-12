@@ -25,33 +25,33 @@ model Request {
     `%{request_response_body}` (capped at 64 KB).
     """)
   request: {
-    @doc("URL to send the request to.")
+    @doc("Endpoint to call. Must be a publicly reachable URL.")
     @example("https://api.example.com/lookup")
     url: url;
 
-    @doc("HTTP method. Default `POST`.")
+    @doc("HTTP method.")
     @example("POST")
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "POST";
 
-    @doc("HTTP headers to include with the request. Each value must be a string.")
+    @doc("HTTP headers to include with the request, as a map of header name to value. Each value must be a string.")
     @example(#{ Authorization: "Bearer token" })
     headers?: {
       ...TypeSpec.Record<string>;
     };
 
-    @doc("Request body. Hashes are JSON-encoded automatically.")
+    @doc("Request body. Objects are JSON-encoded automatically.")
     @example(#{ phone: "%{message.from}" })
     body?: string | {
       ...TypeSpec.Record<unknown>;
     };
 
-    @doc("Timeout in seconds. Default `5.0`. Clamped to a maximum of `5.0`.")
+    @doc("Timeout in seconds. Clamped to a maximum of `5.0`.")
     @minValue(0)
     @maxValue(5)
     @example(3)
     timeout?: float = 5.0;
 
-    @doc("If `true`, parse the JSON response into `request_response.*` variables. Default `false`.")
+    @doc("If `true`, parse the JSON response into `request_response.*` variables.")
     @example(true)
     save_variables?: boolean = false;
   };

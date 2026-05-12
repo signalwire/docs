@@ -11,7 +11,7 @@ model ReplyBase {
   @example("+15551234567")
   to?: string;
 
-  @doc("Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`.")
+  @doc("Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`.")
   @example("+15559876543")
   from?: string;
 
@@ -84,7 +84,11 @@ model ReplyInlineSwitch {
       ...TypeSpec.Record<string | ReplyPlan>;
     };
 
-    @doc("Fallback used when no `case` value matches. Same string-or-reply-object shape as a `case` value.")
+    @doc("""
+      Fallback used when no `case` value matches. Same string-or-reply-object shape as a
+      `case` value. If omitted and no case matches, the `reply` step fails and execution
+      stops.
+      """)
     default?: string | ReplyPlan;
   };
 }
@@ -96,6 +100,9 @@ model Reply {
     Create and send an outbound message in response to the inbound message. Accepts one of:
     a string (used as the message body), an object with body, media, and routing fields, or
     an inline `switch` that branches the reply on a variable value.
+
+    `reply` does not end execution — subsequent steps in the section continue to run after
+    the reply is queued.
     """)
   reply: string | ReplyPlan | ReplyInlineSwitch;
 }
