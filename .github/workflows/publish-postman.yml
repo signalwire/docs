@@ -1,0 +1,155 @@
+name: publish-postman
+
+# Pushes generated OpenAPI specs to their Postman public collections via
+# the Postman API (PUT /collections/:id). One matrix entry per collection.
+#
+# Triggered only when a watched openapi.yaml actually changes on main.
+# Each matrix job double-checks via `git diff` so unrelated specs are skipped.
+#
+# Required repo configuration:
+#   secrets.POSTMAN_API_KEY                            - Postman API key
+#   vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID         - public collection UID
+#   vars.POSTMAN_COMPATIBILITY_COLLECTION_ID           - public collection UID
+#
+# The public collections must already exist in Postman; PUT replaces contents
+# but cannot create a new collection.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'fern/apis/signalwire-rest/openapi.yaml'
+      - 'fern/apis/compatibility/openapi.yaml'
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Push every collection regardless of change detection'
+        type: boolean
+        default: false
+
+# Restrict the default GITHUB_TOKEN: this workflow only reads source files
+# (for git diff) and never writes back to the repo. Lock it down so a
+# compromised dependency cannot use the token to push commits.
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: signalwire-rest
+            spec: fern/apis/signalwire-rest/openapi.yaml
+          - name: compatibility
+            spec: fern/apis/compatibility/openapi.yaml
+    steps:
+      - name: Checkout
+        # Pinned to commit SHA (v4.2.2) — tags are mutable and a tag
+        # repoint by a compromised upstream would run with our secrets.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          fetch-depth: 2  # need HEAD^ for the per-spec diff
+
+      - name: Detect whether ${{ matrix.spec }} changed
+        id: changed
+        env:
+          SPEC: ${{ matrix.spec }}
+          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_all || 'false' }}
+        run: |
+          if [[ "$FORCE_ALL" == "true" ]]; then
+            echo "Manual dispatch with force_all=true; running."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only HEAD^ HEAD | grep -qx "$SPEC"; then
+            echo "$SPEC changed in this push."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$SPEC did not change; skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.changed.outputs.changed == 'true'
+        # Pinned to commit SHA for the same reason as actions/checkout above.
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '22'
+
+      - name: Install openapi-to-postmanv2
+        if: steps.changed.outputs.changed == 'true'
+        # Exact version pin so an upstream npm compromise can't ship new
+        # code under the same major. Bump deliberately; verify CLI flags
+        # below still validate against any new major.
+        run: npm install -g openapi-to-postmanv2@6.0.1
+
+      - name: Convert OpenAPI to Postman Collection
+        if: steps.changed.outputs.changed == 'true'
+        # Options chosen for both signalwire-rest and compatibility:
+        #   folderStrategy=Tags                  group requests by OpenAPI tag (not raw paths)
+        #   requestParametersResolution=Example  populate request bodies from spec examples
+        #   exampleParametersResolution=Example  populate response examples from spec examples
+        #   alwaysInheritAuthentication=true     define auth once at collection level, inherit per-request
+        #
+        # Left at library defaults (intentional):
+        #   includeDeprecated=true        keep deprecated ops visible so end users
+        #                                 see them with their deprecation status
+        #                                 rather than silently dropping requests
+        #                                 they may already be calling.
+        #   preferredRequestBodyType=first-listed
+        #                                 setting this to `raw` strips request
+        #                                 bodies from compatibility-api endpoints
+        #                                 (form-urlencoded Twilio convention).
+        #                                 first-listed correctly picks form for
+        #                                 compat and JSON for signalwire-rest.
+        run: |
+          openapi2postmanv2 \
+            -s "${{ matrix.spec }}" \
+            -o collection.json \
+            -p \
+            -O 'folderStrategy=Tags,requestParametersResolution=Example,exampleParametersResolution=Example,alwaysInheritAuthentication=true'
+
+      - name: Strip generated IDs and wrap for PUT
+        if: steps.changed.outputs.changed == 'true'
+        # Postman API requires {"collection": {...}} and rejects payloads
+        # carrying foreign _postman_id / id / uid fields.
+        run: |
+          jq 'walk(if type == "object" then del(._postman_id, .id, .uid) else . end) | {collection: .}' \
+            collection.json > payload.json
+
+      - name: PUT collection to Postman
+        if: steps.changed.outputs.changed == 'true'
+        # Both vars are pre-bound via static dot notation (always supported).
+        # The shell picks the right one based on matrix.name. This avoids the
+        # dynamic context-indexing pattern `vars[matrix.collection_var]`,
+        # which is documented to fail silently for `secrets[matrix.x]` inside
+        # `env:` blocks; `vars` may behave the same. The case dispatch below
+        # is unambiguous and bulletproof.
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+          NAME: ${{ matrix.name }}
+          SIGNALWIRE_REST_COLLECTION_ID: ${{ vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID }}
+          COMPATIBILITY_COLLECTION_ID: ${{ vars.POSTMAN_COMPATIBILITY_COLLECTION_ID }}
+        run: |
+          case "$NAME" in
+            signalwire-rest) COLLECTION_ID="$SIGNALWIRE_REST_COLLECTION_ID"; VAR_NAME=POSTMAN_SIGNALWIRE_REST_COLLECTION_ID ;;
+            compatibility)   COLLECTION_ID="$COMPATIBILITY_COLLECTION_ID";   VAR_NAME=POSTMAN_COMPATIBILITY_COLLECTION_ID ;;
+            *) echo "::error::Unknown matrix entry: $NAME"; exit 1 ;;
+          esac
+          if [[ -z "$COLLECTION_ID" ]]; then
+            echo "::error::Missing repo variable $VAR_NAME"
+            exit 1
+          fi
+          if [[ -z "$POSTMAN_API_KEY" ]]; then
+            echo "::error::Missing secret POSTMAN_API_KEY"
+            exit 1
+          fi
+          curl --fail-with-body -sS -X PUT \
+            "https://api.getpostman.com/collections/$COLLECTION_ID" \
+            -H "X-Api-Key: $POSTMAN_API_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary @payload.json \
+            -o response.json
+          echo "Postman response:"
+          jq '.collection.info | {name, uid}' response.json || cat response.json
