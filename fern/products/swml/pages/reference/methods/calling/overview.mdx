@@ -1,123 +1,292 @@
 ---
 id: a9dd1c03-0b27-4aab-98ab-4d9230d38484
 slug: /reference/calling
-description: Overview of SWML methods for handling inbound and outbound calls.
-title: Calling methods overview
+description: Reference for Calling SWML — document structure, webhook payload, variable expansion, and methods for handling inbound and outbound calls.
+title: Calling SWML overview
 sidebar-title: Overview
 position: 0
 max-toc-depth: 3
 ---
 
-Methods in SWML control the program flow and execute functions during a call.
-This includes setting and unsetting variables, conditional statements,
-making calls, and sending faxes etc.
+Calling SWML is the flavor of SWML used to handle voice calls — inbound calls arriving on a phone
+number configured with a SWML calling handler, outbound REST-initiated calls that point at a SWML
+URL, and re-fetches triggered by methods that hit an external URL.
 
-For methods that handle inbound messages, see the
-[Messaging methods overview](/docs/swml/reference/messaging).
+For handling inbound SMS and MMS messages, see the
+[Messaging SWML overview](/docs/swml/reference/messaging).
 
-## The `ai` method
+## Document structure
 
-The [`ai`](/docs/swml/reference/ai) method is an incredibly powerful tool to instantiate an AI agent
-that holds a natural conversation with the caller, and perform actions based on their input.
+A Calling SWML document is a top-level `sections` map with named sections. Execution starts
+at `sections.main`, and each section contains an array of methods that run sequentially.
 
-## Control-flow methods
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: "say:Hello!"
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "play": { "url": "say:Hello!" } },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
 
-### `execute` and `return`
+### SWML object properties
 
-The [`execute`](/docs/swml/reference/execute) method is similar to a function call in most languages. It can be sent parameters,
-and it can return values using the [`return`](/docs/swml/reference/return) object. The SWML function to be executed can
-exist as a subsection in the same SWML document, but it can also be a separate SWML document hosted on
-an internet-accessible web-server.
+<ParamField path="version" type="string" toc={true}>
+  The SWML schema version. Currently only `"1.0.0"` is accepted. Optional — defaults to the
+  current schema version when omitted.
+</ParamField>
 
-### `transfer`
+<ParamField path="sections" type="object" required={true} toc={true}>
+  A map of named sections. Each value is an array of [methods](#methods) that run sequentially.
+  Must contain at least a `main` section; additional named sections can be invoked via
+  [`execute`](/docs/swml/reference/calling/execute),
+  [`transfer`](/docs/swml/reference/calling/transfer), or
+  [`goto`](/docs/swml/reference/calling/goto).
+</ParamField>
 
-The [`transfer`](/docs/swml/reference/transfer) statement transfers the execution to a different section or
-a different SWML document. Unlike the `execute` statement, the `transfer` statement doesn't return
-back to the calling section.
+<Indent>
 
-### `goto` and `label`
+<ParamField path="sections.main" type="array" required={true} toc={true}>
+  The entry-point section. Execution starts here when the document loads. Each item in the
+  array is one of the [methods](#methods) listed below.
+</ParamField>
 
-The [`goto`](/docs/swml/reference/goto) statement can jump to a specified [`label`](/docs/swml/reference/label) either depending on a
-given condition or unconditionally, and repeatedly for a specified number of repetitions.
 
-### `cond` and `switch`
+<ParamField path="sections.<name>" type="array" toc={true}>
+  Any additional named section, invokable via `execute`, `transfer`, or `goto`. Each item in
+  the array is one of the [methods](#methods) listed below.
+</ParamField>
 
-The [`cond`](/docs/swml/reference/cond) statement is a general purpose conditional branching statement that
-executes SWML code based on the evaluation of a JavaScript expression.
+</Indent>
 
-The [`switch`](/docs/swml/reference/switch) statement allows switch-case like conditional execution depending on whether a certain variable is
-a certain value.
+## Document-fetching webhook [#document-fetching-webhook]
 
-## Call related methods
+When SignalWire fetches a Calling SWML document from an external URL, it sends a POST request
+with the [inbound call webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-call-webhook).
+This applies on the initial inbound fetch and on every fetch triggered by methods that hit an
+external URL — `execute` with a remote URL, [`transfer`](/docs/swml/reference/calling/transfer),
+[`join_conference.wait_url`](/docs/swml/reference/calling/join-conference#properties),
+[`enter_queue.wait_url`](/docs/swml/reference/calling/enter-queue#properties), and
+[`connect.confirm`](/docs/swml/reference/calling/connect#properties).
 
-### `answer` and `hangup`
+<WebhookPayloadSnippet webhook="inboundCallWebhook" />
 
-Use these methods to decide when to [`answer`](/docs/swml/reference/answer) the call
-and when to [`hangup`](/docs/swml/reference/hangup). Some other methods (like [`play`](/docs/swml/reference/play))
-will automatically answer calls, but you can use these methods to be more
-specific about when it happens.
+The payload includes:
 
-### `denoise` and `stop_denoise`
+- **`call`** — call state and routing data (call ID, from/to, type, headers, project/space IDs, etc.).
+- **`vars`** — script variables set by prior SWML execution (via [`set`](/docs/swml/reference/calling/set)
+  or method outputs). Empty on the initial inbound fetch; populated on subsequent fetches.
+- **`params`** — parameters explicitly passed by the calling step (`execute.params` or
+  `transfer.params`). Empty on the initial inbound fetch.
+- **`envs`** — environment variables configured at the account or project level.
 
-The [`denoise`](/docs/swml/reference/denoise) method starts the noise reduction filter and the
-[`stop_denoise`](/docs/swml/reference/stop-denoise) method stops it.
+Your server must respond with a valid SWML document using one of these content types:
+`application/json`, `application/yaml`, or `text/x-yaml`.
 
-### `live_transcribe`
+## Variable expansion
 
-The [`live_transcribe`](/docs/swml/reference/live-transcribe) method starts a live transcription of the call.
+Calling SWML supports two substitution syntaxes in string values:
 
-### `live_translate`
+- **`${...}`** — JavaScript expressions evaluated by V8. Use for transformations, calculations,
+  and conditional logic. See [Expressions](/docs/swml/reference/expressions).
+- **`%{path}`** — pure path-based substitution. See [Variables](/docs/swml/reference/variables).
 
-The [`live_translate`](/docs/swml/reference/live-translate) method starts a live translation of the call.
+## Methods
 
-### `play` and `prompt`
+A method is a single step in a SWML document — each item in a `sections.<name>` array invokes
+one method. Each method's reference page documents its parameters, defaults, and any output
+variables it sets. Methods below are grouped by what they do.
 
-The [`play`](/docs/swml/reference/play) method can be used to send TTS speech, play audio files, send different rings etc.
-The [`prompt`](/docs/swml/reference/prompt) method also plays TTS or URLs like `play` but it can receive
-keypad or speech input in response.
+### Conversational AI
 
-### `connect`
+Hand the call to an AI agent that holds a natural conversation, recognizes intent, and can call
+out to your backend via SWAIG functions or webhooks.
 
-Use the [`connect`](/docs/swml/reference/connect) method to connect the caller to other phone or SIP calls.
-You can set it up to dial multiple numbers in series, parallel or a combination of the two.
+<CardGroup cols={2}>
+  <Card title="ai" href="/docs/swml/reference/calling/ai">
+    Hand the call to a SignalWire AI agent that holds a natural conversation and can invoke SWAIG functions.
+  </Card>
+  <Card title="amazon_bedrock" href="/docs/swml/reference/calling/amazon-bedrock">
+    Hand the call to an Amazon Bedrock-backed AI agent.
+  </Card>
+</CardGroup>
 
-### `enter_queue`
+### Call lifecycle
 
-The [`enter_queue`](/docs/swml/reference/enter-queue) method places the call in a queue where it will wait
-until an agent or resource becomes available. You can configure wait music, timeout settings, and
-status callbacks to manage the queue experience.
+Control when the call is answered, ended, and what kind of party is on the other end before
+deciding how to handle it.
 
-### `join_room`
+<CardGroup cols={2}>
+  <Card title="answer" href="/docs/swml/reference/calling/answer">
+    Answer an inbound call. Some methods (e.g. `play`) auto-answer if needed.
+  </Card>
+  <Card title="hangup" href="/docs/swml/reference/calling/hangup">
+    End the call.
+  </Card>
+  <Card title="detect_machine" href="/docs/swml/reference/calling/detect-machine">
+    Detect whether the answering party is a human or an answering machine.
+  </Card>
+</CardGroup>
 
-The [`join_room`](/docs/swml/reference/join-room) method seamlessly connects your call to a
-[video room](/docs/platform/video), enabling participants to
-join from various sources, including mobile apps, web browsers, or phone calls.
+### Audio & speech
 
-### `receive_fax`
+Play audio to the caller, prompt for input, and stream live transcription or translation.
+Includes noise reduction for clearer audio.
 
-The [`receive_fax`](/docs/swml/reference/receive-fax) method will interpret the call as a fax and process it.
+<CardGroup cols={2}>
+  <Card title="play" href="/docs/swml/reference/calling/play">
+    Play TTS speech, audio files, silence, or ring tones.
+  </Card>
+  <Card title="prompt" href="/docs/swml/reference/calling/prompt">
+    Play audio or speech and capture DTMF or speech input.
+  </Card>
+  <Card title="live_transcribe" href="/docs/swml/reference/calling/live-transcribe">
+    Stream live transcription of the call.
+  </Card>
+  <Card title="live_translate" href="/docs/swml/reference/calling/live-translate">
+    Stream live translation of the call.
+  </Card>
+  <Card title="denoise" href="/docs/swml/reference/calling/denoise">
+    Start the noise reduction filter on the call audio.
+  </Card>
+  <Card title="stop_denoise" href="/docs/swml/reference/calling/stop-denoise">
+    Stop the noise reduction filter.
+  </Card>
+</CardGroup>
 
-### `record`, `record_call` and `stop_record_call`
+### Connecting parties
 
-The [`record`](/docs/swml/reference/record) and the [`record_call`](/docs/swml/reference/record-call) methods will record
-the call. The `record` method, however, waits for the recording to terminate before continuing
-execution. The [`record_call`](/docs/swml/reference/record-call) method starts a call recording in the
-background, and it stops recording when you call [`stop_record_call`](/docs/swml/reference/stop-record-call).
+Bring other phones, SIP endpoints, video rooms, or queued agents into the call.
 
-### `tap` and `stop_tap`
+<CardGroup cols={2}>
+  <Card title="connect" href="/docs/swml/reference/calling/connect">
+    Dial out to other phone or SIP destinations — series, parallel, or mixed.
+  </Card>
+  <Card title="join_conference" href="/docs/swml/reference/calling/join-conference">
+    Join the call to a conference room.
+  </Card>
+  <Card title="join_room" href="/docs/swml/reference/calling/join-room">
+    Join the call to a SignalWire video room.
+  </Card>
+  <Card title="enter_queue" href="/docs/swml/reference/calling/enter-queue">
+    Place the call in a queue with wait music, timeout, and status callbacks.
+  </Card>
+</CardGroup>
 
-The [`tap`](/docs/swml/reference/tap) method starts streaming the call to an RTP or a web socket sink.
-The [`stop_tap`](/docs/swml/reference/stop-tap) method stops it.
+### Recording & taps
 
-### `sip_refer`
+Record the call to storage, or stream call media to an external sink in real time.
 
-The [`sip_refer`](/docs/swml/reference/sip-refer) method transfer a SIP call by sending a SIP REFER
-message.
+<CardGroup cols={2}>
+  <Card title="record" href="/docs/swml/reference/calling/record">
+    Record audio and wait for completion before continuing execution.
+  </Card>
+  <Card title="record_call" href="/docs/swml/reference/calling/record-call">
+    Start a background recording of the call.
+  </Card>
+  <Card title="stop_record_call" href="/docs/swml/reference/calling/stop-record-call">
+    Stop a background recording started by `record_call`.
+  </Card>
+  <Card title="tap" href="/docs/swml/reference/calling/tap">
+    Stream call media to an RTP or WebSocket sink.
+  </Card>
+  <Card title="stop_tap" href="/docs/swml/reference/calling/stop-tap">
+    Stop a media stream started by `tap`.
+  </Card>
+</CardGroup>
 
-### `send_sms`
+### Messaging & side channels
 
-Use [`send_sms`](/docs/swml/reference/send-sms) to send an SMS to a phone number.
+Send messages, faxes, DTMF, and other out-of-band signals from inside a call. Also collects
+payments and emits custom project events.
 
-### `send_digits`
+<CardGroup cols={2}>
+  <Card title="send_sms" href="/docs/swml/reference/calling/send-sms">
+    Send an outbound SMS to a phone number.
+  </Card>
+  <Card title="send_digits" href="/docs/swml/reference/calling/send-digits">
+    Send DTMF tones into the call.
+  </Card>
+  <Card title="send_fax" href="/docs/swml/reference/calling/send-fax">
+    Send an outbound fax.
+  </Card>
+  <Card title="receive_fax" href="/docs/swml/reference/calling/receive-fax">
+    Interpret the inbound call as a fax and process it.
+  </Card>
+  <Card title="sip_refer" href="/docs/swml/reference/calling/sip-refer">
+    Transfer a SIP call by issuing a SIP `REFER`.
+  </Card>
+  <Card title="pay" href="/docs/swml/reference/calling/pay">
+    Collect a PCI-compliant payment over the phone.
+  </Card>
+  <Card title="user_event" href="/docs/swml/reference/calling/user-event">
+    Emit a custom event onto the project's event stream.
+  </Card>
+</CardGroup>
 
-Use [`send_digits`](/docs/swml/reference/send-digits) to send digits as DTMF tones.
+### Control flow
+
+Direct execution within a SWML document — call subroutines, jump between labels, branch on
+expressions, or tail-call into another document entirely.
+
+<CardGroup cols={2}>
+  <Card title="execute" href="/docs/swml/reference/calling/execute">
+    Call a named section or external SWML URL as a subroutine.
+  </Card>
+  <Card title="return" href="/docs/swml/reference/calling/return">
+    Return from an `execute`-invoked section, optionally producing a `return_value`.
+  </Card>
+  <Card title="transfer" href="/docs/swml/reference/calling/transfer">
+    Tail-call into another section or external SWML document — does not return.
+  </Card>
+  <Card title="goto" href="/docs/swml/reference/calling/goto">
+    Jump to a `label` within the current section, optionally repeating up to a limit.
+  </Card>
+  <Card title="label" href="/docs/swml/reference/calling/label">
+    Mark a jump target for `goto`.
+  </Card>
+  <Card title="cond" href="/docs/swml/reference/calling/cond">
+    Branch on a JavaScript expression.
+  </Card>
+  <Card title="switch" href="/docs/swml/reference/calling/switch">
+    Branch on a variable's value with case matching.
+  </Card>
+</CardGroup>
+
+### State & integration
+
+Manage script variables, pause execution, and reach your backend over HTTP.
+
+<CardGroup cols={2}>
+  <Card title="set" href="/docs/swml/reference/calling/set">
+    Set one or more script variables.
+  </Card>
+  <Card title="unset" href="/docs/swml/reference/calling/unset">
+    Remove one or more script variables.
+  </Card>
+  <Card title="sleep" href="/docs/swml/reference/calling/sleep">
+    Pause execution for a specified duration.
+  </Card>
+  <Card title="request" href="/docs/swml/reference/calling/request">
+    Make an HTTP request to an external URL; optionally parse the response into variables.
+  </Card>
+</CardGroup>

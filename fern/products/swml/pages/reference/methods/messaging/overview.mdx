@@ -1,84 +1,184 @@
 ---
 id: 07af2f82-a8e9-4a94-a679-1be31dfe0a2e
 slug: /reference/messaging
-description: Overview of SWML methods for handling inbound messages.
-title: Messaging methods overview
+description: Reference for Messaging SWML — document modes, webhook payload, variable expansion, and methods for handling inbound SMS and MMS.
+title: Messaging SWML overview
 sidebar-title: Overview
 position: 0
 max-toc-depth: 3
 ---
 
-SWML messaging methods control the program flow when handling **inbound messages** (SMS and MMS).
-When a message arrives on a phone number configured with a SWML message handler, SignalWire fetches
-and processes the SWML document, optionally sending an outbound reply.
+Messaging SWML is the flavor of SWML used to handle **inbound SMS and MMS messages**. When a
+message arrives on a phone number configured with a SWML message handler, SignalWire fetches and
+processes the SWML document, optionally sending an outbound reply.
 
-For methods that handle calls instead of messages, see the
-[Calling methods overview](/docs/swml/reference/calling).
+For handling voice calls, see the [Calling SWML overview](/docs/swml/reference/calling).
 
 ## Document modes
 
-- **Simple mode** — a single top-level [`reply`](/docs/swml/reference/messaging/reply) or
-  [`receive`](/docs/swml/reference/messaging/receive) key. An empty document (`{}`) is treated as an
-  implicit `receive`.
-- **Full mode** — a top-level `sections` key with named sections. Execution starts at `sections.main`,
-  and each section contains an array of steps that execute sequentially.
+Messaging SWML supports two document shapes:
 
-## Reply methods
+- **Light mode** — a single top-level [`reply`](/docs/swml/reference/messaging/reply) or
+  [`receive`](/docs/swml/reference/messaging/receive) key, for one-shot handling. An empty
+  document (`{}`) is treated as an implicit `receive`.
+- **Full mode** — a top-level `sections` map with named sections, for multi-step flows with
+  branching, subroutines, or retries. Execution starts at `sections.main`, and each section
+  contains an array of methods that execute sequentially. A document can execute up to **100
+  method steps** per inbound message; once that ceiling is hit, execution stops.
 
-### `reply` and `receive`
+### Full mode properties
 
-The [`reply`](/docs/swml/reference/messaging/reply) method creates and sends an outbound message in
-response to the inbound message. It accepts three shapes — a string shorthand, an object with
-body/media/routing fields, or an inline `switch` that branches on a variable's value (each case
-can supply a body string or a full reply object with its own media, destination, and status URL).
-`reply` does **not** end execution — subsequent steps continue to run after the reply is queued.
+<ParamField path="version" type="string" default="1.0.0" toc={true}>
+  The SWML schema version. Currently only `"1.0.0"` is accepted.
+</ParamField>
 
-The [`receive`](/docs/swml/reference/messaging/receive) method accepts the inbound message without
-sending a reply. It is a no-op step.
+<ParamField path="sections" type="object" required={true} toc={true}>
+  A map of named sections. Each value is an array of [methods](#methods) that run sequentially.
+  Must contain at least a `main` section; additional named sections can be invoked via
+  [`execute`](/docs/swml/reference/messaging/execute) or
+  [`goto`](/docs/swml/reference/messaging/goto).
+</ParamField>
 
-## Control-flow methods
+<Indent>
 
-### `execute` and `return`
+<ParamField path="sections.main" type="array" required={true} toc={true}>
+  The entry-point section. Execution starts here when the document loads. Each item in the
+  array is one of the [methods](#methods) listed below.
+</ParamField>
 
-The [`execute`](/docs/swml/reference/messaging/execute) method calls a named section as a subroutine.
-Execution continues in the called section, then returns to the caller when the section completes.
-Subroutines can accept `params` and produce a `return_value` via
-[`return`](/docs/swml/reference/messaging/return). In `main`, `return` stops execution entirely.
 
-In the messaging context, `execute` accepts a section name only — not a URL or inline document.
+<ParamField path="sections.<name>" type="array" toc={true}>
+  Any additional named section, invokable via `execute` or `goto`. Each item in the array is
+  one of the [methods](#methods) listed below.
+</ParamField>
 
-### `transfer`
+</Indent>
 
-The [`transfer`](/docs/swml/reference/messaging/transfer) method fetches and executes a new SWML
-document from a URL. Unlike `execute`, `transfer` is a **tail call** — it replaces the current
-document and does not return.
+### Light mode properties
 
-In the messaging context, `transfer.dest` must be a URL — section names and inline documents are not
-supported.
+A light-mode document contains **exactly one** top-level key — either `reply` or `receive` —
+or the empty document `{}`. Light-mode documents do not have a `version` or `sections` wrapper.
 
-### `goto` and `label`
+<ParamField path="reply" type="string | object" toc={true}>
+  Send an outbound message in response to the inbound message and stop. Accepts a string
+  shorthand (the reply body), an object with body/media/routing fields, or an inline `switch`
+  that branches on a variable. See [`reply`](/docs/swml/reference/messaging/reply) for the full
+  field reference.
+</ParamField>
 
-The [`goto`](/docs/swml/reference/messaging/goto) method jumps to a
-[`label`](/docs/swml/reference/messaging/label) within the current section, useful for retry loops
-and conditional repetition. `goto` does not cross subroutine boundaries.
+<ParamField path="receive" type="object" toc={true}>
+  Accept the inbound message without sending a reply. Pass an empty object (`{ "receive": {} }`),
+  or omit the key entirely by sending an empty document (`{}`) — both are equivalent. See
+  [`receive`](/docs/swml/reference/messaging/receive).
+</ParamField>
 
-### `switch`
+## Document-fetching webhook [#document-fetching-webhook]
 
-The [`switch`](/docs/swml/reference/messaging/switch) method branches based on a variable's value,
-with optional text transforms (`lowercase`, `uppercase`, `trim`, `lowercase_trim`, `uppercase_trim`).
-This is ideal for keyword-driven inbound message handling.
+{/* TODO: Restore the inline link below once the SWML messaging schema PR merges and
+    /docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook is live in the REST API
+    reference. Original:
+    [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
+*/}
+When SignalWire fetches a Messaging SWML document from an external URL, it sends a POST request
+with the inbound message webhook payload.
+This applies on the initial inbound-message fetch and on every fetch triggered by a
+[`transfer`](/docs/swml/reference/messaging/transfer) step.
 
-## External integrations
+{/* TODO: Remove manual json snippet and uncomment webhook payload component
+    once the SWML messaging schema PR (inboundMessageWebhook payload) merges and
+    the REST API reference rebuilds. */}
 
-### `request`
+{/* <WebhookPayloadSnippet webhook="inboundMessageWebhook" /> */}
 
-The [`request`](/docs/swml/reference/messaging/request) method sends an HTTP request to an external
-URL. The response can optionally be parsed and stored as variables for use in subsequent steps.
+```json
+{
+  "message": {
+    "message_id": "c2d3e4f5-a6b7-8901-cdef-234567890abc",
+    "project_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "space_id": "d3e4f5a6-b7c8-9012-defa-345678901bcd",
+    "direction": "inbound",
+    "type": "sms",
+    "from": "+15551231234",
+    "to": "+15553214321",
+    "body": "Hello, I need help",
+    "media": [],
+    "segments": 1,
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "params": {}
+}
+```
 
-HTTP and network errors during a `request` are **soft** — they set `request_result` (one of
-`success`, `failed`, `timeout`, `limit_exceeded`) and let execution continue, so the document can
-branch on the outcome without failing the inbound message. A missing `request.url` is a hard error
-that stops execution.
+The payload includes:
+
+- **`message`** — the inbound message that triggered the fetch (`from`, `to`, `body`, `media`,
+  `type`, `segments`, `timestamp`, etc.).
+- **`params`** — parameters supplied by the calling
+  [`transfer`](/docs/swml/reference/messaging/transfer) step. Empty `{}` on the initial inbound fetch.
+- **`vars`** — runtime variables propagated from the originating document
+  (`request_result`, `reply_result`, `request_response`, `request_response_code`,
+  `request_response_body`, `reply_message_id`). Present only on `transfer`-driven fetches;
+  **absent** on the initial inbound fetch.
+
+Your server must respond with a valid SWML document using one of these content types:
+`application/json`, `application/yaml`, or `text/x-yaml`.
+
+## Methods
+
+A method is a single step in a full-mode SWML document — each item in a `sections.<name>` array
+invokes one method. Each method's reference page documents its parameters, defaults, and any
+output variables it sets. Methods below are grouped by what they do.
+
+### Message handling
+
+Decide what to do with the inbound message — send an outbound reply, or accept it silently.
+Both methods can also appear at the top level of a [light-mode document](#light-mode-properties).
+
+<CardGroup cols={2}>
+  <Card title="reply" href="/docs/swml/reference/messaging/reply">
+    Send an SMS or MMS back to the sender of the inbound message. Use for auto-replies, confirmations, and keyword responses.
+  </Card>
+  <Card title="receive" href="/docs/swml/reference/messaging/receive">
+    Accept the inbound message without sending a reply. Use to acknowledge the message without an outbound response.
+  </Card>
+</CardGroup>
+
+### Control flow
+
+Direct execution within the document — reuse blocks of logic, repeat steps, choose between
+branches, or hand off the message to another document entirely.
+
+<CardGroup cols={2}>
+  <Card title="execute" href="/docs/swml/reference/messaging/execute">
+    Run another section of the current document, then resume when it finishes. Use to reuse a sequence of steps from more than one place.
+  </Card>
+  <Card title="return" href="/docs/swml/reference/messaging/return">
+    Hand control back to the section that called the current one, optionally passing a value the caller can read.
+  </Card>
+  <Card title="transfer" href="/docs/swml/reference/messaging/transfer">
+    Hand off the rest of the conversation to a different SWML document hosted on an external server. The current document stops; the new one takes over.
+  </Card>
+  <Card title="goto" href="/docs/swml/reference/messaging/goto">
+    Restart from a named point earlier or later in the current section. Use for retry loops that repeat a step until it succeeds.
+  </Card>
+  <Card title="label" href="/docs/swml/reference/messaging/label">
+    Mark a place in the section that `goto` can jump to. Labels perform no action; they serve as navigation anchors.
+  </Card>
+  <Card title="switch" href="/docs/swml/reference/messaging/switch">
+    Choose what to do next based on a value from the inbound message or a variable. Use for keyword routing — different replies for different inbound message bodies.
+  </Card>
+</CardGroup>
+
+### External integration
+
+Reach out to your own backend during message handling, so the reply can depend on data only your
+systems know.
+
+<CardGroup cols={2}>
+  <Card title="request" href="/docs/swml/reference/messaging/request">
+    Call an external API while handling the message — for example, to look up a customer record before replying.
+  </Card>
+</CardGroup>
 
 ## Variable expansion
 
@@ -89,14 +189,3 @@ method calls, or operators. Unresolvable paths are replaced with an empty string
 The inbound `message.*` context (`message.to`, `message.from`, `message.body`, `message.kind`,
 `message.project_id`, `message.status`) is available throughout the document. See
 [Variables](/docs/swml/reference/variables) for the full variable reference.
-
-## Platform limits
-
-| Limit                           | Value     | On exceed                                          |
-|---------------------------------|-----------|----------------------------------------------------|
-| Max steps per message           | 100       | Stop execution                                     |
-| Default `goto.max`              | 100       | Fall through to next step (each `goto` can override) |
-| Max `request` calls             | 10        | Skip request, `request_result: "limit_exceeded"`   |
-| Max `request` timeout           | 5 seconds | `request_result: "timeout"`                        |
-| Max `request_response_body`     | 64 KB     | Truncate                                           |
-| Max media attachments per reply | 8         | Reply fails                                        |

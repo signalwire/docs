@@ -15,12 +15,12 @@ is queued.
 
 ## **Properties**
 
-`reply` accepts one of three shapes — pick the one that fits your use case:
+`reply` accepts one of three shapes — use whichever fits the document shape:
 
 <Tabs>
 <Tab title="String shorthand">
 
-The simplest form: a single string used as the reply body. The reply is sent to the inbound
+A single string used as the reply body. The reply is sent to the inbound
 message's `from` number, using the inbound `to` as the sender.
 
 <ParamField path="reply" type="string" required={true} toc={true}>
@@ -40,7 +40,7 @@ a delivery status callback. At least one of `body` or `media` must be present.
 <Indent>
 
 <ParamField path="reply.body" type="string" toc={true}>
-  The body of the reply message. Required if `media` is not present.
+  Text body of the outbound message. Required when `media` is not set.
 </ParamField>
 
 <ParamField path="reply.media" type="string[]" toc={true}>
@@ -48,13 +48,12 @@ a delivery status callback. At least one of `body` or `media` must be present.
   `body` is not present.
 </ParamField>
 
-<ParamField path="reply.to" type="string" toc={true}>
-  Destination phone number in E.164 format. Defaults to the inbound message's `from`.
+<ParamField path="reply.to" type="string" default="message.from" toc={true}>
+  Destination phone number in E.164 format.
 </ParamField>
 
-<ParamField path="reply.from" type="string" toc={true}>
-  Sending phone number — must be a PhoneRoute or ShortCode in the project. Defaults to the inbound
-  message's `to`.
+<ParamField path="reply.from" type="string" default="message.to" toc={true}>
+  Sending phone number or short code. Must be owned by your project and have messaging capability.
 </ParamField>
 
 <ParamField path="reply.status_url" type="string" toc={true}>
@@ -67,8 +66,8 @@ a delivery status callback. At least one of `body` or `media` must be present.
 </Tab>
 <Tab title="Inline switch">
 
-Branch the reply body on a variable's value — useful for keyword-driven replies without writing a
-full multi-step document. The matched `case` (or `default`) provides the reply body.
+Branch the reply body on a variable's value — for keyword-driven replies in a light-mode document.
+The matched `case` (or `default`) provides the reply body.
 
 <ParamField path="reply" type="object" required={true} toc={true}>
   An object with a single `switch` property.
@@ -102,8 +101,7 @@ full multi-step document. The matched `case` (or `default`) provides the reply b
 
 <ParamField path="reply.switch.default" type="string | object" toc={true}>
   Fallback used when no `case` value matches. Accepts the same string-or-reply-object shape as a
-  `case` value. If omitted and no case matches, the inbound message is marked as `failed` with
-  `swml_switch_no_match`.
+  `case` value. If omitted and no case matches, the `reply` step fails and execution stops.
 </ParamField>
 
 </Indent>
@@ -118,13 +116,20 @@ on the same `reply` — put them inside each `case` value (or `default`) instead
 
 ## **Variables**
 
-Set by the method:
+`reply` writes these variables into the script context after it runs. Read them with the
+`%{variable}` syntax in subsequent steps. When `reply` is called multiple times in a single
+document, both variables reflect the most recent reply.
 
-- **reply_result:** (out) `queued` | `failed`.
-- **reply_message_id:** (out) Message segment ID of the last successful reply.
+<ParamField path="reply_result" type="string" toc={true}>
+  Outcome of the reply attempt. `queued` when the outbound message was accepted for delivery,
+  `failed` when validation or delivery rejected it (invalid `from`/`to`, missing body and media,
+  character limit exceeded, missing messaging capability, inactive campaign, etc.).
+</ParamField>
 
-If `reply` is called multiple times in a single document, these variables reflect the most recent
-reply.
+<ParamField path="reply_message_id" type="string" toc={true}>
+  ID of the outbound message created by the successful reply. Absent when
+  `reply_result` is `failed`.
+</ParamField>
 
 ## **Status callbacks**
 
@@ -149,7 +154,7 @@ webhook page for the full field reference and the list of possible `status` valu
 
 ## **Examples**
 
-### Simple-mode string shorthand
+### Light-mode string shorthand
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -265,8 +270,8 @@ sections:
 
 ### Keyword-driven reply with inline switch
 
-Use the inline `switch` form to branch the reply body on a variable's value — typically the
-inbound `message.body`. No `sections` needed.
+The inline `switch` form branches the reply body on a variable's value — typically the
+inbound `message.body`. Light-mode documents do not require a `sections` wrapper.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -392,12 +397,3 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-## **Failure behavior**
-
-`reply` validation failures (invalid `from`, invalid `to`, missing body/media, exceeding the character
-limit, inactive campaign, etc.) mark the inbound message as `failed` with a specific error code and do
-**not** create a partial outbound message. Common error codes include
-`swml_reply_invalid_from_number`, `swml_reply_invalid_to_number`,
-`swml_reply_body_or_media_required`, `swml_reply_media_limit_exceeded`,
-`swml_reply_character_limit_exceeded`, `swml_reply_missing_messaging_capability`, and
-`swml_reply_inactive_campaign`.

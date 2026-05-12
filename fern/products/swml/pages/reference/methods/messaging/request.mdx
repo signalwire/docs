@@ -21,7 +21,7 @@ can branch on the outcome without failing the inbound message.
 <Indent>
 
 <ParamField path="request.url" type="string" required={true} toc={true}>
-  URL to send the request to.
+  Endpoint to call. Must be a publicly reachable URL.
 </ParamField>
 
 
@@ -37,7 +37,7 @@ can branch on the outcome without failing the inbound message.
 
 
 <ParamField path="request.body" type="string | object" toc={true}>
-  Request body. Hashes are JSON-encoded automatically.
+  Request body. Objects are JSON-encoded automatically.
 </ParamField>
 
 
@@ -54,22 +54,40 @@ can branch on the outcome without failing the inbound message.
 
 ## **Variables**
 
-Set by the method:
+`request` writes these variables into the script context after the HTTP call completes (or is
+skipped). Read them with the `%{variable}` syntax in subsequent steps.
 
-- **request_result:** (out) `success` | `failed` | `timeout` | `limit_exceeded`.
-- **request_response_code:** (out) HTTP response code from the request.
-- **request_response_body:** (out) Raw response body. Truncated to 64 KB.
-- **request_response.`<field>`:** (out) Variables saved from the response when `save_variables` is
-  `true` and the response is parsed as JSON.
+<ParamField path="request_result" type="string" toc={true}>
+  Outcome of the request. Always set. One of `success` (request completed with a 2xx response),
+  `failed` (network error or non-2xx response), `timeout` (request exceeded `timeout`, or the
+  5-second platform maximum), or `limit_exceeded` (the document already used the maximum of
+  10 `request` calls).
+</ParamField>
 
-For example, if the server responds with the following JSON:
+<ParamField path="request_response_code" type="integer" toc={true}>
+  HTTP status code from the response. Set when the request was actually sent. Absent when
+  `request_result` is `limit_exceeded`.
+</ParamField>
 
-```json
-{ "status": "created", "time": "2 seconds ago", "number": { "home": "n/a" } }
-```
+<ParamField path="request_response_body" type="string" toc={true}>
+  Raw response body, truncated to 64 KB. Set when the response had a body. Absent when
+  `request_result` is `limit_exceeded`.
+</ParamField>
 
-The variables `request_response.status`, `request_response.time`, and
-`request_response.number.home` are set.
+<ParamField path="request_response.<field>" type="any" toc={true}>
+  Variables saved from the parsed JSON response when `save_variables` is `true`. Each
+  top-level key of the JSON body becomes a `request_response.<key>` path, with dotted
+  paths into nested objects.
+
+  For example, if the server responds with:
+
+  ```json
+  { "status": "created", "time": "2 seconds ago", "number": { "home": "n/a" } }
+  ```
+
+  the variables `request_response.status`, `request_response.time`, and
+  `request_response.number.home` are set.
+</ParamField>
 
 ## **Examples**
 
@@ -203,14 +221,3 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-## **Failure behavior**
-
-`request` failures are soft — they do not stop execution. Instead, the outcome is recorded in
-`request_result`:
-
-| `request_result`  | Cause                                                              |
-|-------------------|--------------------------------------------------------------------|
-| `success`         | Request completed and returned a 2xx response.                     |
-| `failed`          | Network error or non-2xx response.                                 |
-| `timeout`         | Request exceeded `timeout` (or the 5-second platform maximum).     |
-| `limit_exceeded`  | Document already used the maximum of 10 `request` calls per message. |
