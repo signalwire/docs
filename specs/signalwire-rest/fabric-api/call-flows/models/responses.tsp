@@ -1,6 +1,7 @@
 import "./core.tsp";
 import "../../_shared/enums.tsp";
 import "../../_shared/const.tsp";
+import "../../../../swml/calling";
 
 model CallFlowResponse {
   @doc("Unique ID of the Call Flow.")
@@ -48,13 +49,15 @@ model CallFlowVersionResponse {
   @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
 
-  @doc("Call Flow data structure")
-  @example("{}")
-  flow_data?: string;
+  @doc("Call Flow Builder state, stored as an opaque JSON object.")
+  @example(#{})
+  flow_data?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
-  @doc("SWML document for this version")
-  @example(SWML_EXAMPLE)
-  relayml?: string;
+  @doc("The calling SWML document this version snapshots. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @example(SWML_CONTENTS_EXAMPLE)
+  relayml?: SWML.Calling.SWMLObject;
 }
 
 model CallFlowPaginationResponse {
