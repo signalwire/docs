@@ -42,19 +42,19 @@ model InboundMessageContext {
   @example("sms")
   type: "sms" | "mms";
 
-  @doc("Sender phone number in E.164 format.")
+  @doc("Phone number that sent the message.")
   @example("+15551231234")
   from: string;
 
-  @doc("Recipient phone number in E.164 format.")
+  @doc("Phone number that received the message.")
   @example("+15553214321")
   to: string;
 
-  @doc("The text content of the message.")
+  @doc("The text content of the message. Null on media-only MMS where the carrier did not include a text body.")
   @example("Hello, I need help")
-  body: string;
+  body: string | null;
 
-  @doc("Array of MMS media attachments. Empty for SMS-only messages.")
+  @doc("MMS media attachments. Empty when the message has no attachments.")
   @example(#[])
   media: InboundMessageMediaItem[];
 
@@ -62,20 +62,29 @@ model InboundMessageContext {
   @example(1)
   segments: int32;
 
-  @doc("ISO 8601 timestamp of when the message was received.")
+  @doc("Timestamp in UTC (ISO 8601, seconds precision) of when the message was received.")
   @example(utcDateTime.fromISO("2024-01-15T10:30:00Z"))
   timestamp: utcDateTime;
 }
 
 @summary("SWML inbound message webhook")
 @doc("""
-  Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, the `params` object contains the values supplied to the `transfer` step.
+  Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
 
   The webhook URL is expected to respond with the SWML document to execute for the inbound message.
   """)
 model InboundMessageWebhookPayload {
   @doc("The inbound message that triggered this fetch.")
   message: InboundMessageContext;
+
+  @doc("Script-scope variables propagated from the SWML document that issued a `transfer` step. Absent on the initial inbound-message fetch; present (possibly empty) on fetches driven by a `transfer` step inside a full-mode SWML document. Common keys include `request_result`, `request_response`, `request_response_code`, `request_response_body`, `reply_result`, and `reply_message_id`.")
+  @example(#{
+    request_result: "success",
+    reply_result: "queued",
+  })
+  vars?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
   @doc("Parameters passed via a SWML messaging `transfer` step. An empty object on the initial document fetch.")
   @example(#{})

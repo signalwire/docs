@@ -18698,7 +18698,6 @@ components:
       type: object
       required:
         - name
-        - script_type
         - contents
       properties:
         name:
@@ -18710,9 +18709,10 @@ components:
           type: string
           enum:
             - calling
-          description: Set to `calling` for SWML Scripts that handle inbound or outbound calls.
+          description: Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.
           examples:
             - calling
+          default: calling
         contents:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.SWMLObject'
@@ -18735,8 +18735,6 @@ components:
       title: Create Calling Script
     CallingSwmlScriptUpdateRequest:
       type: object
-      required:
-        - script_type
       properties:
         display_name:
           type: string
@@ -18747,9 +18745,10 @@ components:
           type: string
           enum:
             - calling
-          description: Set to `calling` for SWML Scripts that handle inbound or outbound calls.
+          description: Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.
           examples:
             - calling
+          default: calling
         contents:
           allOf:
             - $ref: '#/components/schemas/SWML.Calling.SWMLObject'
@@ -18768,7 +18767,7 @@ components:
             - https://example.com/status
       unevaluatedProperties:
         not: {}
-      description: Request body to update an existing calling SWML Script. All fields other than `script_type` are optional.
+      description: Request body to update an existing calling SWML Script. All fields are optional — include only what you want to change.
       title: Update Calling Script
     Campaign:
       type: object
@@ -22701,24 +22700,26 @@ components:
             - sms
         from:
           type: string
-          description: Sender phone number in E.164 format.
+          description: Phone number that sent the message.
           examples:
             - '+15551231234'
         to:
           type: string
-          description: Recipient phone number in E.164 format.
+          description: Phone number that received the message.
           examples:
             - '+15553214321'
         body:
-          type: string
-          description: The text content of the message.
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: The text content of the message. Null on media-only MMS where the carrier did not include a text body.
           examples:
             - Hello, I need help
         media:
           type: array
           items:
             $ref: '#/components/schemas/Fabric.SWMLWebhooks.InboundMessageMediaItem'
-          description: Array of MMS media attachments. Empty for SMS-only messages.
+          description: MMS media attachments. Empty when the message has no attachments.
           examples:
             - []
         segments:
@@ -22730,7 +22731,7 @@ components:
         timestamp:
           type: string
           format: date-time
-          description: ISO 8601 timestamp of when the message was received.
+          description: Timestamp in UTC (ISO 8601, seconds precision) of when the message was received.
           examples:
             - '2024-01-15T10:30:00Z'
       unevaluatedProperties:
@@ -22775,6 +22776,13 @@ components:
           allOf:
             - $ref: '#/components/schemas/Fabric.SWMLWebhooks.InboundMessageContext'
           description: The inbound message that triggered this fetch.
+        vars:
+          type: object
+          unevaluatedProperties: {}
+          description: Script-scope variables propagated from the SWML document that issued a `transfer` step. Absent on the initial inbound-message fetch; present (possibly empty) on fetches driven by a `transfer` step inside a full-mode SWML document. Common keys include `request_result`, `request_response`, `request_response_code`, `request_response_body`, `reply_result`, and `reply_message_id`.
+          examples:
+            - request_result: success
+              reply_result: queued
         params:
           type: object
           unevaluatedProperties: {}
@@ -22784,7 +22792,7 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, the `params` object contains the values supplied to the `transfer` step.
+        Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
 
         The webhook URL is expected to respond with the SWML document to execute for the inbound message.
       title: SWML inbound message webhook
@@ -25232,7 +25240,6 @@ components:
       type: object
       required:
         - name
-        - script_type
         - contents
       properties:
         name:
@@ -25244,9 +25251,10 @@ components:
           type: string
           enum:
             - messaging
-          description: Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages.
+          description: Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.
           examples:
             - messaging
+          default: messaging
         contents:
           allOf:
             - $ref: '#/components/schemas/SWML.Messaging.SWMLObject'
@@ -25268,8 +25276,6 @@ components:
       title: Create Messaging Script
     MessagingSwmlScriptUpdateRequest:
       type: object
-      required:
-        - script_type
       properties:
         display_name:
           type: string
@@ -25280,9 +25286,10 @@ components:
           type: string
           enum:
             - messaging
-          description: Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages.
+          description: Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.
           examples:
             - messaging
+          default: messaging
         contents:
           allOf:
             - $ref: '#/components/schemas/SWML.Messaging.SWMLObject'
@@ -25300,7 +25307,7 @@ components:
             - https://example.com/status
       unevaluatedProperties:
         not: {}
-      description: Request body to update an existing messaging SWML Script. All fields other than `script_type` are optional.
+      description: Request body to update an existing messaging SWML Script. All fields are optional — include only what you want to change.
       title: Update Messaging Script
     MfaRequest:
       type: object
@@ -38050,11 +38057,21 @@ components:
             case:
               type: object
               unevaluatedProperties:
-                type: string
-              description: Map of values to reply bodies. The matched value is used as the reply body.
+                anyOf:
+                  - type: string
+                  - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
+                  - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
+              description: |-
+                Map of values to reply outcomes. Each entry's value is either a string (used as
+                the reply body, sent back to the original sender as SMS) or a full reply object
+                (`body`, `media`, `to`, `from`, `status_url`). Use the object form when the
+                branch needs media, a different destination, or a per-branch `status_url`.
             default:
-              type: string
-              description: Fallback reply body used when no `case` value matches.
+              anyOf:
+                - type: string
+                - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
+                - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
+              description: Fallback used when no `case` value matches. Same string-or-reply-object shape as a `case` value.
           required:
             - variable
             - case
@@ -38063,9 +38080,19 @@ components:
       unevaluatedProperties:
         not: {}
       description: |-
-        Branch the reply body based on a variable value. The matching case (or `default`) provides
-        the reply body. When using an inline `switch`, you cannot also set `body`, `media`, `to`,
-        `from`, or `status_url` on the same `reply`.
+        Branch the reply on a variable value. The matched `case` (or `default`) supplies the
+        reply contents in one of two forms:
+
+        - **String** — sent back to the original sender as the SMS body. The simplest form,
+          good for choosing between canned text responses.
+        - **Reply object** — a full `{ body, media, to, from, status_url }` block, so the
+          matched branch can attach media, override the destination, or set a per-branch
+          status callback. Any `%{…}` placeholders inside the object are expanded before
+          the reply is sent.
+
+        When you use an inline `switch`, do not set `body`, `media`, `to`, `from`, or
+        `status_url` directly on the same `reply` — put them inside each `case` value
+        (or `default`) instead.
       title: Reply with inline switch
     SWML.Messaging.ReplyWithBody:
       type: object
@@ -38085,12 +38112,13 @@ components:
         status_url:
           type: string
           format: uri
-          description: URL to receive delivery status callbacks for the outbound reply message.
+          description: URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/messages/webhooks/message-status-callback).
           examples:
             - https://example.com/reply-status
         body:
           type: string
-          description: The body of the reply message. Required if `media` is not present.
+          minLength: 1
+          description: Body text of the reply. Must be a non-empty string. Required if `media` is not present.
           examples:
             - Thanks for your message!
         media:
@@ -38123,7 +38151,7 @@ components:
         status_url:
           type: string
           format: uri
-          description: URL to receive delivery status callbacks for the outbound reply message.
+          description: URL that receives delivery status callbacks for the outbound reply. The callback uses the [message status callback payload](/docs/apis/rest/messages/webhooks/message-status-callback).
           examples:
             - https://example.com/reply-status
         media:
@@ -38137,7 +38165,8 @@ components:
             - - https://example.com/image.jpg
         body:
           type: string
-          description: Optional body text included alongside the media attachments.
+          minLength: 1
+          description: Optional body text included alongside the media attachments. Must be a non-empty string if provided.
           examples:
             - Check out this image!
       unevaluatedProperties:
@@ -38203,9 +38232,25 @@ components:
           unevaluatedProperties:
             not: {}
           description: |-
-            Make an HTTP request to an external URL. The response can optionally be parsed and
-            stored as variables for use in subsequent steps. Request failures are soft —
-            they set `request_result` but do not stop execution.
+            Make an HTTP request from inside your SWML document — useful for looking up
+            records, calling your own API, or fetching data to use later in the message flow.
+
+            After the request, the `%{request_result}` variable tells you the outcome:
+
+            - `"success"` — the URL returned a 2xx response.
+            - `"failed"` — the URL returned a 4xx or 5xx, or the network call failed.
+            - `"timeout"` — the request didn't respond within `timeout` seconds.
+            - `"limit_exceeded"` — your document already made the maximum of 10 requests;
+              this call was skipped.
+
+            Network and HTTP errors don't stop your document — the next steps still run,
+            so you can branch on `%{request_result}` to handle each outcome. The only
+            fatal error is omitting `url`.
+
+            When `save_variables` is `true` and the response body is JSON, the parsed
+            fields are available as `%{request_response.<field>}`. The raw response
+            status code is in `%{request_response_code}` and the raw body in
+            `%{request_response_body}` (capped at 64 KB).
           title: request
       unevaluatedProperties:
         not: {}
@@ -38383,9 +38428,14 @@ components:
           unevaluatedProperties:
             not: {}
           description: |-
-            Fetch and execute a new SWML document from a URL. This is a tail call —
-            it replaces the current document and does not return. Steps after `transfer`
-            are skipped, including steps in calling sections.
+            Fetch and execute a new SWML document from a URL. SignalWire POSTs the
+            [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
+            to `dest`: `message` describes the original inbound message, `params` carries
+            the values supplied here, and `vars` carries the propagated runtime variables
+            (`request_result`, `reply_result`, etc.) accumulated by the current document.
+
+            This is a tail call — it replaces the current document and does not return.
+            Steps after `transfer` are skipped, including steps in calling sections.
           title: transfer
       unevaluatedProperties:
         not: {}
@@ -40923,7 +40973,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/CallingSwmlScriptCreateRequest'
         - $ref: '#/components/schemas/MessagingSwmlScriptCreateRequest'
-      description: Body shape for creating a SWML Script. Set `script_type` to `"calling"` for a [Calling Script](#schema/CallingSwmlScriptCreateRequest) or `"messaging"` for a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest).
+      description: Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. Setting `script_type` (`"calling"` or `"messaging"`) is recommended for clarity, but it is optional — when omitted, the script kind is inferred from the shape of `contents`.
       title: Create SWML Script
     SwmlScriptCreateStatusCode422:
       type: object
@@ -41052,7 +41102,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/CallingSwmlScriptUpdateRequest'
         - $ref: '#/components/schemas/MessagingSwmlScriptUpdateRequest'
-      description: Body shape for updating an existing SWML Script. Set `script_type` to match the script you're updating — `"calling"` for a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) or `"messaging"` for a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest). All other fields are optional; include only what you want to change.
+      description: Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Setting `script_type` (`"calling"` for a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) or `"messaging"` for a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest)) is recommended for clarity; when omitted, the script kind is inferred from the shape of `contents`.
       title: Update SWML Script
     SwmlScriptUpdateStatusCode422:
       type: object
@@ -45779,15 +45829,17 @@ webhooks:
                       example: sms
                     from:
                       type: string
-                      description: Sender phone number in E.164 format.
+                      description: Phone number that sent the message.
                       example: '+15551231234'
                     to:
                       type: string
-                      description: Recipient phone number in E.164 format.
+                      description: Phone number that received the message.
                       example: '+15553214321'
                     body:
-                      type: string
-                      description: The text content of the message.
+                      anyOf:
+                        - type: string
+                        - type: 'null'
+                      description: The text content of the message. Null on media-only MMS where the carrier did not include a text body.
                       example: Hello, I need help
                     media:
                       type: array
@@ -45815,7 +45867,7 @@ webhooks:
                         unevaluatedProperties:
                           not: {}
                         description: A single MMS media attachment included on an inbound message.
-                      description: Array of MMS media attachments. Empty for SMS-only messages.
+                      description: MMS media attachments. Empty when the message has no attachments.
                       example: []
                     segments:
                       type: integer
@@ -45825,7 +45877,7 @@ webhooks:
                     timestamp:
                       type: string
                       format: date-time
-                      description: ISO 8601 timestamp of when the message was received.
+                      description: Timestamp in UTC (ISO 8601, seconds precision) of when the message was received.
                       example: '2024-01-15T10:30:00Z'
                   required:
                     - message_id
@@ -45842,6 +45894,14 @@ webhooks:
                   unevaluatedProperties:
                     not: {}
                   description: The inbound message that triggered this fetch.
+                vars:
+                  type: object
+                  properties: {}
+                  unevaluatedProperties: {}
+                  description: Script-scope variables propagated from the SWML document that issued a `transfer` step. Absent on the initial inbound-message fetch; present (possibly empty) on fetches driven by a `transfer` step inside a full-mode SWML document. Common keys include `request_result`, `request_response`, `request_response_code`, `request_response_body`, `reply_result`, and `reply_message_id`.
+                  example:
+                    request_result: success
+                    reply_result: queued
                 params:
                   type: object
                   properties: {}
@@ -45854,14 +45914,14 @@ webhooks:
               unevaluatedProperties:
                 not: {}
               description: |-
-                Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, the `params` object contains the values supplied to the `transfer` step.
+                Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
 
                 The webhook URL is expected to respond with the SWML document to execute for the inbound message.
       responses:
         '200':
           description: Webhook received
       description: |-
-        Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, the `params` object contains the values supplied to the `transfer` step.
+        Payload sent by SignalWire to a SWML messaging webhook URL when an inbound SMS or MMS message arrives on a phone number configured with a SWML message handler. The same payload shape is also used when the SWML messaging `transfer` method targets an external URL — in that case, `params` carries the values supplied to the `transfer` step and `vars` carries the propagated runtime variables from the originating document.
 
         The webhook URL is expected to respond with the SWML document to execute for the inbound message.
       tags:

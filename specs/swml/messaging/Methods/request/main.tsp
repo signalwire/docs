@@ -4,9 +4,25 @@ namespace SWML.Messaging;
 model Request {
   @summary("request")
   @doc("""
-    Make an HTTP request to an external URL. The response can optionally be parsed and
-    stored as variables for use in subsequent steps. Request failures are soft —
-    they set `request_result` but do not stop execution.
+    Make an HTTP request from inside your SWML document — useful for looking up
+    records, calling your own API, or fetching data to use later in the message flow.
+
+    After the request, the `%{request_result}` variable tells you the outcome:
+
+    - `"success"` — the URL returned a 2xx response.
+    - `"failed"` — the URL returned a 4xx or 5xx, or the network call failed.
+    - `"timeout"` — the request didn't respond within `timeout` seconds.
+    - `"limit_exceeded"` — your document already made the maximum of 10 requests;
+      this call was skipped.
+
+    Network and HTTP errors don't stop your document — the next steps still run,
+    so you can branch on `%{request_result}` to handle each outcome. The only
+    fatal error is omitting `url`.
+
+    When `save_variables` is `true` and the response body is JSON, the parsed
+    fields are available as `%{request_response.<field>}`. The raw response
+    status code is in `%{request_response_code}` and the raw body in
+    `%{request_response_body}` (capped at 64 KB).
     """)
   request: {
     @doc("URL to send the request to.")

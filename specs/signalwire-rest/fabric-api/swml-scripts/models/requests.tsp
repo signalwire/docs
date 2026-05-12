@@ -11,9 +11,9 @@ model CallingSwmlScriptCreateRequest {
   @example("Welcome Script")
   name: string;
 
-  @doc("Set to `calling` for SWML Scripts that handle inbound or outbound calls.")
+  @doc("Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
   @example("calling")
-  script_type: "calling";
+  script_type?: "calling" = "calling";
 
   @doc("The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
@@ -32,9 +32,9 @@ model MessagingSwmlScriptCreateRequest {
   @example("Reply Bot")
   name: string;
 
-  @doc("Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages.")
+  @doc("Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
   @example("messaging")
-  script_type: "messaging";
+  script_type?: "messaging" = "messaging";
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
@@ -47,7 +47,7 @@ model MessagingSwmlScriptCreateRequest {
 }
 
 @summary("Create SWML Script")
-@doc("Body shape for creating a SWML Script. Set `script_type` to `\"calling\"` for a [Calling Script](#schema/CallingSwmlScriptCreateRequest) or `\"messaging\"` for a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest).")
+@doc("Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. Setting `script_type` (`\"calling\"` or `\"messaging\"`) is recommended for clarity, but it is optional — when omitted, the script kind is inferred from the shape of `contents`.")
 @oneOf
 union SwmlScriptCreateRequest {
   CallingSwmlScriptCreateRequest,
@@ -55,15 +55,15 @@ union SwmlScriptCreateRequest {
 }
 
 @summary("Update Calling Script")
-@doc("Request body to update an existing calling SWML Script. All fields other than `script_type` are optional.")
+@doc("Request body to update an existing calling SWML Script. All fields are optional — include only what you want to change.")
 model CallingSwmlScriptUpdateRequest {
   @doc("Display name of the SWML Script")
   @example("Welcome Script")
   display_name?: string;
 
-  @doc("Set to `calling` for SWML Scripts that handle inbound or outbound calls.")
+  @doc("Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
   @example("calling")
-  script_type: "calling";
+  script_type?: "calling" = "calling";
 
   @doc("The calling SWML document. Uses [calling SWML methods](/docs/swml/reference/calling).")
   @example(SWML_CONTENTS_EXAMPLE)
@@ -76,15 +76,15 @@ model CallingSwmlScriptUpdateRequest {
 }
 
 @summary("Update Messaging Script")
-@doc("Request body to update an existing messaging SWML Script. All fields other than `script_type` are optional.")
+@doc("Request body to update an existing messaging SWML Script. All fields are optional — include only what you want to change.")
 model MessagingSwmlScriptUpdateRequest {
   @doc("Display name of the SWML Script")
   @example("Reply Bot")
   display_name?: string;
 
-  @doc("Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages.")
+  @doc("Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
   @example("messaging")
-  script_type: "messaging";
+  script_type?: "messaging" = "messaging";
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
@@ -97,7 +97,7 @@ model MessagingSwmlScriptUpdateRequest {
 }
 
 @summary("Update SWML Script")
-@doc("Body shape for updating an existing SWML Script. Set `script_type` to match the script you're updating — `\"calling\"` for a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) or `\"messaging\"` for a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest). All other fields are optional; include only what you want to change.")
+@doc("Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Setting `script_type` (`\"calling\"` for a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) or `\"messaging\"` for a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest)) is recommended for clarity; when omitted, the script kind is inferred from the shape of `contents`.")
 @oneOf
 union SwmlScriptUpdateRequest {
   CallingSwmlScriptUpdateRequest,
