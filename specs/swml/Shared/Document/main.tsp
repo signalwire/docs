@@ -6,7 +6,6 @@ namespace SWML.Shared;
 
 @summary("SWML section")
 model Section<TMethod> {
-  @minItems(1)
   main: TMethod[];
 
   ...TypeSpec.Record<TMethod[]>;
