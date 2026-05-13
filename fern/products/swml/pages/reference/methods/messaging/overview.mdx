@@ -1,0 +1,294 @@
+---
+id: 07af2f82-a8e9-4a94-a679-1be31dfe0a2e
+slug: /reference/messaging
+description: Reference for Messaging SWML — document modes, webhook payload, variable expansion, and methods for handling inbound SMS and MMS.
+title: Messaging SWML overview
+sidebar-title: Overview
+position: 0
+max-toc-depth: 3
+---
+
+Messaging SWML is the flavor of SWML used to handle **inbound SMS and MMS messages**. When a
+message arrives on a phone number configured with a SWML message handler, SignalWire fetches and
+processes the SWML document, optionally sending an outbound reply.
+
+For handling voice calls, see the [Calling SWML overview](/docs/swml/reference/calling).
+
+## Document modes
+
+Messaging SWML supports two document shapes:
+
+- **Light mode** — a single top-level [`reply`](/docs/swml/reference/messaging/reply) or
+  [`receive`](/docs/swml/reference/messaging/receive) key, for one-shot handling. An empty
+  document (`{}`) is treated as an implicit `receive`.
+- **Full mode** — a top-level `sections` map with named sections, for multi-step flows with
+  branching, subroutines, or retries. Execution starts at `sections.main`, and each section
+  contains an array of methods that execute sequentially. A document can execute up to **100
+  method steps** per inbound message; once that ceiling is hit, execution stops.
+
+### Full mode properties
+
+<ParamField path="version" type="string" default="1.0.0" toc={true}>
+  The SWML schema version. Currently only `"1.0.0"` is accepted.
+</ParamField>
+
+<ParamField path="sections" type="object" required={true} toc={true}>
+  A map of named sections. Each value is an array of [methods](#methods) that run sequentially.
+  Must contain at least a `main` section; additional named sections can be invoked via
+  [`execute`](/docs/swml/reference/messaging/execute) or
+  [`goto`](/docs/swml/reference/messaging/goto).
+</ParamField>
+
+<Indent>
+
+<ParamField path="sections.main" type="array" required={true} toc={true}>
+  The entry-point section. Execution starts here when the document loads. Each item in the
+  array is one of the [methods](#methods) listed below.
+</ParamField>
+
+
+<ParamField path="sections.<name>" type="array" toc={true}>
+  Any additional named section, invokable via `execute` or `goto`. Each item in the array is
+  one of the [methods](#methods) listed below.
+</ParamField>
+
+</Indent>
+
+### Light mode properties
+
+A light-mode document contains **exactly one** top-level key — either `reply` or `receive` —
+or the empty document `{}`. Light-mode documents do not have a `version` or `sections` wrapper.
+
+<ParamField path="reply" type="string | object" toc={true}>
+  Send an outbound message in response to the inbound message and stop. Accepts a string
+  shorthand (the reply body), an object with body/media/routing fields, or an inline `switch`
+  that branches on a variable. See [`reply`](/docs/swml/reference/messaging/reply) for the full
+  field reference.
+</ParamField>
+
+<ParamField path="receive" type="object" toc={true}>
+  Accept the inbound message without sending a reply. Pass an empty object (`{ "receive": {} }`),
+  or omit the key entirely by sending an empty document (`{}`) — both are equivalent. See
+  [`receive`](/docs/swml/reference/messaging/receive).
+</ParamField>
+
+## Webhook and variable payload [#webhook-payload]
+
+{/* TODO: Restore the inline link below once the SWML messaging schema PR merges and
+    /docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook is live in the REST API
+    reference. Original:
+    [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
+*/}
+When SignalWire fetches a Messaging SWML document from an external URL, it POSTs this payload
+to your server — on the initial inbound-message fetch and on every fetch triggered by a
+[`transfer`](/docs/swml/reference/messaging/transfer) step. Your server must respond with a valid
+SWML document using one of these content types: `application/json`, `application/yaml`, or
+`text/x-yaml`.
+
+Inside the executing document, the same `message` and `params` fields are available for `%{...}`
+variable expansion (for example, `%{message.from}`). As the script runs, methods also populate
+the **`vars.*` runtime scope** — those values are not in the initial inbound payload, but they
+are propagated across `transfer` boundaries and delivered on transfer-driven fetches.
+
+{/* TODO: Remove manual json snippet and uncomment webhook payload component
+    once the SWML messaging schema PR (inboundMessageWebhook payload) merges and
+    the REST API reference rebuilds. */}
+
+{/* <WebhookPayloadSnippet webhook="inboundMessageWebhook" /> */}
+
+```json
+{
+  "message": {
+    "message_id": "c2d3e4f5-a6b7-8901-cdef-234567890abc",
+    "project_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "space_id": "d3e4f5a6-b7c8-9012-defa-345678901bcd",
+    "direction": "inbound",
+    "type": "sms",
+    "from": "+15551231234",
+    "to": "+15553214321",
+    "body": "Hello, I need help",
+    "media": [],
+    "segments": 1,
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "params": {}
+}
+```
+
+<ParamField path="message" type="object" toc={true}>
+  The inbound message that triggered the SWML document.
+</ParamField>
+
+<Indent>
+
+  <ParamField path="message.message_id" type="string" toc={true}>
+    Unique identifier for the inbound message segment.
+  </ParamField>
+
+  <ParamField path="message.project_id" type="string" toc={true}>
+    The Project ID this message belongs to.
+  </ParamField>
+
+  <ParamField path="message.space_id" type="string" toc={true}>
+    The Space ID this message belongs to.
+  </ParamField>
+
+  <ParamField path="message.direction" type="string" toc={true}>
+    The direction of the message. Always `inbound` for messages that trigger a Messaging SWML document.
+  </ParamField>
+
+  <ParamField path="message.type" type="string" toc={true}>
+    The message type. Possible values: `sms`, `mms`.
+  </ParamField>
+
+  <ParamField path="message.from" type="string" toc={true}>
+    Sender phone number in E.164 format.
+  </ParamField>
+
+  <ParamField path="message.to" type="string" toc={true}>
+    Recipient phone number in E.164 format (the SignalWire number that received the message).
+  </ParamField>
+
+  <ParamField path="message.body" type="string" toc={true}>
+    The text content of the inbound message.
+  </ParamField>
+
+  <ParamField path="message.media" type="object[]" toc={true}>
+    Media attachments on the inbound message. Empty array when no media is attached.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="message.media[].url" type="string" toc={true}>
+      URL where the media file is stored.
+    </ParamField>
+
+    <ParamField path="message.media[].content_type" type="string" toc={true}>
+      MIME type of the media file (e.g., `image/jpeg`, `image/png`).
+    </ParamField>
+
+    <ParamField path="message.media[].size" type="integer" toc={true}>
+      Size of the media file in bytes.
+    </ParamField>
+
+  </Indent>
+
+  <ParamField path="message.segments" type="integer" toc={true}>
+    Number of SMS segments the inbound message was split into.
+  </ParamField>
+
+  <ParamField path="message.timestamp" type="string" toc={true}>
+    ISO 8601 timestamp of when the inbound message was received.
+  </ParamField>
+
+</Indent>
+
+<ParamField path="params" type="object" toc={true}>
+  Parameters passed by the calling [`transfer`](/docs/swml/reference/messaging/transfer) or
+  [`execute`](/docs/swml/reference/messaging/execute) step. Empty `{}` on the initial inbound
+  fetch. Section-scoped — restored to the caller's value when an `execute` returns.
+</ParamField>
+
+<ParamField path="vars" type="object" toc={true}>
+  Runtime variable scope, populated by methods as the script executes. **Not part of the
+  initial inbound payload** — values appear here only after a method that sets them has run.
+  The full `vars` object is propagated across `transfer` boundaries and delivered as a top-level
+  `vars` field on the transfer-driven webhook payload.
+
+  The standard runtime entries are listed below. Methods may also write additional keys; see
+  each method's reference page for what it sets.
+</ParamField>
+
+<Indent>
+
+  <ParamField path="vars.reply_result" type="string" toc={true}>
+    Result of the most recent [`reply`](/docs/swml/reference/messaging/reply) step. Set after
+    the step completes. Possible values: `queued`, `failed`.
+  </ParamField>
+
+  <ParamField path="vars.reply_message_id" type="string" toc={true}>
+    Message segment ID of the most recent successful `reply`. Set after the step completes.
+  </ParamField>
+
+  <ParamField path="vars.request_result" type="string" toc={true}>
+    Result of the most recent [`request`](/docs/swml/reference/messaging/request) step. Set
+    after the step completes. Possible values: `success`, `failed`, `timeout`, `limit_exceeded`.
+  </ParamField>
+
+  <ParamField path="vars.request_response" type="object" toc={true}>
+    Parsed JSON response from the most recent `request`. Set after the step completes when
+    `save_variables: true` was set on the `request` step. Access nested fields with dot
+    notation, e.g., `%{vars.request_response.field_name}`.
+  </ParamField>
+
+  <ParamField path="vars.request_response_code" type="integer" toc={true}>
+    HTTP response code from the most recent `request`. Set after the step completes.
+  </ParamField>
+
+  <ParamField path="vars.request_response_body" type="string" toc={true}>
+    Raw response body from the most recent `request`. Set after the step completes. Truncated
+    to 64 KB.
+  </ParamField>
+
+</Indent>
+
+See [Variables](/docs/swml/reference/variables) for variable-expansion syntax, deployment-mode
+differences, and tips on accessing nested fields and array elements.
+
+## Methods
+
+A method is a single step in a full-mode SWML document — each item in a `sections.<name>` array
+invokes one method. Each method's reference page documents its parameters, defaults, and any
+output variables it sets. Methods below are grouped by what they do.
+
+### Message handling
+
+Decide what to do with the inbound message — send an outbound reply, or accept it silently.
+Both methods can also appear at the top level of a [light-mode document](#light-mode-properties).
+
+<CardGroup cols={2}>
+  <Card title="reply" href="/docs/swml/reference/messaging/reply">
+    Send an SMS or MMS back to the sender of the inbound message. Use for auto-replies, confirmations, and keyword responses.
+  </Card>
+  <Card title="receive" href="/docs/swml/reference/messaging/receive">
+    Accept the inbound message without sending a reply. Use to acknowledge the message without an outbound response.
+  </Card>
+</CardGroup>
+
+### Control flow
+
+Direct execution within the document — reuse blocks of logic, repeat steps, choose between
+branches, or hand off the message to another document entirely.
+
+<CardGroup cols={2}>
+  <Card title="execute" href="/docs/swml/reference/messaging/execute">
+    Run another section of the current document, then resume when it finishes. Use to reuse a sequence of steps from more than one place.
+  </Card>
+  <Card title="return" href="/docs/swml/reference/messaging/return">
+    Hand control back to the section that called the current one, optionally passing a value the caller can read.
+  </Card>
+  <Card title="transfer" href="/docs/swml/reference/messaging/transfer">
+    Hand off the rest of the conversation to a different SWML document hosted on an external server. The current document stops; the new one takes over.
+  </Card>
+  <Card title="goto" href="/docs/swml/reference/messaging/goto">
+    Restart from a named point earlier or later in the current section. Use for retry loops that repeat a step until it succeeds.
+  </Card>
+  <Card title="label" href="/docs/swml/reference/messaging/label">
+    Mark a place in the section that `goto` can jump to. Labels perform no action; they serve as navigation anchors.
+  </Card>
+  <Card title="switch" href="/docs/swml/reference/messaging/switch">
+    Choose what to do next based on a value from the inbound message or a variable. Use for keyword routing — different replies for different inbound message bodies.
+  </Card>
+</CardGroup>
+
+### External integration
+
+Reach out to your own backend during message handling, so the reply can depend on data only your
+systems know.
+
+<CardGroup cols={2}>
+  <Card title="request" href="/docs/swml/reference/messaging/request">
+    Call an external API while handling the message — for example, to look up a customer record before replying.
+  </Card>
+</CardGroup>
+
