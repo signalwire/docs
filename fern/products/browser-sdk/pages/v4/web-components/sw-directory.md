@@ -19,12 +19,6 @@ _Class: `SwDirectory` · Module: `packages/web-components/src/components/sw-dire
 
 ## class: `SwDirectory`, `sw-directory`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

@@ -34,12 +34,6 @@ _Class: `SwAudioLevel` · Module: `packages/web-components/src/components/sw-aud
 
 ## class: `SwAudioLevel`, `sw-audio-level`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

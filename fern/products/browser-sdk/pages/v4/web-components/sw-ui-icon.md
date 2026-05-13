@@ -21,12 +21,6 @@ _Class: `SwUiIcon` · Module: `packages/web-components/src/components/UI/icons/s
 
 ## class: `SwUiIcon`, `sw-ui-icon`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

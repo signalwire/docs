@@ -30,12 +30,6 @@ _Class: `SwLocalCamera` · Module: `packages/web-components/src/components/sw-lo
 
 ## class: `SwLocalCamera`, `sw-local-camera`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

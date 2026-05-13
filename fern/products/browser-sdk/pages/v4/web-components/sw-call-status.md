@@ -33,12 +33,6 @@ _Class: `SwCallStatus` · Module: `packages/web-components/src/components/sw-cal
 
 ## class: `SwCallStatus`, `sw-call-status`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

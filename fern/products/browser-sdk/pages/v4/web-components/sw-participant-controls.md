@@ -28,12 +28,6 @@ _Class: `SwParticipantControls` · Module: `packages/web-components/src/componen
 
 ## class: `SwParticipantControls`, `sw-participant-controls`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

@@ -38,12 +38,6 @@ _Class: `SwSelfMedia` · Module: `packages/web-components/src/components/sw-self
 
 ## class: `SwSelfMedia`, `sw-self-media`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

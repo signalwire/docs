@@ -27,12 +27,6 @@ _Class: `SwUiResponsiveContainer` · Module: `packages/web-components/src/compon
 
 ## class: `SwUiResponsiveContainer`, `sw-ui-responsive-container`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Slots
 
 | Name | Description                                                    |

@@ -34,12 +34,6 @@ _Class: `SwParticipants` · Module: `packages/web-components/src/components/sw-p
 
 ## class: `SwParticipants`, `sw-participants`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

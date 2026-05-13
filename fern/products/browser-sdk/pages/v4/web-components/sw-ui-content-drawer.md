@@ -34,12 +34,6 @@ _Class: `SwUiContentDrawer` · Module: `packages/web-components/src/components/U
 
 ## class: `SwUiContentDrawer`, `sw-ui-content-drawer`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

@@ -25,12 +25,6 @@ _Class: `SwUiModal` · Module: `packages/web-components/src/components/UI/layout
 
 ## class: `SwUiModal`, `sw-ui-modal`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

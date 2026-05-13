@@ -25,12 +25,6 @@ _Class: `SwUiAlert` · Module: `packages/web-components/src/components/UI/sw-ui-
 
 ## class: `SwUiAlert`, `sw-ui-alert`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

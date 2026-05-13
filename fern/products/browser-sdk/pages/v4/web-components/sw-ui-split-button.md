@@ -33,12 +33,6 @@ _Class: `SwUiSplitButton` · Module: `packages/web-components/src/components/UI/
 
 ## class: `SwUiSplitButton`, `sw-ui-split-button`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

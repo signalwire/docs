@@ -28,12 +28,6 @@ _Class: `SwUiTranscriptView` · Module: `packages/web-components/src/components/
 
 ## class: `SwUiTranscriptView`, `sw-ui-transcript-view`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

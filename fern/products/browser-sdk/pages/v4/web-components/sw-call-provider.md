@@ -36,12 +36,6 @@ _Class: `SwCallProvider` · Module: `packages/web-components/src/components/sw-c
 
 ## class: `SwCallProvider`, `sw-call-provider`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

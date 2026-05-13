@@ -29,12 +29,6 @@ _Class: `SwUiBackground` · Module: `packages/web-components/src/components/UI/l
 
 ## class: `SwUiBackground`, `sw-ui-background`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

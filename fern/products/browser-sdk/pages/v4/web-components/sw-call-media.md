@@ -36,12 +36,6 @@ _Class: `SwCallMedia` · Module: `packages/web-components/src/components/sw-call
 
 ## class: `SwCallMedia`, `sw-call-media`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

@@ -35,12 +35,6 @@ _Class: `SwCallWidget` · Module: `packages/web-components/src/components/sw-cal
 
 ## class: `SwCallWidget`, `sw-call-widget`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

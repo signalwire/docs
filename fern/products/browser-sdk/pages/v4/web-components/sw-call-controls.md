@@ -33,12 +33,6 @@ _Class: `SwCallControls` · Module: `packages/web-components/src/components/sw-c
 
 ## class: `SwCallControls`, `sw-call-controls`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

@@ -30,12 +30,6 @@ _Class: `SwUiCallLayout` · Module: `packages/web-components/src/components/UI/l
 
 ## class: `SwUiCallLayout`, `sw-ui-call-layout`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

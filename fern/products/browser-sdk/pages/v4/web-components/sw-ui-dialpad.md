@@ -27,12 +27,6 @@ _Class: `SwUiDialpad` · Module: `packages/web-components/src/components/UI/cont
 
 ## class: `SwUiDialpad`, `sw-ui-dialpad`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

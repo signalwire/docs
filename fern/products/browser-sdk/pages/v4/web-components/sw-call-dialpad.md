@@ -27,12 +27,6 @@ _Class: `SwCallDialpad` · Module: `packages/web-components/src/components/sw-ca
 
 ## class: `SwCallDialpad`, `sw-call-dialpad`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

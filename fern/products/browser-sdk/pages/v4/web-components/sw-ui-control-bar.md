@@ -16,12 +16,6 @@ _Class: `SwUiControlBar` · Module: `packages/web-components/src/components/UI/c
 
 ## class: `SwUiControlBar`, `sw-ui-control-bar`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

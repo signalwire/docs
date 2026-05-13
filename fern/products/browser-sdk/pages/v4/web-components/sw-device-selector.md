@@ -35,12 +35,6 @@ _Class: `SwDeviceSelector` · Module: `packages/web-components/src/components/sw
 
 ## class: `SwDeviceSelector`, `sw-device-selector`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

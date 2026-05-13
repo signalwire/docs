@@ -28,12 +28,6 @@ _Class: `SwClickToCall` · Module: `packages/web-components/src/components/sw-cl
 
 ## class: `SwClickToCall`, `sw-click-to-call`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 

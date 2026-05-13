@@ -27,12 +27,6 @@ _Class: `SwUiDropup` · Module: `packages/web-components/src/components/UI/contr
 
 ## class: `SwUiDropup`, `sw-ui-dropup`
 
-### Superclass
-
-| Name         | Module | Package |
-| ------------ | ------ | ------- |
-| `LitElement` |        | lit     |
-
 ### Fields
 
 
