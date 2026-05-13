@@ -36519,6 +36519,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Calling.SWMLMethod'
+          minItems: 1
       unevaluatedProperties:
         type: array
         items:
@@ -38005,12 +38006,6 @@ components:
       unevaluatedProperties:
         not: {}
       title: goto Method
-    SWML.Messaging.ImplicitReceive:
-      type: object
-      unevaluatedProperties:
-        not: {}
-      description: 'An empty document `{}`. Accepts the inbound message without sending a reply — equivalent to `{ receive: {} }`.'
-      title: Empty SWML document
     SWML.Messaging.Label:
       type: object
       required:
@@ -38026,15 +38021,6 @@ components:
       unevaluatedProperties:
         not: {}
       title: label Method
-    SWML.Messaging.LightReceive:
-      anyOf:
-        - $ref: '#/components/schemas/SWML.Messaging.Receive'
-        - $ref: '#/components/schemas/SWML.Messaging.ImplicitReceive'
-      description: |-
-        Accept the inbound message without sending a reply. Can be written either way:
-        - `{ receive: {} }` — explicit `receive` method.
-        - `{}` — empty document; treated as a `receive`.
-      title: receive Method Variants
     SWML.Messaging.Receive:
       type: object
       required:
@@ -38313,35 +38299,6 @@ components:
       unevaluatedProperties:
         not: {}
       title: return Method
-    SWML.Messaging.SWMLFullDocument:
-      type: object
-      required:
-        - sections
-      properties:
-        version:
-          type: string
-          enum:
-            - 1.0.0
-        sections:
-          $ref: '#/components/schemas/SWML.Messaging.Section'
-      unevaluatedProperties:
-        not: {}
-      description: |-
-        A multi-step SWML document with a top-level `sections` map. Execution starts at
-        `sections.main`, and each section contains an array of methods that run sequentially.
-        Use this form when your message handler needs branching, subroutines, retries, or
-        external HTTP requests.
-      title: Full SWML document
-    SWML.Messaging.SWMLLightDocument:
-      anyOf:
-        - $ref: '#/components/schemas/SWML.Messaging.Reply'
-        - $ref: '#/components/schemas/SWML.Messaging.LightReceive'
-      description: |-
-        A single-step SWML document — either a `reply` (send an outbound message) or a `receive`
-        (accept the inbound message without replying; can be written as `{ receive: {} }` or as an
-        empty `{}` document). Use this form for one-shot handling. For multi-step flows with
-        branching, subroutines, or retries, use the full document form instead.
-      title: Light SWML document
     SWML.Messaging.SWMLMethod:
       anyOf:
         - $ref: '#/components/schemas/SWML.Messaging.Reply'
@@ -38355,15 +38312,22 @@ components:
         - $ref: '#/components/schemas/SWML.Messaging.Label'
       title: SWML methods
     SWML.Messaging.SWMLObject:
-      anyOf:
-        - $ref: '#/components/schemas/SWML.Messaging.SWMLFullDocument'
-        - $ref: '#/components/schemas/SWML.Messaging.SWMLLightDocument'
+      type: object
+      required:
+        - sections
+      properties:
+        version:
+          type: string
+          enum:
+            - 1.0.0
+        sections:
+          $ref: '#/components/schemas/SWML.Messaging.Section'
+      unevaluatedProperties:
+        not: {}
       description: |-
-        A SWML document for handling inbound SMS or MMS messages. Use one of these shapes:
-        - **Full document** — a top-level `sections` map for multi-step flows with branching,
-          subroutines, retries, and external HTTP requests. Execution starts at `sections.main`.
-        - **Light document** — a single top-level `reply` or `receive` for one-shot handling.
-          The receive form accepts both `{ receive: {} }` and an empty `{}` document.
+        A SWML document for handling inbound SMS or MMS messages. The document has a top-level
+        `sections` map; execution starts at `sections.main`, and each section is an ordered array of
+        methods. Additional sections can be invoked via `execute`, `transfer`, or `goto`.
 
         See the [Messaging SWML reference](/docs/swml/reference/messaging) for the full list of
         available methods.
@@ -38377,6 +38341,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
+          minItems: 1
       unevaluatedProperties:
         type: array
         items:

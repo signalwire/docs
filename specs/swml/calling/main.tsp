@@ -1,15 +1,12 @@
 import "@typespec/json-schema";
+import "../Shared/Document";
 import "./Methods";
 
 using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
 
-@summary("SWML section")
-model Section {
-  main: SWMLMethod[];
-  ...TypeSpec.Record<SWMLMethod[]>;
-}
+model Section is SWML.Shared.Section<SWMLMethod>;
 
 @jsonSchema
 @summary("Calling SWML Document")
@@ -19,7 +16,4 @@ model Section {
   `sections.main`. See the [Calling SWML reference](/docs/swml/reference/calling) for the
   full list of available methods.
   """)
-model SWMLObject {
-  version?: "1.0.0";
-  sections: Section;
-}
+model SWMLObject is SWML.Shared.SWMLObject<Section>;
