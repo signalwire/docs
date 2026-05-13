@@ -5,7 +5,61 @@ slug: /error-codes
 max-toc-depth: 3
 ---
 
-When using SignalWire REST APIs, some errors will include error codes. Below, you will find a list of our unique error codes and a short explanation of each to help with error handling and troubleshooting.
+When a SignalWire REST request fails, the response combines a standard HTTP status code with a structured error body. This page covers the status codes you'll encounter, the shape of the error body, and a reference of the specific error codes returned in the body.
+
+## HTTP status codes
+
+SignalWire uses conventional HTTP status codes to signal the outcome of every request.
+
+| Code range | Meaning                                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| `2xx`      | Success — the request was accepted and processed.                                                                    |
+| `4xx`      | Client error — the request was malformed, unauthorized, forbidden, missing, or rejected by validation. Don't retry without fixing the cause. |
+| `5xx`      | Server error — something went wrong on SignalWire's side. Safe to retry with backoff.                                |
+
+The most common codes you'll see:
+
+- `400 Bad Request` — the request was malformed (bad JSON, missing required fields).
+- `401 Unauthorized` — credentials missing or invalid. See [Authorization](/docs/apis/authorization).
+- `403 Forbidden` — your token lacks the required scope.
+- `404 Not Found` — the resource doesn't exist, or doesn't belong to your project.
+- `422 Unprocessable Entity` — the request was well-formed but failed validation. The body contains an [`errors` array](#error-response-body) with specifics.
+- `429 Too Many Requests` — you've exceeded a rate limit. Back off and retry.
+- `500 Internal Server Error` — an unexpected server-side failure. Retry with backoff; contact support if it persists.
+
+## Error response body
+
+Most endpoints under `/api/*` (including `/api/messaging`, `/api/calling`, `/api/fabric`, and others) return validation errors using this shape:
+
+```json
+{
+  "errors": [
+    {
+      "type": "validation_error",
+      "code": "invalid_parameter",
+      "message": "Name must be present",
+      "attribute": "name",
+      "url": "https://signalwire.com/docs/apis/error-codes"
+    }
+  ]
+}
+```
+
+| Field       | Description                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| `type`      | The category of the error (e.g., `validation_error`).                                    |
+| `code`      | A specific, machine-readable code — match this against the [reference below](#account_limit_exceeded) to map error codes to causes. |
+| `message`   | A human-readable description of what went wrong.                                         |
+| `attribute` | The request parameter that triggered the error, when applicable.                         |
+| `url`       | A link back to this documentation.                                                       |
+
+A single response may contain multiple entries in `errors` if several fields failed validation at once. Always iterate the array rather than reading only the first entry.
+
+Endpoints under `/api/relay/rest` use a slightly different shape: `{ errors: [{ detail, status, title, code }] }`. The `code` field still maps to the reference below.
+
+## Error code reference
+
+The `code` field above maps to one of the values below. Each entry describes the specific condition that produced the error.
 
 <ParamField path="account_limit_exceeded" type="Error" toc={true}>
 
