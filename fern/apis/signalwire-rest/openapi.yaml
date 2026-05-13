@@ -18763,7 +18763,7 @@ components:
           type: string
           enum:
             - calling
-          description: Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.
+          description: Set to `calling` for a Calling Script. This is the default when `script_type` is omitted.
           examples:
             - calling
           default: calling
@@ -18799,7 +18799,7 @@ components:
           type: string
           enum:
             - calling
-          description: Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.
+          description: Set to `calling` for a Calling Script.
           examples:
             - calling
           default: calling
@@ -25273,19 +25273,6 @@ components:
               sections:
                 main:
                   - reply: Thanks for your message!
-        status_callback_url:
-          type: string
-          format: uri
-          description: URL that receives status callbacks for messages sent or calls made by this script.
-          examples:
-            - https://website.com/status
-        status_callback_method:
-          type: string
-          enum:
-            - POST
-          description: HTTP method used for status callbacks.
-          examples:
-            - POST
       unevaluatedProperties:
         not: {}
       description: A SWML Script that handles inbound SMS or MMS messages. The `contents` field carries a [messaging SWML document](/docs/swml/reference/messaging).
@@ -25305,7 +25292,7 @@ components:
           type: string
           enum:
             - messaging
-          description: Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.
+          description: Set to `messaging` to create a Messaging Script. If omitted, the API defaults to `calling`, so this field must be set explicitly for messaging scripts.
           examples:
             - messaging
           default: messaging
@@ -25318,12 +25305,6 @@ components:
               sections:
                 main:
                   - reply: Thanks for your message!
-        status_callback_url:
-          type: string
-          format: uri
-          description: URL that receives status callbacks for messages sent or calls made by this script.
-          examples:
-            - https://example.com/status
       unevaluatedProperties:
         not: {}
       description: Request body to create a SWML Script that handles inbound SMS or MMS messages.
@@ -25340,7 +25321,7 @@ components:
           type: string
           enum:
             - messaging
-          description: Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.
+          description: Set to `messaging` for a Messaging Script.
           examples:
             - messaging
           default: messaging
@@ -25353,12 +25334,6 @@ components:
               sections:
                 main:
                   - reply: Thanks for your message!
-        status_callback_url:
-          type: string
-          format: uri
-          description: URL that receives status callbacks for messages sent or calls made by this script.
-          examples:
-            - https://example.com/status
       unevaluatedProperties:
         not: {}
       description: Request body to update an existing messaging SWML Script. All fields are optional — include only what you want to change.
@@ -37990,8 +37965,10 @@ components:
             not: {}
           description: |-
             Call a named section as a subroutine. Execution continues in the called section,
-            then returns to the caller when the section completes. The destination must be
-            the name of a section defined in the current document.
+            then returns to the caller when the section completes — either via `return` or by
+            reaching the end of the section. The destination must be the name of a section
+            defined in the current document; URLs and inline documents are not accepted in the
+            messaging context.
           title: execute
       unevaluatedProperties:
         not: {}
@@ -38006,12 +37983,14 @@ components:
           properties:
             label:
               type: string
-              description: Mark any point of the SWML section with a label so that goto can jump to it.
+              description: Label to jump to. Must reference a `label` step in the current section.
               examples:
                 - greeting
             max:
               type: integer
-              description: Maximum number of jumps before stopping execution. Default `100`.
+              description: |-
+                Maximum number of times this `goto` can jump to its label. Once the limit is reached,
+                the section ends without running any further steps.
               examples:
                 - 3
               default: 100
@@ -38039,7 +38018,9 @@ components:
       properties:
         label:
           type: string
-          description: Mark any point of the SWML section with a label so that goto can jump to it.
+          description: |-
+            Mark any point of the SWML section with a label so that `goto` can jump to it. Must be
+            unique within the section.
           examples:
             - greeting
       unevaluatedProperties:
@@ -38085,6 +38066,9 @@ components:
             Create and send an outbound message in response to the inbound message. Accepts one of:
             a string (used as the message body), an object with body, media, and routing fields, or
             an inline `switch` that branches the reply on a variable value.
+
+            `reply` does not end execution — subsequent steps in the section continue to run after
+            the reply is queued.
           title: reply
       unevaluatedProperties:
         not: {}
@@ -38125,7 +38109,10 @@ components:
                 - type: string
                 - $ref: '#/components/schemas/SWML.Messaging.ReplyWithBody'
                 - $ref: '#/components/schemas/SWML.Messaging.ReplyWithMedia'
-              description: Fallback used when no `case` value matches. Same string-or-reply-object shape as a `case` value.
+              description: |-
+                Fallback used when no `case` value matches. Same string-or-reply-object shape as a
+                `case` value. If omitted and no case matches, the `reply` step fails and execution
+                stops.
           required:
             - variable
             - case
@@ -38160,7 +38147,7 @@ components:
             - '+15551234567'
         from:
           type: string
-          description: Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`.
+          description: Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`.
           examples:
             - '+15559876543'
         status_url:
@@ -38199,7 +38186,7 @@ components:
             - '+15551234567'
         from:
           type: string
-          description: Sending phone number. Must be a PhoneRoute or ShortCode in the project. Defaults to the inbound message's `to`.
+          description: Sending phone number or short code. Must be owned by your project and have messaging capability. Defaults to the inbound message's `to`.
           examples:
             - '+15559876543'
         status_url:
@@ -38237,7 +38224,7 @@ components:
             url:
               type: string
               format: uri
-              description: URL to send the request to.
+              description: Endpoint to call. Must be a publicly reachable URL.
               examples:
                 - https://api.example.com/lookup
             method:
@@ -38248,7 +38235,7 @@ components:
                 - PUT
                 - PATCH
                 - DELETE
-              description: HTTP method. Default `POST`.
+              description: HTTP method.
               examples:
                 - POST
               default: POST
@@ -38256,7 +38243,7 @@ components:
               type: object
               unevaluatedProperties:
                 type: string
-              description: HTTP headers to include with the request. Each value must be a string.
+              description: HTTP headers to include with the request, as a map of header name to value. Each value must be a string.
               examples:
                 - Authorization: Bearer token
             body:
@@ -38264,20 +38251,20 @@ components:
                 - type: string
                 - type: object
                   unevaluatedProperties: {}
-              description: Request body. Hashes are JSON-encoded automatically.
+              description: Request body. Objects are JSON-encoded automatically.
               examples:
                 - phone: '%{message.from}'
             timeout:
               type: number
               minimum: 0
               maximum: 5
-              description: Timeout in seconds. Default `5.0`. Clamped to a maximum of `5.0`.
+              description: Timeout in seconds. Clamped to a maximum of `5.0`.
               examples:
                 - 3
               default: 5
             save_variables:
               type: boolean
-              description: If `true`, parse the JSON response into `request_response.*` variables. Default `false`.
+              description: If `true`, parse the JSON response into `request_response.*` variables.
               examples:
                 - true
               default: false
@@ -38318,7 +38305,8 @@ components:
           description: |-
             Return from the current section. Inside a subroutine called via `execute`, control
             returns to the caller and the value is accessible as `return_value` in the caller's
-            context. In `main`, stops execution entirely (return value is discarded).
+            context. In `main`, stops execution entirely (return value is discarded). To return
+            without a value, use `return: null`.
           title: return
           examples:
             - success
@@ -38404,7 +38392,7 @@ components:
           properties:
             variable:
               type: string
-              description: Variable path to match. Specified without `%{}` wrapper (e.g. `message.body`).
+              description: Variable path to match. Specified without the `%{}` wrapper (e.g. `message.body`).
               examples:
                 - message.body
             transform:
@@ -38419,9 +38407,14 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
-              description: Map of values to arrays of SWML methods to execute.
+              description: |-
+                Map of values to arrays of SWML methods to execute. The key is the value to compare
+                against `variable` (after applying `transform`); the value is the array of methods
+                to run on match.
             default:
-              description: Array of SWML methods to execute if no cases match.
+              description: |-
+                Array of SWML methods to execute if no `case` matches. If omitted and no case
+                matches, execution stops with an error.
               type: array
               items:
                 $ref: '#/components/schemas/SWML.Messaging.SWMLMethod'
@@ -38430,7 +38423,9 @@ components:
             - case
           unevaluatedProperties:
             not: {}
-          description: Branch based on a variable value with optional text transforms.
+          description: |-
+            Branch on a variable's value, with optional text transforms applied before matching.
+            Useful for keyword-driven inbound message handling.
           title: switch
       unevaluatedProperties:
         not: {}
@@ -38456,7 +38451,9 @@ components:
             dest:
               type: string
               format: uri
-              description: URL to fetch the new SWML document from.
+              description: |-
+                URL (`http` or `https`) to fetch the new SWML document from. Authentication can
+                be embedded in the URL as `username:password@url`.
               examples:
                 - https://example.com/handler
             method:
@@ -38467,14 +38464,14 @@ components:
                 - PUT
                 - PATCH
                 - DELETE
-              description: HTTP method for the fetch request. Default `POST`.
+              description: HTTP method for the fetch request.
               examples:
                 - POST
               default: POST
             params:
               type: object
               unevaluatedProperties: {}
-              description: Parameters to include in the request body of the fetch.
+              description: Parameters to include in the request body of the fetch. Available as `params.*` in the transferred document.
               examples:
                 - reason: escalation
           required:
@@ -38489,7 +38486,9 @@ components:
             (`request_result`, `reply_result`, etc.) accumulated by the current document.
 
             This is a tail call — it replaces the current document and does not return.
-            Steps after `transfer` are skipped, including steps in calling sections.
+            Steps after `transfer` are skipped, including steps in calling sections. In the
+            messaging context, `transfer.dest` must be a URL — section names and inline
+            documents are not accepted.
           title: transfer
       unevaluatedProperties:
         not: {}
@@ -41027,7 +41026,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/CallingSwmlScriptCreateRequest'
         - $ref: '#/components/schemas/MessagingSwmlScriptCreateRequest'
-      description: Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. Setting `script_type` (`"calling"` or `"messaging"`) is recommended for clarity, but it is optional — when omitted, the script kind is inferred from the shape of `contents`.
+      description: Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. `script_type` is optional and defaults to `"calling"` when omitted — set it explicitly to `"messaging"` to create a Messaging Script. The script kind determines whether the script can be assigned as a call handler or a message handler on a phone number.
       title: Create SWML Script
     SwmlScriptCreateStatusCode422:
       type: object
@@ -41156,7 +41155,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/CallingSwmlScriptUpdateRequest'
         - $ref: '#/components/schemas/MessagingSwmlScriptUpdateRequest'
-      description: Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Setting `script_type` (`"calling"` for a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) or `"messaging"` for a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest)) is recommended for clarity; when omitted, the script kind is inferred from the shape of `contents`.
+      description: Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Choose a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest) for inbound SMS or MMS messages.
       title: Update SWML Script
     SwmlScriptUpdateStatusCode422:
       type: object

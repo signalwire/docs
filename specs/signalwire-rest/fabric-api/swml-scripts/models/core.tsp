@@ -70,15 +70,6 @@ model MessagingSwmlScript {
   @doc("The messaging SWML document executed when this script runs. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
   contents: SWML.Messaging.SWMLObject;
-
-  @doc("URL that receives status callbacks for messages sent or calls made by this script.")
-  @example("https://website.com/status")
-  @format("uri")
-  status_callback_url?: url;
-
-  @doc("HTTP method used for status callbacks.")
-  @example(RequestUrlMethodType.Post)
-  status_callback_method?: RequestUrlMethodType.Post;
 }
 
 @summary("SWML Script")

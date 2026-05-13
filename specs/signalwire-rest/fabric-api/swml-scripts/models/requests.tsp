@@ -11,7 +11,7 @@ model CallingSwmlScriptCreateRequest {
   @example("Welcome Script")
   name: string;
 
-  @doc("Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
+  @doc("Set to `calling` for a Calling Script. This is the default when `script_type` is omitted.")
   @example("calling")
   script_type?: "calling" = "calling";
 
@@ -32,22 +32,17 @@ model MessagingSwmlScriptCreateRequest {
   @example("Reply Bot")
   name: string;
 
-  @doc("Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
+  @doc("Set to `messaging` to create a Messaging Script. If omitted, the API defaults to `calling`, so this field must be set explicitly for messaging scripts.")
   @example("messaging")
   script_type?: "messaging" = "messaging";
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
   contents: SWML.Messaging.SWMLObject;
-
-  @doc("URL that receives status callbacks for messages sent or calls made by this script.")
-  @example("https://example.com/status")
-  @format("uri")
-  status_callback_url?: url;
 }
 
 @summary("Create SWML Script")
-@doc("Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. Setting `script_type` (`\"calling\"` or `\"messaging\"`) is recommended for clarity, but it is optional — when omitted, the script kind is inferred from the shape of `contents`.")
+@doc("Body shape for creating a SWML Script. Choose a [Calling Script](#schema/CallingSwmlScriptCreateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptCreateRequest) for inbound SMS or MMS messages. `script_type` is optional and defaults to `\"calling\"` when omitted — set it explicitly to `\"messaging\"` to create a Messaging Script. The script kind determines whether the script can be assigned as a call handler or a message handler on a phone number.")
 @oneOf
 union SwmlScriptCreateRequest {
   CallingSwmlScriptCreateRequest,
@@ -61,7 +56,7 @@ model CallingSwmlScriptUpdateRequest {
   @example("Welcome Script")
   display_name?: string;
 
-  @doc("Set to `calling` for SWML Scripts that handle inbound or outbound calls. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
+  @doc("Set to `calling` for a Calling Script.")
   @example("calling")
   script_type?: "calling" = "calling";
 
@@ -82,22 +77,17 @@ model MessagingSwmlScriptUpdateRequest {
   @example("Reply Bot")
   display_name?: string;
 
-  @doc("Set to `messaging` for SWML Scripts that handle inbound SMS or MMS messages. Optional — when omitted, the script kind is inferred from the shape of `contents`.")
+  @doc("Set to `messaging` for a Messaging Script.")
   @example("messaging")
   script_type?: "messaging" = "messaging";
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
   contents?: SWML.Messaging.SWMLObject;
-
-  @doc("URL that receives status callbacks for messages sent or calls made by this script.")
-  @example("https://example.com/status")
-  @format("uri")
-  status_callback_url?: url;
 }
 
 @summary("Update SWML Script")
-@doc("Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Setting `script_type` (`\"calling\"` for a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) or `\"messaging\"` for a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest)) is recommended for clarity; when omitted, the script kind is inferred from the shape of `contents`.")
+@doc("Body shape for updating an existing SWML Script. All fields are optional — include only what you want to change. Choose a [Calling Script](#schema/CallingSwmlScriptUpdateRequest) for inbound or outbound calls or a [Messaging Script](#schema/MessagingSwmlScriptUpdateRequest) for inbound SMS or MMS messages.")
 @oneOf
 union SwmlScriptUpdateRequest {
   CallingSwmlScriptUpdateRequest,
