@@ -22,14 +22,25 @@ For template transformation functions, see [Template Functions](/docs/swml/refer
 
 ## Syntax
 
-SWML supports two placeholder syntaxes in string values. Availability depends on the SWML flavor:
+Wrap a variable name in `${...}` or `%{...}` anywhere inside a string value, and SignalWire
+substitutes the current value when the script runs. Use it to personalize a greeting with the
+caller's number, pass a request body through to your backend, or pick a reply based on the
+inbound message body.
 
-| Syntax | Calling | Messaging | Description |
-|---|:---:|:---:|---|
-| `${...}` | ✓ | — | JavaScript expression evaluated by V8. Use for transformations, calculations, and conditional logic. See [Expressions](/docs/swml/reference/expressions). |
-| `%{path}` | ✓ | ✓ | Pure path-based substitution — no JS, no method calls, no operators. Unresolvable paths resolve to an empty string. |
+The two flavors of SWML accept slightly different forms.
 
-A calling document can use either syntax:
+### Calling
+
+In a Calling document, `${...}` and `%{...}` are interchangeable — pick whichever reads more
+naturally in your YAML or JSON.
+
+**Reference a value.** Use a plain path like `${call.from}` or `%{vars.user_choice}`. Works
+for any field on `call`, `params`, `envs`, or `vars`. If the path is valid but the value isn't
+set, the placeholder resolves to an empty string.
+
+If the placeholder body isn't a plain path — for example, it includes operators, method
+calls, or other JavaScript — it's evaluated as a JavaScript expression instead. See
+[Expressions](/docs/swml/reference/expressions).
 
 <CodeBlocks>
 <CodeBlock title="YAML">
@@ -55,18 +66,24 @@ sections:
 </CodeBlock>
 </CodeBlocks>
 
-A messaging document uses `%{path}` only:
+### Messaging
+
+A Messaging document uses `%{...}` only.
+
+**Reference a value.** Use a plain path like `%{message.from}` or `%{vars.reply_message_id}`.
+Works for any field on `message`, `params`, or `vars`. If the path is valid but the value
+isn't set, the placeholder resolves to an empty string.
 
 <CodeBlocks>
 <CodeBlock title="YAML">
 ```yaml
-reply: 'Hi %{message.from}, thanks for your message!'
+reply: 'Received message from %{message.from}: %{message.body}'
 ```
 </CodeBlock>
 <CodeBlock title="JSON">
 ```json
 {
-  "reply": "Hi %{message.from}, thanks for your message!"
+  "reply": "Received message from %{message.from}: %{message.body}"
 }
 ```
 </CodeBlock>
@@ -74,19 +91,12 @@ reply: 'Hi %{message.from}, thanks for your message!'
 
 ## Variable scopes
 
-Every SWML script has access to a small set of top-level scopes. The exact contents differ
-between calling and messaging — see the linked overview for the field-level reference.
-
-| Scope | Calling | Messaging | Description |
-|---|:---:|:---:|---|
-| `call` | ✓ | — | Information about the current call leg (`call_id`, `from`, `to`, `headers`, `sip_data`, etc.). See [Calling reference](/docs/swml/reference/calling#webhook-payload). |
-| `message` | — | ✓ | Information about the inbound message (`message_id`, `from`, `to`, `body`, `media`, etc.). See [Messaging reference](/docs/swml/reference/messaging#webhook-payload). |
-| `params` | ✓ | ✓ | Parameters passed by the calling [`execute`](/docs/swml/reference/calling/execute) or [`transfer`](/docs/swml/reference/calling/transfer) step. Section-scoped. |
-| `vars` | ✓ | ✓ | Runtime variable scope populated by methods as the script executes (and by [`set`](/docs/swml/reference/calling/set) in calling). Propagated across `transfer` boundaries. |
-| `envs` | ✓ | — | Environment variables configured at the account or project level. Read-only. |
-
-In calling, `vars` can be referenced without the `vars.` prefix — SWML first checks `vars`, then
-falls back to `envs`. Messaging always requires explicit scope prefixes.
+The variables available at runtime are the same fields delivered on the inbound webhook payload
+for each SWML flavor. See the
+[Calling webhook and variable payload](/docs/swml/reference/calling#webhook-payload) and the
+[Messaging webhook and variable payload](/docs/swml/reference/messaging#webhook-payload) for the
+authoritative list of scopes (`call` / `message`, `params`, `vars`, `envs`) and every field
+inside them.
 
 ## Accessing nested data
 
