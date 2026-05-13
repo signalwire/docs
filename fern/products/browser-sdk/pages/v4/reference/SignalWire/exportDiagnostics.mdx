@@ -8,5 +8,37 @@ max-toc-depth: 3
 ```ts
 exportDiagnostics(): SessionDiagnostics
 ```
-Export a structured diagnostic bundle for support/debugging.
-Includes connection events, call summaries, and device changes.
+Snapshots the client's accumulated diagnostic data into a single serializable bundle — connection events, recent call summaries, and device-change history — for inclusion in support tickets or local debug exports.
+
+The returned object is a plain JSON-serializable structure; safe to `JSON.stringify` and ship to a support endpoint.
+
+## **Returns**
+
+[`SessionDiagnostics`](/docs/browser-sdk/v4/reference/interfaces/session-diagnostics) — a structured snapshot containing connection events, call summaries, and device change history at the moment of the call.
+
+## **Examples**
+
+### Download the diagnostics bundle
+
+```ts
+const diag = client.exportDiagnostics();
+const blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
+const url = URL.createObjectURL(blob);
+Object.assign(document.createElement('a'), { href: url, download: 'signalwire-diag.json' }).click();
+URL.revokeObjectURL(url);
+```
+
+### Attach diagnostics to a support form
+
+```ts
+supportForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await fetch('/api/support', {
+    method: 'POST',
+    body: JSON.stringify({
+      message: messageInput.value,
+      diagnostics: client.exportDiagnostics(),
+    }),
+  });
+});
+```

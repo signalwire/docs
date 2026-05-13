@@ -8,13 +8,38 @@ max-toc-depth: 3
 ```ts
 hangup(): Promise<void>
 ```
-Hangs up the call and releases all resources.
+Ends the call and releases all WebRTC resources.
 
-Sends a Verto `bye` to the server, transitions status to `'disconnecting'`,
-then destroys the call. After this, the call instance is no longer usable.
+Sends a Verto `bye` to the server, transitions [`status$`](/docs/browser-sdk/v4/reference/webrtc-call/status$) to `disconnecting` then `disconnected`, and destroys the call instance. After the promise resolves, the call object is no longer usable — drop your reference and let it be garbage-collected.
+
+The promise resolves once the local teardown has completed. Server-side cleanup (recording finalization, billing) continues asynchronously and is not awaited.
+
+## **Returns**
+
+`Promise<void>` — resolves when the local teardown has completed.
 
 ## **Examples**
 
+### Hang up on user click
+
 ```ts
-await call.hangup();
+endCallButton.addEventListener('click', async () => {
+  await call.hangup();
+  showCallEndedUI();
+});
 ```
+
+### Hang up from a status subscription
+
+```ts
+call.status$.subscribe(async (status) => {
+  if (status === 'connected' && callTooLong()) {
+    await call.hangup();
+  }
+});
+```
+
+## **See**
+
+- [`reject`](/docs/browser-sdk/v4/reference/webrtc-call/reject) to decline an inbound call before it's answered.
+- [`status$`](/docs/browser-sdk/v4/reference/webrtc-call/status$) to observe the call's lifecycle.

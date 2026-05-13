@@ -60,7 +60,7 @@ _Class: `SwAudioLevel` · Module: `packages/web-components/src/components/sw-aud
 </ParamField>
 
 <ParamField path="autoRequest" type="boolean" default="false" toc={true}>
-  When true, automatically calls getUserMedia({ audio: true }) to acquire a microphone stream instead of requiring the consumer to set `.stream`.
+  When true, automatically calls `getUserMedia({ audio: true })` to acquire a microphone stream instead of requiring the consumer to set `.stream`.
 </ParamField>
 
 <ParamField path="maxSize" type="number" default="32" toc={true}>

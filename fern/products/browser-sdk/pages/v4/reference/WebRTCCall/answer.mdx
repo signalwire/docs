@@ -8,12 +8,16 @@ max-toc-depth: 3
 ```ts
 answer(options?): void
 ```
-Accepts an inbound call, optionally overriding media options for the answer.
+Accepts an inbound call. The call transitions through `connecting` → `connected` as media negotiation completes.
+
+Without `options`, the call answers with the media defaults configured on the [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) client (typically audio + video). Pass `options` to narrow what's offered — for example, accepting a video call with audio only.
+
+`answer` returns synchronously; observe progression through [`status$`](/docs/browser-sdk/v4/reference/webrtc-call/status$) or [`answered$`](/docs/browser-sdk/v4/reference/webrtc-call/answered$).
 
 ## **Parameters**
 
 <ParamField path="options" type="MediaOptions" toc={true}>
-  Optional media constraints for the answer (audio/video).
+  Optional media constraints for the answer (`audio`, `video`, and the input-stream / constraint overrides defined on [`MediaOptions`](/docs/browser-sdk/v4/reference/interfaces/media-options)). When omitted, the client-level defaults apply.
 </ParamField>
 
 ## **Returns**
@@ -22,15 +26,30 @@ Accepts an inbound call, optionally overriding media options for the answer.
 
 ## **Examples**
 
-```ts
-// Accept with defaults
-call.answer();
+### Accept with defaults
 
-// Accept audio-only
+```ts
+call.answer();
+```
+
+### Accept audio-only
+
+```ts
 call.answer({ audio: true, video: false });
+```
+
+### Accept, then await the connection
+
+```ts
+import { filter, take } from 'rxjs';
+
+call.answer();
+const connected = await call.status$
+  .pipe(filter((s) => s === 'connected'), take(1))
+  .toPromise();
 ```
 
 ## **See**
 
- - [reject](#reject) to decline the call instead.
- - [answered$](#answered) to observe the acceptance state.
+- [`reject`](/docs/browser-sdk/v4/reference/webrtc-call/reject) to decline the call instead.
+- [`answered$`](/docs/browser-sdk/v4/reference/webrtc-call/answered$) to observe the acceptance state.

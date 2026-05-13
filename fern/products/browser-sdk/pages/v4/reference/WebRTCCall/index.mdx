@@ -4,11 +4,29 @@ slug: /reference/webrtc-call
 description: "Concrete WebRTC call implementation."
 max-toc-depth: 3
 ---
-Concrete WebRTC call implementation.
+`WebRTCCall` represents an active call between the local subscriber and one or
+more remote participants. Instances are never constructed directly by
+applications — they are returned by
+[`SignalWire.dial`](/docs/browser-sdk/v4/reference/signalwire#dial) for outbound
+calls, or surfaced through the inbound-call flow once the subscriber has
+[`register`](/docs/browser-sdk/v4/reference/signalwire#register)ed.
 
-Manages the full lifecycle of a call including signaling, media streams,
-participants, layout, and event routing. Created via [SignalWire.dial](/docs/browser-sdk/v4/reference/signalwire#dial)
-or received as an inbound call.
+The class owns every aspect of an in-progress call: signaling
+(`RTCPeerConnection`, Verto messages), local and remote media streams,
+participant roster, layout, recording/streaming state, and network-quality
+telemetry. State is exposed in two complementary forms — a snapshot getter
+(e.g. [`locked`](/docs/browser-sdk/v4/reference/webrtc-call/locked$#locked))
+for one-shot reads and an observable (e.g.
+[`locked$`](/docs/browser-sdk/v4/reference/webrtc-call/locked$)) for reactive
+UI binding. Event streams that have no snapshot equivalent end in `$` only
+(e.g. [`memberJoined$`](/docs/browser-sdk/v4/reference/webrtc-call/member-joined$),
+[`signalingEvent$`](/docs/browser-sdk/v4/reference/webrtc-call/signaling-event$)).
+
+The available control methods depend on the capabilities granted by the server
+at join time — inspect [`capabilities$`](#capabilities-1) before exposing a
+control in your UI. Calling [`hangup`](#hangup) ends the call locally and
+transitions [`status$`](#status-1) to `disconnected`; the instance is then safe
+to release.
 
 ## **Extends**
 
@@ -60,14 +78,6 @@ new WebRTCCall(clientSession, options, initialization, address?): WebRTCCall
 
 <ParamField path="to" type="string" toc={true}>
   Destination URI this call was placed to.
-</ParamField>
-
-<ParamField path="clientSession" type="ClientSession" required toc={true}>
-  Active client session created by `SignalWire`. Provides signaling transport and auth context.
-</ParamField>
-
-<ParamField path="options" type="CallOptions" required toc={true}>
-  Call construction options including media constraints and recovery behavior.
 </ParamField>
 
 ## **Accessors**

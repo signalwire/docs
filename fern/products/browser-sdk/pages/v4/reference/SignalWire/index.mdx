@@ -4,16 +4,39 @@ slug: /reference/signalwire
 description: "Main entry point for the SignalWire Browser SDK."
 max-toc-depth: 3
 ---
-Main entry point for the SignalWire Browser SDK.
+`SignalWire` is the top-level client for the Browser SDK and the only class
+applications instantiate directly. A single instance owns the WebSocket
+transport, the authenticated session, the local media-device controller, and
+the call factory used by [`dial`](#dial). Every other entity in the SDK —
+[`WebRTCCall`](/docs/browser-sdk/v4/reference/webrtc-call),
+[`Subscriber`](/docs/browser-sdk/v4/reference/subscriber),
+[`Address`](/docs/browser-sdk/v4/reference/address) — is produced or fetched
+through it.
 
-Manages authentication, WebSocket transport, call creation, and media devices.
+Lifecycle: construct with a [`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider),
+then await connection-readiness via [`ready$`](#ready-1) or [`connect`](#connect)
+before placing or receiving calls. Calls to [`register`](#register) opt the
+subscriber into inbound calls; [`unregister`](#unregister) reverses it.
+[`destroy`](#destroy) tears down all transports, timers, and subscriptions —
+hold a reference to the client for the lifetime of your app and call
+`destroy()` exactly once on tear-down.
+
+Device management methods (`enable*`, `disable*`, `select*`, `applySelected*`)
+operate on a shared device pool surfaced through observable accessors
+(`audioInputDevices$`, `selectedVideoInputDevice$`, etc.). Selections are
+persisted via the configured `StorageManager` when
+[`ClientPreferences.enableSavePreferences`](/docs/browser-sdk/v4/reference/client-preferences/enable-save-preferences)
+is set. Most state is exposed in two forms — a snapshot getter and an
+observable (`$`) for reactive UI binding.
 
 ## **Examples**
 
 ```ts
-const client = new SignalWire(credentialProvider);
-client.isConnected$.subscribe(connected => console.log('Connected:', connected));
-const call = await client.dial('/public/my-room');
+const client = new SignalWire(new StaticCredentialProvider({ token: 'YOUR_TOKEN' }));
+await client.connect();
+await client.register();
+client.errors$.subscribe(err => console.error(err));
+const call = await client.dial('/public/my-room', { audio: true, video: true });
 ```
 
 ## **Extends**
