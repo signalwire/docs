@@ -36,11 +36,18 @@ _Class: `SwUiTranscriptView` · Module: `packages/web-components/src/components/
 
 ### Fields
 
-| Name        | Privacy | Type                | Default        | Description | Inherited From |
-| ----------- | ------- | ------------------- | -------------- | ----------- | -------------- |
-| `entries`   |         | `TranscriptEntry[]` | `[]`           |             |                |
-| `header`    |         | `string`            | `'Transcript'` |             |                |
-| `emptyText` |         | `string`            | `''`           |             |                |
+
+<ParamField path="entries" type="TranscriptEntry[]" default="[]" toc={true}>
+  `entries` field.
+</ParamField>
+
+<ParamField path="header" type="string" default="'Transcript'" toc={true}>
+  `header` field.
+</ParamField>
+
+<ParamField path="emptyText" type="string" default="''" toc={true}>
+  `emptyText` field.
+</ParamField>
 
 ### Attributes
 

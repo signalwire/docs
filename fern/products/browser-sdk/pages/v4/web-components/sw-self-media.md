@@ -46,10 +46,14 @@ _Class: `SwSelfMedia` · Module: `packages/web-components/src/components/sw-self
 
 ### Fields
 
-| Name     | Privacy | Type                | Default | Description                                                         | Inherited From |
-| -------- | ------- | ------------------- | ------- | ------------------------------------------------------------------- | -------------- |
-| `mirror` |         | `boolean`           | `false` |                                                                     |                |
-| `call`   |         | `Call \| undefined` |         | Explicit Call — when set, subscribes directly and bypasses context. |                |
+
+<ParamField path="mirror" type="boolean" default="false" toc={true}>
+  `mirror` field.
+</ParamField>
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, subscribes directly and bypasses context.
+</ParamField>
 
 ### Attributes
 

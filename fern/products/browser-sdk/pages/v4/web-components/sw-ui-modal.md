@@ -33,9 +33,10 @@ _Class: `SwUiModal` · Module: `packages/web-components/src/components/UI/layout
 
 ### Fields
 
-| Name   | Privacy | Type      | Default | Description | Inherited From |
-| ------ | ------- | --------- | ------- | ----------- | -------------- |
-| `open` |         | `boolean` | `false` |             |                |
+
+<ParamField path="open" type="boolean" default="false" toc={true}>
+  `open` field.
+</ParamField>
 
 ### Attributes
 

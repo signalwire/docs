@@ -24,24 +24,70 @@ _Class: `SwUiControlBar` · Module: `packages/web-components/src/components/UI/c
 
 ### Fields
 
-| Name               | Privacy | Type           | Default | Description | Inherited From |
-| ------------------ | ------- | -------------- | ------- | ----------- | -------------- |
-| `micMuted`         |         | `boolean`      | `false` |             |                |
-| `cameraMuted`      |         | `boolean`      | `false` |             |                |
-| `speakerMuted`     |         | `boolean`      | `false` |             |                |
-| `fullscreen`       |         | `boolean`      | `false` |             |                |
-| `screenSharing`    |         | `boolean`      | `false` |             |                |
-| `handRaised`       |         | `boolean`      | `false` |             |                |
-| `transcriptActive` |         | `boolean`      | `false` |             |                |
-| `showScreenShare`  |         | `boolean`      | `false` |             |                |
-| `showHandRaise`    |         | `boolean`      | `false` |             |                |
-| `showTranscript`   |         | `boolean`      | `false` |             |                |
-| `showSettings`     |         | `boolean`      | `false` |             |                |
-| `showFullscreen`   |         | `boolean`      | `true`  |             |                |
-| `micDevices`       |         | `DropUpItem[]` | `[]`    |             |                |
-| `cameraDevices`    |         | `DropUpItem[]` | `[]`    |             |                |
-| `speakerDevices`   |         | `DropUpItem[]` | `[]`    |             |                |
-| `settingsItems`    |         | `DropUpItem[]` | `[]`    |             |                |
+
+<ParamField path="micMuted" type="boolean" default="false" toc={true}>
+  `micMuted` field.
+</ParamField>
+
+<ParamField path="cameraMuted" type="boolean" default="false" toc={true}>
+  `cameraMuted` field.
+</ParamField>
+
+<ParamField path="speakerMuted" type="boolean" default="false" toc={true}>
+  `speakerMuted` field.
+</ParamField>
+
+<ParamField path="fullscreen" type="boolean" default="false" toc={true}>
+  `fullscreen` field.
+</ParamField>
+
+<ParamField path="screenSharing" type="boolean" default="false" toc={true}>
+  `screenSharing` field.
+</ParamField>
+
+<ParamField path="handRaised" type="boolean" default="false" toc={true}>
+  `handRaised` field.
+</ParamField>
+
+<ParamField path="transcriptActive" type="boolean" default="false" toc={true}>
+  `transcriptActive` field.
+</ParamField>
+
+<ParamField path="showScreenShare" type="boolean" default="false" toc={true}>
+  `showScreenShare` field.
+</ParamField>
+
+<ParamField path="showHandRaise" type="boolean" default="false" toc={true}>
+  `showHandRaise` field.
+</ParamField>
+
+<ParamField path="showTranscript" type="boolean" default="false" toc={true}>
+  `showTranscript` field.
+</ParamField>
+
+<ParamField path="showSettings" type="boolean" default="false" toc={true}>
+  `showSettings` field.
+</ParamField>
+
+<ParamField path="showFullscreen" type="boolean" default="true" toc={true}>
+  `showFullscreen` field.
+</ParamField>
+
+<ParamField path="micDevices" type="DropUpItem[]" default="[]" toc={true}>
+  `micDevices` field.
+</ParamField>
+
+<ParamField path="cameraDevices" type="DropUpItem[]" default="[]" toc={true}>
+  `cameraDevices` field.
+</ParamField>
+
+<ParamField path="speakerDevices" type="DropUpItem[]" default="[]" toc={true}>
+  `speakerDevices` field.
+</ParamField>
+
+<ParamField path="settingsItems" type="DropUpItem[]" default="[]" toc={true}>
+  `settingsItems` field.
+</ParamField>
 
 ### Attributes
 

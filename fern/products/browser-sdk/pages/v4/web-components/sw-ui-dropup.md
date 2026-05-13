@@ -35,11 +35,18 @@ _Class: `SwUiDropup` · Module: `packages/web-components/src/components/UI/contr
 
 ### Fields
 
-| Name     | Privacy | Type                          | Default | Description | Inherited From |
-| -------- | ------- | ----------------------------- | ------- | ----------- | -------------- |
-| `items`  |         | `Array<DropUpItem \| string>` | `[]`    |             |                |
-| `open`   |         | `boolean`                     | `false` |             |                |
-| `anchor` |         | `Element \| undefined`        |         |             |                |
+
+<ParamField path="items" type="Array<DropUpItem | string>" default="[]" toc={true}>
+  `items` field.
+</ParamField>
+
+<ParamField path="open" type="boolean" default="false" toc={true}>
+  `open` field.
+</ParamField>
+
+<ParamField path="anchor" type="Element | undefined" toc={true}>
+  `anchor` field.
+</ParamField>
 
 ### Attributes
 

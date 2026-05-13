@@ -42,14 +42,30 @@ _Class: `SwAudioLevel` · Module: `packages/web-components/src/components/sw-aud
 
 ### Fields
 
-| Name          | Privacy | Type                         | Default      | Description                                                                                                                                           | Inherited From |
-| ------------- | ------- | ---------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `stream`      |         | `MediaStream \| undefined`   |              | Explicit MediaStream to analyze — highest precedence.                                                                                                 |                |
-| `call`        |         | `Call \| undefined`          |              | Explicit Call — when set, analyzes the call's \`localStream\`.&#xA;Bypassed by \`.stream\` if both are set.                                           |                |
-| `bars`        |         | `number`                     | `5`          | Number of bars to display (default: 5)                                                                                                                |                |
-| `orientation` |         | `'vertical' \| 'horizontal'` | `'vertical'` | Orientation of the bars: 'vertical' or 'horizontal'                                                                                                   |                |
-| `autoRequest` |         | `boolean`                    | `false`      | When true, automatically calls getUserMedia(\{ audio: true \}) to acquire&#xA;a microphone stream instead of requiring the consumer to set \`.stream\`. |                |
-| `maxSize`     |         | `number`                     | `32`         | Maximum height/width of bars in pixels                                                                                                                |                |
+
+<ParamField path="stream" type="MediaStream | undefined" toc={true}>
+  Explicit MediaStream to analyze — highest precedence.
+</ParamField>
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, analyzes the call's `localStream`. Bypassed by `.stream` if both are set.
+</ParamField>
+
+<ParamField path="bars" type="number" default="5" toc={true}>
+  Number of bars to display (default: 5)
+</ParamField>
+
+<ParamField path="orientation" type="'vertical' | 'horizontal'" default="'vertical'" toc={true}>
+  Orientation of the bars: 'vertical' or 'horizontal'
+</ParamField>
+
+<ParamField path="autoRequest" type="boolean" default="false" toc={true}>
+  When true, automatically calls getUserMedia({ audio: true }) to acquire a microphone stream instead of requiring the consumer to set `.stream`.
+</ParamField>
+
+<ParamField path="maxSize" type="number" default="32" toc={true}>
+  Maximum height/width of bars in pixels
+</ParamField>
 
 ### Methods
 

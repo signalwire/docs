@@ -27,9 +27,10 @@ _Class: `SwDirectory` · Module: `packages/web-components/src/components/sw-dire
 
 ### Fields
 
-| Name        | Privacy | Type                       | Default | Description                                  | Inherited From |
-| ----------- | ------- | -------------------------- | ------- | -------------------------------------------- | -------------- |
-| `directory` |         | `DirectoryService \| null` | `null`  | Directory service with addresses$ observable |                |
+
+<ParamField path="directory" type="DirectoryService | null" default="null" toc={true}>
+  Directory service with addresses$ observable
+</ParamField>
 
 ### Attributes
 

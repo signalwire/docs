@@ -41,15 +41,34 @@ _Class: `SwCallControls` · Module: `packages/web-components/src/components/sw-c
 
 ### Fields
 
-| Name               | Privacy | Type                | Default | Description                                                   | Inherited From |
-| ------------------ | ------- | ------------------- | ------- | ------------------------------------------------------------- | -------------- |
-| `call`             |         | `Call \| undefined` |         | Explicit Call — when set, drives call-state actions directly. |                |
-| `showScreenShare`  |         | `boolean`           | `true`  |                                                               |                |
-| `showHandRaise`    |         | `boolean`           | `true`  |                                                               |                |
-| `showTranscript`   |         | `boolean`           | `false` |                                                               |                |
-| `transcriptActive` |         | `boolean`           | `false` |                                                               |                |
-| `showSettings`     |         | `boolean`           | `true`  |                                                               |                |
-| `showFullscreen`   |         | `boolean`           | `true`  |                                                               |                |
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, drives call-state actions directly.
+</ParamField>
+
+<ParamField path="showScreenShare" type="boolean" default="true" toc={true}>
+  `showScreenShare` field.
+</ParamField>
+
+<ParamField path="showHandRaise" type="boolean" default="true" toc={true}>
+  `showHandRaise` field.
+</ParamField>
+
+<ParamField path="showTranscript" type="boolean" default="false" toc={true}>
+  `showTranscript` field.
+</ParamField>
+
+<ParamField path="transcriptActive" type="boolean" default="false" toc={true}>
+  `transcriptActive` field.
+</ParamField>
+
+<ParamField path="showSettings" type="boolean" default="true" toc={true}>
+  `showSettings` field.
+</ParamField>
+
+<ParamField path="showFullscreen" type="boolean" default="true" toc={true}>
+  `showFullscreen` field.
+</ParamField>
 
 ### Attributes
 

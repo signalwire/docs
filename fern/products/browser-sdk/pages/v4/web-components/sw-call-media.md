@@ -44,10 +44,14 @@ _Class: `SwCallMedia` · Module: `packages/web-components/src/components/sw-call
 
 ### Fields
 
-| Name     | Privacy | Type                  | Default | Description                                                                                                                                    | Inherited From |
-| -------- | ------- | --------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `call`   |         | `Call \| undefined`   |         | Explicit Call — when set, subscribes directly to its observables instead&#xA;of relying on context. Overridden by \`.stream\` if both are set. |                |
-| `stream` |         | `MediaStream \| null` | `null`  | Explicit remote MediaStream — highest precedence. Bypasses both \`.call\`&#xA;and context. Useful for raw rendering with no SDK at all.        |                |
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, subscribes directly to its observables instead of relying on context. Overridden by `.stream` if both are set.
+</ParamField>
+
+<ParamField path="stream" type="MediaStream | null" default="null" toc={true}>
+  Explicit remote MediaStream — highest precedence. Bypasses both `.call` and context. Useful for raw rendering with no SDK at all.
+</ParamField>
 
 ### Attributes
 

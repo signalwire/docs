@@ -35,12 +35,22 @@ _Class: `SwCallDialpad` · Module: `packages/web-components/src/components/sw-ca
 
 ### Fields
 
-| Name             | Privacy | Type                | Default          | Description                                                                  | Inherited From |
-| ---------------- | ------- | ------------------- | ---------------- | ---------------------------------------------------------------------------- | -------------- |
-| `call`           |         | `Call \| undefined` |                  | Explicit Call — when set, drives DTMF directly and bypasses context.         |                |
-| `showCallButton` |         | `boolean`           | `false`          | Whether to display the call button below the keypad.                         |                |
-| `allowText`      |         | `boolean`           | `false`          | Allow free-text input in the display field (e.g., SIP URIs, vanity letters). |                |
-| `placeholder`    |         | `string`            | `'Enter number'` | Placeholder text shown in the digit display input.                           |                |
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, drives DTMF directly and bypasses context.
+</ParamField>
+
+<ParamField path="showCallButton" type="boolean" default="false" toc={true}>
+  Whether to display the call button below the keypad.
+</ParamField>
+
+<ParamField path="allowText" type="boolean" default="false" toc={true}>
+  Allow free-text input in the display field (e.g., SIP URIs, vanity letters).
+</ParamField>
+
+<ParamField path="placeholder" type="string" default="'Enter number'" toc={true}>
+  Placeholder text shown in the digit display input.
+</ParamField>
 
 ### Attributes
 

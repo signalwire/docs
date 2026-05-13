@@ -41,10 +41,14 @@ _Class: `SwUiSplitButton` · Module: `packages/web-components/src/components/UI/
 
 ### Fields
 
-| Name     | Privacy | Type                          | Default | Description | Inherited From |
-| -------- | ------- | ----------------------------- | ------- | ----------- | -------------- |
-| `items`  |         | `Array<DropUpItem \| string>` | `[]`    |             |                |
-| `active` |         | `boolean`                     | `false` |             |                |
+
+<ParamField path="items" type="Array<DropUpItem | string>" default="[]" toc={true}>
+  `items` field.
+</ParamField>
+
+<ParamField path="active" type="boolean" default="false" toc={true}>
+  `active` field.
+</ParamField>
 
 ### Attributes
 

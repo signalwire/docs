@@ -38,12 +38,22 @@ _Class: `SwUiCallLayout` · Module: `packages/web-components/src/components/UI/l
 
 ### Fields
 
-| Name         | Privacy | Type      | Default | Description                                       | Inherited From |
-| ------------ | ------- | --------- | ------- | ------------------------------------------------- | -------------- |
-| `transcript` |         | `boolean` | `false` | show / hide the transcript pane                   |                |
-| `loading`    |         | `boolean` | `false` | show a spinner overlay on the video area          |                |
-| `shadow`     |         | `boolean` | `false` | apply a drop shadow to the host                   |                |
-| `fullscreen` |         | `boolean` |         | (read-only) reflects the current fullscreen state |                |
+
+<ParamField path="transcript" type="boolean" default="false" toc={true}>
+  show / hide the transcript pane
+</ParamField>
+
+<ParamField path="loading" type="boolean" default="false" toc={true}>
+  show a spinner overlay on the video area
+</ParamField>
+
+<ParamField path="shadow" type="boolean" default="false" toc={true}>
+  apply a drop shadow to the host
+</ParamField>
+
+<ParamField path="fullscreen" type="boolean" toc={true}>
+  (read-only) reflects the current fullscreen state
+</ParamField>
 
 ### Methods
 

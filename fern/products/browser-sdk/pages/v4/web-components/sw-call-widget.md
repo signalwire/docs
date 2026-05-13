@@ -43,18 +43,46 @@ _Class: `SwCallWidget` · Module: `packages/web-components/src/components/sw-cal
 
 ### Fields
 
-| Name                 | Privacy | Type      | Default | Description                                                                                                                                                                                                                                                                                                                                                                                 | Inherited From |
-| -------------------- | ------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `token`              |         | `string`  | `''`    |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `host`               |         | `string`  | `''`    |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `destination`        |         | `string`  | `''`    |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `modal`              |         | `boolean` | `false` |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `transcription`      |         | `boolean` | `false` |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `allowIncomingCalls` |         | `boolean` | `false` |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `audioOnly`          |         | `boolean` | `false` |                                                                                                                                                                                                                                                                                                                                                                                             |                |
-| `userVariables`      |         | `string`  | `''`    | Custom variables sent with the Verto invite as a JSON object.&#xA;&#xA;The widget always advertises \`capabilities.display\_content\` and&#xA;\`metadata.widget.opened\_at\` so the agent can detect that the caller&#xA;supports the content drawer; user-supplied keys are merged in and win&#xA;on shallow conflict.&#xA;&#xA;Invalid JSON is logged and ignored — the call still dials. |                |
-| `disableAutoTheme`   |         | `boolean` | `false` | Skip auto-injecting the SignalWire \`theme.css\` design-token stylesheet.&#xA;Set this when the host page already loads \`@signalwire/web-components/theme.css\`&#xA;or a custom theme written against the same DTCG token names.                                                                                                                                                           |                |
-| `disableAutoFonts`   |         | `boolean` | `false` | Skip auto-loading the SignalWire brand fonts (Lexend, Instrument Sans,&#xA;JetBrains Mono) from Google Fonts. Set this when fonts are self-hosted&#xA;or loaded elsewhere.                                                                                                                                                                                                                  |                |
+
+<ParamField path="token" type="string" default="''" toc={true}>
+  `token` field.
+</ParamField>
+
+<ParamField path="host" type="string" default="''" toc={true}>
+  `host` field.
+</ParamField>
+
+<ParamField path="destination" type="string" default="''" toc={true}>
+  `destination` field.
+</ParamField>
+
+<ParamField path="modal" type="boolean" default="false" toc={true}>
+  `modal` field.
+</ParamField>
+
+<ParamField path="transcription" type="boolean" default="false" toc={true}>
+  `transcription` field.
+</ParamField>
+
+<ParamField path="allowIncomingCalls" type="boolean" default="false" toc={true}>
+  `allowIncomingCalls` field.
+</ParamField>
+
+<ParamField path="audioOnly" type="boolean" default="false" toc={true}>
+  `audioOnly` field.
+</ParamField>
+
+<ParamField path="userVariables" type="string" default="''" toc={true}>
+  Custom variables sent with the Verto invite as a JSON object. The widget always advertises `capabilities.display\_content` and `metadata.widget.opened\_at` so the agent can detect that the caller supports the content drawer; user-supplied keys are merged in and win on shallow conflict. Invalid JSON is logged and ignored — the call still dials.
+</ParamField>
+
+<ParamField path="disableAutoTheme" type="boolean" default="false" toc={true}>
+  Skip auto-injecting the SignalWire `theme.css` design-token stylesheet. Set this when the host page already loads `@signalwire/web-components/theme.css` or a custom theme written against the same DTCG token names.
+</ParamField>
+
+<ParamField path="disableAutoFonts" type="boolean" default="false" toc={true}>
+  Skip auto-loading the SignalWire brand fonts (Lexend, Instrument Sans, JetBrains Mono) from Google Fonts. Set this when fonts are self-hosted or loaded elsewhere.
+</ParamField>
 
 ### Methods
 

@@ -35,11 +35,18 @@ _Class: `SwUiDialpad` · Module: `packages/web-components/src/components/UI/cont
 
 ### Fields
 
-| Name             | Privacy | Type      | Default          | Description                                                                                                           | Inherited From |
-| ---------------- | ------- | --------- | ---------------- | --------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `showCallButton` |         | `boolean` | `false`          | Whether to display the call button below the keypad.                                                                  |                |
-| `allowText`      |         | `boolean` | `false`          | Allow free-text input in the display field (e.g., SIP URIs, vanity letters). Keypad buttons still append DTMF digits. |                |
-| `placeholder`    |         | `string`  | `'Enter number'` | Placeholder text shown in the digit display input.                                                                    |                |
+
+<ParamField path="showCallButton" type="boolean" default="false" toc={true}>
+  Whether to display the call button below the keypad.
+</ParamField>
+
+<ParamField path="allowText" type="boolean" default="false" toc={true}>
+  Allow free-text input in the display field (e.g., SIP URIs, vanity letters). Keypad buttons still append DTMF digits.
+</ParamField>
+
+<ParamField path="placeholder" type="string" default="'Enter number'" toc={true}>
+  Placeholder text shown in the digit display input.
+</ParamField>
 
 ### Attributes
 

@@ -33,11 +33,18 @@ _Class: `SwUiAlert` · Module: `packages/web-components/src/components/UI/sw-ui-
 
 ### Fields
 
-| Name          | Privacy | Type         | Default     | Description | Inherited From |
-| ------------- | ------- | ------------ | ----------- | ----------- | -------------- |
-| `title`       |         | `string`     |             |             |                |
-| `description` |         | `string`     | `''`        |             |                |
-| `type`        |         | `PromptType` | `'confirm'` |             |                |
+
+<ParamField path="title" type="string" toc={true}>
+  `title` field.
+</ParamField>
+
+<ParamField path="description" type="string" default="''" toc={true}>
+  `description` field.
+</ParamField>
+
+<ParamField path="type" type="PromptType" default="'confirm'" toc={true}>
+  `type` field.
+</ParamField>
 
 ### Methods
 

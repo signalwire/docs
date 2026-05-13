@@ -41,9 +41,10 @@ _Class: `SwCallStatus` · Module: `packages/web-components/src/components/sw-cal
 
 ### Fields
 
-| Name   | Privacy | Type                | Default | Description                                                                            | Inherited From |
-| ------ | ------- | ------------------- | ------- | -------------------------------------------------------------------------------------- | -------------- |
-| `call` |         | `Call \| undefined` |         | Explicit Call — when set, subscribes directly to its observables and bypasses context. |                |
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, subscribes directly to its observables and bypasses context.
+</ParamField>
 
 ### Attributes
 

@@ -38,12 +38,22 @@ _Class: `SwLocalCamera` · Module: `packages/web-components/src/components/sw-lo
 
 ### Fields
 
-| Name         | Privacy | Type                   | Default | Description                                                         | Inherited From |
-| ------------ | ------- | ---------------------- | ------- | ------------------------------------------------------------------- | -------------- |
-| `stream`     |         | `MediaStream \| null`  | `null`  | Explicit stream — highest precedence.                               |                |
-| `videoMuted` |         | `boolean \| undefined` |         | Explicit muted flag — overrides devicesContext.videoMuted.          |                |
-| `call`       |         | `Call \| undefined`    |         | Explicit Call — used when \`.stream\` is not set. Bypasses context. |                |
-| `mirror`     |         | `boolean`              | `false` |                                                                     |                |
+
+<ParamField path="stream" type="MediaStream | null" default="null" toc={true}>
+  Explicit stream — highest precedence.
+</ParamField>
+
+<ParamField path="videoMuted" type="boolean | undefined" toc={true}>
+  Explicit muted flag — overrides devicesContext.videoMuted.
+</ParamField>
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — used when `.stream` is not set. Bypasses context.
+</ParamField>
+
+<ParamField path="mirror" type="boolean" default="false" toc={true}>
+  `mirror` field.
+</ParamField>
 
 ### Attributes
 

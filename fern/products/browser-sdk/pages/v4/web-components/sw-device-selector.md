@@ -43,10 +43,14 @@ _Class: `SwDeviceSelector` · Module: `packages/web-components/src/components/sw
 
 ### Fields
 
-| Name               | Privacy | Type                            | Default | Description                                                                                                                                                                                       | Inherited From |
-| ------------------ | ------- | ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `deviceController` |         | `DeviceController \| undefined` |         |                                                                                                                                                                                                   |                |
-| `showPreview`      |         | `boolean`                       | `false` | Render inline previews (camera video, mic level, speaker test) inside&#xA;each section while the panel is open. Streams are acquired only while&#xA;the panel is open and stopped when it closes. |                |
+
+<ParamField path="deviceController" type="DeviceController | undefined" toc={true}>
+  `deviceController` field.
+</ParamField>
+
+<ParamField path="showPreview" type="boolean" default="false" toc={true}>
+  Render inline previews (camera video, mic level, speaker test) inside each section while the panel is open. Streams are acquired only while the panel is open and stopped when it closes.
+</ParamField>
 
 ### Attributes
 

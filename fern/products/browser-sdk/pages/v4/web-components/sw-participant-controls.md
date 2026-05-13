@@ -36,12 +36,22 @@ _Class: `SwParticipantControls` · Module: `packages/web-components/src/componen
 
 ### Fields
 
-| Name            | Privacy | Type                | Default | Description                                                         | Inherited From |
-| --------------- | ------- | ------------------- | ------- | ------------------------------------------------------------------- | -------------- |
-| `participantId` |         | `string`            | `''`    |                                                                     |                |
-| `showVolume`    |         | `boolean`           | `false` |                                                                     |                |
-| `showPin`       |         | `boolean`           | `false` |                                                                     |                |
-| `call`          |         | `Call \| undefined` |         | Explicit Call — when set, subscribes directly and bypasses context. |                |
+
+<ParamField path="participantId" type="string" default="''" toc={true}>
+  `participantId` field.
+</ParamField>
+
+<ParamField path="showVolume" type="boolean" default="false" toc={true}>
+  `showVolume` field.
+</ParamField>
+
+<ParamField path="showPin" type="boolean" default="false" toc={true}>
+  `showPin` field.
+</ParamField>
+
+<ParamField path="call" type="Call | undefined" toc={true}>
+  Explicit Call — when set, subscribes directly and bypasses context.
+</ParamField>
 
 ### Attributes
 

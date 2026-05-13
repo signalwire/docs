@@ -37,12 +37,22 @@ _Class: `SwUiBackground` · Module: `packages/web-components/src/components/UI/l
 
 ### Fields
 
-| Name         | Privacy | Type                  | Default  | Description | Inherited From |
-| ------------ | ------- | --------------------- | -------- | ----------- | -------------- |
-| `default`    |         | `boolean`             | `false`  |             |                |
-| `thumbnail`  |         | `string \| undefined` |          |             |                |
-| `src`        |         | `string \| undefined` |          |             |                |
-| `blurAmount` |         | `string`              | `'20px'` |             |                |
+
+<ParamField path="default" type="boolean" default="false" toc={true}>
+  `default` field.
+</ParamField>
+
+<ParamField path="thumbnail" type="string | undefined" toc={true}>
+  `thumbnail` field.
+</ParamField>
+
+<ParamField path="src" type="string | undefined" toc={true}>
+  `src` field.
+</ParamField>
+
+<ParamField path="blurAmount" type="string" default="'20px'" toc={true}>
+  `blurAmount` field.
+</ParamField>
 
 ### Attributes
 

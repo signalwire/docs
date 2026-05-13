@@ -29,10 +29,14 @@ _Class: `SwUiIcon` · Module: `packages/web-components/src/components/UI/icons/s
 
 ### Fields
 
-| Name   | Privacy | Type       | Default   | Description | Inherited From |
-| ------ | ------- | ---------- | --------- | ----------- | -------------- |
-| `name` |         | `IconName` | `'close'` |             |                |
-| `size` |         | `number`   | `24`      |             |                |
+
+<ParamField path="name" type="IconName" default="'close'" toc={true}>
+  `name` field.
+</ParamField>
+
+<ParamField path="size" type="number" default="24" toc={true}>
+  `size` field.
+</ParamField>
 
 ### Attributes
 

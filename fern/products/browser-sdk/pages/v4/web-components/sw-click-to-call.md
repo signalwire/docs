@@ -36,13 +36,26 @@ _Class: `SwClickToCall` · Module: `packages/web-components/src/components/sw-cl
 
 ### Fields
 
-| Name          | Privacy | Type      | Default  | Description | Inherited From |
-| ------------- | ------- | --------- | -------- | ----------- | -------------- |
-| `token`       |         | `string`  | `''`     |             |                |
-| `host`        |         | `string`  | `''`     |             |                |
-| `destination` |         | `string`  | `''`     |             |                |
-| `label`       |         | `string`  | `'Call'` |             |                |
-| `audioOnly`   |         | `boolean` | `false`  |             |                |
+
+<ParamField path="token" type="string" default="''" toc={true}>
+  `token` field.
+</ParamField>
+
+<ParamField path="host" type="string" default="''" toc={true}>
+  `host` field.
+</ParamField>
+
+<ParamField path="destination" type="string" default="''" toc={true}>
+  `destination` field.
+</ParamField>
+
+<ParamField path="label" type="string" default="'Call'" toc={true}>
+  `label` field.
+</ParamField>
+
+<ParamField path="audioOnly" type="boolean" default="false" toc={true}>
+  `audioOnly` field.
+</ParamField>
 
 ### Attributes
 

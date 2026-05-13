@@ -44,10 +44,14 @@ _Class: `SwCallProvider` · Module: `packages/web-components/src/components/sw-c
 
 ### Fields
 
-| Name               | Privacy | Type                            | Default     | Description | Inherited From |
-| ------------------ | ------- | ------------------------------- | ----------- | ----------- | -------------- |
-| `call`             |         | `Call \| undefined`             | `undefined` |             |                |
-| `deviceController` |         | `DeviceController \| undefined` | `undefined` |             |                |
+
+<ParamField path="call" type="Call | undefined" default="undefined" toc={true}>
+  `call` field.
+</ParamField>
+
+<ParamField path="deviceController" type="DeviceController | undefined" default="undefined" toc={true}>
+  `deviceController` field.
+</ParamField>
 
 ### Slots
 

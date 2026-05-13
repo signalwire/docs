@@ -42,14 +42,30 @@ _Class: `SwUiContentDrawer` · Module: `packages/web-components/src/components/U
 
 ### Fields
 
-| Name       | Privacy | Type            | Default  | Description | Inherited From |
-| ---------- | ------- | --------------- | -------- | ----------- | -------------- |
-| `open`     |         | `boolean`       | `false`  |             |                |
-| `narrow`   |         | `boolean`       | `false`  |             |                |
-| `title`    |         | `string`        | `''`     |             |                |
-| `content`  |         | `string`        | `''`     |             |                |
-| `format`   |         | `ContentFormat` | `'text'` |             |                |
-| `language` |         | `string`        | `''`     |             |                |
+
+<ParamField path="open" type="boolean" default="false" toc={true}>
+  `open` field.
+</ParamField>
+
+<ParamField path="narrow" type="boolean" default="false" toc={true}>
+  `narrow` field.
+</ParamField>
+
+<ParamField path="title" type="string" default="''" toc={true}>
+  `title` field.
+</ParamField>
+
+<ParamField path="content" type="string" default="''" toc={true}>
+  `content` field.
+</ParamField>
+
+<ParamField path="format" type="ContentFormat" default="'text'" toc={true}>
+  `format` field.
+</ParamField>
+
+<ParamField path="language" type="string" default="''" toc={true}>
+  `language` field.
+</ParamField>
 
 ### Attributes
 
