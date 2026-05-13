@@ -34,7 +34,7 @@ model MessagingSwmlScriptCreateRequest {
 
   @doc("Set to `messaging` to create a Messaging Script. If omitted, the API defaults to `calling`, so this field must be set explicitly for messaging scripts.")
   @example("messaging")
-  script_type?: "messaging" = "messaging";
+  script_type?: "messaging";
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
@@ -79,7 +79,7 @@ model MessagingSwmlScriptUpdateRequest {
 
   @doc("Set to `messaging` for a Messaging Script.")
   @example("messaging")
-  script_type?: "messaging" = "messaging";
+  script_type?: "messaging";
 
   @doc("The messaging SWML document. Uses [messaging SWML methods](/docs/swml/reference/messaging).")
   @example(SWML_MESSAGING_CONTENTS_EXAMPLE)
