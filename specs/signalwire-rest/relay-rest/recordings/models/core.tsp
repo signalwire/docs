@@ -6,7 +6,6 @@ using Types;
 model RecordingPathID {
   @doc("Unique ID of the recording.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -15,12 +14,10 @@ model RecordingPathID {
 model RecordingBase {
   @doc("Unique ID of the recording.")
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
-  @format("uuid")
   id: uuid;
 
   @doc("Unique ID of the project.")
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
-  @format("uuid")
   project_id: uuid;
 
   @doc("Date and time when the recording was created.")
@@ -70,7 +67,6 @@ model PstnRecording {
   ...RecordingBase;
 
   @doc("ID of the PSTN leg associated with the recording.")
-  @format("uuid")
   relay_pstn_leg_id: uuid;
 }
 
@@ -79,7 +75,6 @@ model SipRecording {
   ...RecordingBase;
 
   @doc("ID of the SIP leg associated with the recording.")
-  @format("uuid")
   relay_sip_leg_id: uuid;
 }
 
@@ -88,7 +83,6 @@ model WebRtcRecording {
   ...RecordingBase;
 
   @doc("ID of the WebRTC leg associated with the recording.")
-  @format("uuid")
   relay_webrtc_leg_id: uuid;
 }
 

@@ -38,7 +38,7 @@ namespace SignalWireAPI.Video.RoomRecordings {
 
       @query
       @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
-      @minValueExclusive(0)
+      @minValue(0)
       @example(900)
       media_ttl?: int32,
     ):

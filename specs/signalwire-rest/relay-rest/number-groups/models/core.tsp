@@ -6,7 +6,6 @@ using Types;
 model NumberGroupPathID {
   @doc("Unique ID of the number group.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -14,7 +13,6 @@ model NumberGroupPathID {
 model NumberGroupIdPath {
   @doc("Unique ID of the number group.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   NumberGroupId: uuid;
 }
@@ -22,7 +20,6 @@ model NumberGroupIdPath {
 model NumberGroupMembershipPathID {
   @doc("Unique ID of the number group membership.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -31,7 +28,6 @@ model NumberGroupMembershipPathID {
 model NumberGroup {
   @doc("The unique identifier of the Number Group on SignalWire. This can be used to update or delete the group programmatically.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The name given to the number group. Helps to distinguish different groups within your project.")
@@ -50,7 +46,6 @@ model NumberGroup {
 @doc("Phone number representation within a membership.")
 model MembershipPhoneNumber {
   @doc("The unique identifier of the phone number.")
-  @format("uuid")
   id?: uuid;
 
   @doc("The name given to the phone number.")
@@ -70,12 +65,10 @@ model MembershipPhoneNumber {
 model NumberGroupMembership {
   @doc("The unique identifier of the Number Group Membership on SignalWire. This can be used to delete the membership programmatically.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The unique identifier of the Number Group this membership is associated with.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   number_group_id: uuid;
 
   @doc("A representation of the phone number this membership is associated with.")

@@ -8,8 +8,7 @@ namespace SignalWireAPI.Video;
 model RoomResponse {
   @doc("A unique identifier for the room.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  @format("uuid")
-  id: string;
+  id: uuid;
 
   @doc("A named unique identifier for the room.")
   @example("my_room")

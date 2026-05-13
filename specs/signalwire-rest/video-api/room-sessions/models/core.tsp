@@ -32,23 +32,20 @@ enum RoomRecordingStatus {
 
 model RoomSessionPathID {
   @path
-  @format("uuid")
   @doc("Unique ID of the Room Session.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 }
 
 @doc("Room session response object.")
 model RoomSession {
   @doc("Unique ID of the session.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("Unique ID of the Room if the Session was created from a Room and was not an auto-created Session. Null if the room was set to delete on end.")
-  @format("uuid")
   @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
-  room_id: string | null;
+  room_id: uuid | null;
 
   @doc("The named identifier of the room session.")
   @example("my_example_room")
@@ -162,14 +159,12 @@ model RoomSession {
 @doc("Room recording response object.")
 model RoomRecording {
   @doc("Unique ID of the Room Recording.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("Unique ID of the Room Session the Room Recording was made in.")
-  @format("uuid")
   @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
-  room_session_id: string;
+  room_session_id: uuid;
 
   @doc("Status of the recording.")
   @example(RoomRecordingStatus.completed)
@@ -215,14 +210,12 @@ model RoomRecording {
 @doc("Room session member response object.")
 model RoomSessionMember {
   @doc("Unique ID of the Member.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("Unique ID of the Room Session.")
-  @format("uuid")
   @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
-  room_session_id: string;
+  room_session_id: uuid;
 
   @doc("Display name of the Member.")
   @example("John Smith")
@@ -248,34 +241,28 @@ model RoomSessionMember {
 @doc("Room session event response object.")
 model RoomSessionEvent {
   @doc("Unique ID of the event.")
-  @format("uuid")
   @example("e44f56a8-7c69-6153-b45c-ab3456789012")
-  id: string;
+  id: uuid;
 
   @doc("The ID of the project.")
-  @format("uuid")
   @example("a1b2c3d4-5e6f-7890-abcd-ef1234567890")
-  project_id: string;
+  project_id: uuid;
 
   @doc("The ID of the room.")
-  @format("uuid")
   @example("b2c3d4e5-6f70-8901-bcde-f12345678901")
-  room_id: string;
+  room_id: uuid;
 
   @doc("The ID of the room session.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  room_session_id: string;
+  room_session_id: uuid;
 
   @doc("The ID of the associated room recording. Only present for recording-related events.")
-  @format("uuid")
   @example("d33e35f7-6b58-5042-a34b-ef2345678901")
-  room_recording_id?: string;
+  room_recording_id?: uuid;
 
   @doc("The ID of the associated room participant. Only present for participant-related events.")
-  @format("uuid")
   @example("e44f68a9-7c69-6153-b56d-ef3456789012")
-  room_participant_id?: string;
+  room_participant_id?: uuid;
 
   @doc("The severity level of the event.")
   @example("info")

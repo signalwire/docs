@@ -1,3 +1,4 @@
+import "@typespec/openapi";
 import "./decorator.js";
 
 using TypeSpec.Reflection;

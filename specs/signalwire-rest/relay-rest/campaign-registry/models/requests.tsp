@@ -146,7 +146,6 @@ model CreateManagedCampaignRequest {
 
   @doc("The ID of the brand to associate with this campaign.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   brand_id: uuid;
 
   @doc("An SMS Use Case category for the campaign.")
@@ -269,7 +268,6 @@ model CreatePartnerCampaignRequest {
 
   @doc("The ID of the brand to associate with this campaign. Must be a CSP/partner brand.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   brand_id: uuid;
 
   @doc("The approved Campaign ID from TCR. Required for CSP/self-registered campaigns.")
@@ -306,7 +304,6 @@ model CreateOrderRequest {
 model AssignNumberRequest {
   @doc("The phone number ID to assign.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   phone_number_id: uuid;
 }
 

@@ -4,7 +4,6 @@ import "../../../_shared/const.tsp";
 model CallFlowVersion {
   @doc("The unique identifier of the version.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The version number.")
@@ -38,7 +37,6 @@ model CallFlowVersionListResponse {
 model CallFlowVersionDeployResponse {
   @doc("The unique identifier of the deployed Call Flow Version.")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  @format("uuid")
   id: uuid;
 
   @doc("The creation timestamp.")

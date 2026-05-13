@@ -20,10 +20,9 @@ enum ConferenceSize {
 
 model ConferencePathID {
   @path
-  @format("uuid")
   @doc("Unique ID of the video conference.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 }
 
 @doc("Theme color properties for a conference.")
@@ -72,9 +71,8 @@ model ConferenceThemeColors {
 @doc("Video conference response object.")
 model Conference {
   @doc("Unique ID of the video conference.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("A named unique identifier for the conference. Allowed characters: `A-Za-z0-9_-`.")
   @example("my_conference")

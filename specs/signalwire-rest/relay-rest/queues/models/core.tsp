@@ -6,7 +6,6 @@ using Types;
 model QueuePathID {
   @doc("Unique ID of the queue.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -14,7 +13,6 @@ model QueuePathID {
 model QueueIdPath {
   @doc("Unique ID of the queue.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   queue_id: uuid;
 }
@@ -22,7 +20,6 @@ model QueueIdPath {
 model QueueMemberPathID {
   @doc("The unique identifier (ID) of the queue member.")
   @example("596e2dea-a269-4765-a0b4-01b82d11c120")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -31,12 +28,10 @@ model QueueMemberPathID {
 model Queue {
   @doc("The unique identifier of the queue.")
   @example("aae131db-214c-46f5-88b6-92004f8467cf")
-  @format("uuid")
   id: uuid;
 
   @doc("The project ID associated with this queue.")
   @example("c6c4679b-716a-456a-9e41-a03821005005")
-  @format("uuid")
   project_id: uuid;
 
   @doc("The friendly name of the queue.")
@@ -70,7 +65,6 @@ model Queue {
 model QueueMember {
   @doc("The call ID of the queue member.")
   @example("596e2dea-a269-4765-a0b4-01b82d11c120")
-  @format("uuid")
   call_id: uuid;
 
   @doc("The ID of the project associated with this queue member.")

@@ -11,13 +11,11 @@ using TypeSpec.OpenAPI;
 model SipGatewayResponse {
   @doc("Unique ID of the resource.")
   @example("0823a606-0aff-4c90-9eba-f88ba118fe05")
-  @format("uuid")
-  id: string;
+  id: uuid;
 
   @doc("Project ID associated with the resource.")
   @example("bc949800-7b40-43cf-8438-a85facfcbdd1")
-  @format("uuid")
-  project_id: string;
+  project_id: uuid;
 
   @doc("Display name of the SIP Gateway.")
   @example("My SIP Gateway")
@@ -42,8 +40,7 @@ model SipGatewayResponse {
 model SipGateway {
   @doc("Unique ID of the SIP Gateway.")
   @example("cce59cad-104d-4c28-ada4-98cfd102ae09")
-  @format("uuid")
-  id: string;
+  id: uuid;
 
   @doc("The URI for the SIP Gateway.")
   @example("user3@domain.com")

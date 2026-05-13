@@ -93,19 +93,16 @@ model CreateSipEndpointRequest {
   call_relay_application?: string;
 
   @doc("The ID of the Video Room to forward incoming calls to. Required when call_handler is video_room.")
-  @format("uuid")
-  call_video_room_id?: string;
+  call_video_room_id?: uuid;
 
   @doc("The ID of the Call Flow to forward incoming calls to. Required when call_handler is call_flow.")
-  @format("uuid")
-  call_flow_id?: string;
+  call_flow_id?: uuid;
 
   @doc("The version of the Call Flow to use. Valid values are 'working_copy' or 'current_deployed'.")
   call_flow_version?: string;
 
   @doc("The ID of the AI Agent to forward incoming calls to. Required when call_handler is ai_agent.")
-  @format("uuid")
-  call_ai_agent_id?: string;
+  call_ai_agent_id?: uuid;
 
   @doc("A URL of a SWML script to respond to incoming calls. Required when call_handler is relay_script.")
   @example("https://dev.signalwire.com/relay-bins/f9d13f68-f71e-4042-95bb-b07b9e2f2f92")
@@ -203,19 +200,16 @@ model UpdateSipEndpointRequest {
   call_relay_application?: string;
 
   @doc("The ID of the Video Room to forward incoming calls to. Required when call_handler is video_room.")
-  @format("uuid")
-  call_video_room_id?: string;
+  call_video_room_id?: uuid;
 
   @doc("The ID of the Call Flow to forward incoming calls to. Required when call_handler is call_flow.")
-  @format("uuid")
-  call_flow_id?: string;
+  call_flow_id?: uuid;
 
   @doc("The version of the Call Flow to use. Valid values are 'working_copy' or 'current_deployed'.")
   call_flow_version?: string;
 
   @doc("The ID of the AI Agent to forward incoming calls to. Required when call_handler is ai_agent.")
-  @format("uuid")
-  call_ai_agent_id?: string;
+  call_ai_agent_id?: uuid;
 
   @doc("A URL of a SWML script to respond to incoming calls. Required when call_handler is relay_script.")
   @example("https://dev.signalwire.com/relay-bins/f9d13f68-f71e-4042-95bb-b07b9e2f2f92")

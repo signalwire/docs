@@ -4,15 +4,18 @@ import "./models/core.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/errors.tsp";
+import "./models/webhooks.tsp";
 import "./addresses";
 import "../../types";
 import "../tags.tsp";
 import "../../../_shared/alias/token-permissions.tsp";
+import "../../../_shared/webhook/decorator.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+@webhook("inboundCallWebhook", InboundCallWebhookPayload, SWML_WEBHOOK_TAG)
 @route("/resources/swml_webhooks")
 namespace SignalWireAPI.Fabric.SWMLWebhooks {
   @tag(SWML_WEBHOOK_TAG)

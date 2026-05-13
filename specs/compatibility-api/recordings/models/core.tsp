@@ -3,17 +3,15 @@ using TypeSpec.Http;
 model RecordingsAccountSidPath {
   @doc("The unique identifier for the account that is associated with this recording.")
   @example("720796a0-8ee9-4350-83bd-2d07a3121f1e")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model RecordingSidPath {
   @doc("The unique identifier for the recording.")
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("Recording source.")
@@ -48,28 +46,24 @@ model RecordingSubresourceUris {
 @doc("Recording model.")
 model Recording {
   @doc("The unique identifier for the recording.")
-  @format("uuid")
   @example("19e436af-5688-4307-b03b-bdb2b42b8142")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account that is associated with this recording.")
-  @format("uuid")
   @example("720796a0-8ee9-4350-83bd-2d07a3121f1e")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")
   api_version: string;
 
   @doc("The unique identifier for the call that is associated with this recording. Null if this is a conference recording.")
-  @format("uuid")
   @example("43bb71ee-553f-4074-bb20-8e2747647cce")
-  call_sid: string | null;
+  call_sid: uuid | null;
 
   @doc("The unique identifier for the conference that is associated with this recording. Null if this is a call recording.")
-  @format("uuid")
   @example(null)
-  conference_sid: string | null;
+  conference_sid: uuid | null;
 
   @doc("The number of channels in a recording (singular key). Returns '1' for mono or '2' for stereo.")
   @example("1")

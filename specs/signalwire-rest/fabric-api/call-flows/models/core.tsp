@@ -6,7 +6,6 @@ using TypeSpec.Http;
 model CallFlowPathID {
   @doc("Unique ID of a Call Flow.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -14,7 +13,6 @@ model CallFlowPathID {
 model CallFlow {
   @doc("Unique ID of a Call Flow.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The name of the Call Flow")
