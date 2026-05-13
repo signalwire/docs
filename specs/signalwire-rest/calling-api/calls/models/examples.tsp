@@ -1,5 +1,7 @@
 namespace SignalWireAPI.Calling;
 
+using SWML.Calling;
+
 /**
  * Operation examples for the Calling API
  *

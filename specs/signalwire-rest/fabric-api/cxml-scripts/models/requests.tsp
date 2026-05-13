@@ -17,8 +17,8 @@ model CXMLScriptCreateRequest {
   status_callback_url?: url;
 
   @doc("HTTP method to use for status callbacks")
-  @example(UrlMethodType.Get)
-  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
+  @example(RequestUrlMethodType.Get)
+  status_callback_method?: RequestUrlMethodType;
 }
 
 model CXMLScriptUpdateRequest {
@@ -36,6 +36,6 @@ model CXMLScriptUpdateRequest {
   status_callback_url?: url;
 
   @doc("HTTP method to use for status callbacks")
-  @example(UrlMethodType.Get)
-  status_callback_method?: UrlMethodType.Get | UrlMethodType.Post;
+  @example(RequestUrlMethodType.Get)
+  status_callback_method?: RequestUrlMethodType;
 }
