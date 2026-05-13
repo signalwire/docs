@@ -1,0 +1,151 @@
+name: publish-postman
+
+# Pushes generated OpenAPI specs to their Postman public collections via
+# the Postman API (PUT /collections/:id). One matrix entry per collection.
+#
+# Triggered only when a watched openapi.yaml actually changes on main.
+# Each matrix job double-checks via `git diff` so unrelated specs are skipped.
+#
+# Required repo configuration:
+#   secrets.POSTMAN_API_KEY                            - Postman API key
+#   vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID         - public collection UID
+#   vars.POSTMAN_COMPATIBILITY_COLLECTION_ID           - public collection UID
+#
+# The public collections must already exist in Postman; PUT replaces contents
+# but cannot create a new collection.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'fern/apis/signalwire-rest/openapi.yaml'
+      - 'fern/apis/compatibility/openapi.yaml'
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Push every collection regardless of change detection'
+        type: boolean
+        default: false
+
+# Restrict the default GITHUB_TOKEN: this workflow only reads source files
+# (for git diff) and never writes back to the repo. Lock it down so a
+# compromised dependency cannot use the token to push commits.
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # collection_id values are looked up from repo Variables at matrix
+        # expansion time (static `vars.X` references, not dynamic indexing).
+        # UIDs are not sensitive — they appear in public Postman URLs — so
+        # they live in Variables, not Secrets.
+        include:
+          - name: signalwire-rest
+            spec: fern/apis/signalwire-rest/openapi.yaml
+            collection_id: ${{ vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID }}
+          - name: compatibility
+            spec: fern/apis/compatibility/openapi.yaml
+            collection_id: ${{ vars.POSTMAN_COMPATIBILITY_COLLECTION_ID }}
+    steps:
+      - name: Checkout
+        # Pinned to commit SHA (v4.2.2) — tags are mutable and a tag
+        # repoint by a compromised upstream would run with our secrets.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          fetch-depth: 2  # need HEAD^ for the per-spec diff
+
+      - name: Detect whether ${{ matrix.spec }} changed
+        id: changed
+        env:
+          SPEC: ${{ matrix.spec }}
+          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_all || 'false' }}
+        run: |
+          if [[ "$FORCE_ALL" == "true" ]]; then
+            echo "Manual dispatch with force_all=true; running."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only HEAD^ HEAD | grep -qx "$SPEC"; then
+            echo "$SPEC changed in this push."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$SPEC did not change; skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.changed.outputs.changed == 'true'
+        # Pinned to commit SHA for the same reason as actions/checkout above.
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '22'
+
+      - name: Install openapi-to-postmanv2
+        if: steps.changed.outputs.changed == 'true'
+        # Exact version pin so an upstream npm compromise can't ship new
+        # code under the same major. Bump deliberately; verify CLI flags
+        # below still validate against any new major.
+        run: npm install -g openapi-to-postmanv2@6.0.1
+
+      - name: Rewrite relative docs links for Postman
+        if: steps.changed.outputs.changed == 'true'
+        # Rewrites markdown links like [foo](/docs/...) to absolute
+        # [foo](https://signalwire.com/docs/...) so the published collection
+        # links to the live docs site. The OpenAPI source-of-truth stays
+        # relative (correct for Fern); only the workflow's checkout copy is
+        # rewritten. Absolute URLs already in the spec (externalDocs.url,
+        # /company/contact, my.signalwire.com, etc.) are untouched because
+        # the rewrite is anchored on `](/` — see the script for details.
+        run: node scripts/postman/rewrite-links.js "${{ matrix.spec }}"
+
+      - name: Convert OpenAPI to Postman Collection
+        if: steps.changed.outputs.changed == 'true'
+        # Conversion options live in scripts/postman/convert-options.json so
+        # they're identical here and in any local invocation.
+        #
+        # We pass them via `-c` (config file) rather than `-O key=value` because
+        # the CLI's `-O` parser filters its accepted-option list against an
+        # OpenAPI version that defaults to 3.0, dropping any 3.1-only option
+        # like `includeWebhooks` with a stderr warning and continuing. The
+        # `-c` path reads the JSON as-is and bypasses the filter, so 3.1
+        # webhooks (3 in signalwire-rest, 5 in compatibility) come through.
+        # Tracked as a quirk of openapi-to-postmanv2 v6.0.1.
+        run: |
+          openapi2postmanv2 \
+            -s "${{ matrix.spec }}" \
+            -o collection.json \
+            -p \
+            -c scripts/postman/convert-options.json
+
+      - name: Strip generated IDs and wrap for PUT
+        if: steps.changed.outputs.changed == 'true'
+        # Postman API requires {"collection": {...}} and rejects payloads
+        # carrying foreign _postman_id / id / uid fields.
+        run: |
+          jq 'walk(if type == "object" then del(._postman_id, .id, .uid) else . end) | {collection: .}' \
+            collection.json > payload.json
+
+      - name: PUT collection to Postman
+        if: steps.changed.outputs.changed == 'true'
+        # Both env vars are required. The matrix supplies COLLECTION_ID per
+        # entry (static `vars.X` resolved at matrix-expansion time); the
+        # secret supplies the API key. Both are validated below before any
+        # network call.
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+          COLLECTION_ID: ${{ matrix.collection_id }}
+        run: |
+          : "${POSTMAN_API_KEY:?missing repo secret POSTMAN_API_KEY}"
+          : "${COLLECTION_ID:?missing repo variable for ${{ matrix.name }} collection ID — check Settings → Variables}"
+
+          curl --fail-with-body -sS -X PUT \
+            "https://api.getpostman.com/collections/$COLLECTION_ID" \
+            -H "X-Api-Key: $POSTMAN_API_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary @payload.json \
+            -o response.json
+          echo "Postman response:"
+          jq '.collection.info | {name, uid}' response.json || cat response.json
