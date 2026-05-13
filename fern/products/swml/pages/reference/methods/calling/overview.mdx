@@ -78,37 +78,202 @@ sections:
 
 </Indent>
 
-## Document-fetching webhook [#document-fetching-webhook]
+## Webhook and variable payload [#webhook-payload]
 
-When SignalWire fetches a Calling SWML document from an external URL, it sends a POST request
-with the [inbound call webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-call-webhook).
-This applies on the initial inbound fetch and on every fetch triggered by methods that hit an
-external URL — `execute` with a remote URL, [`transfer`](/docs/swml/reference/calling/transfer),
+When SignalWire fetches a Calling SWML document from an external URL, it POSTs this payload to
+your server — on the initial inbound fetch and on every fetch triggered by a method that hits
+an external URL (`execute` with a remote URL,
+[`transfer`](/docs/swml/reference/calling/transfer),
 [`join_conference.wait_url`](/docs/swml/reference/calling/join-conference#properties),
 [`enter_queue.wait_url`](/docs/swml/reference/calling/enter-queue#properties), and
-[`connect.confirm`](/docs/swml/reference/calling/connect#properties).
+[`connect.confirm`](/docs/swml/reference/calling/connect#properties)). Your server must respond
+with a valid SWML document using one of these content types: `application/json`,
+`application/yaml`, or `text/x-yaml`.
+
+Inside the executing document, the `call`, `params`, and `envs` fields are available for
+variable expansion via `${...}` (JavaScript expressions) and `%{...}` (path substitution). As
+the script runs, methods also populate the **`vars.*` runtime scope** — those values are not in
+the initial inbound payload, but they are propagated across `transfer` boundaries and delivered
+on subsequent fetches.
 
 <WebhookPayloadSnippet webhook="inboundCallWebhook" />
 
-The payload includes:
+<ParamField path="call" type="object" toc={true}>
+  Information about the current call. Call-specific and read-only. Each call leg (A-leg, B-leg)
+  has its own unique `call` object with different `call_id`, `from`, `to`, etc. When connecting
+  to a new leg, the `call` object is re-initialized with the new leg's data.
+</ParamField>
 
-- **`call`** — call state and routing data (call ID, from/to, type, headers, project/space IDs, etc.).
-- **`vars`** — script variables set by prior SWML execution (via [`set`](/docs/swml/reference/calling/set)
-  or method outputs). Empty on the initial inbound fetch; populated on subsequent fetches.
-- **`params`** — parameters explicitly passed by the calling step (`execute.params` or
-  `transfer.params`). Empty on the initial inbound fetch.
-- **`envs`** — environment variables configured at the account or project level.
+<Indent>
 
-Your server must respond with a valid SWML document using one of these content types:
-`application/json`, `application/yaml`, or `text/x-yaml`.
+  <ParamField path="call.call_id" type="string" toc={true}>
+    A unique identifier for the call.
+  </ParamField>
 
-## Variable expansion
+  <ParamField path="call.call_state" type="string" toc={true}>
+    The current state of the call.
+  </ParamField>
 
-Calling SWML supports two substitution syntaxes in string values:
+  <ParamField path="call.direction" type="string" toc={true}>
+    The direction of this call. Possible values: `inbound`, `outbound`.
+  </ParamField>
 
-- **`${...}`** — JavaScript expressions evaluated by V8. Use for transformations, calculations,
-  and conditional logic. See [Expressions](/docs/swml/reference/expressions).
-- **`%{path}`** — pure path-based substitution. See [Variables](/docs/swml/reference/variables).
+  <ParamField path="call.from" type="string" toc={true}>
+    The number/URI that initiated this call.
+  </ParamField>
+
+  <ParamField path="call.headers" type="object[]" toc={true}>
+    The headers associated with this call.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.headers[].name" type="string" toc={true}>
+      The name of the header.
+    </ParamField>
+
+    <ParamField path="call.headers[].value" type="string" toc={true}>
+      The value of the header.
+    </ParamField>
+
+  </Indent>
+
+  <ParamField path="call.node_id" type="string" toc={true}>
+    A unique identifier for the node handling the call.
+  </ParamField>
+
+  <ParamField path="call.project_id" type="string" toc={true}>
+    The Project ID this call belongs to.
+  </ParamField>
+
+  <ParamField path="call.segment_id" type="string" toc={true}>
+    A unique identifier for the current call segment.
+  </ParamField>
+
+  <ParamField path="call.space_id" type="string" toc={true}>
+    The Space ID this call belongs to.
+  </ParamField>
+
+  <ParamField path="call.to" type="string" toc={true}>
+    The number/URI of the destination of this call.
+  </ParamField>
+
+  <ParamField path="call.type" type="string" toc={true}>
+    The type of call. Possible values: `sip`, `phone`, `webrtc`.
+  </ParamField>
+
+  <ParamField path="call.sip_data" type="object" toc={true}>
+    SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Contains detailed
+    SIP header information.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.sip_data.sip_contact_host" type="string" toc={true}>
+      The host portion of the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_params" type="object" toc={true}>
+      Additional parameters from the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_port" type="string" toc={true}>
+      The port from the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_uri" type="string" toc={true}>
+      The full URI from the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_user" type="string" toc={true}>
+      The user portion of the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_from_host" type="string" toc={true}>
+      The host portion of the SIP From header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_from_uri" type="string" toc={true}>
+      The full URI from the SIP From header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_from_user" type="string" toc={true}>
+      The user portion of the SIP From header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_host" type="string" toc={true}>
+      The host portion of the SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_uri" type="string" toc={true}>
+      The full SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_user" type="string" toc={true}>
+      The user portion of the SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_host" type="string" toc={true}>
+      The host portion of the SIP To header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_uri" type="string" toc={true}>
+      The full URI from the SIP To header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_user" type="string" toc={true}>
+      The user portion of the SIP To header.
+    </ParamField>
+
+  </Indent>
+
+</Indent>
+
+<ParamField path="params" type="object" toc={true}>
+  Parameters passed by the calling [`execute`](/docs/swml/reference/calling/execute) or
+  [`transfer`](/docs/swml/reference/calling/transfer) step. Empty `{}` on the initial inbound
+  fetch. Section-scoped — each `execute`/`transfer` replaces (does not merge with) the caller's
+  `params`; when an `execute` returns, the caller's original `params` are restored.
+</ParamField>
+
+<ParamField path="vars" type="object" toc={true}>
+  Runtime variable scope, populated by methods as the script executes. **Not part of the
+  initial inbound payload** — values appear here only after a method that sets them has run.
+  The full `vars` object is propagated across `transfer` boundaries (and on remote-URL
+  `execute`) and delivered as a top-level `vars` field on subsequent webhook payloads.
+
+  **Created by:** [`set`](/docs/swml/reference/calling/set) — explicitly create or update
+  variables. Method outputs — many methods auto-populate variables (e.g., `prompt_value`,
+  `record_url`, `return_value`). See each method's reference page for what it sets.
+
+  **Removed by:** [`unset`](/docs/swml/reference/calling/unset).
+
+  **Scope:** Global within a single call session. Variables persist across all sections and
+  through `execute` calls. Connecting to a new call leg resets the `vars` object to an empty
+  state.
+
+  **Access:** Variables can be accessed with or without the `vars.` prefix. When you reference
+  a variable without a scope prefix (e.g., `${my_variable}`), SWML first checks `vars`. If not
+  found in `vars`, it automatically falls back to `envs`.
+</ParamField>
+
+<ParamField path="envs" type="object" toc={true}>
+  Environment variables configured at the account or project level. Account/project-scoped and
+  read-only. Set in your SignalWire account configuration, not within SWML scripts.
+
+  **Fallback behavior:** When you reference a variable without a scope prefix (e.g.,
+  `${my_variable}`), SWML first checks `vars`. If not found in `vars`, it automatically falls
+  back to `envs`.
+
+  <Warning>
+    The `envs` object is included in POST request bodies to external servers, but the ability
+    to set environment variables in the SignalWire Dashboard is not yet available in
+    production. This feature is coming soon.
+  </Warning>
+</ParamField>
+
+See [Variables](/docs/swml/reference/variables) for variable-expansion syntax, deployment-mode
+differences, and tips on accessing nested fields and array elements.
 
 ## Methods
 

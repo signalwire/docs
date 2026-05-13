@@ -72,17 +72,23 @@ or the empty document `{}`. Light-mode documents do not have a `version` or `sec
   [`receive`](/docs/swml/reference/messaging/receive).
 </ParamField>
 
-## Document-fetching webhook [#document-fetching-webhook]
+## Webhook and variable payload [#webhook-payload]
 
 {/* TODO: Restore the inline link below once the SWML messaging schema PR merges and
     /docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook is live in the REST API
     reference. Original:
     [inbound message webhook payload](/docs/apis/rest/swml-webhook/webhooks/inbound-message-webhook)
 */}
-When SignalWire fetches a Messaging SWML document from an external URL, it sends a POST request
-with the inbound message webhook payload.
-This applies on the initial inbound-message fetch and on every fetch triggered by a
-[`transfer`](/docs/swml/reference/messaging/transfer) step.
+When SignalWire fetches a Messaging SWML document from an external URL, it POSTs this payload
+to your server — on the initial inbound-message fetch and on every fetch triggered by a
+[`transfer`](/docs/swml/reference/messaging/transfer) step. Your server must respond with a valid
+SWML document using one of these content types: `application/json`, `application/yaml`, or
+`text/x-yaml`.
+
+Inside the executing document, the same `message` and `params` fields are available for `%{...}`
+variable expansion (for example, `%{message.from}`). As the script runs, methods also populate
+the **`vars.*` runtime scope** — those values are not in the initial inbound payload, but they
+are propagated across `transfer` boundaries and delivered on transfer-driven fetches.
 
 {/* TODO: Remove manual json snippet and uncomment webhook payload component
     once the SWML messaging schema PR (inboundMessageWebhook payload) merges and
@@ -109,19 +115,125 @@ This applies on the initial inbound-message fetch and on every fetch triggered b
 }
 ```
 
-The payload includes:
+<ParamField path="message" type="object" toc={true}>
+  The inbound message that triggered the SWML document.
+</ParamField>
 
-- **`message`** — the inbound message that triggered the fetch (`from`, `to`, `body`, `media`,
-  `type`, `segments`, `timestamp`, etc.).
-- **`params`** — parameters supplied by the calling
-  [`transfer`](/docs/swml/reference/messaging/transfer) step. Empty `{}` on the initial inbound fetch.
-- **`vars`** — runtime variables propagated from the originating document
-  (`request_result`, `reply_result`, `request_response`, `request_response_code`,
-  `request_response_body`, `reply_message_id`). Present only on `transfer`-driven fetches;
-  **absent** on the initial inbound fetch.
+<Indent>
 
-Your server must respond with a valid SWML document using one of these content types:
-`application/json`, `application/yaml`, or `text/x-yaml`.
+  <ParamField path="message.message_id" type="string" toc={true}>
+    Unique identifier for the inbound message segment.
+  </ParamField>
+
+  <ParamField path="message.project_id" type="string" toc={true}>
+    The Project ID this message belongs to.
+  </ParamField>
+
+  <ParamField path="message.space_id" type="string" toc={true}>
+    The Space ID this message belongs to.
+  </ParamField>
+
+  <ParamField path="message.direction" type="string" toc={true}>
+    The direction of the message. Always `inbound` for messages that trigger a Messaging SWML document.
+  </ParamField>
+
+  <ParamField path="message.type" type="string" toc={true}>
+    The message type. Possible values: `sms`, `mms`.
+  </ParamField>
+
+  <ParamField path="message.from" type="string" toc={true}>
+    Sender phone number in E.164 format.
+  </ParamField>
+
+  <ParamField path="message.to" type="string" toc={true}>
+    Recipient phone number in E.164 format (the SignalWire number that received the message).
+  </ParamField>
+
+  <ParamField path="message.body" type="string" toc={true}>
+    The text content of the inbound message.
+  </ParamField>
+
+  <ParamField path="message.media" type="object[]" toc={true}>
+    Media attachments on the inbound message. Empty array when no media is attached.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="message.media[].url" type="string" toc={true}>
+      URL where the media file is stored.
+    </ParamField>
+
+    <ParamField path="message.media[].content_type" type="string" toc={true}>
+      MIME type of the media file (e.g., `image/jpeg`, `image/png`).
+    </ParamField>
+
+    <ParamField path="message.media[].size" type="integer" toc={true}>
+      Size of the media file in bytes.
+    </ParamField>
+
+  </Indent>
+
+  <ParamField path="message.segments" type="integer" toc={true}>
+    Number of SMS segments the inbound message was split into.
+  </ParamField>
+
+  <ParamField path="message.timestamp" type="string" toc={true}>
+    ISO 8601 timestamp of when the inbound message was received.
+  </ParamField>
+
+</Indent>
+
+<ParamField path="params" type="object" toc={true}>
+  Parameters passed by the calling [`transfer`](/docs/swml/reference/messaging/transfer) or
+  [`execute`](/docs/swml/reference/messaging/execute) step. Empty `{}` on the initial inbound
+  fetch. Section-scoped — restored to the caller's value when an `execute` returns.
+</ParamField>
+
+<ParamField path="vars" type="object" toc={true}>
+  Runtime variable scope, populated by methods as the script executes. **Not part of the
+  initial inbound payload** — values appear here only after a method that sets them has run.
+  The full `vars` object is propagated across `transfer` boundaries and delivered as a top-level
+  `vars` field on the transfer-driven webhook payload.
+
+  The standard runtime entries are listed below. Methods may also write additional keys; see
+  each method's reference page for what it sets.
+</ParamField>
+
+<Indent>
+
+  <ParamField path="vars.reply_result" type="string" toc={true}>
+    Result of the most recent [`reply`](/docs/swml/reference/messaging/reply) step. Set after
+    the step completes. Possible values: `queued`, `failed`.
+  </ParamField>
+
+  <ParamField path="vars.reply_message_id" type="string" toc={true}>
+    Message segment ID of the most recent successful `reply`. Set after the step completes.
+  </ParamField>
+
+  <ParamField path="vars.request_result" type="string" toc={true}>
+    Result of the most recent [`request`](/docs/swml/reference/messaging/request) step. Set
+    after the step completes. Possible values: `success`, `failed`, `timeout`, `limit_exceeded`.
+  </ParamField>
+
+  <ParamField path="vars.request_response" type="object" toc={true}>
+    Parsed JSON response from the most recent `request`. Set after the step completes when
+    `save_variables: true` was set on the `request` step. Access nested fields with dot
+    notation, e.g., `%{vars.request_response.field_name}`.
+  </ParamField>
+
+  <ParamField path="vars.request_response_code" type="integer" toc={true}>
+    HTTP response code from the most recent `request`. Set after the step completes.
+  </ParamField>
+
+  <ParamField path="vars.request_response_body" type="string" toc={true}>
+    Raw response body from the most recent `request`. Set after the step completes. Truncated
+    to 64 KB.
+  </ParamField>
+
+</Indent>
+
+See [Variables](/docs/swml/reference/variables) for variable-expansion syntax, deployment-mode
+differences, and tips on accessing nested fields and array elements.
 
 ## Methods
 
@@ -180,12 +292,3 @@ systems know.
   </Card>
 </CardGroup>
 
-## Variable expansion
-
-SWML supports `%{variable.path}` placeholders in string values. Variables are expanded after the
-document is parsed, before methods execute. Expansion is **pure substitution only** — no expressions,
-method calls, or operators. Unresolvable paths are replaced with an empty string.
-
-The inbound `message.*` context (`message.to`, `message.from`, `message.body`, `message.kind`,
-`message.project_id`, `message.status`) is available throughout the document. See
-[Variables](/docs/swml/reference/variables) for the full variable reference.
