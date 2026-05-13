@@ -1,0 +1,457 @@
+---
+id: a9dd1c03-0b27-4aab-98ab-4d9230d38484
+slug: /reference/calling
+description: Reference for Calling SWML — document structure, webhook payload, variable expansion, and methods for handling inbound and outbound calls.
+title: Calling SWML overview
+sidebar-title: Overview
+position: 0
+max-toc-depth: 3
+---
+
+Calling SWML is the flavor of SWML used to handle voice calls — inbound calls arriving on a phone
+number configured with a SWML calling handler, outbound REST-initiated calls that point at a SWML
+URL, and re-fetches triggered by methods that hit an external URL.
+
+For handling inbound SMS and MMS messages, see the
+[Messaging SWML overview](/docs/swml/reference/messaging).
+
+## Document structure
+
+A Calling SWML document is a top-level `sections` map with named sections. Execution starts
+at `sections.main`, and each section contains an array of methods that run sequentially.
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - answer: {}
+    - play:
+        url: "say:Hello!"
+    - hangup: {}
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      { "answer": {} },
+      { "play": { "url": "say:Hello!" } },
+      { "hangup": {} }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### SWML object properties
+
+<ParamField path="version" type="string" toc={true}>
+  The SWML schema version. Currently only `"1.0.0"` is accepted. Optional — defaults to the
+  current schema version when omitted.
+</ParamField>
+
+<ParamField path="sections" type="object" required={true} toc={true}>
+  A map of named sections. Each value is an array of [methods](#methods) that run sequentially.
+  Must contain at least a `main` section; additional named sections can be invoked via
+  [`execute`](/docs/swml/reference/calling/execute),
+  [`transfer`](/docs/swml/reference/calling/transfer), or
+  [`goto`](/docs/swml/reference/calling/goto).
+</ParamField>
+
+<Indent>
+
+<ParamField path="sections.main" type="array" required={true} toc={true}>
+  The entry-point section. Execution starts here when the document loads. Each item in the
+  array is one of the [methods](#methods) listed below.
+</ParamField>
+
+
+<ParamField path="sections.<name>" type="array" toc={true}>
+  Any additional named section, invokable via `execute`, `transfer`, or `goto`. Each item in
+  the array is one of the [methods](#methods) listed below.
+</ParamField>
+
+</Indent>
+
+## Webhook and variable payload [#webhook-payload]
+
+When SignalWire fetches a Calling SWML document from an external URL, it POSTs this payload to
+your server — on the initial inbound fetch and on every fetch triggered by a method that hits
+an external URL (`execute` with a remote URL,
+[`transfer`](/docs/swml/reference/calling/transfer),
+[`join_conference.wait_url`](/docs/swml/reference/calling/join-conference#properties),
+[`enter_queue.wait_url`](/docs/swml/reference/calling/enter-queue#properties), and
+[`connect.confirm`](/docs/swml/reference/calling/connect#properties)). Your server must respond
+with a valid SWML document using one of these content types: `application/json`,
+`application/yaml`, or `text/x-yaml`.
+
+Inside the executing document, the `call`, `params`, and `envs` fields are available for
+variable expansion via `${...}` (JavaScript expressions) and `%{...}` (path substitution). As
+the script runs, methods also populate the **`vars.*` runtime scope** — those values are not in
+the initial inbound payload, but they are propagated across `transfer` boundaries and delivered
+on subsequent fetches.
+
+<WebhookPayloadSnippet webhook="inboundCallWebhook" />
+
+<ParamField path="call" type="object" toc={true}>
+  Information about the current call. Call-specific and read-only. Each call leg (A-leg, B-leg)
+  has its own unique `call` object with different `call_id`, `from`, `to`, etc. When connecting
+  to a new leg, the `call` object is re-initialized with the new leg's data.
+</ParamField>
+
+<Indent>
+
+  <ParamField path="call.call_id" type="string" toc={true}>
+    A unique identifier for the call.
+  </ParamField>
+
+  <ParamField path="call.call_state" type="string" toc={true}>
+    The current state of the call.
+  </ParamField>
+
+  <ParamField path="call.direction" type="string" toc={true}>
+    The direction of this call. Possible values: `inbound`, `outbound`.
+  </ParamField>
+
+  <ParamField path="call.from" type="string" toc={true}>
+    The number/URI that initiated this call.
+  </ParamField>
+
+  <ParamField path="call.headers" type="object[]" toc={true}>
+    The headers associated with this call.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.headers[].name" type="string" toc={true}>
+      The name of the header.
+    </ParamField>
+
+    <ParamField path="call.headers[].value" type="string" toc={true}>
+      The value of the header.
+    </ParamField>
+
+  </Indent>
+
+  <ParamField path="call.node_id" type="string" toc={true}>
+    A unique identifier for the node handling the call.
+  </ParamField>
+
+  <ParamField path="call.project_id" type="string" toc={true}>
+    The Project ID this call belongs to.
+  </ParamField>
+
+  <ParamField path="call.segment_id" type="string" toc={true}>
+    A unique identifier for the current call segment.
+  </ParamField>
+
+  <ParamField path="call.space_id" type="string" toc={true}>
+    The Space ID this call belongs to.
+  </ParamField>
+
+  <ParamField path="call.to" type="string" toc={true}>
+    The number/URI of the destination of this call.
+  </ParamField>
+
+  <ParamField path="call.type" type="string" toc={true}>
+    The type of call. Possible values: `sip`, `phone`, `webrtc`.
+  </ParamField>
+
+  <ParamField path="call.sip_data" type="object" toc={true}>
+    SIP-specific data for SIP calls. Only present when `call.type` is `sip`. Contains detailed
+    SIP header information.
+  </ParamField>
+
+  <Indent>
+
+    <ParamField path="call.sip_data.sip_contact_host" type="string" toc={true}>
+      The host portion of the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_params" type="object" toc={true}>
+      Additional parameters from the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_port" type="string" toc={true}>
+      The port from the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_uri" type="string" toc={true}>
+      The full URI from the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_contact_user" type="string" toc={true}>
+      The user portion of the SIP Contact header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_from_host" type="string" toc={true}>
+      The host portion of the SIP From header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_from_uri" type="string" toc={true}>
+      The full URI from the SIP From header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_from_user" type="string" toc={true}>
+      The user portion of the SIP From header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_host" type="string" toc={true}>
+      The host portion of the SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_uri" type="string" toc={true}>
+      The full SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_req_user" type="string" toc={true}>
+      The user portion of the SIP request URI.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_host" type="string" toc={true}>
+      The host portion of the SIP To header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_uri" type="string" toc={true}>
+      The full URI from the SIP To header.
+    </ParamField>
+
+    <ParamField path="call.sip_data.sip_to_user" type="string" toc={true}>
+      The user portion of the SIP To header.
+    </ParamField>
+
+  </Indent>
+
+</Indent>
+
+<ParamField path="params" type="object" toc={true}>
+  Parameters passed by the calling [`execute`](/docs/swml/reference/calling/execute) or
+  [`transfer`](/docs/swml/reference/calling/transfer) step. Empty `{}` on the initial inbound
+  fetch. Section-scoped — each `execute`/`transfer` replaces (does not merge with) the caller's
+  `params`; when an `execute` returns, the caller's original `params` are restored.
+</ParamField>
+
+<ParamField path="vars" type="object" toc={true}>
+  Runtime variable scope, populated by methods as the script executes. **Not part of the
+  initial inbound payload** — values appear here only after a method that sets them has run.
+  The full `vars` object is propagated across `transfer` boundaries (and on remote-URL
+  `execute`) and delivered as a top-level `vars` field on subsequent webhook payloads.
+
+  **Created by:** [`set`](/docs/swml/reference/calling/set) — explicitly create or update
+  variables. Method outputs — many methods auto-populate variables (e.g., `prompt_value`,
+  `record_url`, `return_value`). See each method's reference page for what it sets.
+
+  **Removed by:** [`unset`](/docs/swml/reference/calling/unset).
+
+  **Scope:** Global within a single call session. Variables persist across all sections and
+  through `execute` calls. Connecting to a new call leg resets the `vars` object to an empty
+  state.
+
+  **Access:** Variables can be accessed with or without the `vars.` prefix. When you reference
+  a variable without a scope prefix (e.g., `${my_variable}`), SWML first checks `vars`. If not
+  found in `vars`, it automatically falls back to `envs`.
+</ParamField>
+
+<ParamField path="envs" type="object" toc={true}>
+  Environment variables configured at the account or project level. Account/project-scoped and
+  read-only. Set in your SignalWire account configuration, not within SWML scripts.
+
+  **Fallback behavior:** When you reference a variable without a scope prefix (e.g.,
+  `${my_variable}`), SWML first checks `vars`. If not found in `vars`, it automatically falls
+  back to `envs`.
+
+  <Warning>
+    The `envs` object is included in POST request bodies to external servers, but the ability
+    to set environment variables in the SignalWire Dashboard is not yet available in
+    production. This feature is coming soon.
+  </Warning>
+</ParamField>
+
+See [Variables](/docs/swml/reference/variables) for variable-expansion syntax, deployment-mode
+differences, and tips on accessing nested fields and array elements.
+
+## Methods
+
+A method is a single step in a SWML document — each item in a `sections.<name>` array invokes
+one method. Each method's reference page documents its parameters, defaults, and any output
+variables it sets. Methods below are grouped by what they do.
+
+### Conversational AI
+
+Hand the call to an AI agent that holds a natural conversation, recognizes intent, and can call
+out to your backend via SWAIG functions or webhooks.
+
+<CardGroup cols={2}>
+  <Card title="ai" href="/docs/swml/reference/calling/ai">
+    Hand the call to a SignalWire AI agent that holds a natural conversation and can invoke SWAIG functions.
+  </Card>
+  <Card title="amazon_bedrock" href="/docs/swml/reference/calling/amazon-bedrock">
+    Hand the call to an Amazon Bedrock-backed AI agent.
+  </Card>
+</CardGroup>
+
+### Call lifecycle
+
+Control when the call is answered, ended, and what kind of party is on the other end before
+deciding how to handle it.
+
+<CardGroup cols={2}>
+  <Card title="answer" href="/docs/swml/reference/calling/answer">
+    Answer an inbound call. Some methods (e.g. `play`) auto-answer if needed.
+  </Card>
+  <Card title="hangup" href="/docs/swml/reference/calling/hangup">
+    End the call.
+  </Card>
+  <Card title="detect_machine" href="/docs/swml/reference/calling/detect-machine">
+    Detect whether the answering party is a human or an answering machine.
+  </Card>
+</CardGroup>
+
+### Audio & speech
+
+Play audio to the caller, prompt for input, and stream live transcription or translation.
+Includes noise reduction for clearer audio.
+
+<CardGroup cols={2}>
+  <Card title="play" href="/docs/swml/reference/calling/play">
+    Play TTS speech, audio files, silence, or ring tones.
+  </Card>
+  <Card title="prompt" href="/docs/swml/reference/calling/prompt">
+    Play audio or speech and capture DTMF or speech input.
+  </Card>
+  <Card title="live_transcribe" href="/docs/swml/reference/calling/live-transcribe">
+    Stream live transcription of the call.
+  </Card>
+  <Card title="live_translate" href="/docs/swml/reference/calling/live-translate">
+    Stream live translation of the call.
+  </Card>
+  <Card title="denoise" href="/docs/swml/reference/calling/denoise">
+    Start the noise reduction filter on the call audio.
+  </Card>
+  <Card title="stop_denoise" href="/docs/swml/reference/calling/stop-denoise">
+    Stop the noise reduction filter.
+  </Card>
+</CardGroup>
+
+### Connecting parties
+
+Bring other phones, SIP endpoints, video rooms, or queued agents into the call.
+
+<CardGroup cols={2}>
+  <Card title="connect" href="/docs/swml/reference/calling/connect">
+    Dial out to other phone or SIP destinations — series, parallel, or mixed.
+  </Card>
+  <Card title="join_conference" href="/docs/swml/reference/calling/join-conference">
+    Join the call to a conference room.
+  </Card>
+  <Card title="join_room" href="/docs/swml/reference/calling/join-room">
+    Join the call to a SignalWire video room.
+  </Card>
+  <Card title="enter_queue" href="/docs/swml/reference/calling/enter-queue">
+    Place the call in a queue with wait music, timeout, and status callbacks.
+  </Card>
+</CardGroup>
+
+### Recording & taps
+
+Record the call to storage, or stream call media to an external sink in real time.
+
+<CardGroup cols={2}>
+  <Card title="record" href="/docs/swml/reference/calling/record">
+    Record audio and wait for completion before continuing execution.
+  </Card>
+  <Card title="record_call" href="/docs/swml/reference/calling/record-call">
+    Start a background recording of the call.
+  </Card>
+  <Card title="stop_record_call" href="/docs/swml/reference/calling/stop-record-call">
+    Stop a background recording started by `record_call`.
+  </Card>
+  <Card title="tap" href="/docs/swml/reference/calling/tap">
+    Stream call media to an RTP or WebSocket sink.
+  </Card>
+  <Card title="stop_tap" href="/docs/swml/reference/calling/stop-tap">
+    Stop a media stream started by `tap`.
+  </Card>
+</CardGroup>
+
+### Messaging & side channels
+
+Send messages, faxes, DTMF, and other out-of-band signals from inside a call. Also collects
+payments and emits custom project events.
+
+<CardGroup cols={2}>
+  <Card title="send_sms" href="/docs/swml/reference/calling/send-sms">
+    Send an outbound SMS to a phone number.
+  </Card>
+  <Card title="send_digits" href="/docs/swml/reference/calling/send-digits">
+    Send DTMF tones into the call.
+  </Card>
+  <Card title="send_fax" href="/docs/swml/reference/calling/send-fax">
+    Send an outbound fax.
+  </Card>
+  <Card title="receive_fax" href="/docs/swml/reference/calling/receive-fax">
+    Interpret the inbound call as a fax and process it.
+  </Card>
+  <Card title="sip_refer" href="/docs/swml/reference/calling/sip-refer">
+    Transfer a SIP call by issuing a SIP `REFER`.
+  </Card>
+  <Card title="pay" href="/docs/swml/reference/calling/pay">
+    Collect a PCI-compliant payment over the phone.
+  </Card>
+  <Card title="user_event" href="/docs/swml/reference/calling/user-event">
+    Emit a custom event onto the project's event stream.
+  </Card>
+</CardGroup>
+
+### Control flow
+
+Direct execution within a SWML document — call subroutines, jump between labels, branch on
+expressions, or tail-call into another document entirely.
+
+<CardGroup cols={2}>
+  <Card title="execute" href="/docs/swml/reference/calling/execute">
+    Call a named section or external SWML URL as a subroutine.
+  </Card>
+  <Card title="return" href="/docs/swml/reference/calling/return">
+    Return from an `execute`-invoked section, optionally producing a `return_value`.
+  </Card>
+  <Card title="transfer" href="/docs/swml/reference/calling/transfer">
+    Tail-call into another section or external SWML document — does not return.
+  </Card>
+  <Card title="goto" href="/docs/swml/reference/calling/goto">
+    Jump to a `label` within the current section, optionally repeating up to a limit.
+  </Card>
+  <Card title="label" href="/docs/swml/reference/calling/label">
+    Mark a jump target for `goto`.
+  </Card>
+  <Card title="cond" href="/docs/swml/reference/calling/cond">
+    Branch on a JavaScript expression.
+  </Card>
+  <Card title="switch" href="/docs/swml/reference/calling/switch">
+    Branch on a variable's value with case matching.
+  </Card>
+</CardGroup>
+
+### State & integration
+
+Manage script variables, pause execution, and reach your backend over HTTP.
+
+<CardGroup cols={2}>
+  <Card title="set" href="/docs/swml/reference/calling/set">
+    Set one or more script variables.
+  </Card>
+  <Card title="unset" href="/docs/swml/reference/calling/unset">
+    Remove one or more script variables.
+  </Card>
+  <Card title="sleep" href="/docs/swml/reference/calling/sleep">
+    Pause execution for a specified duration.
+  </Card>
+  <Card title="request" href="/docs/swml/reference/calling/request">
+    Make an HTTP request to an external URL; optionally parse the response into variables.
+  </Card>
+</CardGroup>
