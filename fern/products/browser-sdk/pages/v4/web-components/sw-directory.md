@@ -1,10 +1,12 @@
 ---
 title: "sw-directory"
-slug: "/web-components/sw-directory"
+slug: /reference/web-component/sw-directory
 ---
-# `<sw-directory>`
-
 Searchable, paginated contact list bound to a `DirectoryService`.
+
+```html
+<sw-directory></sw-directory>
+```
 
 Displays the live `addresses$` observable from a directory service as a
 scrollable list with a built-in search input. Each row is selectable

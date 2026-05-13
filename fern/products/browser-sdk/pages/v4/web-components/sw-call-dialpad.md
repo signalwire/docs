@@ -1,12 +1,14 @@
 ---
 title: "sw-call-dialpad"
-slug: "/web-components/sw-call-dialpad"
+slug: /reference/web-component/sw-call-dialpad
 ---
-# `<sw-call-dialpad>`
-
 Context-aware DTMF dialpad — sends tones over the active call when
 one exists, otherwise bubbles a `sw-dial` event for the parent to act on
 (e.g. as a "start a call to these digits" signal).
+
+```html
+<sw-call-dialpad></sw-call-dialpad>
+```
 
 Wraps the presentational `<sw-ui-dialpad>` primitive and connects it to
 the active call. When `callState.status === 'connected'` (or the

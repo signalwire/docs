@@ -1,11 +1,16 @@
 ---
 title: "sw-ui-modal"
-slug: "/web-components/sw-ui-modal"
+slug: /reference/web-component/sw-ui-modal
 ---
-# `<sw-ui-modal>`
-
 Lightweight modal wrapper built on the native `<dialog>` element
 with a built-in bounce-in / bounce-out animation.
+
+```html
+<sw-ui-modal id="dialog">
+  <h2>Hello</h2>
+  <p>I'm a modal.</p>
+</sw-ui-modal>
+```
 
 Toggle visibility via the boolean `open` property. Opening calls
 `dialog.showModal()` (so focus is trapped, the body is inert, and the

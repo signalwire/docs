@@ -1,6 +1,6 @@
 ---
 title: "Overview"
-slug: "/web-components"
+slug: /reference/web-component
 position: 0
 ---
 

@@ -1,11 +1,13 @@
 ---
 title: "sw-ui-transcript-view"
-slug: "/web-components/sw-ui-transcript-view"
+slug: /reference/web-component/sw-ui-transcript-view
 ---
-# `<sw-ui-transcript-view>`
-
 Chat-bubble timeline that renders an array of `TranscriptEntry`
 items, each tagged as user / agent / system with optional rich content.
+
+```html
+<sw-ui-transcript-view></sw-ui-transcript-view>
+```
 
 Designed to live inside `<sw-ui-call-layout>`'s `transcript` slot or
 `<sw-ui-content-drawer>` body. The view auto-scrolls to the latest

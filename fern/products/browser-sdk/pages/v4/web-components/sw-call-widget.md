@@ -1,11 +1,16 @@
 ---
 title: "sw-call-widget"
-slug: "/web-components/sw-call-widget"
+slug: /reference/web-component/sw-call-widget
 ---
-# `<sw-call-widget>`
-
 All-in-one call widget — handles client initialisation, dialling,
 media, controls and optional AI transcript in either inline or modal mode.
+
+```html
+<sw-call-widget
+  token="YOUR_GUEST_TOKEN"
+  destination="/private/sales"
+></sw-call-widget>
+```
 
 The widget owns the entire call lifecycle:
 

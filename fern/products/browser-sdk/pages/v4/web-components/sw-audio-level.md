@@ -1,10 +1,12 @@
 ---
 title: "sw-audio-level"
-slug: "/web-components/sw-audio-level"
+slug: /reference/web-component/sw-audio-level
 ---
-# `<sw-audio-level>`
-
 Real-time audio-level meter rendered as a row (or column) of bars.
+
+```html
+<sw-audio-level></sw-audio-level>
+```
 
 Pipes a `MediaStream` through the Web Audio API (`AnalyserNode`,
 `fftSize=256`, `smoothingTimeConstant=0.8`) and updates an animation

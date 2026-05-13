@@ -1,12 +1,20 @@
 ---
 title: "sw-ui-dropup"
-slug: "/web-components/sw-ui-dropup"
+slug: /reference/web-component/sw-ui-dropup
 ---
-# `<sw-ui-dropup>`
-
 Tiny pop-up menu that opens **above** its anchor and closes on
 outside click — the building block used for the chevron menus inside
 `<sw-ui-split-button>` (mic / camera / speaker selectors).
+
+```html
+<sw-ui-dropup>
+  <button slot="anchor">Open menu</button>
+  <ul>
+    <li>Item one</li>
+    <li>Item two</li>
+  </ul>
+</sw-ui-dropup>
+```
 
 Items are supplied as a JSON-encoded array on the `items` attribute (or
 the `items` property). Each entry is either a string (used as both

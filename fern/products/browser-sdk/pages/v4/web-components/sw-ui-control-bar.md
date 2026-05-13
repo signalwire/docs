@@ -1,10 +1,12 @@
 ---
 title: "sw-ui-control-bar"
-slug: "/web-components/sw-ui-control-bar"
+slug: /reference/web-component/sw-ui-control-bar
 ---
-# `<sw-ui-control-bar>`
-
 Call controls bar.
+
+```html
+<sw-ui-control-bar></sw-ui-control-bar>
+```
 
 Buttons rendered (left to right): mic, camera, speaker, screen share,
 hand raise, transcript, fullscreen, hang-up. Optional buttons are hidden

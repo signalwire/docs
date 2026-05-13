@@ -1,10 +1,14 @@
 ---
 title: "sw-ui-call-layout"
-slug: "/web-components/sw-ui-call-layout"
+slug: /reference/web-component/sw-ui-call-layout
 ---
-# `<sw-ui-call-layout>`
-
 Fluid call layout that adapts to any container shape.
+
+```html
+<sw-ui-call-layout>
+  <!-- call surface goes here -->
+</sw-ui-call-layout>
+```
 
 Uses the container's **aspect ratio** (not just width) to decide whether
 the transcript pane sits beside the video (landscape) or below it

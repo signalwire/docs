@@ -1,11 +1,13 @@
 ---
 title: "sw-ui-dialpad"
-slug: "/web-components/sw-ui-dialpad"
+slug: /reference/web-component/sw-ui-dialpad
 ---
-# `<sw-ui-dialpad>`
-
 Presentational 12-key telephone keypad (0-9, *, #) for entering
 phone numbers, sending DTMF tones, or capturing free-text destinations.
+
+```html
+<sw-ui-dialpad></sw-ui-dialpad>
+```
 
 Pure UI primitive — no call logic, no SDK coupling. Use
 `<sw-call-dialpad>` for the SDK-aware version that automatically forwards

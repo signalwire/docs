@@ -1,11 +1,15 @@
 ---
 title: "sw-participant-controls"
-slug: "/web-components/sw-participant-controls"
+slug: /reference/web-component/sw-participant-controls
 ---
-# `<sw-participant-controls>`
-
 Per-participant action panel — mute / unmute audio & video,
 adjust volume, pin / unpin, and remove a single participant from the call.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-participant-controls participant-id="123"></sw-participant-controls>
+</sw-call-provider>
+```
 
 Identifies the target participant from the `participant-id` attribute by
 looking it up in `callState.participants` (or in the live `Call` when

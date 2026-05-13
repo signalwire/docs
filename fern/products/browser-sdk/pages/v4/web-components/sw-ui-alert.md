@@ -1,12 +1,14 @@
 ---
 title: "sw-ui-alert"
-slug: "/web-components/sw-ui-alert"
+slug: /reference/web-component/sw-ui-alert
 ---
-# `<sw-ui-alert>`
-
 Modal confirmation / alert dialog primitive built on the native
 `<dialog>` element. Resolves a Promise with the user's choice when used
 via the companion `showPrompt()` helper.
+
+```html
+<sw-ui-alert id="confirm" title="Hang up?" confirm-label="Hang up" cancel-label="Stay"></sw-ui-alert>
+```
 
 Two interaction modes are selectable through the reflected `type` attribute:
 

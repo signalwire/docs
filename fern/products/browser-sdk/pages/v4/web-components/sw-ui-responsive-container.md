@@ -1,12 +1,16 @@
 ---
 title: "sw-ui-responsive-container"
-slug: "/web-components/sw-ui-responsive-container"
+slug: /reference/web-component/sw-ui-responsive-container
 ---
-# `<sw-ui-responsive-container>`
-
 Aspect-ratio-aware sizing wrapper used to host call surfaces
 inside `<sw-ui-modal>` so the experience adapts gracefully from
 ultra-wide monitors down to phones.
+
+```html
+<sw-ui-responsive-container aspect-ratio="16/9">
+  <sw-call-media></sw-call-media>
+</sw-ui-responsive-container>
+```
 
 Applies a tiered set of CSS rules based on viewport size:
 

@@ -1,12 +1,17 @@
 ---
 title: "sw-ui-content-drawer"
-slug: "/web-components/sw-ui-content-drawer"
+slug: /reference/web-component/sw-ui-content-drawer
 ---
-# `<sw-ui-content-drawer>`
-
 Slide-in drawer that displays rich content the agent pushed
 mid-call (a snippet, a markdown article, a sanitized HTML fragment, or
 plain text) without leaving the call view.
+
+```html
+<sw-ui-content-drawer open>
+  <h2>Article</h2>
+  <p>Rich content pushed from the agent appears here.</p>
+</sw-ui-content-drawer>
+```
 
 Used by `<sw-call-widget>` to render `display_content` user events from
 the AI agent. The drawer auto-orients itself to the available space:

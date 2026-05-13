@@ -1,11 +1,15 @@
 ---
 title: "sw-device-selector"
-slug: "/web-components/sw-device-selector"
+slug: /reference/web-component/sw-device-selector
 ---
-# `<sw-device-selector>`
-
 Single-button popover that lets the user pick microphone, camera,
 and speaker devices, with optional live preview of each.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-device-selector></sw-device-selector>
+</sw-call-provider>
+```
 
 The trigger renders as a small icon button; clicking it opens a panel
 with three sections (Microphone, Camera, Speaker), each populated from

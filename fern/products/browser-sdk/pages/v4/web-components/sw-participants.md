@@ -1,11 +1,17 @@
 ---
 title: "sw-participants"
-slug: "/web-components/sw-participants"
+slug: /reference/web-component/sw-participants
 ---
-# `<sw-participants>`
-
 Renders one absolutely-positioned overlay tile per remote
 participant in the MCU layout, plus per-participant menu hooks.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-call-media>
+    <sw-participants></sw-participants>
+  </sw-call-media>
+</sw-call-provider>
+```
 
 Subscribes to `call.layoutLayers$` and `call.participants$` and renders
 a `<div>` for each layer whose `member_id` matches a remote participant

@@ -1,12 +1,17 @@
 ---
 title: "sw-ui-split-button"
-slug: "/web-components/sw-ui-split-button"
+slug: /reference/web-component/sw-ui-split-button
 ---
-# `<sw-ui-split-button>`
-
 Pill-shaped icon button with an optional chevron dropdown — the
 atomic building block of `<sw-ui-control-bar>`'s mic / camera / speaker
 buttons.
+
+```html
+<sw-ui-split-button icon="microphone">
+  <button slot="menu">Mute</button>
+  <button slot="menu">Settings</button>
+</sw-ui-split-button>
+```
 
 Renders in two layouts:
 

@@ -1,12 +1,17 @@
 ---
 title: "sw-call-provider"
-slug: "/web-components/sw-call-provider"
+slug: /reference/web-component/sw-call-provider
 ---
-# `<sw-call-provider>`
-
 Top-level context provider that bridges an external `Call` and/or
 `DeviceController` into Lit context for every descendant SDK-aware
 component to consume.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-call-media></sw-call-media>
+  <sw-call-controls></sw-call-controls>
+</sw-call-provider>
+```
 
 Internally instantiates two reactive controllers:
 

@@ -1,11 +1,15 @@
 ---
 title: "sw-call-status"
-slug: "/web-components/sw-call-status"
+slug: /reference/web-component/sw-call-status
 ---
-# `<sw-call-status>`
-
 Compact status pill that mirrors the live call state plus a running
 duration timer once the call is connected.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-call-status></sw-call-status>
+</sw-call-provider>
+```
 
 Subscribes to `call.status$` (or to `callStateContext.status` when
 nested inside `<sw-call-provider>` / `<sw-call-widget>`) and renders

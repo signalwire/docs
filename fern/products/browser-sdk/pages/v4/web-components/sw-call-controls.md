@@ -1,11 +1,15 @@
 ---
 title: "sw-call-controls"
-slug: "/web-components/sw-call-controls"
+slug: /reference/web-component/sw-call-controls
 ---
-# `<sw-call-controls>`
-
 Reactive call-control bar that bridges device + call-state context
 to the presentational `<sw-ui-control-bar>` primitive.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-call-controls></sw-call-controls>
+</sw-call-provider>
+```
 
 `sw-call-controls` is the SDK-aware sibling of `<sw-ui-control-bar>`: it
 subscribes to `devicesContext` for mic / camera / speaker state and to

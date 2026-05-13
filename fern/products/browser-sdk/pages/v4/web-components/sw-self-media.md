@@ -1,11 +1,17 @@
 ---
 title: "sw-self-media"
-slug: "/web-components/sw-self-media"
+slug: /reference/web-component/sw-self-media
 ---
-# `<sw-self-media>`
-
 Local video overlay automatically positioned over the matching tile
 in the MCU layout.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-call-media>
+    <sw-self-media></sw-self-media>
+  </sw-call-media>
+</sw-call-provider>
+```
 
 `sw-self-media` is designed to be slotted **inside** `<sw-call-media>`.
 It listens to three observables on the `Call`:

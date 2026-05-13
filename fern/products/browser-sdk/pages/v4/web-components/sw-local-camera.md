@@ -1,11 +1,15 @@
 ---
 title: "sw-local-camera"
-slug: "/web-components/sw-local-camera"
+slug: /reference/web-component/sw-local-camera
 ---
-# `<sw-local-camera>`
-
 Aspect-ratio-aware preview tile for the local camera, with a
 "camera off" placeholder when video is muted or the stream is missing.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-local-camera></sw-local-camera>
+</sw-call-provider>
+```
 
 Designed for small picture-in-picture-style previews — typically slotted
 into `<sw-ui-call-layout>`'s `floating-video` slot or used standalone in

@@ -1,11 +1,18 @@
 ---
 title: "sw-call-media"
-slug: "/web-components/sw-call-media"
+slug: /reference/web-component/sw-call-media
 ---
-# `<sw-call-media>`
-
 Renders the remote MCU video stream with aspect-ratio-aware sizing,
 plus a default slot positioned as an overlay layer on top of the video.
+
+```html
+<sw-call-provider token="YOUR_GUEST_TOKEN">
+  <sw-call-media>
+    <sw-self-media></sw-self-media>
+    <sw-participants></sw-participants>
+  </sw-call-media>
+</sw-call-provider>
+```
 
 `sw-call-media` is the visual canvas of the call. It binds to a remote
 `MediaStream` (provided directly via `.stream`, derived from a `.call`,

@@ -1,10 +1,12 @@
 ---
 title: "sw-ui-icon"
-slug: "/web-components/sw-ui-icon"
+slug: /reference/web-component/sw-ui-icon
 ---
-# `<sw-ui-icon>`
-
 Inline SVG icon component backed by a curated icon set.
+
+```html
+<sw-ui-icon name="microphone"></sw-ui-icon>
+```
 
 Picks an SVG out of the bundled `ICONS` map (raw `import` of `.svg`
 files in this folder) by name and renders it inline so it inherits

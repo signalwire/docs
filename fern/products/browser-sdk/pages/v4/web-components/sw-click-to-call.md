@@ -1,11 +1,18 @@
 ---
 title: "sw-click-to-call"
-slug: "/web-components/sw-click-to-call"
+slug: /reference/web-component/sw-click-to-call
 ---
-# `<sw-click-to-call>`
-
 Drop-in call button — embed it anywhere on a page and clicking it
 dials a preconfigured destination, opening the full call UI in a modal.
+
+```html
+<sw-click-to-call
+  token="YOUR_GUEST_TOKEN"
+  destination="/private/sales"
+>
+  Call sales
+</sw-click-to-call>
+```
 
 `sw-click-to-call` is a thin wrapper around `<sw-call-widget>` configured
 in `modal` mode. The host renders only the green "Call" pill button;

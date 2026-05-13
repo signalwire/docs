@@ -1,12 +1,17 @@
 ---
 title: "sw-ui-background"
-slug: "/web-components/sw-ui-background"
+slug: /reference/web-component/sw-ui-background
 ---
-# `<sw-ui-background>`
-
 Decorative full-bleed background that progressively reveals a
 high-resolution image — a blurred thumbnail shows immediately, then
 crossfades to the full image once it has finished loading.
+
+```html
+<sw-ui-background
+  src="/images/hero.jpg"
+  thumbnail-src="/images/hero-blur.jpg"
+></sw-ui-background>
+```
 
 The component owns two stacked layers:
 
