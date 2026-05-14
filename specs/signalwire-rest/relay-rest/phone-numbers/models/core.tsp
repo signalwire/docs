@@ -76,7 +76,6 @@ enum PhoneNumberCallHandlerRequest {
 model PhoneNumberPathID {
   @doc("Unique ID of the phone number.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -92,7 +91,6 @@ model E164NumberPath {
 model PhoneNumber {
   @doc("The unique identifier of the phone number.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("The phone number in E.164 format.")
@@ -111,7 +109,6 @@ model PhoneNumber {
   number_type: PhoneNumberType;
 
   @doc("The E911 address ID associated with this phone number.")
-  @format("uuid")
   e911_address_id: uuid | null;
 
   @doc("The date the number was added to your project.")
@@ -129,7 +126,6 @@ model PhoneNumber {
 
   @doc("The unique identifier of the calling handler resource.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   calling_handler_resource_id: uuid | null;
 
   @doc("How do you want to receive the incoming call.")
@@ -191,7 +187,6 @@ model PhoneNumber {
   call_relay_connector_id: string | null;
 
   @doc("The ID of the Relay SIP Endpoint to send this call to when using the relay_sip_endpoint call handler.")
-  @format("uuid")
   call_sip_endpoint_id: uuid | null;
 
   @doc("The name of the Verto Relay Endpoint to send this call to when using the relay_verto_endpoint call handler.")
@@ -199,7 +194,6 @@ model PhoneNumber {
 
   @doc("The ID of the Video Room to send this call to when using the video_room call handler.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   call_video_room_id: uuid | null;
 
   @doc("What type of handler you want to run on inbound messages.")
@@ -208,7 +202,6 @@ model PhoneNumber {
 
   @doc("The unique identifier of the messaging handler resource.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   messaging_handler_resource_id: uuid | null;
 
   @doc("The URL to make a request to when using the laml_webhooks message handler.")

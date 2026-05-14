@@ -122,3 +122,53 @@ model ChargeDetails {
   @example(0.121176)
   charge: float64;
 }
+
+@doc("Codec offered on an outbound call. For PSTN, `PCMU`/`PCMA` are widely supported. `OPUS@<rate>H@<ptime>I` variants pin the OPUS sample rate (Hz) and packetization time (ms).")
+enum OutboundCallCodec {
+  OPUS: "OPUS",
+  `OPUS@48000H@20I`: "OPUS@48000H@20I",
+  `OPUS@24000H@20I`: "OPUS@24000H@20I",
+  `OPUS@16000H@20I`: "OPUS@16000H@20I",
+  `OPUS@8000H@20I`: "OPUS@8000H@20I",
+  G722: "G722",
+  PCMU: "PCMU",
+  PCMA: "PCMA",
+  G729: "G729",
+  VP8: "VP8",
+  H264: "H264",
+}
+
+@doc("The type of tap device to stream audio to.")
+enum TapDeviceType {
+  @doc("Stream audio via RTP protocol.")
+  rtp,
+
+  @doc("Stream audio via WebSocket.")
+  ws,
+}
+
+@doc("RTP/WebSocket audio codec. Case-sensitive; accepted in both upper and lower case.")
+enum TapCodec {
+  PCMA: "PCMA",
+  PCMU: "PCMU",
+  pcma: "pcma",
+  pcmu: "pcmu",
+  OPUS: "OPUS",
+  opus: "opus",
+}
+
+@doc("RTP packetization time in milliseconds. Must be a multiple of 10 between 10 and 120.")
+enum TapPtime {
+  `10`: 10,
+  `20`: 20,
+  `30`: 30,
+  `40`: 40,
+  `50`: 50,
+  `60`: 60,
+  `70`: 70,
+  `80`: 80,
+  `90`: 90,
+  `100`: 100,
+  `110`: 110,
+  `120`: 120,
+}

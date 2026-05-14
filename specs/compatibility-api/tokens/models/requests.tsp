@@ -13,9 +13,8 @@ model CreateTokenRequest {
   permissions: string[];
 
   @doc("The unique identifier of the subproject you would like to create a token for. Must belong to the parent project.")
-  @format("uuid")
   @example("9a7fc048-984f-11ee-b9d1-0242ac120002")
-  subproject_id?: string;
+  subproject_id?: uuid;
 }
 
 @doc("Request body for updating an API token.")

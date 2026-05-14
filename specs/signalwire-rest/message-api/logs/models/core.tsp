@@ -9,7 +9,6 @@ namespace SignalWireAPI.Message;
 
 @doc("Unique ID of the log.")
 model LogPathID {
-  @format("uuid")
   @doc("Unique ID of the log.")
   @path
   id: uuid;
@@ -28,7 +27,6 @@ model ChargeDetail {
 
 @doc("Message log entry with all activity details")
 model MessageLog {
-  @format("uuid")
   @doc("A unique identifier for the log.")
   id: uuid;
 
@@ -90,4 +88,12 @@ model MessageLog {
   @doc("Date and time when the message entry was created.")
   @example(UTC_TIME_EXAMPLE)
   created_at: utcDateTime;
+
+  @doc("Description of the error when the message failed. Null when the message did not fail. LaML messages use the codes documented at https://signalwire.com/docs/compatibility-api/rest/error-codes.")
+  @example("From number is not a SMS-capable phone number.")
+  error_message: string | null;
+
+  @doc("Error code identifying why the message failed. Null when the message did not fail. Some Relay messages may have an `error_message` without an `error_code` — the `error_code` is a newer pattern that is not used in all Relay areas.")
+  @example("21601")
+  error_code: string | null;
 }

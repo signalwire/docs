@@ -26,9 +26,8 @@ model CreateMessageRequest {
   SendAsMms?: boolean;
 
   @doc("The SID of a SignalWire cXML Application used to configure the message's status callback.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ap")
-  ApplicationSid?: string;
+  ApplicationSid?: uuid;
 
   @doc("The maximum price in USD acceptable for the message to be sent. Format: decimal with up to 4 decimal places.")
   @pattern("^\\d+\\.?\\d{0,4}$")
@@ -48,9 +47,8 @@ model CreateMessageRequest {
   ValidityPeriod?: int32 = 14400;
 
   @doc("The ID of a number group to use when sending the message. Either `From` or `MessagingServiceSid` must be provided.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ms")
-  MessagingServiceSid?: string;
+  MessagingServiceSid?: uuid;
 }
 
 @doc("Request body for updating (redacting) a message.")

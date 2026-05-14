@@ -6,7 +6,6 @@ using Types;
 model VerifiedCallerIDPathID {
   @doc("Unique ID of the verified caller ID.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -19,7 +18,6 @@ model VerifiedCallerID {
 
   @doc("The unique identifier of the Verified Caller ID on SignalWire.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("String representing the phone number for the caller ID. This must be a valid, routeable phone number in E.164 format.")

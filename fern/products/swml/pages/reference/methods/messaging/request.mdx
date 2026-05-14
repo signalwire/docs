@@ -1,0 +1,223 @@
+---
+id: 49320334-1c95-452e-b61c-4f5ded4b4d1c
+title: request
+slug: /reference/messaging/request
+description: Make an HTTP request to an external URL during inbound message handling.
+max-toc-depth: 3
+---
+
+Make an HTTP request to an external URL. The response can optionally be parsed and stored as variables
+for use in subsequent steps.
+
+Request failures are **soft** — they set `request_result` but do not stop execution, so the document
+can branch on the outcome without failing the inbound message.
+
+## **Properties**
+
+<ParamField path="request" type="object" required={true} toc={true}>
+  An object containing the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="request.url" type="string" required={true} toc={true}>
+  Endpoint to call. Must be a publicly reachable URL.
+</ParamField>
+
+
+<ParamField path="request.method" type="string" default="POST" toc={true}>
+  HTTP method. One of `GET`, `POST`, `PUT`, `PATCH`, or `DELETE`.
+</ParamField>
+
+
+<ParamField path="request.headers" type="object" toc={true}>
+  HTTP headers to include with the request, as a map of header name to value. Each value must be a
+  string.
+</ParamField>
+
+
+<ParamField path="request.body" type="string | object" toc={true}>
+  Request body. Objects are JSON-encoded automatically.
+</ParamField>
+
+
+<ParamField path="request.timeout" type="number" default="5.0" toc={true}>
+  Timeout in seconds. Clamped to a maximum of `5.0`.
+</ParamField>
+
+
+<ParamField path="request.save_variables" type="boolean" default="false" toc={true}>
+  If `true`, parse the JSON response into `request_response.*` variables.
+</ParamField>
+
+</Indent>
+
+## **Variables**
+
+`request` writes these variables into the script context after the HTTP call completes (or is
+skipped). Read them with the `%{variable}` syntax in subsequent steps.
+
+<ParamField path="request_result" type="string" toc={true}>
+  Outcome of the request. Always set. One of `success` (request completed with a 2xx response),
+  `failed` (network error or non-2xx response), `timeout` (request exceeded `timeout`, or the
+  5-second platform maximum), or `limit_exceeded` (the document already used the maximum of
+  10 `request` calls).
+</ParamField>
+
+<ParamField path="request_response_code" type="integer" toc={true}>
+  HTTP status code from the response. Set when the request was actually sent. Absent when
+  `request_result` is `limit_exceeded`.
+</ParamField>
+
+<ParamField path="request_response_body" type="string" toc={true}>
+  Raw response body, truncated to 64 KB. Set when the response had a body. Absent when
+  `request_result` is `limit_exceeded`.
+</ParamField>
+
+<ParamField path="request_response.<field>" type="any" toc={true}>
+  Variables saved from the parsed JSON response when `save_variables` is `true`. Each
+  top-level key of the JSON body becomes a `request_response.<key>` path, with dotted
+  paths into nested objects.
+
+  For example, if the server responds with:
+
+  ```json
+  { "status": "created", "time": "2 seconds ago", "number": { "home": "n/a" } }
+  ```
+
+  the variables `request_response.status`, `request_response.time`, and
+  `request_response.number.home` are set.
+</ParamField>
+
+## **Examples**
+
+### Look up the inbound sender and reply with the result
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - request:
+        url: "https://api.example.com/lookup"
+        method: POST
+        body:
+          phone: "%{message.from}"
+        save_variables: true
+        timeout: 3
+    - reply:
+        body: "Hi %{request_response.name}, thanks for reaching out!"
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "method": "POST",
+          "body": {
+            "phone": "%{message.from}"
+          },
+          "save_variables": true,
+          "timeout": 3
+        }
+      },
+      {
+        "reply": {
+          "body": "Hi %{request_response.name}, thanks for reaching out!"
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+
+### Branch on request_result
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - request:
+        url: "https://api.example.com/lookup"
+        save_variables: true
+    - switch:
+        variable: request_result
+        case:
+          success:
+            - reply:
+                body: "Found you in our system."
+          failed:
+            - reply:
+                body: "Sorry, we couldn't reach the lookup service."
+          timeout:
+            - reply:
+                body: "Lookup timed out — please try again later."
+        default:
+          - reply:
+              body: "Unable to look up your account."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "save_variables": true
+        }
+      },
+      {
+        "switch": {
+          "variable": "request_result",
+          "case": {
+            "success": [
+              {
+                "reply": {
+                  "body": "Found you in our system."
+                }
+              }
+            ],
+            "failed": [
+              {
+                "reply": {
+                  "body": "Sorry, we couldn't reach the lookup service."
+                }
+              }
+            ],
+            "timeout": [
+              {
+                "reply": {
+                  "body": "Lookup timed out — please try again later."
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Unable to look up your account."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+

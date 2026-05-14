@@ -5,6 +5,7 @@ import "../../../_shared/alias/token-permissions.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/examples.tsp";
+import "../tags.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;

@@ -3,9 +3,8 @@ using TypeSpec.Http;
 model AccountPathSid {
   @doc("The Project ID that uniquely identifies the Project to retrieve.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("The status of the Project.")
@@ -100,9 +99,8 @@ model SubresourceUris {
 @doc("Account/Project model representing a SignalWire project.")
 model Account {
   @doc("The unique identifier for this Project.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  sid: string;
+  sid: uuid;
 
   @doc("The name of the Project.")
   @example("My Project")
@@ -127,9 +125,8 @@ model Account {
   type: AccountType;
 
   @doc("The Project ID of the parent project. For parent projects, this is the same as sid.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  owner_account_sid: string;
+  owner_account_sid: uuid;
 
   @doc("The preferred region for the Project.")
   @example("us-east")

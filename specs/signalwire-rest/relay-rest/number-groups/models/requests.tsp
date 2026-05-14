@@ -28,6 +28,5 @@ model UpdateNumberGroupRequest {
 model AddNumberGroupMembershipRequest {
   @doc("The phone number ID to add to the group.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   phone_number_id: uuid;
 }

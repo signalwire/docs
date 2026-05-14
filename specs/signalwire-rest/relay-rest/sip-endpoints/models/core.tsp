@@ -6,7 +6,6 @@ using Types;
 model SipEndpointPathID {
   @doc("Unique ID of the SIP endpoint.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -34,7 +33,6 @@ model SipEndpoint {
 
   @doc("The unique identifier of the SIP endpoint.")
   @example("67075301-69b2-4fc3-8a2c-c95a69a5665e")
-  @format("uuid")
   id: uuid;
 
   @doc("The username for the SIP endpoint.")
@@ -65,7 +63,6 @@ model SipEndpoint {
 
   @doc("The unique identifier of the calling handler resource.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  @format("uuid")
   calling_handler_resource_id: uuid | null;
 
   @doc("A string representing the LaML URL to access when a call is received. This is only used (and required) when call_handler is set to laml_webhooks.")
@@ -114,7 +111,6 @@ model SipEndpoint {
   call_relay_application: string | null;
 
   @doc("A string representing the ID of the Video Room to forward incoming calls to. This is only used (and required) when call_handler is set to video_room.")
-  @format("uuid")
   call_video_room_id: uuid | null;
 
   @doc("A string representing a URL of a SWML script to respond to incoming calls. This is only used (and required) when call_handler is set to relay_script.")
