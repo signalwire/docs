@@ -120,13 +120,36 @@ jobs:
             -p \
             -c scripts/postman/convert-options.json
 
-      - name: Strip generated IDs and wrap for PUT
+      - name: Group APIs under a wrapper folder, strip IDs, wrap for PUT
         if: steps.changed.outputs.changed == 'true'
         # Postman API requires {"collection": {...}} and rejects payloads
         # carrying foreign _postman_id / id / uid fields.
+        #
+        # Layout produced by openapi-to-postmanv2 with `folderStrategy: "Tags"`
+        # and `includeWebhooks: true`: top-level `.item[]` is a flat list of
+        # tag-derived folders plus one converter-generated "Webhooks" folder
+        # that holds the OpenAPI 3.1 `webhooks:` entries. We restructure so
+        # webhooks stay peer-level at the root while every tag folder moves
+        # into a single wrapper folder named "APIs", alphabetized
+        # case-insensitively. "cXML *" then slots near "Call Flows" instead
+        # of at the bottom under ASCII byte order.
+        #
+        # Partitioning is by name ("Webhooks" vs the rest) because the
+        # converter doesn't tag the synthetic webhooks folder with any
+        # distinguishing metadata. If a future spec adds a tag literally
+        # named "Webhooks", that tag would land at the root with the
+        # webhooks folder instead of inside "APIs" — revisit then.
+        # openapi-to-postmanv2 has no built-in sort or wrap option, so we
+        # do it here. Items inside each tag folder keep their existing
+        # path/method order; items inside the Webhooks folder are unchanged.
         run: |
-          jq 'walk(if type == "object" then del(._postman_id, .id, .uid) else . end) | {collection: .}' \
-            collection.json > payload.json
+          jq '
+            (.item | map(select(.name != "Webhooks")) | sort_by(.name | ascii_downcase)) as $apis
+            | (.item | map(select(.name == "Webhooks"))) as $webhooks
+            | .item = ([{name: "APIs", item: $apis}] + $webhooks)
+            | walk(if type == "object" then del(._postman_id, .id, .uid) else . end)
+            | {collection: .}
+          ' collection.json > payload.json
 
       - name: PUT collection to Postman
         if: steps.changed.outputs.changed == 'true'
