@@ -1,5 +1,6 @@
 import "../../../../types";
 import "../../../_shared/const.tsp";
+import "../../../../../swml/calling";
 
 model CallFlowVersion {
   @doc("The unique identifier of the version.")
@@ -18,13 +19,15 @@ model CallFlowVersion {
   @example("2023-01-01T12:00:00Z")
   updated_at: string;
 
-  @doc("Call Flow data structure")
-  @example("{}")
-  flow_data?: string;
+  @doc("Call Flow Builder state, stored as an opaque JSON object.")
+  @example(#{})
+  flow_data?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
-  @doc("SWML document for this version")
-  @example("{}")
-  relayml?: string;
+  @doc("The calling SWML document this version snapshots. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @example(SWML_CONTENTS_EXAMPLE)
+  relayml?: SWML.Calling.SWMLObject;
 }
 
 model CallFlowVersionListResponse {
@@ -51,13 +54,15 @@ model CallFlowVersionDeployResponse {
   @example(2)
   document_version: int32;
 
-  @doc("Call Flow data structure")
-  @example("{}")
-  flow_data?: string;
+  @doc("Call Flow Builder state, stored as an opaque JSON object.")
+  @example(#{})
+  flow_data?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
-  @doc("SWML document for this version")
-  @example(SWML_EXAMPLE)
-  relayml?: string;
+  @doc("The calling SWML document deployed by this version. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @example(SWML_CONTENTS_EXAMPLE)
+  relayml?: SWML.Calling.SWMLObject;
 }
 
 model CallFlowVersionsPaginationResponse {

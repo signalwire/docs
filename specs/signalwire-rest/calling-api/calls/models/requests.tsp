@@ -1,11 +1,13 @@
 import "@typespec/http";
 import "@typespec/openapi3";
-import "../../../../swml";
+import "../../../../swml/calling";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
 namespace SignalWireAPI.Calling;
+
+using SWML.Calling;
 
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";

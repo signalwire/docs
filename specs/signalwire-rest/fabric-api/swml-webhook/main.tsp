@@ -16,6 +16,7 @@ using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @webhook("inboundCallWebhook", InboundCallWebhookPayload, SWML_WEBHOOK_TAG)
+@webhook("inboundMessageWebhook", InboundMessageWebhookPayload, SWML_WEBHOOK_TAG)
 @route("/resources/swml_webhooks")
 namespace SignalWireAPI.Fabric.SWMLWebhooks {
   @tag(SWML_WEBHOOK_TAG)
