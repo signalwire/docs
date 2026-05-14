@@ -134,6 +134,14 @@ jobs:
         # entry (static `vars.X` resolved at matrix-expansion time); the
         # secret supplies the API key. Both are validated below before any
         # network call.
+        #
+        # We capture the HTTP status with curl's `-w "%{http_code}"` and
+        # branch on it explicitly rather than relying on `--fail-with-body`,
+        # so the workflow logs report a clear ✓/✗ line for the PUT and dump
+        # the response body on failure. The PUT response shape is
+        # {"collection": {"id", "name", "uid"}} — name/uid live directly on
+        # `.collection`, not under `.collection.info` (that nested path is
+        # the *collection schema* shape, not the PUT envelope).
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
           COLLECTION_ID: ${{ matrix.collection_id }}
@@ -141,11 +149,21 @@ jobs:
           : "${POSTMAN_API_KEY:?missing repo secret POSTMAN_API_KEY}"
           : "${COLLECTION_ID:?missing repo variable for ${{ matrix.name }} collection ID — check Settings → Variables}"
 
-          curl --fail-with-body -sS -X PUT \
+          http_status=$(curl -sS -X PUT \
             "https://api.getpostman.com/collections/$COLLECTION_ID" \
             -H "X-Api-Key: $POSTMAN_API_KEY" \
             -H "Content-Type: application/json" \
             --data-binary @payload.json \
-            -o response.json
-          echo "Postman response:"
-          jq '.collection.info | {name, uid}' response.json || cat response.json
+            -o response.json \
+            -w "%{http_code}")
+
+          if [[ "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+            echo "✓ Postman PUT succeeded (HTTP $http_status) for ${{ matrix.name }}"
+            jq -r '.collection | "  name: \(.name)\n  uid:  \(.uid)"' response.json \
+              || cat response.json
+          else
+            echo "✗ Postman PUT failed (HTTP $http_status) for ${{ matrix.name }}"
+            echo "Response body:"
+            cat response.json
+            exit 1
+          fi
