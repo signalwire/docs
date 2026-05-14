@@ -1,6 +1,7 @@
 import "@typespec/http";
 import "@typespec/openapi3";
 import "../../../../swml/calling";
+import "./core.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -439,9 +440,9 @@ model CallCreateParamsBase {
   @example("POST")
   url_method?: "GET" | "POST" = "POST";
 
-  @doc("Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
-  @example(#["OPUS", "G729", "VP8", "PCMA"])
-  codecs?: string[] | string;
+  @doc("Codecs to offer on the outbound call. May be provided as an array of enum values or a comma-separated string of the same values. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
+  @example(#[OutboundCallCodec.OPUS, OutboundCallCodec.G729, OutboundCallCodec.VP8, OutboundCallCodec.PCMA])
+  codecs?: OutboundCallCodec[] | string;
 
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
   @example(30)
@@ -1330,41 +1331,6 @@ model CallDetectStopRequest {
 // ============================================
 // Tap Commands
 // ============================================
-
-@doc("The type of tap device to stream audio to.")
-enum TapDeviceType {
-  @doc("Stream audio via RTP protocol.")
-  rtp,
-
-  @doc("Stream audio via WebSocket.")
-  ws,
-}
-
-@doc("RTP/WebSocket audio codec. Case-sensitive; accepted in both upper and lower case.")
-enum TapCodec {
-  PCMA: "PCMA",
-  PCMU: "PCMU",
-  pcma: "pcma",
-  pcmu: "pcmu",
-  OPUS: "OPUS",
-  opus: "opus",
-}
-
-@doc("RTP packetization time in milliseconds. Must be a multiple of 10 between 10 and 120.")
-enum TapPtime {
-  `10`: 10,
-  `20`: 20,
-  `30`: 30,
-  `40`: 40,
-  `50`: 50,
-  `60`: 60,
-  `70`: 70,
-  `80`: 80,
-  `90`: 90,
-  `100`: 100,
-  `110`: 110,
-  `120`: 120,
-}
 
 @doc("Tap configuration — specifies what audio to capture.")
 model TapConfig {

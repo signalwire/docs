@@ -20,7 +20,7 @@ const dialCallExample = #{
       caller_id: "+15551234567",
       status_url: "https://example.com/status_callback",
       status_events: #["answered", "ended"],
-      codecs: #["PCMU", "PCMA"],
+      codecs: #[OutboundCallCodec.PCMU, OutboundCallCodec.PCMA],
       timeout: 30,
       max_price_per_minute: 0.05,
     },
