@@ -120,13 +120,36 @@ jobs:
             -p \
             -c scripts/postman/convert-options.json
 
-      - name: Strip generated IDs and wrap for PUT
+      - name: Group APIs under a wrapper folder, strip IDs, wrap for PUT
         if: steps.changed.outputs.changed == 'true'
         # Postman API requires {"collection": {...}} and rejects payloads
         # carrying foreign _postman_id / id / uid fields.
+        #
+        # Layout produced by openapi-to-postmanv2 with `folderStrategy: "Tags"`
+        # and `includeWebhooks: true`: top-level `.item[]` is a flat list of
+        # tag-derived folders plus one converter-generated "Webhooks" folder
+        # that holds the OpenAPI 3.1 `webhooks:` entries. We restructure so
+        # webhooks stay peer-level at the root while every tag folder moves
+        # into a single wrapper folder named "APIs", alphabetized
+        # case-insensitively. "cXML *" then slots near "Call Flows" instead
+        # of at the bottom under ASCII byte order.
+        #
+        # Partitioning is by name ("Webhooks" vs the rest) because the
+        # converter doesn't tag the synthetic webhooks folder with any
+        # distinguishing metadata. If a future spec adds a tag literally
+        # named "Webhooks", that tag would land at the root with the
+        # webhooks folder instead of inside "APIs" — revisit then.
+        # openapi-to-postmanv2 has no built-in sort or wrap option, so we
+        # do it here. Items inside each tag folder keep their existing
+        # path/method order; items inside the Webhooks folder are unchanged.
         run: |
-          jq 'walk(if type == "object" then del(._postman_id, .id, .uid) else . end) | {collection: .}' \
-            collection.json > payload.json
+          jq '
+            (.item | map(select(.name != "Webhooks")) | sort_by(.name | ascii_downcase)) as $apis
+            | (.item | map(select(.name == "Webhooks"))) as $webhooks
+            | .item = ([{name: "APIs", item: $apis}] + $webhooks)
+            | walk(if type == "object" then del(._postman_id, .id, .uid) else . end)
+            | {collection: .}
+          ' collection.json > payload.json
 
       - name: PUT collection to Postman
         if: steps.changed.outputs.changed == 'true'
@@ -134,6 +157,14 @@ jobs:
         # entry (static `vars.X` resolved at matrix-expansion time); the
         # secret supplies the API key. Both are validated below before any
         # network call.
+        #
+        # We capture the HTTP status with curl's `-w "%{http_code}"` and
+        # branch on it explicitly rather than relying on `--fail-with-body`,
+        # so the workflow logs report a clear ✓/✗ line for the PUT and dump
+        # the response body on failure. The PUT response shape is
+        # {"collection": {"id", "name", "uid"}} — name/uid live directly on
+        # `.collection`, not under `.collection.info` (that nested path is
+        # the *collection schema* shape, not the PUT envelope).
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
           COLLECTION_ID: ${{ matrix.collection_id }}
@@ -141,11 +172,21 @@ jobs:
           : "${POSTMAN_API_KEY:?missing repo secret POSTMAN_API_KEY}"
           : "${COLLECTION_ID:?missing repo variable for ${{ matrix.name }} collection ID — check Settings → Variables}"
 
-          curl --fail-with-body -sS -X PUT \
+          http_status=$(curl -sS -X PUT \
             "https://api.getpostman.com/collections/$COLLECTION_ID" \
             -H "X-Api-Key: $POSTMAN_API_KEY" \
             -H "Content-Type: application/json" \
             --data-binary @payload.json \
-            -o response.json
-          echo "Postman response:"
-          jq '.collection.info | {name, uid}' response.json || cat response.json
+            -o response.json \
+            -w "%{http_code}")
+
+          if [[ "$http_status" =~ ^2[0-9][0-9]$ ]]; then
+            echo "✓ Postman PUT succeeded (HTTP $http_status) for ${{ matrix.name }}"
+            jq -r '.collection | "  name: \(.name)\n  uid:  \(.uid)"' response.json \
+              || cat response.json
+          else
+            echo "✗ Postman PUT failed (HTTP $http_status) for ${{ matrix.name }}"
+            echo "Response body:"
+            cat response.json
+            exit 1
+          fi

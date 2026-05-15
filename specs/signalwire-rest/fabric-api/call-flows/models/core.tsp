@@ -1,5 +1,6 @@
 import "../../../types";
 import "../../_shared/const.tsp";
+import "../../../../swml/calling";
 
 using TypeSpec.Http;
 
@@ -19,13 +20,15 @@ model CallFlow {
   @example("Booking Assistant")
   title: string;
 
-  @doc("Call flow data as JSON string")
-  @example("{}")
-  flow_data?: string;
+  @doc("Call Flow Builder state, stored as an opaque JSON object. Produced and consumed by the SignalWire Call Flow Builder UI; not used by SWML execution.")
+  @example(#{})
+  flow_data?: {
+    ...TypeSpec.Record<unknown>;
+  };
 
-  @doc("A SWML document. For more information on SWML, please go to the [SWML docs](/docs/swml)")
-  @example(SWML_EXAMPLE)
-  relayml?: string;
+  @doc("The calling SWML document this Call Flow executes. Uses [calling SWML methods](/docs/swml/reference/calling).")
+  @example(SWML_CONTENTS_EXAMPLE)
+  relayml?: SWML.Calling.SWMLObject;
 
   @doc("The current revision of the call flow. Every update must increase this number.")
   @example(1)
