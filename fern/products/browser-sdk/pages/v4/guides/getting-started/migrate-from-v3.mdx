@@ -6,13 +6,466 @@ position: 4
 max-toc-depth: 3
 ---
 
-A guided walkthrough for moving an existing v3 (`@signalwire/js@3.x`) integration to v4. Covers package changes, the new client entry point, the shift from event emitters to RxJS observables, auth-token differences, and renamed/removed APIs.
+This guide walks through moving an existing v3 (`@signalwire/js@3.x`) integration to v4. v3 was built around `RoomSession` and event emitters for video conferencing. v4 unifies calling and conferencing under a single `Call` API and replaces event emitters with RxJS observables.
 
-> **TODO:** Stub. Sections to fill in:
+If you are using the older RELAY v2 SDK, see [Migrate from v2](/sdks/browser-sdk/v4/guides/migrate-from-v2) instead.
+
+## Feature compatibility
+
+v4 covers the bulk of v3, but a handful of features are still in progress. Check this table before starting.
+
+| Feature                | v4 Status          | Alternative                  |
+| ---------------------- | ------------------ | ---------------------------- |
+| Video rooms & calling  | Implemented        | —                            |
+| Participants & events  | Implemented        | —                            |
+| Layouts                | Implemented        | —                            |
+| Screen sharing         | Implemented        | —                            |
+| Mute/unmute            | Implemented        | —                            |
+| Device selection       | Implemented        | —                            |
+| DTMF                   | Implemented        | —                            |
+| Hold/unhold            | Implemented        | —                            |
+| Recording              | Not implemented    | Use SWML or the REST API     |
+| Streaming (RTMP)       | Not implemented    | Use the server-side REST API |
+| Playback               | Not implemented    | Use SWML                     |
+| Room locking           | Not implemented    | —                            |
+| Metadata (`setMeta`)   | Not implemented    | —                            |
+| Call transfer          | Not implemented    | —                            |
+
+If your application depends on recording, streaming, playback, room locking, metadata, or transfer, wait for these features to land before migrating.
+
+## Installation
+
+The package name is unchanged. Upgrade to the v4 major release:
+
+```bash
+npm install @signalwire/js@latest
+```
+
+For the browser build:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@signalwire/js/dist/browser.umd.js"></script>
+```
+
+## Authentication
+
+v3 accepted a room token directly. v4 introduces **Subscriber Access Tokens (SAT)** for authenticated users and **Embed Tokens** for guest access, both passed through a credential provider. See [Authentication](/sdks/browser-sdk/v4/guides/authentication) for the full reference.
+
+## Client initialization
+
+v3 used an async factory. v4 uses a class constructor that takes a credential provider.
+
+**Before (v3):**
+
+```js
+const client = await SignalWire({ token: "<TOKEN>" });
+```
+
+**After (v4):**
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const credentials = new StaticCredentialProvider({ token: "<TOKEN>" });
+const client = new SignalWire(credentials);
+
+client.ready$.subscribe((ready) => {
+  if (ready) {
+    console.log("Client connected and authenticated");
+  }
+});
+
+client.errors$.subscribe((error) => {
+  console.error("Client error:", error);
+});
+```
+
+### With token refresh
+
+Implement `authenticate()` and `refresh()` to fetch tokens from your backend. The SDK calls `refresh()` automatically before expiry.
+
+```js
+const credentials = {
+  authenticate: async () => {
+    const response = await fetch("/api/token");
+    return response.json(); // { token, expiry_at }
+  },
+  refresh: async () => {
+    const response = await fetch("/api/token/refresh");
+    return response.json();
+  },
+};
+
+const client = new SignalWire(credentials);
+```
+
+## Outbound calls
+
+v3 accepted an options object with `to` and `rootElement`. v4 takes the destination as the first argument and does **not** auto-attach media to the DOM — you wire streams up yourself.
+
+**Before (v3):**
+
+```js
+const call = await client.dial({
+  to: "/private/user1",
+  rootElement: document.getElementById("container"),
+});
+```
+
+**After (v4):**
+
+```js
+const call = await client.dial("/private/user1", {
+  audio: true,
+  video: true,
+});
+
+call.remoteStream$.subscribe((stream) => {
+  if (stream) {
+    document.getElementById("remoteVideo").srcObject = stream;
+  }
+});
+
+call.localStream$.subscribe((stream) => {
+  if (stream) {
+    document.getElementById("localVideo").srcObject = stream;
+  }
+});
+```
+
+## Inbound calls
+
+v3 used `client.online({ incomingCallHandlers })` with callbacks on the `invite` object. v4 exposes incoming calls as an observable on the session.
+
+**Before (v3):**
+
+```js
+client.online({
+  incomingCallHandlers: {
+    all: (notification) => {
+      window.__invite = notification.invite;
+    },
+  },
+});
+
+const call = await window.__invite.accept({
+  rootElement: document.getElementById("container"),
+});
+
+await window.__invite.reject();
+```
+
+**After (v4):**
+
+```js
+await client.register();
+
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.filter((c) => c.status === "ringing");
+  if (ringing.length > 0) {
+    showIncomingCallUI(ringing[0]);
+  }
+});
+
+function acceptCall(call) {
+  call.answer();
+  call.remoteStream$.subscribe((stream) => {
+    document.getElementById("remoteVideo").srcObject = stream;
+  });
+}
+
+function rejectCall(call) {
+  call.reject();
+}
+```
+
+## RoomSession → Call
+
+v3 distinguished between `CallFabricRoomSession` and `RoomSession`. v4 collapses both into a single `Call`, with self-participant controls moved off the room object onto `call.self`.
+
+**Before (v3):**
+
+```js
+const roomSession = await client.dial({ to: "/public/room" });
+
+roomSession.audioMute();
+roomSession.audioUnmute();
+roomSession.videoMute();
+roomSession.videoUnmute();
+roomSession.setLayout("grid");
+```
+
+**After (v4):**
+
+```js
+const call = await client.dial("/public/room");
+
+await call.self.mute();
+await call.self.unmute();
+await call.self.muteVideo();
+await call.self.unmuteVideo();
+
+await call.setLayout("grid", {});
+```
+
+## Self participant
+
+`call.self` is a full participant object with reactive state.
+
+```js
+const self = call.self;
+
+await self.mute();
+await self.unmute();
+await self.toggleMute();
+
+await self.muteVideo();
+await self.unmuteVideo();
+await self.toggleMuteVideo();
+
+// Sync access
+const isMuted = call.self?.audioMuted;
+const isVideoMuted = call.self?.videoMuted;
+
+// Reactive
+call.self$.subscribe((self) => {
+  if (self) {
+    self.audioMuted$.subscribe((muted) => updateMuteButton(muted));
+  }
+});
+```
+
+## Participants
+
+Event emitters are gone — participants are exposed as an observable list, with per-event observables when you need them.
+
+**Before (v3):**
+
+```js
+roomSession.on("member.joined", (member) => addParticipantToUI(member));
+roomSession.on("member.left", (member) => removeParticipantFromUI(member));
+const members = roomSession.members;
+```
+
+**After (v4):**
+
+```js
+call.participants$.subscribe((participants) => {
+  renderParticipantList(participants);
+});
+
+call.memberJoined$.subscribe((event) => addParticipantToUI(event.member));
+call.memberLeft$.subscribe((event) => removeParticipantFromUI(event.member_id));
+
+const participants = call.participants;
+```
+
+## Screen sharing
+
+Screen sharing moves from the room to `call.self`.
+
+```js
+await call.self.startScreenShare();
+await call.self.stopScreenShare();
+
+call.self$.subscribe((self) => {
+  if (self) {
+    self.screenShareStatus$.subscribe((status) => {
+      console.log("Screen share:", status);
+    });
+  }
+});
+```
+
+## Layouts
+
+```js
+call.layouts$.subscribe((layouts) => {
+  console.log("Available layouts:", layouts);
+});
+
+call.layout$.subscribe((layout) => {
+  console.log("Current layout:", layout);
+});
+
+await call.setLayout("grid", {});
+
+await call.setLayout("highlight-1-active-4", {
+  "participant-id": "reserved-1",
+});
+```
+
+## Recording and streaming
+
+Recording and streaming APIs are **not yet implemented** in v4. The observables exist for monitoring server-initiated state, but `startRecording()` and `startStreaming()` will throw. Drive these from SWML or the server-side REST API in the meantime.
+
+```js
+// State observable (for server-initiated recordings)
+call.recording$.subscribe((isRecording) => {
+  updateRecordingIndicator(isRecording);
+});
+
+const isRecording = call.recording;
+```
+
+## Device management
+
+The standalone `WebRTC` namespace is removed. Devices live on the client as reactive lists that auto-update when devices are plugged in or removed.
+
+**Before (v3):**
+
+```js
+import { WebRTC } from "@signalwire/js";
+
+const cameras = await WebRTC.getCameras();
+const microphones = await WebRTC.getMicrophones();
+const speakers = await WebRTC.getSpeakers();
+
+await WebRTC.checkCameraPermissions();
+```
+
+**After (v4):**
+
+```js
+client.videoInputDevices$.subscribe((cameras) => populateCameraSelect(cameras));
+client.audioInputDevices$.subscribe((mics) => populateMicSelect(mics));
+client.audioOutputDevices$.subscribe((speakers) => populateSpeakerSelect(speakers));
+
+client.selectVideoInputDevice(camera);
+client.selectAudioInputDevice(mic);
+client.selectAudioOutputDevice(speaker);
+
+// Sync access
+const cameras = client.videoInputDevices;
+```
+
+## User info
+
+`Subscriber` is renamed to `User`.
+
+**Before (v3):**
+
+```js
+const info = await client.getSubscriberInfo();
+console.log("Logged in as:", info.name);
+```
+
+**After (v4):**
+
+```js
+const user = client.user;
+
+user.fetched$.subscribe((fetched) => {
+  if (fetched) {
+    console.log("User ID:", user.id);
+    console.log("Display name:", user.displayName);
+  }
+});
+```
+
+## Directory
+
+v4 introduces a directory of addresses (contacts and rooms) that you can browse and dial directly.
+
+```js
+client.directory$.subscribe((directory) => {
+  if (directory) {
+    directory.addresses$.subscribe((addresses) => {
+      addresses.forEach((addr) => {
+        console.log(addr.displayName, addr.type);
+      });
+    });
+  }
+});
+
+const address = client.directory.addresses.find((a) => a.name === "user1");
+const call = await client.dial(address);
+
+// URI strings still work
+const call2 = await client.dial("/private/user1");
+```
+
+## Removed namespaces
+
+The standalone `Chat`, `PubSub`, and `WebRTC` clients from v3 are removed. Device APIs move onto the client (see [Device management](#device-management)). Chat and PubSub equivalents are not part of the v4 browser SDK.
+
+## Event-to-observable reference
+
+> When using RxJS operators like `filter`, `map`, or `pipe`, import them from `rxjs`:
 >
-> - Package & import changes (`Video.RoomSession` → `SignalWire` / `dial`)
-> - Auth: room tokens → Subscriber Access Tokens & Embed Tokens
-> - Events → Observables migration table (`.on('member.joined')` → `participants$`)
-> - Removed namespaces (`Chat`, `PubSub`, `WebRTC` standalone clients)
-> - Web Components: v3 had none — point to new `<sw-*>` elements
-> - Side-by-side code diffs for: outbound call, inbound call, screen share, recording
+> ```js
+> import { filter, map } from "rxjs";
+> ```
+>
+> See the [RxJS primer](/sdks/browser-sdk/v4/guides/rxjs-primer) for a quick orientation.
+
+| v3 Event                  | v4 Observable                                          |
+| ------------------------- | ------------------------------------------------------ |
+| `member.joined`           | `call.memberJoined$`                                   |
+| `member.left`             | `call.memberLeft$`                                     |
+| `member.updated`          | `call.memberUpdated$`                                  |
+| `member.talking`          | `call.memberTalking$`                                  |
+| `layout.changed`          | `call.layout$`, `call.layoutLayers$`                   |
+| `recording.started/ended` | `call.recording$` (state observable)                   |
+| `playback.started/ended`  | Not available in the browser SDK (server-side only)    |
+| `room.updated`            | `call.meta$`, `call.locked$`                           |
+| `room.joined`             | `call.status$.pipe(filter(s => s === 'connected'))`    |
+| `room.left`               | `call.status$.pipe(filter(s => s === 'disconnected'))` |
+
+## API quick reference
+
+| v3                                 | v4                                                            |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `SignalWire({ token })`            | `new SignalWire(credentialProvider)`                          |
+| Ready callback                     | `client.ready$` (emits `true` when connected + authenticated) |
+| `client.dial({ to, rootElement })` | `client.dial(destination, options)`                           |
+| `client.online({ handlers })`      | `client.register()` + `client.session.incomingCalls$`         |
+| `invite.accept()`                  | `call.answer()`                                               |
+| `invite.reject()`                  | `call.reject()`                                               |
+| `roomSession.audioMute()`          | `call.self.mute()`                                            |
+| `roomSession.setLayout(name)`      | `call.setLayout(name, positions)`                             |
+| `roomSession.members`              | `call.participants` / `call.participants$`                    |
+| `roomSession.on('event', fn)`      | `call.eventName$.subscribe(fn)`                               |
+| `client.updateToken(token)`        | Handled by credential provider's `refresh()`                  |
+| `roomSession.leave()`              | `call.hangup()`                                               |
+| Disconnect                         | `client.disconnect()` + `client.destroy()`                    |
+
+## Cleanup
+
+v4 requires explicit cleanup. End calls with `hangup()`, then disconnect and destroy the client.
+
+```js
+await call.hangup();
+
+await client.disconnect(); // Closes the WebSocket
+client.destroy();          // Releases subscriptions and resources
+
+// Manual subscription cleanup, if needed
+const sub = call.status$.subscribe((status) => console.log(status));
+sub.unsubscribe();
+```
+
+## Web components
+
+v3 did not ship web components. v4 introduces `@signalwire/web-components`, which compose around the new reactive Call API.
+
+```html
+<script type="module">
+  import "@signalwire/web-components";
+</script>
+
+<sw-call-media id="call-media">
+  <sw-self-media mirror></sw-self-media>
+  <sw-call-controls></sw-call-controls>
+  <sw-call-status></sw-call-status>
+</sw-call-media>
+```
+
+Pass the call to the root component after dialing — child components receive it automatically via Lit context.
+
+```js
+const call = await client.dial("/public/room");
+
+const callMedia = document.getElementById("call-media");
+callMedia.call = call;
+```
