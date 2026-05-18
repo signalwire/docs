@@ -2,10 +2,122 @@
 title: "Overview"
 slug: /guides/manage-resources
 sidebar-title: "Overview"
-position: 0
+position: 1
 max-toc-depth: 3
 ---
 
-Manage the resources a Browser SDK client interacts with: subscribers (the addressable identity of a user), the address book and directory, client preferences, and runtime capabilities.
+The SignalWire platform models every callable thing — a person, a room,
+an AI agent, a SWML script — as a [**Resource**](/docs/platform/resources).
+Each Resource is reachable via one or more [**Addresses**](/docs/platform/addresses)
+in the form `/<context>/<name>` (e.g. `/private/jane`, `/public/support`).
+**Subscribers** are the Resource type that represents a user of your
+application, with credentials, identity, and assigned phone numbers.
 
-> **TODO:** Stub. Introduce the resource model and link to subsections.
+The Browser SDK exposes three handles for working with these platform
+concepts at runtime, all hanging off the connected `SignalWire`
+client:
+
+| Platform concept                       | SDK access point             | What it gives you                                                  |
+| -------------------------------------- | ---------------------------- | ------------------------------------------------------------------ |
+| The authenticated [Subscriber](/docs/platform/subscribers) | `client.user` / `client.user$` | Identity (id, email, name, company), assigned addresses, SAT claims. |
+| The [Addresses](/docs/platform/addresses) reachable to that user | `client.directory` / `client.directory$` | Paginated, observable list of [`Address`] entries — search, dial, message. |
+| Per-client settings                    | `client.preferences`         | Device choices, media defaults, ICE/recovery tuning — optionally persisted. |
+| Per-call capability flags              | `call.self.capabilities`     | What the current participant is allowed to do (mute, layout, screenshare, end). |
+
+This section walks through each one in turn.
+
+## Naming note: "Subscriber" vs [`User`]
+
+Browser SDK v4 renamed the SDK-side object from `Subscriber` to
+[`User`]. This is a pure SDK surface change — the platform still calls
+these resources "Subscribers" everywhere it matters:
+
+- The product is still called **Subscriber Access Token** (SAT).
+- The REST API endpoints are still `/api/fabric/subscribers/...`.
+- The Dashboard still shows a **Subscribers** tab.
+- The [`Address`] for one of these resources still has `type === 'subscriber'`.
+
+So when you read **"Subscriber"** in platform docs or dashboard UI, the
+SDK-side equivalent is `client.user`. The two refer to the same thing
+viewed from different sides.
+
+## How they fit together
+
+```
+                           ┌──────────────────────────────┐
+                           │   SignalWire (platform)      │
+                           │   Resources + Addresses      │
+                           └──────────────┬───────────────┘
+                                          │  REST mint
+                                          ▼
+                           ┌──────────────────────────────┐
+       Backend mints SAT  │   Subscriber Access Token    │
+       on user login   ─► │   for THIS subscriber        │
+                           └──────────────┬───────────────┘
+                                          │  passed to SDK
+                                          ▼
+        ┌────────────────────────────────────────────────────────────┐
+        │   const client = new SignalWire(provider)                  │
+        │                                                            │
+        │   client.user$         ─►  this subscriber's profile       │
+        │   client.directory$    ─►  addresses they can reach        │
+        │   client.preferences   ─►  their per-client settings        │
+        │                                                            │
+        │   const call = await client.dial(address)                  │
+        │   call.self.capabilities  ─►  what they may do in THIS call │
+        └────────────────────────────────────────────────────────────┘
+```
+
+The platform decides which Addresses a subscriber can reach (based on
+context, ACLs, and the SAT's scopes). The SDK surfaces that as an
+observable directory — your UI doesn't have to know how the platform
+arrives at the list.
+
+## What you'll find in this section
+
+<CardGroup cols={2}>
+  <Card title="Subscribers" href="/docs/browser-sdk/v4/guides/subscribers">
+    Working with `client.user`: profile fields, assigned addresses,
+    push notification keys, and the v3 → v4 `Subscriber` → [`User`]
+    rename.
+  </Card>
+  <Card title="Address Book & Directory" href="/docs/browser-sdk/v4/guides/address-book">
+    `client.directory` and the [`Address`] entity: paginated listing,
+    lookup by URI, channels, messaging, and call history.
+  </Card>
+  <Card title="Client Preferences" href="/docs/browser-sdk/v4/guides/client-preferences">
+    `client.preferences`: persisted device choices, media defaults,
+    custom `userVariables`, and ICE / recovery tuning.
+  </Card>
+  <Card title="Capabilities" href="/docs/browser-sdk/v4/guides/capabilities">
+    `call.self.capabilities`: drive your UI off real server-granted
+    permissions instead of guessing what a participant may do.
+    Presence is on the roadmap — see this page for current status.
+  </Card>
+</CardGroup>
+
+For creating Subscribers, minting tokens, or managing Resources from
+your backend, see the platform's
+[REST API reference](/docs/apis) and
+[Subscribers overview](/docs/platform/subscribers). The Browser SDK
+itself never creates or destroys Resources — it only authenticates
+*as* one and consumes the Addresses the platform exposes to it.
+
+## Reference
+
+- [`SignalWire.user`] / [`SignalWire.user$`] — authenticated user
+- [`SignalWire.directory`] / [`SignalWire.directory$`] — paginated address book
+- [`SignalWire.preferences`] — per-client settings ([`ClientPreferences`])
+- [`SelfCapabilities`] — per-call capability flags
+- [`User`], [`Address`], [`Directory`] — the entity types
+
+[`SignalWire.user`]: /docs/browser-sdk/v4/reference/signalwire/user$
+[`SignalWire.user$`]: /docs/browser-sdk/v4/reference/signalwire/user$
+[`SignalWire.directory`]: /docs/browser-sdk/v4/reference/signalwire/directory$
+[`SignalWire.directory$`]: /docs/browser-sdk/v4/reference/signalwire/directory$
+[`SignalWire.preferences`]: /docs/browser-sdk/v4/reference/signalwire
+[`ClientPreferences`]: /docs/browser-sdk/v4/reference/client-preferences
+[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities
+[`User`]: /docs/browser-sdk/v4/reference/user
+[`Address`]: /docs/browser-sdk/v4/reference/address
+[`Directory`]: /docs/browser-sdk/v4/reference/interfaces/directory

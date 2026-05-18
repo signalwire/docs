@@ -6,6 +6,329 @@ position: 8
 max-toc-depth: 3
 ---
 
-Mute and unmute audio/video, hold and resume, send DTMF, transfer, and hang up — both for the local participant and (with permission) for remote participants.
+Call controls split across three objects:
 
-> **TODO:** Stub. Tabulate the control surface, link to `SelfCapabilities` / `Participant` reference pages.
+- **`Call`** owns session-level actions: hangup, transfer, hold, lock,
+  layout, send DTMF.
+- **`SelfParticipant`** (`call.self`) owns *your* state: mute,
+  deaf, hand raise, screen share, volume, audio processing, end call,
+  remove self.
+- **`Participant`** (entries in `call.participants$`) owns moderation
+  actions on *other* members — mute them, change their position,
+  remove them. Subject to `call.self.capabilities.member` permissions.
+
+The pattern that runs through everything: **mutator method + matching
+`$` observable**. Call the method, listen on the observable for UI
+state. Don't try to track local state in a `let isMuted` variable —
+the server is the source of truth and may flip it (a moderator can
+mute you).
+
+## Quick reference
+
+Every cell below is a shortcut link to the reference page — click for
+signature, parameters, capability gate, and a working example.
+
+| Action                | Method                                                                              | State observable                |
+| --------------------- | ----------------------------------------------------------------------------------- | ------------------------------- |
+| Hang up               | [`Call.hangup()`]                                                                   | `status$`                       |
+| Mute audio (self)     | [`Participant.toggleMute()`] / [`mute()`] / [`unmute()`]                            | [`audioMuted$`]                 |
+| Mute video (self)     | [`Participant.toggleMuteVideo()`] / [`muteVideo()`] / [`unmuteVideo()`]             | [`videoMuted$`]                 |
+| Deaf                  | [`Participant.toggleDeaf()`]                                                        | [`deaf$`]                       |
+| Hand raise            | [`Participant.toggleHandraise()`]                                                   | [`handraised$`]                 |
+| Echo cancellation     | [`Participant.toggleEchoCancellation()`]                                            | [`echoCancellation$`]           |
+| Auto gain             | [`Participant.toggleAudioInputAutoGain()`]                                          | [`autoGain$`]                   |
+| Noise suppression     | [`Participant.toggleNoiseSuppression()`]                                            | [`noiseSuppression$`]           |
+| Studio audio (raw)    | [`SelfParticipant.enableStudioAudio()`] / [`disableStudioAudio()`]                  | [`studioAudio$`]                |
+| Server mic volume     | [`Participant.setAudioInputVolume()`]                                               | [`inputVolume$`]                |
+| Server mic gate       | [`Participant.setAudioInputSensitivity()`]                                          | [`inputSensitivity$`]           |
+| Server speaker volume | [`Participant.setAudioOutputVolume()`]                                              | [`outputVolume$`]               |
+| Local mic gain        | [`Call.setLocalMicrophoneGain()`]                                                   | (call observable)               |
+| Send DTMF             | [`Call.sendDigits()`]                                                               | —                               |
+| Lock / unlock room    | [`Call.toggleLock()`]                                                               | [`locked$`]                     |
+| Hold / resume         | [`Call.toggleHold()`]                                                               | (internal state)                |
+| Transfer              | [`Call.transfer()`]                                                                 | status$                         |
+| Remove self           | [`Participant.remove()`]                                                            | status$ → destroyed             |
+| End call (for everyone) | [`Participant.end()`]                                                             | status$ → destroyed             |
+| Move someone          | [`Participant.setPosition()`]                                                       | per-participant `position$`     |
+
+## Mute / unmute (self)
+
+```js
+call.self$.subscribe((self) => {
+  if (!self) return;
+
+  muteBtn.onclick = () => self.toggleMute();
+
+  self.audioMuted$.subscribe((muted) => {
+    muteBtn.classList.toggle("muted", muted);
+    muteBtn.textContent = muted ? "Unmute" : "Mute";
+  });
+});
+```
+
+If you need explicit [`mute()`] / [`unmute()`] (e.g. to force a state
+regardless of current), they're available too:
+
+```js
+await self.mute();        // force muted
+await self.unmute();      // force unmuted
+await self.muteVideo();   // video off
+await self.unmuteVideo(); // video on
+```
+
+The toggles are idempotent — calling `toggleMute()` while a network
+request is in flight is safe; the SDK serializes them.
+
+## Deaf
+
+"Deaf" means: stop playing remote audio to *me*. Other participants
+can still hear each other. Useful when the user wants to step away
+without leaving the room. Different from mute (which is about what
+*you* send).
+
+```js
+self.toggleDeaf();
+self.deaf$.subscribe((deaf) => deafBtn.classList.toggle("active", deaf));
+```
+
+## Hand raise
+
+```js
+self.toggleHandraise();
+self.handraised$.subscribe((up) => handBtn.classList.toggle("active", up));
+
+// And to see who *else* has their hand up:
+call.participants$.subscribe((participants) => {
+  for (const p of participants) {
+    p.handraised$.subscribe((up) => updateAvatarBadge(p.id, up));
+  }
+});
+```
+
+The `call.raiseHandPriority$` observable indicates whether the room
+prioritizes raised hands in the layout (server-side setting).
+
+## Sending DTMF
+
+```js
+// Single digit (call as the user presses)
+await call.sendDigits("5");
+
+// Or batch
+await call.sendDigits("1234#");
+```
+
+Send digits only after `status$` is `'connected'` — earlier and the
+remote side may not accept them yet. `sendDigit` capability
+(`call.self.capabilities.sendDigit`) controls whether the room
+permits DTMF.
+
+## Hold / resume
+
+```js
+await call.toggleHold();
+```
+
+Hold pauses local media transmission (mic + camera) without
+disconnecting the call. The remote side hears silence; the call
+resumes with the same media tracks when you toggle again.
+
+This is different from `toggleMute()` — mute disables a single track,
+hold pauses the whole call. There's no `held$` observable in v4;
+track it in your own state if needed.
+
+## Lock / unlock
+
+```js
+await call.toggleLock();
+call.locked$.subscribe((locked) => lockBtn.classList.toggle("active", locked));
+```
+
+A locked room rejects new joiners until it's unlocked. Permission
+gated by `call.self.capabilities.lock`.
+
+## Transfer
+
+```js
+await call.transfer({
+  destination: "/private/specialist",
+});
+```
+
+Transfer hands the call off to another destination. The platform
+handles the actual cutover; `status$` reflects the transitions.
+
+## Local audio pipeline (advanced)
+
+The standard mute / volume controls are server-mixed. For
+**client-side** mic processing — push-to-talk, a local gain knob,
+a VAD speaking indicator — use the local pipeline on the `Call`:
+
+```js
+// 0..200 percent, 100 = unity
+call.setLocalMicrophoneGain(150);
+call.localMicrophoneGain$.subscribe(/* ... */);
+
+// Real-time level meter (0..1 RMS at ~30fps)
+call.localAudioLevel$.subscribe((level) => {
+  meter.style.width = `${level * 100}%`;
+});
+
+// Speaking indicator (VAD with hysteresis)
+call.localSpeaking$.subscribe((speaking) => {
+  selfTile.classList.toggle("speaking", speaking);
+});
+
+// Push-to-talk
+call.enablePushToTalk();
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") call.setPushToTalkActive(true);
+});
+document.addEventListener("keyup", (e) => {
+  if (e.code === "Space") call.setPushToTalkActive(false);
+});
+call.disablePushToTalk(); // when done
+```
+
+The pipeline is lazy — it engages on first use, so there's no cost
+if you don't call any of these.
+
+## Moderation: acting on another participant
+
+`call.participants$` exposes each `Participant`. With the right
+capability, you can mute or remove them:
+
+```js
+call.participants$.subscribe((participants) => {
+  // Note: this includes the self participant — filter if you don't
+  // want to expose moderation actions against yourself.
+  for (const p of participants.filter((p) => p.id !== call.self?.id)) {
+    bindModerationUi(p);
+  }
+});
+
+function bindModerationUi(p) {
+  // Check capabilities first
+  call.self?.capabilities.member$.subscribe((member) => {
+    muteOthersBtn.disabled = !member.muteAudio.on;
+    kickBtn.disabled       = !member.remove;
+  });
+
+  muteOthersBtn.onclick = () => p.mute();
+  kickBtn.onclick       = () => p.remove();
+}
+```
+
+See [Capabilities](/docs/browser-sdk/v4/guides/capabilities) for the full
+permission model — only show moderation UI when the server actually
+grants the action, since trying without the right capability will
+fail server-side.
+
+## Putting it together
+
+A minimal control bar:
+
+```js
+call.self$.subscribe((self) => {
+  if (!self) return;
+
+  // Buttons
+  muteBtn.onclick   = () => self.toggleMute();
+  videoBtn.onclick  = () => self.toggleMuteVideo();
+  deafBtn.onclick   = () => self.toggleDeaf();
+  handBtn.onclick   = () => self.toggleHandraise();
+  shareBtn.onclick  = () =>
+    self.screenShareStatus === "started"
+      ? self.stopScreenShare()
+      : self.startScreenShare();
+  hangupBtn.onclick = () => call.hangup();
+
+  // Observables driving button state
+  self.audioMuted$.subscribe((m)   => muteBtn.classList.toggle("muted", m));
+  self.videoMuted$.subscribe((m)   => videoBtn.classList.toggle("muted", m));
+  self.deaf$.subscribe((d)         => deafBtn.classList.toggle("active", d));
+  self.handraised$.subscribe((h)   => handBtn.classList.toggle("active", h));
+  self.screenShareStatus$.subscribe((s) =>
+    shareBtn.classList.toggle("active", s === "started"));
+});
+```
+
+That's the full muscle of any call UI. Everything else (layouts,
+device pickers, recording badge) is decoration over the same
+observable pattern.
+
+## Reference
+
+**Self mute / audio state**
+
+- [`Participant.toggleMute()`] / [`mute()`] / [`unmute()`] · [`audioMuted$`]
+- [`Participant.toggleMuteVideo()`] / [`muteVideo()`] / [`unmuteVideo()`] · [`videoMuted$`]
+- [`Participant.toggleDeaf()`] · [`deaf$`]
+- [`Participant.toggleHandraise()`] · [`handraised$`] · [`Call.raiseHandPriority$`]
+
+**Audio processing**
+
+- [`Participant.toggleEchoCancellation()`] · [`echoCancellation$`]
+- [`Participant.toggleAudioInputAutoGain()`] · [`autoGain$`]
+- [`Participant.toggleNoiseSuppression()`] · [`noiseSuppression$`]
+- [`SelfParticipant.enableStudioAudio()`] / [`disableStudioAudio()`] · [`studioAudio$`]
+
+**Volumes (server-mixed)**
+
+- [`Participant.setAudioInputVolume()`] · [`inputVolume$`]
+- [`Participant.setAudioOutputVolume()`] · [`outputVolume$`]
+- [`Participant.setAudioInputSensitivity()`] · [`inputSensitivity$`]
+
+**Call-level**
+
+- [`Call.hangup()`], [`Call.sendDigits()`], [`Call.toggleLock()`] · [`locked$`], [`Call.toggleHold()`], [`Call.transfer()`]
+- [`Call.setLocalMicrophoneGain()`], [`Call.localAudioLevel$`], [`Call.localSpeaking$`], [`Call.enablePushToTalk()`], [`Call.setPushToTalkActive()`]
+
+**Moderation**
+
+- [`Participant.remove()`], [`Participant.end()`], [`Participant.setPosition()`]
+- Gated by [`SelfCapabilities`] · see [Capabilities](/docs/browser-sdk/v4/guides/capabilities)
+
+[`Participant.toggleMute()`]: /docs/browser-sdk/v4/reference/participant/toggle-mute
+[`mute()`]: /docs/browser-sdk/v4/reference/participant/mute
+[`unmute()`]: /docs/browser-sdk/v4/reference/participant/unmute
+[`audioMuted$`]: /docs/browser-sdk/v4/reference/participant/audio-muted$
+[`Participant.toggleMuteVideo()`]: /docs/browser-sdk/v4/reference/participant/toggle-mute-video
+[`muteVideo()`]: /docs/browser-sdk/v4/reference/participant/mute-video
+[`unmuteVideo()`]: /docs/browser-sdk/v4/reference/participant/unmute-video
+[`videoMuted$`]: /docs/browser-sdk/v4/reference/participant/video-muted$
+[`Participant.toggleDeaf()`]: /docs/browser-sdk/v4/reference/participant/toggle-deaf
+[`deaf$`]: /docs/browser-sdk/v4/reference/participant/deaf$
+[`Participant.toggleHandraise()`]: /docs/browser-sdk/v4/reference/participant/toggle-handraise
+[`handraised$`]: /docs/browser-sdk/v4/reference/participant/handraised$
+[`Call.raiseHandPriority$`]: /docs/browser-sdk/v4/reference/webrtc-call/raise-hand-priority$
+[`Participant.toggleEchoCancellation()`]: /docs/browser-sdk/v4/reference/participant/toggle-echo-cancellation
+[`echoCancellation$`]: /docs/browser-sdk/v4/reference/participant/echo-cancellation$
+[`Participant.toggleAudioInputAutoGain()`]: /docs/browser-sdk/v4/reference/participant/toggle-audio-input-auto-gain
+[`autoGain$`]: /docs/browser-sdk/v4/reference/participant/auto-gain$
+[`Participant.toggleNoiseSuppression()`]: /docs/browser-sdk/v4/reference/participant/toggle-noise-suppression
+[`noiseSuppression$`]: /docs/browser-sdk/v4/reference/participant/noise-suppression$
+[`SelfParticipant.enableStudioAudio()`]: /docs/browser-sdk/v4/reference/self-participant/enable-studio-audio
+[`disableStudioAudio()`]: /docs/browser-sdk/v4/reference/self-participant/disable-studio-audio
+[`studioAudio$`]: /docs/browser-sdk/v4/reference/self-participant/studio-audio$
+[`Participant.setAudioInputVolume()`]: /docs/browser-sdk/v4/reference/participant/set-audio-input-volume
+[`inputVolume$`]: /docs/browser-sdk/v4/reference/participant/input-volume$
+[`Participant.setAudioOutputVolume()`]: /docs/browser-sdk/v4/reference/participant/set-audio-output-volume
+[`outputVolume$`]: /docs/browser-sdk/v4/reference/participant/output-volume$
+[`Participant.setAudioInputSensitivity()`]: /docs/browser-sdk/v4/reference/participant/set-audio-input-sensitivity
+[`inputSensitivity$`]: /docs/browser-sdk/v4/reference/participant/input-sensitivity$
+[`Call.hangup()`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
+[`Call.sendDigits()`]: /docs/browser-sdk/v4/reference/webrtc-call/send-digits
+[`Call.toggleLock()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
+[`locked$`]: /docs/browser-sdk/v4/reference/webrtc-call/locked$
+[`Call.toggleHold()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-hold
+[`Call.transfer()`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
+[`Call.setLocalMicrophoneGain()`]: /docs/browser-sdk/v4/reference/webrtc-call/set-local-microphone-gain
+[`Call.localAudioLevel$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-audio-level$
+[`Call.localSpeaking$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-speaking$
+[`Call.enablePushToTalk()`]: /docs/browser-sdk/v4/reference/webrtc-call/enable-push-to-talk
+[`Call.setPushToTalkActive()`]: /docs/browser-sdk/v4/reference/webrtc-call/set-push-to-talk-active
+[`Participant.remove()`]: /docs/browser-sdk/v4/reference/participant/remove
+[`Participant.end()`]: /docs/browser-sdk/v4/reference/participant/end
+[`Participant.setPosition()`]: /docs/browser-sdk/v4/reference/participant/set-position
+[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities

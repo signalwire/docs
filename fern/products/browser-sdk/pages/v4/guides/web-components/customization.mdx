@@ -2,10 +2,218 @@
 title: "Customization"
 slug: /guides/web-components-customization
 sidebar-title: "Customization"
-position: 3
+position: 4
 max-toc-depth: 3
 ---
 
-Replace or extend pieces of the built-in widgets: custom call layouts, swap the dialpad, inject your own control bar, or compose primitives like `<sw-local-camera>` and `<sw-participants>` into a bespoke UI.
+When the all-in-one `<sw-call-widget>` doesn't match your layout — or
+you only want one or two pieces of it — drop down to the primitives.
+Every widget on the page is built from the same elements you can use à
+la carte, wired together through reactive contexts. Compose them, swap
+them, slot custom UI in.
 
-> **TODO:** Stub. Cover slot-based composition, listening to component events, programmatic control via element properties.
+This guide covers three patterns, ordered by how much of the built-in
+widget you're keeping:
+
+1. **Slot-based composition** — keep `<sw-call-widget>`, replace a
+   region (trigger, background) with your own markup.
+2. **Listening to events & driving the widget** — pure attribute /
+   event / method API; the widget still owns the lifecycle.
+3. **Building a UI from primitives** — drop `<sw-call-widget>`
+   entirely and compose `<sw-call-provider>`, `<sw-call-media>`,
+   `<sw-call-controls>`, etc. yourself.
+
+## Slots
+
+`<sw-call-widget>` exposes two slots:
+
+| Slot         | Purpose                                                              |
+| ------------ | -------------------------------------------------------------------- |
+| `background` | The full-bleed background behind the call. Default: none.            |
+| _(default)_  | The trigger element shown when idle. Clicking it dials the widget.  |
+
+A trigger button with a custom background:
+
+```html
+<sw-call-widget modal token="c2c_…" destination="/public/sales">
+  <sw-ui-background slot="background" default></sw-ui-background>
+
+  <button class="cta">
+    <svg><!-- your icon --></svg>
+    Talk to sales
+  </button>
+</sw-call-widget>
+```
+
+Any element placed in the default slot becomes the trigger — clicking
+anywhere inside it calls `widget.dial()` for you. The widget swaps
+into call mode (inline or modal, depending on the `modal` attribute)
+once dialing starts.
+
+## Programmatic control
+
+`<sw-call-widget>` exposes two imperative methods you can call from JS
+when you want to drive dialing yourself instead of relying on the
+trigger slot:
+
+```js
+const widget = document.querySelector("sw-call-widget");
+
+document.querySelector("#dial-btn").addEventListener("click", async () => {
+  try {
+    await widget.dial();
+  } catch (err) {
+    console.error("dial failed", err);
+  }
+});
+
+document.querySelector("#hangup-btn").addEventListener("click", () => {
+  widget.hangup();
+});
+```
+
+The widget bubbles three composed events you can subscribe to from
+anywhere on the page:
+
+| Event                      | Detail                          | When                                               |
+| -------------------------- | ------------------------------- | -------------------------------------------------- |
+| `sw-dial`                  | —                               | Dialing started (programmatically or via trigger). |
+| `sw-call-ended`            | `{ status }`                    | Call reached any terminal state.                   |
+| `sw-display-content`       | forwarded `display_content`     | Agent pushed content to the side drawer.           |
+| `signalwire-address:event` | forwarded SignalWire user event | Custom server-side events.                         |
+
+```js
+widget.addEventListener("sw-call-ended", (e) => {
+  analytics.track("call_ended", { status: e.detail.status });
+});
+```
+
+## Pass-through attributes
+
+A few `<sw-call-widget>` attributes change which sub-components are
+mounted — useful when you only want certain parts of the built-in UI:
+
+```html
+<sw-call-widget
+  token="c2c_…"
+  destination="/private/sales"
+  transcription           <!-- mount the AI transcript drawer -->
+  allow-incoming-calls    <!-- listen for inbound calls on this token -->
+  audio-only              <!-- no camera, no video panes -->
+  user-variables='{"plan":"pro","user_id":"u_123"}'
+></sw-call-widget>
+```
+
+`user-variables` are merged into the Verto invite as `userVariables`,
+so an agent or backend handler can read per-call context. Invalid JSON
+is logged and ignored; the call still dials.
+
+## Building a UI from primitives
+
+When you want full control over the layout, skip `<sw-call-widget>`
+and compose the primitives directly. `<sw-call-provider>` is the only
+required wrapper — it owns the reactive contexts that the SDK-aware
+components subscribe to.
+
+```html
+<sw-call-provider id="provider">
+  <div class="my-grid">
+    <sw-call-media></sw-call-media>
+    <sw-self-media></sw-self-media>
+    <sw-call-status></sw-call-status>
+    <sw-call-controls show-screen-share show-fullscreen></sw-call-controls>
+    <sw-device-selector></sw-device-selector>
+  </div>
+</sw-call-provider>
+
+<script type="module">
+  import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+  import "@signalwire/web-components";
+
+  const client = new SignalWire(
+    new StaticCredentialProvider({ token: "YOUR_SAT" })
+  );
+
+  const call = await client.dial("/private/sales", { audio: true, video: true });
+
+  // Hand the live Call object to the provider — every nested
+  // component picks up state via @lit/context automatically.
+  const provider = document.getElementById("provider");
+  provider.call = call;
+  provider.deviceController = client.deviceController;
+</script>
+```
+
+The same pattern works with the embed bundle — replace the imports with
+`const { SignalWire, StaticCredentialProvider } = SignalWireUI;` and drop
+the `<script type="module">`.
+
+### What the provider gives you
+
+`<sw-call-provider>` mounts four controllers that publish reactive
+state into the subtree:
+
+| Context              | Provided by                       | Consumed by                                                              |
+| -------------------- | --------------------------------- | ------------------------------------------------------------------------ |
+| `callStateContext`   | `CallStateContextController`      | `<sw-call-media>`, `<sw-self-media>`, `<sw-call-controls>`, `<sw-call-status>`, `<sw-participants>`, … |
+| `devicesContext`     | `DevicesContextController`        | `<sw-device-selector>`, `<sw-local-camera>`                              |
+| `transcriptContext`  | `TranscriptController`            | `<sw-ui-transcript-view>`                                                |
+| _(user events)_      | `UserEventController` (on host)   | `<sw-ui-content-drawer>`, custom event listeners                         |
+
+You don't have to wire anything else — set `.call` and
+`.deviceController` on the provider and every nested element
+re-renders as call state changes.
+
+### Component-level events
+
+Each primitive bubbles its own composed events. Listen on the provider
+(or `document`) to react app-wide:
+
+| Element                      | Event              | Detail                          |
+| ---------------------------- | ------------------ | ------------------------------- |
+| `<sw-call-controls>`         | `sw-mute-audio`    | `{ muted }`                     |
+| `<sw-call-controls>`         | `sw-mute-video`    | `{ muted }`                     |
+| `<sw-call-controls>`         | `sw-hangup`        | —                               |
+| `<sw-call-dialpad>`          | `sw-digit-press`   | `{ digit }`                     |
+| `<sw-device-selector>`       | `sw-device-change` | `{ type, device }`              |
+| `<sw-directory>`             | `sw-select`        | `{ resource }`                  |
+
+```js
+provider.addEventListener("sw-hangup", () => {
+  // user clicked hangup — clean up app state
+});
+```
+
+### Replacing a single primitive
+
+Because every component subscribes to context independently, you can
+build your own version of one piece and slot it next to the originals.
+For example, a custom dialpad that dispatches `sw-digit-press` events
+will work anywhere `<sw-call-dialpad>` works.
+
+```html
+<sw-call-provider .call="${call}">
+  <sw-call-media></sw-call-media>
+  <my-fancy-dialpad></my-fancy-dialpad>      <!-- emits sw-digit-press -->
+  <sw-call-controls></sw-call-controls>
+</sw-call-provider>
+```
+
+The SDK-aware components don't talk to each other directly — they all
+go through the call object — so swapping one out is a drop-in
+replacement as long as your component dispatches the same composed
+custom events.
+
+## Choosing the right level
+
+| Need                                                     | Use                                  |
+| -------------------------------------------------------- | ------------------------------------ |
+| One call button on a marketing page                      | `<sw-click-to-call>`                 |
+| Inline / modal call UI, default layout, branded colors   | `<sw-call-widget>` + token overrides |
+| Same as above with a custom trigger or background        | `<sw-call-widget>` + slots           |
+| Fully custom layout, keep SDK-aware primitives           | `<sw-call-provider>` + primitives    |
+| No web components at all                                 | The [Browser SDK](/docs/browser-sdk/v4/guides/overview) directly |
+
+See [Theming](/docs/browser-sdk/v4/guides/web-components-theming) for the visual
+side and the [Web Components reference](/docs/browser-sdk/v4/reference/web-component) for the
+per-element attribute, slot, and event listings.

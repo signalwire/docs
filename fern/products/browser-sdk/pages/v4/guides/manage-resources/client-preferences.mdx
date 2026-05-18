@@ -2,10 +2,228 @@
 title: "Client Preferences"
 slug: /guides/client-preferences
 sidebar-title: "Client Preferences"
-position: 3
+position: 4
 max-toc-depth: 3
 ---
 
-Persist per-client settings — preferred devices, default audio/video state, do-not-disturb — via `ClientPreferences` so users keep their setup across sessions.
+`client.preferences` is a per-client settings bag that controls how
+the SDK behaves on *this* browser instance: preferred input devices,
+default receive-video state, ICE / reconnection tuning, custom
+metadata attached to every outgoing call. Preferences can be
+persisted to storage so users keep their setup across sessions.
 
-> **TODO:** Stub. Cover reading, updating, and observing preferences.
+These are **client-side preferences** — they live in the browser, not
+on the platform. They're distinct from per-Subscriber configuration
+(profile, scopes, assigned addresses) which lives on the platform
+and shows up via [`client.user`](/docs/browser-sdk/v4/guides/subscribers).
+
+## Reading and writing
+
+`client.preferences` is a plain object — getters return the current
+value, setters update it immediately:
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+// Read
+console.log(client.preferences.receiveVideo);     // boolean
+console.log(client.preferences.connectionTimeout); // seconds
+
+// Write — applies on the next operation that consumes it
+client.preferences.receiveVideo = true;
+client.preferences.connectionTimeout = 30;
+```
+
+A handful of properties are observable on the SDK side (device
+selection, for example, flows through `client.deviceController`); the
+[`ClientPreferences`] surface itself is a snapshot — set the value and
+the next call that reads it picks up the new setting.
+
+## Persistence
+
+Set `savePreferences: true` when constructing the client to load
+previously saved preferences from local storage and sync future
+changes back automatically:
+
+```js
+const client = new SignalWire(provider, {
+  savePreferences: true,
+});
+```
+
+Internally this calls `preferences.enableSavePreferences(storage)`,
+which:
+
+1. Reads the previously stored preferences blob from local storage and
+   applies it to the in-memory container.
+2. Writes back to local storage on every setter call (fire-and-forget).
+
+The persisted subset covers timeouts, ICE settings, codec preferences,
+device-management flags, and `userVariables` — anything that's safely
+serializable to JSON. `MediaDeviceInfo` references aren't persisted
+(deviceIds aren't stable across sessions in all browsers).
+
+If you want a different storage backend or no persistence, leave
+`savePreferences` off and write a small wrapper that hydrates / mirrors
+to your store of choice.
+
+## Useful preferences
+
+### Default media behavior
+
+```js
+client.preferences.receiveAudio = true;
+client.preferences.receiveVideo = false;     // audio-first apps
+client.preferences.stereoAudio  = true;       // enable stereo Opus
+```
+
+`receiveAudio` / `receiveVideo` are the *defaults* applied when
+`client.dial()` is called without explicit options — explicit options
+always win.
+
+### Default media constraints
+
+```js
+client.preferences.defaultAudioConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl:  true,
+  sampleRate:       48000,
+};
+
+client.preferences.defaultVideoConstraints = {
+  width:      { ideal: 1280 },
+  height:     { ideal: 720 },
+  frameRate:  { ideal: 30 },
+};
+```
+
+These constraints get merged into every `getUserMedia` call the SDK
+makes, unless you pass explicit constraints to `dial()`.
+
+### `userVariables`
+
+`userVariables` is a free-form object attached to every outbound
+Verto invite — the agent or backend on the receiving end can read it
+via `signalwire-address:event` payloads. Use it to pass per-call
+context (tier, locale, intent, A/B test bucket):
+
+```js
+client.preferences.userVariables = {
+  plan: "pro",
+  locale: navigator.language,
+  page: location.pathname,
+};
+```
+
+Setting `userVariables` here means *every* call carries this object.
+For per-call overrides, pass `userVariables` directly to `dial()`.
+
+### Codec preferences
+
+```js
+client.preferences.preferredVideoCodecs = ["VP9", "VP8", "H264"];
+client.preferences.preferredAudioCodecs = ["opus"];
+```
+
+The SDK uses these as priority ordering in the SDP offer. Codecs that
+aren't supported by the platform or browser fall through silently.
+
+### ICE / network tuning
+
+| Property                       | Default       | Purpose                                         |
+| ------------------------------ | ------------- | ----------------------------------------------- |
+| `connectionTimeout`            | (built-in)    | WebSocket connection timeout, in seconds.       |
+| `reconnectCallsTimeout`        | (built-in)    | How long to wait for call reconnection.         |
+| `reconnectDelayMin` / `Max`    | (built-in)    | Backoff bounds for reconnection attempts.       |
+| `iceCandidateTimeout`          | (built-in)    | Per-candidate ICE gathering timeout.            |
+| `iceGatheringTimeout`          | (built-in)    | Whole ICE-gathering-phase timeout.              |
+| `disableUdpIceServers`         | `false`       | Skip UDP TURN servers (force TCP).              |
+| `relayOnly`                    | `false`       | Force relay-only candidates (no host/srflx).    |
+| `iceServers`                   | (server)      | Override the ICE server list entirely.          |
+| `relayHost`                    | (default)     | Override the WebSocket relay host.              |
+
+All timeouts on this surface are in **seconds** (the SDK stores them
+as ms internally). Don't tighten these without a specific reason —
+the defaults are tuned for real-world networks.
+
+### Recovery pipeline
+
+A second tier of properties governs how the SDK reacts when ICE
+degrades mid-call. The defaults are good; override only with a
+specific symptom in mind:
+
+```js
+client.preferences.enableNetworkChangeDetection    = true;
+client.preferences.enableRelayFallback             = true;
+client.preferences.enableServerHangupInterception  = true;
+client.preferences.iceDisconnectedGracePeriod      = 5;   // seconds
+client.preferences.iceRestartTimeout               = 10;  // seconds
+client.preferences.maxRecoveryAttempts             = 3;
+```
+
+### Visibility & device behavior
+
+```js
+client.preferences.persistDeviceSelection   = true;  // remember mic/cam pick
+client.preferences.syncDevicesToActiveCalls = true;  // apply changes mid-call
+client.preferences.autoMuteVideoOnHidden    = true;  // mute video when tab is hidden
+client.preferences.refreshDevicesOnVisible  = true;
+client.preferences.checkConnectionOnVisible = true;
+```
+
+`autoMuteVideoOnHidden` is the polite default for desktop video apps
+— a backgrounded tab shouldn't keep the camera light on.
+
+## Per-call overrides
+
+Anything you set on `client.preferences` is a *default*. Pass options
+directly to `client.dial()` (or per-call API like `userVariables` on
+the web-components widget) to override on a single call without
+mutating the shared preferences:
+
+```js
+// Default: audio-only
+client.preferences.receiveVideo = false;
+
+// One-off video call — overrides the preference for this call only
+const call = await client.dial("/private/team", {
+  audio: true,
+  video: true,
+  userVariables: { reason: "demo" },
+});
+```
+
+## Mirroring to your own state
+
+[`ClientPreferences`] doesn't expose an `update$` observable — it's a
+synchronous bag, not a reactive store. If you need to mirror its
+state into your UI's reactive layer (Redux, Zustand, Vuex), wrap the
+setters in your own action:
+
+```ts
+function setReceiveVideo(value: boolean) {
+  client.preferences.receiveVideo = value;
+  appStore.setState({ receiveVideo: value });
+}
+```
+
+Most apps don't need this — preferences are read once at call setup
+and rarely change interactively beyond device selection (which has
+its own reactive surface on the device controller).
+
+## Reference
+
+- [`ClientPreferences`] — the class
+- [`SignalWire.preferences`] — instance hanging off the client
+- [`SignalWireOptions`] — including `savePreferences`, `skipDeviceMonitoring`, `reconnectAttachedCalls`, `persistSession`
+- [`SignalWire.dial()`] — per-call overrides for the same options
+
+[`ClientPreferences`]: /docs/browser-sdk/v4/reference/client-preferences
+[`SignalWire.preferences`]: /docs/browser-sdk/v4/reference/signalwire
+[`SignalWireOptions`]: /docs/browser-sdk/v4/reference/interfaces/signal-wire-options
+[`SignalWire.dial()`]: /docs/browser-sdk/v4/reference/signalwire/dial

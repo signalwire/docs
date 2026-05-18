@@ -6,6 +6,231 @@ position: 9
 max-toc-depth: 3
 ---
 
-Choose and customize room layouts (grid, presenter, picture-in-picture), highlight the active speaker, and pull per-participant thumbnails.
+For multi-party video rooms, the SignalWire platform composes every
+participant's camera into a single mixed video stream — the "layout."
+Each room has a list of layouts available to it (grid, presenter,
+picture-in-picture, etc.); the client can pick one, override
+participant positions within it, and read back where each participant
+is currently rendered.
 
-> **TODO:** Stub. Cover layout selection, custom positions, highlighting active speaker. Carry over content from v3 "layouts", "layout-positions", "highlighting-whos-speaking", and "get-thumbnails" guides.
+Three observables drive every layout UI:
+
+- `call.layouts$` — the layouts available in this room.
+- `call.layout$` — the currently active layout name.
+- `call.layoutLayers$` — the per-layer positions, sizes, and z-index
+  of each participant within the current layout.
+
+Plus one mutator: `call.setLayout(name, positions)`.
+
+## Listing and picking layouts
+
+```js
+call.layouts$.subscribe((layouts) => {
+  layoutPicker.innerHTML = "";
+  for (const name of layouts) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    layoutPicker.appendChild(opt);
+  }
+});
+
+call.layout$.subscribe((current) => {
+  layoutPicker.value = current ?? "";
+});
+
+layoutPicker.onchange = async () => {
+  try {
+    await call.setLayout(layoutPicker.value, {}); // empty positions = use defaults
+  } catch (err) {
+    console.error("setLayout failed:", err);
+  }
+};
+```
+
+The layout names are server-defined. Common ones across most rooms:
+`grid-responsive`, `1x1`, `2x2`, `3x3`, `6x6`, `presenter`, `pip`.
+Read `call.layouts` (sync snapshot) once you know the call is
+joined to see what's actually available.
+
+`setLayout()` throws `InvalidParams` if you pass a name that isn't in
+`call.layouts` — validate or rely on the picker's options.
+
+## Per-participant positions
+
+The second argument to `setLayout()` is a map of member IDs to
+[`VideoPosition`] slot names. Use it to pin specific participants into
+reserved slots:
+
+```js
+const presenterId = mostImportantParticipant.id;
+const guestId     = secondaryParticipant.id;
+
+await call.setLayout("presenter", {
+  [presenterId]: "reserved-0",   // main slot
+  [guestId]:     "reserved-1",   // pip / secondary
+});
+```
+
+Members not in the map are auto-placed by the layout engine into
+remaining slots. The exact slot names available depend on the
+layout — `reserved-0` through `reserved-N` are common.
+
+## Reading where everyone is rendered
+
+`layoutLayers$` emits the live position of every participant in the
+mixed output. Each layer has percentage-based coordinates (0–100)
+relative to the room canvas:
+
+```ts
+interface LayoutLayer {
+  member_id?: string;
+  layer_index?: number;
+  z_index?: number;
+  x: number;        // 0..100, left edge
+  y: number;        // 0..100, top edge
+  width: number;    // 0..100
+  height: number;   // 0..100
+  position?: string;
+  reservation?: string;
+  visible?: boolean;
+  playing_file?: boolean;
+}
+```
+
+```js
+call.layoutLayers$.subscribe((layers) => {
+  for (const layer of layers) {
+    overlayElement(layer.member_id, {
+      left:   `${layer.x}%`,
+      top:    `${layer.y}%`,
+      width:  `${layer.width}%`,
+      height: `${layer.height}%`,
+    });
+  }
+});
+```
+
+This is how the `<sw-participants>` web component renders interactive
+overlays on top of the mixed video — picking the right layer per
+participant for hit testing, name tags, etc.
+
+## Per-participant position observables
+
+Each `Participant` carries its own `position$` observable that
+narrows `layoutLayers$` down to just that member:
+
+```js
+call.participants$.subscribe((participants) => {
+  for (const p of participants) {
+    p.position$.subscribe((layer) => {
+      if (!layer) return;
+      console.log(`${p.name} is at ${layer.x},${layer.y} (${layer.width}x${layer.height})`);
+    });
+  }
+});
+```
+
+Useful for binding per-participant overlay markup without re-scanning
+the full layer list on every change.
+
+## Highlighting the active speaker
+
+The talking signal lives on `Participant.isTalking$` — a boolean
+that flips while voice activity is detected on that member's track.
+Highlight whichever layer corresponds to a talking member:
+
+```js
+call.participants$.subscribe((participants) => {
+  for (const p of participants) {
+    p.isTalking$.subscribe((talking) => {
+      participantTile(p.id).classList.toggle("speaking", talking);
+    });
+  }
+});
+```
+
+Pairing this with `layoutLayers$` is the standard "active speaker
+gets a green border" pattern.
+
+## Setting your own position
+
+The local user can request a specific position (with the right
+`position` capability):
+
+```js
+await call.self.setPosition("reserved-0"); // VideoPosition
+```
+
+Common values: `'auto'`, `'reserved-0'`, `'reserved-1'`, …,
+`'standard-0'`, etc. The room layout dictates which slots accept
+fixed positioning. Gate the UI on
+`call.self.capabilities.self.position`.
+
+## Attaching the mixed video
+
+`remoteStream$` is the mixed feed — set it on a `<video>` element
+and you get the layout for free:
+
+```html
+<video id="room" autoplay playsinline></video>
+```
+
+```js
+call.remoteStream$.subscribe((stream) => {
+  if (stream) document.querySelector("#room").srcObject = stream;
+});
+```
+
+The rendered output already contains every participant arranged by
+the current layout. The `layoutLayers$` data is for drawing
+*overlays* on top of that video (name tags, mute icons, click
+targets) — not for compositing.
+
+## Reactivity
+
+Both `layout$` and `layoutLayers$` re-emit when:
+
+- Anyone calls `setLayout()`.
+- A participant joins or leaves (auto-layout reshuffles).
+- The server adjusts the layout (e.g. someone with `prioritize_handraise`
+  raises a hand).
+
+You don't need to refresh manually — keep your subscriptions live and
+the UI will stay in sync.
+
+## Capability gating
+
+| Action                | Capability required                |
+| --------------------- | ---------------------------------- |
+| Pick a different layout | `call.self.capabilities.setLayout` |
+| Set your own position | `call.self.capabilities.self.position` |
+| Set another member's position | `call.self.capabilities.member.position` |
+
+Hide the layout picker (or position controls) when the capability
+isn't granted — see [Capabilities](/docs/browser-sdk/v4/guides/capabilities).
+
+## Reference
+
+- [`Call.layouts$`] / [`Call.layouts`] — available layouts
+- [`Call.layout$`] / [`Call.layout`] — current layout name
+- [`Call.layoutLayers$`] / [`Call.layoutLayers`] — per-participant positions
+- [`Call.setLayout()`] — switch layouts / pin positions
+- [`Participant.position$`] — per-participant layer
+- [`Participant.setPosition()`] — set a member's position
+- [`LayoutLayer`] — the layer shape
+- [`VideoPosition`] — valid slot names
+- [`SelfCapabilities.setLayout$`] — capability gate
+
+[`Call.layouts$`]: /docs/browser-sdk/v4/reference/webrtc-call/layouts$
+[`Call.layouts`]: /docs/browser-sdk/v4/reference/webrtc-call/layouts$
+[`Call.layout$`]: /docs/browser-sdk/v4/reference/webrtc-call/layout$
+[`Call.layout`]: /docs/browser-sdk/v4/reference/webrtc-call/layout$
+[`Call.layoutLayers$`]: /docs/browser-sdk/v4/reference/webrtc-call/layout-layers$
+[`Call.layoutLayers`]: /docs/browser-sdk/v4/reference/webrtc-call/layout-layers$
+[`Call.setLayout()`]: /docs/browser-sdk/v4/reference/webrtc-call/set-layout
+[`Participant.position$`]: /docs/browser-sdk/v4/reference/participant/position$
+[`Participant.setPosition()`]: /docs/browser-sdk/v4/reference/participant/set-position
+[`LayoutLayer`]: /docs/browser-sdk/v4/reference/interfaces/layout-layer
+[`VideoPosition`]: /docs/browser-sdk/v4/reference/type-aliases/video-position
+[`SelfCapabilities.setLayout$`]: /docs/browser-sdk/v4/reference/self-capabilities/set-layout$

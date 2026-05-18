@@ -2,10 +2,282 @@
 title: "Framework Integration"
 slug: /guides/framework-integration
 sidebar-title: "Framework Integration"
-position: 1
+position: 2
 max-toc-depth: 3
 ---
 
-Idiomatic patterns for using the Browser SDK from React, Vue, Angular, and Svelte — wrapping observables in framework state, managing client lifetimes, and avoiding double-mount pitfalls.
+The Browser SDK is framework-agnostic — every public surface is either
+a plain class (`SignalWire`, `StaticCredentialProvider`), a method
+returning a Promise, or an RxJS observable. Integration with React,
+Vue, Svelte, or Angular comes down to two questions:
 
-> **TODO:** Stub. One tab per framework with a minimal hook/composable/service example.
+1. **Lifecycle** — when to construct the `SignalWire` client, and when
+   to disconnect it.
+2. **State** — how to fold an observable into the framework's
+   reactivity system so your UI re-renders when call state changes.
+
+The patterns below cover both for each major framework. If you're using
+the [web components](/docs/browser-sdk/v4/guides/web-components) instead of the JS
+SDK directly, you only need to worry about lifecycle — the components
+manage their own state through context.
+
+## React
+
+### One client per app
+
+Construct the client once at app start, share it through context, and
+disconnect it on unmount. Do **not** put `new SignalWire(...)` inside
+a render — it would re-run on every state change.
+
+```tsx
+// src/signalwire-context.tsx
+import { createContext, useContext, useEffect, useState } from "react";
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const Ctx = createContext<SignalWire | null>(null);
+
+export function SignalWireProvider({
+  token,
+  children,
+}: {
+  token: string;
+  children: React.ReactNode;
+}) {
+  const [client, setClient] = useState<SignalWire | null>(null);
+
+  useEffect(() => {
+    const c = new SignalWire(new StaticCredentialProvider({ token }));
+    setClient(c);
+    return () => {
+      c.disconnect();
+    };
+  }, [token]);
+
+  return <Ctx.Provider value={client}>{children}</Ctx.Provider>;
+}
+
+export const useSignalWire = () => useContext(Ctx);
+```
+
+### Subscribing to observables
+
+Wrap an observable in a hook that subscribes on mount and unsubscribes
+on unmount. The SDK uses BehaviorSubjects, so the current value emits
+synchronously on subscribe.
+
+```ts
+// src/hooks/use-observable.ts
+import { useEffect, useState } from "react";
+import type { Observable } from "rxjs";
+
+export function useObservable<T>(obs: Observable<T> | undefined, initial: T) {
+  const [value, setValue] = useState<T>(initial);
+  useEffect(() => {
+    if (!obs) return;
+    const sub = obs.subscribe(setValue);
+    return () => sub.unsubscribe();
+  }, [obs]);
+  return value;
+}
+```
+
+```tsx
+function CallStatus({ call }: { call: WebRTCCall }) {
+  const status = useObservable(call.status$, "idle");
+  return <span>{status}</span>;
+}
+```
+
+### Strict Mode and double mounting
+
+React 18 Strict Mode mounts components twice in development to surface
+unsafe lifecycle effects. The pattern above is safe because the
+cleanup function disconnects the client — but if you `await
+client.connect()` outside `useEffect`, you'll get a duplicate
+connection. Always put side effects inside `useEffect`.
+
+### Typed refs for web components
+
+If you're using `@signalwire/web-components`, the package ships a JSX
+type declaration so `useRef<SwCallWidget>` is fully typed:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "types": ["@signalwire/web-components/react"]
+  }
+}
+```
+
+```tsx
+import type { SwCallWidget } from "@signalwire/web-components";
+
+function Dialer() {
+  const widget = useRef<SwCallWidget>(null);
+  return (
+    <>
+      <sw-call-widget ref={widget} token="…" destination="/public/sales" />
+      <button onClick={() => widget.current?.dial()}>Dial</button>
+    </>
+  );
+}
+```
+
+## Vue 3
+
+### One client via `provide` / `inject`
+
+```ts
+// src/composables/use-signalwire.ts
+import { inject, onUnmounted, provide } from "vue";
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const KEY = Symbol("signalwire");
+
+export function provideSignalWire(token: string) {
+  const client = new SignalWire(new StaticCredentialProvider({ token }));
+  provide(KEY, client);
+  onUnmounted(() => client.disconnect());
+  return client;
+}
+
+export function useSignalWire() {
+  const c = inject<SignalWire | null>(KEY, null);
+  if (!c) throw new Error("SignalWire client not provided");
+  return c;
+}
+```
+
+### Observables → reactive refs
+
+```ts
+// src/composables/use-observable.ts
+import { onUnmounted, ref, type Ref } from "vue";
+import type { Observable } from "rxjs";
+
+export function useObservable<T>(obs: Observable<T>, initial: T): Ref<T> {
+  const r = ref(initial) as Ref<T>;
+  const sub = obs.subscribe((v) => (r.value = v));
+  onUnmounted(() => sub.unsubscribe());
+  return r;
+}
+```
+
+```vue
+<script setup lang="ts">
+import { useObservable } from "@/composables/use-observable";
+import type { WebRTCCall } from "@signalwire/js";
+
+const props = defineProps<{ call: WebRTCCall }>();
+const status = useObservable(props.call.status$, "idle");
+</script>
+
+<template>
+  <span>{{ status }}</span>
+</template>
+```
+
+## Svelte 5
+
+Svelte's `readable` store maps cleanly onto an RxJS observable — both
+are just "subscribe and you get values."
+
+```ts
+// src/lib/observable-store.ts
+import { readable, type Readable } from "svelte/store";
+import type { Observable } from "rxjs";
+
+export function fromObservable<T>(obs: Observable<T>, initial: T): Readable<T> {
+  return readable(initial, (set) => {
+    const sub = obs.subscribe(set);
+    return () => sub.unsubscribe();
+  });
+}
+```
+
+```svelte
+<script lang="ts">
+  import { fromObservable } from "$lib/observable-store";
+  import type { WebRTCCall } from "@signalwire/js";
+
+  export let call: WebRTCCall;
+  $: status = fromObservable(call.status$, "idle");
+</script>
+
+<span>{$status}</span>
+```
+
+For the client itself, construct it in `+layout.svelte`'s `onMount`
+and `onDestroy`, or in a `+page.svelte` if it's page-scoped — never at
+module top level (it would run during SSR).
+
+## Angular
+
+Angular and the SDK both use RxJS, so the SDK's streams plug into the
+template's `| async` pipe directly. Wrap the client in an injectable
+service:
+
+```ts
+// src/app/signalwire.service.ts
+import { Injectable, OnDestroy } from "@angular/core";
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+@Injectable({ providedIn: "root" })
+export class SignalWireService implements OnDestroy {
+  client = new SignalWire(
+    new StaticCredentialProvider({ token: this.bootstrapToken() })
+  );
+
+  ngOnDestroy() {
+    this.client.disconnect();
+  }
+
+  private bootstrapToken(): string {
+    /* read from APP_INITIALIZER, secure cookie, etc. */
+    return "";
+  }
+}
+```
+
+```ts
+@Component({
+  selector: "app-call-status",
+  template: `<span>{{ call.status$ | async }}</span>`,
+})
+export class CallStatusComponent {
+  @Input() call!: WebRTCCall;
+}
+```
+
+## Patterns that apply everywhere
+
+### Subscribe immediately
+
+The SDK uses BehaviorSubjects throughout. They emit their current
+value synchronously on subscribe — but only if you actually subscribe.
+A common bug is awaiting `client.ready$.pipe(filter(Boolean), take(1))`
+*after* the client has already become ready, then waiting forever.
+Subscribe early; you'll get the cached value.
+
+### Always unsubscribe
+
+Memory leaks in long-lived sessions are almost always missing
+unsubscribes. Use the framework's lifecycle hook (`useEffect` cleanup,
+`onUnmounted`, `onDestroy`, the `async` pipe) and resist the urge to
+"just keep it simple." See the [RxJS Primer](/docs/browser-sdk/v4/guides/rxjs-primer)
+for the patterns the SDK relies on.
+
+### One client per session, not one per component
+
+Constructing a `SignalWire` opens a WebSocket. Sharing the client
+through context (React), provide/inject (Vue), `getContext` (Svelte),
+or a singleton service (Angular) avoids "why am I seeing two
+connections in the network panel" debugging.
+
+### Disconnect on unmount
+
+The SDK doesn't tear down its WebSocket when the host page is hot-
+reloaded — your cleanup hook has to call `client.disconnect()`. This
+matters most in dev mode (Vite, Next.js fast refresh) where unmount /
+mount cycles are frequent.

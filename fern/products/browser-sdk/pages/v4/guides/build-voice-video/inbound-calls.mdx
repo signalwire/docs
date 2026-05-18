@@ -2,10 +2,225 @@
 title: "Inbound Calls"
 slug: /guides/inbound-calls
 sidebar-title: "Inbound Calls"
-position: 2
+position: 3
 max-toc-depth: 3
 ---
 
-Receive incoming calls by registering the client and subscribing to `incomingCalls$`. Covers ringing UI, accept/reject flows, and handling multiple simultaneous calls.
+To receive calls, the client needs to be **registered** with the
+platform — that tells SignalWire to route any call addressed to the
+authenticated Subscriber's address into this client. Once registered,
+incoming calls appear in `client.session.incomingCalls$`; you accept
+or reject each one through methods on the `Call` instance.
 
-> **TODO:** Stub. Show `client.register()`, `incomingCalls$`, accept/reject, and call queueing.
+Embed tokens **cannot** receive calls. Use a Subscriber Access Token
+(SAT) — see [Authentication](/docs/browser-sdk/v4/guides/authentication).
+
+## Register the client
+
+`register()` happens automatically when you construct the client
+unless you set `skipRegister: true`. To be explicit (or to re-register
+after `unregister()`):
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+// Wait until the client is connected + authenticated, then register.
+client.ready$.subscribe(async (ready) => {
+  if (!ready) return;
+  await client.register();
+  console.log("ready to receive calls");
+});
+```
+
+`isRegistered$` is the observable form — true when registration is
+live, false on `unregister()` or transport loss.
+
+## Subscribe to incoming calls
+
+```js
+import { filter } from "rxjs";
+
+client.session.incomingCalls$.subscribe((calls) => {
+  // calls is the current list — usually 0 or 1, can be more
+  const ringing = calls.filter((c) => c.status === "ringing");
+  for (const call of ringing) {
+    presentRingingUi(call);
+  }
+});
+```
+
+The list is reactive: it changes when a call rings, when its status
+transitions out of `ringing`, and when calls are reattached on
+reconnect. Filter by status to find what you should actually present.
+
+## Accepting a call
+
+[`Call.answer()`] opens the media negotiation. It accepts an optional
+`MediaOptions` to override what tracks you send:
+
+```js
+function presentRingingUi(call) {
+  showModal({
+    callerName: call.from ?? "Unknown",
+    onAccept: () => {
+      call.answer({
+        audio: true,
+        video: true,   // send video back
+      });
+      wireCallToUi(call); // subscribe to status$, remoteStream$, etc.
+      hideModal();
+    },
+    onReject: () => {
+      call.reject();
+      hideModal();
+    },
+  });
+}
+```
+
+`answer()` is synchronous — it flips an internal flag and the SDK
+proceeds with negotiation. Watch `status$` to know when media is
+flowing:
+
+```js
+call.status$
+  .pipe(filter((s) => s === "connected"))
+  .subscribe(() => console.log("call live"));
+```
+
+## Knowing what media the caller offered
+
+The caller's offer dictates which directions the SDK can answer in.
+`call.mediaDirections` reports the negotiated transceiver direction
+per kind:
+
+```js
+const dirs = call.mediaDirections;       // { audio, video }
+const canReceiveAudio = dirs.audio.includes("recv"); // 'sendrecv' or 'recvonly'
+const canReceiveVideo = dirs.video.includes("recv");
+```
+
+Use this to pre-populate the accept modal — there's no point letting
+the user enable video if the offer is audio-only.
+
+```js
+acceptVideoCheckbox.disabled = !canReceiveVideo;
+acceptVideoCheckbox.checked = canReceiveVideo;
+```
+
+## Rejecting
+
+```js
+call.reject();
+```
+
+`reject()` declines the call before media is negotiated. The caller
+sees a busy / declined indication and the `Call` transitions to
+`destroyed`. Don't call any other method on the call after
+rejecting.
+
+## A complete inbound modal
+
+```js
+import { filter } from "rxjs";
+
+let currentRinging = null;
+
+client.session.incomingCalls$.subscribe((incomingCalls) => {
+  const ringing = incomingCalls.filter((c) => c.status === "ringing");
+
+  if (ringing.length > 0 && !currentRinging) {
+    currentRinging = ringing[0];
+    showRingingModal(currentRinging);
+
+    // Auto-hide if the call leaves ringing for any reason
+    currentRinging.status$
+      .pipe(filter((s) => s !== "ringing"))
+      .subscribe(() => {
+        if (currentRinging?.id === ringing[0].id) {
+          hideRingingModal();
+          currentRinging = null;
+        }
+      });
+  } else if (ringing.length === 0 && currentRinging) {
+    hideRingingModal();
+    currentRinging = null;
+  }
+});
+
+function showRingingModal(call) {
+  modal.innerHTML = `<button id="accept">Accept</button>
+                     <button id="reject">Reject</button>`;
+  modal.classList.add("visible");
+
+  modal.querySelector("#accept").onclick = () => {
+    call.answer({
+      audio: true,
+      video: call.mediaDirections.video.includes("recv"),
+    });
+    wireCallToUi(call);
+  };
+
+  modal.querySelector("#reject").onclick = () => {
+    call.reject();
+  };
+}
+```
+
+This is the same shape the kitchen-sink demo uses (see
+`playground/kitchen-sink-demo/src/main.ts`, `subscribeToIncomingCalls`).
+
+## Multiple simultaneous calls
+
+`incomingCalls$` can have more than one entry. A few options:
+
+- **Auto-reject extras while busy.** Iterate over the list, reject
+  everything past the one you're already showing.
+- **Queue them.** Maintain your own pending list; only present the
+  next one after the current is answered or rejected.
+- **Present them all.** Show a stacked notification with multiple
+  accept actions. Each entry is its own `Call` instance with its own
+  observables.
+
+The SDK doesn't enforce a policy here — that's up to your UX.
+
+## Unregistering
+
+```js
+await client.unregister();
+```
+
+After `unregister()`, the platform stops routing calls to this client.
+Use it before logging out, or to put the user into a "do not disturb"
+state without disconnecting the client entirely. `register()` puts
+them back into the routing pool.
+
+## Push notifications
+
+The `User.pushNotificationKey` field carries a key your backend can
+register with a push service so users get notified of incoming calls
+when the tab isn't open. The SDK doesn't manage push subscriptions
+itself — wiring through Web Push (or your mobile platform's
+equivalent) is application territory.
+
+## Reference
+
+- [`SignalWire.register()`] — opt into receiving inbound calls
+- [`SignalWire.unregister()`] — stop receiving inbound calls
+- [`SignalWire.isRegistered$`] — reactive registration state
+- [`SignalWire.session`] → [`SessionState.incomingCalls$`] — the ringing-call stream
+- [`Call.answer()`] / [`Call.reject()`] — accept or decline
+- [`Call.mediaDirections`] — what media the caller offered
+
+[`SignalWire.register()`]: /docs/browser-sdk/v4/reference/signalwire/register
+[`SignalWire.unregister()`]: /docs/browser-sdk/v4/reference/signalwire/unregister
+[`SignalWire.isRegistered$`]: /docs/browser-sdk/v4/reference/signalwire/is-registered$
+[`SignalWire.session`]: /docs/browser-sdk/v4/reference/signalwire/session
+[`SessionState.incomingCalls$`]: /docs/browser-sdk/v4/reference/interfaces/session-state
+[`Call.answer()`]: /docs/browser-sdk/v4/reference/webrtc-call/answer
+[`Call.reject()`]: /docs/browser-sdk/v4/reference/webrtc-call/reject
+[`Call.mediaDirections`]: /docs/browser-sdk/v4/reference/webrtc-call/media-directions$

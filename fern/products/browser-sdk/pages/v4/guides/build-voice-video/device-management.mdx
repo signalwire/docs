@@ -6,6 +6,245 @@ position: 4
 max-toc-depth: 3
 ---
 
-Enumerate cameras, microphones, and speakers, prompt for permissions, switch devices mid-call, and react to hot-plug events.
+The Browser SDK enumerates the user's microphones, cameras, and
+speakers for you, surfaces them as observables, and reactively
+updates when the OS reports a `devicechange` event. Pick a device,
+hand it to the SDK, and the SDK applies it to any active call.
 
-> **TODO:** Stub. Cover device enumeration, permission UX, switching webcam/mic during an active call, and `devicechange` handling. Carry over content from v3 "switch webcam or microphone" guide.
+The device API lives on the client (`client.audioInputDevices$`,
+etc.) — not on the call. Picks made before dialing are used for the
+next call; picks made mid-call are applied immediately.
+
+## Permission first
+
+Device labels are only populated after the user has granted
+microphone/camera permission at least once. Until then, `MediaDeviceInfo.label`
+is empty. To unlock labels at app start, request a transient stream:
+
+```js
+async function unlockDeviceLabels() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      // Add `video: true` if your app also needs camera labels.
+    });
+    stream.getTracks().forEach((t) => t.stop()); // release immediately
+  } catch (err) {
+    // User denied — labels stay empty, but device IDs still work.
+  }
+}
+```
+
+Do this on a user gesture (click), not on page load — browsers
+penalize cold prompts.
+
+## Enumerating devices
+
+```js
+client.audioInputDevices$.subscribe((devices) => {
+  micSelect.innerHTML = "";
+  for (const d of devices) {
+    const opt = document.createElement("option");
+    opt.value = d.deviceId;
+    opt.textContent = d.label || `Microphone ${d.deviceId.slice(0, 8)}`;
+    micSelect.appendChild(opt);
+  }
+});
+
+client.videoInputDevices$.subscribe(/* same shape */);
+client.audioOutputDevices$.subscribe(/* same shape */);
+```
+
+The three observables are BehaviorSubjects — late subscribers get the
+current list synchronously. They re-emit whenever the OS reports a
+device change (hot-plug, default speaker swap, Bluetooth headset
+arrives).
+
+Synchronous snapshots are available too: `client.audioInputDevices`,
+`videoInputDevices`, `audioOutputDevices`.
+
+## The currently selected device
+
+```js
+// Snapshot
+client.selectedAudioInputDevice; // MediaDeviceInfo | null
+client.selectedVideoInputDevice;
+client.selectedAudioOutputDevice;
+
+// Observables — re-emit on user selection AND auto-recovery
+client.selectedAudioInputDevice$.subscribe((device) => {
+  if (device) micSelect.value = device.deviceId;
+});
+```
+
+## Selecting a device
+
+`selectAudioInputDevice` / `selectVideoInputDevice` /
+`selectAudioOutputDevice` are the setters. The SDK takes the
+`MediaDeviceInfo` object, not the deviceId — find it in the list
+first:
+
+```js
+micSelect.onchange = () => {
+  const device = client.audioInputDevices.find(
+    (d) => d.deviceId === micSelect.value
+  );
+  if (device) client.selectAudioInputDevice(device);
+};
+
+cameraSelect.onchange = () => {
+  const device = client.videoInputDevices.find(
+    (d) => d.deviceId === cameraSelect.value
+  );
+  if (device) client.selectVideoInputDevice(device);
+};
+
+speakerSelect.onchange = () => {
+  const device = client.audioOutputDevices.find(
+    (d) => d.deviceId === speakerSelect.value
+  );
+  if (device) client.selectAudioOutputDevice(device);
+};
+```
+
+If a call is active and `client.preferences.syncDevicesToActiveCalls`
+is `true` (the default), the change applies live — the SDK
+renegotiates the track without interrupting the call.
+
+Output device routing (`selectAudioOutputDevice`) requires browser
+support for `HTMLMediaElement.setSinkId`. Chromium-based browsers
+support it; Firefox does not, so output selection is a no-op there
+and audio plays through the system default.
+
+## Device recovery
+
+The SDK monitors the active device's `MediaStreamTrack` for `ended`
+events (unplugged, OS reclaimed the device) and auto-switches to the
+next available device of the same kind. When it does, it emits a
+`DeviceRecoveryEvent` on `client.deviceRecovered$`:
+
+```js
+client.deviceRecovered$.subscribe((event) => {
+  showToast(
+    "Device changed",
+    `${event.kind} switched to ${event.newDevice?.label ?? "default"} (${event.reason})`
+  );
+});
+```
+
+Recovery is transparent — there's no interruption to the call — but
+the user should know which mic they're actually transmitting on.
+
+You can disable monitoring at construction with `skipDeviceMonitoring:
+true` if you'd rather handle device events yourself.
+
+## Default constraints
+
+Per-track constraints (resolution, frame rate, sample rate, echo
+cancellation, etc.) can be set globally on `client.preferences` or
+per-call as `inputAudioDeviceConstraints` / `inputVideoDeviceConstraints`
+in `DialOptions`:
+
+```js
+// Global default — applies to every dial
+client.preferences.defaultVideoConstraints = {
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  frameRate: { ideal: 30 },
+};
+
+// Per-call override
+await client.dial("/private/team", {
+  video: true,
+  inputVideoDeviceConstraints: { width: { ideal: 1920 }, height: { ideal: 1080 } },
+});
+```
+
+See [Client Preferences → Default media constraints](/docs/browser-sdk/v4/guides/client-preferences#default-media-constraints).
+
+## Per-participant audio processing
+
+Echo cancellation, noise suppression, and auto-gain are per-track —
+configure them on the `SelfParticipant` after the call connects:
+
+```js
+call.self$.subscribe(async (self) => {
+  if (!self) return;
+  await self.toggleEchoCancellation();    // toggle on/off
+  await self.toggleNoiseSuppression();
+  await self.toggleAudioInputAutoGain();
+
+  // Reactive read-back
+  self.echoCancellation$.subscribe((on) => updateButton(on));
+});
+```
+
+For musicians / podcasters who want raw, unprocessed audio, the
+shortcut is:
+
+```js
+await self.enableStudioAudio();   // disables EC, AGC, NS in one call
+// later:
+await self.disableStudioAudio();  // restores defaults
+```
+
+## A complete device picker
+
+```js
+function bindDeviceSelectors(client) {
+  const wireUp = (kind, listSelect, selectMethod) => {
+    client[`${kind}Devices$`].subscribe((devices) => {
+      listSelect.innerHTML = "";
+      for (const d of devices) {
+        const o = document.createElement("option");
+        o.value = d.deviceId;
+        o.textContent = d.label || `${kind} ${d.deviceId.slice(0, 8)}`;
+        listSelect.appendChild(o);
+      }
+      const selected = client[`selected${capitalize(kind)}Device`];
+      if (selected) listSelect.value = selected.deviceId;
+    });
+
+    client[`selected${capitalize(kind)}Device$`].subscribe((device) => {
+      if (device) listSelect.value = device.deviceId;
+    });
+
+    listSelect.onchange = () => {
+      const device = client[`${kind}Devices`].find(
+        (d) => d.deviceId === listSelect.value
+      );
+      if (device) client[selectMethod](device);
+    };
+  };
+
+  wireUp("audioInput",  micSelect,     "selectAudioInputDevice");
+  wireUp("videoInput",  cameraSelect,  "selectVideoInputDevice");
+  wireUp("audioOutput", speakerSelect, "selectAudioOutputDevice");
+}
+```
+
+The kitchen-sink demo (`playground/kitchen-sink-demo/src/main.ts`)
+wires this end-to-end.
+
+## Reference
+
+- [`SignalWire.audioInputDevices$`], [`SignalWire.videoInputDevices$`], [`SignalWire.audioOutputDevices$`] — device lists
+- [`SignalWire.selectAudioInputDevice()`], [`selectVideoInputDevice()`], [`selectAudioOutputDevice()`] — pick a device
+- [`SignalWire.selectedAudioInputDevice$`], [`selectedVideoInputDevice$`], [`selectedAudioOutputDevice$`] — reactive selection state
+- [`SignalWire.deviceRecovered$`] — auto-switch events
+- [`ClientPreferences.defaultAudioConstraints`] / [`defaultVideoConstraints`] — default track constraints
+- [`SelfParticipant.enableStudioAudio()`] — disable all audio processing in one call
+
+[`SignalWire.audioInputDevices$`]: /docs/browser-sdk/v4/reference/signalwire/audio-input-devices$
+[`SignalWire.videoInputDevices$`]: /docs/browser-sdk/v4/reference/signalwire/video-input-devices$
+[`SignalWire.audioOutputDevices$`]: /docs/browser-sdk/v4/reference/signalwire/audio-output-devices$
+[`SignalWire.selectAudioInputDevice()`]: /docs/browser-sdk/v4/reference/signalwire/select-audio-input-device
+[`selectVideoInputDevice()`]: /docs/browser-sdk/v4/reference/signalwire/select-video-input-device
+[`selectAudioOutputDevice()`]: /docs/browser-sdk/v4/reference/signalwire/select-audio-output-device
+[`SignalWire.selectedAudioInputDevice$`]: /docs/browser-sdk/v4/reference/signalwire/selected-audio-input-device$
+[`selectedVideoInputDevice$`]: /docs/browser-sdk/v4/reference/signalwire/selected-video-input-device$
+[`selectedAudioOutputDevice$`]: /docs/browser-sdk/v4/reference/signalwire/selected-audio-output-device$
+[`SignalWire.deviceRecovered$`]: /docs/browser-sdk/v4/reference/signalwire/device-recovered$
+[`ClientPreferences.defaultAudioConstraints`]: /docs/browser-sdk/v4/reference/client-preferences
+[`defaultVideoConstraints`]: /docs/browser-sdk/v4/reference/client-preferences
+[`SelfParticipant.enableStudioAudio()`]: /docs/browser-sdk/v4/reference/self-participant/enable-studio-audio

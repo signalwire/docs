@@ -2,10 +2,262 @@
 title: "Outbound Calls"
 slug: /guides/outbound-calls
 sidebar-title: "Outbound Calls"
-position: 1
+position: 2
 max-toc-depth: 3
 ---
 
-Dial rooms, subscribers, or PSTN destinations from a logged-in client using `client.dial()`. Covers call options, audio/video constraints, and lifecycle observables.
+`client.dial()` is the entry point for every outbound call — to a
+room, another Subscriber, a SIP endpoint, or a PSTN number routed
+through a SignalWire Resource. Pass a destination string (or an
+`Address` from the directory), media options, and you get back a
+`Call` instance whose lifecycle you observe through its streams.
 
-> **TODO:** Stub. Show `dial`, options for `audio`/`video`, attaching streams, hanging up, listening to `status$`.
+## The shortest example
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+const call = await client.dial("/public/test-room", {
+  audio: true,
+  video: true,
+});
+
+call.status$.subscribe((status) => console.log("status:", status));
+call.remoteStream$.subscribe((stream) => {
+  document.querySelector("video#remote").srcObject = stream;
+});
+```
+
+That's enough to place a video call, attach the remote video, and log
+status transitions. Everything else in this page is "what if I need
+to…" elaboration.
+
+## Destinations
+
+`destination` accepts:
+
+- A Resource Address URI like `"/public/sales"` or `"/private/alice"`.
+- A phone number routed through a Fabric address: `"/public/sales?channel=audio"`.
+- An `Address` instance from `client.directory.addresses$`. The SDK
+  picks the right channel automatically.
+
+```js
+// String form
+await client.dial("/private/alice");
+
+// Address form — channel selection is automatic
+import { firstValueFrom } from "rxjs";
+const directory = await firstValueFrom(client.directory$);
+const alice = directory.addresses.find((a) => a.name === "/private/alice");
+await client.dial(alice);
+```
+
+URI query parameters override defaults — `?channel=audio` forces
+audio-only, `?channel=video` forces video.
+
+## [`DialOptions`]
+
+```ts
+interface DialOptions {
+  audio?: boolean;          // capture local audio (default: true)
+  video?: boolean;          // capture local video (default: false)
+  receiveAudio?: boolean;   // receive remote audio
+  receiveVideo?: boolean;   // receive remote video
+
+  inputAudioDeviceConstraints?: MediaTrackConstraints;
+  inputVideoDeviceConstraints?: MediaTrackConstraints;
+  inputAudioStream?: MediaStream; // bring your own track
+  inputVideoStream?: MediaStream;
+
+  preferredVideoCodecs?: string[];
+  preferredAudioCodecs?: string[];
+  stereo?: boolean;
+
+  userVariables?: Record<string, unknown>; // per-call payload
+}
+```
+
+A typical "make a video call, but I'll pick the mic and camera"
+invocation:
+
+```js
+const call = await client.dial("/public/sales", {
+  audio: true,
+  video: true,
+  receiveAudio: true,
+  receiveVideo: true,
+  userVariables: { plan: "enterprise", page: location.pathname },
+});
+```
+
+Defaults pulled from `client.preferences` apply when you omit a
+field — set defaults there if every call in your app needs the same
+behavior. See [Client Preferences](/docs/browser-sdk/v4/guides/client-preferences).
+
+## Lifecycle: `status$`
+
+`call.status$` is a BehaviorSubject; it emits the current status
+synchronously on subscribe and re-emits on every transition.
+
+```ts
+type CallStatus =
+  | 'new'           // created, not yet sent
+  | 'requesting'    // dial in flight
+  | 'trying'        // signaling reached the server
+  | 'ringing'       // remote side notified
+  | 'answering'
+  | 'early'         // early media (ringback, IVR)
+  | 'active'        // media negotiated
+  | 'connected'     // fully connected, audio/video flowing
+  | 'disconnecting'
+  | 'destroyed'     // hung up cleanly
+  | 'failed';       // unrecoverable error
+```
+
+Drive UI states from these:
+
+```js
+call.status$.subscribe((status) => {
+  statusBadge.textContent = status.toUpperCase();
+  if (status === "destroyed" || status === "failed") {
+    teardownCallUi();
+  }
+});
+```
+
+## Attaching media to the DOM
+
+`localStream$` and `remoteStream$` emit `MediaStream` objects you
+assign to `<video>` or `<audio>` elements:
+
+```js
+call.localStream$.subscribe((stream) => {
+  if (stream) localVideoEl.srcObject = stream;
+});
+
+call.remoteStream$.subscribe((stream) => {
+  if (stream) remoteVideoEl.srcObject = stream;
+});
+```
+
+For autoplay reasons (Safari especially), have `<video autoplay
+playsinline>` in your markup, and never set `muted` on the remote
+element — that mutes the remote audio.
+
+```html
+<video id="local"  autoplay playsinline muted></video> <!-- self-view: mute is fine -->
+<video id="remote" autoplay playsinline></video>      <!-- remote: do NOT mute -->
+```
+
+## Hanging up
+
+```js
+await call.hangup();
+```
+
+`hangup()` transitions to `'disconnecting'`, sends a Verto `bye`,
+then destroys the call. After it resolves, the call instance is no
+longer usable — drop your references.
+
+If the *other* side hangs up, you'll see `status$` go through
+`'disconnecting'` → `'destroyed'` automatically.
+
+## Errors
+
+```js
+call.errors$.subscribe((callError) => {
+  const label = callError.fatal ? "Fatal" : "Recoverable";
+  console.error(`[${callError.kind}] ${label}:`, callError.error);
+  if (callError.fatal) {
+    // status$ will also transition to 'failed' — clean up there
+  } else {
+    // surface a toast / banner, the call continues
+  }
+});
+```
+
+Fatal errors automatically transition `status$` to `'failed'` and
+destroy the call. Non-fatal errors (e.g. a transient media issue
+that the recovery pipeline handled) keep the call alive — wire them
+to a banner so the user gets feedback without losing the connection.
+
+See [Troubleshooting](/docs/browser-sdk/v4/guides/troubleshooting) for the common
+error kinds.
+
+## Cleanup
+
+Always unsubscribe from observables when the call ends, or attach the
+subscriptions to a per-call `Subscription` you can `unsubscribe()` in
+your teardown handler:
+
+```js
+import { Subscription } from "rxjs";
+
+const subs = new Subscription();
+
+subs.add(call.status$.subscribe(/* … */));
+subs.add(call.remoteStream$.subscribe(/* … */));
+
+// When the call ends:
+subs.unsubscribe();
+```
+
+The SDK cleans up its own internal subscriptions when the call is
+destroyed — but anything *you* added needs to come down with it,
+otherwise you'll leak DOM updates on the next call.
+
+## Reconnecting attached calls on reload
+
+Set `reconnectAttachedCalls: true` (and `persistSession: true`) on the
+`SignalWire` client to survive a page reload mid-call:
+
+```js
+const client = new SignalWire(provider, {
+  reconnectAttachedCalls: true,
+  persistSession: true,
+});
+```
+
+After reconnect, `client.session.calls` contains any re-attached
+calls — usually exactly one:
+
+```js
+client.isConnected$.subscribe((connected) => {
+  if (!connected) return;
+  const existing = client.session.calls;
+  if (existing.length > 0) {
+    const call = existing[0];
+    wireCallToUi(call); // same subscriptions as a fresh dial
+  }
+});
+```
+
+The SDK stores active call IDs in sessionStorage. On reload, the
+server pushes a `verto.attach` event and the SDK reconstructs the
+`Call` instance with its state intact.
+
+See [Inbound Calls](/docs/browser-sdk/v4/guides/inbound-calls) for receiving calls
+and [Call Controls](/docs/browser-sdk/v4/guides/call-controls) for what to do once
+a call is connected.
+
+## Reference
+
+- [`SignalWire.dial()`] — place an outbound call
+- [`Call.status$`], [`Call.errors$`] — lifecycle and errors
+- [`Call.localStream$`], [`Call.remoteStream$`] — media bindings
+- [`Call.hangup()`] — end the call
+- [`DialOptions`] — the options object
+- [`SignalWire.session`] — re-attached calls live in `session.calls`
+
+[`SignalWire.dial()`]: /docs/browser-sdk/v4/reference/signalwire/dial
+[`Call.status$`]: /docs/browser-sdk/v4/reference/webrtc-call/status$
+[`Call.errors$`]: /docs/browser-sdk/v4/reference/webrtc-call/errors$
+[`Call.localStream$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-stream$
+[`Call.remoteStream$`]: /docs/browser-sdk/v4/reference/webrtc-call/remote-stream$
+[`Call.hangup()`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
+[`DialOptions`]: /docs/browser-sdk/v4/reference/interfaces/dial-options
+[`SignalWire.session`]: /docs/browser-sdk/v4/reference/signalwire/session

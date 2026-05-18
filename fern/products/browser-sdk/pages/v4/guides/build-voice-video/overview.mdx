@@ -2,10 +2,164 @@
 title: "Overview"
 slug: /guides/build-voice-video
 sidebar-title: "Overview"
-position: 0
+position: 1
 max-toc-depth: 3
 ---
 
-This chapter walks through building real-time voice and video apps with the Browser SDK — outbound and inbound calls, media streams, device management, recording, streaming, multi-party rooms, and chat.
+The Browser SDK gives you a [`Call`] object for every active conversation
+— inbound or outbound, audio-only or video, 1-on-1 or room. Once you
+have one, every aspect of the call (status, media streams,
+participants, layout, recording state, network quality) is reachable
+through observables and a small set of imperative methods.
 
-> **TODO:** Stub. List subsections and recommend a reading order.
+This section is the practical guide to building with that object.
+Pages are roughly ordered from "first call" to "advanced call-center
+features," but each is self-contained.
+
+## Reading order
+
+If you're starting from zero:
+
+1. **[Outbound Calls](/docs/browser-sdk/v4/guides/outbound-calls)** — the simplest
+   thing that works: `client.dial()`, attach streams, listen for
+   status, hang up.
+2. **[Call Controls](/docs/browser-sdk/v4/guides/call-controls)** — the muscle of any
+   call UI: mute, deaf, hand raise, hangup, DTMF.
+3. **[Device Management](/docs/browser-sdk/v4/guides/device-management)** — pick a
+   microphone and camera; reactively rebind when the user plugs in a
+   headset mid-call.
+4. **[Inbound Calls](/docs/browser-sdk/v4/guides/inbound-calls)** — `register()` and
+   subscribe to `session.incomingCalls$`; answer or reject.
+
+When you need more:
+
+- **[Screen Sharing](/docs/browser-sdk/v4/guides/screen-sharing)** —
+  `self.startScreenShare()` and the matching `screenShareStatus$`.
+- **[Multi-party](/docs/browser-sdk/v4/guides/multi-party)** — `participants$`,
+  per-participant observables, moderation actions.
+- **[Layouts](/docs/browser-sdk/v4/guides/layouts)** — `setLayout()`,
+  `layoutLayers$`, picking room layouts at runtime.
+- **[Messaging & Chat](/docs/browser-sdk/v4/guides/messaging-chat)** — in-call text
+  messages via `address.sendText` and `textMessages$`.
+
+## What every call has
+
+```ts
+class Call {
+  // Lifecycle
+  status$:   Observable<'new' | 'requesting' | 'trying' | 'ringing' | 'answering' | 'early' | 'active' | 'connected' | 'disconnecting' | 'destroyed' | 'failed'>;
+  errors$:   Observable<CallError>;
+  direction: 'inbound' | 'outbound';
+  to?:       string;
+  address?:  Address;
+
+  // Participants
+  self$:         Observable<SelfParticipant>;     // local participant
+  participants$: Observable<CallParticipant[]>;   // everyone (rooms)
+
+  // Media
+  localStream$:  Observable<MediaStream>;
+  remoteStream$: Observable<MediaStream>;
+  mediaDirections$: Observable<{ audio: MediaDirection; video: MediaDirection }>;
+
+  // Session state
+  recording$:  Observable<boolean>;
+  streaming$:  Observable<boolean>;
+  locked$:     Observable<boolean>;
+  meta$:       Observable<Record<string, unknown>>;
+  layout$:     Observable<string>;
+  layouts$:    Observable<string[]>;
+  layoutLayers$: Observable<LayoutLayer[]>;
+  capabilities$: Observable<Capability[]>;
+
+  // Quality (resilience)
+  qualityScore$: Observable<number>;     // MOS-style
+  qualityLevel$: Observable<QualityLevel>;
+  networkIssues$: Observable<StatsNetworkIssue[]>;
+  recoveryState$: Observable<RecoveryState>;
+
+  // Methods
+  hangup(): Promise<void>;
+  answer(options?: MediaOptions): void;
+  reject(): void;
+  sendDigits(dtmf: string): Promise<void>;
+  setLayout(layout: string, positions: Record<string, VideoPosition>): Promise<void>;
+  toggleLock(): Promise<void>;
+  toggleHold(): Promise<void>;
+  transfer(options: TransferOptions): Promise<void>;
+  requestKeyframe(): void;
+  requestIceRestart(): Promise<void>;
+
+  // Local audio pipeline (advanced)
+  setLocalMicrophoneGain(value: number): void;
+  enablePushToTalk(): void;
+  setPushToTalkActive(active: boolean): void;
+  localAudioLevel$: Observable<number>;
+  localSpeaking$:   Observable<boolean>;
+}
+```
+
+The detail pages dig into each surface. Every one assumes you've read
+the [RxJS Primer](/docs/browser-sdk/v4/guides/rxjs-primer) — the SDK is observables
+all the way down, so understanding `subscribe` + `unsubscribe` is
+non-negotiable.
+
+## Two patterns the SDK relies on
+
+These show up in every example below — calling them out once here so
+they don't surprise you:
+
+### 1. Subscribe to the participant, not the call, for member state
+
+`call.audioMuted` doesn't exist. Mute / deaf / hand raise / video
+state all live on the [`SelfParticipant`]:
+
+```js
+call.self$.subscribe((self) => {
+  if (!self) return;
+  self.audioMuted$.subscribe((muted) => updateMuteButton(muted));
+});
+```
+
+You wait for `self$` to emit (it's `null` until the local member
+joins) and then bind to the participant's own observables.
+
+### 2. BehaviorSubjects emit synchronously on subscribe
+
+Most observables on [`Call`] and [`Participant`] are BehaviorSubjects:
+late subscribers receive the current value immediately. You don't
+need to remember "did I subscribe before the call connected" — you'll
+get the cached state on first emission.
+
+```js
+// This works even if you subscribe well after the call is connected:
+call.status$.subscribe((status) => console.log(status));
+// → logs the current status immediately, then any future changes.
+```
+
+## A real reference app
+
+Everything in this section is faithful to the kitchen-sink demo in
+`signalwire-typescript-web/playground/kitchen-sink-demo` — a vanilla
+TypeScript app that exercises every public API. When in doubt about
+how a feature fits together with the rest of the SDK, check
+`playground/kitchen-sink-demo/src/main.ts` in the SDK repo for the
+exact wiring.
+
+## Reference
+
+- [`SignalWire`] — top-level client
+- [`Call`] (interface) / [`WebRTCCall`] (concrete) — the active call
+- [`Participant`] / [`SelfParticipant`] — members
+- [`Address`] — directory entries
+- [`SelfCapabilities`] — per-call permission flags
+- [`SessionState`] — `client.session` surface (incl. inbound calls)
+
+[`SignalWire`]: /docs/browser-sdk/v4/reference/signalwire
+[`Call`]: /docs/browser-sdk/v4/reference/interfaces/call
+[`WebRTCCall`]: /docs/browser-sdk/v4/reference/webrtc-call
+[`Participant`]: /docs/browser-sdk/v4/reference/participant
+[`SelfParticipant`]: /docs/browser-sdk/v4/reference/self-participant
+[`Address`]: /docs/browser-sdk/v4/reference/address
+[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities
+[`SessionState`]: /docs/browser-sdk/v4/reference/interfaces/session-state

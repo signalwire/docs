@@ -1,0 +1,143 @@
+---
+title: "Recording"
+slug: /guides/recording
+sidebar-title: "Recording"
+position: 6
+max-toc-depth: 3
+---
+
+Recording on the SignalWire platform is a server-side capability —
+the media mix is recorded in the cloud, not in the browser. The
+Browser SDK's role today is to **observe** recording state on the
+active call. It surfaces a `recording$` boolean observable; the
+recording itself is started, stopped, and downloaded through the
+platform (Dashboard, REST API, or SWML).
+
+<Warning>
+**Client-side `startRecording()` is not yet implemented in v4.** The
+SDK ships an `async startRecording()` stub on `Call` that throws
+`UnimplementedError`. Until it lands, trigger recording through one
+of the server-side paths below and use the observables to reflect
+status in your UI.
+</Warning>
+
+## What you can do today
+
+- **Observe** whether a recording is active: `call.recording$`.
+- **Render a "REC" badge** in your UI driven by that observable.
+- **Trigger recording** server-side via:
+  - Configuring the Resource (room, SWML script) to auto-record on
+    join.
+  - The SignalWire REST API.
+  - A SWML script that runs on the call leg.
+
+## Observing recording state
+
+`recording$` emits a boolean — `true` whenever any recording is
+active on the call's session, `false` otherwise. It's a
+BehaviorSubject, so late subscribers get the current state
+synchronously.
+
+```js
+call.recording$.subscribe((isRecording) => {
+  recordingBadge.classList.toggle("visible", isRecording);
+  recordingBadge.textContent = isRecording ? "● REC" : "";
+});
+```
+
+That's all most apps need — a visible indicator so participants know
+the session is being recorded.
+
+## Pulling more detail
+
+The full recording state (file IDs, current duration, format, paused
+status, etc.) is sent by the server inside `call.joined` and
+`call.updated` events. The SDK exposes the resulting state via
+`call.signalingEvent$` if you need to inspect the raw payload:
+
+```js
+call.signalingEvent$.subscribe((event) => {
+  if (event.event_type === "call.updated") {
+    // event.params.room_session.recordings has the list
+    console.log("recordings:", event.params?.room_session?.recordings);
+  }
+});
+```
+
+This is escape-hatch territory — most apps shouldn't need it. When
+the `start/stop/pause` mutator methods land on the SDK, you'll get a
+cleaner API for the same data.
+
+## Starting a recording: server-side options
+
+### From a SWML script on the Resource
+
+Use the `record` verb in the room's SWML to begin recording as soon
+as the call connects:
+
+```yaml
+sections:
+  main:
+    - record:
+        stereo: true
+        format: mp4
+```
+
+### From the REST API
+
+Issue a request against the call's session ID. The platform
+identifies the active room session and starts recording.
+
+```bash
+curl -X POST "https://yourspace.signalwire.com/api/video/room_sessions/{id}/recordings" \
+  -u "PROJECT_ID:API_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+Refer to the [REST API reference](/docs/apis) for the full set of
+recording endpoints (start, stop, list, download).
+
+### From the Dashboard
+
+For ad-hoc recording on a specific Resource, toggle "Record on join"
+in the Resource configuration. Useful for support / sales workflows
+where every call should be archived.
+
+## Capability flag
+
+`call.self.capabilities` does **not** currently include a `record`
+flag — recording isn't a per-participant capability in v4. Anyone in
+a room may know about a recording in progress (via the `recording$`
+observable), but starting / stopping is governed entirely by
+server-side policy.
+
+## What about stopping?
+
+When recording is started server-side, the same channel stops it. The
+SDK will see `recording$` flip to `false` and your "REC" badge will
+clear. Don't try to call `call.startRecording()` / no equivalent
+client-side stop is reachable today.
+
+## Roadmap
+
+[`Call.startRecording()`] / `Call.stopRecording()` / pause/resume are
+planned. Until they ship, the contract is:
+
+- **Read**: `recording$` / `recording` (works today).
+- **Write**: server-side only (works today, via REST / SWML /
+  Dashboard).
+
+When the SDK methods become available, this guide will grow examples
+for starting and stopping inline. Watch the [changelog](/docs/browser-sdk/v4/changelog)
+or the JS reference for the introduction of the methods.
+
+For livestreaming an active call (which behaves similarly), see
+[Live Streaming](/docs/browser-sdk/v4/guides/live-streaming).
+
+## Reference
+
+- [`Call.recording$`] — reactive recording state
+- [`Call.startRecording()`] — server-side mutator (not yet implemented in v4)
+
+[`Call.recording$`]: /docs/browser-sdk/v4/reference/webrtc-call/recording$
+[`Call.startRecording()`]: /docs/browser-sdk/v4/reference/webrtc-call/start-recording
