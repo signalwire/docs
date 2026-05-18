@@ -59,66 +59,34 @@ await client.dial(alice);
 URI query parameters override defaults — `?channel=audio` forces
 audio-only, `?channel=video` forces video.
 
-## [`DialOptions`]
+## Options
 
-```ts
-interface DialOptions {
-  audio?: boolean;          // capture local audio (default: true)
-  video?: boolean;          // capture local video (default: false)
-  receiveAudio?: boolean;   // receive remote audio
-  receiveVideo?: boolean;   // receive remote video
+The second argument to `dial()` controls what media you send /
+receive and lets you attach per-call metadata. See [`DialOptions`] for
+the full shape. The pattern: pass what you want for this specific
+call; anything omitted falls back to
+[`client.preferences`](/docs/browser-sdk/v4/guides/client-preferences),
+which is where app-wide defaults live.
 
-  inputAudioDeviceConstraints?: MediaTrackConstraints;
-  inputVideoDeviceConstraints?: MediaTrackConstraints;
-  inputAudioStream?: MediaStream; // bring your own track
-  inputVideoStream?: MediaStream;
-
-  preferredVideoCodecs?: string[];
-  preferredAudioCodecs?: string[];
-  stereo?: boolean;
-
-  userVariables?: Record<string, unknown>; // per-call payload
-}
-```
-
-A typical "make a video call, but I'll pick the mic and camera"
-invocation:
+Per-call `userVariables` are arbitrary key/value pairs forwarded to
+the receiving side (an AI agent, a SWML script, your own backend),
+useful for routing or attribution:
 
 ```js
 const call = await client.dial("/public/sales", {
   audio: true,
   video: true,
-  receiveAudio: true,
-  receiveVideo: true,
   userVariables: { plan: "enterprise", page: location.pathname },
 });
 ```
 
-Defaults pulled from `client.preferences` apply when you omit a
-field — set defaults there if every call in your app needs the same
-behavior. See [Client Preferences](/docs/browser-sdk/v4/guides/client-preferences).
+## Lifecycle
 
-## Lifecycle: `status$`
-
-`call.status$` is a BehaviorSubject; it emits the current status
-synchronously on subscribe and re-emits on every transition.
-
-```ts
-type CallStatus =
-  | 'new'           // created, not yet sent
-  | 'requesting'    // dial in flight
-  | 'trying'        // signaling reached the server
-  | 'ringing'       // remote side notified
-  | 'answering'
-  | 'early'         // early media (ringback, IVR)
-  | 'active'        // media negotiated
-  | 'connected'     // fully connected, audio/video flowing
-  | 'disconnecting'
-  | 'destroyed'     // hung up cleanly
-  | 'failed';       // unrecoverable error
-```
-
-Drive UI states from these:
+Subscribe to [`status$`][`Call.status$`] and drive your UI off it.
+The stream is a BehaviorSubject — late subscribers get the current
+status immediately. The terminal states are `'destroyed'` (hung up
+cleanly) and `'failed'` (unrecoverable error); both mean it's time
+to tear down call UI. See [`CallStatus`] for the full enum.
 
 ```js
 call.status$.subscribe((status) => {
@@ -250,7 +218,8 @@ a call is connected.
 - [`Call.status$`], [`Call.errors$`] — lifecycle and errors
 - [`Call.localStream$`], [`Call.remoteStream$`] — media bindings
 - [`Call.hangup()`] — end the call
-- [`DialOptions`] — the options object
+- [`DialOptions`] — the full options surface
+- [`CallStatus`] — every value `status$` may emit
 - [`SignalWire.session`] — re-attached calls live in `session.calls`
 
 [`SignalWire.dial()`]: /docs/browser-sdk/v4/reference/signalwire/dial
@@ -260,4 +229,5 @@ a call is connected.
 [`Call.remoteStream$`]: /docs/browser-sdk/v4/reference/webrtc-call/remote-stream$
 [`Call.hangup()`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
 [`DialOptions`]: /docs/browser-sdk/v4/reference/interfaces/dial-options
+[`CallStatus`]: /docs/browser-sdk/v4/reference/type-aliases/call-status
 [`SignalWire.session`]: /docs/browser-sdk/v4/reference/signalwire/session

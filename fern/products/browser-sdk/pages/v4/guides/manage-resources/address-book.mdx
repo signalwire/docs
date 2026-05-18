@@ -70,44 +70,15 @@ The collection is reactive — when a server-side update lands (e.g. a
 new contact added in the background), new entries appear in the
 existing `addresses$` stream without you re-fetching.
 
-## The [`Address`] entity
+## What an [`Address`] gives you
 
-Each entry is an [`Address`] instance carrying both synchronous
-getters (for snapshot reads) and `$`-suffixed observables (for
-reactive UI):
-
-```ts
-class Address {
-  // Identity
-  id: string;
-  name: string;            // resource URI, e.g. "/public/support"
-  displayName: string;     // human-readable name
-  displayName$: Observable<string>;
-  resourceId: string;      // underlying Resource ID
-  type: 'app' | 'call' | 'room' | 'subscriber';
-  type$: Observable<ResourceType>;
-
-  // Visual
-  previewUrl?: string;
-  coverUrl?: string;
-  previewUrl$: Observable<string | undefined>;
-  coverUrl$: Observable<string | undefined>;
-
-  // Channels — the URIs to dial for each communication mode
-  channels: { audio?: string; video?: string; messaging?: string };
-  channels$: Observable<{ audio?: string; video?: string; messaging?: string }>;
-  defaultChannel: string | undefined;  // video for rooms, audio otherwise
-
-  // Room state
-  locked: boolean;
-  locked$: Observable<boolean>;
-
-  // Conversation
-  sendText(text: string): Promise<void>;
-  textMessages$: Observable<TextMessageCollection>;
-  history$: Observable<AddressHistoryCollection>;
-}
-```
+Identity (name, displayName, type, resourceId), visuals (preview /
+cover URLs), communication channels (audio / video / messaging URIs),
+room state, and the conversation handle (`sendText`, `textMessages$`,
+`history$`). Like everything in the SDK, mutable state is exposed
+twice — as a synchronous getter and as a `$` observable. The full
+shape is on the [`Address`] reference page; this guide covers the
+fields you'll actually drive UI off of.
 
 ### Resource type
 
@@ -187,36 +158,13 @@ await client.dial(address, { audio: true });
 Passing the [`Address`] lets the SDK pick the right channel
 automatically when one isn't pinned in the URI.
 
-## Messaging
+## Messaging and call history
 
-`Address.sendText()` writes a chat message to the address's
-conversation. The `textMessages$` and `history$` observables lazy-load
-the conversation on first subscribe, then stream updates:
-
-```js
-// Send
-await address.sendText("Heading to the call now");
-
-// Read
-address.textMessages$.subscribe((collection) => {
-  if (!collection) return;
-  for (const msg of collection.items) {
-    console.log(msg.text, "from", msg.fromAddress$);
-  }
-  if (collection.hasMore) collection.loadMore();
-});
-
-// Call history with this address
-address.history$.subscribe((collection) => {
-  if (!collection) return;
-  for (const entry of collection.items) {
-    console.log(entry.kind, entry.status, entry.started, "→", entry.ended);
-  }
-});
-```
-
-Both collections paginate the same way as the directory — call
-`loadMore()` to pull older entries.
+Each address owns its own conversation: `address.sendText()`,
+`address.textMessages$`, and `address.history$`. See
+[Messaging & Chat](/docs/browser-sdk/v4/guides/messaging-chat) for
+the patterns — same pagination shape as the directory, lazy-loaded
+on first subscribe.
 
 ## Room state
 

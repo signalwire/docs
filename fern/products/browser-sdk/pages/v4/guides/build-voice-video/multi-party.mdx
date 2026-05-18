@@ -7,47 +7,41 @@ max-toc-depth: 3
 ---
 
 A "room" in SignalWire is a call with more than two members. The
-`Call` API is the same — `dial()` into a room address, get back a
-`Call`, observe `remoteStream$` for the mixed feed — but several
-observables that don't matter in a 1:1 call become central:
-
-- `call.participants$` — everyone in the room, including `self`.
-- `Participant.isTalking$` — voice activity per member.
-- `Participant.handraised$` — hand-raise state per member.
-- `Participant.position$` / `call.layoutLayers$` — where each member
-  is rendered (see [Layouts](/docs/browser-sdk/v4/guides/layouts)).
-
-Moderation actions (mute someone else, remove them, lock the room)
-sit on [`Participant`] and `Call`, gated by capabilities.
+`Call` API is identical to a 1:1 call — `dial()` into a room address,
+get back a [`Call`], observe `remoteStream$` for the mixed feed
+(the server composites every participant's camera into one stream,
+laid out by [Layouts](/docs/browser-sdk/v4/guides/layouts)). What
+changes is the *count* of things you have to track: now there are
+many participants, and you need a way to render them, listen to
+their state, and act on them as a moderator.
 
 ## Joining
 
-A room is just a Resource Address with `type === 'room'`. Dial it the
-same way as any other call:
+A room is just a Resource Address with `type === 'room'`:
 
 ```js
 const call = await client.dial("/public/team-standup", {
   audio: true,
   video: true,
-  receiveAudio: true,
-  receiveVideo: true,
 });
 ```
 
-The mixed video feed comes through `remoteStream$` — bind it to a
-single `<video>` element. The composition (grid, presenter, etc.) is
-controlled server-side; see [Layouts](/docs/browser-sdk/v4/guides/layouts).
+Nothing room-specific in the dial itself. The room-ness shows up in
+the observables.
 
 ## The participants list
 
-`participants$` is a BehaviorSubject of the current member list. It
-re-emits on join, leave, and updates:
+[`participants$`] is the source of truth for who's in the room. It
+re-emits on every join, leave, and update. The structural trick:
+**don't re-render the whole list on every emission** — diff it,
+because each new emission may include the same `Participant`
+instances and you want to keep their subscriptions intact.
 
 ```js
 const tiles = new Map();
 
 call.participants$.subscribe((participants) => {
-  // Remove tiles for members who left
+  // Tear down tiles for members who left
   for (const [id, el] of tiles) {
     if (!participants.find((p) => p.id === id)) {
       el.remove();
@@ -55,226 +49,132 @@ call.participants$.subscribe((participants) => {
     }
   }
 
-  // Add tiles for new members
+  // Mount tiles for new members, leave existing ones alone
   for (const p of participants) {
     if (!tiles.has(p.id)) {
       const el = renderTile(p);
+      bindParticipantObservables(p, el); // subscribe ONCE per id
       tiles.set(p.id, el);
       participantsList.appendChild(el);
-      bindParticipantObservables(p, el);
     }
   }
 });
 ```
 
-The `participants$` list includes the self participant. Filter on
-`p.id === call.self?.id` if you want to treat self specially in your
-UI.
+The list includes self. Filter on `p.id === call.self?.id` if you
+want to treat self specially (e.g. label "You" instead of the name).
 
-## Per-participant observables
+## Per-participant state
 
-Each [`Participant`] exposes its own reactive state. The full set:
-
-| Observable                 | What it carries                                  |
-| -------------------------- | ------------------------------------------------ |
-| `name$`                    | Display name                                     |
-| `type$`                    | Member type string (e.g. `'member'`, `'audience'`)|
-| `audioMuted$`              | Whether their audio is muted                     |
-| `videoMuted$`              | Whether their video is muted                     |
-| `deaf$`                    | Whether they've muted incoming audio for themselves |
-| `handraised$`              | Hand raise state                                 |
-| `isTalking$`               | Voice activity (server-side VAD)                 |
-| `visible$`                 | Visible in the current layout                    |
-| `position$`                | Current layout layer (x, y, width, height, …)    |
-| `inputVolume$` / `outputVolume$` / `inputSensitivity$` | Server-side audio levels |
-| `echoCancellation$` / `autoGain$` / `noiseSuppression$` | Audio processing flags |
-| `userId$` / `addressId$`   | Their User and Address IDs (if any)              |
-| `meta$`                    | Custom metadata (room-specific)                  |
-
-Bind them like any RxJS observable:
+Each entry is a [`Participant`] — the same class as `call.self`,
+minus the device/screen-share extras. Bind to its observables
+exactly the way you would for self:
 
 ```js
-function bindParticipantObservables(p, el) {
-  p.name$.subscribe((name) => (el.querySelector(".name").textContent = name ?? ""));
-  p.audioMuted$.subscribe((m) => el.classList.toggle("muted", m));
-  p.videoMuted$.subscribe((m) => el.classList.toggle("video-off", m));
-  p.isTalking$.subscribe((t) => el.classList.toggle("speaking", t));
-  p.handraised$.subscribe((h) => el.classList.toggle("hand-up", h));
+function bindParticipantObservables(p, tileEl) {
+  p.name$.subscribe((n)       => tileEl.querySelector(".name").textContent = n ?? "");
+  p.audioMuted$.subscribe((m) => tileEl.classList.toggle("muted", m));
+  p.videoMuted$.subscribe((m) => tileEl.classList.toggle("video-off", m));
+  p.isTalking$.subscribe((t)  => tileEl.classList.toggle("speaking", t));
+  p.handraised$.subscribe((h) => tileEl.classList.toggle("hand-up", h));
 }
 ```
 
-## Moderation
+The full list of per-member observables is on the [`Participant`]
+reference page. The shape is consistent: whatever state exists has a
+`$` observable and a sync getter.
 
-Mute, remove, and reposition another participant by calling methods
-on their [`Participant`] instance:
+## Active speaker
 
-```js
-// Mute their mic (they see themselves muted)
-await participant.mute();
-await participant.unmute();
-
-// Remove them from the call
-await participant.remove();
-
-// Move them to a layout slot
-await participant.setPosition("reserved-0");
-
-// Server-side volume / sensitivity on their leg
-await participant.setAudioInputVolume(50);
-await participant.setAudioInputSensitivity(20);
-```
-
-**Always check capabilities first.** `call.self.capabilities.member`
-tells you which actions the server has granted you against other
-members:
+[`isTalking$`] flips while server-side VAD detects voice on a
+member's track. The standard pattern: highlight whoever is currently
+talking, optionally pin them in the layout.
 
 ```js
-call.self?.capabilities.member$.subscribe((member) => {
-  kickButton.disabled = !member.remove;
-  muteOthersButton.disabled = !member.muteAudio.on;
-  setPositionMenu.hidden = !member.position;
-});
-```
-
-Trying without permission throws server-side. See
-[Capabilities](/docs/browser-sdk/v4/guides/capabilities).
-
-## End the call for everyone
-
-`self.end()` ends the call session for *every* participant, not just
-self. Gated by `call.self.capabilities.end`:
-
-```js
-endRoomButton.onclick = async () => {
-  if (!confirm("End this call for everyone?")) return;
-  await call.self.end();
-};
-
-call.self?.capabilities.end$.subscribe((canEnd) => {
-  endRoomButton.hidden = !canEnd;
-});
-```
-
-To leave the call without ending it, use `self.remove()` or
-`call.hangup()`.
-
-## Lock / unlock
-
-A locked room rejects new joiners:
-
-```js
-await call.toggleLock();
-call.locked$.subscribe((locked) => {
-  lockIndicator.textContent = locked ? "🔒 Locked" : "Open";
-});
-```
-
-Useful for "we've started, no more arrivals" workflows. Capability:
-`call.self.capabilities.lock`.
-
-## Lobby / waiting room patterns
-
-The platform doesn't ship a hard "lobby" primitive in v4 — implement
-it as two Resources:
-
-1. A **lobby Resource** that all guests dial first. Configure it with
-   a SWML script that holds them (e.g. hold music + a recorded
-   message).
-2. The **main room** Resource. A moderator's app, watching
-   `participants$` on the lobby, transfers individuals into the main
-   room when ready:
-   ```js
-   await lobbyCall.transfer({ destination: "/private/main-room" });
-   ```
-
-Alternatively, lock the main room and unlock it manually when guests
-arrive, accepting that everyone hears "locked" feedback until you
-flip it.
-
-## Talking heads from `isTalking$`
-
-A common UI: highlight whoever is speaking and float them to the
-front. The signal is per-participant `isTalking$`:
-
-```js
-const isTalkingMap = new Map();
-
 call.participants$.subscribe((participants) => {
   for (const p of participants) {
     p.isTalking$.subscribe((talking) => {
-      isTalkingMap.set(p.id, talking);
-      const activeSpeaker = [...isTalkingMap.entries()]
-        .find(([, talking]) => talking)?.[0];
-      highlightSpeaker(activeSpeaker);
+      tile(p.id).classList.toggle("speaking", talking);
     });
   }
 });
 ```
 
-Combine with `layoutLayers$` if you want to draw an overlay border
-on the active speaker's tile within the mixed video.
+Combine with [`layoutLayers$`] if you want to overlay a "speaking"
+border on top of the mixed video — `layoutLayers$` tells you where
+each member is rendered inside that stream.
 
-## A complete participant tile
+## Moderation
 
-The kitchen-sink demo's `subscribeToParticipantObservables` (in
-`playground/kitchen-sink-demo/src/main.ts`) wires every participant
-observable to a card template. Cribbing from that:
+You can mute, kick, reposition, or end the call on behalf of others
+— but **every moderation action is server-gated**. The capability
+stream tells you what's allowed:
 
 ```js
-function renderParticipantCard(p) {
-  const card = document.createElement("div");
-  card.className = "participant-card";
+call.self?.capabilities.member$.subscribe((member) => {
+  kickButton.disabled = !member.remove;
+  muteOthersButton.disabled = !member.muteAudio.on;
+});
 
-  // Static structure
-  card.innerHTML = `
-    <div class="avatar"></div>
-    <div class="name"></div>
-    <div class="badges">
-      <span class="badge audio"></span>
-      <span class="badge video"></span>
-      <span class="badge speaking" hidden>🗣</span>
-      <span class="badge hand"     hidden>✋</span>
-    </div>
-  `;
-
-  // Reactive bindings
-  p.name$.subscribe((n)        => card.querySelector(".name").textContent = n ?? "Unknown");
-  p.audioMuted$.subscribe((m)  => card.querySelector(".audio").textContent = m ? "🔇" : "🎙");
-  p.videoMuted$.subscribe((m)  => card.querySelector(".video").textContent = m ? "📵" : "📹");
-  p.isTalking$.subscribe((t)   => card.querySelector(".speaking").hidden = !t);
-  p.handraised$.subscribe((h)  => card.querySelector(".hand").hidden = !h);
-
-  return card;
-}
+// Then, on click — note these are methods on the OTHER participant,
+// not on self.
+kickButton.onclick = () => participant.remove();
+muteOthersButton.onclick = () => participant.mute();
 ```
 
-Re-render the whole list on `participants$`, but bind individual
-observables once per card — they handle their own re-emissions.
+Calling [`participant.remove()`][`Participant.remove()`] /
+[`participant.mute()`][`Participant.mute()`] etc. without the
+matching capability throws server-side. Always gate the UI off the
+[`member$`][`SelfCapabilities.member$`] stream — don't show a button
+the server will reject. The
+[Capabilities](/docs/browser-sdk/v4/guides/capabilities) guide is the
+full reference for that model.
+
+Room-level actions are the same shape:
+[`toggleLock`][`Call.toggleLock()`] (with [`locked$`] for the
+reflection) keeps new joiners out; [`self.end()`][`Participant.end()`]
+ends the call for *everyone*, gated by
+[`SelfCapabilities.end$`]. The mutator+observable pattern is the
+same as everywhere else — see
+[Call Controls](/docs/browser-sdk/v4/guides/call-controls#the-pattern).
+
+## Lobby / waiting room
+
+There's no first-class "lobby" primitive in v4. Two ways to fake one:
+
+- **Two Resources.** Guests dial a `lobby` Resource configured with
+  a SWML script that holds them (e.g. hold music). A moderator app,
+  watching `participants$` on the lobby room, calls
+  [`call.transfer({ destination: "/private/main-room" })`][`Call.transfer()`]
+  to graduate each guest individually.
+- **Lock the main room.** Have everyone dial the main room directly;
+  toggle the lock open / closed to admit batches. Cheaper, but guests
+  hear "room locked" until you flip it.
+
+The two-resource approach scales better for one-by-one admission
+(e.g. an interview format) and gives you per-guest control. Lock is
+fine for "we've started, no more arrivals."
 
 ## Reference
 
-- [`Call.participants$`] / [`Call.participants`] — full member list
-- [`Call.self$`] / [`Call.self`] — the local member
-- [`Participant`] / [`SelfParticipant`] / [`CallParticipant`] — per-member API
-- Per-member observables on [`Participant`]: `name$`, `audioMuted$`, `videoMuted$`, `deaf$`, `handraised$`, `isTalking$`, `visible$`, `position$`, `meta$`
-- Moderation: [`Participant.mute()`], [`Participant.remove()`], [`Participant.setPosition()`]
-- Capability gates: [`SelfCapabilities.member$`] (kick / mute others), [`SelfCapabilities.end$`] (end for all), [`SelfCapabilities.lock$`]
-- [`Call.toggleLock()`] · [`Call.locked$`]
-- [`Call.transfer()`] — hand a call off (e.g. lobby → main room)
+- [`Call.participants$`] · [`Call.self$`] — the lists
+- [`Participant`] — per-member API (full observable + method surface)
+- [`SelfCapabilities.member$`] · [`SelfCapabilities.end$`] · [`SelfCapabilities.lock$`] — moderation gates
+- [`Call.toggleLock()`] · [`locked$`] · [`Call.transfer()`] — room-level actions
 
+[`Call`]: /docs/browser-sdk/v4/reference/webrtc-call
 [`Call.participants$`]: /docs/browser-sdk/v4/reference/webrtc-call/participants$
-[`Call.participants`]: /docs/browser-sdk/v4/reference/webrtc-call/participants$
+[`participants$`]: /docs/browser-sdk/v4/reference/webrtc-call/participants$
 [`Call.self$`]: /docs/browser-sdk/v4/reference/webrtc-call/self$
-[`Call.self`]: /docs/browser-sdk/v4/reference/webrtc-call/self$
 [`Participant`]: /docs/browser-sdk/v4/reference/participant
-[`SelfParticipant`]: /docs/browser-sdk/v4/reference/self-participant
-[`CallParticipant`]: /docs/browser-sdk/v4/reference/interfaces/call-participant
 [`Participant.mute()`]: /docs/browser-sdk/v4/reference/participant/mute
 [`Participant.remove()`]: /docs/browser-sdk/v4/reference/participant/remove
-[`Participant.setPosition()`]: /docs/browser-sdk/v4/reference/participant/set-position
+[`Participant.end()`]: /docs/browser-sdk/v4/reference/participant/end
+[`isTalking$`]: /docs/browser-sdk/v4/reference/participant/is-talking$
+[`layoutLayers$`]: /docs/browser-sdk/v4/reference/webrtc-call/layout-layers$
 [`SelfCapabilities.member$`]: /docs/browser-sdk/v4/reference/self-capabilities/member$
 [`SelfCapabilities.end$`]: /docs/browser-sdk/v4/reference/self-capabilities/end$
 [`SelfCapabilities.lock$`]: /docs/browser-sdk/v4/reference/self-capabilities/lock$
 [`Call.toggleLock()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
-[`Call.locked$`]: /docs/browser-sdk/v4/reference/webrtc-call/locked$
+[`locked$`]: /docs/browser-sdk/v4/reference/webrtc-call/locked$
 [`Call.transfer()`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer

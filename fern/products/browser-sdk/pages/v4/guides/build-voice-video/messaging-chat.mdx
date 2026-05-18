@@ -53,20 +53,10 @@ address.textMessages$.subscribe((collection) => {
 });
 ```
 
-Each message:
-
-```ts
-interface TextMessage<A = Address> {
-  id: string;
-  text: string;
-  created: string;             // ISO timestamp
-  fromAddress$: Observable<A>; // who sent it
-}
-```
-
-`fromAddress$` is an observable because the sender is itself a
-resolved `Address` instance — useful for rendering an avatar or
-name without an extra fetch.
+Each entry is a [`TextMessage`] with `id`, `text`, `created` and a
+`fromAddress$` observable — the sender is itself a resolved
+[`Address`], so you can render an avatar / name from the same SDK
+data without an extra fetch.
 
 ## Paging older messages
 
@@ -113,45 +103,18 @@ messages between calls.
 
 ## Call history
 
-The same conversation log carries call history. Reach it via
-`address.history$`:
+The same conversation log also carries call history — same shape,
+same pagination, filtered to call entries instead of chat. Each
+entry ([`AddressHistory`]) has `kind`, `status`, `started`, `ended`.
 
 ```js
 address.history$.subscribe((collection) => {
-  if (!collection) return;
-  collection.values$.subscribe((entries) => {
-    for (const entry of entries) {
-      console.log(entry.kind, entry.status, entry.started, "→", entry.ended);
-    }
-  });
+  collection?.values$.subscribe((entries) => renderCallLog(entries));
 });
 ```
 
-```ts
-interface AddressHistory<A = Address> {
-  id: string;
-  kind: string;          // 'inbound' | 'outbound' | 'missed' | ...
-  status: string;        // server-defined status string
-  started: string;       // ISO timestamp
-  ended: string;         // ISO timestamp
-  fromAddress$: Observable<A>;
-}
-```
-
-Both `textMessages$` and `history$` paginate the same way — they're
-just two views of the same underlying conversation, filtered to chat
-vs. call entries.
-
-## Per-conversation observables
-
-The `Address` instance is the conversation handle. Two convenient
-shortcuts:
-
-| Member             | Purpose                                              |
-| ------------------ | ---------------------------------------------------- |
-| `address.textMessages$` | Observable<TextMessageCollection> — chat thread |
-| `address.history$`      | Observable<AddressHistoryCollection> — call log |
-| `address.sendText(text)`| Append a chat message to the thread           |
+`textMessages$` and `history$` are two filtered views of the same
+underlying conversation, so loading one populates both.
 
 Both observables `shareReplay(1)` — late subscribers get the existing
 collection without re-fetching.

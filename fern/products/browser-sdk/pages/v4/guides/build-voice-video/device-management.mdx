@@ -38,83 +38,44 @@ async function unlockDeviceLabels() {
 Do this on a user gesture (click), not on page load — browsers
 penalize cold prompts.
 
-## Enumerating devices
+## The pattern
 
-```js
-client.audioInputDevices$.subscribe((devices) => {
-  micSelect.innerHTML = "";
-  for (const d of devices) {
-    const opt = document.createElement("option");
-    opt.value = d.deviceId;
-    opt.textContent = d.label || `Microphone ${d.deviceId.slice(0, 8)}`;
-    micSelect.appendChild(opt);
-  }
-});
+Three things every device picker does:
 
-client.videoInputDevices$.subscribe(/* same shape */);
-client.audioOutputDevices$.subscribe(/* same shape */);
-```
+1. **Enumerate** — subscribe to the kind's observable
+   ([`audioInputDevices$`][`SignalWire.audioInputDevices$`],
+   [`videoInputDevices$`][`SignalWire.videoInputDevices$`],
+   [`audioOutputDevices$`][`SignalWire.audioOutputDevices$`]) and render
+   options. The streams re-emit on every OS device change.
+2. **Reflect the active choice** — subscribe to the matching
+   `selected…Device$` and keep your `<select>` value in sync. This
+   matters because the SDK may auto-switch (see [Device recovery]
+   below) — the picker has to follow.
+3. **Apply user input** — on `change`, find the chosen
+   `MediaDeviceInfo` in the current list and pass it to
+   [`selectAudioInputDevice`][`SignalWire.selectAudioInputDevice()`]
+   (etc.). The SDK takes the device object, not the `deviceId` string.
 
-The three observables are BehaviorSubjects — late subscribers get the
-current list synchronously. They re-emit whenever the OS reports a
-device change (hot-plug, default speaker swap, Bluetooth headset
-arrives).
+The three loops are identical except for the kind name. See the
+[complete device picker](#a-complete-device-picker) below for the
+de-duplicated version.
 
-Synchronous snapshots are available too: `client.audioInputDevices`,
-`videoInputDevices`, `audioOutputDevices`.
+If a call is active when the user picks, the change applies live —
+the SDK renegotiates the track without interrupting the call. Turn
+that off by setting `client.preferences.syncDevicesToActiveCalls =
+false` if you'd rather batch device changes between calls.
 
-## The currently selected device
+[Device recovery]: #device-recovery
 
-```js
-// Snapshot
-client.selectedAudioInputDevice; // MediaDeviceInfo | null
-client.selectedVideoInputDevice;
-client.selectedAudioOutputDevice;
+### Speaker selection is browser-gated
 
-// Observables — re-emit on user selection AND auto-recovery
-client.selectedAudioInputDevice$.subscribe((device) => {
-  if (device) micSelect.value = device.deviceId;
-});
-```
-
-## Selecting a device
-
-`selectAudioInputDevice` / `selectVideoInputDevice` /
-`selectAudioOutputDevice` are the setters. The SDK takes the
-`MediaDeviceInfo` object, not the deviceId — find it in the list
-first:
-
-```js
-micSelect.onchange = () => {
-  const device = client.audioInputDevices.find(
-    (d) => d.deviceId === micSelect.value
-  );
-  if (device) client.selectAudioInputDevice(device);
-};
-
-cameraSelect.onchange = () => {
-  const device = client.videoInputDevices.find(
-    (d) => d.deviceId === cameraSelect.value
-  );
-  if (device) client.selectVideoInputDevice(device);
-};
-
-speakerSelect.onchange = () => {
-  const device = client.audioOutputDevices.find(
-    (d) => d.deviceId === speakerSelect.value
-  );
-  if (device) client.selectAudioOutputDevice(device);
-};
-```
-
-If a call is active and `client.preferences.syncDevicesToActiveCalls`
-is `true` (the default), the change applies live — the SDK
-renegotiates the track without interrupting the call.
-
-Output device routing (`selectAudioOutputDevice`) requires browser
-support for `HTMLMediaElement.setSinkId`. Chromium-based browsers
-support it; Firefox does not, so output selection is a no-op there
-and audio plays through the system default.
+`selectAudioOutputDevice` only works in browsers that implement
+`HTMLMediaElement.setSinkId`. Chromium-based browsers support it;
+Firefox does not, so on Firefox the picker still renders but
+selecting a different speaker is a no-op — playback uses the system
+default. Show the picker anyway; users with multiple outputs on
+Chromium will appreciate it, and on Firefox they won't notice it
+doesn't work.
 
 ## Device recovery
 
@@ -162,31 +123,14 @@ await client.dial("/private/team", {
 
 See [Client Preferences → Default media constraints](/docs/browser-sdk/v4/guides/client-preferences#default-media-constraints).
 
-## Per-participant audio processing
+## Audio processing
 
-Echo cancellation, noise suppression, and auto-gain are per-track —
-configure them on the `SelfParticipant` after the call connects:
-
-```js
-call.self$.subscribe(async (self) => {
-  if (!self) return;
-  await self.toggleEchoCancellation();    // toggle on/off
-  await self.toggleNoiseSuppression();
-  await self.toggleAudioInputAutoGain();
-
-  // Reactive read-back
-  self.echoCancellation$.subscribe((on) => updateButton(on));
-});
-```
-
-For musicians / podcasters who want raw, unprocessed audio, the
-shortcut is:
-
-```js
-await self.enableStudioAudio();   // disables EC, AGC, NS in one call
-// later:
-await self.disableStudioAudio();  // restores defaults
-```
+Echo cancellation, noise suppression, and auto-gain are
+*per-track*, not per-device — they live on the
+[`SelfParticipant`][`SelfParticipant.enableStudioAudio()`] of the
+active call. Toggling them while a different mic is selected applies
+to whatever track is currently being captured. See
+[Call Controls → Audio processing](/docs/browser-sdk/v4/guides/call-controls#self-mute--audio-state).
 
 ## A complete device picker
 

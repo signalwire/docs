@@ -25,14 +25,11 @@ widget you're keeping:
 
 ## Slots
 
-`<sw-call-widget>` exposes two slots:
-
-| Slot         | Purpose                                                              |
-| ------------ | -------------------------------------------------------------------- |
-| `background` | The full-bleed background behind the call. Default: none.            |
-| _(default)_  | The trigger element shown when idle. Clicking it dials the widget.  |
-
-A trigger button with a custom background:
+`<sw-call-widget>` has a `background` slot for the full-bleed
+background behind the call, and a default slot for the trigger
+element shown while idle. Anything you place in the default slot
+becomes the click target — `widget.dial()` fires on click. A trigger
+button with a custom background:
 
 ```html
 <sw-call-widget modal token="c2c_…" destination="/public/sales">
@@ -72,15 +69,9 @@ document.querySelector("#hangup-btn").addEventListener("click", () => {
 });
 ```
 
-The widget bubbles three composed events you can subscribe to from
-anywhere on the page:
-
-| Event                      | Detail                          | When                                               |
-| -------------------------- | ------------------------------- | -------------------------------------------------- |
-| `sw-dial`                  | —                               | Dialing started (programmatically or via trigger). |
-| `sw-call-ended`            | `{ status }`                    | Call reached any terminal state.                   |
-| `sw-display-content`       | forwarded `display_content`     | Agent pushed content to the side drawer.           |
-| `signalwire-address:event` | forwarded SignalWire user event | Custom server-side events.                         |
+The widget bubbles `sw-dial` and `sw-call-ended` (plus forwarded
+agent events) — same pattern as native DOM events. Listen from
+anywhere:
 
 ```js
 widget.addEventListener("sw-call-ended", (e) => {
@@ -88,25 +79,17 @@ widget.addEventListener("sw-call-ended", (e) => {
 });
 ```
 
+See [`<sw-call-widget>`] for the full event surface.
+
 ## Pass-through attributes
 
-A few `<sw-call-widget>` attributes change which sub-components are
-mounted — useful when you only want certain parts of the built-in UI:
+A handful of widget attributes toggle which sub-features mount —
+`transcription` enables the AI transcript drawer, `allow-incoming-calls`
+listens for inbound calls on the same token, `audio-only` skips the
+camera. `user-variables` (JSON string) is forwarded into the Verto
+invite for the receiving side to read.
 
-```html
-<sw-call-widget
-  token="c2c_…"
-  destination="/private/sales"
-  transcription           <!-- mount the AI transcript drawer -->
-  allow-incoming-calls    <!-- listen for inbound calls on this token -->
-  audio-only              <!-- no camera, no video panes -->
-  user-variables='{"plan":"pro","user_id":"u_123"}'
-></sw-call-widget>
-```
-
-`user-variables` are merged into the Verto invite as `userVariables`,
-so an agent or backend handler can read per-call context. Invalid JSON
-is logged and ignored; the call still dials.
+See [`<sw-call-widget>`] for the full attribute list.
 
 ## Building a UI from primitives
 
@@ -150,39 +133,30 @@ the `<script type="module">`.
 
 ### What the provider gives you
 
-`<sw-call-provider>` mounts four controllers that publish reactive
-state into the subtree:
-
-| Context              | Provided by                       | Consumed by                                                              |
-| -------------------- | --------------------------------- | ------------------------------------------------------------------------ |
-| `callStateContext`   | `CallStateContextController`      | `<sw-call-media>`, `<sw-self-media>`, `<sw-call-controls>`, `<sw-call-status>`, `<sw-participants>`, … |
-| `devicesContext`     | `DevicesContextController`        | `<sw-device-selector>`, `<sw-local-camera>`                              |
-| `transcriptContext`  | `TranscriptController`            | `<sw-ui-transcript-view>`                                                |
-| _(user events)_      | `UserEventController` (on host)   | `<sw-ui-content-drawer>`, custom event listeners                         |
-
-You don't have to wire anything else — set `.call` and
-`.deviceController` on the provider and every nested element
-re-renders as call state changes.
+`<sw-call-provider>` mounts reactive contexts for call state,
+devices, transcript, and forwarded user events. Set its `.call` and
+`.deviceController` properties; every nested SDK-aware element
+subscribes automatically — no per-element wiring required. State
+changes (a participant joins, a device gets unplugged, a transcript
+line arrives) push through the contexts to whichever components are
+listening.
 
 ### Component-level events
 
-Each primitive bubbles its own composed events. Listen on the provider
-(or `document`) to react app-wide:
-
-| Element                      | Event              | Detail                          |
-| ---------------------------- | ------------------ | ------------------------------- |
-| `<sw-call-controls>`         | `sw-mute-audio`    | `{ muted }`                     |
-| `<sw-call-controls>`         | `sw-mute-video`    | `{ muted }`                     |
-| `<sw-call-controls>`         | `sw-hangup`        | —                               |
-| `<sw-call-dialpad>`          | `sw-digit-press`   | `{ digit }`                     |
-| `<sw-device-selector>`       | `sw-device-change` | `{ type, device }`              |
-| `<sw-directory>`             | `sw-select`        | `{ resource }`                  |
+Each primitive bubbles its own composed events: `<sw-call-controls>`
+fires `sw-mute-audio` / `sw-mute-video` / `sw-hangup`,
+`<sw-call-dialpad>` fires `sw-digit-press`, `<sw-device-selector>`
+fires `sw-device-change`, and so on. Since they bubble across shadow
+DOM, listen wherever you like:
 
 ```js
 provider.addEventListener("sw-hangup", () => {
   // user clicked hangup — clean up app state
 });
 ```
+
+The per-element [reference pages](/docs/browser-sdk/v4/reference/web-component)
+list each component's full event payload.
 
 ### Replacing a single primitive
 
@@ -217,3 +191,5 @@ custom events.
 See [Theming](/docs/browser-sdk/v4/guides/web-components-theming) for the visual
 side and the [Web Components reference](/docs/browser-sdk/v4/reference/web-component) for the
 per-element attribute, slot, and event listings.
+
+[`<sw-call-widget>`]: /docs/browser-sdk/v4/reference/web-component/sw-call-widget
