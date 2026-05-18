@@ -5,12 +5,14 @@ import "./models/responses.tsp";
 import "./models/errors.tsp";
 import "../../../types";
 import "../../tags.tsp";
+import "../../../../_shared/auth.tsp";
 import "../../../../_shared/alias/token-permissions.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
+@useAuth(SignalWireBearerAuth)
 @route("/subscriber/invites")
 namespace SignalWireAPI.Fabric.SubscriberInviteTokens {
   @tag(SUBSCRIBERS_TOKENS_TAG)
