@@ -76,22 +76,30 @@ If the user denies the prompt, `enumerateDevices()` still returns the device lis
 Each list is an observable of `MediaDeviceInfo[]`. Subscribe once at startup — every subscription receives the current list immediately and then again whenever the OS reports a change. Pair the list with the matching `selected…$` observable so a `<select>` reflects the right value when the SDK switches devices on its own:
 
 ```ts Browser
-import { combineLatest } from "rxjs";
+let mics = [];
+let selectedMic = null;
 
-combineLatest([
-  client.audioInputDevices$,
-  client.selectedAudioInputDevice$,
-]).subscribe(([mics, selected]) => {
+function renderMics() {
   micSelect.innerHTML = "";
   for (const mic of mics) {
     const option = new Option(mic.label || `Microphone ${mic.deviceId.slice(0, 6)}`, mic.deviceId);
-    option.selected = mic.deviceId === selected?.deviceId;
+    option.selected = mic.deviceId === selectedMic?.deviceId;
     micSelect.append(option);
   }
+}
+
+client.audioInputDevices$.subscribe((list) => {
+  mics = list;
+  renderMics();
+});
+
+client.selectedAudioInputDevice$.subscribe((device) => {
+  selectedMic = device;
+  renderMics();
 });
 ```
 
-The same pattern fits `videoInputDevices$` and `audioOutputDevices$` — only the property names change.
+The same pattern fits `videoInputDevices$` and `audioOutputDevices$` — only the property names change. Caching the latest of each list in module-scope state keeps the rendering pure and avoids pulling in observable combinators.
 
 ## Apply the user's choice
 
@@ -307,7 +315,6 @@ Pick a different mic, camera, or speaker before dialing. The log records each pi
 
     <script type="module">
       import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@latest";
-      import { combineLatest } from "https://esm.sh/rxjs@7";
 
       const log = (msg) =>
         (document.getElementById("log").textContent += msg + "\n");
@@ -316,14 +323,24 @@ Pick a different mic, camera, or speaker before dialing. The log records each pi
       let client = null;
       let activeCall = null;
 
-      function populate(selectEl, devices, selected) {
+      // Cache the latest list + selection per kind so each subscription can
+      // rerender the picker without pulling in observable combinators.
+      const state = {
+        mic: { list: [], selected: null },
+        cam: { list: [], selected: null },
+        speaker: { list: [], selected: null },
+      };
+
+      function populate(kind) {
+        const selectEl = $(kind);
+        const { list, selected } = state[kind];
         selectEl.innerHTML = "";
-        for (const d of devices) {
+        for (const d of list) {
           const opt = new Option(d.label || `Device ${d.deviceId.slice(0, 6)}`, d.deviceId);
           if (selected && d.deviceId === selected.deviceId) opt.selected = true;
           selectEl.append(opt);
         }
-        if (!devices.length) selectEl.innerHTML = "<option>(none)</option>";
+        if (!list.length) selectEl.innerHTML = "<option>(none)</option>";
       }
 
       $("connect").onclick = () => {
@@ -339,12 +356,12 @@ Pick a different mic, camera, or speaker before dialing. The log records each pi
           log("Error: " + (err.name || "Error") + " — " + err.message),
         );
 
-        combineLatest([client.audioInputDevices$, client.selectedAudioInputDevice$])
-          .subscribe(([devices, selected]) => populate($("mic"), devices, selected));
-        combineLatest([client.videoInputDevices$, client.selectedVideoInputDevice$])
-          .subscribe(([devices, selected]) => populate($("cam"), devices, selected));
-        combineLatest([client.audioOutputDevices$, client.selectedAudioOutputDevice$])
-          .subscribe(([devices, selected]) => populate($("speaker"), devices, selected));
+        client.audioInputDevices$.subscribe((list) => { state.mic.list = list; populate("mic"); });
+        client.selectedAudioInputDevice$.subscribe((d) => { state.mic.selected = d; populate("mic"); });
+        client.videoInputDevices$.subscribe((list) => { state.cam.list = list; populate("cam"); });
+        client.selectedVideoInputDevice$.subscribe((d) => { state.cam.selected = d; populate("cam"); });
+        client.audioOutputDevices$.subscribe((list) => { state.speaker.list = list; populate("speaker"); });
+        client.selectedAudioOutputDevice$.subscribe((d) => { state.speaker.selected = d; populate("speaker"); });
 
         client.deviceRecovered$.subscribe((e) =>
           log(`auto-switch: ${e.kind} (${e.reason}) → ${e.newDevice?.label ?? "system default"}`),
