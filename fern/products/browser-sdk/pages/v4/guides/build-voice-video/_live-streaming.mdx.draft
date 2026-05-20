@@ -1,0 +1,138 @@
+---
+title: "Live Streaming"
+slug: /guides/live-streaming
+sidebar-title: "Live Streaming"
+position: 7
+max-toc-depth: 3
+---
+
+Live streaming on the SignalWire platform pushes a room's mixed feed
+to one or more RTMP destinations (YouTube Live, Twitch, a custom
+ingest server). It's a server-side feature — like
+[recording](/docs/browser-sdk/v4/guides/recording), the SDK's role is to observe
+streaming state on the active call.
+
+<Warning>
+**Client-side `startStreaming()` is not yet implemented in v4.** The
+SDK ships an `async startStreaming()` stub on `Call` that throws
+`UnimplementedError`. Trigger streams server-side (REST or SWML); use
+`streaming$` to reflect status in your UI.
+</Warning>
+
+## What you can do today
+
+- **Observe** whether streaming is active: `call.streaming$`.
+- **Render a "LIVE" indicator** driven by that observable.
+- **Start / stop streams** via:
+  - The REST API.
+  - A SWML script on the Resource.
+  - The SignalWire Dashboard.
+
+## Observing streaming state
+
+`streaming$` is a boolean BehaviorSubject — `true` whenever any
+stream is active on the call's session, `false` otherwise.
+
+```js
+call.streaming$.subscribe((isStreaming) => {
+  liveBadge.classList.toggle("visible", isStreaming);
+  liveBadge.textContent = isStreaming ? "● LIVE" : "";
+});
+```
+
+The badge updates instantly when streaming starts or stops, regardless
+of which client started it.
+
+## Starting a stream: server-side
+
+### From the REST API
+
+Issue a request against the call's session ID with the RTMP target:
+
+```bash
+curl -X POST "https://yourspace.signalwire.com/api/video/room_sessions/{id}/streams" \
+  -u "PROJECT_ID:API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "rtmps://a.rtmps.youtube.com/live2/STREAM_KEY"
+  }'
+```
+
+The full set of stream endpoints (create, list, stop, etc.) is in
+the [REST API reference](/docs/apis).
+
+### From SWML
+
+A `stream` verb in the room's SWML automatically starts a stream when
+the session begins:
+
+```yaml
+sections:
+  main:
+    - stream:
+        url: rtmps://a.rtmps.youtube.com/live2/STREAM_KEY
+```
+
+### From the Dashboard
+
+For ad-hoc stream targets, configure the Resource's streaming
+settings and toggle on join.
+
+## Multiple destinations
+
+The session can run multiple streams concurrently — useful for
+simulcasting to YouTube and Twitch at the same time. Each is created
+through a separate REST call (or a separate `stream` verb in SWML).
+The `streaming$` observable reports a single boolean: `true` if any
+of them are active.
+
+If you need to enumerate the individual stream targets, read them
+from `call.signalingEvent$` payloads (the room session state
+includes the current `streams` list):
+
+```js
+call.signalingEvent$.subscribe((event) => {
+  if (event.event_type === "call.updated") {
+    console.log("streams:", event.params?.room_session?.streams);
+  }
+});
+```
+
+## Capability flag
+
+`call.self.capabilities` does not include a streaming-specific flag
+in v4 — streaming is a session-level operation governed by
+server-side policy. Anyone in the room sees `streaming$` flip, but
+only authorized callers (typically your backend) can start or stop
+streams via the REST API.
+
+## Roadmap
+
+[`Call.startStreaming()`] and `Call.stopStreaming()` are planned.
+Until they land, the SDK contract is:
+
+- **Read**: `streaming$` / `streaming` (works today).
+- **Write**: server-side only (works today, via REST / SWML /
+  Dashboard).
+
+For per-call recording, see [Recording](/docs/browser-sdk/v4/guides/recording). The
+two features behave similarly today — observe-only on the SDK,
+write-only on the platform.
+
+## Viewer-side: interactive live streams
+
+If your app is *consuming* a stream (rather than producing one), the
+playback flow is plain HTTP — point an HLS player at the URL the
+platform publishes, no SDK involved. The Browser SDK is only relevant
+when the viewer needs to *participate* in the room (chat, raise hand,
+join as a video participant). For that flow, treat them as a normal
+inbound or outbound call against the Resource Address; the platform
+mixes their media into the same session that's being streamed.
+
+## Reference
+
+- [`Call.streaming$`] — reactive streaming state
+- [`Call.startStreaming()`] — server-side mutator (not yet implemented in v4)
+
+[`Call.streaming$`]: /docs/browser-sdk/v4/reference/webrtc-call/streaming$
+[`Call.startStreaming()`]: /docs/browser-sdk/v4/reference/webrtc-call/start-streaming

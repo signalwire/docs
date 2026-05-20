@@ -1,0 +1,179 @@
+---
+title: "Capabilities"
+slug: /guides/capabilities
+sidebar-title: "Capabilities"
+position: 5
+max-toc-depth: 3
+---
+
+Capabilities are the permissions the server granted *this* participant
+in *this* call. Different across rooms, roles, and token scopes — and
+they're the single source of truth for *what your UI should let the
+user do*. The SDK surfaces them as `call.self.capabilities`, a
+[`SelfCapabilities`] instance with both synchronous getters and
+observable streams.
+
+Use capability flags to decide which UI affordances to render. Don't
+guess from token type or hard-code "agents can lock rooms" — the
+server already knows, and the capability stream reflects what it
+decided for this specific call.
+
+## When capabilities are populated
+
+Once a call reaches `joined`, the server sends a `call.joined` event
+carrying the participant's capability flags. The SDK decodes them
+into a structured [`SelfCapabilities`] object on `call.self`:
+
+```js
+const call = await client.dial("/private/team", { audio: true, video: true });
+
+call.self$.subscribe((self) => {
+  if (!self) return;
+
+  // Synchronous read — current state at this moment
+  console.log(self.capabilities.end);                // can end the call?
+  console.log(self.capabilities.self.muteAudio.on);  // can mute my own audio?
+  console.log(self.capabilities.member.remove);      // can remove others?
+});
+```
+
+[`SelfCapabilities`] exposes both synchronous getters (`end`,
+`screenshare`, `setLayout`, …) and `$`-suffixed observables that
+re-emit when capabilities change. State updates are *full
+replacements* — a new `call.joined` swaps the entire state object,
+not a partial merge.
+
+### Mid-call changes
+
+Capabilities only re-emit when the server sends a fresh `call.joined`
+event. If your application supports role promotions (guest → host,
+attendee → moderator) and you need the UI to react, the server has
+to re-emit `call.joined` for that participant. The SDK supports
+nested `call.joined` events and will update the capability state
+when one arrives — but it won't synthesize updates on its own.
+
+## The shape of [`SelfCapabilities`]
+
+[`SelfCapabilities`] groups flags into three families. Each capability
+is exposed in two forms — an observable (e.g. [`end$`]) for reactive
+bindings and a synchronous getter (e.g. `end`) for snapshot reads.
+
+- **Member-level (self):** what *this* participant can do to themselves
+  — mute audio/video, deaf, raise hand, microphone volume / sensitivity,
+  speaker volume. Access via [`self$`] / [`self`].
+- **Member-level (others):** the same shape, but for moderation against
+  other members — plus `remove` (kick), `position` (move them in the
+  layout), and `meta`. Access via [`member$`] / [`member`].
+- **Call-level:** [`end$`], [`setLayout$`], [`sendDigit$`],
+  [`screenshare$`], [`device$`], plus on/off-split [`lock$`] and
+  [`vmutedHide$`].
+
+For the full member shape, see [`MemberCapabilities`] in the reference.
+Each member flag is either a boolean (the action is allowed or not) or
+an [`OnOffCapability`] — which separates "can turn this on" from "can
+turn this off" because some roles can do one but not both (e.g. a
+moderator who can lock a room while only the host can unlock it).
+
+## Driving UI from capabilities
+
+The pattern: subscribe once to the observable you care about, toggle
+the affordance, let the stream update it forever.
+
+```js
+const self = call.self; // SelfParticipant
+
+self.capabilities.end$.subscribe((canEnd) => {
+  endCallButton.hidden = !canEnd;
+});
+
+self.capabilities.screenshare$.subscribe((canShare) => {
+  shareScreenButton.disabled = !canShare;
+});
+
+self.capabilities.setLayout$.subscribe((canLayout) => {
+  layoutMenu.hidden = !canLayout;
+});
+
+// Self-mute flags split on/off
+self.capabilities.self$.subscribe((self) => {
+  muteAudioButton.disabled = !self.muteAudio.on && !self.muteAudio.off;
+});
+
+// Moderation actions on other members
+self.capabilities.member$.subscribe((member) => {
+  kickButton.hidden = !member.remove;
+  moveButton.hidden = !member.position;
+});
+```
+
+If you're using the [web components](/docs/browser-sdk/v4/guides/web-components),
+`<sw-call-controls>` already does this internally — buttons hide
+themselves when the corresponding capability isn't granted. You only
+need the manual wiring when building a custom UI.
+
+## Reading the full state
+
+`state$` emits the entire [`CallCapabilitiesState`] on every change.
+Useful if you serialize the capability set into your own store:
+
+```js
+self.capabilities.state$.subscribe((state) => {
+  uiStore.setCapabilities(state);
+});
+```
+
+## Why not just gate on token type?
+
+It's tempting to skip the capability stream and say "guests can't end
+calls" in the UI. Two reasons not to:
+
+1. **The same token can have different capabilities in different
+   rooms.** Rooms can override permissions per-resource. The
+   capability stream reflects the resolved permission for *this*
+   call.
+2. **Capabilities can be re-evaluated mid-call.** When the server
+   re-emits `call.joined` after a permission change, the capability
+   stream reflects the new state. Token-based gating would be stuck
+   on the value the token was minted with.
+
+The local capability stream and the server are always in sync because
+they come from the same `call.joined` event. Trust it.
+
+## Server-side enforcement
+
+Capabilities you see locally are exactly what the platform enforces
+— calling `participant.remove()` without the `member.remove`
+capability will fail server-side. The local checks are *UX*, not
+security: the server is the authority, the flags exist so your UI
+doesn't show buttons that would error out.
+
+## Presence
+
+Per-user presence isn't currently exposed through the SDK. Derive
+online state from your own application telemetry — a last-seen
+heartbeat from your backend, or "currently in a call" tracked from
+your own call lifecycle webhooks.
+
+## Reference
+
+- [`SelfCapabilities`] — the class
+- [`self$`] / [`self`] — self capabilities
+- [`member$`] / [`member`] — other-member capabilities
+- [`end$`], [`setLayout$`], [`sendDigit$`], [`screenshare$`], [`device$`], [`lock$`], [`vmutedHide$`] — call-level capabilities
+- [`MemberCapabilities`], [`OnOffCapability`], [`CallCapabilitiesState`] — the data shapes
+
+[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities
+[`self$`]: /docs/browser-sdk/v4/reference/self-capabilities/self$
+[`self`]: /docs/browser-sdk/v4/reference/self-capabilities/self$
+[`member$`]: /docs/browser-sdk/v4/reference/self-capabilities/member$
+[`member`]: /docs/browser-sdk/v4/reference/self-capabilities/member$
+[`end$`]: /docs/browser-sdk/v4/reference/self-capabilities/end$
+[`setLayout$`]: /docs/browser-sdk/v4/reference/self-capabilities/set-layout$
+[`sendDigit$`]: /docs/browser-sdk/v4/reference/self-capabilities/send-digit$
+[`screenshare$`]: /docs/browser-sdk/v4/reference/self-capabilities/screenshare$
+[`device$`]: /docs/browser-sdk/v4/reference/self-capabilities/device$
+[`lock$`]: /docs/browser-sdk/v4/reference/self-capabilities/lock$
+[`vmutedHide$`]: /docs/browser-sdk/v4/reference/self-capabilities/vmuted-hide$
+[`MemberCapabilities`]: /docs/browser-sdk/v4/reference/interfaces/member-capabilities
+[`OnOffCapability`]: /docs/browser-sdk/v4/reference/interfaces/on-off-capability
+[`CallCapabilitiesState`]: /docs/browser-sdk/v4/reference/interfaces/call-capabilities-state

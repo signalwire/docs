@@ -2,10 +2,141 @@
 title: "Theming"
 slug: /guides/web-components-theming
 sidebar-title: "Theming"
-position: 2
+position: 3
 max-toc-depth: 3
 ---
 
-Use CSS custom properties and shadow-DOM parts to match the web components to your brand — colors, typography, spacing, and dark mode.
+The web components are themed entirely through CSS — no JavaScript
+configuration, no theme objects, no provider. The components consume
+[DTCG](https://www.designtokens.org/) tokens shipped in `theme.css`;
+override any of them at any ancestor element and every descendant
+component re-renders in the new style.
 
-> **TODO:** Stub. List exposed CSS variables, `::part(...)` selectors, and example light/dark themes.
+Two layers to work with, in order of preference:
+
+1. **Design tokens** — CSS custom properties for colors, typography,
+   spacing, radii. Set on a parent selector, cascade into shadow DOM
+   via inheritance. Best for brand colors and light/dark.
+2. **CSS Parts** — `::part(...)` selectors for piercing shadow DOM
+   when you need to restyle a specific inner element (a single button,
+   a specific badge).
+
+Reach for tokens first — they're stable, well-documented per
+component, and one declaration can re-style every element on the
+page at once. Drop to Parts only when no token expresses what you
+want to change.
+
+## How `theme.css` loads
+
+[`<sw-call-widget>`] and [`<sw-click-to-call>`] auto-inject
+`theme.css` the first time they render — tokens are available with
+no extra import. If you'd rather control the load order (e.g.
+override tokens *before* the widget mounts, or self-host the
+stylesheet), set `disable-auto-theme` on the widget and import
+explicitly:
+
+```js
+import "@signalwire/web-components/theme.css";
+```
+
+```html
+<sw-call-widget disable-auto-theme token="…" destination="…"></sw-call-widget>
+```
+
+The same auto-load pulls SignalWire brand fonts (Lexend, Instrument
+Sans, JetBrains Mono) from Google Fonts. Set `disable-auto-fonts` if
+your site already self-hosts them.
+
+## The brand-color recipe
+
+For most apps, the entire integration is one selector. Set the
+primary, the success state (the "Call" pill), maybe a radius and a
+font family — that's enough to make the widget visually belong to
+your product:
+
+```css
+sw-call-widget,
+sw-click-to-call {
+  --interactive-button-primary-bg: #7c3aed;
+  --interactive-button-primary-hover: #6d28d9;
+  --interactive-status-success:     #10b981;
+  --fg-emphasis:                    #7c3aed;
+  --radius-md:                      12px;
+  --type-family-body:               "Inter", sans-serif;
+}
+```
+
+The full token surface is grouped into foreground / background,
+interactive (buttons, inputs), structure (border, radius, spacing,
+transition), and typography. Each web-component reference page lists
+exactly which tokens it consumes — start at the
+[Web Components reference](/docs/browser-sdk/v4/reference/web-component)
+to find the ones relevant to a specific element.
+
+The legacy `--sw-color-*`, `--sw-space-*`, `--sw-font-*` variables
+from v3 are gone — migrate downstream themes to the DTCG names.
+
+## Light theme
+
+The defaults are tuned for dark UI. To switch a section to light,
+scope the overrides to a wrapper. Override the bg/fg/border tokens
+and the rest follows:
+
+```css
+.light-section {
+  --bg-page:        #fafbfc;
+  --bg-surface:     #f3f4f6;
+  --fg-default:     #1a1a18;
+  --fg-muted:       #737371;
+  --border-default: rgba(0, 0, 0, 0.1);
+}
+```
+
+Pair the override block with `prefers-color-scheme` to follow the
+visitor's OS preference automatically.
+
+## CSS Parts — when tokens aren't enough
+
+Parts are stable attachment points exposed by each component. Use
+them when you want to restyle one specific inner element without
+affecting siblings — and *only* then, because once you target a
+Part you're tied to the component's internal structure more tightly
+than a token cascade.
+
+```css
+sw-click-to-call::part(button) {
+  border-radius: 999px;     /* pill */
+  padding: 14px 28px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+```
+
+Every reference page lists the parts the element exposes — see the
+[Web Components reference](/docs/browser-sdk/v4/reference/web-component).
+
+## Putting it together
+
+```html
+<style>
+  .branded {
+    --interactive-button-primary-bg: #7c3aed;
+    --interactive-status-success:    #10b981;
+    --radius-md:                     12px;
+    --type-family-body:              "Inter", sans-serif;
+  }
+  .branded sw-click-to-call::part(button) {
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+  }
+</style>
+
+<div class="branded">
+  <sw-click-to-call token="c2c_…" destination="/public/support" label="Talk to us"></sw-click-to-call>
+</div>
+```
+
+For the structural side — layout, slot composition, swapping in
+custom controls — see
+[Customization](/docs/browser-sdk/v4/guides/web-components-customization).
+
+[`<sw-call-widget>`]: /docs/browser-sdk/v4/reference/web-component/sw-call-widget
+[`<sw-click-to-call>`]: /docs/browser-sdk/v4/reference/web-component/sw-click-to-call

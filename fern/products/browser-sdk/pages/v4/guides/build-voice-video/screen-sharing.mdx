@@ -6,6 +6,117 @@ position: 5
 max-toc-depth: 3
 ---
 
-Share a tab, window, or full screen alongside or in place of the user's camera, including audio capture where supported.
+Screen sharing is a method on the `SelfParticipant`. Call
+`startScreenShare()` to add a screen-share track to the active call;
+call `stopScreenShare()` to remove it. The SDK calls
+`getDisplayMedia()` under the hood, negotiates the additional track,
+and pushes status changes through an observable.
 
-> **TODO:** Stub. Cover `getDisplayMedia`, adding a screenshare track to an active call, stopping the share, browser quirks. Carry over content from v3 "sharing your screen" guide.
+There's no separate "screen share call" — the share is added to the
+*existing* call alongside the camera, as a second video stream.
+
+## Start / stop
+
+```js
+call.self$.subscribe(async (self) => {
+  if (!self) return;
+
+  shareButton.onclick = async () => {
+    try {
+      if (self.screenShareStatus === "started") {
+        await self.stopScreenShare();
+      } else {
+        await self.startScreenShare();
+      }
+    } catch (err) {
+      // User cancelled the picker, or permission denied
+      console.error(err);
+    }
+  };
+});
+```
+
+`startScreenShare()` triggers the browser's screen-picker. If the
+user cancels, the promise rejects — handle it gracefully (no error
+toast for a deliberate cancel).
+
+## Observing share state
+
+`screenShareStatus$` is the reactive form. Use it instead of polling
+[`screenShareStatus`] so your UI reflects auto-stop (user clicked
+"Stop sharing" in the browser bar, OS revoked permission, etc.):
+
+```ts
+type ScreenShareStatus = 'idle' | 'starting' | 'started' | 'stopping';
+```
+
+```js
+self.screenShareStatus$.subscribe((status) => {
+  shareButton.classList.toggle("active", status === "started");
+  shareButton.disabled = status === "starting" || status === "stopping";
+});
+```
+
+## How the share appears to other participants
+
+The screen-share track is delivered as a separate participant entry
+in `call.participants$` — usually with a name like `Screen` or the
+sharer's name suffixed with `(Screen)`. The local participant
+doesn't need to render their own share to see it; the SDK doesn't
+mirror the local capture into `remoteStream$`.
+
+To detect which participants are screen shares specifically, check
+the participant's metadata or `type`. In the kitchen-sink demo, the
+share state is read from `self.screenShareStatus` directly:
+
+```js
+const isSharing = call.self?.screenShareStatus === "started";
+```
+
+## Audio with the share
+
+`getDisplayMedia()` can capture system / tab audio on some platforms
+(Chromium-based browsers on macOS / Windows). The SDK forwards
+whatever the browser provides — there's no separate "share audio"
+toggle. If the user's browser doesn't support display audio, only
+the video is shared.
+
+In practice:
+- Chrome / Edge on macOS or Windows: works for tab audio, may work
+  for system audio depending on OS version.
+- Firefox: video only.
+- Safari: video only (and screen sharing requires explicit
+  user-initiated permission per session).
+
+## Browser quirks
+
+- **User gesture required.** `startScreenShare()` must originate from
+  a click or keyboard event — calling it on a timer or after an
+  async chain that didn't start from a gesture will fail.
+- **iOS Safari.** Tab screen sharing isn't supported. iOS has its own
+  system-wide screen-broadcast flow which is outside the browser's
+  reach.
+- **Multiple displays.** The picker lists each display separately;
+  selecting "Entire screen" on a multi-monitor setup shares only the
+  picked display.
+
+## Stopping from outside the page
+
+The user can stop sharing from the browser's "Stop sharing" toolbar.
+When they do, the underlying track ends and the SDK transitions
+`screenShareStatus$` to `'idle'` automatically — no action required
+on your side. Subscribe to `screenShareStatus$` and your UI will
+update without polling.
+
+## Reference
+
+- [`SelfParticipant.startScreenShare()`] — open picker, add the share track
+- [`SelfParticipant.stopScreenShare()`] — remove the share track
+- [`SelfParticipant.screenShareStatus$`] / [`screenShareStatus`] — reactive status (`'idle' | 'starting' | 'started' | 'stopping'`)
+- [`SelfCapabilities.screenshare$`] — capability gate
+
+[`SelfParticipant.startScreenShare()`]: /docs/browser-sdk/v4/reference/self-participant/start-screen-share
+[`SelfParticipant.stopScreenShare()`]: /docs/browser-sdk/v4/reference/self-participant/stop-screen-share
+[`SelfParticipant.screenShareStatus$`]: /docs/browser-sdk/v4/reference/self-participant/screen-share-status$
+[`screenShareStatus`]: /docs/browser-sdk/v4/reference/self-participant/screen-share-status$
+[`SelfCapabilities.screenshare$`]: /docs/browser-sdk/v4/reference/self-capabilities/screenshare$

@@ -2,10 +2,125 @@
 title: "Click-to-Call Widget"
 slug: /guides/click-to-call-widget
 sidebar-title: "Click-to-Call"
-position: 1
+position: 2
 max-toc-depth: 3
 ---
 
-Drop `<sw-click-to-call>` into any page to let visitors place a one-click call to your support or sales line.
+`<sw-click-to-call>` is the fastest way to put a working call button on
+a web page. Set a `token` and a `destination`, and visitors get a
+single styled button that dials your support or sales line and opens
+the full call UI in a modal.
 
-> **TODO:** Stub. Cover element attributes, token provisioning, styling hooks, and a copy-paste embed snippet.
+Under the hood it's a thin wrapper around `<sw-call-widget>` configured
+in modal mode — the button is the trigger, everything else (media,
+controls, optional AI transcript) is delegated to the widget once the
+user clicks.
+
+## Minimum embed
+
+The smallest viable integration is one script tag and one element:
+
+```html
+<script src="https://unpkg.com/@signalwire/web-components/dist/embed/signalwire-web-components-embed.iife.js"></script>
+
+<sw-click-to-call
+  token="c2c_892b29eca7b6d96091faf713f07cdf46"
+  destination="/public/support"
+  label="Talk to support"
+></sw-click-to-call>
+```
+
+That's the whole integration. Drop those two snippets into any HTML
+page and you have a working call button.
+
+If you're using a bundler instead of the embed pathway, swap the script
+tag for `import "@signalwire/web-components/sw-click-to-call"` — the
+element markup is identical. See [Overview](/docs/browser-sdk/v4/guides/web-components)
+for the two pathways.
+
+## Provisioning a token
+
+`token` accepts two formats:
+
+- **Embed token** (`c2c_…` or `c2t_…` prefix) — created in the
+  SignalWire Dashboard's *Embeds* section. The widget automatically
+  routes through `embeds.signalwire.com` and the destination is baked
+  into the embed configuration on the server side; the `destination`
+  attribute is ignored when an embed token already pins one.
+- **Subscriber Access Token (SAT)** — a JWT minted by your backend for
+  an authenticated user. Use this when the call should be attributed
+  to a known account. Pair it with an explicit `destination`.
+
+For public-facing pages (marketing, support, sales), the embed token
+is the right choice: it's safe to expose in HTML, scoped to a single
+destination, and revocable from the dashboard. Use a SAT only when the
+visitor is logged into your app.
+
+See [Authentication](/docs/browser-sdk/v4/guides/authentication) for details.
+
+## Attributes
+
+`token` is required; everything else is optional. `destination`
+selects which resource to dial (ignored when the embed token already
+pins one). `label` sets the button text. `audio-only` flips to a
+no-video flow. See the
+[`<sw-click-to-call>` reference](/docs/browser-sdk/v4/reference/web-component/sw-click-to-call)
+for the full attribute list.
+
+## Listening for events
+
+The element bubbles three composed events: `sw-dial` (dialing
+started), `sw-call-hangup` (visitor clicked hangup), `sw-call-ended`
+(call reached any terminal state). Wire them up for analytics or a
+post-call confirmation UI:
+
+```js
+document.querySelector("sw-click-to-call")
+  .addEventListener("sw-dial", (e) => {
+    analytics.track("call_started", { destination: e.detail.destination });
+  });
+```
+
+## Styling
+
+The button is themed with the SignalWire DTCG tokens shipped in
+`theme.css`. Override any of them at a parent element to restyle the
+button without touching shadow DOM:
+
+```css
+sw-click-to-call {
+  --interactive-status-success: #1d4ed8; /* button background */
+  --radius-md: 999px;                     /* pill shape */
+  --type-family-body: "Inter", sans-serif;
+  --type-size-body: 15px;
+}
+```
+
+For deeper control, target the inner `button` via its
+[CSS Part](https://developer.mozilla.org/en-US/docs/Web/CSS/::part):
+
+```css
+sw-click-to-call::part(button) {
+  padding: 14px 28px;
+  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.4);
+}
+```
+
+See [Theming](/docs/browser-sdk/v4/guides/web-components-theming) for the full token
+list and brand-color recipes.
+
+## When to reach for `sw-call-widget` instead
+
+`<sw-click-to-call>` is intentionally narrow: one destination, one
+button, modal-only. If you need any of the following, drop down to
+`<sw-call-widget>` directly:
+
+- Multiple destinations (a directory, dynamic routing).
+- Inline (non-modal) rendering — embedded inside a page section.
+- A custom trigger element (use the default slot of `<sw-call-widget>`).
+- Receiving incoming calls (`allow-incoming-calls`).
+- Programmatic `dial()` / `hangup()` control.
+
+Both elements share the same underlying call lifecycle — see the
+[`<sw-call-widget>` reference](/docs/browser-sdk/v4/reference/web-component/sw-call-widget)
+for the full surface.

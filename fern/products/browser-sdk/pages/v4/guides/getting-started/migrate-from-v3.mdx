@@ -6,13 +6,27 @@ position: 4
 max-toc-depth: 3
 ---
 
-This guide walks through moving an existing v3 (`@signalwire/js@3.x`) integration to v4. v3 was built around `RoomSession` and event emitters for video conferencing. v4 unifies calling and conferencing under a single `Call` API and replaces event emitters with RxJS observables.
+This guide walks through moving an existing v3 (`@signalwire/js@3.x`) integration to v4. v3 was built around `RoomSession` and event emitters for video conferencing. v4 unifies calling and conferencing under a single `Call` API, replaces event emitters with RxJS observables, and introduces a credential-provider auth model with automatic token refresh.
 
-If you are using the older RELAY v2 SDK, see [Migrate from v2](/sdks/browser-sdk/v4/guides/migrate-from-v2) instead.
+If you are using the older RELAY v2 SDK, see [Migrate from v2](/docs/browser-sdk/v4/guides/migrate-from-v2) instead.
+
+## At a glance
+
+| Concern             | v3                                                     | v4                                                                            |
+| ------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Initialization      | `await SignalWire({ host, token })` (async factory)    | `new SignalWire(credentialProvider)` (class constructor)                      |
+| Authentication      | Token passed directly                                  | `CredentialProvider` with auto-refresh (`StaticCredentialProvider`, custom)   |
+| State               | Event emitters — `roomObj.on('event', handler)`        | RxJS observables — `call.status$.subscribe(handler)`                          |
+| Call controls       | `roomObj.audioMute()`, `roomObj.videoMute()`           | `call.self.toggleMute()`, `call.self.toggleMuteVideo()`                       |
+| Media rendering     | `rootElement` passed to `dial()` — SDK manages the DOM | `<sw-call-media>` / `<sw-self-media>` components, or `localStream$`/`remoteStream$` |
+| Devices             | `getCameraDevicesWithPermissions()`, `roomObj.updateCamera()` | `client.audioInputDevices$`, `self.selectAudioInputDevice()`           |
+| Directory           | Paginated API — `client.address.getAddresses({...})`   | Observable directory — `client.directory.addresses$`, `loadMore()`            |
+| Inbound calls       | `client.online({ incomingCallHandlers })`              | `client.session.incomingCalls$` (always active after register)                |
+| Messaging           | `client.conversation.sendMessage()` / `subscribe()`    | `callAddress.sendText()` / `callAddress.textMessages$`                        |
 
 ## Feature compatibility
 
-v4 covers the bulk of v3, but a handful of features are still in progress. Check this table before starting.
+v4 covers the bulk of v3, but some features are still in progress. Check this table before migrating.
 
 | Feature                | v4 Status          | Alternative                  |
 | ---------------------- | ------------------ | ---------------------------- |
@@ -33,6 +47,22 @@ v4 covers the bulk of v3, but a handful of features are still in progress. Check
 
 If your application depends on recording, streaming, playback, room locking, metadata, or transfer, wait for these features to land before migrating.
 
+## Migration checklist
+
+- [ ] Update the package and import paths
+- [ ] Replace `await SignalWire({ token })` with `new SignalWire(credentialProvider)`
+- [ ] Remove `rootElement` from `dial()` and attach media streams manually (or use web components)
+- [ ] Drop `node_id` / `userVariables` / `await call.start()` — handled by v4 internally
+- [ ] Convert `RoomSession` methods to `Call` / `call.self` equivalents
+- [ ] Replace `roomObj.on('event', ...)` with `call.eventName$.subscribe(...)`
+- [ ] Update `invite.accept` / `invite.reject` to `call.answer()` / `call.reject()`
+- [ ] Move screen share from the room to `call.self`
+- [ ] Swap `WebRTC.getCameras()` etc. for `client.videoInputDevices$`
+- [ ] Pass full `MediaDeviceInfo` objects (not bare `deviceId`) to device selectors
+- [ ] Replace `client.address.getAddresses()` with `client.directory.addresses$`
+- [ ] Replace `client.conversation` messaging with `callAddress.sendText()` / `textMessages$`
+- [ ] Add explicit cleanup: `call.hangup()`, `client.disconnect()`, `client.destroy()`
+
 ## Installation
 
 The package name is unchanged. Upgrade to the v4 major release:
@@ -47,18 +77,60 @@ For the browser build:
 <script src="https://cdn.jsdelivr.net/npm/@signalwire/js/dist/browser.umd.js"></script>
 ```
 
+v4 ships as an ES module. If you bundled v3 as a CDN global, switch to module imports:
+
+```html
+<!-- v3: CDN global -->
+<script src="https://unpkg.com/@signalwire/client@dev"></script>
+
+<!-- v4: bundled ES module -->
+<script type="module" src="/src/main.js"></script>
+```
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+```
+
 ## Authentication
 
-v3 accepted a room token directly. v4 introduces **Subscriber Access Tokens (SAT)** for authenticated users and **Embed Tokens** for guest access, both passed through a credential provider. See [Authentication](/sdks/browser-sdk/v4/guides/authentication) for the full reference.
+v3 accepted a room token directly. v4 introduces a **CredentialProvider** that owns the token lifecycle — including scheduled refresh before expiry. Use **Subscriber Access Tokens (SAT)** for authenticated users and **Embed Tokens** for guest access. See [Authentication](/docs/browser-sdk/v4/guides/authentication) for the full reference.
+
+The SDK ships with `StaticCredentialProvider` for pre-obtained tokens (build-time SAT, server-rendered pages). For long-running apps, implement a custom provider that fetches and refreshes a SAT from your backend.
+
+### Client Bound SAT (DPoP)
+
+When the SDK passes an `AuthenticateContext` with a DPoP key `fingerprint`, forward it to your token endpoint to request a **Client Bound SAT** with automatic refresh:
+
+```js
+class UserCredentialProvider {
+  async authenticate(context) {
+    const response = await fetch("/api/subscriber/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fingerprint: context?.fingerprint }),
+    });
+    const { token, expiresAt } = await response.json();
+    return { token, expiry_at: expiresAt };
+  }
+
+  async refresh() {
+    return this.authenticate();
+  }
+}
+```
 
 ## Client initialization
 
-v3 used an async factory. v4 uses a class constructor that takes a credential provider.
+v3 was an async factory. v4 is a synchronous constructor; connection happens automatically when you subscribe to the first observable.
 
 **Before (v3):**
 
 ```js
-const client = await SignalWire({ token: "<TOKEN>" });
+const client = await SignalWire({
+  host,
+  token: "<TOKEN>",
+  debug: { logWsTraffic: true },
+});
 ```
 
 **After (v4):**
@@ -70,9 +142,7 @@ const credentials = new StaticCredentialProvider({ token: "<TOKEN>" });
 const client = new SignalWire(credentials);
 
 client.ready$.subscribe((ready) => {
-  if (ready) {
-    console.log("Client connected and authenticated");
-  }
+  if (ready) console.log("Client connected and authenticated");
 });
 
 client.errors$.subscribe((error) => {
@@ -80,28 +150,19 @@ client.errors$.subscribe((error) => {
 });
 ```
 
-### With token refresh
+### Connection state
 
-Implement `authenticate()` and `refresh()` to fetch tokens from your backend. The SDK calls `refresh()` automatically before expiry.
+v3 had no separate connection observable — the factory was the connect call. v4 exposes connection state reactively:
 
 ```js
-const credentials = {
-  authenticate: async () => {
-    const response = await fetch("/api/token");
-    return response.json(); // { token, expiry_at }
-  },
-  refresh: async () => {
-    const response = await fetch("/api/token/refresh");
-    return response.json();
-  },
-};
-
-const client = new SignalWire(credentials);
+client.isConnected$.subscribe((connected) => { /* ... */ });
+client.isRegistered$.subscribe((registered) => { /* ... */ });
+client.ready$.subscribe((ready) => { /* connected + authenticated */ });
 ```
 
 ## Outbound calls
 
-v3 accepted an options object with `to` and `rootElement`. v4 takes the destination as the first argument and does **not** auto-attach media to the DOM — you wire streams up yourself.
+v3 took an options object with `to`, `rootElement`, optional `nodeId` for routing, and `userVariables`, then required `await call.start()`. v4 takes the destination as the first argument, handles steering internally, and does **not** auto-attach media — you wire streams up yourself.
 
 **Before (v3):**
 
@@ -109,7 +170,10 @@ v3 accepted an options object with `to` and `rootElement`. v4 takes the destinat
 const call = await client.dial({
   to: "/private/user1",
   rootElement: document.getElementById("container"),
+  nodeId: steeringId,
+  userVariables: { /* ... */ },
 });
+await call.start();
 ```
 
 **After (v4):**
@@ -119,28 +183,43 @@ const call = await client.dial("/private/user1", {
   audio: true,
   video: true,
 });
+// No rootElement, no nodeId, no start() — routing is internal
 
 call.remoteStream$.subscribe((stream) => {
-  if (stream) {
-    document.getElementById("remoteVideo").srcObject = stream;
-  }
+  if (stream) document.getElementById("remoteVideo").srcObject = stream;
 });
 
 call.localStream$.subscribe((stream) => {
-  if (stream) {
-    document.getElementById("localVideo").srcObject = stream;
-  }
+  if (stream) document.getElementById("localVideo").srcObject = stream;
 });
+```
+
+### Full call lifecycle
+
+```js
+// v3
+const call = await client.dial({ to, rootElement, nodeId, userVariables });
+await call.start();
+roomObj.on("room.joined", handler);
+roomObj.on("media.connected", handler);
+roomObj.hangup();
+
+// v4
+const call = await client.dial(address, { audio, video });
+call.status$.subscribe(handler);          // replaces on('room.joined')
+call.localStream$.subscribe(/* ... */);   // replaces rootElement auto-render
+call.remoteStream$.subscribe(/* ... */);
+call.hangup();
 ```
 
 ## Inbound calls
 
-v3 used `client.online({ incomingCallHandlers })` with callbacks on the `invite` object. v4 exposes incoming calls as an observable on the session.
+v3 used `client.online({ incomingCallHandlers })` with callbacks and an explicit `offline()`. v4 exposes incoming calls as an observable that is always active after `register()`. `answer()` and `reject()` are **synchronous** in v4 — no `await` needed.
 
 **Before (v3):**
 
 ```js
-client.online({
+await client.online({
   incomingCallHandlers: {
     all: (notification) => {
       window.__invite = notification.invite;
@@ -151,8 +230,8 @@ client.online({
 const call = await window.__invite.accept({
   rootElement: document.getElementById("container"),
 });
-
 await window.__invite.reject();
+await client.offline();
 ```
 
 **After (v4):**
@@ -162,20 +241,18 @@ await client.register();
 
 client.session.incomingCalls$.subscribe((calls) => {
   const ringing = calls.filter((c) => c.status === "ringing");
-  if (ringing.length > 0) {
-    showIncomingCallUI(ringing[0]);
-  }
+  if (ringing.length > 0) showIncomingCallUI(ringing[0]);
 });
 
 function acceptCall(call) {
-  call.answer();
+  call.answer(); // synchronous
   call.remoteStream$.subscribe((stream) => {
     document.getElementById("remoteVideo").srcObject = stream;
   });
 }
 
 function rejectCall(call) {
-  call.reject();
+  call.reject(); // synchronous
 }
 ```
 
@@ -183,30 +260,17 @@ function rejectCall(call) {
 
 v3 distinguished between `CallFabricRoomSession` and `RoomSession`. v4 collapses both into a single `Call`, with self-participant controls moved off the room object onto `call.self`.
 
-**Before (v3):**
-
-```js
-const roomSession = await client.dial({ to: "/public/room" });
-
-roomSession.audioMute();
-roomSession.audioUnmute();
-roomSession.videoMute();
-roomSession.videoUnmute();
-roomSession.setLayout("grid");
-```
-
-**After (v4):**
-
-```js
-const call = await client.dial("/public/room");
-
-await call.self.mute();
-await call.self.unmute();
-await call.self.muteVideo();
-await call.self.unmuteVideo();
-
-await call.setLayout("grid", {});
-```
+| v3                               | v4                             |
+| -------------------------------- | ------------------------------ |
+| `roomSession.audioMute()`        | `call.self.mute()`             |
+| `roomSession.audioUnmute()`      | `call.self.unmute()`           |
+| `roomSession.videoMute()`        | `call.self.muteVideo()`        |
+| `roomSession.videoUnmute()`      | `call.self.unmuteVideo()`      |
+| `roomSession.deaf()`             | `call.self.toggleDeaf()`       |
+| `roomSession.startScreenShare()` | `call.self.startScreenShare()` |
+| `roomSession.stopScreenShare()`  | `call.self.stopScreenShare()`  |
+| `roomSession.setMicrophoneVolume({ volume })` | `call.self.setAudioInputVolume(value)` |
+| `roomSession.setSpeakerVolume({ volume })`    | `call.self.setAudioOutputVolume(value)` |
 
 ## Self participant
 
@@ -223,6 +287,8 @@ await self.muteVideo();
 await self.unmuteVideo();
 await self.toggleMuteVideo();
 
+await self.toggleDeaf();
+
 // Sync access
 const isMuted = call.self?.audioMuted;
 const isVideoMuted = call.self?.videoMuted;
@@ -237,25 +303,38 @@ call.self$.subscribe((self) => {
 
 ## Participants
 
-Event emitters are gone — participants are exposed as an observable list, with per-event observables when you need them.
+Event emitters are gone — participants are an observable list. Each participant also exposes individual observables for granular updates.
 
 **Before (v3):**
 
 ```js
 roomSession.on("member.joined", (member) => addParticipantToUI(member));
 roomSession.on("member.left", (member) => removeParticipantFromUI(member));
-const members = roomSession.members;
+roomSession.on("member.updated", handler);
+const members = roomSession.members; // flat objects with properties
 ```
 
 **After (v4):**
 
 ```js
+// Full list (re-emits on every change)
 call.participants$.subscribe((participants) => {
   renderParticipantList(participants);
 });
 
+// Individual events
 call.memberJoined$.subscribe((event) => addParticipantToUI(event.member));
 call.memberLeft$.subscribe((event) => removeParticipantFromUI(event.member_id));
+
+// Per-participant observables for fine-grained UI updates:
+//   participant.name$
+//   participant.audioMuted$
+//   participant.videoMuted$
+//   participant.isTalking$
+//   participant.handraised$
+//   participant.deaf$
+//   participant.visible$
+//   participant.position$
 
 const participants = call.participants;
 ```
@@ -280,13 +359,14 @@ call.self$.subscribe((self) => {
 ## Layouts
 
 ```js
-call.layouts$.subscribe((layouts) => {
-  console.log("Available layouts:", layouts);
-});
+// v3
+roomObj.getLayoutList();
+roomObj.setLayout({ name: layoutName });
+roomObj.on("layout.changed", (event) => console.log(event.layout));
 
-call.layout$.subscribe((layout) => {
-  console.log("Current layout:", layout);
-});
+// v4
+call.layouts$.subscribe((layouts) => console.log("Available:", layouts));
+call.layout$.subscribe((layout) => console.log("Current:", layout));
 
 await call.setLayout("grid", {});
 
@@ -301,27 +381,33 @@ Recording and streaming APIs are **not yet implemented** in v4. The observables 
 
 ```js
 // State observable (for server-initiated recordings)
-call.recording$.subscribe((isRecording) => {
-  updateRecordingIndicator(isRecording);
-});
+call.recording$.subscribe((isRecording) => updateRecordingIndicator(isRecording));
 
 const isRecording = call.recording;
 ```
 
 ## Device management
 
-The standalone `WebRTC` namespace is removed. Devices live on the client as reactive lists that auto-update when devices are plugged in or removed.
+The standalone `WebRTC` namespace and `roomObj.updateCamera()`-style methods are removed. Devices live on the client as reactive lists that auto-update when devices are plugged in or removed.
+
+> **Heads up:** v4 device selectors take the full `MediaDeviceInfo` object, not just a `deviceId` string.
 
 **Before (v3):**
 
 ```js
 import { WebRTC } from "@signalwire/js";
 
-const cameras = await WebRTC.getCameras();
-const microphones = await WebRTC.getMicrophones();
-const speakers = await WebRTC.getSpeakers();
+enumerateDevices();
+getCameraDevicesWithPermissions();
+createDeviceWatcher(); // for change detection
 
+await WebRTC.getCameras();
+await WebRTC.getMicrophones();
+await WebRTC.getSpeakers();
 await WebRTC.checkCameraPermissions();
+
+roomObj.updateMicrophone({ deviceId });
+roomObj.updateCamera({ deviceId });
 ```
 
 **After (v4):**
@@ -331,9 +417,10 @@ client.videoInputDevices$.subscribe((cameras) => populateCameraSelect(cameras));
 client.audioInputDevices$.subscribe((mics) => populateMicSelect(mics));
 client.audioOutputDevices$.subscribe((speakers) => populateSpeakerSelect(speakers));
 
-client.selectVideoInputDevice(camera);
-client.selectAudioInputDevice(mic);
-client.selectAudioOutputDevice(speaker);
+// Pass the full MediaDeviceInfo, not just deviceId
+call.self.selectVideoInputDevice(deviceInfo);
+call.self.selectAudioInputDevice(deviceInfo);
+call.self.selectAudioOutputDevice(deviceInfo);
 
 // Sync access
 const cameras = client.videoInputDevices;
@@ -365,29 +452,74 @@ user.fetched$.subscribe((fetched) => {
 
 ## Directory
 
-v4 introduces a directory of addresses (contacts and rooms) that you can browse and dial directly.
+v3's paginated `client.address.getAddresses()` is replaced by a reactive directory that accumulates entries on `loadMore()`.
+
+**Before (v3):**
 
 ```js
-client.directory$.subscribe((directory) => {
-  if (directory) {
-    directory.addresses$.subscribe((addresses) => {
-      addresses.forEach((addr) => {
-        console.log(addr.displayName, addr.type);
-      });
-    });
-  }
+const data = await client.address.getAddresses({
+  type,
+  displayName,
+  pageSize: 10,
+});
+// data.data, data.hasNext, data.hasPrev, data.nextPage(), data.prevPage()
+```
+
+**After (v4):**
+
+```js
+const directory = client.directory;
+
+directory.addresses$.subscribe((addresses) => {
+  // Reactive list — accumulates as loadMore() is called
+  addresses.forEach((addr) => console.log(addr.displayName, addr.type));
 });
 
+directory.hasMore$.subscribe((hasMore) => toggleLoadMoreButton(hasMore));
+directory.loading$.subscribe((loading) => showSpinner(loading));
+
+directory.loadMore(); // fetches and appends the next page
+```
+
+You can dial an address directly:
+
+```js
 const address = client.directory.addresses.find((a) => a.name === "user1");
-const call = await client.dial(address);
+const call = await client.dial(address.defaultChannel, { video: true, audio: true });
 
 // URI strings still work
 const call2 = await client.dial("/private/user1");
 ```
 
+## Messaging
+
+v3's `client.conversation` API is replaced by per-address messaging on the call.
+
+**Before (v3):**
+
+```js
+client.conversation.sendMessage({ addressId, text });
+client.conversation.subscribe((newMsg) => { /* ... */ });
+client.conversation.getConversationMessages({ addressId, pageSize });
+```
+
+**After (v4):**
+
+```js
+callAddress.sendText(text); // scoped to the call's address
+
+callAddress.textMessages$.subscribe((textMessagesCollection) => {
+  textMessagesCollection.values$.subscribe((messages) => renderMessages(messages));
+  textMessagesCollection.hasMore$.subscribe((hasMore) => {});
+  textMessagesCollection.loadMore();
+});
+```
+
+Messages are scoped to the current call's address — there is no global conversation client in v4.
+
 ## Removed namespaces
 
-The standalone `Chat`, `PubSub`, and `WebRTC` clients from v3 are removed. Device APIs move onto the client (see [Device management](#device-management)). Chat and PubSub equivalents are not part of the v4 browser SDK.
+The standalone `Chat`, `PubSub`, and `WebRTC` clients from v3 are removed. Device APIs move onto the client (see [Device management](#device-management)). Chat/PubSub equivalents are not part of the v4 browser SDK.
 
 ## Event-to-observable reference
 
@@ -397,7 +529,7 @@ The standalone `Chat`, `PubSub`, and `WebRTC` clients from v3 are removed. Devic
 > import { filter, map } from "rxjs";
 > ```
 >
-> See the [RxJS primer](/sdks/browser-sdk/v4/guides/rxjs-primer) for a quick orientation.
+> See the [RxJS primer](/docs/browser-sdk/v4/guides/rxjs-primer) for a quick orientation.
 
 | v3 Event                  | v4 Observable                                          |
 | ------------------------- | ------------------------------------------------------ |
@@ -420,25 +552,30 @@ The standalone `Chat`, `PubSub`, and `WebRTC` clients from v3 are removed. Devic
 | Ready callback                     | `client.ready$` (emits `true` when connected + authenticated) |
 | `client.dial({ to, rootElement })` | `client.dial(destination, options)`                           |
 | `client.online({ handlers })`      | `client.register()` + `client.session.incomingCalls$`         |
-| `invite.accept()`                  | `call.answer()`                                               |
-| `invite.reject()`                  | `call.reject()`                                               |
+| `invite.accept()` (async)          | `call.answer()` (sync)                                        |
+| `invite.reject()` (async)          | `call.reject()` (sync)                                        |
 | `roomSession.audioMute()`          | `call.self.mute()`                                            |
+| `roomSession.deaf()`               | `call.self.toggleDeaf()`                                      |
+| `roomSession.setMicrophoneVolume({ volume })` | `call.self.setAudioInputVolume(value)`             |
 | `roomSession.setLayout(name)`      | `call.setLayout(name, positions)`                             |
+| `roomSession.getLayoutList()`      | `call.layouts$`                                               |
 | `roomSession.members`              | `call.participants` / `call.participants$`                    |
 | `roomSession.on('event', fn)`      | `call.eventName$.subscribe(fn)`                               |
 | `client.updateToken(token)`        | Handled by credential provider's `refresh()`                  |
+| `client.address.getAddresses()`    | `client.directory.addresses$` + `directory.loadMore()`        |
+| `client.conversation.sendMessage()`| `callAddress.sendText()`                                      |
 | `roomSession.leave()`              | `call.hangup()`                                               |
 | Disconnect                         | `client.disconnect()` + `client.destroy()`                    |
 
 ## Cleanup
 
-v4 requires explicit cleanup. End calls with `hangup()`, then disconnect and destroy the client.
+v4 requires explicit cleanup. End calls with `hangup()`, then disconnect and destroy the client to release all subscriptions.
 
 ```js
 await call.hangup();
 
-await client.disconnect(); // Closes the WebSocket
-client.destroy();          // Releases subscriptions and resources
+await client.disconnect(); // closes the WebSocket
+client.destroy();          // releases subscriptions and resources
 
 // Manual subscription cleanup, if needed
 const sub = call.status$.subscribe((status) => console.log(status));
@@ -447,7 +584,7 @@ sub.unsubscribe();
 
 ## Web components
 
-v3 did not ship web components. v4 introduces `@signalwire/web-components`, which compose around the new reactive Call API.
+v4 ships `@signalwire/web-components`, composable around the new reactive Call API. `<sw-call-media>` is the root container — nest media, controls, and status components inside, then assign the call.
 
 ```html
 <script type="module">
@@ -461,11 +598,21 @@ v3 did not ship web components. v4 introduces `@signalwire/web-components`, whic
 </sw-call-media>
 ```
 
-Pass the call to the root component after dialing — child components receive it automatically via Lit context.
-
 ```js
 const call = await client.dial("/public/room");
 
 const callMedia = document.getElementById("call-media");
 callMedia.call = call;
+// Child components receive the call automatically via Lit context
 ```
+
+`<sw-participants>` renders participant overlays driven by the same context.
+
+## Common migration issues
+
+1. **No video displays.** v4 does not auto-attach to the DOM. Subscribe to `remoteStream$` (and `localStream$`) and assign the stream to a `<video>`'s `srcObject` — or use `<sw-call-media>` / `<sw-self-media>`.
+2. **`call.self` is null.** `self` is populated only after joining. Use `call.self$` for reactive access, or optional chaining (`call.self?.audioMuted`) for sync reads.
+3. **Events seem to be missing.** Subscribe to observables before the events fire — and avoid unsubscribing prematurely. `participants$` re-emits the full list on any change, so wire it up early in your component lifecycle.
+4. **`startRecording()` throws.** Recording is not yet implemented in v4. Trigger recording server-side via SWML or the REST API; use `call.recording$` to reflect state in the UI.
+5. **Device selection has no effect.** v4 expects a full `MediaDeviceInfo` object, not a bare `deviceId` string.
+6. **Token expired errors after a while.** v3's `client.updateToken()` is gone. Implement `refresh()` on your credential provider and return `{ token, expiry_at }` — the SDK will refresh on schedule.

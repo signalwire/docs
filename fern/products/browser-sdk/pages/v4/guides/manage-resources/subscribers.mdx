@@ -2,10 +2,164 @@
 title: "Subscribers"
 slug: /guides/subscribers
 sidebar-title: "Subscribers"
-position: 1
+position: 2
 max-toc-depth: 3
 ---
 
-Subscribers are the addressable identities that the Browser SDK signs in as. This guide covers minting subscribers, scoping their access, and managing their lifetime from your backend.
+[**Subscribers**](/docs/platform/subscribers) are the SignalWire
+Resource type that represents a user of your application. Each
+Subscriber has credentials, a profile, a private
+[Address](/docs/platform/addresses) for direct dialing, and may own
+public phone numbers. When the Browser SDK authenticates with a
+[Subscriber Access Token (SAT)](/docs/browser-sdk/v4/guides/authentication), the
+platform identifies the caller as one specific Subscriber — and the
+SDK surfaces that identity as `client.user`.
 
-> **TODO:** Stub. Cover subscriber creation via REST, the relationship with SATs, and revocation.
+This guide is about the runtime side: reading the authenticated user's
+profile, reacting to identity changes, and understanding the v4
+rename. For *creating* and *managing* Subscribers themselves (which
+happens on your backend, not in the browser), see
+[Subscribers in the platform docs](/docs/platform/subscribers) and the
+[REST API](/docs/apis/rest/subscribers/create-subscriber).
+
+## v3 → v4: `Subscriber` → [`User`]
+
+Browser SDK v4 renamed the SDK-side object:
+
+| v3 (deprecated)            | v4                  |
+| -------------------------- | ------------------- |
+| `client.subscriber$`       | `client.user$`      |
+| `client.subscriber`        | `client.user`       |
+| `Subscriber` class         | [`User`] class        |
+| `Participant.subscriberId` | `Participant.userId` |
+
+This is a pure SDK rename — the platform, dashboard, REST API, and
+token type are all unchanged. The reason for the rename: not every
+authenticated session corresponds to a "Subscriber" resource — guest
+tokens, for example, produce a session that doesn't map to a stored
+Subscriber. [`User`] is the more general term.
+
+In docs and code samples below we use `user`. If you're reading
+platform-level material that says "Subscriber," it means the same
+thing — the Subscriber Resource the SDK is currently authenticated as.
+
+## Accessing the authenticated user
+
+`client.user` is populated automatically when the client connects —
+the SDK fetches the profile from `/api/fabric/subscriber/info` on
+your behalf. Subscribe to `client.user$` to wait for it without
+risking a `null` read:
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SAT" })
+);
+
+client.user$.subscribe((user) => {
+  if (!user) return; // not yet authenticated
+  console.log("Signed in as", user.displayName ?? user.email);
+});
+```
+
+`client.user$` is a BehaviorSubject — once the profile loads, late
+subscribers get the cached value synchronously.
+
+## Profile
+
+The [`User`] instance carries the platform-side Subscriber profile:
+identity (id, email, firstName / lastName / displayName),
+organisation context (jobTitle, companyName, timeZone, country,
+region), the assigned `addresses` and `pushNotificationKey`, plus
+`appSettings.scopes` from the SAT. See [`User`] for the full field
+list. A typical "who am I" panel:
+
+```js
+client.user$.subscribe((user) => {
+  if (!user) return;
+  document.querySelector("#name").textContent =
+    user.displayName ?? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  document.querySelector("#email").textContent = user.email;
+  document.querySelector("#company").textContent = user.companyName ?? "";
+});
+```
+
+### Assigned addresses
+
+`user.addresses` is the list of [Resource Addresses](/docs/platform/addresses)
+this user owns directly — typically one private address (e.g.
+`/private/jane-doe`) plus any phone numbers or aliases the platform
+has provisioned for them. These are the addresses *other* users will
+dial to reach this user.
+
+This is distinct from `client.directory`, which is the broader list
+of addresses this user can *reach* (other Subscribers, rooms, AI
+agents, scripts the platform exposes to them). See
+[Address Book & Directory](/docs/browser-sdk/v4/guides/address-book).
+
+### Scopes
+
+`user.appSettings?.scopes` reflects the permission scopes the SAT was
+minted with. Use it to gate features your backend has opted the user
+into:
+
+```js
+client.user$.subscribe((user) => {
+  if (!user) return;
+  const canRecord = user.appSettings?.scopes.includes("recording");
+  recordButton.hidden = !canRecord;
+});
+```
+
+The scopes are advisory in the UI — the *real* enforcement is
+server-side, but reading them locally avoids showing buttons that
+would fail.
+
+## Creating and managing Subscribers
+
+Subscriber lifecycle happens on your backend, not in the browser. The
+Browser SDK can only sign in *as* a Subscriber — it can't create,
+update, or delete one. The REST endpoints for that work are:
+
+| Operation     | REST endpoint                                            |
+| ------------- | -------------------------------------------------------- |
+| List          | `GET /api/fabric/subscribers`                            |
+| Create        | `POST /api/fabric/subscribers`                           |
+| Retrieve      | `GET /api/fabric/subscribers/{id}`                       |
+| Update        | `PUT /api/fabric/subscribers/{id}`                       |
+| Delete        | `DELETE /api/fabric/subscribers/{id}`                    |
+| Mint a SAT    | `POST /api/fabric/subscribers/{id}/tokens`               |
+| Mint guest    | `POST /api/fabric/subscribers/{id}/tokens/guest`         |
+
+These are called from your server with your SignalWire API
+credentials — **never** from the browser. The typical pattern: on
+login, your backend looks up (or creates) a Subscriber for the
+authenticated user, mints a SAT, and returns it to the browser to
+hand to the SDK. See [Authentication](/docs/browser-sdk/v4/guides/authentication)
+for the full token flow.
+
+## Sign-out
+
+There's no "sign out the Subscriber" call on the platform — the
+Subscriber resource persists. To end the *session*, disconnect the
+SDK client and discard the SAT:
+
+```js
+await client.disconnect();
+// then drop your stored token, redirect to login, etc.
+```
+
+A disconnected client can be garbage-collected; for the next login,
+construct a new `SignalWire` with a fresh credential provider.
+
+## Reference
+
+- [`SignalWire.user`] / [`user$`] — the authenticated user
+- [`User`] — class with profile fields (id, email, firstName, lastName, displayName, addresses, pushNotificationKey, appSettings, satClaims)
+- [`SignalWire.disconnect()`] — end the session
+
+[`SignalWire.user`]: /docs/browser-sdk/v4/reference/signalwire/user$
+[`user$`]: /docs/browser-sdk/v4/reference/signalwire/user$
+[`User`]: /docs/browser-sdk/v4/reference/user
+[`SignalWire.disconnect()`]: /docs/browser-sdk/v4/reference/signalwire/disconnect

@@ -1,43 +1,174 @@
 ---
 title: "Web Components"
 slug: /guides/web-components
-sidebar-title: "Web Components"
+sidebar-title: "Overview"
 position: 1
 max-toc-depth: 3
 ---
 
-The Browser SDK ships a set of custom HTML elements (e.g. `<sw-call-widget>`, `<sw-audio-level>`) that you can drop into any page. They wrap the underlying SDK so you can build a calling UI without writing imperative JavaScript.
+`@signalwire/web-components` is a set of custom HTML elements built on
+[Lit](https://lit.dev) that wraps the Browser SDK in declarative
+markup. Drop them into any page — vanilla HTML, React, Vue, Angular,
+plain server-rendered templates — and you get a working calling UI
+without writing imperative JavaScript.
 
-## Install
+The headline element is `<sw-call-widget>`: it owns the entire call
+lifecycle (client init, dialling, media, controls, optional AI
+transcript) and renders inline or as a modal. Around it sits a family
+of composable primitives — `<sw-call-media>`, `<sw-local-camera>`,
+`<sw-call-controls>`, `<sw-device-selector>`, and the `sw-ui-*`
+presentational layer — so you can swap any piece out when you need
+something custom.
+
+## Two ways to load the library
+
+There are two distribution channels, and they correspond to two very
+different integration styles. Pick one up front:
 
 <CardGroup cols={2}>
-  <Card title="npm" icon="brands npm" href="https://www.npmjs.com/package/@signalwire/web-components">
-    @signalwire/web-components
+  <Card title="Embed bundle" icon="code">
+    A single self-contained `<script>` tag. Registers every custom
+    element and exposes the SDK on `window.SignalWireUI`. Best for
+    static sites, CMS pages, and any context where you don't have a
+    bundler.
+  </Card>
+  <Card title="npm bundle" icon="brands npm">
+    `npm install @signalwire/web-components`. Tree-shakes through your
+    bundler, plays well with TypeScript, and lets you import single
+    elements via subpath exports. Best for SPAs and framework apps.
   </Card>
 </CardGroup>
 
-```bash
-npm install @signalwire/web-components
-```
+The two paths register the **same** custom elements with the **same**
+attribute and event APIs — once an element is on the page it behaves
+identically regardless of how it got loaded. The only practical
+differences are how you import it and where SDK classes live.
 
-Or load from a CDN:
+## Embed pathway
 
-```html
-<script type="module" src="https://unpkg.com/@signalwire/web-components"></script>
-```
-
-## Use
-
-Import once, then use the elements anywhere in your markup.
+The embed bundle is a single IIFE file that registers every custom
+element as a side effect and re-exports the SDK on
+`window.SignalWireUI`. No build step, no module syntax.
 
 ```html
-<script type="module">
-  import "@signalwire/web-components";
+<!doctype html>
+<html>
+  <head>
+    <script src="https://unpkg.com/@signalwire/web-components/dist/embed/signalwire-web-components-embed.iife.js"></script>
+  </head>
+  <body>
+    <sw-call-widget
+      token="c2c_892b29eca7b6d96091faf713f07cdf46"
+      destination="/public/support"
+      transcription
+    >
+      <sw-ui-background slot="background" default></sw-ui-background>
+    </sw-call-widget>
+  </body>
+</html>
+```
+
+For programmatic control, the SDK classes are on the global:
+
+```html
+<script>
+  const { SignalWire, StaticCredentialProvider, EmbedTokenCredentialProvider } =
+    SignalWireUI;
+
+  // Embed token (c2c_ / c2t_ prefix) — uses embeds.signalwire.com:
+  const client = new SignalWire(
+    new EmbedTokenCredentialProvider("embeds.signalwire.com", "c2c_…")
+  );
+
+  // SAT token — point at your own project:
+  const client2 = new SignalWire(
+    new StaticCredentialProvider({ token: "eyJ…your_SAT…" })
+  );
 </script>
+```
 
-<sw-call-provider token="YOUR_SAT">
-  <sw-call-widget destination="/private/support"></sw-call-widget>
+Use the embed pathway when:
+
+- You're adding a click-to-call button or call widget to a marketing
+  site, landing page, or CMS template.
+- You don't have (or don't want) a bundler.
+- You want a single URL you can copy-paste.
+
+## npm pathway
+
+Install the package and `@signalwire/js` together (the SDK is a peer
+dependency of the components):
+
+```bash
+npm install @signalwire/web-components @signalwire/js rxjs
+```
+
+A side-effect import registers every element:
+
+```js
+import "@signalwire/web-components";
+```
+
+Or pull in just the elements you use to keep the bundle small:
+
+```js
+import "@signalwire/web-components/sw-call-widget";
+import "@signalwire/web-components/sw-ui-background";
+```
+
+Then use them anywhere in your markup or JSX:
+
+```html
+<sw-call-widget
+  token="c2c_892b29eca7b6d96091faf713f07cdf46"
+  destination="/public/support"
+  transcription
+>
+  <sw-ui-background slot="background" default></sw-ui-background>
+</sw-call-widget>
+```
+
+SDK classes import from `@signalwire/js`:
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+```
+
+Use the npm pathway when:
+
+- You already have a bundler (Vite, webpack, esbuild, Next.js, etc.).
+- You want tree-shaking and per-element subpath imports.
+- You're working in TypeScript and want types.
+- You're rendering through a framework (React, Vue, Svelte, …).
+  See the [framework integration guide](/docs/browser-sdk/v4/guides/framework-integration)
+  for React/Vue/Svelte wrappers.
+
+## Anatomy of a widget
+
+`<sw-call-widget>` is the simplest entry point — set `token` and
+`destination`, and it does the rest. Inside, it composes the same
+primitives you can also use à la carte:
+
+```html
+<sw-call-provider .call="${callObject}" .deviceController="${deviceController}">
+  <sw-call-media></sw-call-media>
+  <sw-self-media></sw-self-media>
+  <sw-call-controls></sw-call-controls>
 </sw-call-provider>
 ```
 
-See the [Web Components reference](/js/v4/web-components) for the full list of elements and their attributes.
+`<sw-call-provider>` sets up reactive contexts (call state, devices,
+transcript, user events). Any descendant element subscribes
+automatically. You only need to reach for the primitives when the
+built-in widget layout doesn't match your design.
+
+## Where to next
+
+- [Click-to-Call Widget](/docs/browser-sdk/v4/guides/click-to-call-widget) — drop a
+  single call button anywhere on your site.
+- [Theming](/docs/browser-sdk/v4/guides/web-components-theming) — design tokens,
+  shadow-DOM parts, light/dark, and brand colors.
+- [Customization](/docs/browser-sdk/v4/guides/web-components-customization) — slots,
+  events, and composing your own UI from the primitives.
+- [Web Components reference](/docs/browser-sdk/v4/reference/web-component) — full attribute,
+  event, and slot listings for every element.

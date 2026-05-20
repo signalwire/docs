@@ -2,10 +2,194 @@
 title: "Production Checklist"
 slug: /guides/production
 sidebar-title: "Production"
-position: 3
+position: 4
 max-toc-depth: 3
 ---
 
-Harden a Browser SDK deployment before launch: HTTPS, microphone/camera permission UX, Content Security Policy, token TTL and refresh, error reporting, and load testing.
+Eight things to verify before flipping a Browser SDK app to
+production. None are exotic — they're all the items that show up in
+post-launch incident reviews when a step gets skipped.
 
-> **TODO:** Stub. Tabulate CSP directives needed, document SAT refresh patterns, list pre-launch verifications.
+## 1. HTTPS everywhere
+
+`getUserMedia`, `RTCPeerConnection`, and the SDK's WebSocket all
+require a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+The browser will silently refuse to grant microphone or camera access
+on plain HTTP — even on a LAN. The only exempt origin is `localhost`.
+
+- ✅ Production domain served over HTTPS
+- ✅ HSTS header on the app domain (e.g. `Strict-Transport-Security: max-age=63072000`)
+- ✅ No mixed-content warnings in DevTools
+
+## 2. Microphone & camera permission UX
+
+The browser permission prompt is non-negotiable, but its *context* is
+yours to design. A cold prompt — "Allow microphone?" the instant the
+page loads — drops grant rates substantially. Two patterns that work:
+
+- **Just-in-time**: only call `getUserMedia` (or `client.dial()` with
+  media) after the user has explicitly clicked "Start call." This is
+  what `<sw-call-widget>` does by default.
+- **Pre-explain**: render a small in-app modal that explains why the
+  permission is needed, with a "Continue" button that triggers the
+  browser prompt.
+
+Always handle denial:
+
+```js
+try {
+  const call = await client.dial(destination, { audio: true, video: true });
+} catch (err) {
+  if (err.name === "NotAllowedError") {
+    showPermissionDeniedHelp(); // explain how to reset permissions
+  } else if (err.name === "NotFoundError") {
+    showNoDeviceHelp(); // no microphone or camera at all
+  } else {
+    showGenericFailure(err);
+  }
+}
+```
+
+## 3. Content Security Policy
+
+A CSP that supports the SDK needs to allow the SignalWire WebSocket,
+your token endpoint, WebRTC media (which isn't gated by CSP — but
+related fetches are), and — if you load the web-components embed
+bundle — the CDN you fetch it from.
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  connect-src 'self' https://*.signalwire.com wss://*.signalwire.com;
+  script-src 'self' https://unpkg.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  media-src 'self' blob:;
+  img-src 'self' data: blob:;
+  worker-src 'self' blob:;
+  frame-src 'self';
+```
+
+| Directive     | Why                                                                 |
+| ------------- | ------------------------------------------------------------------- |
+| `connect-src` | WebSocket to SignalWire (`wss://`) and your `/api/sw-token` endpoint. |
+| `script-src`  | Add `https://unpkg.com` (or your CDN host) if loading the embed bundle by script tag; omit otherwise. |
+| `style-src`   | The web components inject `theme.css` and Google Fonts inline. Drop `'unsafe-inline'` and the `fonts.googleapis.com` host if you use `disable-auto-fonts` + `disable-auto-theme`. |
+| `font-src`    | Brand fonts from Google. Drop if self-hosted or `disable-auto-fonts` is set. |
+| `media-src`   | `blob:` is required for `MediaStream` track URLs.                   |
+| `worker-src`  | `blob:` is required for some browsers' WebRTC stack workers.        |
+
+Test the policy with the browser console open — CSP violations log
+loudly.
+
+## 4. Token TTL and refresh
+
+The SDK refreshes credentials automatically *if* your provider exposes
+a `refresh()` method. A static token will expire and the next
+`dial()` will fail with `InvalidCredentialsError`.
+
+```ts
+class RefreshingCredentialProvider {
+  async authenticate() {
+    const r = await fetch("/api/sw-token", { method: "POST" });
+    return await r.json(); // { token, expiry_at }
+  }
+  async refresh() {
+    return this.authenticate();
+  }
+}
+```
+
+Recommended TTLs:
+
+| Use case                  | TTL          |
+| ------------------------- | ------------ |
+| Interactive user session  | 1–4 hours    |
+| Click-to-call / embed     | 15–60 min    |
+| Long-running kiosk / bot  | 1–8 hours, with `refresh()` mandatory |
+
+Short TTLs limit the blast radius if a token is leaked. The refresh
+flow is transparent to the user.
+
+See [Authentication](/docs/browser-sdk/v4/guides/authentication) for the full
+credential-provider contract.
+
+## 5. Error reporting
+
+Wire `client.errors$` and `call.errors$` into your error tracker
+(Sentry, Datadog, Bugsnag, …) so connection failures and ICE
+disconnects show up in your usual dashboards.
+
+```ts
+client.errors$.subscribe((err) => {
+  Sentry.captureException(err, { tags: { source: "signalwire-client" } });
+});
+
+call.errors$.subscribe((err) => {
+  Sentry.captureException(err, {
+    tags: { source: "signalwire-call", call_id: call.id },
+  });
+});
+```
+
+Track the connection state too — `isConnected$` going false is often
+the first signal of a network problem on the user's side. A short
+"reconnecting…" banner improves perceived reliability significantly.
+
+## 6. Network expectations
+
+WebRTC media is UDP-by-default. Corporate networks frequently block
+UDP outbound, in which case the SDK falls back to TURN-over-TCP via
+SignalWire's relay infrastructure. Two things to verify:
+
+- Open the **Network** panel during a real call — confirm the
+  WebSocket stays connected.
+- Open the **WebRTC internals** (`chrome://webrtc-internals/`) tab —
+  confirm `iceConnectionState` reaches `connected` and stays there.
+
+If you have customers on strict networks, document a fallback ("call
+in on PSTN at +1…") in your support UI. The SDK can't open ports that
+the network has closed.
+
+## 7. Observability
+
+Beyond error tracking, track call quality. The peer connection's
+`getStats()` returns RTP-level metrics that map onto real
+mean-opinion-score deterioration:
+
+```ts
+const stats = await call.rtcPeerConnection.getStats();
+const inbound = [...stats.values()].find(
+  (s) => s.type === "inbound-rtp" && s.kind === "audio"
+);
+if (inbound) {
+  metrics.gauge("call.packets_lost", inbound.packetsLost);
+  metrics.gauge("call.jitter", inbound.jitter);
+}
+```
+
+Sample at the end of each call (or every 30s for long calls) and feed
+into your existing dashboards.
+
+## 8. Pre-launch verification
+
+Run through this list on the actual production URL — not staging,
+not localhost — with real devices:
+
+- [ ] Anonymous visitor can place a click-to-call (if applicable).
+- [ ] Authenticated user can place an outbound call.
+- [ ] Authenticated user receives a registered inbound call.
+- [ ] Permission prompt fires only after user gesture.
+- [ ] Denying the permission shows a graceful help screen.
+- [ ] Token refresh fires before expiry (force-test by setting a 60s TTL).
+- [ ] CSP allows the WebSocket, fonts, and embed bundle (no violations in console).
+- [ ] HTTPS + HSTS confirmed; no mixed content.
+- [ ] Camera-off / muted UI matches actual track state after toggle.
+- [ ] Hangup from both ends cleans up the peer connection (no orphan WebSockets in `chrome://webrtc-internals`).
+- [ ] Error tracker receives a forced failure (e.g. dial an invalid destination).
+- [ ] Mobile Safari: video plays after user gesture and `playsinline` set.
+- [ ] Firefox: audio routes correctly even though `setSinkId` is no-op.
+- [ ] Slow-network simulation (DevTools throttling): SDK reconnects after disconnect.
+
+For per-symptom debugging once the app is live, see
+[Troubleshooting](/docs/browser-sdk/v4/guides/troubleshooting).

@@ -6,6 +6,176 @@ position: 11
 max-toc-depth: 3
 ---
 
-Send in-call chat messages, build dedicated chat channels, and subscribe to message streams alongside a voice or video call.
+Text messaging in the Browser SDK lives on the `Address` entity, not
+on the `Call`. Every Address — whether a Subscriber, room, or
+external contact — has a conversation associated with it: an
+append-only log of chat messages and call history. You can send a
+text to an Address with or without an active call.
 
-> **TODO:** Stub. Cover channel subscription, sending messages, history, presence. Carry over content from v3 "simple chat demo" guide.
+The same conversation is shared across all clients of the same
+Subscriber. Sending a message from your phone client and your laptop
+client puts both into the same thread.
+
+## Sending a message
+
+```js
+import { firstValueFrom } from "rxjs";
+
+const directory = await firstValueFrom(client.directory$);
+const address   = directory.addresses.find((a) => a.name === "/private/alice");
+
+await address.sendText("Heading over to the call now");
+```
+
+`sendText` resolves once the message is accepted by the server.
+There's no separate "delivered" / "read" signal in v4 — if you need
+those, store delivery state in your own backend.
+
+## Reading the conversation
+
+`address.textMessages$` lazy-loads the conversation on first
+subscribe and emits a `TextMessageCollection`. The collection itself
+is reactive — its `values$` re-emits as new messages arrive or older
+ones are paginated in.
+
+```js
+address.textMessages$.subscribe((collection) => {
+  if (!collection) return;
+
+  collection.values$.subscribe((messages) => {
+    chatList.innerHTML = "";
+    for (const m of messages) {
+      const li = document.createElement("li");
+      li.textContent = `${m.text} — ${new Date(m.created).toLocaleTimeString()}`;
+      chatList.appendChild(li);
+    }
+  });
+});
+```
+
+Each entry is a [`TextMessage`] with `id`, `text`, `created` and a
+`fromAddress$` observable — the sender is itself a resolved
+[`Address`], so you can render an avatar / name from the same SDK
+data without an extra fetch.
+
+## Paging older messages
+
+`textMessages$` initially loads the most recent page. To pull older
+messages, watch `hasMore$` and call `loadMore()`:
+
+```js
+collection.hasMore$.subscribe((hasMore) => {
+  if (!hasMore) return;
+  chatList.onscroll = () => {
+    if (chatList.scrollTop < 50) collection.loadMore();
+  };
+});
+```
+
+The "scroll near the top → loadMore" pattern is what the kitchen-sink
+demo uses; the same shape works for any direction.
+
+## In-call chat
+
+When you have an active call, the call's address is reachable as
+`call.address`. Use that to send chat messages within the call's
+conversation:
+
+```js
+const sendButton = document.querySelector("#send-chat");
+const input      = document.querySelector("#chat-input");
+
+sendButton.onclick = async () => {
+  const text = input.value.trim();
+  if (!text || !call.address) return;
+  await call.address.sendText(text);
+  input.value = "";
+};
+
+call.address?.textMessages$.subscribe((collection) => {
+  collection?.values$.subscribe(renderMessages);
+});
+```
+
+Even after the call ends, the conversation persists — you can scroll
+back through messages from previous calls and send asynchronous
+messages between calls.
+
+## Call history
+
+The same conversation log also carries call history — same shape,
+same pagination, filtered to call entries instead of chat. Each
+entry ([`AddressHistory`]) has `kind`, `status`, `started`, `ended`.
+
+```js
+address.history$.subscribe((collection) => {
+  collection?.values$.subscribe((entries) => renderCallLog(entries));
+});
+```
+
+`textMessages$` and `history$` are two filtered views of the same
+underlying conversation, so loading one populates both.
+
+Both observables `shareReplay(1)` — late subscribers get the existing
+collection without re-fetching.
+
+## Group chat in a room
+
+In a room call, `call.address` is the *room's* address — sending a
+chat message there delivers it to everyone in the room's
+conversation. Each room thus has one chat thread, persisted across
+sessions:
+
+```js
+const call = await client.dial("/public/team-standup", { audio: true });
+
+call.address?.textMessages$.subscribe((collection) => {
+  collection?.values$.subscribe((messages) => renderChat(messages));
+});
+
+sendButton.onclick = () => call.address?.sendText(input.value);
+```
+
+For private side-channels within a room (a DM between two
+participants), use each participant's `Address` directly — look it
+up from `directory.get$(addressId)` using the `Participant.addressId`
+field.
+
+## Realtime delivery without a call
+
+Conversations are reactive whether or not a call is active. To run a
+chat-only experience (e.g. a support inbox), subscribe to multiple
+addresses' `textMessages$` streams and update your UI as messages
+land:
+
+```js
+for (const address of directory.addresses) {
+  address.textMessages$.subscribe((collection) => {
+    collection?.values$.subscribe((messages) => {
+      const unread = messages.filter((m) => !isRead(m.id));
+      updateUnreadBadge(address.id, unread.length);
+    });
+  });
+}
+```
+
+The platform pushes new messages over the same WebSocket the SDK
+uses for signaling — no polling required.
+
+## Reference
+
+- [`Address.sendText()`] — send a chat message
+- [`Address.textMessages$`] / [`Address.textMessage`] — chat thread collection
+- [`Address.history$`] / [`Address.history`] — call history for the same conversation
+- [`TextMessage`] — the message shape
+- [`AddressHistory`] — the call-log entry shape
+- [`Call.address`] — the active call's address, for in-call chat
+
+[`Address.sendText()`]: /docs/browser-sdk/v4/reference/address/send-text
+[`Address.textMessages$`]: /docs/browser-sdk/v4/reference/address
+[`Address.textMessage`]: /docs/browser-sdk/v4/reference/address/text-message
+[`Address.history$`]: /docs/browser-sdk/v4/reference/address
+[`Address.history`]: /docs/browser-sdk/v4/reference/address/history
+[`TextMessage`]: /docs/browser-sdk/v4/reference/interfaces/text-message
+[`AddressHistory`]: /docs/browser-sdk/v4/reference/interfaces/address-history
+[`Call.address`]: /docs/browser-sdk/v4/reference/webrtc-call/address$
