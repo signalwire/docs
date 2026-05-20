@@ -1,11 +1,449 @@
 ---
 title: "Device Management"
+subtitle: "Pick the mic, camera, and speaker — before a call and on the fly"
 slug: /guides/device-management
 sidebar-title: "Device Management"
 position: 4
 max-toc-depth: 3
 ---
 
-Enumerate cameras, microphones, and speakers, prompt for permissions, switch devices mid-call, and react to hot-plug events.
+To let users pick which microphone, camera, and speaker a call uses, subscribe to the device lists, render a picker, and apply the user's choice — either as a preference for the next call or as a live swap during one. The same APIs cover hot-plug events, so a new headset shows up in the list as soon as it's connected.
 
-> **TODO:** Stub. Cover device enumeration, permission UX, switching webcam/mic during an active call, and `devicechange` handling. Carry over content from v3 "switch webcam or microphone" guide.
+```ts Browser
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+
+// 1. Prompt for permission so devices come back with real labels.
+await client.requestMediaPermissions({ audio: true, video: true });
+
+// 2. Render the lists; they re-emit when devices are plugged or unplugged.
+client.audioInputDevices$.subscribe((mics) => renderMicOptions(mics));
+client.videoInputDevices$.subscribe((cams) => renderCamOptions(cams));
+client.audioOutputDevices$.subscribe((speakers) => renderSpeakerOptions(speakers));
+
+// 3. Apply the user's choice. Before a call, set the preference on the client;
+//    during a call, switch the live track on `call.self`.
+micSelect.onchange = () => {
+  const mic = client.audioInputDevices.find((d) => d.deviceId === micSelect.value);
+  if (activeCall?.self) activeCall.self.selectAudioInputDevice(mic);
+  else client.selectAudioInputDevice(mic);
+};
+```
+
+The sections below cover requesting permission, reading the device lists, applying the user's pick before a call and again mid-call, routing remote audio to the chosen speaker, and reacting when a device disappears.
+
+<Info>
+**Before you start.** Devices live behind the browser's permission gate. `getUserMedia` only runs on secure origins (HTTPS or `localhost`), and device labels are empty strings until the user has granted access at least once. Plan the UX so picking a device comes *after* the prompt — not the other way around.
+</Info>
+
+## The three device kinds
+
+Each kind comes with its own pair of observables: one for the list of available devices, and one for the current selection. Subscribe to both whenever you render a picker so the `<select>` reflects what's actually in use — including changes that happen without an explicit user pick, such as a recovery after the active device was unplugged.
+
+<CardGroup cols={3}>
+  <Card title="Microphones" icon="fa-regular fa-microphone">
+    [`audioInputDevices$`](/docs/browser-sdk/v4/reference/signalwire/audio-input-devices$) lists every mic; [`selectedAudioInputDevice$`](/docs/browser-sdk/v4/reference/signalwire/selected-audio-input-device$) tracks the current pick.
+  </Card>
+  <Card title="Cameras" icon="fa-regular fa-video">
+    [`videoInputDevices$`](/docs/browser-sdk/v4/reference/signalwire/video-input-devices$) lists every camera; [`selectedVideoInputDevice$`](/docs/browser-sdk/v4/reference/signalwire/selected-video-input-device$) tracks the current pick.
+  </Card>
+  <Card title="Speakers" icon="fa-regular fa-volume-high">
+    [`audioOutputDevices$`](/docs/browser-sdk/v4/reference/signalwire/audio-output-devices$) lists every speaker; [`selectedAudioOutputDevice$`](/docs/browser-sdk/v4/reference/signalwire/selected-audio-output-device$) tracks the current pick.
+  </Card>
+</CardGroup>
+
+When you only need the current snapshot — for example, populating a dropdown once on click — read the non-`$` accessor instead: `client.audioInputDevices`, `client.videoInputDevices`, `client.audioOutputDevices`. Use the observable when the UI should keep up with hot-plugs and SDK-driven switches.
+
+## Prompt for permission
+
+Each list populates from `navigator.mediaDevices.enumerateDevices()`. Until the user grants permission, that call returns devices with empty `label` strings, which makes a picker UI useless. Call [`requestMediaPermissions()`](/docs/browser-sdk/v4/reference/signalwire/request-media-permissions) once at startup to drive the prompt and re-enumerate with labels filled in:
+
+```ts Browser
+const result = await client.requestMediaPermissions({ audio: true, video: true });
+
+if (!result.audio || !result.video) {
+  showPermissionBanner("Allow microphone and camera in your browser to continue.");
+}
+```
+
+The returned [`PermissionResult`](/docs/browser-sdk/v4/reference/interfaces/permission-result) reports which scopes were granted and which device the browser handed back for each kind. Those devices become the initial selection unless you've already set a preference. The browser only shows the prompt the first time per origin; later calls resolve immediately with the existing grant.
+
+If the user denies the prompt, `enumerateDevices()` still returns the device list, but with empty labels. Show a "permission needed" banner instead of an empty dropdown, and link to the browser's lock-icon controls so they can grant it later.
+
+## Read the device lists
+
+Each list is an observable of `MediaDeviceInfo[]`. Subscribe once at startup — every subscription receives the current list immediately and then again whenever the OS reports a change. Pair the list with the matching `selected…$` observable so a `<select>` reflects the right value when the SDK switches devices on its own:
+
+```ts Browser
+import { combineLatest } from "rxjs";
+
+combineLatest([
+  client.audioInputDevices$,
+  client.selectedAudioInputDevice$,
+]).subscribe(([mics, selected]) => {
+  micSelect.innerHTML = "";
+  for (const mic of mics) {
+    const option = new Option(mic.label || `Microphone ${mic.deviceId.slice(0, 6)}`, mic.deviceId);
+    option.selected = mic.deviceId === selected?.deviceId;
+    micSelect.append(option);
+  }
+});
+```
+
+The same pattern fits `videoInputDevices$` and `audioOutputDevices$` — only the property names change.
+
+## Apply the user's choice
+
+There are two scopes for "use this device." Match the scope to the moment the user picks:
+
+<Tabs>
+  <Tab title="Before a call">
+  Set a preference on the client. The selection sticks for every future [`dial()`](/docs/browser-sdk/v4/reference/signalwire/dial) and [`answer()`](/docs/browser-sdk/v4/reference/interfaces/call), so the next outbound call is captured from the right mic and camera without any extra wiring. Wire the picker's `change` event to look up the chosen `MediaDeviceInfo` from the live list and pass it to [`selectAudioInputDevice()`](/docs/browser-sdk/v4/reference/signalwire/select-audio-input-device) or [`selectVideoInputDevice()`](/docs/browser-sdk/v4/reference/signalwire/select-video-input-device):
+
+  ```ts Browser
+  // <select id="mic-select"> populated from client.audioInputDevices$
+  micSelect.onchange = () => {
+    const mic = client.audioInputDevices.find(
+      (d) => d.deviceId === micSelect.value,
+    );
+    // null clears the preference and falls back to the system default.
+    client.selectAudioInputDevice(mic ?? null);
+  };
+
+  camSelect.onchange = () => {
+    const camera = client.videoInputDevices.find(
+      (d) => d.deviceId === camSelect.value,
+    );
+    client.selectVideoInputDevice(camera ?? null);
+  };
+
+  // Subsequent dials use the preference automatically.
+  const call = await client.dial("/private/alice", { audio: true, video: true });
+  ```
+
+  The next `dial()` captures from the chosen mic and camera with no extra arguments. To change the default back later, look up a new device the same way, or pass `null` to clear the preference.
+  </Tab>
+  <Tab title="During a call">
+  Replace the live track on [`call.self`](/docs/browser-sdk/v4/reference/self-participant). The user hears or sees the new device immediately, without renegotiation, and the remote side doesn't notice the switch. The shape is the same picker handler — only the target changes from `client` to `activeCall.self`:
+
+  ```ts Browser
+  // While a call is in progress, swap the live track instead of setting
+  // a preference for the next call.
+  micSelect.onchange = () => {
+    const mic = client.audioInputDevices.find(
+      (d) => d.deviceId === micSelect.value,
+    );
+    if (!mic) return;
+    // `savePreference: true` also stores the pick at the client level so
+    // the next session starts with the same device selected.
+    activeCall.self.selectAudioInputDevice(mic, { savePreference: true });
+  };
+
+  camSelect.onchange = () => {
+    const camera = client.videoInputDevices.find(
+      (d) => d.deviceId === camSelect.value,
+    );
+    if (!camera) return;
+    activeCall.self.selectVideoInputDevice(camera, { savePreference: true });
+  };
+  ```
+
+  See [`call.self.selectAudioInputDevice()`](/docs/browser-sdk/v4/reference/self-participant/select-audio-input-device) and [`call.self.selectVideoInputDevice()`](/docs/browser-sdk/v4/reference/self-participant/select-video-input-device) for the full options object — `constraints` and `savePreference` round out the supported keys.
+  </Tab>
+</Tabs>
+
+In practice, a single picker handler covers both scopes — fall through to the client-level preference when there's no active call, replace the live track when there is:
+
+```ts Browser
+let activeCall = null;
+
+function pickMicrophone(): void {
+  const mic = client.audioInputDevices.find(
+    (d) => d.deviceId === micSelect.value,
+  );
+  if (!mic) return;
+
+  if (activeCall?.self) {
+    // Live swap; mid-call only.
+    activeCall.self.selectAudioInputDevice(mic, { savePreference: true });
+  } else {
+    // Preference for the next dial()/answer().
+    client.selectAudioInputDevice(mic);
+  }
+}
+
+micSelect.onchange = pickMicrophone;
+
+// Keep `activeCall` in sync with whatever call the user is on right now.
+client.dial("/private/alice").then((call) => {
+  activeCall = call;
+  call.status$.subscribe((s) => {
+    if (s === "destroyed") activeCall = null;
+  });
+});
+```
+
+Speakers follow a slightly different path — see the next section.
+
+## Route remote audio to the chosen speaker
+
+Selecting a speaker takes an extra step the other devices don't — most browsers route audio output through the `<video>` or `<audio>` element the remote stream is attached to, and switching the sink is an element-level call. [`applySelectedAudioOutputDevice()`](/docs/browser-sdk/v4/reference/signalwire/apply-selected-audio-output-device) wraps `HTMLMediaElement.setSinkId()` so you don't have to:
+
+```ts Browser
+client.selectAudioOutputDevice(speaker);
+const applied = await client.applySelectedAudioOutputDevice(remoteVideo);
+if (!applied) {
+  // Browser doesn't support setSinkId — fall through to the system default.
+}
+```
+
+The method returns `true` when the sink was changed and `false` when no speaker is selected or the browser doesn't support `setSinkId`. Call it once after binding the remote stream to the element, and again any time the user picks a new speaker.
+
+<Warning>
+**Firefox doesn't ship `setSinkId` yet.** `applySelectedAudioOutputDevice()` returns `false` on Firefox and audio plays through the system default speaker. Check the return value and surface a "speaker selection unavailable" notice rather than silently swallowing the choice — see [the MDN compatibility table](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/setSinkId#browser_compatibility).
+</Warning>
+
+## React to device changes
+
+Hot-plug events are already covered by the list observables — adding a USB headset re-emits `audioInputDevices$` with the new entry. What you usually want on top of that is a notification when the SDK *automatically switches* a device because the previous one was unplugged. Subscribe to [`deviceRecovered$`](/docs/browser-sdk/v4/reference/signalwire/device-recovered$):
+
+```ts Browser
+client.deviceRecovered$.subscribe((event) => {
+  toast(`${event.kind} switched to ${event.newDevice?.label ?? "system default"}`);
+});
+```
+
+The [`DeviceRecoveryEvent`](/docs/browser-sdk/v4/reference/interfaces/device-recovery-event) carries everything you need to compose that notification:
+
+| Field            | What it tells you                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `kind`           | Which kind switched: `audioinput`, `videoinput`, or `audiooutput`                        |
+| `previousDevice` | The device that was active before the swap (may be `null` if it was unplugged)           |
+| `newDevice`      | The device the SDK switched to (may be `null` if it fell back to the system default)     |
+| `reason`         | Why: `device_disconnected`, `device_reconnected`, `fallback_to_default`, and a few more  |
+
+Reach for it when the user should know "we lost your AirPods and put you on the built-in mic" rather than discovering it mid-sentence.
+
+Device monitoring is on by default. Use [`disableDeviceMonitoring()`](/docs/browser-sdk/v4/reference/signalwire/disable-device-monitoring) and [`enableDeviceMonitoring()`](/docs/browser-sdk/v4/reference/signalwire/enable-device-monitoring) to pause and resume it — handy on mobile when the page goes into the background and you don't want hot-plug events firing while the user can't see the UI.
+
+## Try it: enumerate and switch devices
+
+The fastest way to see the device APIs end-to-end is a single page that wires the three observable lists to three `<select>` elements, dials a test destination on demand, and switches the mic, camera, or speaker on the live call from the same picker. The handler routes preference changes through `client.*` before the call and live-track swaps through `activeCall.self.*` while the call is up — so the same dropdowns exercise both branches of the [Apply the user's choice](#apply-the-users-choice) section.
+
+<Steps>
+
+### Issue a Subscriber Access Token
+
+Create a SAT for your project — the [Authentication guide](/docs/browser-sdk/v4/guides/authentication) covers the production version of this flow; the [Create Subscriber Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) reference will send the request for you.
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/subscribers/tokens" />
+
+### Open the demo and request permission
+
+Save the page below as `devices-demo.html` and open it over HTTPS (or `localhost`). Paste the SAT and click **Connect** — the log reports the WebSocket coming up. Click **Request permission** to drive the browser's prompt; the three dropdowns populate with labelled devices.
+
+Pick a different mic, camera, or speaker before dialing. The log records each pick as `preference: …` — that's the `client.select*` branch in action. Plug or unplug a USB headset to see `deviceRecovered$` fire.
+
+<Accordion title="devices-demo.html — full source">
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SignalWire SDK device-management demo</title>
+    <style>
+      /* Shared demo shell — identical across the inbound, outbound, and
+         device-management guides. Per-demo extras go below this block. */
+      body { font: 14px/1.5 system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      label { display: block; margin: 0.75rem 0 0.25rem; font-weight: 600; }
+      input, select { width: 100%; padding: 0.5rem; font: 13px ui-monospace, monospace; box-sizing: border-box; }
+      button { margin: 0.5rem 0.5rem 0 0; padding: 0.5rem 1rem; font: 14px system-ui; cursor: pointer; }
+      button[disabled] { opacity: 0.5; cursor: not-allowed; }
+      .videos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
+      video { width: 100%; background: #000; border-radius: 4px; aspect-ratio: 4/3; }
+      #log { margin-top: 1rem; padding: 1rem; background: #111; color: #0f0; font: 13px ui-monospace, monospace; min-height: 6rem; white-space: pre-wrap; border-radius: 4px; }
+      /* Device-management-specific */
+      .devices { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem 1rem; margin-top: 1rem; }
+      .devices > div { display: flex; flex-direction: column; }
+    </style>
+  </head>
+  <body>
+    <h1>SignalWire SDK device-management demo</h1>
+
+    <label for="token">Subscriber Access Token</label>
+    <input id="token" type="password" placeholder="Paste your SAT here" />
+
+    <button id="connect">Connect</button>
+    <button id="perms" disabled>Request permission</button>
+
+    <div class="devices">
+      <div>
+        <label for="mic">Microphone</label>
+        <select id="mic"><option>(none)</option></select>
+      </div>
+      <div>
+        <label for="cam">Camera</label>
+        <select id="cam"><option>(none)</option></select>
+      </div>
+      <div>
+        <label for="speaker">Speaker</label>
+        <select id="speaker"><option>(none)</option></select>
+      </div>
+    </div>
+
+    <label for="destination">Destination</label>
+    <input id="destination" type="text" placeholder="/public/test-room" />
+
+    <button id="dial" disabled>Dial</button>
+    <button id="hangup" disabled>Hang up</button>
+
+    <div class="videos">
+      <video id="local" autoplay muted playsinline></video>
+      <video id="remote" autoplay playsinline></video>
+    </div>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@latest";
+      import { combineLatest } from "https://esm.sh/rxjs@7";
+
+      const log = (msg) =>
+        (document.getElementById("log").textContent += msg + "\n");
+      const $ = (id) => document.getElementById(id);
+
+      let client = null;
+      let activeCall = null;
+
+      function populate(selectEl, devices, selected) {
+        selectEl.innerHTML = "";
+        for (const d of devices) {
+          const opt = new Option(d.label || `Device ${d.deviceId.slice(0, 6)}`, d.deviceId);
+          if (selected && d.deviceId === selected.deviceId) opt.selected = true;
+          selectEl.append(opt);
+        }
+        if (!devices.length) selectEl.innerHTML = "<option>(none)</option>";
+      }
+
+      $("connect").onclick = () => {
+        const token = $("token").value.trim();
+        if (!token) return log("Paste a token first.");
+
+        $("connect").disabled = true;
+        log("Connecting...");
+
+        client = new SignalWire(new StaticCredentialProvider({ token }));
+
+        client.errors$.subscribe((err) =>
+          log("Error: " + (err.name || "Error") + " — " + err.message),
+        );
+
+        combineLatest([client.audioInputDevices$, client.selectedAudioInputDevice$])
+          .subscribe(([devices, selected]) => populate($("mic"), devices, selected));
+        combineLatest([client.videoInputDevices$, client.selectedVideoInputDevice$])
+          .subscribe(([devices, selected]) => populate($("cam"), devices, selected));
+        combineLatest([client.audioOutputDevices$, client.selectedAudioOutputDevice$])
+          .subscribe(([devices, selected]) => populate($("speaker"), devices, selected));
+
+        client.deviceRecovered$.subscribe((e) =>
+          log(`auto-switch: ${e.kind} (${e.reason}) → ${e.newDevice?.label ?? "system default"}`),
+        );
+
+        $("perms").disabled = false;
+        $("dial").disabled = false;
+        log("Connected. Click Request permission to populate labels.");
+      };
+
+      $("perms").onclick = async () => {
+        const result = await client.requestMediaPermissions({ audio: true, video: true });
+        log(`permission: audio=${result.audio} video=${result.video}`);
+      };
+
+      // Single picker handler used by all three <select> elements.
+      // Routes through call.self when a call is up, client.* otherwise —
+      // matches the combined handler from the "Apply the user's choice" section.
+      function pick(kind) {
+        const list =
+          kind === "mic" ? client.audioInputDevices :
+          kind === "cam" ? client.videoInputDevices :
+          client.audioOutputDevices;
+        const device = list.find((d) => d.deviceId === $(kind).value);
+        if (!device) return;
+
+        if (activeCall?.self && kind !== "speaker") {
+          if (kind === "mic") activeCall.self.selectAudioInputDevice(device, { savePreference: true });
+          if (kind === "cam") activeCall.self.selectVideoInputDevice(device, { savePreference: true });
+          log(`live: ${kind} → ${device.label}`);
+        } else if (kind === "speaker") {
+          client.selectAudioOutputDevice(device);
+          client.applySelectedAudioOutputDevice($("remote"));
+          log(`speaker → ${device.label}`);
+        } else {
+          if (kind === "mic") client.selectAudioInputDevice(device);
+          if (kind === "cam") client.selectVideoInputDevice(device);
+          log(`preference: ${kind} → ${device.label}`);
+        }
+      }
+
+      $("mic").onchange = () => pick("mic");
+      $("cam").onchange = () => pick("cam");
+      $("speaker").onchange = () => pick("speaker");
+
+      $("dial").onclick = async () => {
+        const to = $("destination").value.trim();
+        if (!to) return log("Enter a destination first.");
+        $("dial").disabled = true;
+        log("Dialing " + to + "...");
+        try {
+          activeCall = await client.dial(to, { audio: true, video: true });
+          $("hangup").disabled = false;
+
+          activeCall.localStream$.subscribe((s) => ($("local").srcObject = s));
+          activeCall.remoteStream$.subscribe(async (s) => {
+            $("remote").srcObject = s;
+            if (client.selectedAudioOutputDevice) {
+              await client.applySelectedAudioOutputDevice($("remote"));
+            }
+          });
+          activeCall.status$.subscribe((status) => {
+            log("Status: " + status);
+            if (status === "destroyed") {
+              activeCall = null;
+              $("dial").disabled = false;
+              $("hangup").disabled = true;
+            }
+          });
+        } catch (err) {
+          log("dial() rejected: " + (err.name || "Error") + " — " + err.message);
+          $("dial").disabled = false;
+        }
+      };
+
+      $("hangup").onclick = () => { if (activeCall) activeCall.hangup(); };
+    </script>
+  </body>
+</html>
+```
+</Accordion>
+
+### Switch a device mid-call
+
+Enter a destination in the **Destination** field (a `/public/<resource>`, `/private/<subscriber>`, PSTN number, or SIP URI the token can reach — see [Outbound Calls](/docs/browser-sdk/v4/guides/outbound-calls#pick-a-destination) for the destination shapes) and click **Dial**. The local and remote tiles populate once the call connects.
+
+With the call connected, change the **Microphone** or **Camera** dropdown again. The log now records the change as `live: …` — the picker is routing through `activeCall.self.selectAudioInputDevice()` instead of the client-level preference, and the remote side hears or sees the new device immediately without renegotiation. Picking a new **Speaker** triggers `applySelectedAudioOutputDevice()` on the remote `<video>` element so the sink swaps too.
+
+Click **Hang up** and try the dropdowns again — the log goes back to `preference: …` because `activeCall` is `null`. That's the combined handler from the [Apply the user's choice](#apply-the-users-choice) section, end to end.
+
+</Steps>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Troubleshooting" href="/docs/browser-sdk/v4/guides/troubleshooting" icon="fa-regular fa-wrench">
+    Black video, missing audio, denied permissions.
+  </Card>
+  <Card title="DeviceController reference" href="/docs/browser-sdk/v4/reference/interfaces/device-controller" icon="fa-regular fa-book">
+    Every device-related property and method on the client.
+  </Card>
+</CardGroup>
