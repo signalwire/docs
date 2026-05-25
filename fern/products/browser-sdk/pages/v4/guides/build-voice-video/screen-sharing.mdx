@@ -15,6 +15,23 @@ and pushes status changes through an observable.
 There's no separate "screen share call" — the share is added to the
 *existing* call alongside the camera, as a second video stream.
 
+<Info>
+**You'll need an active call.** Screen share attaches to an existing
+`Call` — start one of these first.
+</Info>
+
+<CardGroup cols={3}>
+  <Card title="Set up the client" icon="fa-regular fa-rocket" href="/docs/browser-sdk/v4/guides/overview">
+    Install the SDK and create a `SignalWire` client with a credential provider.
+  </Card>
+  <Card title="Place an outbound call" icon="fa-regular fa-phone-arrow-up-right" href="/docs/browser-sdk/v4/guides/outbound-calls">
+    Dial a destination with `client.dial()` to get a `Call` instance.
+  </Card>
+  <Card title="Answer an inbound call" icon="fa-regular fa-phone-arrow-down-left" href="/docs/browser-sdk/v4/guides/inbound-calls">
+    Subscribe to `client.session.incomingCalls$` and `call.answer()`.
+  </Card>
+</CardGroup>
+
 ## Start / stop
 
 ```js
@@ -29,16 +46,70 @@ call.self$.subscribe(async (self) => {
         await self.startScreenShare();
       }
     } catch (err) {
-      // User cancelled the picker, or permission denied
-      console.error(err);
+      handleShareError(err);
     }
   };
 });
 ```
 
-`startScreenShare()` triggers the browser's screen-picker. If the
-user cancels, the promise rejects — handle it gracefully (no error
-toast for a deliberate cancel).
+`startScreenShare()` triggers the browser's screen-picker. The
+promise rejects on cancel *and* on permission denial — you need to
+tell them apart to avoid showing a scary error toast for what was a
+deliberate user choice.
+
+## Handling permission and cancel
+
+The browser surfaces both outcomes as a `DOMException` from
+`getDisplayMedia()`. Use `err.name` to distinguish:
+
+| `err.name`           | What happened                                                                          | UX                                  |
+| -------------------- | -------------------------------------------------------------------------------------- | ----------------------------------- |
+| `NotAllowedError`    | User clicked Cancel in the picker, **or** the OS / browser denied the permission entirely | Silent — no toast on cancel         |
+| `NotFoundError`      | No source was available to share (rare — usually a misconfigured kiosk environment)    | Tell the user "no shareable screen" |
+| `NotReadableError`   | OS-level capture failure (another app holds the screen, hardware error)                | Suggest retry / closing other apps  |
+| `AbortError`         | The session ended before capture started                                               | Silent                              |
+| `NotSupportedError`  | `getDisplayMedia()` isn't available (iOS Safari, some embedded WebViews)                | Hide the share button entirely      |
+
+`NotAllowedError` is the one to watch — its message contains
+`"Permission denied"` when the OS or browser blocked the prompt, vs
+`"Permission denied by user"` (Chromium) or an empty message
+(Firefox / Safari) when the user clicked Cancel. The distinction is
+fuzzy across browsers, so the safest UX is: **silent on
+`NotAllowedError`** and rely on the user re-trying, since they just
+made an explicit choice.
+
+```js
+function handleShareError(err) {
+  if (err?.name === "NotAllowedError") {
+    // Cancel or denied — don't surface a toast either way.
+    return;
+  }
+  if (err?.name === "NotFoundError" || err?.name === "NotReadableError") {
+    showToast("Couldn't start screen share. Close other capture apps and try again.");
+    return;
+  }
+  if (err?.name === "NotSupportedError") {
+    showToast("Screen sharing isn't supported in this browser.");
+    return;
+  }
+  console.error("Unexpected screen share error:", err);
+}
+```
+
+### Detect support before showing the button
+
+`getDisplayMedia()` is unavailable on iOS Safari and some embedded
+WebViews. Gate the button on the capability and the API existence
+so the user never sees a control that can't work:
+
+```js
+const supported =
+  typeof navigator.mediaDevices?.getDisplayMedia === "function";
+
+call.self?.capabilities.screenshare$.subscribe((canShare) => {
+  shareButton.hidden = !(supported && canShare);
+});
+```
 
 ## Observing share state
 

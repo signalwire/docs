@@ -12,19 +12,14 @@ and `customElements` — APIs that don't exist in Node.js. Importing
 either package at the top of a server-rendered module will crash the
 server during build or during SSR.
 
-The same constraints apply to every server-rendered framework: Next.js,
-Nuxt, SvelteKit, Remix, Astro, Gatsby. The fix is the same in each:
-load the SDK only on the client, and mint tokens on the server.
+Two boundaries to hold across any server-rendered framework: load the
+SDK only on the client, and mint tokens only on the server. The
+patterns below are Next.js–specific, but the same shape applies in
+Nuxt, SvelteKit, Remix, Astro, or Gatsby — wrap the SDK in that
+framework's client-only escape hatch, and put token minting behind a
+server route.
 
-## The rule
-
-> The SDK runs in the browser. Tokens are minted on the server.
-> Nothing else crosses that line.
-
-That's it. Every concrete pattern below is a way to enforce that
-boundary in a particular framework.
-
-## Next.js (App Router)
+## Next.js App Router
 
 ### Client components
 
@@ -133,13 +128,14 @@ export async function POST(req: Request) {
   ).toString("base64");
 
   const res = await fetch(
-    `https://${process.env.SIGNALWIRE_SPACE}/api/fabric/subscribers/${user.subscriberId}/tokens`,
+    `https://${process.env.SIGNALWIRE_SPACE}/api/fabric/subscribers/tokens`,
     {
       method: "POST",
       headers: {
         Authorization: `Basic ${auth}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({ reference: user.id }),
     }
   );
 
@@ -147,20 +143,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "token mint failed" }, { status: 502 });
   }
 
-  const { token, expiry_at } = await res.json();
-  return NextResponse.json({ token, expiry_at });
+  const { token } = await res.json();
+  return NextResponse.json({ token });
 }
 ```
+
+On the client, wrap the route in a [`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider)
+so the SDK can re-fetch a fresh SAT when the current one nears
+expiry. `expiry_at` is a `Date.now()`-style millisecond timestamp.
 
 ```ts
 // app/_lib/sw-credentials.ts
 "use client";
 
-export class FetchedCredentialProvider {
+import type { CredentialProvider } from "@signalwire/js";
+
+export class FetchedCredentialProvider implements CredentialProvider {
   async authenticate() {
     const res = await fetch("/api/sw-token", { method: "POST" });
     if (!res.ok) throw new Error("token fetch failed");
-    return await res.json();
+    const { token } = await res.json();
+    // Default SAT lifetime is 2h. If you override `expire_at` when
+    // minting, compute from that value instead.
+    return { token, expiry_at: Date.now() + 2 * 60 * 60 * 1000 };
   }
   async refresh() {
     return this.authenticate();
@@ -168,9 +173,9 @@ export class FetchedCredentialProvider {
 }
 ```
 
-The SDK's `CredentialProvider` interface only requires `authenticate()`
-and (optionally) `refresh()`. Define both and the SDK will refresh
-tokens automatically before expiry.
+See [Authentication › Refresh strategies](/docs/browser-sdk/v4/guides/authentication)
+for refresh-token-based flows that avoid re-authenticating the user on
+every rollover.
 
 ### Pages Router
 
@@ -191,66 +196,6 @@ export default function Home() {
 
 Token endpoints live under `pages/api/sw-token.ts` and use the same
 REST flow as the App Router example.
-
-## Nuxt 3
-
-Nuxt's `<ClientOnly>` wrapper is the Vue equivalent of `dynamic({ ssr:
-false })`. Or use a `.client.ts` suffix on a plugin to make it
-client-only:
-
-```ts
-// plugins/signalwire.client.ts
-import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
-
-export default defineNuxtPlugin(async (nuxtApp) => {
-  const { token } = await $fetch<{ token: string }>("/api/sw-token", {
-    method: "POST",
-  });
-  const client = new SignalWire(new StaticCredentialProvider({ token }));
-  nuxtApp.provide("signalwire", client);
-});
-```
-
-```ts
-// server/api/sw-token.post.ts
-export default defineEventHandler(async (event) => {
-  // mint a SAT via SignalWire REST, same as the Next.js example
-});
-```
-
-## SvelteKit
-
-```svelte
-<!-- src/routes/+page.svelte -->
-<script lang="ts">
-  import { browser } from "$app/environment";
-  import { onMount, onDestroy } from "svelte";
-
-  let client: import("@signalwire/js").SignalWire | undefined;
-
-  onMount(async () => {
-    if (!browser) return;
-    const { SignalWire, StaticCredentialProvider } = await import("@signalwire/js");
-    const { token } = await fetch("/api/sw-token", { method: "POST" }).then((r) =>
-      r.json()
-    );
-    client = new SignalWire(new StaticCredentialProvider({ token }));
-  });
-
-  onDestroy(() => client?.disconnect());
-</script>
-```
-
-```ts
-// src/routes/api/sw-token/+server.ts
-import { json, type RequestHandler } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-
-export const POST: RequestHandler = async ({ locals }) => {
-  // mint a SAT, return { token, expiry_at }
-  return json({ token, expiry_at });
-};
-```
 
 ## Hydration caveats
 
@@ -275,9 +220,8 @@ export const POST: RequestHandler = async ({ locals }) => {
 | `NEXT_PUBLIC_SW_HOST`     | Public (client) | Optional. The WebSocket host the SDK connects to.   |
 
 In Next.js, `NEXT_PUBLIC_*` is the only prefix that gets inlined into
-the client bundle. In Nuxt, use `runtimeConfig.public`. In SvelteKit,
-use `$env/dynamic/public`. **Project ID and auth token must stay on
-the server side of that boundary**, always.
+the client bundle. **Project ID and auth token must stay on the server
+side of that boundary**, always.
 
 See [Authentication](/docs/browser-sdk/v4/guides/authentication) for the full token
 flow and [Production](/docs/browser-sdk/v4/guides/production) for hardening

@@ -7,23 +7,21 @@ max-toc-depth: 3
 ---
 
 For multi-party video rooms, the SignalWire platform composes every
-participant's camera into a single **mixed video stream** — that's
-what `call.remoteStream$` emits. The layout is the rule for *how*
-the server composites that stream: grid, presenter + thumbnails,
-picture-in-picture, and so on. Each room has a list of layouts the
-server allows; clients pick one, optionally pin who goes in which
-slot, and read back where everyone ended up.
+participant's camera into a single **mixed video stream** —
+[`call.remoteStream$`][`remoteStream$`] emits that stream. A
+**layout** is the rule the server uses to composite it: grid,
+presenter + thumbnails, picture-in-picture, etc. Each room has a
+list of layouts the server allows; clients pick one, optionally pin
+who goes in which slot, and read back where everyone ended up.
 
-The mental model that matters: **you don't compose the video, the
-server does.** Your job is to (a) tell it which composition to use,
-and (b) draw overlays (name tags, mute icons, click targets) on top
-of the resulting stream using percentage-based layer coordinates.
+The server composes the video. The client picks the composition
+and draws overlays (name tags, mute icons, click targets) on top
+using percentage-based layer coordinates.
 
 ## Pick a layout
 
-Wire your picker to [`layouts$`] (available options),
-[`layout$`] (current selection), and [`setLayout()`] (mutator). Same
-pattern as every other control on a call:
+Wire a picker to [`layouts$`] (available options), [`layout$`]
+(current selection), and [`setLayout()`] (mutator):
 
 ```js
 call.layouts$.subscribe((names) => {
@@ -63,8 +61,7 @@ by `capabilities.self.position`.
 
 ## Render the layout
 
-Attach the mixed video to a single `<video>` element and you're done
-for the composition itself:
+Attach the mixed stream to a single `<video>` element:
 
 ```html
 <video id="room" autoplay playsinline></video>
@@ -74,17 +71,16 @@ for the composition itself:
 call.remoteStream$.subscribe((s) => roomVideo.srcObject = s);
 ```
 
-That stream *already* contains every participant arranged by the
-current layout. You don't render per-participant `<video>` tags
-in a room — that's the server's job.
+The stream already contains every participant arranged by the
+current layout — don't render per-participant `<video>` tags.
 
 ## Draw overlays
 
-What you *do* render is overlays on top of that single video — name
-tags, mute icons, click hotspots, "speaking" borders. That's where
-[`layoutLayers$`] comes in: it emits per-participant boxes with
-**percentage** coordinates (0–100) relative to the room canvas, so
-your overlays scale with the video element regardless of resolution.
+Overlays (name tags, mute icons, click hotspots, speaking borders)
+go on top of the single video. [`layoutLayers$`] emits
+per-participant boxes with **percentage** coordinates (0–100)
+relative to the room canvas, so overlays scale with the video
+element regardless of resolution.
 
 ```js
 call.layoutLayers$.subscribe((layers) => {
@@ -102,20 +98,16 @@ call.layoutLayers$.subscribe((layers) => {
 See [`LayoutLayer`] for the full layer shape (z-index, visibility,
 reservation slot, etc.).
 
-If you only need *one* member's box at a time, every `Participant`
-has its own [`position$`][`Participant.position$`] that narrows
-`layoutLayers$` to just that member — easier to wire per-tile than
-re-scanning the full list on every emission. This is the standard
-"render an overlay per participant card" pattern; see
-[Multi-party rooms](/docs/browser-sdk/v4/guides/multi-party).
+For per-tile UI, each `Participant` has its own
+[`position$`][`Participant.position$`] scoped to that member —
+simpler than filtering `layoutLayers$` on every emission.
 
-## When the layout re-shuffles
+## Re-shuffles
 
 [`layout$`] and [`layoutLayers$`] re-emit whenever the server
-re-composites: someone calls `setLayout`, a member joins/leaves and
-auto-layout reflows, the server promotes a raised hand. Keep your
-subscriptions live and the overlays follow. There's no manual
-refresh.
+re-composites: `setLayout` calls, members joining or leaving under
+auto-layout, the server promoting a raised hand. Subscriptions stay
+live; overlays follow automatically.
 
 ## Capability gating
 
@@ -136,6 +128,7 @@ See [Capabilities](/docs/browser-sdk/v4/guides/capabilities).
 - [`LayoutLayer`] · [`VideoPosition`] — data shapes
 - [`SelfCapabilities.setLayout$`] — capability gate
 
+[`remoteStream$`]: /docs/browser-sdk/v4/reference/webrtc-call/remote-stream$
 [`layouts$`]: /docs/browser-sdk/v4/reference/webrtc-call/layouts$
 [`layout$`]: /docs/browser-sdk/v4/reference/webrtc-call/layout$
 [`layoutLayers$`]: /docs/browser-sdk/v4/reference/webrtc-call/layout-layers$

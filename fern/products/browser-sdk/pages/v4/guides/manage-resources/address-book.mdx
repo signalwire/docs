@@ -31,6 +31,8 @@ client.directory$.subscribe((directory) => {
   directory.addresses$.subscribe((addresses) => {
     renderList(addresses);
   });
+
+  directory.loadMore(); // trigger the first page
 });
 ```
 
@@ -42,8 +44,9 @@ state.
 
 ## Paging
 
-The first page loads automatically when the directory becomes
-available. Pull the next page with `loadMore()`:
+The directory does **not** load on its own — `addresses$` emits `[]`
+until you call `loadMore()`. Subscribe first, then trigger the first
+page; every subsequent page works the same way.
 
 ```js
 const directory = await firstValueFrom(client.directory$.pipe(filterNull()));
@@ -64,7 +67,15 @@ directory.loading$.subscribe((loading) => {
 });
 
 loadMoreButton.onclick = () => directory.loadMore();
+
+// Kick off the first page.
+directory.loadMore();
 ```
+
+Reading `directory.addresses` synchronously before `loadMore()` has
+resolved gives you an empty array — it's the snapshot of state the
+SDK currently holds, not a promise that fetches. Always drive your
+UI from `addresses$`.
 
 The collection is reactive — when a server-side update lands (e.g. a
 new contact added in the background), new entries appear in the
@@ -199,6 +210,8 @@ const directory = await firstValueFrom(
 directory.addresses$.subscribe(renderList);
 directory.hasMore$.subscribe((more) => (loadMoreBtn.hidden = !more));
 loadMoreBtn.onclick = () => directory.loadMore();
+
+directory.loadMore(); // trigger the first page
 
 function renderList(addresses) {
   list.innerHTML = "";

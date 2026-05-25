@@ -7,15 +7,30 @@ max-toc-depth: 3
 ---
 
 Every control on a call follows the same shape: **call a mutator,
-listen on the matching `$` observable for state.** Don't track local
-state in a `let isMuted` variable — the server is the source of truth
-and can flip it (a moderator can mute you, the room can lock itself,
-the platform can disconnect). The observable is the only honest
-answer to "are we muted right now."
+subscribe to the matching `$` observable for state.** The server is
+the source of truth — a moderator can mute you, the room can lock
+itself, the platform can disconnect. Local state (`let isMuted = …`)
+will drift; the observable won't.
 
-Once you internalize that pattern, every control on the SDK is the
-same code. This page teaches the pattern; the [reference] has the
-full surface.
+This page covers the pattern. Per-method details live in the
+[reference].
+
+<Info>
+**You'll need an active call.** Call controls operate on a `Call`
+instance — get one of these going first.
+</Info>
+
+<CardGroup cols={3}>
+  <Card title="Set up the client" icon="fa-regular fa-rocket" href="/docs/browser-sdk/v4/guides/overview">
+    Install the SDK and create a `SignalWire` client with a credential provider.
+  </Card>
+  <Card title="Place an outbound call" icon="fa-regular fa-phone-arrow-up-right" href="/docs/browser-sdk/v4/guides/outbound-calls">
+    Dial a destination with `client.dial()` to get a `Call` instance.
+  </Card>
+  <Card title="Answer an inbound call" icon="fa-regular fa-phone-arrow-down-left" href="/docs/browser-sdk/v4/guides/inbound-calls">
+    Subscribe to `client.session.incomingCalls$` and `call.answer()`.
+  </Card>
+</CardGroup>
 
 ## The pattern
 
@@ -34,21 +49,19 @@ call.self$.subscribe((self) => {
 });
 ```
 
-That snippet is the canonical shape for *every* button on a call UI.
-Swap `toggleMute` / `audioMuted$` for whichever pair you need:
+Every other control is the same shape with different names —
 [`toggleMuteVideo`] / [`videoMuted$`], [`toggleDeaf`] / [`deaf$`],
-[`toggleHandraise`] / [`handraised$`], and so on.
+[`toggleHandraise`] / [`handraised$`], etc.
 
-A few things make this pattern work cleanly:
+Three properties make this work:
 
-- **Toggles are idempotent.** Calling [`toggleMute`] while a network
-  round-trip is in flight is safe — the SDK serializes.
-- **`$` observables emit on subscribe.** You get the current value
-  immediately, no "wait for an event" dance.
-- **The mutator only triggers the change.** The observable is what
-  closes the loop. If a moderator mutes you, your `toggleMute` button
-  click was never sent, but `audioMuted$` still emits `true` — and
-  your UI updates with no extra code.
+- **Toggles are idempotent.** Calling [`toggleMute`] mid-flight is
+  safe — the SDK serializes.
+- **`$` observables emit on subscribe.** The current value arrives
+  immediately; no wait-for-event step.
+- **The mutator only triggers the change; the observable closes the
+  loop.** A moderator-initiated mute that never went through the
+  button still updates the UI, because `audioMuted$` emits.
 
 ## Where each control lives
 
@@ -64,13 +77,11 @@ Three objects own the controls:
 - **`Participant`** (entries in `call.participants$`) — moderation
   actions on *other* members. Gated by capabilities — see below.
 
-If you can't find a control, it's because it doesn't live where you
-expected. The split exists because the server-side authorization
-model is different for each layer: ending a call needs `end`
-capability, kicking someone needs `member.remove`, muting yourself is
-unconditional.
+The split mirrors server-side authorization: ending a call needs the
+`end` capability, kicking someone needs `member.remove`, muting
+yourself is unconditional.
 
-## Two non-obvious distinctions
+## Mute vs. deaf vs. hold
 
 ### Mute vs. deaf
 
@@ -141,15 +152,48 @@ call.self?.capabilities.member$.subscribe((member) => {
 });
 ```
 
-The flag is the server's authoritative answer. If it's false, hide
-the button — don't show a button that will error out. The
-[Capabilities](/docs/browser-sdk/v4/guides/capabilities) guide
-covers the full model.
+If the flag is false, hide the button. See
+[Capabilities](/docs/browser-sdk/v4/guides/capabilities) for the
+full model.
 
-## Putting it together
+## Handling unsuccessful attempts
 
-A minimal but realistic control bar — every button uses the same
-mutator+observable pattern as the canonical snippet at the top:
+Most toggles resolve cleanly, but three categories can throw — handle
+them, don't let an unhandled rejection bubble up:
+
+| Source            | When it throws                                                                                  | What to do                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Browser permission | `unmuteVideo()` or `selectVideoInputDevice()` after the user denied camera access at the OS level | Catch `NotAllowedError` and prompt the user to re-enable in settings  |
+| Server capability | Moderation methods (`participant.mute()`, `participant.remove()`) without the right capability     | Gate the button on [`SelfCapabilities`] — don't catch, just hide it   |
+| Connection state  | `sendDigits()` before `status$` is `'connected'`, anything after the call has ended                | Subscribe to `status$` and gate calls on `'connected'`                |
+
+Only browser-permission errors need a try/catch on each click.
+Capability errors shouldn't be reachable — gate the button instead.
+Connection-state errors are prevented by waiting on `status$` (see
+[DTMF, timing matters](#dtmf-timing-matters)).
+
+```js
+muteVideoBtn.onclick = async () => {
+  try {
+    await call.self.toggleMuteVideo();
+  } catch (err) {
+    if (err?.name === "NotAllowedError") {
+      showToast("Camera access is blocked. Allow camera in your browser settings.");
+      return;
+    }
+    console.error("Failed to toggle video:", err);
+  }
+};
+```
+
+The pure-mute toggles ([`toggleMute`], [`toggleDeaf`]) don't require
+any browser permission — they only flip server-side state — so they
+won't throw on permission. They can still throw on capability or
+connection state.
+
+## Example: control bar
+
+Every button uses the same mutator + observable shape:
 
 ```js
 call.self$.subscribe((self) => {
@@ -170,91 +214,50 @@ call.self$.subscribe((self) => {
 });
 ```
 
-That's the muscle. Everything else (volume sliders, audio processing
-toggles, the screen share button, moderation actions) is the same
-shape with different names — and every name is on the [reference].
+Volume sliders, audio-processing toggles, the screen-share button,
+and moderation actions all follow the same shape.
 
 ## Reference
 
+For the full surface — every method and every observable — see the
+per-class reference:
+
+- [`Participant`] — mute, deaf, hand raise, audio processing, server-mixed volumes; also the surface for moderation actions on other members ([`remove`], [`end`], [`setPosition`]).
+- [`SelfParticipant`] — adds [`enableStudioAudio`] / [`disableStudioAudio`] on top of `Participant`.
+- [`WebRTCCall`] — session-level controls: [`hangup`], [`sendDigits`], [`toggleLock`], [`toggleHold`], [`transfer`], local-mic pipeline ([`setLocalMicrophoneGain`], [`localAudioLevel$`], [`localSpeaking$`], [`enablePushToTalk`], [`setPushToTalkActive`]).
+- [`SelfCapabilities`] — server-authoritative flags for gating moderation UI; see [Capabilities](/docs/browser-sdk/v4/guides/capabilities).
+
 [reference]: /docs/browser-sdk/v4/reference
-
-**Self mute / audio state**
-
-- [`Participant.toggleMute()`] / [`mute()`] / [`unmute()`] · [`audioMuted$`]
-- [`Participant.toggleMuteVideo()`] / [`muteVideo()`] / [`unmuteVideo()`] · [`videoMuted$`]
-- [`Participant.toggleDeaf()`] · [`deaf$`]
-- [`Participant.toggleHandraise()`] · [`handraised$`] · [`Call.raiseHandPriority$`]
-
-**Audio processing**
-
-- [`Participant.toggleEchoCancellation()`] · [`echoCancellation$`]
-- [`Participant.toggleAudioInputAutoGain()`] · [`autoGain$`]
-- [`Participant.toggleNoiseSuppression()`] · [`noiseSuppression$`]
-- [`SelfParticipant.enableStudioAudio()`] / [`disableStudioAudio()`] · [`studioAudio$`]
-
-**Volumes (server-mixed)**
-
-- [`Participant.setAudioInputVolume()`] · [`inputVolume$`]
-- [`Participant.setAudioOutputVolume()`] · [`outputVolume$`]
-- [`Participant.setAudioInputSensitivity()`] · [`inputSensitivity$`]
-
-**Call-level**
-
-- [`Call.hangup()`], [`Call.sendDigits()`], [`Call.toggleLock()`] · [`locked$`], [`Call.toggleHold()`], [`Call.transfer()`]
-- [`Call.setLocalMicrophoneGain()`], [`Call.localAudioLevel$`], [`Call.localSpeaking$`], [`Call.enablePushToTalk()`], [`Call.setPushToTalkActive()`]
-
-**Moderation**
-
-- [`Participant.remove()`], [`Participant.end()`], [`Participant.setPosition()`]
-- Gated by [`SelfCapabilities`] · see [Capabilities](/docs/browser-sdk/v4/guides/capabilities)
-
-[`Participant.toggleMute()`]: /docs/browser-sdk/v4/reference/participant/toggle-mute
+[`Participant`]: /docs/browser-sdk/v4/reference/participant
+[`SelfParticipant`]: /docs/browser-sdk/v4/reference/self-participant
+[`WebRTCCall`]: /docs/browser-sdk/v4/reference/webrtc-call
+[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities
+[`SelfCapabilities.member$`]: /docs/browser-sdk/v4/reference/self-capabilities/member$
 [`toggleMute`]: /docs/browser-sdk/v4/reference/participant/toggle-mute
-[`mute()`]: /docs/browser-sdk/v4/reference/participant/mute
-[`unmute()`]: /docs/browser-sdk/v4/reference/participant/unmute
-[`audioMuted$`]: /docs/browser-sdk/v4/reference/participant/audio-muted$
-[`Participant.toggleMuteVideo()`]: /docs/browser-sdk/v4/reference/participant/toggle-mute-video
 [`toggleMuteVideo`]: /docs/browser-sdk/v4/reference/participant/toggle-mute-video
-[`muteVideo()`]: /docs/browser-sdk/v4/reference/participant/mute-video
-[`unmuteVideo()`]: /docs/browser-sdk/v4/reference/participant/unmute-video
-[`videoMuted$`]: /docs/browser-sdk/v4/reference/participant/video-muted$
-[`Participant.toggleDeaf()`]: /docs/browser-sdk/v4/reference/participant/toggle-deaf
 [`toggleDeaf`]: /docs/browser-sdk/v4/reference/participant/toggle-deaf
-[`deaf$`]: /docs/browser-sdk/v4/reference/participant/deaf$
-[`Participant.toggleHandraise()`]: /docs/browser-sdk/v4/reference/participant/toggle-handraise
 [`toggleHandraise`]: /docs/browser-sdk/v4/reference/participant/toggle-handraise
+[`audioMuted$`]: /docs/browser-sdk/v4/reference/participant/audio-muted$
+[`videoMuted$`]: /docs/browser-sdk/v4/reference/participant/video-muted$
+[`deaf$`]: /docs/browser-sdk/v4/reference/participant/deaf$
 [`handraised$`]: /docs/browser-sdk/v4/reference/participant/handraised$
-[`Call.raiseHandPriority$`]: /docs/browser-sdk/v4/reference/webrtc-call/raise-hand-priority$
-[`Participant.toggleEchoCancellation()`]: /docs/browser-sdk/v4/reference/participant/toggle-echo-cancellation
-[`echoCancellation$`]: /docs/browser-sdk/v4/reference/participant/echo-cancellation$
-[`Participant.toggleAudioInputAutoGain()`]: /docs/browser-sdk/v4/reference/participant/toggle-audio-input-auto-gain
-[`autoGain$`]: /docs/browser-sdk/v4/reference/participant/auto-gain$
-[`Participant.toggleNoiseSuppression()`]: /docs/browser-sdk/v4/reference/participant/toggle-noise-suppression
-[`noiseSuppression$`]: /docs/browser-sdk/v4/reference/participant/noise-suppression$
-[`SelfParticipant.enableStudioAudio()`]: /docs/browser-sdk/v4/reference/self-participant/enable-studio-audio
-[`disableStudioAudio()`]: /docs/browser-sdk/v4/reference/self-participant/disable-studio-audio
-[`studioAudio$`]: /docs/browser-sdk/v4/reference/self-participant/studio-audio$
-[`Participant.setAudioInputVolume()`]: /docs/browser-sdk/v4/reference/participant/set-audio-input-volume
-[`inputVolume$`]: /docs/browser-sdk/v4/reference/participant/input-volume$
-[`Participant.setAudioOutputVolume()`]: /docs/browser-sdk/v4/reference/participant/set-audio-output-volume
-[`outputVolume$`]: /docs/browser-sdk/v4/reference/participant/output-volume$
-[`Participant.setAudioInputSensitivity()`]: /docs/browser-sdk/v4/reference/participant/set-audio-input-sensitivity
-[`inputSensitivity$`]: /docs/browser-sdk/v4/reference/participant/input-sensitivity$
 [`Call.hangup()`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
 [`Call.sendDigits()`]: /docs/browser-sdk/v4/reference/webrtc-call/send-digits
 [`Call.toggleLock()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
-[`locked$`]: /docs/browser-sdk/v4/reference/webrtc-call/locked$
 [`Call.toggleHold()`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-hold
 [`Call.transfer()`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
-[`Call.setLocalMicrophoneGain()`]: /docs/browser-sdk/v4/reference/webrtc-call/set-local-microphone-gain
-[`Call.localAudioLevel$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-audio-level$
 [`localAudioLevel$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-audio-level$
-[`Call.localSpeaking$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-speaking$
 [`localSpeaking$`]: /docs/browser-sdk/v4/reference/webrtc-call/local-speaking$
-[`Call.enablePushToTalk()`]: /docs/browser-sdk/v4/reference/webrtc-call/enable-push-to-talk
-[`Call.setPushToTalkActive()`]: /docs/browser-sdk/v4/reference/webrtc-call/set-push-to-talk-active
-[`Participant.remove()`]: /docs/browser-sdk/v4/reference/participant/remove
-[`Participant.end()`]: /docs/browser-sdk/v4/reference/participant/end
-[`Participant.setPosition()`]: /docs/browser-sdk/v4/reference/participant/set-position
-[`SelfCapabilities`]: /docs/browser-sdk/v4/reference/self-capabilities
-[`SelfCapabilities.member$`]: /docs/browser-sdk/v4/reference/self-capabilities/member$
+[`hangup`]: /docs/browser-sdk/v4/reference/webrtc-call/hangup
+[`sendDigits`]: /docs/browser-sdk/v4/reference/webrtc-call/send-digits
+[`toggleLock`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-lock
+[`toggleHold`]: /docs/browser-sdk/v4/reference/webrtc-call/toggle-hold
+[`transfer`]: /docs/browser-sdk/v4/reference/webrtc-call/transfer
+[`setLocalMicrophoneGain`]: /docs/browser-sdk/v4/reference/webrtc-call/set-local-microphone-gain
+[`enablePushToTalk`]: /docs/browser-sdk/v4/reference/webrtc-call/enable-push-to-talk
+[`setPushToTalkActive`]: /docs/browser-sdk/v4/reference/webrtc-call/set-push-to-talk-active
+[`remove`]: /docs/browser-sdk/v4/reference/participant/remove
+[`end`]: /docs/browser-sdk/v4/reference/participant/end
+[`setPosition`]: /docs/browser-sdk/v4/reference/participant/set-position
+[`enableStudioAudio`]: /docs/browser-sdk/v4/reference/self-participant/enable-studio-audio
+[`disableStudioAudio`]: /docs/browser-sdk/v4/reference/self-participant/disable-studio-audio

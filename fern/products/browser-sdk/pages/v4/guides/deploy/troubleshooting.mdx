@@ -6,19 +6,21 @@ position: 4
 max-toc-depth: 3
 ---
 
-Common issues and solutions when working with the SignalWire Browser SDK.
+Common failure modes and how to diagnose them. For end-to-end
+patterns, see the guides; for full API contracts, see the
+[reference](/docs/browser-sdk/v4/reference).
 
 ## Connection issues
 
 ### `InvalidCredentialsError` on connect
 
-**Cause:** Token is expired, malformed, or generated for a different environment.
+**Cause:** Token is expired, malformed, or minted for a different SignalWire space.
 
 **Fix:**
 
-1. Generate a fresh token from your backend
-2. Verify the token is for the correct SignalWire space
-3. Check that you're copying the full token string
+1. Mint a fresh SAT from your backend — see [Authentication](/docs/browser-sdk/v4/guides/authentication).
+2. Confirm the token was issued by the space you're connecting to.
+3. Check that the full token string was copied (SATs are long; truncation is common).
 
 ```js
 import { jwtDecode } from "jwt-decode";
@@ -28,9 +30,12 @@ const expiresAt = new Date(decoded.exp * 1000);
 console.log("Expired?", expiresAt < new Date());
 ```
 
-### Connection fails silently
+### Connection fails without an obvious error
 
-**Cause:** Not subscribing to error streams.
+Errors that happen outside of an `await` flow surface on
+[`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$). If you
+never subscribe to it, those errors are silently dropped — subscribe
+during client construction so they always reach your logs.
 
 ```js
 client.errors$.subscribe((error) => console.error("Client error:", error));
@@ -38,7 +43,9 @@ client.errors$.subscribe((error) => console.error("Client error:", error));
 
 ### `NotConnectedError` when calling `dial()`
 
-**Cause:** Trying to make a call before the client is ready.
+**Cause:** Calling [`dial()`](/docs/browser-sdk/v4/reference/signalwire/dial) before the client finished connecting.
+
+Wait for [`ready$`](/docs/browser-sdk/v4/reference/signalwire/ready$) to emit `true`:
 
 ```js
 import { filter, take } from "rxjs";
@@ -50,9 +57,10 @@ client.ready$.pipe(filter(Boolean), take(1)).subscribe(async () => {
 
 ### WebSocket disconnects frequently
 
-**Causes:** Unstable network, corporate firewall/proxy blocking WebSocket, server-side timeout.
+**Causes:** Unstable network, corporate firewall/proxy blocking WebSocket, idle timeout.
 
-The SDK reconnects automatically — subscribe to `isConnected$` to track state:
+The SDK reconnects automatically. Drive a "reconnecting" banner off
+[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$):
 
 ```js
 client.isConnected$.subscribe((connected) => {
@@ -77,17 +85,19 @@ client.videoInputDevices$.subscribe((devices) => {
 
 ### No remote audio
 
-**Causes:** Speaker/headphone issue, audio output not selected, remote muted, autoplay blocked.
+**Causes:** Output device not selected, remote participant muted, browser blocking unmuted autoplay, or the `muted` attribute left on the `<video>` element.
 
 ```html
-<!-- Wrong - muted blocks remote audio -->
+<!-- Wrong — the `muted` attribute mutes playback regardless of the track -->
 <video id="remote" autoplay muted></video>
 
 <!-- Right -->
 <video id="remote" autoplay playsinline></video>
 ```
 
-Browsers block autoplay with audio until the user interacts with the page.
+Browsers block autoplay with audio until the page has been interacted
+with — `play()` will reject. Catch that promise and surface a
+play-to-start button if it fails.
 
 ### Remote can't hear me
 
@@ -147,13 +157,18 @@ pc?.addEventListener("iceconnectionstatechange", () => {
 
 ### Can't receive inbound calls
 
-**Causes:** Not registered, using embed token (no inbound), subscriber not configured.
+**Causes:** [`register()`](/docs/browser-sdk/v4/reference/signalwire/register)
+was never called, or the token can't register. Only full Subscriber
+Access Tokens can register; Guest SATs, Invite SATs, and embed tokens
+are outbound-only.
 
 ```js
 client.ready$.subscribe(async (ready) => {
   if (ready) await client.register();
 });
 ```
+
+Inbound calls then surface on [`session.incomingCalls$`](/docs/browser-sdk/v4/reference/interfaces/session-state#incomingcalls-1).
 
 ### DTMF tones not working
 
@@ -187,7 +202,10 @@ Subscribe immediately after getting the object — BehaviorSubjects emit current
 
 ### Memory leak / page slows down
 
-Always unsubscribe. See [RxJS Primer → Cleanup](/docs/browser-sdk/v4/guides/rxjs-primer#cleanup).
+Almost always a missing unsubscribe on a long-lived subscription. See
+[RxJS Primer → Cleanup](/docs/browser-sdk/v4/guides/rxjs-primer#cleanup)
+and the framework patterns in
+[Framework Integration](/docs/browser-sdk/v4/guides/framework-integration).
 
 ## Browser-specific issues
 
@@ -230,7 +248,8 @@ client.videoInputDevices$.subscribe((devices) => {
 
 ### Verbose logging
 
-The SDK logs at debug level. Filter the browser console by `signalwire`.
+The SDK emits debug-level logs to the browser console. Filter by
+`signalwire` in DevTools to isolate them.
 
 ### Inspect WebSocket traffic
 
@@ -238,9 +257,13 @@ DevTools → Network → "WS" filter → click the connection → Messages tab.
 
 ### Get call statistics
 
+[`call.rtcPeerConnection`](/docs/browser-sdk/v4/reference/webrtc-call/rtc-peer-connection)
+is the underlying `RTCPeerConnection` — it's `undefined` until media
+negotiation starts, so guard before reading it.
+
 ```js
-const stats = await call.rtcPeerConnection.getStats();
-stats.forEach((report) => {
+const stats = await call.rtcPeerConnection?.getStats();
+stats?.forEach((report) => {
   if (report.type === "inbound-rtp" && report.kind === "video") {
     console.log("Packets received:", report.packetsReceived);
     console.log("Packets lost:", report.packetsLost);
@@ -294,8 +317,15 @@ call.status$.subscribe((status) => {
 
 ### Can I record calls?
 
-Recording is controlled server-side through the SignalWire platform. Check `call.capabilities$` for available features.
+Recording is controlled by the SignalWire platform, not the browser.
+[`startRecording()`](/docs/browser-sdk/v4/reference/webrtc-call/start-recording)
+is on the API surface but **not yet implemented in v4** and will throw
+when called. Recording state configured server-side still surfaces
+through [`recording$`](/docs/browser-sdk/v4/reference/webrtc-call/recording$).
 
 ### Why "Unimplemented" errors?
 
-Some features require specific server capabilities or are still in development. Check `call.capabilities$`.
+Some methods are on the API surface but pending implementation, and
+others depend on capabilities the server hasn't granted to this call.
+Check [`capabilities$`](/docs/browser-sdk/v4/reference/webrtc-call/capabilities$)
+to gate the UI on what's actually available.

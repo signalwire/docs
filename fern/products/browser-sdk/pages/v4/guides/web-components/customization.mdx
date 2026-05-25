@@ -6,30 +6,26 @@ position: 4
 max-toc-depth: 3
 ---
 
-When the all-in-one `<sw-call-widget>` doesn't match your layout — or
-you only want one or two pieces of it — drop down to the primitives.
-Every widget on the page is built from the same elements you can use à
-la carte, wired together through reactive contexts. Compose them, swap
-them, slot custom UI in.
+When [`<sw-call-widget>`] doesn't fit the layout, drop down to the
+primitives. The widget itself is built from the same elements,
+wired together through reactive contexts.
 
-This guide covers three patterns, ordered by how much of the built-in
-widget you're keeping:
+Three patterns, in increasing order of customization:
 
-1. **Slot-based composition** — keep `<sw-call-widget>`, replace a
-   region (trigger, background) with your own markup.
-2. **Listening to events & driving the widget** — pure attribute /
-   event / method API; the widget still owns the lifecycle.
-3. **Building a UI from primitives** — drop `<sw-call-widget>`
-   entirely and compose `<sw-call-provider>`, `<sw-call-media>`,
-   `<sw-call-controls>`, etc. yourself.
+1. **Slots** — keep `<sw-call-widget>`, replace one region (trigger
+   or background).
+2. **Events & methods** — attribute / event / method API; the widget
+   still owns the lifecycle.
+3. **Primitives** — drop the widget and compose
+   `<sw-call-provider>`, `<sw-call-media>`, `<sw-call-controls>`,
+   etc. directly.
 
 ## Slots
 
-`<sw-call-widget>` has a `background` slot for the full-bleed
-background behind the call, and a default slot for the trigger
-element shown while idle. Anything you place in the default slot
-becomes the click target — `widget.dial()` fires on click. A trigger
-button with a custom background:
+[`<sw-call-widget>`] exposes a `background` slot for the full-bleed
+background and a default slot for the idle-state trigger. Anything
+in the default slot becomes the click target; clicking calls
+`widget.dial()`.
 
 ```html
 <sw-call-widget modal token="c2c_…" destination="/public/sales">
@@ -42,16 +38,13 @@ button with a custom background:
 </sw-call-widget>
 ```
 
-Any element placed in the default slot becomes the trigger — clicking
-anywhere inside it calls `widget.dial()` for you. The widget swaps
-into call mode (inline or modal, depending on the `modal` attribute)
-once dialing starts.
+Once dialing starts the widget swaps into call mode (inline or
+modal, per the `modal` attribute).
 
 ## Programmatic control
 
-`<sw-call-widget>` exposes two imperative methods you can call from JS
-when you want to drive dialing yourself instead of relying on the
-trigger slot:
+[`<sw-call-widget>`] exposes `dial()` and `hangup()` for driving
+dialing from JS instead of the trigger slot:
 
 ```js
 const widget = document.querySelector("sw-call-widget");
@@ -69,9 +62,8 @@ document.querySelector("#hangup-btn").addEventListener("click", () => {
 });
 ```
 
-The widget bubbles `sw-dial` and `sw-call-ended` (plus forwarded
-agent events) — same pattern as native DOM events. Listen from
-anywhere:
+The widget bubbles `sw-dial`, `sw-call-ended`, and forwarded agent
+events:
 
 ```js
 widget.addEventListener("sw-call-ended", (e) => {
@@ -83,20 +75,21 @@ See [`<sw-call-widget>`] for the full event surface.
 
 ## Pass-through attributes
 
-A handful of widget attributes toggle which sub-features mount —
-`transcription` enables the AI transcript drawer, `allow-incoming-calls`
-listens for inbound calls on the same token, `audio-only` skips the
-camera. `user-variables` (JSON string) is forwarded into the Verto
-invite for the receiving side to read.
+Widget attributes toggle sub-features:
+
+- `transcription` — enables the AI transcript drawer.
+- `allow-incoming-calls` — listens for inbound calls on the same token.
+- `audio-only` — skips the camera.
+- `user-variables` — JSON string forwarded into the Verto invite for
+  the receiving side to read.
 
 See [`<sw-call-widget>`] for the full attribute list.
 
-## Building a UI from primitives
+## Building from primitives
 
-When you want full control over the layout, skip `<sw-call-widget>`
-and compose the primitives directly. `<sw-call-provider>` is the only
-required wrapper — it owns the reactive contexts that the SDK-aware
-components subscribe to.
+For full layout control, compose the primitives directly.
+`<sw-call-provider>` is the only required wrapper — it owns the
+reactive contexts that the SDK-aware components subscribe to.
 
 ```html
 <sw-call-provider id="provider">
@@ -119,35 +112,32 @@ components subscribe to.
 
   const call = await client.dial("/private/sales", { audio: true, video: true });
 
-  // Hand the live Call object to the provider — every nested
-  // component picks up state via @lit/context automatically.
   const provider = document.getElementById("provider");
   provider.call = call;
   provider.deviceController = client.deviceController;
 </script>
 ```
 
-The same pattern works with the embed bundle — replace the imports with
-`const { SignalWire, StaticCredentialProvider } = SignalWireUI;` and drop
-the `<script type="module">`.
+For the embed bundle, replace the imports with
+`const { SignalWire, StaticCredentialProvider } = SignalWireUI;` and
+drop `<script type="module">`.
 
-### What the provider gives you
+### Provider contexts
 
 `<sw-call-provider>` mounts reactive contexts for call state,
-devices, transcript, and forwarded user events. Set its `.call` and
-`.deviceController` properties; every nested SDK-aware element
-subscribes automatically — no per-element wiring required. State
-changes (a participant joins, a device gets unplugged, a transcript
-line arrives) push through the contexts to whichever components are
-listening.
+devices, transcript, and forwarded user events. Set `.call` and
+`.deviceController`; every nested SDK-aware element subscribes
+automatically. State changes (participant joins, device changes,
+transcript lines) push through the contexts to whichever components
+are listening.
 
-### Component-level events
+### Component events
 
-Each primitive bubbles its own composed events: `<sw-call-controls>`
-fires `sw-mute-audio` / `sw-mute-video` / `sw-hangup`,
-`<sw-call-dialpad>` fires `sw-digit-press`, `<sw-device-selector>`
-fires `sw-device-change`, and so on. Since they bubble across shadow
-DOM, listen wherever you like:
+Each primitive bubbles its own composed events:
+`<sw-call-controls>` emits `sw-mute-audio` / `sw-mute-video` /
+`sw-hangup`; `<sw-call-dialpad>` emits `sw-digit-press`;
+`<sw-device-selector>` emits `sw-device-change`. Events bubble
+across shadow DOM:
 
 ```js
 provider.addEventListener("sw-hangup", () => {
@@ -155,15 +145,14 @@ provider.addEventListener("sw-hangup", () => {
 });
 ```
 
-The per-element [reference pages](/docs/browser-sdk/v4/reference/web-component)
-list each component's full event payload.
+Per-element event payloads are listed in the
+[Web Components reference](/docs/browser-sdk/v4/reference/web-component).
 
-### Replacing a single primitive
+### Replacing a primitive
 
-Because every component subscribes to context independently, you can
-build your own version of one piece and slot it next to the originals.
-For example, a custom dialpad that dispatches `sw-digit-press` events
-will work anywhere `<sw-call-dialpad>` works.
+Because components subscribe to context independently, a custom
+element that dispatches the same composed events is a drop-in
+replacement.
 
 ```html
 <sw-call-provider .call="${call}">
@@ -173,23 +162,24 @@ will work anywhere `<sw-call-dialpad>` works.
 </sw-call-provider>
 ```
 
-The SDK-aware components don't talk to each other directly — they all
-go through the call object — so swapping one out is a drop-in
-replacement as long as your component dispatches the same composed
-custom events.
+SDK-aware components don't talk to each other directly — they all
+go through the call object — so any element emitting the right
+events fits.
 
 ## Choosing the right level
 
 | Need                                                     | Use                                  |
 | -------------------------------------------------------- | ------------------------------------ |
-| One call button on a marketing page                      | `<sw-click-to-call>`                 |
-| Inline / modal call UI, default layout, branded colors   | `<sw-call-widget>` + token overrides |
-| Same as above with a custom trigger or background        | `<sw-call-widget>` + slots           |
-| Fully custom layout, keep SDK-aware primitives           | `<sw-call-provider>` + primitives    |
-| No web components at all                                 | The [Browser SDK](/docs/browser-sdk/v4/guides/overview) directly |
+| One call button on a page                                | [`<sw-click-to-call>`]               |
+| Inline or modal call UI with default layout              | [`<sw-call-widget>`]                 |
+| Same with a custom trigger or background                 | [`<sw-call-widget>`] + slots         |
+| Custom layout, keep SDK-aware primitives                 | `<sw-call-provider>` + primitives    |
+| No web components                                        | [Browser SDK](/docs/browser-sdk/v4/guides/overview) directly |
 
-See [Theming](/docs/browser-sdk/v4/guides/web-components-theming) for the visual
-side and the [Web Components reference](/docs/browser-sdk/v4/reference/web-component) for the
-per-element attribute, slot, and event listings.
+See [Theming](/docs/browser-sdk/v4/guides/web-components-theming)
+for the visual side and the
+[Web Components reference](/docs/browser-sdk/v4/reference/web-component)
+for per-element attributes, slots, and events.
 
 [`<sw-call-widget>`]: /docs/browser-sdk/v4/reference/web-component/sw-call-widget
+[`<sw-click-to-call>`]: /docs/browser-sdk/v4/reference/web-component/sw-click-to-call

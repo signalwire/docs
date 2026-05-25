@@ -22,14 +22,30 @@ client puts both into the same thread.
 import { firstValueFrom } from "rxjs";
 
 const directory = await firstValueFrom(client.directory$);
-const address   = directory.addresses.find((a) => a.name === "/private/alice");
+const id        = await directory.findAddressIdByURI("/private/alice");
+const address   = directory.get(id);
 
 await address.sendText("Heading over to the call now");
 ```
 
+`findAddressIdByURI` checks the local cache and falls back to the server, so it works even before `directory.loadMore()` has populated `directory.addresses`. See [Address Book & Directory](/docs/browser-sdk/v4/guides/address-book) for the directory-lookup patterns.
+
 `sendText` resolves once the message is accepted by the server.
 There's no separate "delivered" / "read" signal in v4 — if you need
 those, store delivery state in your own backend.
+
+<Note>
+You can't message your own subscriber address. The platform rejects a
+join request whose destination is the same fabric address as the
+caller with a `422`. If your UI lists the directory, filter
+`client.user.addresses[0].id` out before rendering.
+
+Testing two sides of a conversation requires **two different
+Subscriber Access Tokens** — one per subscriber. Reusing the same SAT
+in two tabs will work for the most recently connected tab, while the
+other tab logs `Discarding stale event: conversation.message` as the
+platform rotates the session's event channel.
+</Note>
 
 ## Reading the conversation
 
@@ -149,18 +165,258 @@ addresses' `textMessages$` streams and update your UI as messages
 land:
 
 ```js
-for (const address of directory.addresses) {
-  address.textMessages$.subscribe((collection) => {
-    collection?.values$.subscribe((messages) => {
-      const unread = messages.filter((m) => !isRead(m.id));
-      updateUnreadBadge(address.id, unread.length);
+directory.addresses$.subscribe((addresses) => {
+  for (const address of addresses) {
+    address.textMessages$.subscribe((collection) => {
+      collection?.values$.subscribe((messages) => {
+        const unread = messages.filter((m) => !isRead(m.id));
+        updateUnreadBadge(address.id, unread.length);
+      });
     });
-  });
-}
+  }
+});
+
+directory.loadMore();
 ```
+
+Subscribing to `addresses$` (rather than reading the `addresses` snapshot) means new entries that arrive on later pages or via background updates get watched automatically. Track which `address.id`s you've already wired up if you want to avoid double-subscribing on re-emit.
 
 The platform pushes new messages over the same WebSocket the SDK
 uses for signaling — no polling required.
+
+## Try it: a tiny chat client
+
+The page below stitches together everything above into one runnable
+file. Paste a [Subscriber Access Token](/docs/browser-sdk/v4/guides/authentication),
+hit **Connect**, pick a conversation from the dropdown, and you can
+read history, paginate older pages, send a text, and toggle the call
+log for the same address — all from one `Address` entity.
+
+The demo touches: `client.directory$` (to list addresses),
+`address.textMessages$` and the collection's `values$` / `hasMore$` /
+`loadMore()` (to render and paginate the thread), `address.sendText()`
+(to post), and `address.history$` (to surface the call log for the
+same conversation).
+
+<Accordion title="messaging-chat-demo.html — full source">
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SignalWire SDK messaging & chat demo</title>
+    <style>
+      body { font: 14px/1.5 system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      label { display: block; margin: 0.75rem 0 0.25rem; font-weight: 600; }
+      input, select { width: 100%; padding: 0.5rem; font: 13px ui-monospace, monospace; box-sizing: border-box; }
+      button { margin: 0.5rem 0.5rem 0 0; padding: 0.5rem 1rem; font: 14px system-ui; cursor: pointer; }
+      button[disabled] { opacity: 0.5; cursor: not-allowed; }
+      #thread { margin-top: 1rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; height: 18rem; overflow-y: auto; background: #fafafa; }
+      #thread li { list-style: none; padding: 0.25rem 0; border-bottom: 1px solid #eee; }
+      #thread li:last-child { border-bottom: none; }
+      .meta { color: #666; font-size: 12px; }
+      #history { margin-top: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; max-height: 10rem; overflow-y: auto; background: #fafafa; display: none; font-size: 13px; }
+      #log { margin-top: 1rem; padding: 1rem; background: #111; color: #0f0; font: 13px ui-monospace, monospace; min-height: 4rem; white-space: pre-wrap; border-radius: 4px; }
+      .row { display: flex; gap: 0.5rem; align-items: stretch; }
+      .row input { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <h1>SignalWire SDK messaging & chat demo</h1>
+
+    <label for="token">Subscriber Access Token</label>
+    <input id="token" type="password" placeholder="Paste your SAT here" />
+    <button id="connect">Connect</button>
+
+    <label for="address">Conversation</label>
+    <select id="address" disabled>
+      <option>— connect first —</option>
+    </select>
+    <button id="loadOlder" disabled>Load older</button>
+    <button id="toggleHistory" disabled>Show call history</button>
+
+    <ul id="thread"></ul>
+    <div id="history"></div>
+
+    <div class="row" style="margin-top: 0.75rem;">
+      <input id="text" placeholder="Type a message…" disabled />
+      <button id="send" disabled>Send</button>
+    </div>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev?bundle-deps";
+      import { firstValueFrom, filter } from "https://esm.sh/rxjs@7.8.2?bundle-deps";
+
+      const $ = (id) => document.getElementById(id);
+      const log = (msg) => ($("log").textContent += msg + "\n");
+
+      let client, currentAddress, threadSub, valuesSub, hasMoreSub, historySub, currentCollection;
+
+      $("connect").addEventListener("click", async () => {
+        const token = $("token").value.trim();
+        if (!token) return log("Paste a token first.");
+        $("connect").disabled = true;
+        log("Connecting…");
+
+        client = new SignalWire(new StaticCredentialProvider({ token }));
+        try {
+          await firstValueFrom(client.ready$.pipe(filter((r) => r)));
+        } catch (err) {
+          log("Failed: " + (err.message || err));
+          $("connect").disabled = false;
+          return;
+        }
+
+        // `directory.addresses` starts empty — subscribing to `addresses$`
+        // and calling `loadMore()` triggers the initial fetch and keeps
+        // the UI in sync as pages stream in.
+        const directory = await firstValueFrom(client.directory$);
+        // The directory includes the current subscriber's own address —
+        // filter it out, since you can't open a conversation with yourself
+        // (the server rejects join with a 422).
+        const selfAddressId = client.user?.addresses?.[0]?.id;
+        const select = $("address");
+        let addresses = [];
+        let pickedFirst = false;
+
+        directory.addresses$.subscribe((next) => {
+          addresses = next.filter((a) => a.id !== selfAddressId);
+          select.innerHTML = "";
+          if (!addresses.length) {
+            const opt = document.createElement("option");
+            opt.textContent = "— no addresses in directory —";
+            select.appendChild(opt);
+            return;
+          }
+          for (const a of addresses) {
+            const opt = document.createElement("option");
+            opt.value = a.id;
+            opt.textContent = a.name + " (" + a.type + ")";
+            select.appendChild(opt);
+          }
+          select.disabled = false;
+          if (!pickedFirst) {
+            pickedFirst = true;
+            log("Connected. Pick a conversation above.");
+            selectAddress(addresses[0]);
+          }
+        });
+
+        select.addEventListener("change", () => {
+          const a = addresses.find((x) => x.id === select.value);
+          if (a) selectAddress(a);
+        });
+
+        directory.loadMore();
+      });
+
+      function selectAddress(address) {
+        currentAddress = address;
+        $("thread").innerHTML = "";
+        $("history").innerHTML = "";
+        $("history").style.display = "none";
+        $("toggleHistory").textContent = "Show call history";
+        $("text").disabled = false;
+        $("send").disabled = false;
+        $("toggleHistory").disabled = false;
+
+        threadSub?.unsubscribe();
+        valuesSub?.unsubscribe();
+        hasMoreSub?.unsubscribe();
+        historySub?.unsubscribe();
+
+        log("Loading conversation with " + address.name + "…");
+
+        threadSub = address.textMessages$.subscribe((collection) => {
+          if (!collection) return;
+          currentCollection = collection;
+
+          valuesSub?.unsubscribe();
+          valuesSub = collection.values$.subscribe((messages) => {
+            $("thread").innerHTML = "";
+            for (const m of messages) {
+              const li = document.createElement("li");
+              const time = new Date(m.created).toLocaleTimeString();
+              li.innerHTML =
+                "<div>" + escapeHtml(m.text) + "</div>" +
+                "<div class='meta'>" + time + "</div>";
+              $("thread").appendChild(li);
+            }
+            $("thread").scrollTop = $("thread").scrollHeight;
+          });
+
+          hasMoreSub?.unsubscribe();
+          hasMoreSub = collection.hasMore$.subscribe((hasMore) => {
+            $("loadOlder").disabled = !hasMore;
+          });
+        });
+      }
+
+      $("loadOlder").addEventListener("click", () => {
+        if (!currentCollection) return;
+        log("Loading older messages…");
+        currentCollection.loadMore();
+      });
+
+      $("send").addEventListener("click", async () => {
+        const text = $("text").value.trim();
+        if (!text || !currentAddress) return;
+        $("send").disabled = true;
+        try {
+          await currentAddress.sendText(text);
+          $("text").value = "";
+        } catch (err) {
+          log("Send failed: " + (err.message || err));
+        } finally {
+          $("send").disabled = false;
+        }
+      });
+
+      $("text").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("send").click();
+      });
+
+      $("toggleHistory").addEventListener("click", () => {
+        if (!currentAddress) return;
+        const panel = $("history");
+        if (panel.style.display === "block") {
+          panel.style.display = "none";
+          $("toggleHistory").textContent = "Show call history";
+          historySub?.unsubscribe();
+          return;
+        }
+        panel.style.display = "block";
+        $("toggleHistory").textContent = "Hide call history";
+        historySub = currentAddress.history$.subscribe((collection) => {
+          collection?.values$.subscribe((entries) => {
+            panel.innerHTML = "";
+            if (!entries.length) {
+              panel.textContent = "(no call history)";
+              return;
+            }
+            for (const e of entries) {
+              const div = document.createElement("div");
+              div.textContent =
+                e.kind + " · " + e.status + " · " +
+                new Date(e.started).toLocaleString();
+              panel.appendChild(div);
+            }
+          });
+        });
+      });
+
+      function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+        })[c]);
+      }
+    </script>
+  </body>
+</html>
+```
+</Accordion>
 
 ## Reference
 

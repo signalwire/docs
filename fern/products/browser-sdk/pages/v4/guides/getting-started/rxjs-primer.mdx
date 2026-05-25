@@ -6,28 +6,28 @@ position: 3
 max-toc-depth: 3
 ---
 
-The Browser SDK is highly asynchronous. Devices come and go, participants join and leave, capabilities shift mid-call, call status walks through `new` → `trying` → `ringing` → `connected` → `disconnected`. Rather than firing one-shot events that are hard to manage, the SDK exposes most of this state as **RxJS Observables** — streams you can subscribe to that immediately push the current value plus every future change.
+Most state in the Browser SDK — devices, participants, capabilities, call status — is exposed as **RxJS observables**. This page covers the subset of RxJS used by the SDK. For everything else, see the [RxJS docs](https://rxjs.dev/).
 
-This page will briefly introduce RxJS, but we recommend taking the time to understand it better from their official docs to be productive with the Browser SDK.
+## Observables and subscriptions
 
-## What you need to know
+An observable is a stream of values over time. It does nothing until `.subscribe()` is called; `.subscribe()` returns a subscription, and `.unsubscribe()` ends it. Subscriptions left open are the main source of memory leaks.
 
-An **Observable** is a value-over-time. It doesn't do anything until you call `.subscribe()` on it. When you do, you get back a **Subscription** — call `.unsubscribe()` to stop listening. Forgetting to do that is the #1 way to leak memory in this SDK.
+SDK observables behave like `BehaviorSubject`s: subscribing emits the current value synchronously, then every subsequent change.
 
-Most observables you'll touch here behave like a `BehaviorSubject` under the hood: the moment you subscribe, you get the current value synchronously, and then every change after that. So you don't have to "wait for an event" — just subscribe and you're caught up.
-
-To transform a stream, you `.pipe()` it through operators. `filter`, `map`, `take`, `combineLatest`, `switchMap`, `debounceTime` — the usual suspects.
+Transform a stream with `.pipe()` and operators (`filter`, `map`, `take`, `combineLatest`, `switchMap`, `debounceTime`, etc.).
 
 ## The `$` suffix
 
-Anywhere you see a property ending in `$`, that's the observable. The same name without the `$` is the current snapshot:
+A property ending in `$` is the observable. The same name without `$` is the current snapshot.
 
 ```js
-const status = call.status;        // string — what it is right now
-call.status$.subscribe(handler);   // stream — current value + every change
+const status = call.status;        // current value
+call.status$.subscribe(handler);   // current value + every change
 ```
 
-Reach for the snapshot when you just need to peek. Reach for the observable when you need to react to changes.
+<Warning>
+**Snapshots are not always populated.** For state the SDK already holds in memory (`call.status`, `call.participants`, device lists), the snapshot is the current value and reading it is fine. For lazily-loaded collections — `directory.addresses`, `address.textMessages`, `address.history` — the snapshot starts empty until something subscribes to the corresponding `$` observable (and, for paginated collections, until `loadMore()` is called). Reading the snapshot synchronously right after connecting will give you `[]`. Subscribe to the `$` form, then call `loadMore()` to trigger the first page.
+</Warning>
 
 ## Subscribing
 
@@ -36,15 +36,14 @@ const sub = client.audioInputDevices$.subscribe((devices) => {
   console.log("mics:", devices);
 });
 
-// when you're done
 sub.unsubscribe();
 ```
 
-That fires once immediately with the current device list, then again every time the OS reports a change.
+The first emission fires synchronously with the current device list; subsequent emissions fire on device changes.
 
-## Patterns you'll use a lot
+## Common patterns
 
-**Wait for something to become true, then move on.** `filter` keeps emissions you care about; `take(1)` ends the subscription after the first one — no manual unsubscribe needed.
+Wait for a value, then proceed once. `take(1)` ends the subscription after the first match.
 
 ```js
 import { filter, take } from "rxjs";
@@ -56,7 +55,7 @@ client.ready$
   });
 ```
 
-**React when a value matches.** Same idea, but you keep listening:
+React on every match.
 
 ```js
 import { filter } from "rxjs";
@@ -64,7 +63,7 @@ import { filter } from "rxjs";
 call.status$.pipe(filter((s) => s === "connected")).subscribe(showCallControls);
 ```
 
-**Combine streams.** When you need the latest of several things together:
+Combine the latest of multiple streams.
 
 ```js
 import { combineLatest } from "rxjs";
@@ -75,7 +74,7 @@ combineLatest([client.audioInputDevices$, client.selectedAudioInputDevice$])
   });
 ```
 
-**Ignore the initial value.** Useful when you only care about *changes*, not what's true right now:
+Skip the initial value when only changes matter.
 
 ```js
 import { skip } from "rxjs";
@@ -83,19 +82,17 @@ import { skip } from "rxjs";
 call.status$.pipe(skip(1)).subscribe(showStatusNotification);
 ```
 
-**Smooth out chatty streams.** `inputVolume$` fires constantly — `debounceTime` waits for things to settle:
+Throttle high-frequency streams.
 
 ```js
 import { debounceTime } from "rxjs";
 
-participant.inputVolume$.pipe(debounceTime(100)).subscribe(updateVolumeIndicator);
+call.localAudioLevel$.pipe(debounceTime(100)).subscribe(updateVolumeIndicator);
 ```
 
-## Cleaning up
+## Cleanup
 
-Every subscription you open needs to be closed when you're done with it, or it'll keep firing into a stale handler. Two patterns to pick from:
-
-**Collect subscriptions, tear them all down at once:**
+Two patterns:
 
 ```js
 class CallManager {
@@ -113,8 +110,6 @@ class CallManager {
 }
 ```
 
-**Or fire one signal that completes everything** via `takeUntil`:
-
 ```js
 import { Subject, takeUntil } from "rxjs";
 
@@ -123,16 +118,15 @@ const destroy$ = new Subject();
 call.status$.pipe(takeUntil(destroy$)).subscribe(updateStatus);
 call.participants$.pipe(takeUntil(destroy$)).subscribe(updateParticipants);
 
-// later
 destroy$.next();
 destroy$.complete();
 ```
 
-Both are fine. `takeUntil` scales better when you have lots of pipelines; the array is more obvious for a handful.
+`takeUntil` scales better with many subscriptions; an array is fine for a few.
 
-## Going further
+## References
 
-- [RxJS docs](https://rxjs.dev/) — the canonical reference
-- [Observables guide](https://rxjs.dev/guide/observable)
-- [Operators](https://rxjs.dev/guide/operators) — the full menu
-- [Subjects](https://rxjs.dev/guide/subject) — including `BehaviorSubject`, which is what most SDK observables are under the hood
+- [RxJS docs](https://rxjs.dev/)
+- [Observables](https://rxjs.dev/guide/observable)
+- [Operators](https://rxjs.dev/guide/operators)
+- [Subjects](https://rxjs.dev/guide/subject) (including `BehaviorSubject`)

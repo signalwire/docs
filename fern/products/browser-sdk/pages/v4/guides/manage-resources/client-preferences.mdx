@@ -6,21 +6,18 @@ position: 4
 max-toc-depth: 3
 ---
 
-`client.preferences` is the bag of **per-client defaults** the SDK
-reads when no per-call options override them: which mic / camera to
-use, whether to receive video by default, ICE / recovery tuning,
-codec ordering, custom `userVariables` to attach to every call.
-Preferences live in the browser, optionally persist to local storage,
-and are distinct from per-Subscriber configuration (which lives on
-the platform — see [Subscribers](/docs/browser-sdk/v4/guides/subscribers)).
+`client.preferences` holds **per-client defaults** the SDK reads when
+no per-call options override them: which mic / camera to use, whether
+to receive video by default, ICE / recovery tuning, codec ordering,
+and custom `userVariables` attached to every call. Preferences live
+in the browser, optionally persist to `localStorage`, and are
+distinct from per-Subscriber configuration (which lives on the
+platform — see [Subscribers](/docs/browser-sdk/v4/guides/subscribers)).
 
-This page covers *how* preferences fit into the SDK lifecycle. The
-full list of properties is on [`ClientPreferences`] — it's a plain
-object, so getting / setting is uninteresting.
+This page covers how preferences fit into the SDK lifecycle. For the
+full property list, see [`ClientPreferences`].
 
 ## Defaults vs. per-call overrides
-
-The mental model:
 
 ```
 client.preferences  ←  defaults
@@ -28,9 +25,9 @@ client.preferences  ←  defaults
 client.dial(dest, options)  ←  per-call overrides win
 ```
 
-Anything you set on `preferences` applies to every subsequent
-[`dial()`][`SignalWire.dial()`] that doesn't pass a competing
-field. Per-call options always win:
+Anything set on `preferences` applies to every subsequent
+[`dial()`][`SignalWire.dial()`] that doesn't pass a competing field.
+Per-call options always win:
 
 ```js
 client.preferences.receiveVideo = false;     // audio-first default
@@ -39,29 +36,28 @@ client.preferences.receiveVideo = false;     // audio-first default
 await client.dial("/private/team", { video: true });
 ```
 
-Set on `preferences` when "every call in my app should behave this
-way" (e.g. default codec ordering, a tier-wide `userVariables`
-payload). Set per-call when it's situational.
+Use `preferences` for app-wide defaults (codec ordering, a tier-wide
+`userVariables` payload). Use per-call options for situational values.
 
 ## Persistence
 
 By default, preferences live in memory only. Set
-`savePreferences: true` when constructing the client and the SDK
-hydrates from `localStorage` on startup and writes back on every
-setter:
+`savePreferences: true` to hydrate from `localStorage` on startup and
+write back on every setter:
 
 ```js
 const client = new SignalWire(provider, { savePreferences: true });
 ```
 
-What's persisted: timeouts, ICE settings, codec preferences,
-device-management flags, and `userVariables` — anything cleanly
-JSON-serializable. What isn't: `MediaDeviceInfo` references (device
-IDs aren't stable across sessions on every browser, so the SDK never
-persists them — picks happen at runtime via the device controller).
+Persisted: timeouts, ICE settings, codec preferences, device-management
+flags, and `userVariables` — anything cleanly JSON-serializable.
 
-If you want a different storage backend (IndexedDB, server-side per
-user), leave `savePreferences` off and mirror manually:
+Not persisted: `MediaDeviceInfo` references. Device IDs aren't stable
+across sessions in every browser, so device picks happen at runtime
+via the device controller.
+
+For a different storage backend (IndexedDB, server-side per user),
+leave `savePreferences` off and mirror manually:
 
 ```ts
 function setReceiveVideo(value: boolean) {
@@ -70,18 +66,14 @@ function setReceiveVideo(value: boolean) {
 }
 ```
 
-There's no `update$` observable on `ClientPreferences` — it's a
-synchronous bag, not a reactive store. Most apps don't need a
-reactive bridge; preferences get read at dial time and rarely
-mutate interactively.
+`ClientPreferences` is a synchronous object — there is no `update$`
+observable. Preferences are read at dial time.
 
-## `userVariables`: per-call context
+## `userVariables`
 
-`userVariables` is the only preference that's not really about SDK
-behavior — it's a free-form payload attached to every outbound
-Verto invite. The receiving side (an AI agent, a SWML script, your
-own backend) reads it via `signalwire-address:event` events. Use it
-to forward per-user / per-session context to the call route:
+`userVariables` is a free-form payload attached to every outbound
+Verto invite. The receiving side (an AI agent, a SWML script, a
+backend) reads it via `signalwire-address:event` events.
 
 ```js
 client.preferences.userVariables = {
@@ -90,34 +82,21 @@ client.preferences.userVariables = {
 };
 ```
 
-Set on preferences for app-wide values; pass to `dial()` for
-per-call attribution.
+Set on preferences for app-wide values; pass to `dial()` for per-call
+attribution.
 
 ## Time units
 
-All timeouts on the preferences surface are exposed in **seconds**,
-though they're stored as milliseconds internally. So:
+Timeouts on the preferences surface are exposed in **seconds** (stored
+as milliseconds internally):
 
 ```js
 client.preferences.connectionTimeout = 30;   // 30 seconds
 client.preferences.iceRestartTimeout = 10;   // 10 seconds
 ```
 
-This is the one quirk worth knowing — every other field uses
-whatever unit the underlying API uses (kbps, integer levels, etc.).
-
-## ICE / recovery / visibility
-
-There are knobs for the resilience pipeline (UDP/TCP TURN, relay
-fallback, ICE restart timeouts, network-change detection) and for
-page-visibility behavior (auto-mute video on hidden tab, refresh
-device list on visible). The defaults are tuned for real-world
-networks — **don't tighten them without a specific symptom in mind.**
-If you're chasing a reliability issue, see
-[Troubleshooting](/docs/browser-sdk/v4/guides/troubleshooting) before
-touching these.
-
-The full set is on [`ClientPreferences`].
+Other fields use the unit of the underlying API (kbps, integer
+levels, etc.).
 
 ## Reference
 

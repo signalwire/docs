@@ -8,8 +8,6 @@ max-toc-depth: 3
 
 This guide walks through moving an existing v3 (`@signalwire/js@3.x`) integration to v4. v3 was built around `RoomSession` and event emitters for video conferencing. v4 unifies calling and conferencing under a single `Call` API, replaces event emitters with RxJS observables, and introduces a credential-provider auth model with automatic token refresh.
 
-If you are using the older RELAY v2 SDK, see [Migrate from v2](/docs/browser-sdk/v4/guides/migrate-from-v2) instead.
-
 ## At a glance
 
 | Concern             | v3                                                     | v4                                                                            |
@@ -56,6 +54,7 @@ If your application depends on recording, streaming, playback, room locking, met
 - [ ] Convert `RoomSession` methods to `Call` / `call.self` equivalents
 - [ ] Replace `roomObj.on('event', ...)` with `call.eventName$.subscribe(...)`
 - [ ] Update `invite.accept` / `invite.reject` to `call.answer()` / `call.reject()`
+- [ ] Drop `client.online()` / `client.offline()` — registration is automatic (use `client.unregister()` to go offline)
 - [ ] Move screen share from the room to `call.self`
 - [ ] Swap `WebRTC.getCameras()` etc. for `client.videoInputDevices$`
 - [ ] Pass full `MediaDeviceInfo` objects (not bare `deviceId`) to device selectors
@@ -68,7 +67,7 @@ If your application depends on recording, streaming, playback, room locking, met
 The package name is unchanged. Upgrade to the v4 major release:
 
 ```bash
-npm install @signalwire/js@latest
+npm install @signalwire/js@dev
 ```
 
 For the browser build:
@@ -139,7 +138,12 @@ const client = await SignalWire({
 import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
 
 const credentials = new StaticCredentialProvider({ token: "<TOKEN>" });
-const client = new SignalWire(credentials);
+
+// Second argument carries v3-style options (debug, logLevel, custom logger, etc.)
+const client = new SignalWire(credentials, {
+  logLevel: "debug",
+  debug: { logWsTraffic: true },
+});
 
 client.ready$.subscribe((ready) => {
   if (ready) console.log("Client connected and authenticated");
@@ -149,6 +153,8 @@ client.errors$.subscribe((error) => {
   console.error("Client error:", error);
 });
 ```
+
+By default, the client connects and registers automatically on construction. Pass `skipConnection: true` or `skipRegister: true` if you want to drive that lifecycle yourself.
 
 ### Connection state
 
@@ -214,7 +220,7 @@ call.hangup();
 
 ## Inbound calls
 
-v3 used `client.online({ incomingCallHandlers })` with callbacks and an explicit `offline()`. v4 exposes incoming calls as an observable that is always active after `register()`. `answer()` and `reject()` are **synchronous** in v4 — no `await` needed.
+v3 used `client.online({ incomingCallHandlers })` with callbacks and an explicit `offline()`. v4 registers the user automatically on construction and exposes incoming calls as an observable — no online/offline toggle. To go offline for inbound calls, call `client.unregister()` (and `client.register()` to come back online). `answer()` and `reject()` are **synchronous** in v4 — no `await` needed.
 
 **Before (v3):**
 
@@ -237,8 +243,7 @@ await client.offline();
 **After (v4):**
 
 ```js
-await client.register();
-
+// Registration happens automatically on client construction.
 client.session.incomingCalls$.subscribe((calls) => {
   const ringing = calls.filter((c) => c.status === "ringing");
   if (ringing.length > 0) showIncomingCallUI(ringing[0]);
@@ -254,6 +259,10 @@ function acceptCall(call) {
 function rejectCall(call) {
   call.reject(); // synchronous
 }
+
+// Equivalent to v3's client.offline() / client.online()
+await client.unregister();
+await client.register();
 ```
 
 ## RoomSession → Call
@@ -551,7 +560,8 @@ The standalone `Chat`, `PubSub`, and `WebRTC` clients from v3 are removed. Devic
 | `SignalWire({ token })`            | `new SignalWire(credentialProvider)`                          |
 | Ready callback                     | `client.ready$` (emits `true` when connected + authenticated) |
 | `client.dial({ to, rootElement })` | `client.dial(destination, options)`                           |
-| `client.online({ handlers })`      | `client.register()` + `client.session.incomingCalls$`         |
+| `client.online({ handlers })`      | Automatic — subscribe to `client.session.incomingCalls$`      |
+| `client.offline()`                 | `client.unregister()` (re-enable with `client.register()`)    |
 | `invite.accept()` (async)          | `call.answer()` (sync)                                        |
 | `invite.reject()` (async)          | `call.reject()` (sync)                                        |
 | `roomSession.audioMute()`          | `call.self.mute()`                                            |
