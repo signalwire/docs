@@ -13,60 +13,17 @@ icon: "golang"
 
 Command swaig-test is a CLI tool for testing SWAIG agents by exercising their HTTP endpoints. Unlike the Python SDK's swaig-test which loads agent files dynamically, this tool operates against a running agent server.
 
-Command swaig-test is a CLI tool for testing SWAIG agents by exercising
-their HTTP endpoints. Unlike the Python SDK's swaig-test which loads agent
-files dynamically, this tool operates against a running agent server.
-
 Usage:
-
-```
-swaig-test --url http://user:pass@localhost:3000/ --dump-swml
-swaig-test --url http://user:pass@localhost:3000/ --list-tools
-swaig-test --url http://user:pass@localhost:3000/ --exec get_weather --param location=London
-```
 
 Binary-introspection mode (no HTTP):
 
-```
-swaig-test --example swmlservice_swaig_standalone --list-tools
-```
-
-In `--example` mode the CLI runs `go run ./examples/<NAME>` with
-SWAIG_LIST_TOOLS=1 set in the subprocess environment. The SDK's
-Service.Serve() honors that env var by printing the registered tool
-registry between __SWAIG_TOOLS_BEGIN__ / __SWAIG_TOOLS_END__ sentinels
-and exiting 0 BEFORE binding any port. The CLI captures stdout, slices
-between the sentinels, parses the JSON, and pretty-prints — no HTTP,
-no /swaig endpoint, no rendered-SWML walk required.
+In `--example` mode the CLI runs `go run ./examples/<NAME>` with SWAIG_LIST_TOOLS=1 set in the subprocess environment. The SDK's Service.Serve() honors that env var by printing the registered tool registry between __SWAIG_TOOLS_BEGIN__ / __SWAIG_TOOLS_END__ sentinels and exiting 0 BEFORE binding any port. The CLI captures stdout, slices between the sentinels, parses the JSON, and pretty-prints — no HTTP, no /swaig endpoint, no rendered-SWML walk required.
 
 Simulator support for `--simulate-serverless` mode.
 
-In the Python SDK, `swaig-test` can load an agent from a source file
-and dispatch invocations through the chosen serverless adapter
-in-process. Go has no equivalent dynamic-loader for compiled binaries,
-so the simulator is split in two:
+In the Python SDK, `swaig-test` can load an agent from a source file and dispatch invocations through the chosen serverless adapter in-process. Go has no equivalent dynamic-loader for compiled binaries, so the simulator is split in two:
 
-  1. A library API (this file) that sets/clears the mode-detection
-     env vars, dispatches a synthetic Lambda Function URL event
-     through pkg/lambda, and restores the outer environment on exit.
-     Tests and in-process callers (e.g. users who embed `swaig-test`
-     in their own test suites) drive the simulator through this API.
-
-  2. A flag on the `swaig-test` CLI (see main.go) that validates the
-     requested platform against what the port actually implements and
-     surfaces a clear error for unsupported platforms (Phase 9 of the
-     porting guide). The flag also works with --url: it sets the
-     mode-detection env vars for the duration of the invocation so
-     the server-side URL generation goes through the platform branch.
-
-The simulator mirrors the behaviour of Python's
-`signalwire/cli/simulation/mock_env.py`:
-  - Platform preset env vars are applied (AWS_LAMBDA_FUNCTION_NAME etc).
-  - Conflicting env vars — most importantly SWML_PROXY_URL_BASE — are
-    cleared so platform-specific URL generation is actually exercised.
-  - The original env is restored on exit, whether the simulated call
-    succeeded, errored, or panicked. Leaking env across simulations
-    would corrupt later tests in the same process.
+The simulator mirrors the behaviour of Python's `signalwire/cli/simulation/mock_env.py`:
 
 ## Signature
 
