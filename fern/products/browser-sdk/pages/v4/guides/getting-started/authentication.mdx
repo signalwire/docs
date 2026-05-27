@@ -7,7 +7,7 @@ position: 2
 max-toc-depth: 3
 ---
 
-The SDK authenticates with a **Subscriber Access Token (SAT)**, a short-lived credential that identifies which [**Subscriber**](/docs/platform/subscribers) (SignalWire's term for a user in your communication system) the SDK is acting on behalf of. Your backend creates the SAT using your Project API Token, then hands it to the browser, where the SDK uses it to open a WebSocket session with SignalWire.
+The SDK authenticates with a **Subscriber Access Token (SAT)**, a short-lived credential that identifies which [**User**](/docs/platform/subscribers) (called a **Subscriber** on the platform) the SDK is acting on behalf of. Your backend creates the SAT using your Project API Token, then hands it to the browser, where the SDK uses it to open a WebSocket session with SignalWire.
 
 ```ts Browser
 import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
@@ -42,13 +42,13 @@ The SDK supports four authentication patterns, each shaped by who is holding the
   </Card>
 </CardGroup>
 
-Each pattern uses a different credential: three **Subscriber Access Token (SAT)** flavors issued for a subscriber, guest, or invitee, and a separate **Embed token** for public widgets. The credential's capabilities determine what the holder can do:
+Each pattern uses a different credential: three **Subscriber Access Token (SAT)** flavors issued for a user, guest, or invitee, and a separate **Embed token** for public widgets. The credential's capabilities determine what the holder can do:
 
 | Pattern | Credential | Inbound calls | Outbound calls | Destinations | Audience |
 |---|---|:---:|:---:|---|---|
-| Authenticated users | **[Subscriber Access Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token)** | ✓ | ✓ | Anywhere the subscriber can reach | One signed-in user |
+| Authenticated users | **[Subscriber Access Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token)** | ✓ | ✓ | Anywhere the user can reach | One signed-in user |
 | Guest users | **[Guest SAT](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token)** | ✗ | ✓ | A list of allowed destinations you set (max 10) | One guest user with scoped capabilities |
-| Call invite | **[Invite SAT](/docs/apis/rest/subscribers/tokens/create-subscriber-invite-token)** | ✗ | ✓ | The inviting subscriber's address | One invitee |
+| Call invite | **[Invite SAT](/docs/apis/rest/subscribers/tokens/create-subscriber-invite-token)** | ✗ | ✓ | The inviting user's address | One invitee |
 | Public usage | **[Embed token](/docs/apis/rest/embeds/tokens/create-guest-embed-token)** | ✗ | ✓ | Tied to a single resource | Anyone visiting a public page |
 
 Match the credential's reach to the trust level of whoever holds it. If a credential can dial anyone, then anyone who can read it can dial anyone, so use the [delivery model](#how-the-sdk-gets-its-credential) below that keeps the credential out of untrusted hands.
@@ -118,9 +118,9 @@ The browser never talks to SignalWire directly here. Creating any SAT requires t
 
 Three SAT variants come through this path:
 
-- **Subscriber Access Token** ([`POST /api/fabric/subscribers/tokens`](/docs/apis/rest/subscribers/tokens/create-subscriber-token)): full subscriber identity for a signed-in user; can receive inbound calls. Also called a default-scope SAT when you need to distinguish it from the variants below.
+- **Subscriber Access Token** ([`POST /api/fabric/subscribers/tokens`](/docs/apis/rest/subscribers/tokens/create-subscriber-token)): full user identity for a signed-in user; can receive inbound calls. Also called a default-scope SAT when you need to distinguish it from the variants below.
 - **Guest SAT** ([`POST /api/fabric/guests/tokens`](/docs/apis/rest/subscribers/tokens/create-subscriber-guest-token)): outbound-only, pinned to up to 10 `allowed_addresses`.
-- **Invite SAT** ([`POST /api/fabric/subscriber/invites`](/docs/apis/rest/subscribers/tokens/create-subscriber-invite-token)): outbound-only, pinned to one address; created client-side by a signed-in subscriber and delivered out-of-band (URL, email, QR code) to one recipient.
+- **Invite SAT** ([`POST /api/fabric/subscriber/invites`](/docs/apis/rest/subscribers/tokens/create-subscriber-invite-token)): outbound-only, pinned to one address; created client-side by a signed-in user and delivered out-of-band (URL, email, QR code) to one recipient.
 
 Once the SAT is in the browser, the next decision is **whether the session needs to outlive a single SAT**. For one-shot sessions (typical for Guest and Invite SATs), use [`StaticCredentialProvider`](/docs/browser-sdk/v4/reference/credential-providers/static-credential-provider). The SDK uses the fetched SAT until it expires, then the session ends. For sessions that must outlive a single SAT, pick a refresh strategy below.
 
@@ -169,7 +169,7 @@ Inside `/api/signalwire-token`, your backend produces the fresh SAT one of two w
 
     ```js Server (Node.js)
     app.post("/api/signalwire-token", async (req, res) => {
-      // Look up the refresh_token you stored when this user's subscriber was created.
+      // Look up the refresh_token you stored when this user was created.
       const stored = await getRefreshTokenForUser(req.user.id);
 
       // Swap that refresh_token for a new SAT + new refresh_token pair.
@@ -200,9 +200,9 @@ Inside `/api/signalwire-token`, your backend produces the fresh SAT one of two w
       const r = await fetch(`https://${SPACE}/api/fabric/subscribers/tokens`, {
         method: "POST",
         headers: { Authorization: BASIC_AUTH, "Content-Type": "application/json" },
-        // `reference` is the string SignalWire uses to identify the subscriber.
+        // `reference` is the string SignalWire uses to identify the user.
         // Pick a stable identifier from your user record (email, UUID) and use
-        // the same one every time so the same subscriber is found across logins.
+        // the same one every time so the same user is found across logins.
         body: JSON.stringify({ reference: req.user.email }),
       });
       const { token } = await r.json();
@@ -255,7 +255,7 @@ app.post("/api/signalwire-token", requireUserAuth, async (req, res) => {
     method: "POST",
     headers: { Authorization: BASIC_AUTH, "Content-Type": "application/json" },
     body: JSON.stringify({
-      reference: req.user.email,         // identifies the SignalWire subscriber
+      reference: req.user.email,         // identifies the SignalWire user
       fingerprint: req.body.fingerprint, // binds the SAT to this browser
       scope: "sat:refresh",              // lets the SDK refresh without your backend
     }),
@@ -269,7 +269,7 @@ For the rotation endpoints, refresh events you can subscribe to, and failure mod
 
 ## Connection lifecycle
 
-Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs three steps in sequence: authenticate the SAT, open the WebSocket, and register the subscriber as online. Each step runs by default, and each can be deferred with a constructor option in [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options) so your UI can drive it later.
+Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs three steps in sequence: authenticate the SAT, open the WebSocket, and register the user as online. Each step runs by default, and each can be deferred with a constructor option in [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options) so your UI can drive it later.
 
 | Step | Default | Defer with | Run later with |
 | --- | --- | --- | --- |
@@ -289,9 +289,9 @@ await client.register();   // come online for inbound calls
 
 ## Going online and offline
 
-[`register()`](/docs/browser-sdk/v4/reference/signalwire/register) tells SignalWire the subscriber is online on this session, so inbound calls and presence events route here. It runs automatically when the client constructs unless `skipRegister: true` is set — defer it when the user needs to opt in (microphone prompt, "Go online" toggle, permissions step) before they start receiving calls.
+[`register()`](/docs/browser-sdk/v4/reference/signalwire/register) tells SignalWire the user is online on this session, so inbound calls and presence events route here. It runs automatically when the client constructs unless `skipRegister: true` is set — defer it when the user needs to opt in (microphone prompt, "Go online" toggle, permissions step) before they start receiving calls.
 
-[`unregister()`](/docs/browser-sdk/v4/reference/signalwire/unregister) is the opposite: the subscriber goes offline for inbound calls, but the WebSocket stays open so outbound calls and observable subscriptions keep working. Use it for Do Not Disturb, app-background, or "available / away" toggles.
+[`unregister()`](/docs/browser-sdk/v4/reference/signalwire/unregister) is the opposite: the user goes offline for inbound calls, but the WebSocket stays open so outbound calls and observable subscriptions keep working. Use it for Do Not Disturb, app-background, or "available / away" toggles.
 
 ```ts Browser
 await client.unregister();   // go offline; socket stays open
@@ -300,7 +300,7 @@ await client.register();     // come back online later
 
 Closing the session entirely is a separate step. [`disconnect()`](/docs/browser-sdk/v4/reference/signalwire/disconnect) closes the WebSocket, and [`destroy()`](/docs/browser-sdk/v4/reference/signalwire/destroy) wipes persisted state on explicit logout.
 
-Only credentials issued with subscriber identity can register. Guest SATs, Invite SATs, and embed-derived Guest SATs are outbound-only, so `register()` is a no-op on those clients — inbound calls require a full Subscriber Access Token.
+Only credentials issued with full user (Subscriber) identity can register. Guest SATs, Invite SATs, and embed-derived Guest SATs are outbound-only, so `register()` is a no-op on those clients — inbound calls require a full Subscriber Access Token.
 
 ## Try it: create a SAT and connect
 
@@ -381,10 +381,10 @@ You should see `Authenticated — WebSocket open.` in the log. If you see `Faile
 
 <CardGroup cols={2}>
   <Card title="Inbound Calls" href="/docs/browser-sdk/v4/guides/inbound-calls" icon="fa-regular fa-phone-arrow-down-left">
-    Receive incoming calls in a signed-in subscriber session.
+    Receive incoming calls in a signed-in user session.
   </Card>
   <Card title="Outbound Calls" href="/docs/browser-sdk/v4/guides/outbound-calls" icon="fa-regular fa-phone-arrow-up-right">
-    Dial subscribers, rooms, or PSTN destinations.
+    Dial users, rooms, or PSTN destinations.
   </Card>
   <Card title="Subscribers" href="/docs/platform/subscribers" icon="fa-regular fa-users">
     Platform concept: who a credential represents and what addresses they can reach.
