@@ -1,0 +1,40 @@
+---
+slug: "/reference/ruby/signal-wire/relay/connect-event/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::ConnectEvent#initialize"
+  parent: "SignalWire::Relay::ConnectEvent"
+  module: "SignalWire.Relay.ConnectEvent"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb"
+  visibility: "public"
+---
+# `initialize`
+
+## Signature
+
+```ruby
+def initialize(connect_state: '', peer: {}, **base)
+```
+
+## Parameters
+
+| Name             | Type | Required | Default | Description |
+| ---------------- | ---- | -------- | ------- | ----------- |
+| `connect_state:` | —    | no       | `''`    | —           |
+| `peer:`          | —    | no       | `{}`    | —           |
+| `...base`        | —    | no       | —       | —           |
+
+## Returns
+
+`ConnectEvent` — a new instance of ConnectEvent
+
+## Source
+
+[`lib/signalwire/relay/relay_event.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb)
+
+Line 185.

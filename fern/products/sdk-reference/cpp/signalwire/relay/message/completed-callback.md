@@ -1,0 +1,28 @@
+---
+slug: "/reference/cpp/signalwire/relay/message/completed-callback"
+title: "CompletedCallback"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Message::CompletedCallback"
+  parent: "signalwire::relay::Message"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp"
+  visibility: "public"
+---
+# `CompletedCallback`
+
+## Signature
+
+```cpp
+typedef std::function< void(const Message &)> CompletedCallback
+```
+
+## Source
+
+[`include/signalwire/relay/message.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp)
+
+Line 25.

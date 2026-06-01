@@ -1,0 +1,44 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/set-language-params"
+title: "set_language_params"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#set_language_params"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `set_language_params`
+
+Set (or replace) the per-language `params` dict on an
+already-added language. Useful when language entries are built up
+via add\_language first and engine-specific tuning is added later
+(e.g. from a config loader). Returns self for chaining.
+
+## Signature
+
+```ruby
+def set_language_params(code, params)
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description                                                            |
+| -------- | -------- | -------- | ------- | ---------------------------------------------------------------------- |
+| `code`   | `String` | yes      | —       | language code as previously passed to `add_language` (e.g. `"en-US"`). |
+| `params` | `Hash`   | yes      | —       | engine-specific params hash to attach. Empty hash removes the key.     |
+
+## Returns
+
+`self` — No-op if the code isn't found.
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 804.

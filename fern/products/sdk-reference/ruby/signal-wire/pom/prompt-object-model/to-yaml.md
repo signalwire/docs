@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/pom/prompt-object-model/to-yaml"
+title: "to_yaml"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::POM::PromptObjectModel#to_yaml"
+  parent: "SignalWire::POM::PromptObjectModel"
+  module: "SignalWire.POM.PromptObjectModel"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/pom/prompt_object_model.rb"
+  visibility: "public"
+---
+# `to_yaml`
+
+Convert the model to a YAML string. Output matches Python's
+`yaml.dump(..., default_flow_style=False, sort_keys=False)`
+byte-for-byte. Ruby's `YAML.dump` prepends `---\n`; we strip
+it. The empty-list case (Ruby emits `--- []\n`) is normalised
+to Python's `[]\n`.
+
+## Signature
+
+```ruby
+def to_yaml
+```
+
+## Source
+
+[`lib/signalwire/pom/prompt_object_model.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/pom/prompt_object_model.rb)
+
+Line 169.

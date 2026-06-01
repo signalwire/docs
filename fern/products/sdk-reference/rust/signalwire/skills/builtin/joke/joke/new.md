@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/joke/joke/new"
+title: "new"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::joke::Joke::new"
+  parent: "signalwire::skills::builtin::joke::Joke"
+  module: "skills.builtin.joke"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/joke.rs"
+  visibility: "public"
+---
+# `new`
+
+## Signature
+
+```rust
+fn new(params: ?<?, ?>) -> Self
+```
+
+## Parameters
+
+| Name     | Type      | Required | Default | Description |
+| -------- | --------- | -------- | ------- | ----------- |
+| `params` | `?<?, ?>` | yes      | —       | —           |
+
+## Returns
+
+`Self`
+
+## Source
+
+[`src/skills/builtin/joke.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/joke.rs)
+
+Line 12.

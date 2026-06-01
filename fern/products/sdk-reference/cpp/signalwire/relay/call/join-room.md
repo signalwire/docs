@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/relay/call/join-room"
+title: "join_room"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Call::join_room"
+  parent: "signalwire::relay::Call"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp"
+  visibility: "public"
+---
+# `join_room`
+
+## Signature
+
+```cpp
+Action join_room(const std::string & name)
+```
+
+## Parameters
+
+| Name   | Type                  | Required | Default | Description |
+| ------ | --------------------- | -------- | ------- | ----------- |
+| `name` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`Action`
+
+## Source
+
+[`include/signalwire/relay/call.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp)
+
+Line 92.

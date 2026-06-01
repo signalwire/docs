@@ -1,0 +1,42 @@
+---
+slug: "/reference/dotnet/signal-wire.skills.builtin/math-skill"
+title: "MathSkill"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.Skills.Builtin.MathSkill"
+  parent: "SignalWire.Skills.Builtin"
+  module: "SignalWire.Skills.Builtin"
+  visibility: "public"
+---
+# `MathSkill`
+
+Perform basic mathematical calculations.
+
+**Modifiers:** `sealed`
+
+## Signature
+
+```dotnet
+public sealed class MathSkill : SkillBase
+```
+
+## Inheritance
+
+**Extends:** [SignalWire.Skills.SkillBase](/reference/dotnet/signal-wire.skills/skill-base)
+
+## Properties
+
+| Name          | Type                                          | Required | Default | Description |
+| ------------- | --------------------------------------------- | -------- | ------- | ----------- |
+| `Description` | `public override string Description { get; }` | yes      | —       | —           |
+| `Name`        | `public override string Name { get; }`        | yes      | —       | —           |
+
+## Methods
+
+- [`GetPromptSections()`](/reference/dotnet/signal-wire.skills.builtin/math-skill/get-prompt-sections)
+- [`RegisterTools(AgentBase)`](/reference/dotnet/signal-wire.skills.builtin/math-skill/register-tools-agent-base)
+- [`Setup(AgentBase, Dictionary<string, object>)`](/reference/dotnet/signal-wire.skills.builtin/math-skill/setup-agent-base-dictionary-string-object)

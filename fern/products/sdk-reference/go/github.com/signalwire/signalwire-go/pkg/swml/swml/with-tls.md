@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/with-tls"
+title: "WithTLS"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.WithTLS"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `WithTLS`
+
+WithTLS configures TLS for the service. When set, Serve() calls ListenAndServeTLS instead of ListenAndServe. Mirrors Python's ssl\_cert / ssl\_key serve() parameters and ssl\_enabled property.
+
+## Signature
+
+```go
+func WithTLS(certFile string, keyFile string) ServiceOption
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `certFile` | `string` | yes      | —       | —           |
+| `keyFile`  | `string` | yes      | —       | —           |
+
+## Returns
+
+`ServiceOption`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 223.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/prompt-object-model/render-markdown"
+title: "renderMarkdown"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\PromptObjectModel::renderMarkdown"
+  parent: "SignalWire\\POM\\PromptObjectModel"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php"
+  visibility: "public"
+---
+# `renderMarkdown`
+
+## Signature
+
+```php
+public function renderMarkdown(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/POM/PromptObjectModel.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php)
+
+Line 289.

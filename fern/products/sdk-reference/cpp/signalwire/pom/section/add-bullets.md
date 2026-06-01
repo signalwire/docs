@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/pom/section/add-bullets"
+title: "add_bullets"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::pom::Section::add_bullets"
+  parent: "signalwire::pom::Section"
+  module: "signalwire.pom"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/pom/pom.hpp"
+  visibility: "public"
+---
+# `add_bullets`
+
+Append bullets to the existing list.
+
+## Signature
+
+```cpp
+void add_bullets(const std::vector< std::string > & bs)
+```
+
+## Parameters
+
+| Name | Type                                 | Required | Default | Description |
+| ---- | ------------------------------------ | -------- | ------- | ----------- |
+| `bs` | `const std::vector< std::string > &` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/pom/pom.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/pom/pom.hpp)
+
+Line 93.

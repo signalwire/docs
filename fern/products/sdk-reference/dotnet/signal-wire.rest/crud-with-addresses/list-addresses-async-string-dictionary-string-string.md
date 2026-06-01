@@ -1,0 +1,38 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/crud-with-addresses/list-addresses-async-string-dictionary-string-string"
+title: "ListAddressesAsync(string, Dictionary<string, string>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.CrudWithAddresses.ListAddressesAsync(string, System.Collections.Generic.Dictionary<string, string>?)"
+  parent: "SignalWire.REST.CrudWithAddresses"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `ListAddressesAsync(string, Dictionary<string, string>?)`
+
+List the addresses sub-collection for a given resource.
+(Python parity:
+`CrudWithAddresses.list_addresses(resource_id, **params)`.)
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual Task<Dictionary<string, object?>> ListAddressesAsync(string resourceId, Dictionary<string, string>? queryParams = null)
+```
+
+## Parameters
+
+| Name          | Type                        | Required | Default | Description |
+| ------------- | --------------------------- | -------- | ------- | ----------- |
+| `resourceId`  | `string`                    | yes      | —       | —           |
+| `queryParams` | `Dictionary<string,string>` | no       | `null`  | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

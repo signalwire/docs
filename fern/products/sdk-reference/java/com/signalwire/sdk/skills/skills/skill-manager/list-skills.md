@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-manager/list-skills"
+title: "listSkills"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillManager.listSkills"
+  parent: "com.signalwire.sdk.skills.SkillManager"
+  module: "com.signalwire.sdk.skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillManager.java"
+  visibility: "public"
+---
+# `listSkills`
+
+List active skill instance keys.
+
+## Signature
+
+```java
+public java.util.List<java.lang.String> listSkills()
+```
+
+## Returns
+
+`java.util.List<java.lang.String>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillManager.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillManager.java)
+
+Line 145.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/typescript/agent-base/agent-base/get-raw-prompt"
+title: "getRawPrompt"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "AgentBase.AgentBase.getRawPrompt"
+  parent: "AgentBase.AgentBase"
+  module: "AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts"
+---
+# `getRawPrompt`
+
+Get the raw prompt text whatever `setPromptText` stored, or null when
+no raw prompt has been set.
+
+Matches Python `PromptManager.get_raw_prompt()` which returns the raw
+stored string or `None`. Use this instead of `getPrompt()` when you
+need the unrendered text rather than the POM-rendered Markdown.
+
+## Signature
+
+```typescript
+getRawPrompt(): string | null
+```
+
+## Returns
+
+`string | null` — The raw prompt string, or null if not set.
+
+## Source
+
+[`src/AgentBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts)
+
+Line 561.

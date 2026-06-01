@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/relay/collect-event/final"
+title: "final"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::CollectEvent#final"
+  parent: "SignalWire::Relay::CollectEvent"
+  module: "SignalWire.Relay.CollectEvent"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb"
+  visibility: "public"
+---
+# `final`
+
+Returns the value of attribute final.
+
+## Signature
+
+```ruby
+attr_reader final -> Object
+```
+
+## Source
+
+[`lib/signalwire/relay/relay_event.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb)
+
+Line 146.

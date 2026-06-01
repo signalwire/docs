@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/security/security/session-manager/debug-token"
+title: "DebugToken"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/security.SessionManager.DebugToken"
+  parent: "github.com/signalwire/signalwire-go/pkg/security.SessionManager"
+  module: "github.com.signalwire.signalwire-go.pkg.security"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go"
+---
+# `DebugToken`
+
+DebugToken decodes a token and returns a map of its components and status without performing signature validation. This is intended for development and debugging only. It requires debug mode to be enabled via WithDebugMode; if not, it returns map\["error": "debug mode not enabled"].
+
+## Signature
+
+```go
+func (*SessionManager) DebugToken(token string) map[string]any
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `token` | `string` | yes      | —       | —           |
+
+## Returns
+
+`map[string]any`
+
+## Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)
+
+Line 194.

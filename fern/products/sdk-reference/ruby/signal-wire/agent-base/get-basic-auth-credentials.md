@@ -1,0 +1,41 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/get-basic-auth-credentials"
+title: "get_basic_auth_credentials"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#get_basic_auth_credentials"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `get_basic_auth_credentials`
+
+Get the configured basic-auth credentials.
+
+Python parity: `get_basic_auth_credentials(include_source=False)`.
+When `include_source` is true, returns a 3-tuple `[user,
+pass, source]` (`"environment"` / `"auto-generated"` /
+`"provided"`). Otherwise returns `[user, pass]`.
+
+## Signature
+
+```ruby
+def get_basic_auth_credentials(include_source: false)
+```
+
+## Parameters
+
+| Name              | Type | Required | Default | Description |
+| ----------------- | ---- | -------- | ------- | ----------- |
+| `include_source:` | —    | no       | `false` | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 1635.

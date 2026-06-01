@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/swml-builder/swml-builder/ai"
+title: "ai"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SwmlBuilder.SwmlBuilder.ai"
+  parent: "SwmlBuilder.SwmlBuilder"
+  module: "SwmlBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SwmlVerbMethods.generated.ts"
+---
+# `ai`
+
+Creates an AI agent that conducts voice conversations using automatic speech recognition (ASR), large language models (LLMs), and text-to-speech (TTS) synthesis. The agent processes caller speech in real-time, generates contextually appropriate responses, and can execute custom functions to interact with external systems through SignalWire AI Gateway (SWAIG).
+
+## Signature
+
+```typescript
+ai(config?: AiVerbConfig): this
+```
+
+## Parameters
+
+| Name     | Type           | Required | Default | Description |
+| -------- | -------------- | -------- | ------- | ----------- |
+| `config` | `AiVerbConfig` | no       | —       | —           |
+
+## Returns
+
+`this`
+
+## Source
+
+[`src/SwmlVerbMethods.generated.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SwmlVerbMethods.generated.ts)
+
+Line 50.

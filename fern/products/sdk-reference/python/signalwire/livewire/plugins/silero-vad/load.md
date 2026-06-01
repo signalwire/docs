@@ -1,0 +1,32 @@
+---
+slug: "/reference/python/signalwire/livewire/plugins/silero-vad/load"
+title: "load"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.livewire.plugins.SileroVAD.load"
+  parent: "signalwire.livewire.plugins.SileroVAD"
+  module: "signalwire.livewire.plugins"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/plugins.py"
+---
+# `load`
+
+Mirrors the SileroVAD.load() factory.
+
+**Modifiers:** `classmethod`
+
+## Signature
+
+```python
+@classmethod
+load()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/plugins.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/plugins.py)
+
+Line 121.

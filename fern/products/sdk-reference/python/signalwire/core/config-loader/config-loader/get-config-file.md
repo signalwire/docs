@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/config-loader/config-loader/get-config-file"
+title: "get_config_file"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.config_loader.ConfigLoader.get_config_file"
+  parent: "signalwire.core.config_loader.ConfigLoader"
+  module: "signalwire.core.config_loader"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py"
+---
+# `get_config_file`
+
+Get the path of the loaded config file.
+
+## Signature
+
+```python
+get_config_file() -> Optional[str]
+```
+
+## Returns
+
+`Optional[str]`
+
+## Source
+
+[`/src/signalwire/signalwire/core/config_loader.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py)
+
+Line 69.

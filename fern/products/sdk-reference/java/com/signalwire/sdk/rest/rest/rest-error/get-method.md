@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/rest/rest-error/get-method"
+title: "getMethod"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.RestError.getMethod"
+  parent: "com.signalwire.sdk.rest.RestError"
+  module: "com.signalwire.sdk.rest.RestError"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/RestError.java"
+  visibility: "public"
+---
+# `getMethod`
+
+## Signature
+
+```java
+public java.lang.String getMethod()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/RestError.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/RestError.java)
+
+Line 41.

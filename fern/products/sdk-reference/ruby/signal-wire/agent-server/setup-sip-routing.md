@@ -1,0 +1,37 @@
+---
+slug: "/reference/ruby/signal-wire/agent-server/setup-sip-routing"
+title: "setup_sip_routing"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentServer#setup_sip_routing"
+  parent: "SignalWire::AgentServer"
+  module: "SignalWire.AgentServer"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/server/agent_server.rb"
+  visibility: "public"
+---
+# `setup_sip_routing`
+
+Set up SIP-based routing.
+
+## Signature
+
+```ruby
+def setup_sip_routing(route: '/sip', auto_map: true)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default  | Description |
+| ----------- | ---- | -------- | -------- | ----------- |
+| `route:`    | —    | no       | `'/sip'` | —           |
+| `auto_map:` | —    | no       | `true`   | —           |
+
+## Source
+
+[`lib/signalwire/server/agent_server.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/server/agent_server.rb)
+
+Line 162.

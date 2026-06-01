@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/call/string"
+title: "String"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Call.String"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Call"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go"
+---
+# `String`
+
+String returns a human-readable representation of the call.
+
+## Signature
+
+```go
+func (*Call) String() string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`pkg/relay/call.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go)
+
+Line 1288.

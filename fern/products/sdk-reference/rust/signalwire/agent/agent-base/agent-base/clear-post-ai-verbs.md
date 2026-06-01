@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/clear-post-ai-verbs"
+title: "clear_post_ai_verbs"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::clear_post_ai_verbs"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `clear_post_ai_verbs`
+
+## Signature
+
+```rust
+fn clear_post_ai_verbs(&mut self) -> &mut Self
+```
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 913.

@@ -1,0 +1,45 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#initialize"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `initialize`
+
+## Signature
+
+```ruby
+def initialize(name:, route: '/', host: '0.0.0.0', port: nil, basic_auth: nil, schema_path: nil, config_file: nil, schema_validation: true)
+```
+
+## Parameters
+
+| Name                 | Type | Required | Default     | Description |
+| -------------------- | ---- | -------- | ----------- | ----------- |
+| `name:`              | —    | yes      | —           | —           |
+| `route:`             | —    | no       | `'/'`       | —           |
+| `host:`              | —    | no       | `'0.0.0.0'` | —           |
+| `port:`              | —    | no       | `nil`       | —           |
+| `basic_auth:`        | —    | no       | `nil`       | —           |
+| `schema_path:`       | —    | no       | `nil`       | —           |
+| `config_file:`       | —    | no       | `nil`       | —           |
+| `schema_validation:` | —    | no       | `true`      | —           |
+
+## Returns
+
+`Service` — a new instance of Service
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 34.

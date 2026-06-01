@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/rest/paginated-iterator/index__2"
+title: "index"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::rest::PaginatedIterator::index"
+  parent: "signalwire::rest::PaginatedIterator"
+  module: "signalwire.rest"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/http_client.hpp"
+  visibility: "public"
+---
+# `index`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+size_t index() const
+```
+
+## Returns
+
+`size_t`
+
+## Source
+
+[`include/signalwire/rest/http_client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/http_client.hpp)
+
+Line 119.

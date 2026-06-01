@@ -1,0 +1,30 @@
+---
+slug: "/reference/dotnet/signal-wire.skills/skill-registry/register-skill-string-func-skill-base"
+title: "RegisterSkill(string, Func<SkillBase>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Skills.SkillRegistry.RegisterSkill(string, System.Func<SignalWire.Skills.SkillBase>)"
+  parent: "SignalWire.Skills.SkillRegistry"
+  module: "SignalWire.Skills"
+  visibility: "public"
+---
+# `RegisterSkill(string, Func<SkillBase>)`
+
+Register a custom skill factory.
+
+## Signature
+
+```dotnet
+public void RegisterSkill(string name, Func<SkillBase> factory)
+```
+
+## Parameters
+
+| Name      | Type                                       | Required | Default | Description |
+| --------- | ------------------------------------------ | -------- | ------- | ----------- |
+| `name`    | `string`                                   | yes      | —       | —           |
+| `factory` | `System.Func<SignalWire.Skills.SkillBase>` | yes      | —       | —           |

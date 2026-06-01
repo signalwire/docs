@@ -1,0 +1,39 @@
+---
+slug: "/reference/java/com/signalwire/sdk/pom/pom/section/add-bullets"
+title: "addBullets"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.pom.Section.addBullets"
+  parent: "com.signalwire.sdk.pom.Section"
+  module: "com.signalwire.sdk.pom.Section"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/Section.java"
+  visibility: "public"
+---
+# `addBullets`
+
+Append bullet points to this section.
+
+Mirrors Python
+`Section.add_bullets` (which extends, not replaces).
+
+## Signature
+
+```java
+public void addBullets(java.util.List<java.lang.String> bullets)
+```
+
+## Parameters
+
+| Name      | Type                               | Required | Default | Description |
+| --------- | ---------------------------------- | -------- | ------- | ----------- |
+| `bullets` | `java.util.List<java.lang.String>` | yes      | —       | —           |
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/pom/Section.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/Section.java)
+
+Line 111.

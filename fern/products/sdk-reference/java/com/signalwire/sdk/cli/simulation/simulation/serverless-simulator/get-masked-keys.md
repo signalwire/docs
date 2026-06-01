@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/cli/simulation/simulation/serverless-simulator/get-masked-keys"
+title: "getMaskedKeys"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.cli.simulation.ServerlessSimulator.getMaskedKeys"
+  parent: "com.signalwire.sdk.cli.simulation.ServerlessSimulator"
+  module: "com.signalwire.sdk.cli.simulation.ServerlessSimulator"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/cli/simulation/ServerlessSimulator.java"
+  visibility: "public"
+---
+# `getMaskedKeys`
+
+## Signature
+
+```java
+public java.util.Set<java.lang.String> getMaskedKeys()
+```
+
+## Returns
+
+`java.util.Set<java.lang.String>` — an immutable view of the keys that are masked (returned as `null`) regardless of what the real env has for them.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/cli/simulation/ServerlessSimulator.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/cli/simulation/ServerlessSimulator.java)
+
+Line 174.

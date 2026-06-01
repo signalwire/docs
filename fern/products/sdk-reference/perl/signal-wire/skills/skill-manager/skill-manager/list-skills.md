@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/skills/skill-manager/skill-manager/list-skills"
+title: "list_skills"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Skills::SkillManager::list_skills"
+  parent: "SignalWire::Skills::SkillManager"
+  module: "SignalWire.Skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/SkillManager.pm"
+  visibility: "public"
+---
+# `list_skills`
+
+## Signature
+
+```perl
+sub list_skills()
+```
+
+## Source
+
+[`lib/SignalWire/Skills/SkillManager.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/SkillManager.pm)
+
+Line 103.

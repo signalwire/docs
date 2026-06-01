@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/crud-resource/get-client"
+title: "getClient"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\CrudResource::getClient"
+  parent: "SignalWire\\REST\\CrudResource"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/CrudResource.php"
+  visibility: "public"
+---
+# `getClient`
+
+## Signature
+
+```php
+public function getClient(): SignalWire\REST\HttpClient
+```
+
+## Returns
+
+`SignalWire\REST\HttpClient`
+
+## Source
+
+[`/src/src/SignalWire/REST/CrudResource.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/CrudResource.php)
+
+Line 70.

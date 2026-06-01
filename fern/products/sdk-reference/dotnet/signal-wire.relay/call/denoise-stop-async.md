@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/call/denoise-stop-async"
+title: "DenoiseStopAsync()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Call.DenoiseStopAsync()"
+  parent: "SignalWire.Relay.Call"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `DenoiseStopAsync()`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> DenoiseStopAsync()
+```
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

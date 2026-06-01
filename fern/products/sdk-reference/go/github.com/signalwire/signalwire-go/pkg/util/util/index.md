@@ -1,0 +1,36 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/util/util"
+title: "util"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/util"
+  module: "github.com.signalwire.signalwire-go.pkg.util"
+---
+# `util`
+
+Package util provides cross-cutting helpers used across the Go SDK.
+
+validate\_url is the SSRF-prevention guard applied to user-supplied URLs before they are fetched. It must mirror the Python reference at signalwire.utils.url\_validator.validate\_url:
+
+- require http or https scheme
+- require a hostname
+- allow\_private bypass (param OR SWML\_ALLOW\_PRIVATE\_URLS env var)
+- resolve hostname; reject any IP that lands in a blocked network
+
+The blocked-network list is identical across all SDK ports.
+
+## Signature
+
+```go
+package util
+```
+
+## Functions
+
+- [`GetExecutionMode`](/reference/go/github.com/signalwire/signalwire-go/pkg/util/util/get-execution-mode) — GetExecutionMode reports the SDK's deployment environment based on well-known environment variables. Returned values are: "cgi", "lambda", "google\_cloud\_function", "azure\_function", "server".
+- [`IsServerlessMode`](/reference/go/github.com/signalwire/signalwire-go/pkg/util/util/is-serverless-mode) — IsServerlessMode reports whether the SDK is running in any serverless invocation environment (i.e. not "server").
+- [`ValidateURL`](/reference/go/github.com/signalwire/signalwire-go/pkg/util/util/validate-url) — ValidateURL reports whether the supplied URL is safe to fetch.

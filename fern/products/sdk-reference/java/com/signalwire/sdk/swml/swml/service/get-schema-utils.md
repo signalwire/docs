@@ -1,0 +1,38 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/service/get-schema-utils"
+title: "getSchemaUtils"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Service.getSchemaUtils"
+  parent: "com.signalwire.sdk.swml.Service"
+  module: "com.signalwire.sdk.swml.Service"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java"
+  visibility: "public"
+---
+# `getSchemaUtils`
+
+SchemaUtils helper bound to this Service.
+
+Mirrors Python's
+`self.schema_utils` public instance attribute on
+`SWMLService`.  Built lazily on first access.
+
+## Signature
+
+```java
+public com.signalwire.sdk.swml.SchemaUtils getSchemaUtils()
+```
+
+## Returns
+
+`com.signalwire.sdk.swml.SchemaUtils`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Service.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java)
+
+Line 429.

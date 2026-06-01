@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/render-pretty"
+title: "RenderPretty"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.RenderPretty"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `RenderPretty`
+
+RenderPretty returns the SWML document as an indented JSON string.
+
+## Signature
+
+```go
+func (*Service) RenderPretty() (string, error)
+```
+
+## Returns
+
+`(string, error)`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 1044.

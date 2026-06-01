@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/cli/simulation/simulation/serverless-simulator/get-platform"
+title: "getPlatform"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.cli.simulation.ServerlessSimulator.getPlatform"
+  parent: "com.signalwire.sdk.cli.simulation.ServerlessSimulator"
+  module: "com.signalwire.sdk.cli.simulation.ServerlessSimulator"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/cli/simulation/ServerlessSimulator.java"
+  visibility: "public"
+---
+# `getPlatform`
+
+## Signature
+
+```java
+public com.signalwire.sdk.cli.simulation.ServerlessSimulator.Platform getPlatform()
+```
+
+## Returns
+
+`com.signalwire.sdk.cli.simulation.ServerlessSimulator.Platform` — the simulated platform.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/cli/simulation/ServerlessSimulator.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/cli/simulation/ServerlessSimulator.java)
+
+Line 158.

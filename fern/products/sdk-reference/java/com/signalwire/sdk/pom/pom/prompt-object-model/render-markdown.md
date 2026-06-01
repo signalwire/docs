@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/pom/pom/prompt-object-model/render-markdown"
+title: "renderMarkdown"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.pom.PromptObjectModel.renderMarkdown"
+  parent: "com.signalwire.sdk.pom.PromptObjectModel"
+  module: "com.signalwire.sdk.pom.PromptObjectModel"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java"
+  visibility: "public"
+---
+# `renderMarkdown`
+
+Render the entire model as Markdown.
+
+Mirrors Python `render_markdown()`.
+
+## Signature
+
+```java
+public java.lang.String renderMarkdown()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java)
+
+Line 256.

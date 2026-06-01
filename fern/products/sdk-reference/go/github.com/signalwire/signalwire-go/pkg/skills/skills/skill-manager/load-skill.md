@@ -1,0 +1,44 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/skills/skill-manager/load-skill"
+title: "LoadSkill"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills.SkillManager.LoadSkill"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills.SkillManager"
+  module: "github.com.signalwire.signalwire-go.pkg.skills"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/manager.go"
+---
+# `LoadSkill`
+
+LoadSkill validates environment variables, calls Setup, and registers the skill. Returns (success bool, errorMessage string).
+
+When a skill with the same instance key is already loaded, the behavior depends on SupportsMultipleInstances():
+
+- false (default): returns (false, error) — duplicate is an error.
+- true: returns (true, "") — duplicate instance is silently accepted, matching Python's SkillManager.load\_skill() warning-and-continue behavior.
+
+## Signature
+
+```go
+func (*SkillManager) LoadSkill(skill SkillBase) (bool, string)
+```
+
+## Parameters
+
+| Name    | Type        | Required | Default | Description |
+| ------- | ----------- | -------- | ------- | ----------- |
+| `skill` | `SkillBase` | yes      | —       | —           |
+
+## Returns
+
+`(bool, string)`
+
+## Source
+
+[`pkg/skills/manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/manager.go)
+
+Line 30.

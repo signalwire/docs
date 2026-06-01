@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/prompt-object-model/clone"
+title: "Clone"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/pom.PromptObjectModel.Clone"
+  parent: "github.com/signalwire/signalwire-go/pkg/pom.PromptObjectModel"
+  module: "github.com.signalwire.signalwire-go.pkg.pom"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/pom/pom.go"
+---
+# `Clone`
+
+Clone returns a deep copy of the POM. Useful when an agent wants to hand callers a snapshot without exposing internal mutable state.
+
+## Signature
+
+```go
+func (*PromptObjectModel) Clone() *PromptObjectModel
+```
+
+## Returns
+
+`*PromptObjectModel`
+
+## Source
+
+[`pkg/pom/pom.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/pom/pom.go)
+
+Line 849.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/agent-base/render-swml"
+title: "RenderSWML"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase.RenderSWML"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `RenderSWML`
+
+RenderSWML builds the complete SWML document for a request.
+
+## Signature
+
+```go
+func (*AgentBase) RenderSWML(requestData map[string]any, request *http.Request) map[string]any
+```
+
+## Parameters
+
+| Name          | Type             | Required | Default | Description |
+| ------------- | ---------------- | -------- | ------- | ----------- |
+| `requestData` | `map[string]any` | yes      | —       | —           |
+| `request`     | `*http.Request`  | yes      | —       | —           |
+
+## Returns
+
+`map[string]any`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 2475.

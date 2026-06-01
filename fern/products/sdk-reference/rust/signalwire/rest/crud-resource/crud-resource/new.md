@@ -1,0 +1,39 @@
+---
+slug: "/reference/rust/signalwire/rest/crud-resource/crud-resource/new"
+title: "new"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::crud_resource::CrudResource::new"
+  parent: "signalwire::rest::crud_resource::CrudResource"
+  module: "rest.crud_resource"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/crud_resource.rs"
+  visibility: "public"
+---
+# `new`
+
+## Signature
+
+```rust
+fn new(client: &'a ?, base_path: &str) -> Self
+```
+
+## Parameters
+
+| Name        | Type    | Required | Default | Description |
+| ----------- | ------- | -------- | ------- | ----------- |
+| `client`    | `&'a ?` | yes      | —       | —           |
+| `base_path` | `&str`  | yes      | —       | —           |
+
+## Returns
+
+`Self`
+
+## Source
+
+[`src/rest/crud_resource.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/crud_resource.rs)
+
+Line 18.

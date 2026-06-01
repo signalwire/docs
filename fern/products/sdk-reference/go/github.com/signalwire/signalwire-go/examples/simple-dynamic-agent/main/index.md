@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/simple-dynamic-agent/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/simple_dynamic_agent"
+  module: "github.com.signalwire.signalwire-go.examples.simple_dynamic_agent"
+---
+# `main`
+
+Example: simple\_dynamic\_agent
+
+Per-request agent customization using a dynamic config callback. The callback inspects query parameters to determine the caller's tier (standard vs. premium) and adjusts the prompt, global data, and tools.
+
+## Signature
+
+```go
+package main
+```

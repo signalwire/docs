@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/with-schema-validation"
+title: "WithSchemaValidation"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.WithSchemaValidation"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `WithSchemaValidation`
+
+WithSchemaValidation enables or disables SWML schema validation. Defaults to true (validation on). Set to false, or export SWML\_SKIP\_SCHEMA\_VALIDATION=1, to bypass schema checks. Mirrors Python's schema\_validation constructor parameter.
+
+## Signature
+
+```go
+func WithSchemaValidation(enabled bool) ServiceOption
+```
+
+## Parameters
+
+| Name      | Type   | Required | Default | Description |
+| --------- | ------ | -------- | ------- | ----------- |
+| `enabled` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`ServiceOption`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 280.

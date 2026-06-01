@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/server/agent-server/agent-server/get-agent"
+title: "get_agent"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Server::AgentServer::get_agent"
+  parent: "SignalWire::Server::AgentServer"
+  module: "SignalWire.Server.AgentServer"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Server/AgentServer.pm"
+  visibility: "public"
+---
+# `get_agent`
+
+## Signature
+
+```perl
+sub get_agent($route)
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description |
+| ------- | ---- | -------- | ------- | ----------- |
+| `route` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Server/AgentServer.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Server/AgentServer.pm)
+
+Line 53.

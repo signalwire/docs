@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/step/new"
+title: "new"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::Step::new"
+  parent: "signalwire::contexts::context_builder::Step"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `new`
+
+## Signature
+
+```rust
+fn new(name: &str) -> Self
+```
+
+## Parameters
+
+| Name   | Type   | Required | Default | Description |
+| ------ | ------ | -------- | ------- | ----------- |
+| `name` | `&str` | yes      | —       | —           |
+
+## Returns
+
+`Self`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 173.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat/recordings"
+title: "recordings"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Compat::recordings"
+  parent: "SignalWire\\REST\\Namespaces\\Compat"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php"
+  visibility: "public"
+---
+# `recordings`
+
+## Signature
+
+```php
+public function recordings(): SignalWire\REST\Namespaces\CompatRecordings
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\CompatRecordings`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Compat.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php)
+
+Line 118.

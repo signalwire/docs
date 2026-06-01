@@ -1,0 +1,42 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/message/on-completed"
+title: "onCompleted"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Message::onCompleted"
+  parent: "SignalWire\\Relay\\Message"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php"
+  visibility: "public"
+---
+# `onCompleted`
+
+Register a callback to fire when the message reaches a terminal state.
+
+If the message is already complete the callback fires immediately.
+
+## Signature
+
+```php
+public function onCompleted(callable $cb): SignalWire\Relay\Message
+```
+
+## Parameters
+
+| Name | Type       | Required | Default | Description |
+| ---- | ---------- | -------- | ------- | ----------- |
+| `cb` | `callable` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire\Relay\Message`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Message.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php)
+
+Line 160.

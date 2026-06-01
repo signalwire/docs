@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context-builder/validate"
+title: "validate"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.ContextBuilder.validate"
+  parent: "signalwire.core.contexts.ContextBuilder"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `validate`
+
+Validate the contexts configuration
+
+## Signature
+
+```python
+validate() -> None
+```
+
+## Returns
+
+`None`
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 1215.

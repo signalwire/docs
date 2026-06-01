@@ -1,0 +1,32 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/native-vector-search-skill/supports-multiple-instances"
+title: "supports_multiple_instances?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::NativeVectorSearchSkill#supports_multiple_instances?"
+  parent: "SignalWire::Skills::Builtin::NativeVectorSearchSkill"
+  module: "SignalWire.Skills.Builtin.NativeVectorSearchSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/native_vector_search.rb"
+  visibility: "public"
+---
+# `supports_multiple_instances?`
+
+## Signature
+
+```ruby
+def supports_multiple_instances?
+```
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/skills/builtin/native_vector_search.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/native_vector_search.rb)
+
+Line 17.

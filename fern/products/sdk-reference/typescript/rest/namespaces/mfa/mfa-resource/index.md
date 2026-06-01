@@ -1,0 +1,50 @@
+---
+slug: "/reference/typescript/rest/namespaces/mfa/mfa-resource"
+title: "MfaResource"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "rest.namespaces.mfa.MfaResource"
+  parent: "rest.namespaces.mfa"
+  module: "rest.namespaces.mfa"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/mfa.ts"
+---
+# `MfaResource`
+
+Multi-factor authentication via SMS or phone call.
+
+Access via `client.mfa.*`. Two-step flow: call `.sms()` or `.call()` to send
+a code, then `.verify()` to confirm it.
+
+## Signature
+
+```typescript
+class MfaResource extends BaseResource
+```
+
+## Inheritance
+
+**Extends:** `BaseResource`
+
+## Examples
+
+```typescript
+const req = await client.mfa.sms({ to: '+15551234567' });
+const result = await client.mfa.verify(req.id, { token: '123456' });
+```
+
+## Methods
+
+- [`call`](/reference/typescript/rest/namespaces/mfa/mfa-resource/call) — Initiate MFA by placing a phone call that reads out a one-time code.
+- [`constructor`](/reference/typescript/rest/namespaces/mfa/mfa-resource/constructor)
+- [`sms`](/reference/typescript/rest/namespaces/mfa/mfa-resource/sms) — Initiate MFA by sending a one-time code to a phone number over SMS.
+- [`verify`](/reference/typescript/rest/namespaces/mfa/mfa-resource/verify) — Verify the one-time code the user received via SMS or call.
+
+## Source
+
+[`src/rest/namespaces/mfa.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/mfa.ts)
+
+Line 22.

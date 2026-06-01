@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/concierge/global-data"
+title: "global_data"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::Concierge#global_data"
+  parent: "SignalWire::Prefabs::Concierge"
+  module: "SignalWire.Prefabs.Concierge"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/concierge.rb"
+  visibility: "public"
+---
+# `global_data`
+
+## Signature
+
+```ruby
+def global_data
+```
+
+## Source
+
+[`lib/signalwire/prefabs/concierge.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/concierge.rb)
+
+Line 62.

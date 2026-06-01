@@ -1,0 +1,35 @@
+---
+slug: "/reference/typescript/swml-handler"
+title: "SWMLHandler"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "typescript"
+  qualified_name: "SWMLHandler"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLHandler.ts"
+---
+# `SWMLHandler`
+
+## Signature
+
+```typescript
+module SWMLHandler
+```
+
+## Classes
+
+- [`AIVerbHandler`](/reference/typescript/swml-handler/ai-verb-handler) — Handler for the SWML 'ai' verb.
+- [`SWMLVerbHandler`](/reference/typescript/swml-handler/swml-verb-handler) — Abstract base class for pluggable SWML verb handlers.
+- [`VerbHandlerRegistry`](/reference/typescript/swml-handler/verb-handler-registry) — Registry for SWML verb handlers.
+
+## Interfaces
+
+- [`AIVerbBuildOptions`](/reference/typescript/swml-handler/ai-verb-build-options) — Options accepted by [AIVerbHandler.buildConfig](/reference/typescript/swml-handler/ai-verb-handler/build-config).
+
+## Source
+
+[`src/SWMLHandler.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLHandler.ts)
+
+Line 1.

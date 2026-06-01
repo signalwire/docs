@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/search/search-engine/search-engine/get-stats"
+title: "get_stats"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.search.search_engine.SearchEngine.get_stats"
+  parent: "signalwire.search.search_engine.SearchEngine"
+  module: "signalwire.search.search_engine"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/search_engine.py"
+---
+# `get_stats`
+
+Get statistics about the search index
+
+## Signature
+
+```python
+get_stats() -> Dict[str, Any]
+```
+
+## Returns
+
+`Dict[str, Any]`
+
+## Source
+
+[`/src/signalwire/signalwire/search/search_engine.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/search_engine.py)
+
+Line 1346.

@@ -1,0 +1,49 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace"
+title: "LogsNamespace"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.LogsNamespace"
+  parent: "com.signalwire.sdk.rest.namespaces"
+  module: "com.signalwire.sdk.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/LogsNamespace.java"
+  visibility: "public"
+---
+# `LogsNamespace`
+
+Logs namespace \u2014 message, voice, fax, and conference logs (read-only).
+
+<p>Mirrors `signalwire.rest.namespaces.logs.LogsNamespace`: each
+ sub-resource fans out to a distinct sub-API root (message \u2192 /messaging/logs,
+ voice \u2192 /voice/logs, fax \u2192 /fax/logs, conference \u2192 /logs/conferences).
+
+## Signature
+
+```java
+public class LogsNamespace
+```
+
+## Methods
+
+- [`<init>`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/init)
+- [`conferences`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/conferences)
+- [`fax`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/fax)
+- [`messages`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/messages)
+- [`voice`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/voice)
+
+## Classes
+
+- [`ConferenceLogs`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/conference-logs) — Conference logs \u2014 list-only.
+- [`FaxLogs`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/fax-logs) — Fax logs \u2014 list + per-id get.
+- [`MessageLogs`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/message-logs) — Read-only logs supporting list + per-id get.
+- [`VoiceLogs`](/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/voice-logs) — Voice logs add a per-id events sub-collection.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/LogsNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/LogsNamespace.java)
+
+Line 20.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/prefabs/faq-bot/faq-bot-agent/suggest-related"
+title: "suggest_related"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::prefabs::faq_bot::FAQBotAgent::suggest_related"
+  parent: "signalwire::prefabs::faq_bot::FAQBotAgent"
+  module: "prefabs.faq_bot"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/prefabs/faq_bot.rs"
+  visibility: "public"
+---
+# `suggest_related`
+
+## Signature
+
+```rust
+fn suggest_related(&self) -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`src/prefabs/faq_bot.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/prefabs/faq_bot.rs)
+
+Line 184.

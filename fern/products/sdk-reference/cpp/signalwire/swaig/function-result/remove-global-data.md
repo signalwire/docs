@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/swaig/function-result/remove-global-data"
+title: "remove_global_data"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swaig::FunctionResult::remove_global_data"
+  parent: "signalwire::swaig::FunctionResult"
+  module: "signalwire.swaig"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swaig/function_result.hpp"
+  visibility: "public"
+---
+# `remove_global_data`
+
+## Signature
+
+```cpp
+FunctionResult & remove_global_data(const json & keys)
+```
+
+## Parameters
+
+| Name   | Type           | Required | Default | Description |
+| ------ | -------------- | -------- | ------- | ----------- |
+| `keys` | `const json &` | yes      | —       | —           |
+
+## Returns
+
+`FunctionResult &`
+
+## Source
+
+[`include/signalwire/swaig/function_result.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swaig/function_result.hpp)
+
+Line 48.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/number-groups-namespace/get-membership"
+title: "getMembership"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.NumberGroupsNamespace.getMembership"
+  parent: "com.signalwire.sdk.rest.namespaces.NumberGroupsNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.NumberGroupsNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/NumberGroupsNamespace.java"
+  visibility: "public"
+---
+# `getMembership`
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> getMembership(
+    java.lang.String membershipId
+)
+```
+
+## Parameters
+
+| Name           | Type               | Required | Default | Description |
+| -------------- | ------------------ | -------- | ------- | ----------- |
+| `membershipId` | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/NumberGroupsNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/NumberGroupsNamespace.java)
+
+Line 74.

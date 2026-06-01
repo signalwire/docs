@@ -1,0 +1,49 @@
+---
+slug: "/reference/typescript/prefabs/survey-agent/survey-agent/on-summary"
+title: "onSummary"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.SurveyAgent.SurveyAgent.onSummary"
+  parent: "prefabs.SurveyAgent.SurveyAgent"
+  module: "prefabs.SurveyAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/prefabs/SurveyAgent.ts"
+---
+# `onSummary`
+
+Process the survey results summary returned at the end of a call.
+Mirrors Python `on_summary`: structured (dict-like) summaries are logged
+as JSON; unstructured summaries are logged verbatim.
+
+The parameter type widens the base `AgentBase.onSummary` signature to
+accept string payloads as well, matching Python's `isinstance(summary, dict)`
+branch even though the current framework only surfaces object summaries.
+
+## Signature
+
+```typescript
+onSummary(
+  summary: string | Record<string, unknown> | null,
+  _rawData: Record<string, unknown>
+): void | Promise<void>
+```
+
+## Parameters
+
+| Name       | Type                                        | Required | Default | Description |
+| ---------- | ------------------------------------------- | -------- | ------- | ----------- |
+| `summary`  | `string \| Record<string, unknown> \| null` | yes      | —       | —           |
+| `_rawData` | `Record<string, unknown>`                   | yes      | —       | —           |
+
+## Returns
+
+`void | Promise<void>`
+
+## Source
+
+[`src/prefabs/SurveyAgent.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/prefabs/SurveyAgent.ts)
+
+Line 639.

@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/calling/get-base-path"
+title: "GetBasePath()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.Calling.GetBasePath()"
+  parent: "SignalWire.REST.Namespaces.Calling"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `GetBasePath()`
+
+## Signature
+
+```dotnet
+public string GetBasePath()
+```
+
+## Returns
+
+`string`

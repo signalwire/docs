@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/joke/get-global-data"
+title: "getGlobalData"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\Joke::getGlobalData"
+  parent: "SignalWire\\Skills\\Builtin\\Joke"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/Joke.php"
+  visibility: "public"
+---
+# `getGlobalData`
+
+## Signature
+
+```php
+public function getGlobalData(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Skills/Builtin/Joke.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/Joke.php)
+
+Line 78.

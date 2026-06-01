@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/respond-to-missing"
+title: "respond_to_missing?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#respond_to_missing?"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `respond_to_missing?`
+
+## Signature
+
+```ruby
+def respond_to_missing?(method_name, include_private = false)
+```
+
+## Parameters
+
+| Name              | Type | Required | Default | Description |
+| ----------------- | ---- | -------- | ------- | ----------- |
+| `method_name`     | —    | yes      | —       | —           |
+| `include_private` | —    | no       | `false` | —           |
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 208.

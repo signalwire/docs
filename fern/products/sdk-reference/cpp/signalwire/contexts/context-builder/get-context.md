@@ -1,0 +1,40 @@
+---
+slug: "/reference/cpp/signalwire/contexts/context-builder/get-context"
+title: "get_context"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::ContextBuilder::get_context"
+  parent: "signalwire::contexts::ContextBuilder"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `get_context`
+
+Get an existing context.
+
+## Signature
+
+```cpp
+Context * get_context(const std::string & name)
+```
+
+## Parameters
+
+| Name   | Type                  | Required | Default | Description |
+| ------ | --------------------- | -------- | ------- | ----------- |
+| `name` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`Context *`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 408.

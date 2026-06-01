@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/mcp-gateway/skill/mcp-gateway-skill/get-global-data"
+title: "get_global_data"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.mcp_gateway.skill.MCPGatewaySkill.get_global_data"
+  parent: "signalwire.skills.mcp_gateway.skill.MCPGatewaySkill"
+  module: "signalwire.skills.mcp_gateway.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/mcp_gateway/skill.py"
+---
+# `get_global_data`
+
+Return global data for DataMap variables
+
+## Signature
+
+```python
+get_global_data() -> Dict[str, Any]
+```
+
+## Returns
+
+`Dict[str, Any]`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/mcp_gateway/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/mcp_gateway/skill.py)
+
+Line 392.

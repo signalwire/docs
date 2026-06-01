@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/datamap/datamap/data-map/to-swaig-function"
+title: "toSwaigFunction"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.datamap.DataMap.toSwaigFunction"
+  parent: "com.signalwire.sdk.datamap.DataMap"
+  module: "com.signalwire.sdk.datamap.DataMap"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/datamap/DataMap.java"
+  visibility: "public"
+---
+# `toSwaigFunction`
+
+Convert this DataMap to a SWAIG function definition.
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> toSwaigFunction()
+```
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/datamap/DataMap.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/datamap/DataMap.java)
+
+Line 238.

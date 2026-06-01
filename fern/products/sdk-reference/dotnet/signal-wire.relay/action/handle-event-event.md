@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/action/handle-event-event"
+title: "HandleEvent(Event)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Action.HandleEvent(SignalWire.Relay.Event)"
+  parent: "SignalWire.Relay.Action"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `HandleEvent(Event)`
+
+Append an incoming event and update local state / payload.
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual void HandleEvent(Event evt)
+```
+
+## Parameters
+
+| Name  | Type                     | Required | Default | Description |
+| ----- | ------------------------ | -------- | ------- | ----------- |
+| `evt` | `SignalWire.Relay.Event` | yes      | —       | —           |

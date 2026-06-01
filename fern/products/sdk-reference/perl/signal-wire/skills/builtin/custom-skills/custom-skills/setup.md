@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/skills/builtin/custom-skills/custom-skills/setup"
+title: "setup"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Skills::Builtin::CustomSkills::setup"
+  parent: "SignalWire::Skills::Builtin::CustomSkills"
+  module: "SignalWire.Skills.Builtin.CustomSkills"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/Builtin/CustomSkills.pm"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```perl
+sub setup()
+```
+
+## Source
+
+[`lib/SignalWire/Skills/Builtin/CustomSkills.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/Builtin/CustomSkills.pm)
+
+Line 14.

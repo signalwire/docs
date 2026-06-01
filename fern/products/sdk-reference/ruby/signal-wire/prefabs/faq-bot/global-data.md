@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/faq-bot/global-data"
+title: "global_data"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::FaqBot#global_data"
+  parent: "SignalWire::Prefabs::FaqBot"
+  module: "SignalWire.Prefabs.FaqBot"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/faq_bot.rb"
+  visibility: "public"
+---
+# `global_data`
+
+## Signature
+
+```ruby
+def global_data
+```
+
+## Source
+
+[`lib/signalwire/prefabs/faq_bot.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/faq_bot.rb)
+
+Line 49.

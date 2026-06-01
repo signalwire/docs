@@ -1,0 +1,46 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/service/read-body"
+title: "readBody"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Service.readBody"
+  parent: "com.signalwire.sdk.swml.Service"
+  module: "com.signalwire.sdk.swml.Service"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java"
+  visibility: "protected"
+---
+# `readBody`
+
+Read request body with size limit.
+
+## Signature
+
+```java
+protected java.lang.String readBody(
+    com.sun.net.httpserver.HttpExchange exchange
+)
+```
+
+## Parameters
+
+| Name       | Type                                  | Required | Default | Description |
+| ---------- | ------------------------------------- | -------- | ------- | ----------- |
+| `exchange` | `com.sun.net.httpserver.HttpExchange` | yes      | —       | —           |
+
+## Returns
+
+`java.lang.String`
+
+## Throws
+
+- `IOException`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Service.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java)
+
+Line 643.

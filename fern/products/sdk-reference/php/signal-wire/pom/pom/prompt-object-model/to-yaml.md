@@ -1,0 +1,36 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/prompt-object-model/to-yaml"
+title: "toYaml"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\PromptObjectModel::toYaml"
+  parent: "SignalWire\\POM\\PromptObjectModel"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php"
+  visibility: "public"
+---
+# `toYaml`
+
+Serialize the model as YAML.  Matches PyYAML's default block style
+
+with `default_flow_style=False, sort_keys=False`.
+
+## Signature
+
+```php
+public function toYaml(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/POM/PromptObjectModel.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php)
+
+Line 280.

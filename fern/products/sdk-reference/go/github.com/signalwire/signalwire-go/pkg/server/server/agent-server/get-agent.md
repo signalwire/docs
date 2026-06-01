@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/server/server/agent-server/get-agent"
+title: "GetAgent"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/server.AgentServer.GetAgent"
+  parent: "github.com/signalwire/signalwire-go/pkg/server.AgentServer"
+  module: "github.com.signalwire.signalwire-go.pkg.server"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go"
+---
+# `GetAgent`
+
+GetAgent returns the agent registered at the given route, or nil if none.
+
+## Signature
+
+```go
+func (*AgentServer) GetAgent(route string) *agent.AgentBase
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `route` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*agent.AgentBase`
+
+## Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 188.

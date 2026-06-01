@@ -1,0 +1,31 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin/google-maps-skill/get-hints"
+title: "GetHints"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills/builtin.GoogleMapsSkill.GetHints"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills/builtin.GoogleMapsSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/google_maps.go"
+---
+# `GetHints`
+
+## Signature
+
+```go
+func (*GoogleMapsSkill) GetHints() []string
+```
+
+## Returns
+
+`[]string`
+
+## Source
+
+[`pkg/skills/builtin/google_maps.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/google_maps.go)
+
+Line 293.

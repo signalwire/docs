@@ -1,0 +1,30 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/transcribe-action/stop"
+title: "stop"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\TranscribeAction::stop"
+  parent: "SignalWire\\Relay\\TranscribeAction"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Action.php"
+  visibility: "public"
+---
+# `stop`
+
+Stop the running action by sending its stop sub-command.
+
+## Signature
+
+```php
+public function stop(): void
+```
+
+## Source
+
+[`/src/src/SignalWire/Relay/Action.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Action.php)
+
+Line 186.

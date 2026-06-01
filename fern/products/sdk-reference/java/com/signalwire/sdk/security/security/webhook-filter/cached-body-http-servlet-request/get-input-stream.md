@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/security/security/webhook-filter/cached-body-http-servlet-request/get-input-stream"
+title: "getInputStream"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.security.WebhookFilter.CachedBodyHttpServletRequest.getInputStream"
+  parent: "com.signalwire.sdk.security.WebhookFilter.CachedBodyHttpServletRequest"
+  module: "com.signalwire.sdk.security.WebhookFilter.CachedBodyHttpServletRequest"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/security/WebhookFilter.java"
+  visibility: "public"
+---
+# `getInputStream`
+
+**Decorators:** `@Override`
+
+## Signature
+
+```java
+public javax.servlet.ServletInputStream getInputStream()
+```
+
+## Returns
+
+`javax.servlet.ServletInputStream`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/security/WebhookFilter.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/security/WebhookFilter.java)
+
+Line 221.

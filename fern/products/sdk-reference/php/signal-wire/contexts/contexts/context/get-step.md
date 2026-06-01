@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context/get-step"
+title: "getStep"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\Context::getStep"
+  parent: "SignalWire\\Contexts\\Context"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `getStep`
+
+## Signature
+
+```php
+public function getStep(string $name): ?SignalWire\Contexts\Step
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`?SignalWire\Contexts\Step`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 659.

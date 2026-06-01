@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/message/get-message-id"
+title: "getMessageId"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Message::getMessageId"
+  parent: "SignalWire\\Relay\\Message"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php"
+  visibility: "public"
+---
+# `getMessageId`
+
+## Signature
+
+```php
+public function getMessageId(): ?string
+```
+
+## Returns
+
+`?string`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Message.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php)
+
+Line 180.

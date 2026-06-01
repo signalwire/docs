@@ -1,0 +1,55 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/builder/signing-key"
+title: "signingKey"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.Builder.signingKey"
+  parent: "com.signalwire.sdk.agent.AgentBase.Builder"
+  module: "com.signalwire.sdk.agent.AgentBase.Builder"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `signingKey`
+
+Configure the customer's SignalWire Signing Key from the Dashboard
+(API Credentials \u2192 Signing Key).
+
+When set, the agent enforces
+webhook signature validation on POST `/`, `/swaig`,
+and `/post_prompt` \u2014 unsigned or invalidly-signed requests
+are rejected with HTTP 403.
+
+ <p>Resolution order at `#build()` time:
+ <ol>
+   <li>Explicit `signingKey(...)` on the builder.</li>
+   <li>`SIGNALWIRE_SIGNING_KEY` environment variable.</li>
+   <li>Unset \u2192 validation disabled, with a startup warning.</li>
+ </ol>
+
+## Signature
+
+```java
+public com.signalwire.sdk.agent.AgentBase.Builder signingKey(
+    java.lang.String key
+)
+```
+
+## Parameters
+
+| Name  | Type               | Required | Default | Description                                                         |
+| ----- | ------------------ | -------- | ------- | ------------------------------------------------------------------- |
+| `key` | `java.lang.String` | yes      | —       | the Signing Key. Pass `null` to fall through to env-var resolution. |
+
+## Returns
+
+`com.signalwire.sdk.agent.AgentBase.Builder` — this builder.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 217.

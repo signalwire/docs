@@ -1,0 +1,42 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/logs-namespace"
+title: "LogsNamespace"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::LogsNamespace"
+  parent: "SignalWire::REST::Namespaces"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/logs.rb"
+  visibility: "public"
+---
+# `LogsNamespace`
+
+Logs API namespace.
+
+## Signature
+
+```ruby
+class LogsNamespace < Object
+```
+
+## Inheritance
+
+**Extends:** `Object`
+
+## Methods
+
+- [`conferences`](/reference/ruby/signal-wire/rest/namespaces/logs-namespace/conferences) — Returns the value of attribute conferences.
+- [`fax`](/reference/ruby/signal-wire/rest/namespaces/logs-namespace/fax) — Returns the value of attribute fax.
+- [`initialize`](/reference/ruby/signal-wire/rest/namespaces/logs-namespace/initialize)
+- [`messages`](/reference/ruby/signal-wire/rest/namespaces/logs-namespace/messages) — Returns the value of attribute messages.
+- [`voice`](/reference/ruby/signal-wire/rest/namespaces/logs-namespace/voice) — Returns the value of attribute voice.
+
+## Source
+
+[`lib/signalwire/rest/namespaces/logs.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/logs.rb)
+
+Line 34.

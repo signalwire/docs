@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/skills/builtin/joke/create-skill"
+title: "createSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "skills.builtin.joke.createSkill"
+  parent: "skills.builtin.joke"
+  module: "skills.builtin.joke"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/joke.ts"
+---
+# `createSkill`
+
+Factory function for creating JokeSkill instances.
+
+## Signature
+
+```typescript
+createSkill(config?: SkillConfig): JokeSkill
+```
+
+## Parameters
+
+| Name     | Type          | Required | Default | Description                   |
+| -------- | ------------- | -------- | ------- | ----------------------------- |
+| `config` | `SkillConfig` | no       | —       | Optional skill configuration. |
+
+## Returns
+
+`JokeSkill` — A new JokeSkill instance.
+
+## Source
+
+[`src/skills/builtin/joke.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/joke.ts)
+
+Line 194.

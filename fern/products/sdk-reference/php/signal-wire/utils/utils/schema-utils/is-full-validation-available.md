@@ -1,0 +1,36 @@
+---
+slug: "/reference/php/signal-wire/utils/utils/schema-utils/is-full-validation-available"
+title: "isFullValidationAvailable"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Utils\\SchemaUtils::isFullValidationAvailable"
+  parent: "SignalWire\\Utils\\SchemaUtils"
+  module: "SignalWire.Utils"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Utils/SchemaUtils.php"
+  visibility: "public"
+---
+# `isFullValidationAvailable`
+
+Whether full JSON Schema validation is wired up.
+
+Mirrors Python's full\_validation\_available property.
+
+## Signature
+
+```php
+public function isFullValidationAvailable(): bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/src/SignalWire/Utils/SchemaUtils.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Utils/SchemaUtils.php)
+
+Line 169.

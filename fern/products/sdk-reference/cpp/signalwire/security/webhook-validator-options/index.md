@@ -1,0 +1,37 @@
+---
+slug: "/reference/cpp/signalwire/security/webhook-validator-options"
+title: "WebhookValidatorOptions"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "cpp"
+  qualified_name: "signalwire::security::WebhookValidatorOptions"
+  parent: "signalwire::security"
+  module: "signalwire.security"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_middleware.hpp"
+  visibility: "public"
+---
+# `WebhookValidatorOptions`
+
+Optional knobs for WrapWithSignatureValidation. trust\_proxy controls whether X-Forwarded-Proto / X-Forwarded-Host headers are honored when reconstructing the public URL — opt-in because proxy headers are spoofable. proxy\_url\_base is consulted before the proxy headers and is meant for SWML\_PROXY\_URL\_BASE callers.
+
+## Signature
+
+```cpp
+struct signalwire::security::WebhookValidatorOptions
+```
+
+## Properties
+
+| Name             | Type                         | Required | Default | Description                                                                                                                                                |
+| ---------------- | ---------------------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `proxy_url_base` | `std::string proxy_url_base` | yes      | —       | Optional base URL (e.g. https://abcd.ngrok.io) joined with the request path + query when reconstructing the URL. Wins over proxy headers and request.host. |
+| `trust_proxy`    | `bool trust_proxy`           | yes      | —       | If true, honor X-Forwarded-Proto / X-Forwarded-Host when reconstructing the URL. Default false.                                                            |
+
+## Source
+
+[`include/signalwire/security/webhook_middleware.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_middleware.hpp)
+
+Line 26.

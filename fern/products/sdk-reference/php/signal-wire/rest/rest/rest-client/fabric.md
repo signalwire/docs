@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/fabric"
+title: "fabric"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::fabric"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `fabric`
+
+Fabric API (sub-resources: subscribers, sip\_endpoints, call\_flows, ...).
+
+## Signature
+
+```php
+public function fabric(): SignalWire\REST\Namespaces\Fabric
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\Fabric`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 138.

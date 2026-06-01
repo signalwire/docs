@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/mcp-gateway/gateway-service/mcp-gateway/run"
+title: "run"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.mcp_gateway.gateway_service.MCPGateway.run"
+  parent: "signalwire.mcp_gateway.gateway_service.MCPGateway"
+  module: "signalwire.mcp_gateway.gateway_service"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/gateway_service.py"
+---
+# `run`
+
+Run the gateway service
+
+## Signature
+
+```python
+run()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/mcp_gateway/gateway_service.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/gateway_service.py)
+
+Line 478.

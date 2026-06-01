@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/relay-event/get-string-slice"
+title: "GetStringSlice"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.RelayEvent.GetStringSlice"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.RelayEvent"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/event.go"
+---
+# `GetStringSlice`
+
+GetStringSlice returns a \[]string for a key in params whose wire value is \[]any. Returns nil if absent or wrong type. Matches Python list\[str] field behavior.
+
+## Signature
+
+```go
+func (*RelayEvent) GetStringSlice(key string) []string
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description |
+| ----- | -------- | -------- | ------- | ----------- |
+| `key` | `string` | yes      | —       | —           |
+
+## Returns
+
+`[]string`
+
+## Source
+
+[`pkg/relay/event.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/event.go)
+
+Line 173.

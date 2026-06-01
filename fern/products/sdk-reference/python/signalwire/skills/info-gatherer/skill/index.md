@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/skills/info-gatherer/skill"
+title: "skill"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.skills.info_gatherer.skill"
+  parent: "signalwire.skills.info_gatherer"
+  module: "signalwire.skills.info_gatherer"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/info_gatherer/skill.py"
+---
+# `skill`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module skill
+```
+
+## Classes
+
+- [`InfoGathererSkill`](/reference/python/signalwire/skills/info-gatherer/skill/info-gatherer-skill) — Skill that guides an AI agent through a series of questions, collecting and storing answers in namespaced global\_data.
+
+## Source
+
+[`/src/signalwire/signalwire/skills/info_gatherer/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/info_gatherer/skill.py)

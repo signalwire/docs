@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/config-loader/config-loader/get-section"
+title: "getSection"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ConfigLoader.ConfigLoader.getSection"
+  parent: "ConfigLoader.ConfigLoader"
+  module: "ConfigLoader"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ConfigLoader.ts"
+---
+# `getSection`
+
+Get an entire configuration section with all environment variables substituted.
+
+## Signature
+
+```typescript
+getSection(section: string): Record<string, unknown>
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description                                             |
+| --------- | -------- | -------- | ------- | ------------------------------------------------------- |
+| `section` | `string` | yes      | —       | The top-level section name (e.g. 'security', 'server'). |
+
+## Returns
+
+`Record<string, unknown>` — The configuration section as an object, or an empty object if not found.
+
+## Source
+
+[`src/ConfigLoader.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ConfigLoader.ts)
+
+Line 298.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/paginated-iterator/get-items"
+title: "getItems"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\PaginatedIterator::getItems"
+  parent: "SignalWire\\REST\\PaginatedIterator"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/PaginatedIterator.php"
+  visibility: "public"
+---
+# `getItems`
+
+## Signature
+
+```php
+public function getItems(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/REST/PaginatedIterator.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/PaginatedIterator.php)
+
+Line 79.

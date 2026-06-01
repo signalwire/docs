@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/cli/init-project/generate-password"
+title: "generate_password"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.init_project.generate_password"
+  parent: "signalwire.cli.init_project"
+  module: "signalwire.cli.init_project"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/init_project.py"
+---
+# `generate_password`
+
+Generate a secure random password.
+
+## Signature
+
+```python
+generate_password(length: int = 32) -> str
+```
+
+## Parameters
+
+| Name     | Type  | Required | Default | Description |
+| -------- | ----- | -------- | ------- | ----------- |
+| `length` | `int` | no       | `32`    | —           |
+
+## Returns
+
+`str`
+
+## Source
+
+[`/src/signalwire/signalwire/cli/init_project.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/init_project.py)
+
+Line 139.

@@ -1,0 +1,31 @@
+---
+slug: "/reference/python/signalwire/core/logging-config/reset-logging-configuration"
+title: "reset_logging_configuration"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.core.logging_config.reset_logging_configuration"
+  parent: "signalwire.core.logging_config"
+  module: "signalwire.core.logging_config"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/logging_config.py"
+---
+# `reset_logging_configuration`
+
+Reset the logging configuration flag to allow reconfiguration
+
+This is useful when environment variables change after initial configuration.
+
+## Signature
+
+```python
+reset_logging_configuration()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/core/logging_config.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/logging_config.py)
+
+Line 75.

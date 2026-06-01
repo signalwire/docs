@@ -1,0 +1,40 @@
+---
+slug: "/reference/rust/signalwire/swml/document/document/add-section"
+title: "add_section"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::swml::document::Document::add_section"
+  parent: "signalwire::swml::document::Document"
+  module: "swml.document"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/swml/document.rs"
+  visibility: "public"
+---
+# `add_section`
+
+Add a new named section. Returns `true` if created, `false` if it already existed.
+
+## Signature
+
+```rust
+fn add_section(&mut self, name: &str) -> bool
+```
+
+## Parameters
+
+| Name   | Type   | Required | Default | Description |
+| ------ | ------ | -------- | ------- | ----------- |
+| `name` | `&str` | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`src/swml/document.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swml/document.rs)
+
+Line 26.

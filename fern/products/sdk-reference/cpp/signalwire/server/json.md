@@ -1,0 +1,28 @@
+---
+slug: "/reference/cpp/signalwire/server/json"
+title: "json"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::server::json"
+  parent: "signalwire::server"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/server/agent_server.hpp"
+  visibility: "public"
+---
+# `json`
+
+## Signature
+
+```cpp
+typedef nlohmann::json json
+```
+
+## Source
+
+[`include/signalwire/server/agent_server.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/server/agent_server.hpp)
+
+Line 19.

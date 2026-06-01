@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/fabric/cxml-applications"
+title: "cxmlApplications"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Fabric::cxmlApplications"
+  parent: "SignalWire\\REST\\Namespaces\\Fabric"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Fabric.php"
+  visibility: "public"
+---
+# `cxmlApplications`
+
+## Signature
+
+```php
+public function cxmlApplications(): SignalWire\REST\Namespaces\FabricCxmlApplications
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\FabricCxmlApplications`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Fabric.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Fabric.php)
+
+Line 143.

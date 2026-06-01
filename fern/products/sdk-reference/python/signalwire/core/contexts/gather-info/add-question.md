@@ -1,0 +1,41 @@
+---
+slug: "/reference/python/signalwire/core/contexts/gather-info/add-question"
+title: "add_question"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.GatherInfo.add_question"
+  parent: "signalwire.core.contexts.GatherInfo"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `add_question`
+
+Add a question to gather.
+
+## Signature
+
+```python
+add_question(key: str, question: str, **kwargs = {}) -> GatherInfo
+```
+
+## Parameters
+
+| Name        | Type  | Required | Default | Description                                     |
+| ----------- | ----- | -------- | ------- | ----------------------------------------------- |
+| `key`       | `str` | yes      | —       | Key name for storing the answer in global\_data |
+| `question`  | `str` | yes      | —       | The question text to ask                        |
+| `...kwargs` | —     | no       | `{}`    | —                                               |
+
+## Returns
+
+`GatherInfo` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 67.

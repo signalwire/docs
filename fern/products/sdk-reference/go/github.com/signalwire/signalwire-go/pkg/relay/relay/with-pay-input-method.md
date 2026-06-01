@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/with-pay-input-method"
+title: "WithPayInputMethod"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.WithPayInputMethod"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go"
+---
+# `WithPayInputMethod`
+
+WithPayInputMethod sets the payment input method.
+
+## Signature
+
+```go
+func WithPayInputMethod(method string) PayOption
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description |
+| -------- | -------- | -------- | ------- | ----------- |
+| `method` | `string` | yes      | —       | —           |
+
+## Returns
+
+`PayOption`
+
+## Source
+
+[`pkg/relay/options.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go)
+
+Line 215.

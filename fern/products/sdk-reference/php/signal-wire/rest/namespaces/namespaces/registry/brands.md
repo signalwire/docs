@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/registry/brands"
+title: "brands"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Registry::brands"
+  parent: "SignalWire\\REST\\Namespaces\\Registry"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Registry.php"
+  visibility: "public"
+---
+# `brands`
+
+## Signature
+
+```php
+public function brands(): SignalWire\REST\Namespaces\RegistryBrands
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\RegistryBrands`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Registry.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Registry.php)
+
+Line 34.

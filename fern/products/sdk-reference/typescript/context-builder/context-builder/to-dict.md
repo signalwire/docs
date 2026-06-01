@@ -1,0 +1,33 @@
+---
+slug: "/reference/typescript/context-builder/context-builder/to-dict"
+title: "toDict"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ContextBuilder.ContextBuilder.toDict"
+  parent: "ContextBuilder.ContextBuilder"
+  module: "ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts"
+---
+# `toDict`
+
+Validates and serializes all contexts to a plain object for SWML output.
+
+## Signature
+
+```typescript
+toDict(): Record<string, unknown>
+```
+
+## Returns
+
+`Record<string, unknown>` — A dictionary mapping context names to their serialized representations.
+
+## Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 1162.

@@ -1,0 +1,41 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/agent-base/set-prompt-transformer"
+title: "SetPromptTransformer"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase.SetPromptTransformer"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `SetPromptTransformer`
+
+SetPromptTransformer installs a hook that is called with the assembled prompt map before it is placed into the AI verb config. The function may return a new map or mutate and return the same map. Set to nil to remove a previously installed transformer.
+
+This is used by specialised agents (e.g. BedrockAgent) that need to add or filter prompt-level keys without reimplementing all of RenderSWML.
+
+## Signature
+
+```go
+func (*AgentBase) SetPromptTransformer(fn func(map[string]any) map[string]any) *AgentBase
+```
+
+## Parameters
+
+| Name | Type                                  | Required | Default | Description |
+| ---- | ------------------------------------- | -------- | ------- | ----------- |
+| `fn` | `func(map[string]any) map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`*AgentBase`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 1513.

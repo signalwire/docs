@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/fabric-namespace/sip-gateways"
+title: "sipGateways"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.FabricNamespace.sipGateways"
+  parent: "com.signalwire.sdk.rest.namespaces.FabricNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.FabricNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/FabricNamespace.java"
+  visibility: "public"
+---
+# `sipGateways`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource sipGateways()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/FabricNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/FabricNamespace.java)
+
+Line 79.

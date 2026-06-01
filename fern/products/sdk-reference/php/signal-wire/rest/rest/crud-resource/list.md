@@ -1,0 +1,42 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/crud-resource/list"
+title: "list"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\CrudResource::list"
+  parent: "SignalWire\\REST\\CrudResource"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/CrudResource.php"
+  visibility: "public"
+---
+# `list`
+
+List resources (GET basePath).
+
+## Signature
+
+```php
+public function list(array $params = array (
+)): array
+```
+
+## Parameters
+
+| Name     | Type    | Required | Default     | Description              |
+| -------- | ------- | -------- | ----------- | ------------------------ |
+| `params` | `array` | no       | `array (
+)` | Query-string parameters. |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/REST/CrudResource.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/CrudResource.php)
+
+Line 94.

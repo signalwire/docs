@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/prefabs/prefabs/faq-bot-agent/get-agent"
+title: "getAgent"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.prefabs.FAQBotAgent.getAgent"
+  parent: "com.signalwire.sdk.prefabs.FAQBotAgent"
+  module: "com.signalwire.sdk.prefabs.FAQBotAgent"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/prefabs/FAQBotAgent.java"
+  visibility: "public"
+---
+# `getAgent`
+
+## Signature
+
+```java
+public com.signalwire.sdk.agent.AgentBase getAgent()
+```
+
+## Returns
+
+`com.signalwire.sdk.agent.AgentBase`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/prefabs/FAQBotAgent.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/prefabs/FAQBotAgent.java)
+
+Line 111.

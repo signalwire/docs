@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/tool-definition/get-description"
+title: "getDescription"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.ToolDefinition.getDescription"
+  parent: "com.signalwire.sdk.swaig.ToolDefinition"
+  module: "com.signalwire.sdk.swaig.ToolDefinition"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/ToolDefinition.java"
+  visibility: "public"
+---
+# `getDescription`
+
+## Signature
+
+```java
+public java.lang.String getDescription()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/ToolDefinition.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/ToolDefinition.java)
+
+Line 24.

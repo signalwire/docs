@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/schema/verb-count"
+title: "verbCount"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Schema.verbCount"
+  parent: "com.signalwire.sdk.swml.Schema"
+  module: "com.signalwire.sdk.swml.Schema"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Schema.java"
+  visibility: "public"
+---
+# `verbCount`
+
+Get the number of loaded verb definitions.
+
+## Signature
+
+```java
+public int verbCount()
+```
+
+## Returns
+
+`int`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Schema.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Schema.java)
+
+Line 132.

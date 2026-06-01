@@ -1,0 +1,40 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-registry/registered"
+title: "registered?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillRegistry.registered?"
+  parent: "SignalWire::Skills::SkillRegistry"
+  module: "SignalWire.Skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_registry.rb"
+  visibility: "public"
+---
+# `registered?`
+
+Check if a skill is registered.
+
+## Signature
+
+```ruby
+def registered?(skill_name)
+```
+
+## Parameters
+
+| Name         | Type     | Required | Default | Description |
+| ------------ | -------- | -------- | ------- | ----------- |
+| `skill_name` | `String` | yes      | —       | —           |
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/skills/skill_registry.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_registry.rb)
+
+Line 201.

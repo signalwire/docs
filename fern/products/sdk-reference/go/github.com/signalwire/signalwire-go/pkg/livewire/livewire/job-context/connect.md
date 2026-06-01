@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/job-context/connect"
+title: "Connect"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.JobContext.Connect"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.JobContext"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `Connect`
+
+Connect is a LiveKit compatibility noop — SignalWire agents connect automatically when the platform invokes the SWML endpoint.
+
+## Signature
+
+```go
+func (*JobContext) Connect() error
+```
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 718.

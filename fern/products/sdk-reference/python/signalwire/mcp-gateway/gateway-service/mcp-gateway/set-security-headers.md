@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/mcp-gateway/gateway-service/mcp-gateway/set-security-headers"
+title: "set_security_headers"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.mcp_gateway.gateway_service.MCPGateway.__init__.set_security_headers"
+  parent: "signalwire.mcp_gateway.gateway_service.MCPGateway.__init__"
+  module: "signalwire.mcp_gateway.gateway_service"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/gateway_service.py"
+---
+# `set_security_headers`
+
+**Decorators:** `@self.app.after_request`
+
+## Signature
+
+```python
+set_security_headers(response)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `response` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/mcp_gateway/gateway_service.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/gateway_service.py)
+
+Line 92.

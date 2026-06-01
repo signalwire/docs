@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/swaig/function-result/add-actions"
+title: "add_actions"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swaig::FunctionResult::add_actions"
+  parent: "signalwire::swaig::FunctionResult"
+  module: "signalwire.swaig"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swaig/function_result.hpp"
+  visibility: "public"
+---
+# `add_actions`
+
+## Signature
+
+```cpp
+FunctionResult & add_actions(const std::vector< json > & actions)
+```
+
+## Parameters
+
+| Name      | Type                          | Required | Default | Description |
+| --------- | ----------------------------- | -------- | ------- | ----------- |
+| `actions` | `const std::vector< json > &` | yes      | —       | —           |
+
+## Returns
+
+`FunctionResult &`
+
+## Source
+
+[`include/signalwire/swaig/function_result.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swaig/function_result.hpp)
+
+Line 26.

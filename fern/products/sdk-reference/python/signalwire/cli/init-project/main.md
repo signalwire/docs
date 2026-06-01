@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/cli/init-project/main"
+title: "main"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.init_project.main"
+  parent: "signalwire.cli.init_project"
+  module: "signalwire.cli.init_project"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/init_project.py"
+---
+# `main`
+
+Main entry point.
+
+## Signature
+
+```python
+main()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/cli/init_project.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/init_project.py)
+
+Line 2578.

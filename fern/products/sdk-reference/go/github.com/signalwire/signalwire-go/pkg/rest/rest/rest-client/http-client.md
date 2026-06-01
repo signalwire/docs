@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/rest/rest-client/http-client"
+title: "HttpClient"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest.RestClient.HttpClient"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest.RestClient"
+  module: "github.com.signalwire.signalwire-go.pkg.rest"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/rest_client.go"
+---
+# `HttpClient`
+
+HttpClient exposes the underlying HTTP transport. It is the public form of Python's “signalwire\_client.\_http“ and is the entry point used by helpers like PaginatedIterator that need raw GET access without going through a namespace resource.
+
+## Signature
+
+```go
+func (*RestClient) HttpClient() *HttpClient
+```
+
+## Returns
+
+`*HttpClient`
+
+## Source
+
+[`pkg/rest/rest_client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/rest_client.go)
+
+Line 86.

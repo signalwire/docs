@@ -1,0 +1,41 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/queues-resource"
+title: "QueuesResource"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::QueuesResource"
+  parent: "SignalWire::REST::Namespaces"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/queues.rb"
+  visibility: "public"
+---
+# `QueuesResource`
+
+Queue management with member operations.
+
+## Signature
+
+```ruby
+class QueuesResource < SignalWire::REST::CrudResource
+```
+
+## Inheritance
+
+**Extends:** [SignalWire::REST::CrudResource](/reference/ruby/signal-wire/rest/crud-resource)
+
+## Methods
+
+- [`get_member`](/reference/ruby/signal-wire/rest/namespaces/queues-resource/get-member)
+- [`get_next_member`](/reference/ruby/signal-wire/rest/namespaces/queues-resource/get-next-member)
+- [`initialize`](/reference/ruby/signal-wire/rest/namespaces/queues-resource/initialize)
+- [`list_members`](/reference/ruby/signal-wire/rest/namespaces/queues-resource/list-members)
+
+## Source
+
+[`lib/signalwire/rest/namespaces/queues.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/queues.rb)
+
+Line 7.

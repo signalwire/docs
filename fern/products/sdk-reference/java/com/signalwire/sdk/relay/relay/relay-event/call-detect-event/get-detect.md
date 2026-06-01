@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event/get-detect"
+title: "getDetect"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.RelayEvent.CallDetectEvent.getDetect"
+  parent: "com.signalwire.sdk.relay.RelayEvent.CallDetectEvent"
+  module: "com.signalwire.sdk.relay.RelayEvent.CallDetectEvent"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayEvent.java"
+  visibility: "public"
+---
+# `getDetect`
+
+Results are in detect.params.event, not a simple state field.
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> getDetect()
+```
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/RelayEvent.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayEvent.java)
+
+Line 284.

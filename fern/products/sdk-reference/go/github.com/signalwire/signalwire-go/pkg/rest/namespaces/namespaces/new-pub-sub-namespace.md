@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/new-pub-sub-namespace"
+title: "NewPubSubNamespace"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.NewPubSubNamespace"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/pubsub.go"
+---
+# `NewPubSubNamespace`
+
+NewPubSubNamespace creates a new PubSubNamespace.
+
+## Signature
+
+```go
+func NewPubSubNamespace(client HTTPClient) *PubSubNamespace
+```
+
+## Parameters
+
+| Name     | Type         | Required | Default | Description |
+| -------- | ------------ | -------- | ------- | ----------- |
+| `client` | `HTTPClient` | yes      | —       | —           |
+
+## Returns
+
+`*PubSubNamespace`
+
+## Source
+
+[`pkg/rest/namespaces/pubsub.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/pubsub.go)
+
+Line 16.

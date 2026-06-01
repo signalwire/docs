@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/swaig/function-result/to-json"
+title: "to_json"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Swaig::FunctionResult#to_json"
+  parent: "SignalWire::Swaig::FunctionResult"
+  module: "SignalWire.Swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/function_result.rb"
+  visibility: "public"
+---
+# `to_json`
+
+## Signature
+
+```ruby
+def to_json(*args)
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `...args` | —    | no       | —       | —           |
+
+## Returns
+
+`String` — JSON representation
+
+## Source
+
+[`lib/signalwire/swaig/function_result.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/function_result.rb)
+
+Line 772.

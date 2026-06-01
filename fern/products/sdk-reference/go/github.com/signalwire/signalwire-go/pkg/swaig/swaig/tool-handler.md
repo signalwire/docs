@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/tool-handler"
+title: "ToolHandler"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.ToolHandler"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/handler.go"
+---
+# `ToolHandler`
+
+ToolHandler is the function signature for SWAIG tool handlers. args contains the parsed function arguments, rawData contains the full request payload including global\_data, call\_id, etc.
+
+## Signature
+
+```go
+type ToolHandler alias
+```
+
+## Source
+
+[`pkg/swaig/handler.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/handler.go)
+
+Line 6.

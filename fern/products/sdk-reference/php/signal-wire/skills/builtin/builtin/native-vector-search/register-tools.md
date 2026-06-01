@@ -1,0 +1,28 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/native-vector-search/register-tools"
+title: "registerTools"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\NativeVectorSearch::registerTools"
+  parent: "SignalWire\\Skills\\Builtin\\NativeVectorSearch"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/NativeVectorSearch.php"
+  visibility: "public"
+---
+# `registerTools`
+
+## Signature
+
+```php
+public function registerTools(): void
+```
+
+## Source
+
+[`/src/src/SignalWire/Skills/Builtin/NativeVectorSearch.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/NativeVectorSearch.php)
+
+Line 54.

@@ -1,0 +1,44 @@
+---
+slug: "/reference/typescript/rest/namespaces/number-groups/number-groups-resource/list-memberships"
+title: "listMemberships"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.number-groups.NumberGroupsResource.listMemberships"
+  parent: "rest.namespaces.number-groups.NumberGroupsResource"
+  module: "rest.namespaces.number-groups"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/number-groups.ts"
+---
+# `listMemberships`
+
+List memberships (phone-number assignments) in a group.
+
+## Signature
+
+```typescript
+listMemberships(groupId: string, params?: QueryParams): Promise<any>
+```
+
+## Parameters
+
+| Name      | Type          | Required | Default | Description                                    |
+| --------- | ------------- | -------- | ------- | ---------------------------------------------- |
+| `groupId` | `string`      | yes      | —       | Unique identifier of the number group.         |
+| `params`  | `QueryParams` | no       | —       | Optional filter / pagination query parameters. |
+
+## Returns
+
+`Promise<any>` — A paginated list of number-group memberships.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/number-groups.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/number-groups.ts)
+
+Line 31.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/add-answer-verb"
+title: "add_answer_verb"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#add_answer_verb"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `add_answer_verb`
+
+## Signature
+
+```ruby
+def add_answer_verb(config)
+```
+
+## Parameters
+
+| Name     | Type | Required | Default | Description |
+| -------- | ---- | -------- | ------- | ----------- |
+| `config` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 995.

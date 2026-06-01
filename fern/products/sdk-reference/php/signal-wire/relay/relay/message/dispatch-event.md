@@ -1,0 +1,43 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/message/dispatch-event"
+title: "dispatchEvent"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Message::dispatchEvent"
+  parent: "SignalWire\\Relay\\Message"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php"
+  visibility: "public"
+---
+# `dispatchEvent`
+
+Process an inbound event for this message.
+
+Updates state/reason, fires any registered event listeners, and
+auto-resolves the message when it reaches a terminal state.
+
+Accepts both `state` and `message_state` keys on the event
+payload — production RELAY emits `message_state` while older
+fixtures use `state`.
+
+## Signature
+
+```php
+public function dispatchEvent(SignalWire\Relay\Event $event): void
+```
+
+## Parameters
+
+| Name    | Type                     | Required | Default | Description |
+| ------- | ------------------------ | -------- | ------- | ----------- |
+| `event` | `SignalWire\Relay\Event` | yes      | —       | —           |
+
+## Source
+
+[`/src/src/SignalWire/Relay/Message.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php)
+
+Line 74.

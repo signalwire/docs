@@ -1,0 +1,21 @@
+---
+slug: "/reference/rust/signalwire/security/webhook-layer/webhook-validate/response"
+title: "Response"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "rust"
+  qualified_name: "Response"
+  parent: "signalwire::security::webhook_layer::WebhookValidate"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook_layer.rs"
+  visibility: "public"
+---
+# `Response`
+
+## Source
+
+[`src/security/webhook_layer.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook_layer.rs)
+
+Line 116.

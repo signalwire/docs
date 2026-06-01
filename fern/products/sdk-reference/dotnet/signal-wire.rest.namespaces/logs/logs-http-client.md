@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/logs/logs-http-client"
+title: "Logs(HttpClient)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.Logs.Logs(SignalWire.REST.HttpClient)"
+  parent: "SignalWire.REST.Namespaces.Logs"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `Logs(HttpClient)`
+
+## Signature
+
+```dotnet
+public Logs(HttpClient client)
+```
+
+## Parameters
+
+| Name     | Type                         | Required | Default | Description |
+| -------- | ---------------------------- | -------- | ------- | ----------- |
+| `client` | `SignalWire.REST.HttpClient` | yes      | —       | —           |

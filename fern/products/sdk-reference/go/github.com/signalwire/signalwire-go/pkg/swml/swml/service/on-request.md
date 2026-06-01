@@ -1,0 +1,42 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/on-request"
+title: "OnRequest"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.OnRequest"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `OnRequest`
+
+OnRequest generates the SWML response for an incoming request. It checks routing callbacks first, then returns the default document.
+
+The return value is a pointer to allow subclasses (AgentBase) to signal "no override" by returning nil — matching Python's Optional\[dict] return type for on\_request. Callers should treat a nil return as "use the default document unchanged".
+
+## Signature
+
+```go
+func (*Service) OnRequest(requestData map[string]any, callbackPath string) map[string]any
+```
+
+## Parameters
+
+| Name           | Type             | Required | Default | Description |
+| -------------- | ---------------- | -------- | ------- | ----------- |
+| `requestData`  | `map[string]any` | yes      | —       | —           |
+| `callbackPath` | `string`         | yes      | —       | —           |
+
+## Returns
+
+`map[string]any`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 1021.

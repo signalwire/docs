@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/set-function-includes"
+title: "set_function_includes"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#set_function_includes"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `set_function_includes`
+
+## Signature
+
+```ruby
+def set_function_includes(includes)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `includes` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 966.

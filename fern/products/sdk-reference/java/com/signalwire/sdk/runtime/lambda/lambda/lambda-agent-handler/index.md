@@ -1,0 +1,80 @@
+---
+slug: "/reference/java/com/signalwire/sdk/runtime/lambda/lambda/lambda-agent-handler"
+title: "LambdaAgentHandler"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.runtime.lambda.LambdaAgentHandler"
+  parent: "com.signalwire.sdk.runtime.lambda"
+  module: "com.signalwire.sdk.runtime.lambda"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/lambda/LambdaAgentHandler.java"
+  visibility: "public"
+---
+# `LambdaAgentHandler`
+
+AWS Lambda adapter for a SignalWire `AgentBase`.
+
+<p>Translates API Gateway (REST v1 or HTTP v2) / Lambda Function URL
+ events into the same dispatch logic the in-process HTTP server uses,
+ without depending on the `aws-lambda-java-events` typed models
+ at runtime (the handler accepts plain Object> so
+ the SDK stays dependency-light).
+
+ <p><b>Usage</b> \u2014 in your Lambda handler class:
+ <pre>class MyHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
+     private final LambdaAgentHandler delegate;
+
+```
+ public MyHandler() {
+     AgentBase agent = AgentBase.builder()
+             .name("my-agent")
+             .route("/")
+             .build();
+     agent.setPromptText("You are helpful.");
+     this.delegate = new LambdaAgentHandler(agent);
+
+ public Map<String, Object> handleRequest(Map<String, Object> event, Context ctx) {
+     return delegate.handle(event).toMap();
+ }
+```
+
+}
+}</pre>
+
+ <p>The adapter dispatches based on the request path and the agent's
+ configured route:
+ <ul>
+   <li>/<route>          \u2192 returns rendered SWML</li>
+   <li>/<route>/swaig    \u2192 executes the named SWAIG tool</li>
+   <li>/<route>/post_prompt \u2192 invokes the summary callback</li>
+   <li>/<route>/mcp      \u2192 JSON-RPC 2.0 (if MCP enabled)</li>
+   <li>/health, `/ready` \u2192 health probes</li>
+ </ul>
+
+ <p>All webhook URLs generated inside the SWML document are built from
+ the Lambda's Function URL (via `LambdaUrlResolver`) or the
+ `SWML_PROXY_URL_BASE` override, with the agent's route always
+ layered on top. This is the same invariant the HTTP server path
+ enforces.
+
+**Modifiers:** `final`
+
+## Signature
+
+```java
+public final class LambdaAgentHandler
+```
+
+## Methods
+
+- [`<init>`](/reference/java/com/signalwire/sdk/runtime/lambda/lambda/lambda-agent-handler/init) — Create a handler for the given agent using the real process environment.
+- [`handle`](/reference/java/com/signalwire/sdk/runtime/lambda/lambda/lambda-agent-handler/handle) — Handle a single invocation.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/runtime/lambda/LambdaAgentHandler.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/lambda/LambdaAgentHandler.java)
+
+Line 65.

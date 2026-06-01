@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/crud-with-addresses/get-http"
+title: "getHttp"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\CrudWithAddresses::getHttp"
+  parent: "SignalWire\\REST\\CrudWithAddresses"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/CrudResource.php"
+  visibility: "public"
+---
+# `getHttp`
+
+## Signature
+
+```php
+public function getHttp(): SignalWire\REST\HttpClient
+```
+
+## Returns
+
+`SignalWire\REST\HttpClient`
+
+## Source
+
+[`/src/src/SignalWire/REST/CrudResource.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/CrudResource.php)
+
+Line 43.

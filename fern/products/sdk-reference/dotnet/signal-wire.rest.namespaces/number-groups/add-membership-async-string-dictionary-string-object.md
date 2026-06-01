@@ -1,0 +1,32 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/number-groups/add-membership-async-string-dictionary-string-object"
+title: "AddMembershipAsync(string, Dictionary<string, object?>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.NumberGroups.AddMembershipAsync(string, System.Collections.Generic.Dictionary<string, object?>)"
+  parent: "SignalWire.REST.Namespaces.NumberGroups"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `AddMembershipAsync(string, Dictionary<string, object?>)`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> AddMembershipAsync(string groupId, Dictionary<string, object?> kwargs)
+```
+
+## Parameters
+
+| Name      | Type                        | Required | Default | Description |
+| --------- | --------------------------- | -------- | ------- | ----------- |
+| `groupId` | `string`                    | yes      | —       | —           |
+| `kwargs`  | `Dictionary<string,object>` | yes      | —       | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/campaign-namespace/campaigns"
+title: "campaigns"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.CampaignNamespace.campaigns"
+  parent: "com.signalwire.sdk.rest.namespaces.CampaignNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.CampaignNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/CampaignNamespace.java"
+  visibility: "public"
+---
+# `campaigns`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource campaigns()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/CampaignNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/CampaignNamespace.java)
+
+Line 30.

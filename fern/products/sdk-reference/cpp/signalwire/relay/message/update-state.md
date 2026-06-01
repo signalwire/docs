@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/relay/message/update-state"
+title: "update_state"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Message::update_state"
+  parent: "signalwire::relay::Message"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp"
+  visibility: "public"
+---
+# `update_state`
+
+Update state from a messaging.state event. Notifies waiters / callbacks when the state is terminal.
+
+## Signature
+
+```cpp
+void update_state(const std::string & new_state)
+```
+
+## Parameters
+
+| Name        | Type                  | Required | Default | Description |
+| ----------- | --------------------- | -------- | ------- | ----------- |
+| `new_state` | `const std::string &` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/message.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp)
+
+Line 62.

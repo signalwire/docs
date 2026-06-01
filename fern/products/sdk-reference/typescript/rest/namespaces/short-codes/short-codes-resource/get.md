@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/rest/namespaces/short-codes/short-codes-resource/get"
+title: "get"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.short-codes.ShortCodesResource.get"
+  parent: "rest.namespaces.short-codes.ShortCodesResource"
+  module: "rest.namespaces.short-codes"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/short-codes.ts"
+---
+# `get`
+
+Fetch a short code by ID.
+
+## Signature
+
+```typescript
+get(shortCodeId: string): Promise<any>
+```
+
+## Parameters
+
+| Name          | Type     | Required | Default | Description                          |
+| ------------- | -------- | -------- | ------- | ------------------------------------ |
+| `shortCodeId` | `string` | yes      | —       | Unique identifier of the short code. |
+
+## Returns
+
+`Promise<any>` — The short-code record.
+
+## Throws
+
+- On any non-2xx HTTP response (including `404`).
+
+## Source
+
+[`src/rest/namespaces/short-codes.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/short-codes.ts)
+
+Line 39.

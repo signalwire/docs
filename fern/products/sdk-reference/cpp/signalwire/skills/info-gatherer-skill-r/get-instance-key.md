@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/skills/info-gatherer-skill-r/get-instance-key"
+title: "get_instance_key"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::InfoGathererSkillR::get_instance_key"
+  parent: "signalwire::skills::InfoGathererSkillR"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/src/skills/skill_registry.cpp"
+  visibility: "public"
+---
+# `get_instance_key`
+
+Get instance key for multi-instance skills.
+
+**Modifiers:** `const` `inline` `virtual`
+
+## Signature
+
+```cpp
+std::string get_instance_key() const
+```
+
+## Returns
+
+`std::string`
+
+## Source
+
+[`src/skills/skill_registry.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/skills/skill_registry.cpp)
+
+Line 387.

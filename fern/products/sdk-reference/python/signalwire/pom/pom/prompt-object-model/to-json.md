@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/pom/pom/prompt-object-model/to-json"
+title: "to_json"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.pom.pom.PromptObjectModel.to_json"
+  parent: "signalwire.pom.pom.PromptObjectModel"
+  module: "signalwire.pom.pom"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py"
+---
+# `to_json`
+
+Convert the entire model to a JSON string.
+
+## Signature
+
+```python
+to_json() -> str
+```
+
+## Returns
+
+`str` — A JSON string representation of the model
+
+## Source
+
+[`/src/signalwire/signalwire/pom/pom.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py)
+
+Line 419.

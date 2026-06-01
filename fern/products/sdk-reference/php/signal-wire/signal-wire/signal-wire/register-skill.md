@@ -1,0 +1,41 @@
+---
+slug: "/reference/php/signal-wire/signal-wire/signal-wire/register-skill"
+title: "register_skill"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SignalWire::register_skill"
+  parent: "SignalWire\\SignalWire"
+  module: "SignalWire"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SignalWire.php"
+  visibility: "public"
+---
+# `register_skill`
+
+Register a custom skill class with the global skill registry.
+
+Mirrors Python's `signalwire.register_skill(skill_class)`.
+Delegates to the singleton {@see SkillRegistry} instance.
+
+**Modifiers:** `static`
+
+## Signature
+
+```php
+public static function register_skill(string $skillClass): void
+```
+
+## Parameters
+
+| Name         | Type     | Required | Default | Description |
+| ------------ | -------- | -------- | ------- | ----------- |
+| `skillClass` | `string` | yes      | —       | —           |
+
+## Source
+
+[`/src/src/SignalWire/SignalWire.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SignalWire.php)
+
+Line 70.

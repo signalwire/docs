@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/agent/agent-base/set-pronunciations"
+title: "set_pronunciations"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::agent::AgentBase::set_pronunciations"
+  parent: "signalwire::agent::AgentBase"
+  module: "signalwire.agent"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `set_pronunciations`
+
+## Signature
+
+```cpp
+AgentBase & set_pronunciations(const std::vector< Pronunciation > & pronuns)
+```
+
+## Parameters
+
+| Name      | Type                                   | Required | Default | Description |
+| --------- | -------------------------------------- | -------- | ------- | ----------- |
+| `pronuns` | `const std::vector< Pronunciation > &` | yes      | —       | —           |
+
+## Returns
+
+`AgentBase &`
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 316.

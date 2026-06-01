@@ -1,0 +1,35 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/prompt-object-model/render-xml"
+title: "RenderXML"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/pom.PromptObjectModel.RenderXML"
+  parent: "github.com/signalwire/signalwire-go/pkg/pom.PromptObjectModel"
+  module: "github.com.signalwire.signalwire-go.pkg.pom"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/pom/pom.go"
+---
+# `RenderXML`
+
+RenderXML renders the entire POM as an XML document with the canonical “<?xml ...?>\<prompt> ... </prompt>“ envelope.
+
+Python equivalent: PromptObjectModel.render\_xml
+
+## Signature
+
+```go
+func (*PromptObjectModel) RenderXML() string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`pkg/pom/pom.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/pom/pom.go)
+
+Line 797.

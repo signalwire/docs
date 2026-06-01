@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/pom/pom/section/get-subsections"
+title: "getSubsections"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.pom.Section.getSubsections"
+  parent: "com.signalwire.sdk.pom.Section"
+  module: "com.signalwire.sdk.pom.Section"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/Section.java"
+  visibility: "public"
+---
+# `getSubsections`
+
+## Signature
+
+```java
+public java.util.List<com.signalwire.sdk.pom.Section> getSubsections()
+```
+
+## Returns
+
+`java.util.List<com.signalwire.sdk.pom.Section>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/pom/Section.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/Section.java)
+
+Line 87.

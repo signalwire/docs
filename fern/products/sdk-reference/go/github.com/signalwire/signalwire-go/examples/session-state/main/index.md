@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/session-state/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/session_state"
+  module: "github.com.signalwire.signalwire-go.examples.session_state"
+---
+# `main`
+
+Example: session\_state
+
+Global data management and lifecycle callbacks. Demonstrates setting initial global data, configuring a post-prompt for conversation summaries, registering an OnSummary callback, and defining a tool that uses UpdateGlobalData to track state across interactions.
+
+## Signature
+
+```go
+package main
+```

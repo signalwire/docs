@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/fabric/fabric-http-client"
+title: "Fabric(HttpClient)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.Fabric.Fabric(SignalWire.REST.HttpClient)"
+  parent: "SignalWire.REST.Namespaces.Fabric"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `Fabric(HttpClient)`
+
+## Signature
+
+```dotnet
+public Fabric(HttpClient client)
+```
+
+## Parameters
+
+| Name     | Type                         | Required | Default | Description |
+| -------- | ---------------------------- | -------- | ------- | ----------- |
+| `client` | `SignalWire.REST.HttpClient` | yes      | —       | —           |

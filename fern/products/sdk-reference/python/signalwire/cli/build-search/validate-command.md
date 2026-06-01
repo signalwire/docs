@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/cli/build-search/validate-command"
+title: "validate_command"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.build_search.validate_command"
+  parent: "signalwire.cli.build_search"
+  module: "signalwire.cli.build_search"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/build_search.py"
+---
+# `validate_command`
+
+Validate an existing search index
+
+## Signature
+
+```python
+validate_command()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/cli/build_search.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/build_search.py)
+
+Line 621.

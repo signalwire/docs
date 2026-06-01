@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/receptionist/global-data"
+title: "global_data"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::Receptionist#global_data"
+  parent: "SignalWire::Prefabs::Receptionist"
+  module: "SignalWire.Prefabs.Receptionist"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/receptionist.rb"
+  visibility: "public"
+---
+# `global_data`
+
+## Signature
+
+```ruby
+def global_data
+```
+
+## Source
+
+[`lib/signalwire/prefabs/receptionist.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/receptionist.rb)
+
+Line 54.

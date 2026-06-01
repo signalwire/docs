@@ -1,0 +1,57 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context-builder/reset"
+title: "reset"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.ContextBuilder.reset"
+  parent: "signalwire.core.contexts.ContextBuilder"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `reset`
+
+Remove all contexts, returning the builder to its initial state.
+
+Use this in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request — e.g. skipping a
+greeting context on transfers.
+
+Example::
+
+```
+def on_dynamic_config(query, body, headers, agent):
+    if query.get("transfer"):
+        agent.define_contexts().reset()
+        ctx = agent.define_contexts().add_context("default")
+        ctx.add_step("route").set_text("Route the caller.")
+```
+
+## Signature
+
+```python
+reset() -> ContextBuilder
+```
+
+## Returns
+
+`ContextBuilder` — Self for method chaining.
+
+## Examples
+
+```python
+def on_dynamic_config(query, body, headers, agent):
+    if query.get("transfer"):
+        agent.define_contexts().reset()
+        ctx = agent.define_contexts().add_context("default")
+        ctx.add_step("route").set_text("Route the caller.")
+```
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 1159.

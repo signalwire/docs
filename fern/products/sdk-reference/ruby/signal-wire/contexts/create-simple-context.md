@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/create-simple-context"
+title: "create_simple_context"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts.create_simple_context"
+  parent: "SignalWire::Contexts"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `create_simple_context`
+
+Helper to create a standalone context (not via ContextBuilder).
+
+## Signature
+
+```ruby
+def create_simple_context(name = 'default')
+```
+
+## Parameters
+
+| Name   | Type | Required | Default     | Description |
+| ------ | ---- | -------- | ----------- | ----------- |
+| `name` | —    | no       | `'default'` | —           |
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 857.

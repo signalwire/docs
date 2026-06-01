@@ -1,0 +1,52 @@
+---
+slug: "/reference/dotnet/signal-wire.data-map/data-map/parameter-string-string-string-bool-list-string"
+title: "Parameter(string, string, string, bool, List<string>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.DataMap.DataMap.Parameter(string, string, string, bool, System.Collections.Generic.List<string>?)"
+  parent: "SignalWire.DataMap.DataMap"
+  module: "SignalWire.DataMap"
+  visibility: "public"
+---
+# `Parameter(string, string, string, bool, List<string>?)`
+
+Add a parameter to this data-map tool — the <code class="paramref">description</code>
+is LLM-FACING.
+
+<p>Each parameter description is rendered into the OpenAI
+tool schema under <code>parameters.properties.&lt;name&gt;.description</code>
+and sent to the model. The model uses it to decide HOW to fill
+in the argument from user speech. It is prompt engineering, not
+developer FYI.</p>
+
+<p><b>Bad vs good:</b></p>
+<pre><code class="lang-csharp">BAD : .Parameter("city", "string", "the city")
+GOOD: .Parameter("city", "string",
+          "The name of the city to get weather for, e.g. "
+          + "'San Francisco'. Ask the user if they did not "
+          + "provide one. Include the state or country if the "
+          + "city name is ambiguous.")</code></pre>
+
+## Signature
+
+```dotnet
+public DataMap Parameter(string name, string type, string description, bool required = false, List<string>? enumValues = null)
+```
+
+## Parameters
+
+| Name          | Type           | Required | Default | Description |
+| ------------- | -------------- | -------- | ------- | ----------- |
+| `name`        | `string`       | yes      | —       | —           |
+| `type`        | `string`       | yes      | —       | —           |
+| `description` | `string`       | yes      | —       | —           |
+| `required`    | `bool`         | no       | `false` | —           |
+| `enumValues`  | `List<string>` | no       | `null`  | —           |
+
+## Returns
+
+`SignalWire.DataMap.DataMap`

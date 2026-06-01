@@ -1,0 +1,32 @@
+---
+slug: "/reference/python/signalwire/livewire/job-context/connect"
+title: "connect"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.livewire.JobContext.connect"
+  parent: "signalwire.livewire.JobContext"
+  module: "signalwire.livewire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py"
+---
+# `connect`
+
+Noop -- SignalWire agents connect automatically when the platform
+invokes the SWML endpoint.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async connect()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py)
+
+Line 661.

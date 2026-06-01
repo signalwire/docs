@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin/claude-skills-skill/get-hints"
+title: "GetHints"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills/builtin.ClaudeSkillsSkill.GetHints"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills/builtin.ClaudeSkillsSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/claude_skills.go"
+---
+# `GetHints`
+
+GetHints returns speech recognition hints derived from loaded skill names.
+
+## Signature
+
+```go
+func (*ClaudeSkillsSkill) GetHints() []string
+```
+
+## Returns
+
+`[]string`
+
+## Source
+
+[`pkg/skills/builtin/claude_skills.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/claude_skills.go)
+
+Line 728.

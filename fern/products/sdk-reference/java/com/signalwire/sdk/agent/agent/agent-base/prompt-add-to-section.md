@@ -1,0 +1,42 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/prompt-add-to-section"
+title: "promptAddToSection"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.promptAddToSection"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `promptAddToSection`
+
+## Signature
+
+```java
+public com.signalwire.sdk.agent.AgentBase promptAddToSection(
+    java.lang.String title,
+    java.util.List<java.lang.String> bullets
+)
+```
+
+## Parameters
+
+| Name      | Type                               | Required | Default | Description |
+| --------- | ---------------------------------- | -------- | ------- | ----------- |
+| `title`   | `java.lang.String`                 | yes      | —       | —           |
+| `bullets` | `java.util.List<java.lang.String>` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.agent.AgentBase`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 391.

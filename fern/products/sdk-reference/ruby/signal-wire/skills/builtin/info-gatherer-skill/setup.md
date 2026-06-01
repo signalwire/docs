@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/info-gatherer-skill/setup"
+title: "setup"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::InfoGathererSkill#setup"
+  parent: "SignalWire::Skills::Builtin::InfoGathererSkill"
+  module: "SignalWire.Skills.Builtin.InfoGathererSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/info_gatherer.rb"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```ruby
+def setup
+```
+
+## Source
+
+[`lib/signalwire/skills/builtin/info_gatherer.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/info_gatherer.rb)
+
+Line 14.

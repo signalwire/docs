@@ -1,0 +1,26 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/play-background-file"
+title: "play_background_file"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::play_background_file"
+  parent: "signalwire::skills::builtin"
+  module: "skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/play_background_file.rs"
+  visibility: "public"
+---
+# `play_background_file`
+
+## Classes
+
+- [`PlayBackgroundFile`](/reference/rust/signalwire/skills/builtin/play-background-file/play-background-file) — Control background file playback (DataMap-based).
+
+## Source
+
+[`src/skills/builtin/play_background_file.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/play_background_file.rs)
+
+Line 1.

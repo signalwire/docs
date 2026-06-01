@@ -1,0 +1,30 @@
+---
+slug: "/reference/rust/signalwire/relay/client/on-call-handler"
+title: "OnCallHandler"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "rust"
+  qualified_name: "signalwire::relay::client::OnCallHandler"
+  parent: "signalwire::relay::client"
+  module: "relay.client"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs"
+  visibility: "public"
+---
+# `OnCallHandler`
+
+Callback type for inbound call handler.
+
+## Signature
+
+```rust
+type OnCallHandler = ?<dyn ? + ? + ?>
+```
+
+## Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 33.

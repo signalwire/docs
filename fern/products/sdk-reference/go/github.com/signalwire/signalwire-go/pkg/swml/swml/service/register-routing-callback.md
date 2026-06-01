@@ -1,0 +1,36 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/register-routing-callback"
+title: "RegisterRoutingCallback"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.RegisterRoutingCallback"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `RegisterRoutingCallback`
+
+RegisterRoutingCallback registers a callback for a specific path.
+
+## Signature
+
+```go
+func (*Service) RegisterRoutingCallback(path string, cb RoutingCallback)
+```
+
+## Parameters
+
+| Name   | Type              | Required | Default | Description |
+| ------ | ----------------- | -------- | ------- | ----------- |
+| `path` | `string`          | yes      | —       | —           |
+| `cb`   | `RoutingCallback` | yes      | —       | —           |
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 986.

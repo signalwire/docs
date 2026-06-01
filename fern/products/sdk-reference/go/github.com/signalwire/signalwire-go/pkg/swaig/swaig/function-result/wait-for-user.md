@@ -1,0 +1,41 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/function-result/wait-for-user"
+title: "WaitForUser"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult.WaitForUser"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `WaitForUser`
+
+WaitForUser controls how the agent waits for user input. Pass nil for enabled/timeout to omit those fields. If answerFirst is true, the value is set to "answer\_first" regardless of other parameters.
+
+## Signature
+
+```go
+func (*FunctionResult) WaitForUser(enabled *bool, timeout *int, answerFirst bool) *FunctionResult
+```
+
+## Parameters
+
+| Name          | Type    | Required | Default | Description |
+| ------------- | ------- | -------- | ------- | ----------- |
+| `enabled`     | `*bool` | yes      | —       | —           |
+| `timeout`     | `*int`  | yes      | —       | —           |
+| `answerFirst` | `bool`  | yes      | —       | —           |
+
+## Returns
+
+`*FunctionResult`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 157.

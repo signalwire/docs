@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/relay/call/resolve-all-actions"
+title: "resolve_all_actions"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Call::resolve_all_actions"
+  parent: "signalwire::relay::Call"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp"
+  visibility: "public"
+---
+# `resolve_all_actions`
+
+## Signature
+
+```cpp
+void resolve_all_actions(const std::string & final_state = "finished")
+```
+
+## Parameters
+
+| Name          | Type                  | Required | Default      | Description |
+| ------------- | --------------------- | -------- | ------------ | ----------- |
+| `final_state` | `const std::string &` | no       | `"finished"` | —           |
+
+## Source
+
+[`include/signalwire/relay/call.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp)
+
+Line 115.

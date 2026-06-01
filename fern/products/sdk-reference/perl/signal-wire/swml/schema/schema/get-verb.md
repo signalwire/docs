@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/swml/schema/schema/get-verb"
+title: "get_verb"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWML::Schema::get_verb"
+  parent: "SignalWire::SWML::Schema"
+  module: "SignalWire.SWML.Schema"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Schema.pm"
+  visibility: "public"
+---
+# `get_verb`
+
+## Signature
+
+```perl
+sub get_verb($name)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `name` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/SWML/Schema.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Schema.pm)
+
+Line 83.

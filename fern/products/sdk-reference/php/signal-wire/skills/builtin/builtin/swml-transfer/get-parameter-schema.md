@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/swml-transfer/get-parameter-schema"
+title: "getParameterSchema"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\SwmlTransfer::getParameterSchema"
+  parent: "SignalWire\\Skills\\Builtin\\SwmlTransfer"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/SkillBase.php"
+  visibility: "public"
+---
+# `getParameterSchema`
+
+## Signature
+
+```php
+public function getParameterSchema(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Skills/SkillBase.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/SkillBase.php)
+
+Line 66.

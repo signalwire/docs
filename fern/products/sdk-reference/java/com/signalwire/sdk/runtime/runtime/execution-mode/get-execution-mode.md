@@ -1,0 +1,62 @@
+---
+slug: "/reference/java/com/signalwire/sdk/runtime/runtime/execution-mode/get-execution-mode"
+title: "getExecutionMode"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.runtime.ExecutionMode.getExecutionMode"
+  parent: "com.signalwire.sdk.runtime.ExecutionMode"
+  module: "com.signalwire.sdk.runtime.ExecutionMode"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/ExecutionMode.java"
+  visibility: "public"
+---
+# `getExecutionMode`
+
+Cross-language SDK contract: return the execution mode as the
+canonical lower-case-with-underscores string used by every port.
+
+Mirrors `signalwire.core.logging_config.get_execution_mode`
+in Python: one of `"cgi"`, `"lambda"`,
+`"google_cloud_function"`, `"azure_function"`, or
+`"server"`.
+
+**Modifiers:** `static`
+
+## Signature
+
+**Overload 1**
+
+```java
+public static java.lang.String getExecutionMode()
+```
+
+**Overload 2**
+
+```java
+public static java.lang.String getExecutionMode(
+    com.signalwire.sdk.runtime.EnvProvider env
+)
+```
+
+## Parameters (Overload 2)
+
+| Name  | Type                                     | Required | Default | Description                                         |
+| ----- | ---------------------------------------- | -------- | ------- | --------------------------------------------------- |
+| `env` | `com.signalwire.sdk.runtime.EnvProvider` | yes      | —       | environment variable source (injectable for tests). |
+
+## Returns (Overload 1)
+
+`java.lang.String` — canonical mode string detected from the process environment
+
+## Returns (Overload 2)
+
+`java.lang.String` — canonical mode string.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/runtime/ExecutionMode.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/ExecutionMode.java)
+
+Line 81.

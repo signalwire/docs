@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context/set-prompt"
+title: "setPrompt"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\Context::setPrompt"
+  parent: "SignalWire\\Contexts\\Context"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `setPrompt`
+
+## Signature
+
+```php
+public function setPrompt(string $prompt): SignalWire\Contexts\Context
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description |
+| -------- | -------- | -------- | ------- | ----------- |
+| `prompt` | `string` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire\Contexts\Context`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 693.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/registry/registry/delete-number"
+title: "delete_number"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Registry::delete_number"
+  parent: "SignalWire::REST::Namespaces::Registry"
+  module: "SignalWire.REST.Namespaces.Registry"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Registry.pm"
+  visibility: "public"
+---
+# `delete_number`
+
+## Signature
+
+```perl
+sub delete_number($number_id)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `number_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Registry.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Registry.pm)
+
+Line 85.

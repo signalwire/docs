@@ -1,0 +1,36 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/section/add-body"
+title: "addBody"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\Section::addBody"
+  parent: "SignalWire\\POM\\Section"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/Section.php"
+  visibility: "public"
+---
+# `addBody`
+
+Add or replace the body text for this section.
+
+## Signature
+
+```php
+public function addBody(string $body): void
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `body` | `string` | yes      | —       | —           |
+
+## Source
+
+[`/src/src/SignalWire/POM/Section.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/Section.php)
+
+Line 72.

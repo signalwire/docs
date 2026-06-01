@@ -1,0 +1,44 @@
+---
+slug: "/reference/typescript/skills/builtin/weather-api/weather-api-skill/get-agent"
+title: "getAgent"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.builtin.weather_api.WeatherApiSkill.getAgent"
+  parent: "skills.builtin.weather_api.WeatherApiSkill"
+  module: "skills.builtin.weather_api"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts"
+  visibility: "protected"
+---
+# `getAgent`
+
+Return the agent that owns this skill, asserting it is non-null.
+Equivalent to accessing `self.agent` in Python, where the agent reference
+is always set before `setup()` is called.
+
+The SkillManager lifecycle guarantees that `setAgent()` is called before
+`setup()`, so this method is safe to use inside `setup()` and in any
+tool handler invoked during an active agent session.
+
+## Signature
+
+```typescript
+getAgent(): AgentBase
+```
+
+## Returns
+
+`AgentBase` — The owning `AgentBase` instance.
+
+## Throws
+
+- If called before `setAgent()` (i.e., before the skill is attached to an agent by the SkillManager).
+
+## Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 261.

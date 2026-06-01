@@ -1,0 +1,33 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-registry/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillRegistry.<init>"
+  parent: "com.signalwire.sdk.skills.SkillRegistry"
+  module: "com.signalwire.sdk.skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillRegistry.java"
+  visibility: "public"
+---
+# `<init>`
+
+Public no-arg constructor so callers can manage their own
+external-paths list.
+
+The static registry is unaffected.
+
+## Signature
+
+```java
+public void <init>()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillRegistry.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillRegistry.java)
+
+Line 53.

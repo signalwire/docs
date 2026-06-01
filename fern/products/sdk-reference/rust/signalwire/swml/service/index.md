@@ -1,0 +1,33 @@
+---
+slug: "/reference/rust/signalwire/swml/service"
+title: "service"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::swml::service"
+  parent: "signalwire::swml"
+  module: "swml"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/swml/service.rs"
+  visibility: "public"
+---
+# `service`
+
+## Type Aliases
+
+- [`FunctionHandler`](/reference/rust/signalwire/swml/service/function-handler) — Handler type for SWAIG function callbacks.
+- [`OnSwmlRequestHook`](/reference/rust/signalwire/swml/service/on-swml-request-hook) — Hook function for SWML-request customization. Mirrors Python's `WebMixin.on_swml_request(request_data, callback_path)` — receives the parsed body and optional callback path, and returns a JSON `Value` of modifications to merge (or `None` to use default rendering).
+
+## Classes
+
+- [`Service`](/reference/rust/signalwire/swml/service/service) — SWML service: holds a document, auth credentials, and handles HTTP requests.
+- [`ServiceOptions`](/reference/rust/signalwire/swml/service/service-options) — Options for constructing a `Service`.
+- [`ToolDef`](/reference/rust/signalwire/swml/service/tool-def) — Tool registered on a `Service` for SWAIG dispatch. The `definition` field holds the rendered SWAIG function dict (function/purpose/argument); `handler` is `None` for raw / DataMap-style functions, where dispatch happens server-side rather than in this process.
+
+## Source
+
+[`src/swml/service.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swml/service.rs)
+
+Line 1.

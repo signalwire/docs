@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/rest/phone-call-handler/phone-call-handler/values"
+title: "values"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::PhoneCallHandler::values"
+  parent: "SignalWire::REST::PhoneCallHandler"
+  module: "SignalWire.REST.PhoneCallHandler"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/PhoneCallHandler.pm"
+  visibility: "public"
+---
+# `values`
+
+## Signature
+
+```perl
+sub values()
+```
+
+## Source
+
+[`lib/SignalWire/REST/PhoneCallHandler.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/PhoneCallHandler.pm)
+
+Line 69.

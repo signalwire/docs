@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/execute-verb"
+title: "ExecuteVerb"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.ExecuteVerb"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `ExecuteVerb`
+
+ExecuteVerb adds any SWML verb to the document, validated against the schema and any registered VerbHandler. This is the core method that all verb convenience methods delegate to. For most verbs, config should be a map\[string]any of verb parameters. For "sleep", config should be an integer (milliseconds).
+
+## Signature
+
+```go
+func (*Service) ExecuteVerb(verbName string, config any) error
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `verbName` | `string` | yes      | —       | —           |
+| `config`   | `any`    | yes      | —       | —           |
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 592.

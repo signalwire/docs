@@ -1,0 +1,33 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/service/run"
+title: "Run()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Service.Run()"
+  parent: "SignalWire.SWML.Service"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `Run()`
+
+Start a blocking HTTP server bound to <xref href="SignalWire.SWML.Service.Host" data-throw-if-not-resolved="false"></xref>:<xref href="SignalWire.SWML.Service.Port" data-throw-if-not-resolved="false"></xref>.
+Each incoming request is dispatched through <xref href="SignalWire.SWML.Service.HandleRequest(System.String%2cSystem.String%2cSystem.Collections.Generic.Dictionary%7bSystem.String%2cSystem.String%7d%2cSystem.String)" data-throw-if-not-resolved="false"></xref>;
+the response status / headers / body are written back to the client.
+
+Mirrors Python's SWMLService.run() — examples and the porting-sdk
+audit harness call this directly.
+
+Uses System.Net.HttpListener (BCL) — no extra deps. Server stops on
+Ctrl-C or when the process is killed.
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual void Run()
+```

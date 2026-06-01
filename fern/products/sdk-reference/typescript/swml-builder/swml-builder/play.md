@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/swml-builder/swml-builder/play"
+title: "play"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SwmlBuilder.SwmlBuilder.play"
+  parent: "SwmlBuilder.SwmlBuilder"
+  module: "SwmlBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SwmlVerbMethods.generated.ts"
+---
+# `play`
+
+Play file(s), ringtones, speech or silence.
+
+## Signature
+
+```typescript
+play(config?: PlayVerbConfig): this
+```
+
+## Parameters
+
+| Name     | Type             | Required | Default | Description |
+| -------- | ---------------- | -------- | ------- | ----------- |
+| `config` | `PlayVerbConfig` | no       | —       | —           |
+
+## Returns
+
+`this`
+
+## Source
+
+[`src/SwmlVerbMethods.generated.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SwmlVerbMethods.generated.ts)
+
+Line 90.

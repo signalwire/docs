@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/compat/compat/delete-token"
+title: "delete_token"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Compat::delete_token"
+  parent: "SignalWire::REST::Namespaces::Compat"
+  module: "SignalWire.REST.Namespaces.Compat"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Compat.pm"
+  visibility: "public"
+---
+# `delete_token`
+
+## Signature
+
+```perl
+sub delete_token($token_id)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `token_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Compat.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Compat.pm)
+
+Line 371.

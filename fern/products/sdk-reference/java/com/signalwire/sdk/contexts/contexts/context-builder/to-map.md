@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/context-builder/to-map"
+title: "toMap"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.ContextBuilder.toMap"
+  parent: "com.signalwire.sdk.contexts.ContextBuilder"
+  module: "com.signalwire.sdk.contexts.ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java"
+  visibility: "public"
+---
+# `toMap`
+
+Convert all contexts to a Map for SWML generation.
+
+Validates before converting.
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> toMap()
+```
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java)
+
+Line 310.

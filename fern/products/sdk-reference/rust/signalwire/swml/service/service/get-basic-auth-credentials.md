@@ -1,0 +1,35 @@
+---
+slug: "/reference/rust/signalwire/swml/service/service/get-basic-auth-credentials"
+title: "get_basic_auth_credentials"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::swml::service::Service::get_basic_auth_credentials"
+  parent: "signalwire::swml::service::Service"
+  module: "swml.service"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/swml/service.rs"
+  visibility: "public"
+---
+# `get_basic_auth_credentials`
+
+Get (user, password) — Python-canonical name.
+Python parity: `AuthMixin.get_basic_auth_credentials`.
+
+## Signature
+
+```rust
+fn get_basic_auth_credentials(&self) -> (?, ?)
+```
+
+## Returns
+
+`(?, ?)`
+
+## Source
+
+[`src/swml/service.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swml/service.rs)
+
+Line 335.

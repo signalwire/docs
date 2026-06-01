@@ -1,0 +1,57 @@
+---
+slug: "/reference/rust/signalwire/pom/section/section/add-subsection"
+title: "add_subsection"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::pom::section::Section::add_subsection"
+  parent: "signalwire::pom::section::Section"
+  module: "pom.section"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/pom/section.rs"
+  visibility: "public"
+---
+# `add_subsection`
+
+Add a subsection. Mirrors Python's `Section.add_subsection`
+— the title is required (Python raises `ValueError` when
+`title is None`); we encode the same constraint by accepting
+`String` (not `Option<String>`).
+
+Returns a mutable reference to the freshly-appended
+subsection so the caller can keep configuring it. (Python
+returns the `Section` object directly; Rust's borrow checker
+makes a `&mut` reference the equivalent shape.)
+
+## Signature
+
+```rust
+fn add_subsection<impl Into<String>: ?<?>>(
+    &mut self,
+    title: impl ?<?>
+) -> &mut ?
+```
+
+## Type Parameters
+
+| Name                | Type   | Required | Default | Description |
+| ------------------- | ------ | -------- | ------- | ----------- |
+| `impl Into<String>` | `?<?>` | yes      | —       | —           |
+
+## Parameters
+
+| Name    | Type        | Required | Default | Description |
+| ------- | ----------- | -------- | ------- | ----------- |
+| `title` | `impl ?<?>` | yes      | —       | —           |
+
+## Returns
+
+`&mut ?`
+
+## Source
+
+[`src/pom/section.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/pom/section.rs)
+
+Line 98.

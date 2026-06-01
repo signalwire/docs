@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/agent/on-user-turn-completed"
+title: "OnUserTurnCompleted"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.Agent.OnUserTurnCompleted"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.Agent"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `OnUserTurnCompleted`
+
+OnUserTurnCompleted registers a callback invoked when the user finishes speaking. The two arguments mirror Python's turn\_ctx and new\_message parameters (line 354), typed as any to avoid a LiveKit dependency. Returns the Agent for method chaining.
+
+## Signature
+
+```go
+func (*Agent) OnUserTurnCompleted(fn func(turnCtx any, newMessage any)) *Agent
+```
+
+## Parameters
+
+| Name | Type                                | Required | Default | Description |
+| ---- | ----------------------------------- | -------- | ------- | ----------- |
+| `fn` | `func(turnCtx any, newMessage any)` | yes      | —       | —           |
+
+## Returns
+
+`*Agent`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 273.

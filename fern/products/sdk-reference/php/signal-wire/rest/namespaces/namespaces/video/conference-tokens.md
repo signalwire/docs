@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/video/conference-tokens"
+title: "conferenceTokens"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Video::conferenceTokens"
+  parent: "SignalWire\\REST\\Namespaces\\Video"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Video.php"
+  visibility: "public"
+---
+# `conferenceTokens`
+
+## Signature
+
+```php
+public function conferenceTokens(): SignalWire\REST\Namespaces\VideoConferenceTokens
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\VideoConferenceTokens`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Video.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Video.php)
+
+Line 72.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/mfa"
+title: "mfa"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::mfa"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `mfa`
+
+Multi-factor authentication (sms / call / verify).
+
+## Signature
+
+```php
+public function mfa(): SignalWire\REST\Namespaces\Mfa
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\Mfa`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 281.

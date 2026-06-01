@@ -1,0 +1,43 @@
+---
+slug: "/reference/cpp/signalwire/swml/service/validate-auth"
+title: "validate_auth"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swml::Service::validate_auth"
+  parent: "signalwire::swml::Service"
+  module: "signalwire.swml"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp"
+  visibility: "protected"
+---
+# `validate_auth`
+
+Validate basic auth from a request; returns true if valid.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+bool validate_auth(const httplib::Request & req, httplib::Response & res) const
+```
+
+## Parameters
+
+| Name  | Type                       | Required | Default | Description |
+| ----- | -------------------------- | -------- | ------- | ----------- |
+| `req` | `const httplib::Request &` | yes      | —       | —           |
+| `res` | `httplib::Response &`      | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`include/signalwire/swml/service.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp)
+
+Line 278.

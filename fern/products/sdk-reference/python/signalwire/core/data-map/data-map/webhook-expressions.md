@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/data-map/data-map/webhook-expressions"
+title: "webhook_expressions"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.data_map.DataMap.webhook_expressions"
+  parent: "signalwire.core.data_map.DataMap"
+  module: "signalwire.core.data_map"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/data_map.py"
+---
+# `webhook_expressions`
+
+Add expressions that run after the most recent webhook completes
+
+## Signature
+
+```python
+webhook_expressions(expressions: List[Dict[str, Any]]) -> DataMap
+```
+
+## Parameters
+
+| Name          | Type                   | Required | Default | Description                                          |
+| ------------- | ---------------------- | -------- | ------- | ---------------------------------------------------- |
+| `expressions` | `List[Dict[str, Any]]` | yes      | —       | List of expression definitions to check post-webhook |
+
+## Returns
+
+`DataMap` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/data_map.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/data_map.py)
+
+Line 239.

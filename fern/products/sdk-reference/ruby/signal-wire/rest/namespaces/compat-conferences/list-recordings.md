@@ -1,0 +1,37 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/compat-conferences/list-recordings"
+title: "list_recordings"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::CompatConferences#list_recordings"
+  parent: "SignalWire::REST::Namespaces::CompatConferences"
+  module: "SignalWire.REST.Namespaces.CompatConferences"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/compat.rb"
+  visibility: "public"
+---
+# `list_recordings`
+
+Conference recordings
+
+## Signature
+
+```ruby
+def list_recordings(conference_sid, **params)
+```
+
+## Parameters
+
+| Name             | Type | Required | Default | Description |
+| ---------------- | ---- | -------- | ------- | ----------- |
+| `conference_sid` | —    | yes      | —       | —           |
+| `...params`      | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/compat.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/compat.rb)
+
+Line 99.

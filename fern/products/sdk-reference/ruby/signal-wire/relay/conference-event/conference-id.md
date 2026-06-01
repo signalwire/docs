@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/relay/conference-event/conference-id"
+title: "conference_id"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::ConferenceEvent#conference_id"
+  parent: "SignalWire::Relay::ConferenceEvent"
+  module: "SignalWire.Relay.ConferenceEvent"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb"
+  visibility: "public"
+---
+# `conference_id`
+
+Returns the value of attribute conference\_id.
+
+## Signature
+
+```ruby
+attr_reader conference_id -> Object
+```
+
+## Source
+
+[`lib/signalwire/relay/relay_event.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb)
+
+Line 508.

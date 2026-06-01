@@ -1,0 +1,39 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/message/handle-event"
+title: "handleEvent"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Message::handleEvent"
+  parent: "SignalWire\\Relay\\Message"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php"
+  visibility: "public"
+---
+# `handleEvent`
+
+Alias for `dispatchEvent` so the Client's event router (which
+
+calls `handleEvent` for symmetry with Action) doesn't need a
+special case. Both names route the same way.
+
+## Signature
+
+```php
+public function handleEvent(SignalWire\Relay\Event $event): void
+```
+
+## Parameters
+
+| Name    | Type                     | Required | Default | Description |
+| ------- | ------------------------ | -------- | ------- | ----------- |
+| `event` | `SignalWire\Relay\Event` | yes      | —       | —           |
+
+## Source
+
+[`/src/src/SignalWire/Relay/Message.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Message.php)
+
+Line 112.

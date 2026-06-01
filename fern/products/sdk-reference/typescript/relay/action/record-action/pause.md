@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/relay/action/record-action/pause"
+title: "pause"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "relay.Action.RecordAction.pause"
+  parent: "relay.Action.RecordAction"
+  module: "relay.Action"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Action.ts"
+---
+# `pause`
+
+Pause the recording (resumable with [resume](/reference/typescript/relay/action/record-action/resume)).
+
+## Signature
+
+```typescript
+pause(behavior?: string): Promise<Record<string, unknown>>
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description                                                                                       |
+| ---------- | -------- | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `behavior` | `string` | no       | —       | Optional behaviour hint (e.g. `"silence"`) controlling what is recorded in place of paused audio. |
+
+## Returns
+
+`Promise<Record<string, unknown>>` — The platform's pause response.
+
+## Throws
+
+- When the pause command is rejected.
+
+## Source
+
+[`src/relay/Action.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Action.ts)
+
+Line 229.

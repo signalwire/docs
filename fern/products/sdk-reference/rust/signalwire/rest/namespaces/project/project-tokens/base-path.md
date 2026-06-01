@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/project/project-tokens/base-path"
+title: "base_path"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::project::ProjectTokens::base_path"
+  parent: "signalwire::rest::namespaces::project::ProjectTokens"
+  module: "rest.namespaces.project"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/project.rs"
+  visibility: "public"
+---
+# `base_path`
+
+## Signature
+
+```rust
+fn base_path(&self) -> &str
+```
+
+## Returns
+
+`&str`
+
+## Source
+
+[`src/rest/namespaces/project.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/project.rs)
+
+Line 40.

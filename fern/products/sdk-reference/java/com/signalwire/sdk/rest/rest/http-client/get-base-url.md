@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/rest/http-client/get-base-url"
+title: "getBaseUrl"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.HttpClient.getBaseUrl"
+  parent: "com.signalwire.sdk.rest.HttpClient"
+  module: "com.signalwire.sdk.rest.HttpClient"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/HttpClient.java"
+  visibility: "public"
+---
+# `getBaseUrl`
+
+Get the base URL.
+
+## Signature
+
+```java
+public java.lang.String getBaseUrl()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/HttpClient.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/HttpClient.java)
+
+Line 155.

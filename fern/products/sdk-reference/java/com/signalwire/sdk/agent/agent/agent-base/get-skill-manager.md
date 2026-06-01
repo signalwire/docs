@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/get-skill-manager"
+title: "getSkillManager"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.getSkillManager"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `getSkillManager`
+
+## Signature
+
+```java
+public com.signalwire.sdk.skills.SkillManager getSkillManager()
+```
+
+## Returns
+
+`com.signalwire.sdk.skills.SkillManager`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 1496.

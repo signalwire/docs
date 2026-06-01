@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/skills/api-ninjas-trivia-skill/register-tools"
+title: "register_tools"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::ApiNinjasTriviaSkill::register_tools"
+  parent: "signalwire::skills::ApiNinjasTriviaSkill"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/src/skills/builtin/api_ninjas_trivia.cpp"
+  visibility: "public"
+---
+# `register_tools`
+
+Register tools with the agent. Returns tool definitions.
+
+**Modifiers:** `inline` `virtual`
+
+## Signature
+
+```cpp
+std::vector< swaig::ToolDefinition > register_tools()
+```
+
+## Returns
+
+`std::vector< swaig::ToolDefinition >`
+
+## Source
+
+[`src/skills/builtin/api_ninjas_trivia.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/skills/builtin/api_ninjas_trivia.cpp)
+
+Line 23.

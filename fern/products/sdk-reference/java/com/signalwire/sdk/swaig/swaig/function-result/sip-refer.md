@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/sip-refer"
+title: "sipRefer"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.sipRefer"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `sipRefer`
+
+Send SIP REFER.
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult sipRefer(java.lang.String toUri)
+```
+
+## Parameters
+
+| Name    | Type               | Required | Default | Description |
+| ------- | ------------------ | -------- | ------- | ----------- |
+| `toUri` | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 425.

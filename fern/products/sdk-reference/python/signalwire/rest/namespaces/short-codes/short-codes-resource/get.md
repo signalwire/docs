@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/short-codes/short-codes-resource/get"
+title: "get"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.short_codes.ShortCodesResource.get"
+  parent: "signalwire.rest.namespaces.short_codes.ShortCodesResource"
+  module: "signalwire.rest.namespaces.short_codes"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/short_codes.py"
+---
+# `get`
+
+## Signature
+
+```python
+get(short_code_id)
+```
+
+## Parameters
+
+| Name            | Type | Required | Default | Description |
+| --------------- | ---- | -------- | ------- | ----------- |
+| `short_code_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/short_codes.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/short_codes.py)
+
+Line 26.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/relay/normalize/normalize-play-item"
+title: "normalizePlayItem"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "relay.normalize.normalizePlayItem"
+  parent: "relay.normalize"
+  module: "relay.normalize"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/normalize.ts"
+---
+# `normalizePlayItem`
+
+Normalize a single play item (tts/audio/silence/ringtone).
+
+## Signature
+
+```typescript
+normalizePlayItem(item: Record<string, unknown>): Record<string, unknown>
+```
+
+## Parameters
+
+| Name   | Type                      | Required | Default | Description |
+| ------ | ------------------------- | -------- | ------- | ----------- |
+| `item` | `Record<string, unknown>` | yes      | —       | —           |
+
+## Returns
+
+`Record<string, unknown>`
+
+## Source
+
+[`src/relay/normalize.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/normalize.ts)
+
+Line 17.

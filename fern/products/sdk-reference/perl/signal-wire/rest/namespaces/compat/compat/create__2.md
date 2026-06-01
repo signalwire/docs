@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/compat/compat/create__2"
+title: "create"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Compat::create"
+  parent: "SignalWire::REST::Namespaces::Compat"
+  module: "SignalWire.REST.Namespaces.Compat"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Compat.pm"
+  visibility: "public"
+---
+# `create`
+
+## Signature
+
+```perl
+sub create(%kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Compat.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Compat.pm)
+
+Line 361.

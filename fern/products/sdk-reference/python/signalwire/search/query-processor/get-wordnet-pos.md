@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/search/query-processor/get-wordnet-pos"
+title: "get_wordnet_pos"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.search.query_processor.get_wordnet_pos"
+  parent: "signalwire.search.query_processor"
+  module: "signalwire.search.query_processor"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/query_processor.py"
+---
+# `get_wordnet_pos`
+
+Map spaCy POS tags to WordNet POS tags.
+
+## Signature
+
+```python
+get_wordnet_pos(spacy_pos)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `spacy_pos` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/search/query_processor.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/query_processor.py)
+
+Line 232.

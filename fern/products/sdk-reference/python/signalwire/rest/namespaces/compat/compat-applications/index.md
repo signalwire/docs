@@ -1,0 +1,37 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/compat/compat-applications"
+title: "CompatApplications"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.compat.CompatApplications"
+  parent: "signalwire.rest.namespaces.compat"
+  module: "signalwire.rest.namespaces.compat"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py"
+---
+# `CompatApplications`
+
+Compat application management.
+
+## Signature
+
+```python
+class CompatApplications(CrudResource)
+```
+
+## Inheritance
+
+**Extends:** `CrudResource`
+
+## Methods
+
+- [`update`](/reference/python/signalwire/rest/namespaces/compat/compat-applications/update)
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/compat.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py)
+
+Line 184.

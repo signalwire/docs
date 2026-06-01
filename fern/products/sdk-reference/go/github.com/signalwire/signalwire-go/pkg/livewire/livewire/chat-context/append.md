@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/chat-context/append"
+title: "Append"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.ChatContext.Append"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.ChatContext"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `Append`
+
+Append adds a role/content message to the context and returns the receiver for method chaining. If role is empty it defaults to "user"; if content is empty it defaults to "" (empty string), matching the Python defaults role="user", text="".
+
+## Signature
+
+```go
+func (*ChatContext) Append(role string, content string) *ChatContext
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description |
+| --------- | -------- | -------- | ------- | ----------- |
+| `role`    | `string` | yes      | —       | —           |
+| `content` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*ChatContext`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 929.

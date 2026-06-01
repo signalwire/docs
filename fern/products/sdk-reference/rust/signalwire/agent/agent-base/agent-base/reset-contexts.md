@@ -1,0 +1,37 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/reset-contexts"
+title: "reset_contexts"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::reset_contexts"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `reset_contexts`
+
+Remove all contexts, returning the agent to a no-contexts state.
+This is a convenience wrapper around `define_contexts().reset()`.
+Use it in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request.
+
+## Signature
+
+```rust
+fn reset_contexts(&mut self) -> &mut Self
+```
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 963.

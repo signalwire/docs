@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/pom/section/to-json"
+title: "to_json"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::pom::Section::to_json"
+  parent: "signalwire::pom::Section"
+  module: "signalwire.pom"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/pom/pom.hpp"
+  visibility: "public"
+---
+# `to_json`
+
+Convert the section (and its subtree) to a JSON object. Matches the Python key order: title, body, bullets, subsections, numbered, numberedBullets.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+json to_json() const
+```
+
+## Returns
+
+`json`
+
+## Source
+
+[`include/signalwire/pom/pom.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/pom/pom.hpp)
+
+Line 108.

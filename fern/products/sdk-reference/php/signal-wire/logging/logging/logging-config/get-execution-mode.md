@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/logging/logging/logging-config/get-execution-mode"
+title: "getExecutionMode"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Logging\\LoggingConfig::getExecutionMode"
+  parent: "SignalWire\\Logging\\LoggingConfig"
+  module: "SignalWire.Logging"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Logging/LoggingConfig.php"
+  visibility: "public"
+---
+# `getExecutionMode`
+
+Detect the SDK's deployment environment based on well-known
+
+environment variables.
+
+**Modifiers:** `static`
+
+## Signature
+
+```php
+public static function getExecutionMode(): string
+```
+
+## Returns
+
+`string` — One of 'cgi', 'lambda', 'google\_cloud\_function', 'azure\_function', or 'server'.
+
+## Source
+
+[`/src/src/SignalWire/Logging/LoggingConfig.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Logging/LoggingConfig.php)
+
+Line 43.

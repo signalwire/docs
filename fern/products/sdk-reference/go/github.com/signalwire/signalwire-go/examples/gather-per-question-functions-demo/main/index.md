@@ -1,0 +1,34 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/gather-per-question-functions-demo/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/gather_per_question_functions_demo"
+  module: "github.com.signalwire.signalwire-go.examples.gather_per_question_functions_demo"
+---
+# `main`
+
+Example: gather\_per\_question\_functions\_demo
+
+This example exists to teach one specific gotcha: while a step's gather\_info is asking questions, ALL of the step's other functions are forcibly deactivated. The only callable tools during a gather question are:
+
+- `gather_submit` (the native answer-submission tool, always active)
+- Whatever names you list in that question's WithFunctions option
+
+next\_step and change\_context are also filtered out — the model literally cannot navigate away until the gather completes. This is by design: it forces a tight ask → submit → next-question loop.
+
+If a question needs to call out to a tool — for example, to validate an email format, geocode a ZIP, or look up something from an external service — you must list that tool name with WithFunctions on that question. The function is active ONLY for that question.
+
+Below: a customer-onboarding gather flow where each question unlocks a different validation tool, and where the step's own non-gather tools (escalate\_to\_human, lookup\_existing\_account) are LOCKED OUT during gather because they aren't whitelisted on any question.
+
+Run this file to see the resulting SWML.
+
+## Signature
+
+```go
+package main
+```

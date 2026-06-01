@@ -1,0 +1,38 @@
+---
+slug: "/reference/python/signalwire/livewire/agent/on-user-turn-completed"
+title: "on_user_turn_completed"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.livewire.Agent.on_user_turn_completed"
+  parent: "signalwire.livewire.Agent"
+  module: "signalwire.livewire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py"
+---
+# `on_user_turn_completed`
+
+Called when the user finishes speaking.  Override in subclass.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async on_user_turn_completed(turn_ctx = None, new_message = None)
+```
+
+## Parameters
+
+| Name          | Type | Required | Default | Description |
+| ------------- | ---- | -------- | ------- | ----------- |
+| `turn_ctx`    | —    | no       | `None`  | —           |
+| `new_message` | —    | no       | `None`  | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py)
+
+Line 354.

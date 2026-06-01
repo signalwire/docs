@@ -1,0 +1,41 @@
+---
+slug: "/reference/typescript/type-inference/parse-function-params"
+title: "parseFunctionParams"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "TypeInference.parseFunctionParams"
+  parent: "TypeInference"
+  module: "TypeInference"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/TypeInference.ts"
+---
+# `parseFunctionParams`
+
+Parse function parameter names and default values from source code.
+
+Handles arrow functions, regular functions, and method shorthand.
+
+## Signature
+
+```typescript
+parseFunctionParams(source: string): ParsedParam[]
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description                                               |
+| -------- | -------- | -------- | ------- | --------------------------------------------------------- |
+| `source` | `string` | yes      | —       | The function source text, typically from `fn.toString()`. |
+
+## Returns
+
+`ParsedParam[]` — An array of `{ name, defaultValue? }` records in declaration order. Returns an empty array if no parameter list is present.
+
+## Source
+
+[`src/TypeInference.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/TypeInference.ts)
+
+Line 38.

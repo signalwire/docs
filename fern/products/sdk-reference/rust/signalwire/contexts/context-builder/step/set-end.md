@@ -1,0 +1,51 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/step/set-end"
+title: "set_end"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::Step::set_end"
+  parent: "signalwire::contexts::context_builder::Step"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `set_end`
+
+Mark this step as terminal for the step flow.
+
+**IMPORTANT**: `end = true` does NOT end the conversation or
+hang up the call. It exits step mode entirely after this step
+executes — clearing the steps list, current step index,
+valid\_steps, and valid\_contexts. The agent keeps running, but
+operates only under the base system prompt and the context-level
+prompt; no more step instructions are injected and no more
+`next_step` tool is offered.
+
+To actually end the call, call a hangup tool or define a
+hangup hook.
+
+## Signature
+
+```rust
+fn set_end(&mut self, end: bool) -> &mut Self
+```
+
+## Parameters
+
+| Name  | Type   | Required | Default | Description |
+| ----- | ------ | -------- | ------- | ----------- |
+| `end` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 276.

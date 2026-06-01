@@ -1,0 +1,36 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/document/clear-section"
+title: "clearSection"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Document::clearSection"
+  parent: "SignalWire\\SWML\\Document"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php"
+  visibility: "public"
+---
+# `clearSection`
+
+Clear all verbs in a section.
+
+## Signature
+
+```php
+public function clearSection(string $section): void
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description |
+| --------- | -------- | -------- | ------- | ----------- |
+| `section` | `string` | yes      | —       | —           |
+
+## Source
+
+[`/src/src/SignalWire/SWML/Document.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php)
+
+Line 84.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-manager"
+title: "SkillManager"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillManager"
+  parent: "signalwire::skills"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp"
+  visibility: "public"
+---
+# `SkillManager`
+
+Manages skill lifecycle: creation, setup, registration with agents.
+
+## Signature
+
+```cpp
+class signalwire::skills::SkillManager
+```
+
+## Methods
+
+- [`cleanup_all`](/reference/cpp/signalwire/skills/skill-manager/cleanup-all) — Cleanup all skills.
+- [`is_loaded`](/reference/cpp/signalwire/skills/skill-manager/is-loaded) — Check if a skill is loaded.
+- [`list_loaded`](/reference/cpp/signalwire/skills/skill-manager/list-loaded) — List loaded skills.
+- [`load_skill`](/reference/cpp/signalwire/skills/skill-manager/load-skill) — Load a skill by name with params and register it with the agent.
+- [`SkillManager`](/reference/cpp/signalwire/skills/skill-manager/skill-manager)
+- [`unload_skill`](/reference/cpp/signalwire/skills/skill-manager/unload-skill) — Unload a skill.
+
+## Source
+
+[`include/signalwire/skills/skill_manager.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp)
+
+Line 22.

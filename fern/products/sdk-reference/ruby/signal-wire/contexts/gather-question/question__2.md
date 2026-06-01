@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/gather-question/question__2"
+title: "question="
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::GatherQuestion#question="
+  parent: "SignalWire::Contexts::GatherQuestion"
+  module: "SignalWire.Contexts.GatherQuestion"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `question=`
+
+Sets the attribute question
+
+## Signature
+
+```ruby
+attr_accessor question= <-> Object
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description                                 |
+| ------- | ---- | -------- | ------- | ------------------------------------------- |
+| `value` | —    | yes      | —       | the value to set the attribute question to. |
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 29.

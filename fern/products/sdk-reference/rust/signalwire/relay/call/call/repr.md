@@ -1,0 +1,36 @@
+---
+slug: "/reference/rust/signalwire/relay/call/call/repr"
+title: "repr"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::relay::call::Call::repr"
+  parent: "signalwire::relay::call::Call"
+  module: "relay.call"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/call.rs"
+  visibility: "public"
+---
+# `repr`
+
+Python-style `__repr__` (mirrors `Call.__repr__` in the
+signalwire-python reference). Returns a string of the form
+`Call(call_id=..., state=...)`.
+
+## Signature
+
+```rust
+fn repr(&self) -> ?
+```
+
+## Returns
+
+`?`
+
+## Source
+
+[`src/relay/call.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/call.rs)
+
+Line 95.

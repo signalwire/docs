@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/core/agent-base/agent-base/auto-map-sip-usernames"
+title: "auto_map_sip_usernames"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent_base.AgentBase.auto_map_sip_usernames"
+  parent: "signalwire.core.agent_base.AgentBase"
+  module: "signalwire.core.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent_base.py"
+---
+# `auto_map_sip_usernames`
+
+Automatically register common SIP usernames based on this agent's
+name and route
+
+## Signature
+
+```python
+auto_map_sip_usernames() -> AgentBase
+```
+
+## Returns
+
+`AgentBase` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent_base.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent_base.py)
+
+Line 700.

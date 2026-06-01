@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/joke/joke/setup"
+title: "setup"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::joke::Joke::setup"
+  parent: "signalwire::skills::builtin::joke::Joke"
+  module: "skills.builtin.joke"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/joke.rs"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```rust
+fn setup(&mut self) -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`src/skills/builtin/joke.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/joke.rs)
+
+Line 32.

@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-base/get-version"
+title: "getVersion"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillBase.getVersion"
+  parent: "com.signalwire.sdk.skills.SkillBase"
+  module: "com.signalwire.sdk.skills.SkillBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillBase.java"
+  visibility: "public"
+---
+# `getVersion`
+
+Semantic version string.
+
+**Modifiers:** `default`
+
+## Signature
+
+```java
+public default java.lang.String getVersion()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillBase.java)
+
+Line 20.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/logging/logging/logger/reset"
+title: "reset"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Logging\\Logger::reset"
+  parent: "SignalWire\\Logging\\Logger"
+  module: "SignalWire.Logging"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Logging/Logger.php"
+  visibility: "public"
+---
+# `reset`
+
+Reset all logger instances (for testing).
+
+**Modifiers:** `static`
+
+## Signature
+
+```php
+public static function reset(): void
+```
+
+## Source
+
+[`/src/src/SignalWire/Logging/Logger.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Logging/Logger.php)
+
+Line 46.

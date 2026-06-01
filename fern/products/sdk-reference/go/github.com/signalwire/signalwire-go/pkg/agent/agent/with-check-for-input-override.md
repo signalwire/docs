@@ -1,0 +1,41 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/with-check-for-input-override"
+title: "WithCheckForInputOverride"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.WithCheckForInputOverride"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `WithCheckForInputOverride`
+
+WithCheckForInputOverride enables the /check\_for\_input endpoint, which allows external systems to inject input into an active AI session.
+
+Python equivalent: check\_for\_input\_override parameter in AgentBase.**init**
+
+## Signature
+
+```go
+func WithCheckForInputOverride(enable bool) AgentOption
+```
+
+## Parameters
+
+| Name     | Type   | Required | Default | Description |
+| -------- | ------ | -------- | ------- | ----------- |
+| `enable` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`AgentOption`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 262.

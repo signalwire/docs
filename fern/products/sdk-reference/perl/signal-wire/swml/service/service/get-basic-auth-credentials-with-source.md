@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/swml/service/service/get-basic-auth-credentials-with-source"
+title: "get_basic_auth_credentials_with_source"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWML::Service::get_basic_auth_credentials_with_source"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Service.pm"
+  visibility: "public"
+---
+# `get_basic_auth_credentials_with_source`
+
+## Signature
+
+```perl
+sub get_basic_auth_credentials_with_source()
+```
+
+## Source
+
+[`lib/SignalWire/SWML/Service.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Service.pm)
+
+Line 219.

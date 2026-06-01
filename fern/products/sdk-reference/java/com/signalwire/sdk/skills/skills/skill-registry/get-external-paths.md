@@ -1,0 +1,39 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-registry/get-external-paths"
+title: "getExternalPaths"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillRegistry.getExternalPaths"
+  parent: "com.signalwire.sdk.skills.SkillRegistry"
+  module: "com.signalwire.sdk.skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillRegistry.java"
+  visibility: "public"
+---
+# `getExternalPaths`
+
+Returns an immutable copy of the registered external skill
+directories.
+
+Parity surface for Python's `_external_paths`.
+
+**Modifiers:** `synchronized`
+
+## Signature
+
+```java
+public synchronized java.util.List<java.lang.String> getExternalPaths()
+```
+
+## Returns
+
+`java.util.List<java.lang.String>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillRegistry.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillRegistry.java)
+
+Line 129.

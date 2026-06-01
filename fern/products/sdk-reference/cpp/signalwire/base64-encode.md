@@ -1,0 +1,39 @@
+---
+slug: "/reference/cpp/signalwire/base64-encode"
+title: "base64_encode"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "cpp"
+  qualified_name: "signalwire::base64_encode"
+  parent: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/common.hpp"
+  visibility: "public"
+---
+# `base64_encode`
+
+**Modifiers:** `inline`
+
+## Signature
+
+```cpp
+std::string base64_encode(const std::string & input)
+```
+
+## Parameters
+
+| Name    | Type                  | Required | Default | Description |
+| ------- | --------------------- | -------- | ------- | ----------- |
+| `input` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`std::string`
+
+## Source
+
+[`include/signalwire/common.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/common.hpp)
+
+Line 97.

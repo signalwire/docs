@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/rest/rest-client/phone-numbers-namespace/relay-topic-options"
+title: "RelayTopicOptions"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "cpp"
+  qualified_name: "signalwire::rest::RestClient::PhoneNumbersNamespace::RelayTopicOptions"
+  parent: "signalwire::rest::RestClient::PhoneNumbersNamespace"
+  module: "signalwire.rest.RestClient.PhoneNumbersNamespace"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/rest_client.hpp"
+  visibility: "public"
+---
+# `RelayTopicOptions`
+
+Options for binding a phone number to a RELAY topic.
+
+## Signature
+
+```cpp
+struct signalwire::rest::RestClient::PhoneNumbersNamespace::RelayTopicOptions
+```
+
+## Properties
+
+| Name                  | Type                                               | Required | Default | Description |
+| --------------------- | -------------------------------------------------- | -------- | ------- | ----------- |
+| `status_callback_url` | `std::optional< std::string > status_callback_url` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/rest/rest_client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/rest_client.hpp)
+
+Line 486.

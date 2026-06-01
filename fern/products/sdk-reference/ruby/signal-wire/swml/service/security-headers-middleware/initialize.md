@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/security-headers-middleware/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service::SecurityHeadersMiddleware#initialize"
+  parent: "SignalWire::SWML::Service::SecurityHeadersMiddleware"
+  module: "SignalWire.SWML.Service.SecurityHeadersMiddleware"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `initialize`
+
+## Signature
+
+```ruby
+def initialize(app)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `app` | —    | yes      | —       | —           |
+
+## Returns
+
+`SecurityHeadersMiddleware` — a new instance of SecurityHeadersMiddleware
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 588.

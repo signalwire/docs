@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/client/subscribe-contexts"
+title: "SubscribeContexts"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Client.SubscribeContexts"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Client"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go"
+---
+# `SubscribeContexts`
+
+SubscribeContexts subscribes to whatever contexts were configured via WithContexts. No-op when the contexts slice is empty. Used by the mock-relay test helper which drives connect/auth/read-loop manually.
+
+## Signature
+
+```go
+func (*Client) SubscribeContexts() error
+```
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/relay/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go)
+
+Line 289.

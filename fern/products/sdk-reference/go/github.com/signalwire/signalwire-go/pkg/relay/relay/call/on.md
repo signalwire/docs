@@ -1,0 +1,36 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/call/on"
+title: "On"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Call.On"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Call"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go"
+---
+# `On`
+
+On registers a handler for a specific event type on this call.
+
+## Signature
+
+```go
+func (*Call) On(eventType string, handler func(*RelayEvent))
+```
+
+## Parameters
+
+| Name        | Type                | Required | Default | Description |
+| ----------- | ------------------- | -------- | ------- | ----------- |
+| `eventType` | `string`            | yes      | —       | —           |
+| `handler`   | `func(*RelayEvent)` | yes      | —       | —           |
+
+## Source
+
+[`pkg/relay/call.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go)
+
+Line 110.

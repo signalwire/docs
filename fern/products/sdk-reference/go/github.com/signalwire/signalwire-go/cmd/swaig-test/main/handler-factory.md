@@ -1,0 +1,31 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/cmd/swaig-test/main/handler-factory"
+title: "HandlerFactory"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/cmd/swaig-test.HandlerFactory"
+  parent: "github.com/signalwire/signalwire-go/cmd/swaig-test"
+  module: "github.com.signalwire.signalwire-go.cmd.swaig-test"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/cmd/swaig-test/simulate.go"
+---
+# `HandlerFactory`
+
+HandlerFactory is a zero-arg function that constructs the http.Handler under test. The factory is called AFTER the simulator has activated the platform env vars, so any env-var-driven state the agent captures at construction (notably SWML\_PROXY\_URL\_BASE, which pkg/swml.Service reads in its constructor) reflects the simulated environment rather than the outer shell.
+
+This mirrors the Python SDK's mock\_env.py flow: env vars are set first, then the agent module is imported/loaded, then invocations run against that freshly-loaded agent.
+
+## Signature
+
+```go
+type HandlerFactory alias
+```
+
+## Source
+
+[`cmd/swaig-test/simulate.go`](https://github.com/signalwire/signalwire-go/blob/main/cmd/swaig-test/simulate.go)
+
+Line 376.

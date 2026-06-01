@@ -1,0 +1,59 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context/set-isolated"
+title: "set_isolated"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Context.set_isolated"
+  parent: "signalwire.core.contexts.Context"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `set_isolated`
+
+Mark this context as isolated — entering it wipes conversation history.
+
+When `isolated=True` and the context is entered via change\_context,
+the runtime calls ai\_conversation\_restart() and the entire conversation
+array is wiped. The model starts fresh with only the new context's
+system\_prompt + step instructions, with no memory of prior turns.
+
+EXCEPTION — `reset` overrides the wipe:
+If the context also has a `reset` configuration (set via the
+Step.set\_reset\_\*() methods on a step that switches into this
+context, or via set\_consolidate() / set\_full\_reset() on the
+context itself), the wipe is skipped in favor of the reset
+behavior. Use `reset` with `consolidate=True` to summarize prior
+history into a single message instead of dropping it entirely.
+
+> \[!NOTE]
+>
+> - Switching to a sensitive billing flow that should not see
+>   prior small-talk
+> - Handing off to a different agent persona
+> - Resetting after a long off-topic detour
+
+## Signature
+
+```python
+set_isolated(isolated: bool) -> Context
+```
+
+## Parameters
+
+| Name       | Type   | Required | Default | Description                                                                                |
+| ---------- | ------ | -------- | ------- | ------------------------------------------------------------------------------------------ |
+| `isolated` | `bool` | yes      | —       | True to wipe conversation history on context entry (subject to the reset exception above). |
+
+## Returns
+
+`Context` — Self for method chaining.
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 820.

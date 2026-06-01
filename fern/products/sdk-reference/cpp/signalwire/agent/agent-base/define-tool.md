@@ -1,0 +1,82 @@
+---
+slug: "/reference/cpp/signalwire/agent/agent-base/define-tool"
+title: "define_tool"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::agent::AgentBase::define_tool"
+  parent: "signalwire::agent::AgentBase"
+  module: "signalwire.agent"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `define_tool`
+
+Register a SWAIG tool (function) that the AI can invoke during a call.
+
+How this becomes a tool the model seesA SWAIG function is exactly the same concept as a "tool" in native OpenAI / Anthropic tool calling. On every LLM turn, the SDK renders each registered SWAIG function into the OpenAI tool schema:
+{ "type": "function", "function": { "name": "your\_name\_here", "description": "your description text", "parameters": { ... your JSON schema ... } } }
+That schema is sent to the model as part of the same API call that produces the next assistant message. The model reads:
+the function description to decide WHEN to call this tool
+each parameter description (inside parameters) to decide HOW to fill in that argument from the user's utterance
+
+This means descriptions are prompt engineering, not developer comments. A vague description is the #1 cause of "the model has
+the right tool but doesn't call it" failures.
+
+Bad vs good descriptionsBAD : description: "Lookup function" GOOD: description: "Look up a customer's account details by " "account number. Use this BEFORE quoting " "any account-specific info (balance, plan, " "status). Do not use for general product " "questions."
+BAD : parameters: {"id": {"type": "string", "description": "the id"}} GOOD: parameters: {"account\_number": {"type": "string", "description": "The customer's 8-digit account " "number, no dashes or spaces. Ask the user if they " "don't provide it."}}
+
+Tool count mattersLLM tool selection accuracy degrades past ~7-8 simultaneously-active tools per call. Use contexts::Step::set\_functions to partition tools across steps so only the relevant subset is active at any moment.
+
+## Signature
+
+**Overload 1**
+
+```cpp
+AgentBase & define_tool(const swaig::ToolDefinition & tool)
+```
+
+**Overload 2**
+
+```cpp
+AgentBase & define_tool(
+    const std::string & name,
+    const std::string & description,
+    const json & parameters,
+    swaig::ToolHandler handler,
+    bool secure = false
+)
+```
+
+## Parameters (Overload 1)
+
+| Name   | Type                            | Required | Default | Description |
+| ------ | ------------------------------- | -------- | ------- | ----------- |
+| `tool` | `const swaig::ToolDefinition &` | yes      | —       | —           |
+
+## Parameters (Overload 2)
+
+| Name          | Type                  | Required | Default | Description |
+| ------------- | --------------------- | -------- | ------- | ----------- |
+| `name`        | `const std::string &` | yes      | —       | —           |
+| `description` | `const std::string &` | yes      | —       | —           |
+| `parameters`  | `const json &`        | yes      | —       | —           |
+| `handler`     | `swaig::ToolHandler`  | yes      | —       | —           |
+| `secure`      | `bool`                | no       | `false` | —           |
+
+## Returns (Overload 1)
+
+`AgentBase &`
+
+## Returns (Overload 2)
+
+`AgentBase &`
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 257.

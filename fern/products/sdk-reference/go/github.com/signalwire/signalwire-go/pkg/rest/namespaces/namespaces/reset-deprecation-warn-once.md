@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/reset-deprecation-warn-once"
+title: "ResetDeprecationWarnOnce"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.ResetDeprecationWarnOnce"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/fabric.go"
+---
+# `ResetDeprecationWarnOnce`
+
+ResetDeprecationWarnOnce clears the "once" tracking set so deprecation warnings fire again. Test-only helper.
+
+## Signature
+
+```go
+func ResetDeprecationWarnOnce()
+```
+
+## Source
+
+[`pkg/rest/namespaces/fabric.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/fabric.go)
+
+Line 67.

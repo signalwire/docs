@@ -1,0 +1,37 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/section/to-array"
+title: "toArray"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\Section::toArray"
+  parent: "SignalWire\\POM\\Section"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/Section.php"
+  visibility: "public"
+---
+# `toArray`
+
+Convert the section to a dictionary representation.
+
+Key ordering (must match Python): title, body, bullets, subsections,
+numbered, numberedBullets.
+
+## Signature
+
+```php
+public function toArray(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/POM/Section.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/Section.php)
+
+Line 122.

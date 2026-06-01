@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/datasphere-namespace"
+title: "DatasphereNamespace"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::DatasphereNamespace"
+  parent: "SignalWire::REST::Namespaces"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/datasphere.rb"
+  visibility: "public"
+---
+# `DatasphereNamespace`
+
+Datasphere API namespace.
+
+## Signature
+
+```ruby
+class DatasphereNamespace < Object
+```
+
+## Inheritance
+
+**Extends:** `Object`
+
+## Methods
+
+- [`documents`](/reference/ruby/signal-wire/rest/namespaces/datasphere-namespace/documents) — Returns the value of attribute documents.
+- [`initialize`](/reference/ruby/signal-wire/rest/namespaces/datasphere-namespace/initialize)
+
+## Source
+
+[`lib/signalwire/rest/namespaces/datasphere.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/datasphere.rb)
+
+Line 30.

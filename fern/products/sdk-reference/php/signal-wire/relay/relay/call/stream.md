@@ -1,0 +1,44 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/call/stream"
+title: "stream"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Call::stream"
+  parent: "SignalWire\\Relay\\Call"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php"
+  visibility: "public"
+---
+# `stream`
+
+## Signature
+
+```php
+public function stream(
+    string $url,
+    array $opts = array (
+)
+): SignalWire\Relay\StreamAction
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default     | Description |
+| ------ | -------- | -------- | ----------- | ----------- |
+| `url`  | `string` | yes      | —           | —           |
+| `opts` | `array`  | no       | `array (
+)` | —           |
+
+## Returns
+
+`SignalWire\Relay\StreamAction`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Call.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php)
+
+Line 515.

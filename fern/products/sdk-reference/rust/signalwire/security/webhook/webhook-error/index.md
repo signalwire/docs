@@ -1,0 +1,54 @@
+---
+slug: "/reference/rust/signalwire/security/webhook/webhook-error"
+title: "WebhookError"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "enum"
+  language: "rust"
+  qualified_name: "signalwire::security::webhook::WebhookError"
+  parent: "signalwire::security::webhook"
+  module: "security.webhook"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs"
+  visibility: "public"
+---
+# `WebhookError`
+
+Errors returned by the webhook validator.
+
+`validate_webhook_signature` and `validate_request` return
+`Result<bool, WebhookError>` so callers can distinguish a legitimate
+"signature did not match" (`Ok(false)`) from a programming-error
+"you forgot the signing key" (`Err(WebhookError::MissingSigningKey)`).
+Per the spec, missing/empty _signature header_ and malformed
+signatures return `Ok(false)` — those are not errors.
+
+## Signature
+
+```rust
+enum WebhookError
+```
+
+## Inheritance
+
+**Implements:** `Debug`, `Clone`, `PartialEq`, `Eq`, `Display`, [Error](/reference/rust/signalwire/security/webhook-layer/webhook-validate/error)
+
+## Variants
+
+| Name                | Type                | Required | Default | Description                                                                                                                                                                      |
+| ------------------- | ------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MissingSigningKey` | `MissingSigningKey` | yes      | —       | Caller passed an empty `signing_key`. This is a programming error (the key is mandatory configuration), not a validation failure — Python raises `ValueError` here, Node throws. |
+
+## Methods
+
+- [`clone`](/reference/rust/signalwire/security/webhook/webhook-error/clone)
+- [`eq`](/reference/rust/signalwire/security/webhook/webhook-error/eq)
+- [`fmt`](/reference/rust/signalwire/security/webhook/webhook-error/fmt)
+- [`fmt`](/reference/rust/signalwire/security/webhook/webhook-error/fmt__2)
+
+## Source
+
+[`src/security/webhook.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook.rs)
+
+Line 50.

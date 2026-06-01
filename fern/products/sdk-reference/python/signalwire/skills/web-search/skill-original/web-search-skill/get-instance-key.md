@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/skills/web-search/skill-original/web-search-skill/get-instance-key"
+title: "get_instance_key"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.web_search.skill_original.WebSearchSkill.get_instance_key"
+  parent: "signalwire.skills.web_search.skill_original.WebSearchSkill"
+  module: "signalwire.skills.web_search.skill_original"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/web_search/skill_original.py"
+---
+# `get_instance_key`
+
+Get the key used to track this skill instance
+
+For web search, we use the search\_engine\_id to differentiate instances
+
+## Signature
+
+```python
+get_instance_key() -> str
+```
+
+## Returns
+
+`str`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/web_search/skill_original.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/web_search/skill_original.py)
+
+Line 158.

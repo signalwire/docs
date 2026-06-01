@@ -1,0 +1,44 @@
+---
+slug: "/reference/typescript/serverless-adapter/serverless-adapter/create-azure-handler"
+title: "createAzureHandler"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ServerlessAdapter.ServerlessAdapter.createAzureHandler"
+  parent: "ServerlessAdapter.ServerlessAdapter"
+  module: "ServerlessAdapter"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ServerlessAdapter.ts"
+---
+# `createAzureHandler`
+
+Create an Azure Functions-compatible handler from a Hono app.
+
+**Modifiers:** `static`
+
+## Signature
+
+```typescript
+createAzureHandler(
+  app: { ...1 fields }
+): (context: any, req: any) => Promise<void>
+```
+
+## Parameters
+
+| Name        | Type                                                         | Required | Default | Description                                          |
+| ----------- | ------------------------------------------------------------ | -------- | ------- | ---------------------------------------------------- |
+| `app`       | `{ fetch: (req: Request) => Response \| Promise<Response> }` | yes      | —       | A Hono-compatible application with a `fetch` method. |
+| `app.fetch` | `(req: Request) => Response \| Promise<Response>`            | yes      | —       | —                                                    |
+
+## Returns
+
+`(context: any, req: any) => Promise<void>` — A function that accepts an Azure context and request object.
+
+## Source
+
+[`src/ServerlessAdapter.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ServerlessAdapter.ts)
+
+Line 223.

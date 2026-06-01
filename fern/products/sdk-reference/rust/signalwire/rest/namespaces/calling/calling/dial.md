@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/calling/calling/dial"
+title: "dial"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::calling::Calling::dial"
+  parent: "signalwire::rest::namespaces::calling::Calling"
+  module: "rest.namespaces.calling"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/calling.rs"
+  visibility: "public"
+---
+# `dial`
+
+## Signature
+
+```rust
+fn dial(&self, params: ?) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name     | Type | Required | Default | Description |
+| -------- | ---- | -------- | ------- | ----------- |
+| `params` | `?`  | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/rest/namespaces/calling.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/calling.rs)
+
+Line 63.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/config-loader/config-loader/get-config"
+title: "get_config"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.config_loader.ConfigLoader.get_config"
+  parent: "signalwire.core.config_loader.ConfigLoader"
+  module: "signalwire.core.config_loader"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py"
+---
+# `get_config`
+
+Get the raw configuration (before substitution).
+
+## Signature
+
+```python
+get_config() -> Dict[str, Any]
+```
+
+## Returns
+
+`Dict[str, Any]`
+
+## Source
+
+[`/src/signalwire/signalwire/core/config_loader.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py)
+
+Line 73.

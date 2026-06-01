@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/step/get-name"
+title: "getName"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\Step::getName"
+  parent: "SignalWire\\Contexts\\Step"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `getName`
+
+## Signature
+
+```php
+public function getName(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 202.

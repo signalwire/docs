@@ -1,0 +1,42 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context/add-system-section"
+title: "addSystemSection"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\Context::addSystemSection"
+  parent: "SignalWire\\Contexts\\Context"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `addSystemSection`
+
+## Signature
+
+```php
+public function addSystemSection(
+    string $title,
+    string $body
+): SignalWire\Contexts\Context
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `title` | `string` | yes      | —       | —           |
+| `body`  | `string` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire\Contexts\Context`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 739.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/skills/datetime/skill/date-time-skill/get-parameter-schema"
+title: "get_parameter_schema"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.datetime.skill.DateTimeSkill.get_parameter_schema"
+  parent: "signalwire.skills.datetime.skill.DateTimeSkill"
+  module: "signalwire.skills.datetime.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/datetime/skill.py"
+---
+# `get_parameter_schema`
+
+Get the parameter schema for the datetime skill
+
+The datetime skill has no custom parameters - it inherits only
+the base parameters from SkillBase.
+
+**Modifiers:** `classmethod`
+
+## Signature
+
+```python
+@classmethod
+get_parameter_schema() -> Dict[str, Dict[str, Any]]
+```
+
+## Returns
+
+`Dict[str, Dict[str, Any]]`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/datetime/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/datetime/skill.py)
+
+Line 113.

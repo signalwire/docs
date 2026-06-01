@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/prefabs/info-gatherer/info-gatherer"
+title: "InfoGatherer"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "perl"
+  qualified_name: "SignalWire::Prefabs::InfoGatherer"
+  module: "SignalWire.Prefabs.InfoGatherer"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/InfoGatherer.pm"
+---
+# `InfoGatherer`
+
+## Signature
+
+```perl
+package SignalWire::Prefabs::InfoGatherer
+```
+
+## Inheritance
+
+**Extends:** [SignalWire::Agent::AgentBase](/reference/perl/signal-wire/agent/agent-base/agent-base)
+
+## Methods
+
+- [`BUILD`](/reference/perl/signal-wire/prefabs/info-gatherer/info-gatherer/build)
+
+## Source
+
+[`lib/SignalWire/Prefabs/InfoGatherer.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/InfoGatherer.pm)
+
+Line 1.

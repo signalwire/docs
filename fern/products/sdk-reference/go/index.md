@@ -1,0 +1,55 @@
+---
+title: "Go SDK"
+slug: "/reference/go"
+lustri:
+  auto_generated: true
+  language: "go"
+  kind: "sdk"
+---
+# Go SDK Reference
+
+## Modules
+
+- [`agent`](/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent)
+- [`builtin`](/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin)
+- [`contexts`](/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts)
+- [`datamap`](/reference/go/github.com/signalwire/signalwire-go/pkg/datamap/datamap)
+- [`lambda`](/reference/go/github.com/signalwire/signalwire-go/pkg/lambda/lambda)
+- [`livewire`](/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire)
+- [`logging`](/reference/go/github.com/signalwire/signalwire-go/pkg/logging/logging)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/cmd/enumerate-signatures/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/cmd/enumerate-surface/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/cmd/swaig-test/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/call-flow/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/contexts-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/datamap-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/gather-per-question-functions-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/livewire-agent/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/mcp-agent/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/multi-agent-server/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/prefab-info-gatherer/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/prefab-survey/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/relay-audit-harness/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/relay-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/rest-audit-harness/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/rest-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/session-state/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/simple-agent/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/simple-dynamic-agent/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/skills-audit-harness/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/skills-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/step-function-inheritance-demo/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/swmlservice-ai-sidecar/main)
+- [`main`](/reference/go/github.com/signalwire/signalwire-go/examples/swmlservice-swaig-standalone/main)
+- [`namespaces`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces)
+- [`pom`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom)
+- [`prefabs`](/reference/go/github.com/signalwire/signalwire-go/pkg/prefabs/prefabs)
+- [`relay`](/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay)
+- [`rest`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/rest)
+- [`security`](/reference/go/github.com/signalwire/signalwire-go/pkg/security/security)
+- [`server`](/reference/go/github.com/signalwire/signalwire-go/pkg/server/server)
+- [`skills`](/reference/go/github.com/signalwire/signalwire-go/pkg/skills/skills)
+- [`swaig`](/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig)
+- [`swml`](/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml)
+- [`util`](/reference/go/github.com/signalwire/signalwire-go/pkg/util/util)
+

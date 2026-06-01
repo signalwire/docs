@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/event/get-call-id"
+title: "getCallId"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Event::getCallId"
+  parent: "SignalWire\\Relay\\Event"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Event.php"
+  visibility: "public"
+---
+# `getCallId`
+
+## Signature
+
+```php
+public function getCallId(): ?string
+```
+
+## Returns
+
+`?string`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Event.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Event.php)
+
+Line 35.

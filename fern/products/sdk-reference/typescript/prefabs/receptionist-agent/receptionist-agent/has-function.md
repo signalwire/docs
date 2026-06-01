@@ -1,0 +1,40 @@
+---
+slug: "/reference/typescript/prefabs/receptionist-agent/receptionist-agent/has-function"
+title: "hasFunction"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.ReceptionistAgent.ReceptionistAgent.hasFunction"
+  parent: "prefabs.ReceptionistAgent.ReceptionistAgent"
+  module: "prefabs.ReceptionistAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLService.ts"
+---
+# `hasFunction`
+
+Whether a SWAIG function with the given name is registered.
+(Python parity: `ToolRegistry.has_function`.)
+
+## Signature
+
+```typescript
+hasFunction(name: string): boolean
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`boolean`
+
+## Source
+
+[`src/SWMLService.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLService.ts)
+
+Line 517.

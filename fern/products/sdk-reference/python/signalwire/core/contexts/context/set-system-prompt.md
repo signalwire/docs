@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context/set-system-prompt"
+title: "set_system_prompt"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Context.set_system_prompt"
+  parent: "signalwire.core.contexts.Context"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `set_system_prompt`
+
+Set system prompt for context switching (triggers context reset)
+
+## Signature
+
+```python
+set_system_prompt(system_prompt: str) -> Context
+```
+
+## Parameters
+
+| Name            | Type  | Required | Default | Description                                        |
+| --------------- | ----- | -------- | ------- | -------------------------------------------------- |
+| `system_prompt` | `str` | yes      | —       | New system prompt for when this context is entered |
+
+## Returns
+
+`Context` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 766.

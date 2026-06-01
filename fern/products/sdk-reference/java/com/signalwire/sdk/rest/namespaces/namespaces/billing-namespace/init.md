@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/billing-namespace/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.BillingNamespace.<init>"
+  parent: "com.signalwire.sdk.rest.namespaces.BillingNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.BillingNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/BillingNamespace.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>(com.signalwire.sdk.rest.HttpClient httpClient)
+```
+
+## Parameters
+
+| Name         | Type                                 | Required | Default | Description |
+| ------------ | ------------------------------------ | -------- | ------- | ----------- |
+| `httpClient` | `com.signalwire.sdk.rest.HttpClient` | yes      | —       | —           |
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/BillingNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/BillingNamespace.java)
+
+Line 20.

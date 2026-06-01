@@ -1,0 +1,45 @@
+---
+slug: "/reference/python/signalwire/cli/simulation/data-generation/generate-fake-swml-post-data"
+title: "generate_fake_swml_post_data"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.simulation.data_generation.generate_fake_swml_post_data"
+  parent: "signalwire.cli.simulation.data_generation"
+  module: "signalwire.cli.simulation.data_generation"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/data_generation.py"
+---
+# `generate_fake_swml_post_data`
+
+Generate fake SWML post\_data that matches real SignalWire structure
+
+## Signature
+
+```python
+generate_fake_swml_post_data(
+    call_type: str = 'webrtc',
+    call_direction: str = 'inbound',
+    call_state: str = 'created'
+) -> Dict[str, Any]
+```
+
+## Parameters
+
+| Name             | Type  | Required | Default     | Description                                |
+| ---------------- | ----- | -------- | ----------- | ------------------------------------------ |
+| `call_type`      | `str` | no       | `'webrtc'`  | "sip" or "webrtc" (default: webrtc)        |
+| `call_direction` | `str` | no       | `'inbound'` | "inbound" or "outbound" (default: inbound) |
+| `call_state`     | `str` | no       | `'created'` | Call state (default: created)              |
+
+## Returns
+
+`Dict[str, Any]` — Fake post\_data dict with call, vars, and envs structure
+
+## Source
+
+[`/src/signalwire/signalwire/cli/simulation/data_generation.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/data_generation.py)
+
+Line 85.

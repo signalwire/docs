@@ -1,0 +1,42 @@
+---
+slug: "/reference/python/signalwire/web/web-service"
+title: "web_service"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.web.web_service"
+  parent: "signalwire.web"
+  module: "signalwire.web"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/web/web_service.py"
+---
+# `web_service`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module web_service
+```
+
+## Properties
+
+| Name     | Type     | Required | Default | Description |
+| -------- | -------- | -------- | ------- | ----------- |
+| `logger` | `logger` | yes      | —       | —           |
+
+## Classes
+
+- [`WebService`](/reference/python/signalwire/web/web-service/web-service) — Static file serving service with HTTP API
+
+## Source
+
+[`/src/signalwire/signalwire/web/web_service.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/web/web_service.py)

@@ -1,0 +1,35 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/manual-set-proxy-url"
+title: "ManualSetProxyUrl"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.ManualSetProxyUrl"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `ManualSetProxyUrl`
+
+ManualSetProxyUrl overrides the proxy URL base used for URL generation. Call this at runtime to set or update the proxy URL (e.g. an ngrok URL). Mirrors Python's manual\_set\_proxy\_url(proxy\_url: str) on SWMLService.
+
+## Signature
+
+```go
+func (*Service) ManualSetProxyUrl(url string)
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description |
+| ----- | -------- | -------- | ------- | ----------- |
+| `url` | `string` | yes      | —       | —           |
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 579.

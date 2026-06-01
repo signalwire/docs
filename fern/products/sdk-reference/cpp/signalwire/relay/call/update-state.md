@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/relay/call/update-state"
+title: "update_state"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Call::update_state"
+  parent: "signalwire::relay::Call"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp"
+  visibility: "public"
+---
+# `update_state`
+
+## Signature
+
+```cpp
+void update_state(const std::string & new_state)
+```
+
+## Parameters
+
+| Name        | Type                  | Required | Default | Description |
+| ----------- | --------------------- | -------- | ------- | ----------- |
+| `new_state` | `const std::string &` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/call.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp)
+
+Line 100.

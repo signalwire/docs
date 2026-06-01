@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.server/agent-server/unregister-string"
+title: "Unregister(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Server.AgentServer.Unregister(string)"
+  parent: "SignalWire.Server.AgentServer"
+  module: "SignalWire.Server"
+  visibility: "public"
+---
+# `Unregister(string)`
+
+## Signature
+
+```dotnet
+public AgentServer Unregister(string route)
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `route` | `string` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.Server.AgentServer`

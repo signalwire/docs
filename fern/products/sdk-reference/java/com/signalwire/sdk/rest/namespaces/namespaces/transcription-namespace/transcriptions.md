@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/transcription-namespace/transcriptions"
+title: "transcriptions"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.TranscriptionNamespace.transcriptions"
+  parent: "com.signalwire.sdk.rest.namespaces.TranscriptionNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.TranscriptionNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/TranscriptionNamespace.java"
+  visibility: "public"
+---
+# `transcriptions`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource transcriptions()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/TranscriptionNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/TranscriptionNamespace.java)
+
+Line 23.

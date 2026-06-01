@@ -1,0 +1,53 @@
+---
+slug: "/reference/python/signalwire/core/function-result/function-result/swml-user-event"
+title: "swml_user_event"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.function_result.FunctionResult.swml_user_event"
+  parent: "signalwire.core.function_result.FunctionResult"
+  module: "signalwire.core.function_result"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py"
+---
+# `swml_user_event`
+
+Send a user event through SWML to update the client UI.
+
+This is a convenience method for sending user events to connected clients,
+commonly used for real-time UI updates in interactive applications.
+
+> \[!NOTE]
+> result = (
+> FunctionResult("You have blackjack!")
+> .swml\_user\_event({
+> "type": "cards\_dealt",
+> "player\_hand": player\_cards,
+> "dealer\_hand": dealer\_cards,
+> "player\_score": 21
+> })
+> )
+
+## Signature
+
+```python
+swml_user_event(event_data: Dict[str, Any]) -> FunctionResult
+```
+
+## Parameters
+
+| Name         | Type             | Required | Default | Description                                                                                                                         |
+| ------------ | ---------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `event_data` | `Dict[str, Any]` | yes      | —       | Dictionary containing the event type and any associated data Example: {"type": "cards\_dealt", "player\_hand": \[...], "score": 21} |
+
+## Returns
+
+`FunctionResult` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/function_result.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py)
+
+Line 263.

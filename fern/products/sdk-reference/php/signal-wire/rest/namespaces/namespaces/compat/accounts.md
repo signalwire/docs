@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat/accounts"
+title: "accounts"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Compat::accounts"
+  parent: "SignalWire\\REST\\Namespaces\\Compat"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php"
+  visibility: "public"
+---
+# `accounts`
+
+## Signature
+
+```php
+public function accounts(): SignalWire\REST\Namespaces\CompatAccounts
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\CompatAccounts`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Compat.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php)
+
+Line 73.

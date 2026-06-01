@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/agent-base-agent-options"
+title: "AgentBase(AgentOptions)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.AgentBase(SignalWire.Agent.AgentOptions)"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `AgentBase(AgentOptions)`
+
+## Signature
+
+```dotnet
+public AgentBase(AgentOptions options)
+```
+
+## Parameters
+
+| Name      | Type                            | Required | Default | Description |
+| --------- | ------------------------------- | -------- | ------- | ----------- |
+| `options` | `SignalWire.Agent.AgentOptions` | yes      | —       | —           |

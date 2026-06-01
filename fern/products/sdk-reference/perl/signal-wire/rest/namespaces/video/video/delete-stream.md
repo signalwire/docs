@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/video/video/delete-stream"
+title: "delete_stream"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Video::delete_stream"
+  parent: "SignalWire::REST::Namespaces::Video"
+  module: "SignalWire.REST.Namespaces.Video"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Video.pm"
+  visibility: "public"
+---
+# `delete_stream`
+
+## Signature
+
+```perl
+sub delete_stream($stream_id)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `stream_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Video.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Video.pm)
+
+Line 153.

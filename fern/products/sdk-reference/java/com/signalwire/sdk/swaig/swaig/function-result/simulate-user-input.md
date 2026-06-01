@@ -1,0 +1,42 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/simulate-user-input"
+title: "simulateUserInput"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.simulateUserInput"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `simulateUserInput`
+
+Queue simulated user input.
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult simulateUserInput(
+    java.lang.String text
+)
+```
+
+## Parameters
+
+| Name   | Type               | Required | Default | Description |
+| ------ | ------------------ | -------- | ------- | ----------- |
+| `text` | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 562.

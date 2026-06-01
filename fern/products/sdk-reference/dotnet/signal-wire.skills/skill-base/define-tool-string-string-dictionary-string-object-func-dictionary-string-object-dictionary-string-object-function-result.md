@@ -1,0 +1,33 @@
+---
+slug: "/reference/dotnet/signal-wire.skills/skill-base/define-tool-string-string-dictionary-string-object-func-dictionary-string-object-dictionary-string-object-function-result"
+title: "DefineTool(string, string, Dictionary<string, object>, Func<Dictionary<string, object>, Dictionary<string, object?>, FunctionResult>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Skills.SkillBase.DefineTool(string, string, System.Collections.Generic.Dictionary<string, object>, System.Func<System.Collections.Generic.Dictionary<string, object>, System.Collections.Generic.Dictionary<string, object?>, SignalWire.SWAIG.FunctionResult>)"
+  parent: "SignalWire.Skills.SkillBase"
+  module: "SignalWire.Skills"
+  visibility: "protected"
+---
+# `DefineTool(string, string, Dictionary<string, object>, Func<Dictionary<string, object>, Dictionary<string, object?>, FunctionResult>)`
+
+Convenience wrapper that merges swaig\_fields and delegates to
+AgentBase.DefineTool.
+
+## Signature
+
+```dotnet
+protected void DefineTool(string name, string description, Dictionary<string, object> parameters, Func<Dictionary<string, object>, Dictionary<string, object?>, FunctionResult> handler)
+```
+
+## Parameters
+
+| Name          | Type                                                                                               | Required | Default | Description |
+| ------------- | -------------------------------------------------------------------------------------------------- | -------- | ------- | ----------- |
+| `name`        | `string`                                                                                           | yes      | —       | —           |
+| `description` | `string`                                                                                           | yes      | —       | —           |
+| `parameters`  | `Dictionary<string,object>`                                                                        | yes      | —       | —           |
+| `handler`     | `System.Func<Dictionary<string,object>,Dictionary<string,object>,SignalWire.SWAIG.FunctionResult>` | yes      | —       | —           |

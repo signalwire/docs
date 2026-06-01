@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/registry/skill-registry/discover-skills"
+title: "discover_skills"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.registry.SkillRegistry.discover_skills"
+  parent: "signalwire.skills.registry.SkillRegistry"
+  module: "signalwire.skills.registry"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/registry.py"
+---
+# `discover_skills`
+
+Deprecated: Skills are now loaded on-demand
+
+## Signature
+
+```python
+discover_skills() -> None
+```
+
+## Returns
+
+`None`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/registry.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/registry.py)
+
+Line 122.

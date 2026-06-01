@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/api-ninjas-trivia/skill/api-ninjas-trivia-skill/get-tools"
+title: "get_tools"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.api_ninjas_trivia.skill.ApiNinjasTriviaSkill.get_tools"
+  parent: "signalwire.skills.api_ninjas_trivia.skill.ApiNinjasTriviaSkill"
+  module: "signalwire.skills.api_ninjas_trivia.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/api_ninjas_trivia/skill.py"
+---
+# `get_tools`
+
+Generate the SWAIG tool with DataMap webhook.
+
+## Signature
+
+```python
+get_tools() -> List[Dict[str, Any]]
+```
+
+## Returns
+
+`List[Dict[str, Any]]` — List containing the generated tool configuration
+
+## Source
+
+[`/src/signalwire/signalwire/skills/api_ninjas_trivia/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/api_ninjas_trivia/skill.py)
+
+Line 148.

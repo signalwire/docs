@@ -1,0 +1,20 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/http-client/get"
+title: "Get"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.HTTPClient.Get"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.HTTPClient"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+---
+# `Get`
+
+## Signature
+
+```go
+Get(path string, params map[string]string) (map[string]any, error)
+```

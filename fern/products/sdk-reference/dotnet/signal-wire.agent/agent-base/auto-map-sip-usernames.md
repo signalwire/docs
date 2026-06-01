@@ -1,0 +1,29 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/auto-map-sip-usernames"
+title: "AutoMapSipUsernames()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.AutoMapSipUsernames()"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `AutoMapSipUsernames()`
+
+Enable auto-mapping of SIP usernames to this agent's
+route (Python parity: `agent.auto_map_sip_usernames()`).
+Chainable.
+
+## Signature
+
+```dotnet
+public AgentBase AutoMapSipUsernames()
+```
+
+## Returns
+
+`SignalWire.Agent.AgentBase`

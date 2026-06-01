@@ -1,0 +1,23 @@
+---
+slug: "/reference/php/signal-wire/signal-wire"
+title: "SignalWire"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "php"
+  qualified_name: "SignalWire"
+  module: "SignalWire"
+---
+# `SignalWire`
+
+## Signature
+
+```php
+namespace SignalWire
+```
+
+## Classes
+
+- [`SignalWire`](/reference/php/signal-wire/signal-wire/signal-wire)

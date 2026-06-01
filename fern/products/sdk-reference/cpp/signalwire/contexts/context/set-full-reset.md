@@ -1,0 +1,40 @@
+---
+slug: "/reference/cpp/signalwire/contexts/context/set-full-reset"
+title: "set_full_reset"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Context::set_full_reset"
+  parent: "signalwire::contexts::Context"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `set_full_reset`
+
+Set full reset.
+
+## Signature
+
+```cpp
+Context & set_full_reset(bool fr)
+```
+
+## Parameters
+
+| Name | Type   | Required | Default | Description |
+| ---- | ------ | -------- | ------- | ----------- |
+| `fr` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`Context &`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 278.

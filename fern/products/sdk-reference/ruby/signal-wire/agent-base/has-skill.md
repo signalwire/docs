@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/has-skill"
+title: "has_skill?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#has_skill?"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `has_skill?`
+
+## Signature
+
+```ruby
+def has_skill?(skill_name)
+```
+
+## Parameters
+
+| Name         | Type | Required | Default | Description |
+| ------------ | ---- | -------- | ------- | ----------- |
+| `skill_name` | —    | yes      | —       | —           |
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 1160.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/collect-action/start-input-timers"
+title: "StartInputTimers"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.CollectAction.StartInputTimers"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.CollectAction"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go"
+---
+# `StartInputTimers`
+
+StartInputTimers starts the initial\_timeout timer on an active collect, equivalent to Python's CollectAction.start\_input\_timers().
+
+## Signature
+
+```go
+func (*CollectAction) StartInputTimers() error
+```
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/relay/action.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go)
+
+Line 332.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/swaig/function-result/function-result/set-post-process"
+title: "set_post_process"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWAIG::FunctionResult::set_post_process"
+  parent: "SignalWire::SWAIG::FunctionResult"
+  module: "SignalWire.SWAIG.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm"
+  visibility: "public"
+---
+# `set_post_process`
+
+## Signature
+
+```perl
+sub set_post_process($post_process)
+```
+
+## Parameters
+
+| Name           | Type | Required | Default | Description |
+| -------------- | ---- | -------- | ------- | ----------- |
+| `post_process` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/SWAIG/FunctionResult.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm)
+
+Line 43.

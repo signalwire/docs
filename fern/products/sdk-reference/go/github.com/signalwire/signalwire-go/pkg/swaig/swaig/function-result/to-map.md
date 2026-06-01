@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/function-result/to-map"
+title: "ToMap"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult.ToMap"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `ToMap`
+
+ToMap serializes the FunctionResult to a map suitable for JSON encoding. The "action" key is only included if there are actions. The "post\_process" key is only included if true.
+
+## Signature
+
+```go
+func (*FunctionResult) ToMap() map[string]any
+```
+
+## Returns
+
+`map[string]any`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 77.

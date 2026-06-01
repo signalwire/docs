@@ -1,0 +1,40 @@
+---
+slug: "/reference/cpp/signalwire/skills/google-maps-skill-r"
+title: "GoogleMapsSkillR"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "cpp"
+  qualified_name: "signalwire::skills::GoogleMapsSkillR"
+  parent: "signalwire::skills"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/src/skills/skill_registry.cpp"
+  visibility: "public"
+---
+# `GoogleMapsSkillR`
+
+## Signature
+
+```cpp
+class signalwire::skills::GoogleMapsSkillR : signalwire::skills::SkillBase
+```
+
+## Inheritance
+
+**Extends:** [signalwire::skills::SkillBase](/reference/cpp/signalwire/skills/skill-base)
+
+## Methods
+
+- [`get_hints`](/reference/cpp/signalwire/skills/google-maps-skill-r/get-hints) — Get speech recognition hints to merge into agent.
+- [`register_tools`](/reference/cpp/signalwire/skills/google-maps-skill-r/register-tools) — Register tools with the agent. Returns tool definitions.
+- [`setup`](/reference/cpp/signalwire/skills/google-maps-skill-r/setup) — Initialize the skill with given params. Return true on success.
+- [`skill_description`](/reference/cpp/signalwire/skills/google-maps-skill-r/skill-description)
+- [`skill_name`](/reference/cpp/signalwire/skills/google-maps-skill-r/skill-name)
+
+## Source
+
+[`src/skills/skill_registry.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/skills/skill_registry.cpp)
+
+Line 226.

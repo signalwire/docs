@@ -1,0 +1,40 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/service/register-swaig-function"
+title: "registerSwaigFunction"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Service::registerSwaigFunction"
+  parent: "SignalWire\\SWML\\Service"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php"
+  visibility: "public"
+---
+# `registerSwaigFunction`
+
+Register a raw SWAIG function definition (e.g. DataMap tools).
+
+## Signature
+
+```php
+public function registerSwaigFunction(array $funcDef): static
+```
+
+## Parameters
+
+| Name      | Type    | Required | Default | Description |
+| --------- | ------- | -------- | ------- | ----------- |
+| `funcDef` | `array` | yes      | —       | —           |
+
+## Returns
+
+`static`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Service.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php)
+
+Line 252.

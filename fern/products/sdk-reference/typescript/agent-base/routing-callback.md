@@ -1,0 +1,34 @@
+---
+slug: "/reference/typescript/agent-base/routing-callback"
+title: "RoutingCallback"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "typescript"
+  qualified_name: "AgentBase.RoutingCallback"
+  parent: "AgentBase"
+  module: "AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts"
+---
+# `RoutingCallback`
+
+Callback invoked at a registered routing endpoint to determine how to handle an
+incoming request. Return a route string to redirect to that agent route, or
+null / undefined to let normal SWML processing continue.
+
+Mirrors Python `web_mixin.register_routing_callback` callback signature (body-only
+variant — Hono request object is not forwarded; use the parsed body instead).
+
+## Signature
+
+```typescript
+type RoutingCallback = (body: Record<string, unknown>) => string | null | undefined | Promise<string | null | undefined>
+```
+
+## Source
+
+[`src/AgentBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts)
+
+Line 45.

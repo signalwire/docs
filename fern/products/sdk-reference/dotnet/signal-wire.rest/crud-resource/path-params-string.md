@@ -1,0 +1,33 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/crud-resource/path-params-string"
+title: "Path(params string[])"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.CrudResource.Path(params string[])"
+  parent: "SignalWire.REST.CrudResource"
+  module: "SignalWire.REST"
+  visibility: "protected"
+---
+# `Path(params string[])`
+
+Build a full path by appending segments to the base path.
+
+## Signature
+
+```dotnet
+protected string Path(params string[] parts)
+```
+
+## Parameters
+
+| Name    | Type       | Required | Default | Description |
+| ------- | ---------- | -------- | ------- | ----------- |
+| `parts` | `string[]` | yes      | —       | —           |
+
+## Returns
+
+`string`

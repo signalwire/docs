@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/step/set-step-criteria"
+title: "SetStepCriteria"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.Step.SetStepCriteria"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts.Step"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `SetStepCriteria`
+
+SetStepCriteria sets the criteria for determining when this step is complete.
+
+## Signature
+
+```go
+func (*Step) SetStepCriteria(criteria string) *Step
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `criteria` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*Step`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 206.

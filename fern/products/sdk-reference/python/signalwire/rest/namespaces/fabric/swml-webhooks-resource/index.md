@@ -1,0 +1,31 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/fabric/swml-webhooks-resource"
+title: "SwmlWebhooksResource"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.fabric.SwmlWebhooksResource"
+  parent: "signalwire.rest.namespaces.fabric"
+  module: "signalwire.rest.namespaces.fabric"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/fabric.py"
+---
+# `SwmlWebhooksResource`
+
+## Signature
+
+```python
+class SwmlWebhooksResource(AutoMaterializedWebhook)
+```
+
+## Inheritance
+
+**Extends:** [AutoMaterializedWebhook](/reference/python/signalwire/rest/namespaces/fabric/auto-materialized-webhook)
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/fabric.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/fabric.py)
+
+Line 53.

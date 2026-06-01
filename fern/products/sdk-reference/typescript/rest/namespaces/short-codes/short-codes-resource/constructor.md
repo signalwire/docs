@@ -1,0 +1,37 @@
+---
+slug: "/reference/typescript/rest/namespaces/short-codes/short-codes-resource/constructor"
+title: "constructor"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.short-codes.ShortCodesResource.constructor"
+  parent: "rest.namespaces.short-codes.ShortCodesResource"
+  module: "rest.namespaces.short-codes"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/short-codes.ts"
+---
+# `constructor`
+
+## Signature
+
+```typescript
+constructor(http: HttpClient): ShortCodesResource
+```
+
+## Parameters
+
+| Name   | Type         | Required | Default | Description |
+| ------ | ------------ | -------- | ------- | ----------- |
+| `http` | `HttpClient` | yes      | —       | —           |
+
+## Returns
+
+`ShortCodesResource`
+
+## Source
+
+[`src/rest/namespaces/short-codes.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/short-codes.ts)
+
+Line 17.

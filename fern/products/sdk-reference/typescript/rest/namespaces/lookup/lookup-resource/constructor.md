@@ -1,0 +1,37 @@
+---
+slug: "/reference/typescript/rest/namespaces/lookup/lookup-resource/constructor"
+title: "constructor"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.lookup.LookupResource.constructor"
+  parent: "rest.namespaces.lookup.LookupResource"
+  module: "rest.namespaces.lookup"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/lookup.ts"
+---
+# `constructor`
+
+## Signature
+
+```typescript
+constructor(http: HttpClient): LookupResource
+```
+
+## Parameters
+
+| Name   | Type         | Required | Default | Description |
+| ------ | ------------ | -------- | ------- | ----------- |
+| `http` | `HttpClient` | yes      | —       | —           |
+
+## Returns
+
+`LookupResource`
+
+## Source
+
+[`src/rest/namespaces/lookup.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/lookup.ts)
+
+Line 22.

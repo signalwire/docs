@@ -1,0 +1,46 @@
+---
+slug: "/reference/rust/signalwire/server/agent-server/agent-server/register"
+title: "register"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::server::agent_server::AgentServer::register"
+  parent: "signalwire::server::agent_server::AgentServer"
+  module: "server.agent_server"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/server/agent_server.rs"
+  visibility: "public"
+---
+# `register`
+
+Register an agent at its default route (from the agent's service),
+or at an explicit route override.
+
+**Errors:**
+
+Returns an error string if the route is already registered.
+
+## Signature
+
+```rust
+fn register(&mut self, agent: ?, route: ?<&str>) -> ?<(), ?>
+```
+
+## Parameters
+
+| Name    | Type      | Required | Default | Description |
+| ------- | --------- | -------- | ------- | ----------- |
+| `agent` | `?`       | yes      | —       | —           |
+| `route` | `?<&str>` | yes      | —       | —           |
+
+## Returns
+
+`?<(), ?>`
+
+## Source
+
+[`src/server/agent_server.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/server/agent_server.rs)
+
+Line 94.

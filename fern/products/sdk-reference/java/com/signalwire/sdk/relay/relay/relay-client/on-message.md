@@ -1,0 +1,38 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/relay-client/on-message"
+title: "onMessage"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.RelayClient.onMessage"
+  parent: "com.signalwire.sdk.relay.RelayClient"
+  module: "com.signalwire.sdk.relay.RelayClient"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayClient.java"
+  visibility: "public"
+---
+# `onMessage`
+
+Register a handler for inbound messages.
+
+## Signature
+
+```java
+public void onMessage(
+    java.util.function.Consumer<com.signalwire.sdk.relay.Message> handler
+)
+```
+
+## Parameters
+
+| Name      | Type                                                            | Required | Default | Description |
+| --------- | --------------------------------------------------------------- | -------- | ------- | ----------- |
+| `handler` | `java.util.function.Consumer<com.signalwire.sdk.relay.Message>` | yes      | —       | —           |
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/RelayClient.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayClient.java)
+
+Line 198.

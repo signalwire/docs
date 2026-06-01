@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/rest/namespaces/registry/registry-brands/get"
+title: "get"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.registry.RegistryBrands.get"
+  parent: "rest.namespaces.registry.RegistryBrands"
+  module: "rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts"
+---
+# `get`
+
+Fetch a brand by ID.
+
+## Signature
+
+```typescript
+get(brandId: string): Promise<any>
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description                     |
+| --------- | -------- | -------- | ------- | ------------------------------- |
+| `brandId` | `string` | yes      | —       | Unique identifier of the brand. |
+
+## Returns
+
+`Promise<any>` — The brand record.
+
+## Throws
+
+- On any non-2xx HTTP response (including `404`).
+
+## Source
+
+[`src/rest/namespaces/registry.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts)
+
+Line 46.

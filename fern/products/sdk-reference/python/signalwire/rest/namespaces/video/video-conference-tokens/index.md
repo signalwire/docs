@@ -1,0 +1,38 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/video/video-conference-tokens"
+title: "VideoConferenceTokens"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.video.VideoConferenceTokens"
+  parent: "signalwire.rest.namespaces.video"
+  module: "signalwire.rest.namespaces.video"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/video.py"
+---
+# `VideoConferenceTokens`
+
+Video conference token management.
+
+## Signature
+
+```python
+class VideoConferenceTokens(BaseResource)
+```
+
+## Inheritance
+
+**Extends:** `BaseResource`
+
+## Methods
+
+- [`get`](/reference/python/signalwire/rest/namespaces/video/video-conference-tokens/get)
+- [`reset`](/reference/python/signalwire/rest/namespaces/video/video-conference-tokens/reset)
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/video.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/video.py)
+
+Line 89.

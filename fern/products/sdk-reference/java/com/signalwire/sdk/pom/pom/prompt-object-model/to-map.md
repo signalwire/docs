@@ -1,0 +1,38 @@
+---
+slug: "/reference/java/com/signalwire/sdk/pom/pom/prompt-object-model/to-map"
+title: "toMap"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.pom.PromptObjectModel.toMap"
+  parent: "com.signalwire.sdk.pom.PromptObjectModel"
+  module: "com.signalwire.sdk.pom.PromptObjectModel"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java"
+  visibility: "public"
+---
+# `toMap`
+
+Convert the entire model to a list of maps.
+
+Mirrors Python
+`to_dict()` (named `toMap` here because the Java return
+type is `List<Map<String,Object>>`).
+
+## Signature
+
+```java
+public java.util.List<java.util.Map<java.lang.String,java.lang.Object>> toMap()
+```
+
+## Returns
+
+`java.util.List<java.util.Map<java.lang.String,java.lang.Object>>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java)
+
+Line 226.

@@ -1,0 +1,37 @@
+---
+slug: "/reference/cpp/signalwire/agent/agent-base/pom"
+title: "pom"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::agent::AgentBase::pom"
+  parent: "signalwire::agent::AgentBase"
+  module: "signalwire.agent"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `pom`
+
+Read-only snapshot of the agent's POM as a PromptObjectModel.
+Python parity: agent.pom instance attribute (agent\_base.py line 209). Returns std::nullopt when use\_pom is false (mirroring Python's self.pom = None); otherwise returns a freshly built signalwire::pom::PromptObjectModel whose sections are deep-copied from the agent's internal section/ subsection structures so callers cannot mutate them in-place.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+std::optional< signalwire::pom::PromptObjectModel > pom() const
+```
+
+## Returns
+
+`std::optional< signalwire::pom::PromptObjectModel >`
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 164.

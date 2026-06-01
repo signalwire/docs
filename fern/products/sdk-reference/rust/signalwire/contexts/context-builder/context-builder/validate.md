@@ -1,0 +1,35 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/context-builder/validate"
+title: "validate"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::ContextBuilder::validate"
+  parent: "signalwire::contexts::context_builder::ContextBuilder"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `validate`
+
+Validate the contexts configuration.
+Returns `Ok(())` if valid, `Err(errors)` with a list of error messages.
+
+## Signature
+
+```rust
+fn validate(&self) -> ?<(), ?<?>>
+```
+
+## Returns
+
+`?<(), ?<?>>`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 683.

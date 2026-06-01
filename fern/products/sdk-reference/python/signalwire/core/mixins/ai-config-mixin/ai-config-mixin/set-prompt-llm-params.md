@@ -1,0 +1,61 @@
+---
+slug: "/reference/python/signalwire/core/mixins/ai-config-mixin/ai-config-mixin/set-prompt-llm-params"
+title: "set_prompt_llm_params"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.ai_config_mixin.AIConfigMixin.set_prompt_llm_params"
+  parent: "signalwire.core.mixins.ai_config_mixin.AIConfigMixin"
+  module: "signalwire.core.mixins.ai_config_mixin"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/ai_config_mixin.py"
+---
+# `set_prompt_llm_params`
+
+Set LLM parameters for the main prompt.
+
+Accepts any parameters which will be passed through to the SignalWire server.
+The server will validate and apply parameters based on the target model's capabilities.
+
+> \[!NOTE]
+> model: The AI model to use (gpt-4o-mini, gpt-4.1-mini, gpt-4.1-nano, nova-micro, nova-lite, qwen3-235b-A22b-instruct)
+> temperature: Randomness setting. Lower values make output more deterministic.
+> top\_p: Alternative to temperature. Controls nucleus sampling.
+> barge\_confidence: ASR confidence to interrupt. Higher values make it harder to interrupt.
+> presence\_penalty: Topic diversity. Positive values encourage new topics.
+> frequency\_penalty: Repetition control. Positive values reduce repetition.
+
+Note: Parameters are model-specific and will be validated by the server.
+Invalid parameters for the selected model will be handled/ignored by the server.
+
+> \[!NOTE]
+> agent.set\_prompt\_llm\_params(
+> model="nova-micro",  # Using Amazon's nova-micro model
+> temperature=0.7,
+> top\_p=0.9,
+> barge\_confidence=0.6
+> )
+
+## Signature
+
+```python
+set_prompt_llm_params(**params = {}) -> AgentBase
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...params` | —    | no       | `{}`    | —           |
+
+## Returns
+
+`AgentBase` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/ai_config_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/ai_config_mixin.py)
+
+Line 589.

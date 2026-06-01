@@ -1,0 +1,35 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/queues-resource/list-members"
+title: "list_members"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::QueuesResource#list_members"
+  parent: "SignalWire::REST::Namespaces::QueuesResource"
+  module: "SignalWire.REST.Namespaces.QueuesResource"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/queues.rb"
+  visibility: "public"
+---
+# `list_members`
+
+## Signature
+
+```ruby
+def list_members(queue_id, **params)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `queue_id`  | —    | yes      | —       | —           |
+| `...params` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/queues.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/queues.rb)
+
+Line 14.

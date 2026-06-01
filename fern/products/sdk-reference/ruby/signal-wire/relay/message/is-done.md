@@ -1,0 +1,32 @@
+---
+slug: "/reference/ruby/signal-wire/relay/message/is-done"
+title: "is_done?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Message#is_done?"
+  parent: "SignalWire::Relay::Message"
+  module: "SignalWire.Relay.Message"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/message.rb"
+  visibility: "public"
+---
+# `is_done?`
+
+## Signature
+
+```ruby
+def done?
+```
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/relay/message.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/message.rb)
+
+Line 57.

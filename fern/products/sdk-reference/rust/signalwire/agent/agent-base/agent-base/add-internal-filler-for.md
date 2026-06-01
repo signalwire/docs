@@ -1,0 +1,52 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/add-internal-filler-for"
+title: "add_internal_filler_for"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::add_internal_filler_for"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `add_internal_filler_for`
+
+Add internal fillers for a single internal function and language.
+
+See \[`Self::set_internal_fillers_map`] for the complete list of
+supported `function_name` values
+(\[`Self::SUPPORTED_INTERNAL_FILLER_NAMES`]) and what fillers do.
+Names outside the supported set log a warning.
+
+## Signature
+
+```rust
+fn add_internal_filler_for(
+    &mut self,
+    function_name: &str,
+    language_code: &str,
+    fillers: ?<?>
+) -> &mut Self
+```
+
+## Parameters
+
+| Name            | Type   | Required | Default | Description |
+| --------------- | ------ | -------- | ------- | ----------- |
+| `function_name` | `&str` | yes      | —       | —           |
+| `language_code` | `&str` | yes      | —       | —           |
+| `fillers`       | `?<?>` | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 833.

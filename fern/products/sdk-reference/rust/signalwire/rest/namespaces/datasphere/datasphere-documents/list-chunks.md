@@ -1,0 +1,39 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/datasphere/datasphere-documents/list-chunks"
+title: "list_chunks"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::datasphere::DatasphereDocuments::list_chunks"
+  parent: "signalwire::rest::namespaces::datasphere::DatasphereDocuments"
+  module: "rest.namespaces.datasphere"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/datasphere.rs"
+  visibility: "public"
+---
+# `list_chunks`
+
+## Signature
+
+```rust
+fn list_chunks(&self, document_id: &str, params: &?) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name          | Type   | Required | Default | Description |
+| ------------- | ------ | -------- | ------- | ----------- |
+| `document_id` | `&str` | yes      | —       | —           |
+| `params`      | `&?`   | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/rest/namespaces/datasphere.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/datasphere.rs)
+
+Line 93.

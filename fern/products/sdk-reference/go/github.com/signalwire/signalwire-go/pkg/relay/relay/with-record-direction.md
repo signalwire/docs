@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/with-record-direction"
+title: "WithRecordDirection"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.WithRecordDirection"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go"
+---
+# `WithRecordDirection`
+
+WithRecordDirection sets the recording direction ("listen", "speak", "both").
+
+## Signature
+
+```go
+func WithRecordDirection(dir string) RecordOption
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description |
+| ----- | -------- | -------- | ------- | ----------- |
+| `dir` | `string` | yes      | —       | —           |
+
+## Returns
+
+`RecordOption`
+
+## Source
+
+[`pkg/relay/options.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go)
+
+Line 78.

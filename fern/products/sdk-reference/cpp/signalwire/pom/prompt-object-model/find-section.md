@@ -1,0 +1,58 @@
+---
+slug: "/reference/cpp/signalwire/pom/prompt-object-model/find-section"
+title: "find_section"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::pom::PromptObjectModel::find_section"
+  parent: "signalwire::pom::PromptObjectModel"
+  module: "signalwire.pom"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/pom/pom.hpp"
+  visibility: "public"
+---
+# `find_section`
+
+Recursively search for a section by title. Returns a pointer to the owned section so callers can mutate it; returns nullptr when nothing matches. Pointer is invalidated by any subsequent mutation of the POM that grows sections or subsections (caller's responsibility — same contract as std::vector::data()).
+
+## Signature
+
+**Overload 1**
+
+```cpp
+Section * find_section(const std::string & title)
+```
+
+**Overload 2**
+
+```cpp
+const Section * find_section(const std::string & title) const
+```
+
+## Parameters (Overload 1)
+
+| Name    | Type                  | Required | Default | Description |
+| ------- | --------------------- | -------- | ------- | ----------- |
+| `title` | `const std::string &` | yes      | —       | —           |
+
+## Parameters (Overload 2)
+
+| Name    | Type                  | Required | Default | Description |
+| ------- | --------------------- | -------- | ------- | ----------- |
+| `title` | `const std::string &` | yes      | —       | —           |
+
+## Returns (Overload 1)
+
+`Section *`
+
+## Returns (Overload 2)
+
+`const Section *`
+
+## Source
+
+[`include/signalwire/pom/pom.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/pom/pom.hpp)
+
+Line 163.

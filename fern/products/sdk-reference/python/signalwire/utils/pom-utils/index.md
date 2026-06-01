@@ -1,0 +1,32 @@
+---
+slug: "/reference/python/signalwire/utils/pom-utils"
+title: "pom_utils"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.utils.pom_utils"
+  parent: "signalwire.utils"
+  module: "signalwire.utils"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/utils/pom_utils.py"
+---
+# `pom_utils`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module pom_utils
+```
+
+## Source
+
+[`/src/signalwire/signalwire/utils/pom_utils.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/utils/pom_utils.py)

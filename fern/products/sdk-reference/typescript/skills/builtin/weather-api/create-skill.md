@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/skills/builtin/weather-api/create-skill"
+title: "createSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "skills.builtin.weather_api.createSkill"
+  parent: "skills.builtin.weather_api"
+  module: "skills.builtin.weather_api"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/weather_api.ts"
+---
+# `createSkill`
+
+Factory function for creating WeatherApiSkill instances.
+
+## Signature
+
+```typescript
+createSkill(config?: SkillConfig): WeatherApiSkill
+```
+
+## Parameters
+
+| Name     | Type          | Required | Default | Description                   |
+| -------- | ------------- | -------- | ------- | ----------------------------- |
+| `config` | `SkillConfig` | no       | —       | Optional skill configuration. |
+
+## Returns
+
+`WeatherApiSkill` — A new WeatherApiSkill instance.
+
+## Source
+
+[`src/skills/builtin/weather_api.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/weather_api.ts)
+
+Line 271.

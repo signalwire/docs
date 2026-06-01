@@ -1,0 +1,32 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/add-post-ai-verb-string-dictionary-string-object"
+title: "AddPostAiVerb(string, Dictionary<string, object>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.AddPostAiVerb(string, System.Collections.Generic.Dictionary<string, object>)"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `AddPostAiVerb(string, Dictionary<string, object>)`
+
+## Signature
+
+```dotnet
+public AgentBase AddPostAiVerb(string verb, Dictionary<string, object> config)
+```
+
+## Parameters
+
+| Name     | Type                        | Required | Default | Description |
+| -------- | --------------------------- | -------- | ------- | ----------- |
+| `verb`   | `string`                    | yes      | —       | —           |
+| `config` | `Dictionary<string,object>` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.Agent.AgentBase`

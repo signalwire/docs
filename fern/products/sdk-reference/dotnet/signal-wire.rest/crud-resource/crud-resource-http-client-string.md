@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/crud-resource/crud-resource-http-client-string"
+title: "CrudResource(HttpClient, string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.CrudResource.CrudResource(SignalWire.REST.HttpClient, string)"
+  parent: "SignalWire.REST.CrudResource"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `CrudResource(HttpClient, string)`
+
+## Signature
+
+```dotnet
+public CrudResource(HttpClient client, string basePath)
+```
+
+## Parameters
+
+| Name       | Type                         | Required | Default | Description |
+| ---------- | ---------------------------- | -------- | ------- | ----------- |
+| `client`   | `SignalWire.REST.HttpClient` | yes      | —       | —           |
+| `basePath` | `string`                     | yes      | —       | —           |

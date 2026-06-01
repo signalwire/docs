@@ -1,0 +1,28 @@
+---
+slug: "/reference/cpp/signalwire/utils/json"
+title: "json"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::utils::json"
+  parent: "signalwire::utils"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/utils/schema_utils.hpp"
+  visibility: "public"
+---
+# `json`
+
+## Signature
+
+```cpp
+typedef nlohmann::json json
+```
+
+## Source
+
+[`include/signalwire/utils/schema_utils.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/utils/schema_utils.hpp)
+
+Line 30.

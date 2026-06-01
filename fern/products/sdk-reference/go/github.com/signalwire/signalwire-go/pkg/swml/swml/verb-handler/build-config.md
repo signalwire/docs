@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/verb-handler/build-config"
+title: "BuildConfig"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.VerbHandler.BuildConfig"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.VerbHandler"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+---
+# `BuildConfig`
+
+BuildConfig builds a configuration map for this verb from the provided
+
+parameters.
+
+params contains keyword arguments specific to this verb, mirroring the
+\*\*kwargs pattern from Python. It returns the constructed configuration
+map, or an error if the provided parameters are insufficient or
+contradictory.
+
+## Signature
+
+```go
+BuildConfig(params map[string]any) (map[string]any, error)
+```

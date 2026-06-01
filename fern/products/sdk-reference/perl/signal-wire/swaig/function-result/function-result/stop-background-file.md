@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/swaig/function-result/function-result/stop-background-file"
+title: "stop_background_file"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWAIG::FunctionResult::stop_background_file"
+  parent: "SignalWire::SWAIG::FunctionResult"
+  module: "SignalWire.SWAIG.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm"
+  visibility: "public"
+---
+# `stop_background_file`
+
+## Signature
+
+```perl
+sub stop_background_file()
+```
+
+## Source
+
+[`lib/SignalWire/SWAIG/FunctionResult.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm)
+
+Line 229.

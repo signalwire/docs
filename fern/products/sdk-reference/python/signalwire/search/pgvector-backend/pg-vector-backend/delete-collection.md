@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/search/pgvector-backend/pg-vector-backend/delete-collection"
+title: "delete_collection"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.search.pgvector_backend.PgVectorBackend.delete_collection"
+  parent: "signalwire.search.pgvector_backend.PgVectorBackend"
+  module: "signalwire.search.pgvector_backend"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/pgvector_backend.py"
+---
+# `delete_collection`
+
+Delete a collection and its data
+
+## Signature
+
+```python
+delete_collection(collection_name: str)
+```
+
+## Parameters
+
+| Name              | Type  | Required | Default | Description |
+| ----------------- | ----- | -------- | ------- | ----------- |
+| `collection_name` | `str` | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/search/pgvector_backend.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/pgvector_backend.py)
+
+Line 378.

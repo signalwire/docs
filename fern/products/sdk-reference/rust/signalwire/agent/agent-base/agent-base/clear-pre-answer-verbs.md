@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/clear-pre-answer-verbs"
+title: "clear_pre_answer_verbs"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::clear_pre_answer_verbs"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `clear_pre_answer_verbs`
+
+## Signature
+
+```rust
+fn clear_pre_answer_verbs(&mut self) -> &mut Self
+```
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 903.

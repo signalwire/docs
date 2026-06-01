@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/prefabs/info-gatherer-agent/set-prefix"
+title: "set_prefix"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::prefabs::InfoGathererAgent::set_prefix"
+  parent: "signalwire::prefabs::InfoGathererAgent"
+  module: "signalwire.prefabs"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/prefabs/prefabs.hpp"
+  visibility: "public"
+---
+# `set_prefix`
+
+## Signature
+
+```cpp
+InfoGathererAgent & set_prefix(const std::string & prefix)
+```
+
+## Parameters
+
+| Name     | Type                  | Required | Default | Description |
+| -------- | --------------------- | -------- | ------- | ----------- |
+| `prefix` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`InfoGathererAgent &`
+
+## Source
+
+[`include/signalwire/prefabs/prefabs.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/prefabs/prefabs.hpp)
+
+Line 22.

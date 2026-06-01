@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/relay/denoise-event/denoised"
+title: "denoised"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::DenoiseEvent#denoised"
+  parent: "SignalWire::Relay::DenoiseEvent"
+  module: "SignalWire.Relay.DenoiseEvent"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb"
+  visibility: "public"
+---
+# `denoised`
+
+Returns the value of attribute denoised.
+
+## Signature
+
+```ruby
+attr_reader denoised -> Object
+```
+
+## Source
+
+[`lib/signalwire/relay/relay_event.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb)
+
+Line 364.

@@ -1,0 +1,43 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/define-contexts"
+title: "define_contexts"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::define_contexts"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `define_contexts`
+
+Return the ContextBuilder, creating it lazily on first access.
+
+The builder's tool-name supplier is set to a snapshot of the
+currently registered tool names so \[`ContextBuilder::validate`]
+can check for collisions with reserved native tool names
+(`next_step`, `change_context`, `gather_submit`). Tools added to
+the agent after the first `define_contexts()` call will not be
+included in that snapshot — call \[`AgentBase::refresh_context_tools`]
+to update it, or call `define_contexts` only after defining all
+tools.
+
+## Signature
+
+```rust
+fn define_contexts(&mut self) -> &mut ?
+```
+
+## Returns
+
+`&mut ?`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 932.

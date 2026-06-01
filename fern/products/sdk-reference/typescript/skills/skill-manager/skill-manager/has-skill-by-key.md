@@ -1,0 +1,48 @@
+---
+slug: "/reference/typescript/skills/skill-manager/skill-manager/has-skill-by-key"
+title: "hasSkillByKey"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.SkillManager.SkillManager.hasSkillByKey"
+  parent: "skills.SkillManager.SkillManager"
+  module: "skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts"
+---
+# `hasSkillByKey`
+
+Check if a skill with the given instance key is currently loaded.
+This matches Python's `has_skill` semantics, which performs a direct
+dictionary key lookup (`skill_identifier in self.loaded_skills`).
+
+Use `hasSkill(name)` to check by skill name (iterates values).
+Use `hasSkillByKey(key)` to check by instance key (direct map lookup).
+
+**Remarks:** Equivalent to Python's `has_skill(skill_identifier)`. Callers porting
+from Python should change `skill_manager.has_skill(key)` →
+`skillManager.hasSkillByKey(key)`.
+
+## Signature
+
+```typescript
+hasSkillByKey(instanceKey: string): boolean
+```
+
+## Parameters
+
+| Name          | Type     | Required | Default | Description                  |
+| ------------- | -------- | -------- | ------- | ---------------------------- |
+| `instanceKey` | `string` | yes      | —       | The instance key to look up. |
+
+## Returns
+
+`boolean` — True if a skill with this exact instance key is loaded.
+
+## Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 218.

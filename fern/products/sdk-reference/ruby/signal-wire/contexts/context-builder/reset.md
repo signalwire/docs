@@ -1,0 +1,32 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/context-builder/reset"
+title: "reset"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::ContextBuilder#reset"
+  parent: "SignalWire::Contexts::ContextBuilder"
+  module: "SignalWire.Contexts.ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `reset`
+
+Remove all contexts, returning the builder to its initial state.
+Use this in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request.
+
+## Signature
+
+```ruby
+def reset
+```
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 689.

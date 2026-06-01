@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/relay/call/collect-action/start-input-timers"
+title: "start_input_timers"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.call.CollectAction.start_input_timers"
+  parent: "signalwire.relay.call.CollectAction"
+  module: "signalwire.relay.call"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py"
+---
+# `start_input_timers`
+
+Start the initial\_timeout timer on an active collect.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async start_input_timers() -> dict
+```
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/call.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py)
+
+Line 178.

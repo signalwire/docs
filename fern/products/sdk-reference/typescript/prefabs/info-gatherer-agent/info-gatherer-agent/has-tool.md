@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/prefabs/info-gatherer-agent/info-gatherer-agent/has-tool"
+title: "hasTool"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.InfoGathererAgent.InfoGathererAgent.hasTool"
+  parent: "prefabs.InfoGathererAgent.InfoGathererAgent"
+  module: "prefabs.InfoGathererAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLService.ts"
+---
+# `hasTool`
+
+Whether a tool with the given name is registered.
+
+## Signature
+
+```typescript
+hasTool(name: string): boolean
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`boolean`
+
+## Source
+
+[`src/SWMLService.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLService.ts)
+
+Line 511.

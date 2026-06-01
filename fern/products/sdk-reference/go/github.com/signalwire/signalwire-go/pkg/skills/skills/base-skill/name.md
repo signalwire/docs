@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/skills/base-skill/name"
+title: "Name"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills.BaseSkill.Name"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills.BaseSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/skill_base.go"
+---
+# `Name`
+
+Name returns the skill name.
+
+## Signature
+
+```go
+func (*BaseSkill) Name() string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`pkg/skills/skill_base.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/skill_base.go)
+
+Line 67.

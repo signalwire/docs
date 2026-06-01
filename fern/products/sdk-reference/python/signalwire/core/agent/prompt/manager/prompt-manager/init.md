@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/core/agent/prompt/manager/prompt-manager/init"
+title: "__init__"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.prompt.manager.PromptManager.__init__"
+  parent: "signalwire.core.agent.prompt.manager.PromptManager"
+  module: "signalwire.core.agent.prompt.manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py"
+---
+# `__init__`
+
+Initialize PromptManager with reference to parent agent.
+
+## Signature
+
+```python
+__init__(agent)
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description               |
+| ------- | ---- | -------- | ------- | ------------------------- |
+| `agent` | —    | yes      | —       | Parent AgentBase instance |
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/prompt/manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py)
+
+Line 23.

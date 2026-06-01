@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-base/register-tools"
+title: "registerTools"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillBase.registerTools"
+  parent: "com.signalwire.sdk.skills.SkillBase"
+  module: "com.signalwire.sdk.skills.SkillBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillBase.java"
+  visibility: "public"
+---
+# `registerTools`
+
+Register tools with the agent.
+
+**Modifiers:** `abstract`
+
+## Signature
+
+```java
+public abstract java.util.List<com.signalwire.sdk.swaig.ToolDefinition> registerTools()
+```
+
+## Returns
+
+`java.util.List<com.signalwire.sdk.swaig.ToolDefinition>` — List of tool definitions to register
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillBase.java)
+
+Line 42.

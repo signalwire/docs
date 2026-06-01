@@ -1,0 +1,49 @@
+---
+slug: "/reference/python/signalwire/relay/client/relay-client/execute"
+title: "execute"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.client.RelayClient.execute"
+  parent: "signalwire.relay.client.RelayClient"
+  module: "signalwire.relay.client"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/client.py"
+---
+# `execute`
+
+Send a JSON-RPC request and await the response.
+
+For calling methods, `method` is the full name (e.g.
+`"calling.answer"`, `"calling.play"`) with `node_id`
+and `call_id` in `params`.
+
+If the connection is not ready, the request is queued and sent
+after re-authentication completes.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async execute(method: str, params: dict[str, Any]) -> dict
+```
+
+## Parameters
+
+| Name     | Type             | Required | Default | Description |
+| -------- | ---------------- | -------- | ------- | ----------- |
+| `method` | `str`            | yes      | —       | —           |
+| `params` | `dict[str, Any]` | yes      | —       | —           |
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/client.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/client.py)
+
+Line 331.

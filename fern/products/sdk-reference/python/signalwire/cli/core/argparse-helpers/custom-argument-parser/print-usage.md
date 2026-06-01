@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/cli/core/argparse-helpers/custom-argument-parser/print-usage"
+title: "print_usage"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.cli.core.argparse_helpers.CustomArgumentParser.print_usage"
+  parent: "signalwire.cli.core.argparse_helpers.CustomArgumentParser"
+  module: "signalwire.cli.core.argparse_helpers"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/core/argparse_helpers.py"
+---
+# `print_usage`
+
+Override print\_usage to suppress output when we want custom error handling
+
+## Signature
+
+```python
+print_usage(file = None)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `file` | —    | no       | `None`  | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/cli/core/argparse_helpers.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/core/argparse_helpers.py)
+
+Line 52.

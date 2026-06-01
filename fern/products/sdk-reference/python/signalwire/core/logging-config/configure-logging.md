@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/core/logging-config/configure-logging"
+title: "configure_logging"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.core.logging_config.configure_logging"
+  parent: "signalwire.core.logging_config"
+  module: "signalwire.core.logging_config"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/logging_config.py"
+---
+# `configure_logging`
+
+Configure logging system once, globally, based on environment variables
+
+> \[!NOTE]
+> SIGNALWIRE\_LOG\_MODE: off, stderr, default, auto
+> SIGNALWIRE\_LOG\_LEVEL: debug, info, warning, error, critical
+> SIGNALWIRE\_LOG\_FORMAT: console, json (default: console)
+
+## Signature
+
+```python
+configure_logging()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/core/logging_config.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/logging_config.py)
+
+Line 98.

@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/set-post-prompt"
+title: "set_post_prompt"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#set_post_prompt"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `set_post_prompt`
+
+Set post-prompt text.
+
+## Signature
+
+```ruby
+def set_post_prompt(text)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `text` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 243.

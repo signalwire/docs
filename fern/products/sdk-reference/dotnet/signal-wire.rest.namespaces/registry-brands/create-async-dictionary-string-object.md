@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/registry-brands/create-async-dictionary-string-object"
+title: "CreateAsync(Dictionary<string, object?>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.RegistryBrands.CreateAsync(System.Collections.Generic.Dictionary<string, object?>)"
+  parent: "SignalWire.REST.Namespaces.RegistryBrands"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `CreateAsync(Dictionary<string, object?>)`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> CreateAsync(Dictionary<string, object?> kwargs)
+```
+
+## Parameters
+
+| Name     | Type                        | Required | Default | Description |
+| -------- | --------------------------- | -------- | ------- | ----------- |
+| `kwargs` | `Dictionary<string,object>` | yes      | —       | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

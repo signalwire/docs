@@ -1,0 +1,26 @@
+---
+slug: "/reference/perl/signal-wire/rest/rest-client/rest-client"
+title: "RestClient"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "perl"
+  qualified_name: "SignalWire::REST::RestClient"
+  module: "SignalWire.REST.RestClient"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/RestClient.pm"
+---
+# `RestClient`
+
+## Signature
+
+```perl
+package SignalWire::REST::RestClient
+```
+
+## Source
+
+[`lib/SignalWire/REST/RestClient.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/RestClient.pm)
+
+Line 1.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/context/remove-step"
+title: "remove_step"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::Context::remove_step"
+  parent: "signalwire::contexts::context_builder::Context"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `remove_step`
+
+## Signature
+
+```rust
+fn remove_step(&mut self, name: &str) -> &mut Self
+```
+
+## Parameters
+
+| Name   | Type   | Required | Default | Description |
+| ------ | ------ | -------- | ------- | ----------- |
+| `name` | `&str` | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 469.

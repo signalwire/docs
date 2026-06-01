@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/function-result/function-result/set-metadata"
+title: "setMetadata"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "FunctionResult.FunctionResult.setMetadata"
+  parent: "FunctionResult.FunctionResult"
+  module: "FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/FunctionResult.ts"
+---
+# `setMetadata`
+
+Set metadata key-value pairs on the current call.
+
+## Signature
+
+```typescript
+setMetadata(data: Record<string, unknown>): this
+```
+
+## Parameters
+
+| Name   | Type                      | Required | Default | Description                      |
+| ------ | ------------------------- | -------- | ------- | -------------------------------- |
+| `data` | `Record<string, unknown>` | yes      | —       | Metadata key-value pairs to set. |
+
+## Returns
+
+`this` — This instance for chaining.
+
+## Source
+
+[`src/FunctionResult.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/FunctionResult.ts)
+
+Line 321.

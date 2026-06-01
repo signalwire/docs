@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/schema/get-all-verb-names"
+title: "GetAllVerbNames()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Schema.GetAllVerbNames()"
+  parent: "SignalWire.SWML.Schema"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `GetAllVerbNames()`
+
+Alias of <xref href="SignalWire.SWML.Schema.GetVerbNames" data-throw-if-not-resolved="false"></xref>. (Python parity:
+`SchemaUtils.get_all_verb_names`.)
+
+## Signature
+
+```dotnet
+public List<string> GetAllVerbNames()
+```
+
+## Returns
+
+`List<string>`

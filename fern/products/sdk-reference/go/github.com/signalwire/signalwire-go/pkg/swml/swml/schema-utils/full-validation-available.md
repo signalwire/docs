@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/schema-utils/full-validation-available"
+title: "FullValidationAvailable"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.SchemaUtils.FullValidationAvailable"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.SchemaUtils"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/schema_utils.go"
+---
+# `FullValidationAvailable`
+
+FullValidationAvailable reports whether the full JSON Schema validator is wired up. Mirrors Python's full\_validation\_available.
+
+## Signature
+
+```go
+func (*SchemaUtils) FullValidationAvailable() bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`pkg/swml/schema_utils.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/schema_utils.go)
+
+Line 199.

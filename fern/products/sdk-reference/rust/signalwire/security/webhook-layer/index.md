@@ -1,0 +1,49 @@
+---
+slug: "/reference/rust/signalwire/security/webhook-layer"
+title: "webhook_layer"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::security::webhook_layer"
+  parent: "signalwire::security"
+  module: "security"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook_layer.rs"
+  visibility: "public"
+---
+# `webhook_layer`
+
+Tower / axum middleware for SignalWire webhook signature validation.
+
+This module provides a \[`tower::Layer`] that buffers the request body,
+verifies the `X-SignalWire-Signature` (or `X-Twilio-Signature`)
+header against a configured signing key, and either:
+
+- rejects the request with `403 Forbidden` (no body) when the
+  signature is missing or invalid, or
+- rebuilds the request with the buffered body so downstream
+  handlers can re-read it as a normal `axum::body::Body`.
+
+The URL passed to the validator honors `X-Forwarded-Proto` /
+`X-Forwarded-Host` (for reverse-proxy / tunnel deploys) and falls
+back to scheme-derived-from-`x-forwarded-proto-or-https` plus the
+`Host` header.
+
+The Layer is gated behind the `tower-middleware` Cargo feature
+(enabled by default). Users who only need the raw validator can
+depend on `signalwire` with `default-features = false`.
+
+Copyright (c) 2025 SignalWire. Licensed under the MIT License.
+
+## Classes
+
+- [`WebhookLayer`](/reference/rust/signalwire/security/webhook-layer/webhook-layer) — Tower \[`Layer`] that wraps any `Service<Request<Body>>` with SignalWire webhook signature validation.
+- [`WebhookValidate`](/reference/rust/signalwire/security/webhook-layer/webhook-validate) — Tower \[`Service`] produced by \[`WebhookLayer::layer`]. Buffers the request body, validates the signature, and either forwards a reconstructed request to the inner service or short-circuits with a `403 Forbidden`.
+
+## Source
+
+[`src/security/webhook_layer.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/security/webhook_layer.rs)
+
+Line 1.

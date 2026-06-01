@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/client/start-read-loop"
+title: "StartReadLoop"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Client.StartReadLoop"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Client"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go"
+---
+# `StartReadLoop`
+
+StartReadLoop spawns the read goroutine and marks the client running. Mirrors the goroutine-spawn portion of Run() — call it after Authenticate() and before any Execute() call so JSON-RPC responses have a reader. Pair with Stop() to terminate.
+
+## Signature
+
+```go
+func (*Client) StartReadLoop()
+```
+
+## Source
+
+[`pkg/relay/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go)
+
+Line 281.

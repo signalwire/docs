@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/livewire/agent/llm-node"
+title: "llm_node"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.livewire.Agent.llm_node"
+  parent: "signalwire.livewire.Agent"
+  module: "signalwire.livewire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py"
+---
+# `llm_node`
+
+Noop -- SignalWire handles LLM in its control plane.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async llm_node(chat_ctx = None, tools = None, model_settings = None)
+```
+
+## Parameters
+
+| Name             | Type | Required | Default | Description |
+| ---------------- | ---- | -------- | ------- | ----------- |
+| `chat_ctx`       | —    | no       | `None`  | —           |
+| `tools`          | —    | no       | `None`  | —           |
+| `model_settings` | —    | no       | `None`  | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py)
+
+Line 370.

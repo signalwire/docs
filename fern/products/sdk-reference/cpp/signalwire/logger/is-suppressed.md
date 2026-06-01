@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/logger/is-suppressed"
+title: "is_suppressed"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::Logger::is_suppressed"
+  parent: "signalwire::Logger"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/logging.hpp"
+  visibility: "public"
+---
+# `is_suppressed`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+bool is_suppressed() const
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`include/signalwire/logging.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/logging.hpp)
+
+Line 45.

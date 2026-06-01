@@ -1,0 +1,59 @@
+---
+slug: "/reference/cpp/signalwire/contexts/step/add-gather-question"
+title: "add_gather_question"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Step::add_gather_question"
+  parent: "signalwire::contexts::Step"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `add_gather_question`
+
+Add a gather question (set\_gather\_info must be called first).
+IMPORTANT — gather mode locks function access: While the model is asking gather questions, the runtime forcibly deactivates ALL of the step's other functions. The only callable tools during a gather question are:
+
+gather\_submit (the native answer-submission tool)
+Whatever names you pass in this question's functions argument
+
+next\_step and change\_context are also filtered out — the model cannot navigate away until the gather completes. This is by design: it forces a tight ask → submit → next-question loop.
+If a question needs to call out to a tool (e.g. validate an email, geocode a ZIP), list that tool name in this question's functions argument. Functions listed here are active ONLY for this question.
+
+## Signature
+
+```cpp
+Step & add_gather_question(
+    const std::string & key,
+    const std::string & question,
+    const std::string & type = "string",
+    bool confirm = false,
+    const std::string & prompt = "",
+    const std::vector< std::string > & functions = {}
+)
+```
+
+## Parameters
+
+| Name        | Type                                 | Required | Default    | Description |
+| ----------- | ------------------------------------ | -------- | ---------- | ----------- |
+| `key`       | `const std::string &`                | yes      | —          | —           |
+| `question`  | `const std::string &`                | yes      | —          | —           |
+| `type`      | `const std::string &`                | no       | `"string"` | —           |
+| `confirm`   | `bool`                               | no       | `false`    | —           |
+| `prompt`    | `const std::string &`                | no       | `""`       | —           |
+| `functions` | `const std::vector< std::string > &` | no       | `{}`       | —           |
+
+## Returns
+
+`Step &`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 186.

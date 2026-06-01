@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/queues-resource"
+title: "QueuesResource"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.QueuesResource"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/queues.go"
+---
+# `QueuesResource`
+
+QueuesResource is an alias for QueuesNamespace, matching the Python class name for cross-SDK parity. Prefer QueuesNamespace in new Go code.
+
+## Signature
+
+```go
+type QueuesResource alias
+```
+
+## Source
+
+[`pkg/rest/namespaces/queues.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/queues.go)
+
+Line 39.

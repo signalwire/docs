@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/relay/client/send-json"
+title: "send_json"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Client#send_json"
+  parent: "SignalWire::Relay::Client"
+  module: "SignalWire.Relay.Client"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/client.rb"
+  visibility: "public"
+---
+# `send_json`
+
+Send an arbitrary JSON-RPC frame to the server. Public surface for
+tests, the audit harness, and one-off RELAY methods that don't
+have a high-level wrapper. Returns nothing; outbound failures are
+silently ignored (matching +\_send\_json+ semantics).
+
+## Signature
+
+```ruby
+def send_json(msg)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `msg` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/relay/client.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/client.rb)
+
+Line 133.

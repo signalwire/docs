@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin/web-search-skill/get-instance-key"
+title: "GetInstanceKey"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills/builtin.WebSearchSkill.GetInstanceKey"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills/builtin.WebSearchSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/web_search.go"
+---
+# `GetInstanceKey`
+
+GetInstanceKey returns a unique key incorporating both searchEngineID and toolName, matching Python's f"{SKILL\_NAME}_{search\_engine\_id}_{tool\_name}" pattern.
+
+## Signature
+
+```go
+func (*WebSearchSkill) GetInstanceKey() string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`pkg/skills/builtin/web_search.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/web_search.go)
+
+Line 69.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat-recordings/delete"
+title: "delete"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\CompatRecordings::delete"
+  parent: "SignalWire\\REST\\Namespaces\\CompatRecordings"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/CompatRecordings.php"
+  visibility: "public"
+---
+# `delete`
+
+## Signature
+
+```php
+public function delete(string $sid): array
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description |
+| ----- | -------- | -------- | ------- | ----------- |
+| `sid` | `string` | yes      | —       | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/CompatRecordings.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/CompatRecordings.php)
+
+Line 44.

@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.contexts/context/set-prompt-string"
+title: "SetPrompt(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Contexts.Context.SetPrompt(string)"
+  parent: "SignalWire.Contexts.Context"
+  module: "SignalWire.Contexts"
+  visibility: "public"
+---
+# `SetPrompt(string)`
+
+## Signature
+
+```dotnet
+public Context SetPrompt(string prompt)
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description |
+| -------- | -------- | -------- | ------- | ----------- |
+| `prompt` | `string` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.Contexts.Context`

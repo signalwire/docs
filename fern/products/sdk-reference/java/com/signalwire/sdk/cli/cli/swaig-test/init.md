@@ -1,0 +1,28 @@
+---
+slug: "/reference/java/com/signalwire/sdk/cli/cli/swaig-test/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.cli.SwaigTest.<init>"
+  parent: "com.signalwire.sdk.cli.SwaigTest"
+  module: "com.signalwire.sdk.cli.SwaigTest"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/cli/SwaigTest.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/cli/SwaigTest.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/cli/SwaigTest.java)
+
+Line 44.

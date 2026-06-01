@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/rest/namespaces/project/project-tokens/delete"
+title: "delete"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.project.ProjectTokens.delete"
+  parent: "rest.namespaces.project.ProjectTokens"
+  module: "rest.namespaces.project"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/project.ts"
+---
+# `delete`
+
+Revoke and delete a project API token.
+
+## Signature
+
+```typescript
+delete(tokenId: string): Promise<any>
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description                               |
+| --------- | -------- | -------- | ------- | ----------------------------------------- |
+| `tokenId` | `string` | yes      | —       | Unique identifier of the token to revoke. |
+
+## Returns
+
+`Promise<any>` — The platform's delete response.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/project.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/project.ts)
+
+Line 47.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/with-contexts"
+title: "WithContexts"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.WithContexts"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go"
+---
+# `WithContexts`
+
+WithContexts sets the contexts to subscribe to for inbound events.
+
+## Signature
+
+```go
+func WithContexts(contexts ...string) ClientOption
+```
+
+## Parameters
+
+| Name          | Type     | Required | Default | Description |
+| ------------- | -------- | -------- | ------- | ----------- |
+| `...contexts` | `string` | no       | —       | —           |
+
+## Returns
+
+`ClientOption`
+
+## Source
+
+[`pkg/relay/options.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go)
+
+Line 374.

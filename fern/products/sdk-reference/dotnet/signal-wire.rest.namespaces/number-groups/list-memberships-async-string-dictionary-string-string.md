@@ -1,0 +1,32 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/number-groups/list-memberships-async-string-dictionary-string-string"
+title: "ListMembershipsAsync(string, Dictionary<string, string>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.NumberGroups.ListMembershipsAsync(string, System.Collections.Generic.Dictionary<string, string>?)"
+  parent: "SignalWire.REST.Namespaces.NumberGroups"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `ListMembershipsAsync(string, Dictionary<string, string>?)`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> ListMembershipsAsync(string groupId, Dictionary<string, string>? queryParams = null)
+```
+
+## Parameters
+
+| Name          | Type                        | Required | Default | Description |
+| ------------- | --------------------------- | -------- | ------- | ----------- |
+| `groupId`     | `string`                    | yes      | —       | —           |
+| `queryParams` | `Dictionary<string,string>` | no       | `null`  | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

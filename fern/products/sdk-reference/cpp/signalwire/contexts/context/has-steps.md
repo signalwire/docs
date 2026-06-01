@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/contexts/context/has-steps"
+title: "has_steps"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Context::has_steps"
+  parent: "signalwire::contexts::Context"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `has_steps`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+bool has_steps() const
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 334.

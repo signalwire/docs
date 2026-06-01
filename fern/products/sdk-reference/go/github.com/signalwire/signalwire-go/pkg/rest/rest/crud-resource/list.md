@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/rest/crud-resource/list"
+title: "List"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest.CrudResource.List"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest.CrudResource"
+  module: "github.com.signalwire.signalwire-go.pkg.rest"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/client.go"
+---
+# `List`
+
+List retrieves all items from the collection. Optional query parameters can be provided. The raw JSON response map is returned.
+
+## Signature
+
+```go
+func (*CrudResource) List(params map[string]string) (map[string]any, error)
+```
+
+## Parameters
+
+| Name     | Type                | Required | Default | Description |
+| -------- | ------------------- | -------- | ------- | ----------- |
+| `params` | `map[string]string` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/client.go)
+
+Line 237.

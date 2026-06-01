@@ -1,0 +1,38 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/service/validate-basic-auth-string-string"
+title: "ValidateBasicAuth(string, string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Service.ValidateBasicAuth(string, string)"
+  parent: "SignalWire.SWML.Service"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `ValidateBasicAuth(string, string)`
+
+Validate provided basic-auth credentials against the
+configured ones (constant-time comparison)
+(Python parity: `validate_basic_auth(username, password)`).
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual bool ValidateBasicAuth(string username, string password)
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `username` | `string` | yes      | —       | —           |
+| `password` | `string` | yes      | —       | —           |
+
+## Returns
+
+`bool`

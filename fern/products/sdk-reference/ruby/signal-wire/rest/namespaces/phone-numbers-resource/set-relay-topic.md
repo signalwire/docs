@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/phone-numbers-resource/set-relay-topic"
+title: "set_relay_topic"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::PhoneNumbersResource#set_relay_topic"
+  parent: "SignalWire::REST::Namespaces::PhoneNumbersResource"
+  module: "SignalWire.REST.Namespaces.PhoneNumbersResource"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/phone_numbers.rb"
+  visibility: "public"
+---
+# `set_relay_topic`
+
+Route inbound calls to a RELAY topic (client subscription).
+
+## Signature
+
+```ruby
+def set_relay_topic(sid, topic:, status_callback_url: nil, **extra)
+```
+
+## Parameters
+
+| Name                   | Type | Required | Default | Description |
+| ---------------------- | ---- | -------- | ------- | ----------- |
+| `sid`                  | —    | yes      | —       | —           |
+| `topic:`               | —    | yes      | —       | —           |
+| `status_callback_url:` | —    | no       | `nil`   | —           |
+| `...extra`             | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/phone_numbers.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/phone_numbers.rb)
+
+Line 113.

@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/contexts"
+title: "Contexts()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.Contexts()"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `Contexts()`
+
+Alias for <xref href="SignalWire.Agent.AgentBase.DefineContexts" data-throw-if-not-resolved="false"></xref>.
+
+## Signature
+
+```dotnet
+public ContextBuilder Contexts()
+```
+
+## Returns
+
+`SignalWire.Contexts.ContextBuilder`

@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/video-room-tokens/create"
+title: "create"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::VideoRoomTokens#create"
+  parent: "SignalWire::REST::Namespaces::VideoRoomTokens"
+  module: "SignalWire.REST.Namespaces.VideoRoomTokens"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/video.rb"
+  visibility: "public"
+---
+# `create`
+
+## Signature
+
+```ruby
+def create(**kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/video.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/video.rb)
+
+Line 21.

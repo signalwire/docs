@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/search/preprocess-document-content"
+title: "preprocess_document_content"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.search.preprocess_document_content"
+  parent: "signalwire.search"
+  module: "signalwire.search"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/__init__.py"
+---
+# `preprocess_document_content`
+
+## Signature
+
+```python
+preprocess_document_content(*args = (), **kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...args`   | —    | no       | `()`    | —           |
+| `...kwargs` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/search/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/__init__.py)
+
+Line 111.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/call/set-client"
+title: "setClient"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.Call.setClient"
+  parent: "com.signalwire.sdk.relay.Call"
+  module: "com.signalwire.sdk.relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java"
+  visibility: "public"
+---
+# `setClient`
+
+## Signature
+
+```java
+public void setClient(com.signalwire.sdk.relay.RelayClient client)
+```
+
+## Parameters
+
+| Name     | Type                                   | Required | Default | Description |
+| -------- | -------------------------------------- | -------- | ------- | ----------- |
+| `client` | `com.signalwire.sdk.relay.RelayClient` | yes      | —       | —           |
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/Call.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java)
+
+Line 74.

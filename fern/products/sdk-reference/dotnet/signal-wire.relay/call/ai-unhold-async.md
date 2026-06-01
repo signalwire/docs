@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/call/ai-unhold-async"
+title: "AiUnholdAsync()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Call.AiUnholdAsync()"
+  parent: "SignalWire.Relay.Call"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `AiUnholdAsync()`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> AiUnholdAsync()
+```
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

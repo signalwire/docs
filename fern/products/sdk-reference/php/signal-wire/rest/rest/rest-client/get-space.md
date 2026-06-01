@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/get-space"
+title: "getSpace"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::getSpace"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `getSpace`
+
+## Signature
+
+```php
+public function getSpace(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 118.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/schema/instance"
+title: "instance"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Schema::instance"
+  parent: "SignalWire\\SWML\\Schema"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php"
+  visibility: "public"
+---
+# `instance`
+
+**Modifiers:** `static`
+
+## Signature
+
+```php
+public static function instance(): SignalWire\SWML\Schema
+```
+
+## Returns
+
+`SignalWire\SWML\Schema`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Schema.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php)
+
+Line 21.

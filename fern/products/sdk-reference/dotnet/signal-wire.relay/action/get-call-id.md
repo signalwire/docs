@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/action/get-call-id"
+title: "GetCallId()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Action.GetCallId()"
+  parent: "SignalWire.Relay.Action"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `GetCallId()`
+
+## Signature
+
+```dotnet
+public string GetCallId()
+```
+
+## Returns
+
+`string`

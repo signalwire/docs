@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/call/ai-unhold"
+title: "AIUnhold"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Call.AIUnhold"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Call"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go"
+---
+# `AIUnhold`
+
+AIUnhold removes the call from AI hold. controlID and prompt are both optional — pass "" to omit either, matching Python's ai\_unhold(\*, prompt: Optional\[str] = None) which has no control\_id parameter and only writes keys conditionally.
+
+## Signature
+
+```go
+func (*Call) AIUnhold(controlID string, prompt string) error
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `controlID` | `string` | yes      | —       | —           |
+| `prompt`    | `string` | yes      | —       | —           |
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/relay/call.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go)
+
+Line 991.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/function-result/function-result/set-speech-event-timeout"
+title: "setSpeechEventTimeout"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "FunctionResult.FunctionResult.setSpeechEventTimeout"
+  parent: "FunctionResult.FunctionResult"
+  module: "FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/FunctionResult.ts"
+---
+# `setSpeechEventTimeout`
+
+Set the timeout for speech event detection.
+
+## Signature
+
+```typescript
+setSpeechEventTimeout(milliseconds: number): this
+```
+
+## Parameters
+
+| Name           | Type     | Required | Default | Description              |
+| -------------- | -------- | -------- | ------- | ------------------------ |
+| `milliseconds` | `number` | yes      | —       | Timeout in milliseconds. |
+
+## Returns
+
+`this` — This instance for chaining.
+
+## Source
+
+[`src/FunctionResult.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/FunctionResult.ts)
+
+Line 292.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/python/signalwire/cli/output/swml-dump/handle-dump-swml"
+title: "handle_dump_swml"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.output.swml_dump.handle_dump_swml"
+  parent: "signalwire.cli.output.swml_dump"
+  module: "signalwire.cli.output.swml_dump"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/output/swml_dump.py"
+---
+# `handle_dump_swml`
+
+Handle SWML dumping with fake post\_data and mock request support
+
+## Signature
+
+```python
+handle_dump_swml(agent: AgentBase, args: argparse.Namespace) -> int
+```
+
+## Parameters
+
+| Name    | Type                 | Required | Default | Description               |
+| ------- | -------------------- | -------- | ------- | ------------------------- |
+| `agent` | `AgentBase`          | yes      | —       | The loaded agent instance |
+| `args`  | `argparse.Namespace` | yes      | —       | Parsed CLI arguments      |
+
+## Returns
+
+`int` — Exit code (0 for success, 1 for error)
+
+## Source
+
+[`/src/signalwire/signalwire/cli/output/swml_dump.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/output/swml_dump.py)
+
+Line 53.

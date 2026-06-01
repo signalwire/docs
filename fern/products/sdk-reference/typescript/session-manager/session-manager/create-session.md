@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/session-manager/session-manager/create-session"
+title: "createSession"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SessionManager.SessionManager.createSession"
+  parent: "SessionManager.SessionManager"
+  module: "SessionManager"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SessionManager.ts"
+---
+# `createSession`
+
+Return the given callId or generate a new random session identifier.
+
+## Signature
+
+```typescript
+createSession(callId?: string): string
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description                |
+| -------- | -------- | -------- | ------- | -------------------------- |
+| `callId` | `string` | no       | —       | Existing call ID to reuse. |
+
+## Returns
+
+`string` — The call ID string.
+
+## Source
+
+[`src/SessionManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SessionManager.ts)
+
+Line 62.

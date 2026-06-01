@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/stream-action/stop"
+title: "Stop"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.StreamAction.Stop"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.StreamAction"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go"
+---
+# `Stop`
+
+Stop sends calling.stream.stop to halt the active stream operation.
+
+## Signature
+
+```go
+func (*StreamAction) Stop() error
+```
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/relay/action.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go)
+
+Line 457.

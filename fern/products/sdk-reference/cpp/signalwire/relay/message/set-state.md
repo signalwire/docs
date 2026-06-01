@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/relay/message/set-state"
+title: "set_state"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Message::set_state"
+  parent: "signalwire::relay::Message"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp"
+  visibility: "public"
+---
+# `set_state`
+
+## Signature
+
+```cpp
+void set_state(const std::string & s)
+```
+
+## Parameters
+
+| Name | Type                  | Required | Default | Description |
+| ---- | --------------------- | -------- | ------- | ----------- |
+| `s`  | `const std::string &` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/message.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp)
+
+Line 50.

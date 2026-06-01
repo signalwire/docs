@@ -1,0 +1,40 @@
+---
+slug: "/reference/rust/signalwire/swml/document/document/get-verbs"
+title: "get_verbs"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::swml::document::Document::get_verbs"
+  parent: "signalwire::swml::document::Document"
+  module: "swml.document"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/swml/document.rs"
+  visibility: "public"
+---
+# `get_verbs`
+
+Get a clone of the verbs for a section (empty vec if section does not exist).
+
+## Signature
+
+```rust
+fn get_verbs(&self, section: &str) -> ?<?>
+```
+
+## Parameters
+
+| Name      | Type   | Required | Default | Description |
+| --------- | ------ | -------- | ------- | ----------- |
+| `section` | `&str` | yes      | —       | —           |
+
+## Returns
+
+`?<?>`
+
+## Source
+
+[`src/swml/document.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swml/document.rs)
+
+Line 39.

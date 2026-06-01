@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/agent/update-tools"
+title: "UpdateTools"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.Agent.UpdateTools"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.Agent"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `UpdateTools`
+
+UpdateTools replaces the agent's tool list. Mirrors Python Agent.update\_tools (livewire/**init**.py:394) which accepts List\[Any] and stores self.\_tools = list(tools). In Go, the parameter is \[]any to keep the unexported toolDef out of the public signature (the original typed \[]toolDef made the method uncallable from external packages). Elements that aren't recognized tools are silently skipped, matching Python's permissive storage semantics. Returns the Agent for method chaining.
+
+## Signature
+
+```go
+func (*Agent) UpdateTools(tools []any) *Agent
+```
+
+## Parameters
+
+| Name    | Type    | Required | Default | Description |
+| ------- | ------- | -------- | ------- | ----------- |
+| `tools` | `[]any` | yes      | —       | —           |
+
+## Returns
+
+`*Agent`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 286.

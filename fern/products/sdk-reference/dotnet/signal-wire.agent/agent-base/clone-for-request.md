@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/clone-for-request"
+title: "CloneForRequest()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.CloneForRequest()"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `CloneForRequest()`
+
+Create a deep copy of this agent for per-request customisation.
+Collections are deeply copied; callbacks are preserved by reference.
+
+## Signature
+
+```dotnet
+public AgentBase CloneForRequest()
+```
+
+## Returns
+
+`SignalWire.Agent.AgentBase`

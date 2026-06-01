@@ -1,0 +1,45 @@
+---
+slug: "/reference/rust/signalwire/pom/pom/prompt-object-model/from-value"
+title: "from_value"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::pom::pom::PromptObjectModel::from_value"
+  parent: "signalwire::pom::pom::PromptObjectModel"
+  module: "pom.pom"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/pom/pom.rs"
+  visibility: "public"
+---
+# `from_value`
+
+Build a model from a parsed `serde_json::Value`. Used by
+both \[`from_json`] and \[`from_yaml`].
+
+[`from_json`]: PromptObjectModel::from_json
+
+[`from_yaml`]: PromptObjectModel::from_yaml
+
+## Signature
+
+```rust
+fn from_value(value: &?) -> ?<Self, ?>
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description |
+| ------- | ---- | -------- | ------- | ----------- |
+| `value` | `&?` | yes      | —       | —           |
+
+## Returns
+
+`?<Self, ?>`
+
+## Source
+
+[`src/pom/pom.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/pom/pom.rs)
+
+Line 73.

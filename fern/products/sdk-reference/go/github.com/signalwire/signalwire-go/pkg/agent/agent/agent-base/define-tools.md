@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/agent-base/define-tools"
+title: "DefineTools"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase.DefineTools"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `DefineTools`
+
+DefineTools returns all registered tool definitions in insertion order.
+
+## Signature
+
+```go
+func (*AgentBase) DefineTools() []*ToolDefinition
+```
+
+## Returns
+
+`[]*ToolDefinition`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 1046.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/pom/pom/prompt-object-model/is-debug"
+title: "isDebug"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.pom.PromptObjectModel.isDebug"
+  parent: "com.signalwire.sdk.pom.PromptObjectModel"
+  module: "com.signalwire.sdk.pom.PromptObjectModel"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java"
+  visibility: "public"
+---
+# `isDebug`
+
+## Signature
+
+```java
+public boolean isDebug()
+```
+
+## Returns
+
+`boolean`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java)
+
+Line 75.

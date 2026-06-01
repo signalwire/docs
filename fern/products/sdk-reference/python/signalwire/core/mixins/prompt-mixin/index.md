@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/core/mixins/prompt-mixin"
+title: "prompt_mixin"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.prompt_mixin"
+  parent: "signalwire.core.mixins"
+  module: "signalwire.core.mixins"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/prompt_mixin.py"
+---
+# `prompt_mixin`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module prompt_mixin
+```
+
+## Classes
+
+- [`PromptMixin`](/reference/python/signalwire/core/mixins/prompt-mixin/prompt-mixin) — Mixin class containing all prompt-related methods for AgentBase
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/prompt_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/prompt_mixin.py)

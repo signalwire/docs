@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/agent/prompt/manager/prompt-manager/get-prompt"
+title: "get_prompt"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.prompt.manager.PromptManager.get_prompt"
+  parent: "signalwire.core.agent.prompt.manager.PromptManager"
+  module: "signalwire.core.agent.prompt.manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py"
+---
+# `get_prompt`
+
+Get the prompt configuration.
+
+## Signature
+
+```python
+get_prompt() -> Optional[Union[str, List[Dict[str, Any]]]]
+```
+
+## Returns
+
+`Optional[Union[str, List[Dict[str, Any]]]]` — Prompt text or sections or None
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/prompt/manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py)
+
+Line 273.

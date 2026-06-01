@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/registry-brands/get"
+title: "get"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::RegistryBrands#get"
+  parent: "SignalWire::REST::Namespaces::RegistryBrands"
+  module: "SignalWire.REST.Namespaces.RegistryBrands"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/registry.rb"
+  visibility: "public"
+---
+# `get`
+
+## Signature
+
+```ruby
+def get(brand_id)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `brand_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/registry.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/registry.rb)
+
+Line 10.

@@ -1,0 +1,41 @@
+---
+slug: "/reference/cpp/signalwire/contexts/context/move-step"
+title: "move_step"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Context::move_step"
+  parent: "signalwire::contexts::Context"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `move_step`
+
+Move a step to a specific position.
+
+## Signature
+
+```cpp
+Context & move_step(const std::string & name, int position)
+```
+
+## Parameters
+
+| Name       | Type                  | Required | Default | Description |
+| ---------- | --------------------- | -------- | ------- | ----------- |
+| `name`     | `const std::string &` | yes      | —       | —           |
+| `position` | `int`                 | yes      | —       | —           |
+
+## Returns
+
+`Context &`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 254.

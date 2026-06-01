@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/prefabs/receptionist/receptionist"
+title: "Receptionist"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "perl"
+  qualified_name: "SignalWire::Prefabs::Receptionist"
+  module: "SignalWire.Prefabs.Receptionist"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/Receptionist.pm"
+---
+# `Receptionist`
+
+## Signature
+
+```perl
+package SignalWire::Prefabs::Receptionist
+```
+
+## Inheritance
+
+**Extends:** [SignalWire::Agent::AgentBase](/reference/perl/signal-wire/agent/agent-base/agent-base)
+
+## Methods
+
+- [`BUILD`](/reference/perl/signal-wire/prefabs/receptionist/receptionist/build)
+
+## Source
+
+[`lib/SignalWire/Prefabs/Receptionist.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/Receptionist.pm)
+
+Line 1.

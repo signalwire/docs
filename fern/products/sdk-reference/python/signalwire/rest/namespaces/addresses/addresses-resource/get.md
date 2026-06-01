@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/addresses/addresses-resource/get"
+title: "get"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.addresses.AddressesResource.get"
+  parent: "signalwire.rest.namespaces.addresses.AddressesResource"
+  module: "signalwire.rest.namespaces.addresses"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/addresses.py"
+---
+# `get`
+
+## Signature
+
+```python
+get(address_id)
+```
+
+## Parameters
+
+| Name         | Type | Required | Default | Description |
+| ------------ | ---- | -------- | ------- | ----------- |
+| `address_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/addresses.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/addresses.py)
+
+Line 29.

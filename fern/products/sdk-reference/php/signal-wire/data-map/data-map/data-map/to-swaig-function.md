@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/data-map/data-map/data-map/to-swaig-function"
+title: "toSwaigFunction"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\DataMap\\DataMap::toSwaigFunction"
+  parent: "SignalWire\\DataMap\\DataMap"
+  module: "SignalWire.DataMap"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/DataMap/DataMap.php"
+  visibility: "public"
+---
+# `toSwaigFunction`
+
+Serialize to a SWAIG function definition array.
+
+## Signature
+
+```php
+public function toSwaigFunction(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/DataMap/DataMap.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/DataMap/DataMap.php)
+
+Line 287.

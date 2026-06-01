@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/fabric-namespace/resources"
+title: "resources"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.FabricNamespace.resources"
+  parent: "com.signalwire.sdk.rest.namespaces.FabricNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.FabricNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/FabricNamespace.java"
+  visibility: "public"
+---
+# `resources`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.namespaces.FabricNamespace.GenericResources resources()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.namespaces.FabricNamespace.GenericResources`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/FabricNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/FabricNamespace.java)
+
+Line 69.

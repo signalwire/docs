@@ -1,0 +1,42 @@
+---
+slug: "/reference/php/signal-wire/skills/skills/skill-registry/get-all-skills-schema"
+title: "getAllSkillsSchema"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\SkillRegistry::getAllSkillsSchema"
+  parent: "SignalWire\\Skills\\SkillRegistry"
+  module: "SignalWire.Skills"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/SkillRegistry.php"
+  visibility: "public"
+---
+# `getAllSkillsSchema`
+
+Get complete schema for all registered skills.
+
+Mirrors Python's instance-method
+`SkillRegistry.get_all_skills_schema()` — returns an associative
+array keyed by skill name where each entry contains metadata +
+parameter schema. PHP skills don't carry rich Python-style
+parameter introspection in v1, so the value defaults to a minimal
+shape with the skill name; built-ins that expose
+`getDescription` / `getVersion` get those merged in.
+
+## Signature
+
+```php
+public function getAllSkillsSchema(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Skills/SkillRegistry.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/SkillRegistry.php)
+
+Line 144.

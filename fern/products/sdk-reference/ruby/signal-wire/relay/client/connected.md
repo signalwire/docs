@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/relay/client/connected"
+title: "_connected?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Client#_connected?"
+  parent: "SignalWire::Relay::Client"
+  module: "SignalWire.Relay.Client"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/client.rb"
+  visibility: "public"
+---
+# `_connected?`
+
+True when the client believes the WebSocket is open. Exposed for
+tests that need to assert the recv loop is still alive after an
+injected error / handler exception.
+
+## Signature
+
+```ruby
+def _connected?
+```
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/relay/client.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/client.rb)
+
+Line 162.

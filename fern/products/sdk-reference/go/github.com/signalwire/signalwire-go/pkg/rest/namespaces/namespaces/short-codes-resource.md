@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/short-codes-resource"
+title: "ShortCodesResource"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.ShortCodesResource"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/short_codes.go"
+---
+# `ShortCodesResource`
+
+ShortCodesResource is an alias for ShortCodesNamespace, matching the Python class name for cross-SDK parity. Prefer ShortCodesNamespace in new Go code.
+
+## Signature
+
+```go
+type ShortCodesResource alias
+```
+
+## Source
+
+[`pkg/rest/namespaces/short_codes.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/short_codes.go)
+
+Line 45.

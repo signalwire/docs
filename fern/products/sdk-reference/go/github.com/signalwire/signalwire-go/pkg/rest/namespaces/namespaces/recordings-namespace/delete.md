@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/recordings-namespace/delete"
+title: "Delete"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.RecordingsNamespace.Delete"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.RecordingsNamespace"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/recordings.go"
+---
+# `Delete`
+
+Delete removes a recording by ID.
+
+## Signature
+
+```go
+func (*RecordingsNamespace) Delete(id string) (map[string]any, error)
+```
+
+## Parameters
+
+| Name | Type     | Required | Default | Description |
+| ---- | -------- | -------- | ------- | ----------- |
+| `id` | `string` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/recordings.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/recordings.go)
+
+Line 48.

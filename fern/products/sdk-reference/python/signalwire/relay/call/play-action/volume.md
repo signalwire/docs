@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/relay/call/play-action/volume"
+title: "volume"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.call.PlayAction.volume"
+  parent: "signalwire.relay.call.PlayAction"
+  module: "signalwire.relay.call"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py"
+---
+# `volume`
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async volume(volume: float) -> dict
+```
+
+## Parameters
+
+| Name     | Type    | Required | Default | Description |
+| -------- | ------- | -------- | ------- | ----------- |
+| `volume` | `float` | yes      | —       | —           |
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/call.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py)
+
+Line 107.

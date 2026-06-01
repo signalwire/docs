@@ -1,0 +1,35 @@
+---
+slug: "/reference/typescript/skills/builtin/datasphere/data-sphere-skill/get-instance-key"
+title: "getInstanceKey"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.builtin.datasphere.DataSphereSkill.getInstanceKey"
+  parent: "skills.builtin.datasphere.DataSphereSkill"
+  module: "skills.builtin.datasphere"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/datasphere.ts"
+---
+# `getInstanceKey`
+
+Instance key for the SkillManager. Defaults to `datasphere_search_knowledge`,
+matching the Python SDK default. When `tool_name` is set, uses
+`datasphere_<tool_name>`.
+
+## Signature
+
+```typescript
+getInstanceKey(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`src/skills/builtin/datasphere.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/datasphere.ts)
+
+Line 169.

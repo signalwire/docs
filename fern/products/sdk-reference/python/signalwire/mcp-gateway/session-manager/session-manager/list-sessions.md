@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/mcp-gateway/session-manager/session-manager/list-sessions"
+title: "list_sessions"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.mcp_gateway.session_manager.SessionManager.list_sessions"
+  parent: "signalwire.mcp_gateway.session_manager.SessionManager"
+  module: "signalwire.mcp_gateway.session_manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/session_manager.py"
+---
+# `list_sessions`
+
+List all active sessions with their info
+
+## Signature
+
+```python
+list_sessions() -> Dict[str, Dict[str, Any]]
+```
+
+## Returns
+
+`Dict[str, Dict[str, Any]]`
+
+## Source
+
+[`/src/signalwire/signalwire/mcp_gateway/session_manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/session_manager.py)
+
+Line 146.

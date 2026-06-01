@@ -1,0 +1,43 @@
+---
+slug: "/reference/php/signal-wire/utils/utils/schema-utils/validate-document"
+title: "validateDocument"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Utils\\SchemaUtils::validateDocument"
+  parent: "SignalWire\\Utils\\SchemaUtils"
+  module: "SignalWire.Utils"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Utils/SchemaUtils.php"
+  visibility: "public"
+---
+# `validateDocument`
+
+Validate a complete SWML document. Mirrors Python's
+
+validate\_document(document). Returns (false, \['Schema validator
+not initialized']) when no full validator is wired in.
+
+## Signature
+
+```php
+public function validateDocument(array $document): array
+```
+
+## Parameters
+
+| Name       | Type    | Required | Default | Description |
+| ---------- | ------- | -------- | ------- | ----------- |
+| `document` | `array` | yes      | —       | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Utils/SchemaUtils.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Utils/SchemaUtils.php)
+
+Line 296.

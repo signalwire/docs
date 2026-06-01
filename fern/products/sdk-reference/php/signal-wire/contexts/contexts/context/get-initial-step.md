@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context/get-initial-step"
+title: "getInitialStep"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\Context::getInitialStep"
+  parent: "SignalWire\\Contexts\\Context"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `getInitialStep`
+
+## Signature
+
+```php
+public function getInitialStep(): ?string
+```
+
+## Returns
+
+`?string`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 777.

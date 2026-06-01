@@ -1,0 +1,44 @@
+---
+slug: "/reference/typescript/relay/deferred/create-deferred"
+title: "createDeferred"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "relay.Deferred.createDeferred"
+  parent: "relay.Deferred"
+  module: "relay.Deferred"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Deferred.ts"
+---
+# `createDeferred`
+
+Create a [Deferred](/reference/typescript/relay/deferred/deferred) with externalised `resolve` / `reject` and a
+`settled` flag.
+
+The returned object exposes the promise plus its resolve and reject
+functions so callers outside the executor can settle it. Later calls to
+`resolve` or `reject` are idempotent.
+
+## Signature
+
+```typescript
+createDeferred<T>(): Deferred<T>
+```
+
+## Type Parameters
+
+| Name | Type | Required | Default | Description                                   |
+| ---- | ---- | -------- | ------- | --------------------------------------------- |
+| `T`  | —    | yes      | —       | Resolution value type of the wrapped promise. |
+
+## Returns
+
+`Deferred<T>` — A fresh `Deferred<T>` in pending state.
+
+## Source
+
+[`src/relay/Deferred.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Deferred.ts)
+
+Line 34.

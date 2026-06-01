@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/gather-info/get-completion-action"
+title: "getCompletionAction"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\GatherInfo::getCompletionAction"
+  parent: "SignalWire\\Contexts\\GatherInfo"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `getCompletionAction`
+
+## Signature
+
+```php
+public function getCompletionAction(): ?string
+```
+
+## Returns
+
+`?string`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 138.

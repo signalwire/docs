@@ -1,0 +1,36 @@
+---
+slug: "/reference/dotnet/signal-wire.pom/pom-builder/from-sections-list-dictionary-string-object"
+title: "FromSections(List<Dictionary<string, object>>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.POM.PomBuilder.FromSections(System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>>)"
+  parent: "SignalWire.POM.PomBuilder"
+  module: "SignalWire.POM"
+  visibility: "public"
+---
+# `FromSections(List<Dictionary<string, object>>)`
+
+Build a PomBuilder from a list of section dicts.
+(Python parity: `PomBuilder.from_sections` classmethod.)
+
+**Modifiers:** `static`
+
+## Signature
+
+```dotnet
+public static PomBuilder FromSections(List<Dictionary<string, object>> sections)
+```
+
+## Parameters
+
+| Name       | Type                              | Required | Default | Description |
+| ---------- | --------------------------------- | -------- | ------- | ----------- |
+| `sections` | `List<Dictionary<string,object>>` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.POM.PomBuilder`

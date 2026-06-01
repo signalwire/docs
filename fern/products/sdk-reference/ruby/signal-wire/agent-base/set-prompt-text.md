@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/set-prompt-text"
+title: "set_prompt_text"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#set_prompt_text"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `set_prompt_text`
+
+Set prompt as raw text. Clears any POM state.
+
+## Signature
+
+```ruby
+def set_prompt_text(text)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `text` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 235.

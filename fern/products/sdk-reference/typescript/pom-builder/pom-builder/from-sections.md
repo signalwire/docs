@@ -1,0 +1,41 @@
+---
+slug: "/reference/typescript/pom-builder/pom-builder/from-sections"
+title: "fromSections"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "PomBuilder.PomBuilder.fromSections"
+  parent: "PomBuilder.PomBuilder"
+  module: "PomBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/PomBuilder.ts"
+---
+# `fromSections`
+
+Creates a PomBuilder from an array of section data objects.
+
+**Modifiers:** `static`
+
+## Signature
+
+```typescript
+fromSections(sections: PomSectionData[]): PomBuilder
+```
+
+## Parameters
+
+| Name       | Type               | Required | Default | Description                           |
+| ---------- | ------------------ | -------- | ------- | ------------------------------------- |
+| `sections` | `PomSectionData[]` | yes      | —       | Array of section data to reconstruct. |
+
+## Returns
+
+`PomBuilder` — A new PomBuilder populated with the given sections.
+
+## Source
+
+[`src/PomBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/PomBuilder.ts)
+
+Line 413.

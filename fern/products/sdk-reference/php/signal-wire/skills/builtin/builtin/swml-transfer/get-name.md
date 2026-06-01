@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/swml-transfer/get-name"
+title: "getName"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\SwmlTransfer::getName"
+  parent: "SignalWire\\Skills\\Builtin\\SwmlTransfer"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/SwmlTransfer.php"
+  visibility: "public"
+---
+# `getName`
+
+## Signature
+
+```php
+public function getName(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/Skills/Builtin/SwmlTransfer.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/SwmlTransfer.php)
+
+Line 12.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-base/required-env-vars"
+title: "required_env_vars"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillBase::required_env_vars"
+  parent: "signalwire::skills::SkillBase"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_base.hpp"
+  visibility: "public"
+---
+# `required_env_vars`
+
+**Modifiers:** `const` `inline` `virtual`
+
+## Signature
+
+```cpp
+std::vector< std::string > required_env_vars() const
+```
+
+## Returns
+
+`std::vector< std::string >`
+
+## Source
+
+[`include/signalwire/skills/skill_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_base.hpp)
+
+Line 38.

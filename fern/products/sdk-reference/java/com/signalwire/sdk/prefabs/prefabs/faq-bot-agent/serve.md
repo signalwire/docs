@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/prefabs/prefabs/faq-bot-agent/serve"
+title: "serve"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.prefabs.FAQBotAgent.serve"
+  parent: "com.signalwire.sdk.prefabs.FAQBotAgent"
+  module: "com.signalwire.sdk.prefabs.FAQBotAgent"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/prefabs/FAQBotAgent.java"
+  visibility: "public"
+---
+# `serve`
+
+## Signature
+
+```java
+public void serve()
+```
+
+## Throws
+
+- `Exception`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/prefabs/FAQBotAgent.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/prefabs/FAQBotAgent.java)
+
+Line 112.

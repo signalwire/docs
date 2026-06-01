@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/on-function-call"
+title: "on_function_call"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#on_function_call"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `on_function_call`
+
+Dispatch a function call to the registered handler. Default plain
+implementation — AgentBase overrides with token validation.
+
+## Signature
+
+```ruby
+def on_function_call(name, args, raw_data)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `name`     | —    | yes      | —       | —           |
+| `args`     | —    | yes      | —       | —           |
+| `raw_data` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 113.

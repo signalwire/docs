@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/config-loader/config-loader/get-section"
+title: "get_section"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.config_loader.ConfigLoader.get_section"
+  parent: "signalwire.core.config_loader.ConfigLoader"
+  module: "signalwire.core.config_loader"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py"
+---
+# `get_section`
+
+Get an entire configuration section.
+
+## Signature
+
+```python
+get_section(section: str) -> Dict[str, Any]
+```
+
+## Parameters
+
+| Name      | Type  | Required | Default | Description                                   |
+| --------- | ----- | -------- | ------- | --------------------------------------------- |
+| `section` | `str` | yes      | —       | The section name (e.g., "security", "server") |
+
+## Returns
+
+`Dict[str, Any]` — The configuration section with all variables substituted
+
+## Source
+
+[`/src/signalwire/signalwire/core/config_loader.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py)
+
+Line 156.

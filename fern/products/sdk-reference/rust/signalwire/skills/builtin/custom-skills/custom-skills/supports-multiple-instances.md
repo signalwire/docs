@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/custom-skills/custom-skills/supports-multiple-instances"
+title: "supports_multiple_instances"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::custom_skills::CustomSkills::supports_multiple_instances"
+  parent: "signalwire::skills::builtin::custom_skills::CustomSkills"
+  module: "skills.builtin.custom_skills"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/custom_skills.rs"
+  visibility: "public"
+---
+# `supports_multiple_instances`
+
+## Signature
+
+```rust
+fn supports_multiple_instances(&self) -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`src/skills/builtin/custom_skills.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/custom_skills.rs)
+
+Line 28.

@@ -1,0 +1,42 @@
+---
+slug: "/reference/cpp/signalwire/contexts/step/set-end"
+title: "set_end"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Step::set_end"
+  parent: "signalwire::contexts::Step"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `set_end`
+
+Mark this step as terminal for the step flow.
+IMPORTANT: end=true does NOT end the conversation or hang up the call. It exits step mode entirely after this step executes — clearing the steps list, current step index, valid\_steps, and valid\_contexts. The agent keeps running, but operates only under the base system prompt and the context-level prompt; no more step instructions are injected and no more next\_step tool is offered.
+To actually end the call, call a hangup tool or define a hangup hook.
+
+## Signature
+
+```cpp
+Step & set_end(bool end)
+```
+
+## Parameters
+
+| Name  | Type   | Required | Default | Description |
+| ----- | ------ | -------- | ------- | ----------- |
+| `end` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`Step &`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 153.

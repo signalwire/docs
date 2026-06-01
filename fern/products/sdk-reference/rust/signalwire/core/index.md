@@ -1,0 +1,25 @@
+---
+slug: "/reference/rust/signalwire/core"
+title: "core"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::core"
+  parent: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/core/mod.rs"
+  visibility: "public"
+---
+# `core`
+
+## Modules
+
+- [`logging_config`](/reference/rust/signalwire/core/logging-config)
+
+## Source
+
+[`src/core/mod.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/core/mod.rs)
+
+Line 5.

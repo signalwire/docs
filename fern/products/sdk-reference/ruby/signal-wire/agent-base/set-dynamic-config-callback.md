@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/set-dynamic-config-callback"
+title: "set_dynamic_config_callback"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#set_dynamic_config_callback"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `set_dynamic_config_callback`
+
+\==================================================================
+Web / HTTP configuration
+========================
+
+## Signature
+
+```ruby
+def set_dynamic_config_callback(callable = nil, &block)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `callable` | —    | no       | `nil`   | —           |
+| `...block` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 1168.

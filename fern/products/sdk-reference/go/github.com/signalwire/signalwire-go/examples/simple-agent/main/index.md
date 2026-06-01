@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/simple-agent/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/simple_agent"
+  module: "github.com.signalwire.signalwire-go.examples.simple_agent"
+---
+# `main`
+
+Example: simple\_agent
+
+Basic AI agent with prompt and tools. Demonstrates creating an AgentBase, setting prompt text, adding hints and language, defining SWAIG tools, setting global data, and running the agent.
+
+## Signature
+
+```go
+package main
+```

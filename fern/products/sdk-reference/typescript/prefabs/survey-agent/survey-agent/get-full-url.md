@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/prefabs/survey-agent/survey-agent/get-full-url"
+title: "getFullUrl"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.SurveyAgent.SurveyAgent.getFullUrl"
+  parent: "prefabs.SurveyAgent.SurveyAgent"
+  module: "prefabs.SurveyAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts"
+---
+# `getFullUrl`
+
+Get the full external URL of this agent, using the proxy base URL if available.
+
+## Signature
+
+```typescript
+getFullUrl(includeAuth: boolean = false): string
+```
+
+## Parameters
+
+| Name          | Type      | Required | Default | Description                                                             |
+| ------------- | --------- | -------- | ------- | ----------------------------------------------------------------------- |
+| `includeAuth` | `boolean` | yes      | `false` | Whether to embed basic-auth credentials in the URL (defaults to false). |
+
+## Returns
+
+`string` — The fully-qualified URL string.
+
+## Source
+
+[`src/AgentBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts)
+
+Line 1838.

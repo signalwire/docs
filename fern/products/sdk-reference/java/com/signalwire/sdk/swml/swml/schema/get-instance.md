@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/schema/get-instance"
+title: "getInstance"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Schema.getInstance"
+  parent: "com.signalwire.sdk.swml.Schema"
+  module: "com.signalwire.sdk.swml.Schema"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Schema.java"
+  visibility: "public"
+---
+# `getInstance`
+
+**Modifiers:** `static`
+
+## Signature
+
+```java
+public static com.signalwire.sdk.swml.Schema getInstance()
+```
+
+## Returns
+
+`com.signalwire.sdk.swml.Schema`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Schema.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Schema.java)
+
+Line 44.

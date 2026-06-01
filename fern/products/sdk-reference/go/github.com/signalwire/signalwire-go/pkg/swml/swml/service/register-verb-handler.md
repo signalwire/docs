@@ -1,0 +1,35 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/register-verb-handler"
+title: "RegisterVerbHandler"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.RegisterVerbHandler"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/verb_handler.go"
+---
+# `RegisterVerbHandler`
+
+RegisterVerbHandler registers a custom handler for a SWML verb, keyed by the name returned by h.GetVerbName(). A subsequent call with the same verb name replaces the previous handler. This is the Go equivalent of Python's VerbHandlerRegistry.register\_handler.
+
+## Signature
+
+```go
+func (*Service) RegisterVerbHandler(h VerbHandler)
+```
+
+## Parameters
+
+| Name | Type          | Required | Default | Description |
+| ---- | ------------- | -------- | ------- | ----------- |
+| `h`  | `VerbHandler` | yes      | —       | —           |
+
+## Source
+
+[`pkg/swml/verb_handler.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/verb_handler.go)
+
+Line 45.

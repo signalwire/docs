@@ -1,0 +1,35 @@
+---
+slug: "/reference/perl/signal-wire/signal-wire/contexts/add-system-section"
+title: "add_system_section"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Contexts::add_system_section"
+  parent: "SignalWire::Contexts"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Contexts.pm"
+  visibility: "public"
+---
+# `add_system_section`
+
+## Signature
+
+```perl
+sub add_system_section($title, $body)
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description |
+| ------- | ---- | -------- | ------- | ----------- |
+| `title` | —    | yes      | —       | —           |
+| `body`  | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Contexts.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Contexts.pm)
+
+Line 485.

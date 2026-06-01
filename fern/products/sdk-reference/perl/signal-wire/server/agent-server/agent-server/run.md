@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/server/agent-server/agent-server/run"
+title: "run"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Server::AgentServer::run"
+  parent: "SignalWire::Server::AgentServer"
+  module: "SignalWire.Server.AgentServer"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Server/AgentServer.pm"
+  visibility: "public"
+---
+# `run`
+
+## Signature
+
+```perl
+sub run(%opts)
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `...opts` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Server/AgentServer.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Server/AgentServer.pm)
+
+Line 218.

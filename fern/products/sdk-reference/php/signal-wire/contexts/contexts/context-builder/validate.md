@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context-builder/validate"
+title: "validate"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\ContextBuilder::validate"
+  parent: "SignalWire\\Contexts\\ContextBuilder"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `validate`
+
+Validate the contexts configuration.
+
+## Signature
+
+```php
+public function validate(): array
+```
+
+## Returns
+
+`array` — Array of error strings (empty if valid)
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 1164.

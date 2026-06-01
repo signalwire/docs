@@ -1,0 +1,29 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/client/handle-event-dictionary-string-object"
+title: "HandleEvent(Dictionary<string, object?>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Client.HandleEvent(System.Collections.Generic.Dictionary<string, object?>)"
+  parent: "SignalWire.Relay.Client"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `HandleEvent(Dictionary<string, object?>)`
+
+Route a signalwire.event payload to the appropriate handler.
+
+## Signature
+
+```dotnet
+public void HandleEvent(Dictionary<string, object?> outerParams)
+```
+
+## Parameters
+
+| Name          | Type                        | Required | Default | Description |
+| ------------- | --------------------------- | -------- | ------- | ----------- |
+| `outerParams` | `Dictionary<string,object>` | yes      | —       | —           |

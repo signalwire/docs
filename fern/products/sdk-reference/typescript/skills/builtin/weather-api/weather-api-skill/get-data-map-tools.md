@@ -1,0 +1,40 @@
+---
+slug: "/reference/typescript/skills/builtin/weather-api/weather-api-skill/get-data-map-tools"
+title: "getDataMapTools"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.builtin.weather_api.WeatherApiSkill.getDataMapTools"
+  parent: "skills.builtin.weather_api.WeatherApiSkill"
+  module: "skills.builtin.weather_api"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts"
+---
+# `getDataMapTools`
+
+Optional DataMap-style tool definitions. Skills that build their own
+SWAIG function dicts (e.g. via `DataMap.toSwaigFunction()`) return them
+here and `AgentBase.addSkill()` registers each via `registerSwaigFunction`.
+
+Python equivalent: the direct `self.agent.register_swaig_function(fn)`
+call inside `register_tools()` (e.g. `skills/datasphere_serverless/skill.py:210`).
+Default returns `[]` — skills using only the declarative `getTools()` path
+do not need to override this.
+
+## Signature
+
+```typescript
+getDataMapTools(): Record<string, unknown>[]
+```
+
+## Returns
+
+`Record<string, unknown>[]` — Array of fully-built SWAIG function dicts.
+
+## Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 372.

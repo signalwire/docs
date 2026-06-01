@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/action/get-result"
+title: "getResult"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.Action.getResult"
+  parent: "com.signalwire.sdk.relay.Action"
+  module: "com.signalwire.sdk.relay.Action"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Action.java"
+  visibility: "public"
+---
+# `getResult`
+
+## Signature
+
+```java
+public com.signalwire.sdk.relay.RelayEvent getResult()
+```
+
+## Returns
+
+`com.signalwire.sdk.relay.RelayEvent`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/Action.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Action.java)
+
+Line 59.

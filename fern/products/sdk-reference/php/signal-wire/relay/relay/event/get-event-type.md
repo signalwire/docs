@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/event/get-event-type"
+title: "getEventType"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Event::getEventType"
+  parent: "SignalWire\\Relay\\Event"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Event.php"
+  visibility: "public"
+---
+# `getEventType`
+
+## Signature
+
+```php
+public function getEventType(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Event.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Event.php)
+
+Line 20.

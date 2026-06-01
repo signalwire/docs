@@ -1,0 +1,41 @@
+---
+slug: "/reference/python/signalwire/prefabs/survey/survey-agent/log-response"
+title: "log_response"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.prefabs.survey.SurveyAgent.log_response"
+  parent: "signalwire.prefabs.survey.SurveyAgent"
+  module: "signalwire.prefabs.survey"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/survey.py"
+---
+# `log_response`
+
+Log a validated response to a survey question
+
+This function would typically connect to a database or API to store the response.
+In this example, it just acknowledges that the response was received.
+
+**Decorators:** `@AgentBase.tool(Any, Any, Any)`
+
+## Signature
+
+```python
+log_response(args, raw_data)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `args`     | —    | yes      | —       | —           |
+| `raw_data` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/prefabs/survey.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/survey.py)
+
+Line 314.

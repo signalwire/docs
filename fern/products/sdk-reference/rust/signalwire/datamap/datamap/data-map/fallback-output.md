@@ -1,0 +1,40 @@
+---
+slug: "/reference/rust/signalwire/datamap/datamap/data-map/fallback-output"
+title: "fallback_output"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::datamap::datamap::DataMap::fallback_output"
+  parent: "signalwire::datamap::datamap::DataMap"
+  module: "datamap.datamap"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/datamap/datamap.rs"
+  visibility: "public"
+---
+# `fallback_output`
+
+Set global fallback output.
+
+## Signature
+
+```rust
+fn fallback_output(&mut self, result: ?) -> &mut Self
+```
+
+## Parameters
+
+| Name     | Type | Required | Default | Description |
+| -------- | ---- | -------- | ------- | ----------- |
+| `result` | `?`  | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/datamap/datamap.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/datamap/datamap.rs)
+
+Line 205.

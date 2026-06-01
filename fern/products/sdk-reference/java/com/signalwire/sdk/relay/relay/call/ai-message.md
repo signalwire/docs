@@ -1,0 +1,42 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/call/ai-message"
+title: "aiMessage"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.Call.aiMessage"
+  parent: "com.signalwire.sdk.relay.Call"
+  module: "com.signalwire.sdk.relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java"
+  visibility: "public"
+---
+# `aiMessage`
+
+Send a message to an active AI session.
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> aiMessage(
+    java.util.Map<java.lang.String,java.lang.Object> messageConfig
+)
+```
+
+## Parameters
+
+| Name            | Type                                               | Required | Default | Description |
+| --------------- | -------------------------------------------------- | -------- | ------- | ----------- |
+| `messageConfig` | `java.util.Map<java.lang.String,java.lang.Object>` | yes      | —       | —           |
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/Call.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java)
+
+Line 898.

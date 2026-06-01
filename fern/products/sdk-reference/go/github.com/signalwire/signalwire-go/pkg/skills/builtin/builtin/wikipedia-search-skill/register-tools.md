@@ -1,0 +1,31 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin/wikipedia-search-skill/register-tools"
+title: "RegisterTools"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills/builtin.WikipediaSearchSkill.RegisterTools"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills/builtin.WikipediaSearchSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/wikipedia_search.go"
+---
+# `RegisterTools`
+
+## Signature
+
+```go
+func (*WikipediaSearchSkill) RegisterTools() []skills.ToolRegistration
+```
+
+## Returns
+
+`[]skills.ToolRegistration`
+
+## Source
+
+[`pkg/skills/builtin/wikipedia_search.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/wikipedia_search.go)
+
+Line 65.

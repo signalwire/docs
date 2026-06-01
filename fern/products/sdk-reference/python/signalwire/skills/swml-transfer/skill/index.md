@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/skills/swml-transfer/skill"
+title: "skill"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.skills.swml_transfer.skill"
+  parent: "signalwire.skills.swml_transfer"
+  module: "signalwire.skills.swml_transfer"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/swml_transfer/skill.py"
+---
+# `skill`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module skill
+```
+
+## Classes
+
+- [`SWMLTransferSkill`](/reference/python/signalwire/skills/swml-transfer/skill/swml-transfer-skill) — Skill for transferring calls between agents using SWML with pattern matching
+
+## Source
+
+[`/src/signalwire/signalwire/skills/swml_transfer/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/swml_transfer/skill.py)

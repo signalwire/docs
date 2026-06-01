@@ -1,0 +1,36 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/datamap/datamap/expression-pattern"
+title: "ExpressionPattern"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/datamap.ExpressionPattern"
+  parent: "github.com/signalwire/signalwire-go/pkg/datamap"
+  module: "github.com.signalwire.signalwire-go.pkg.datamap"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/datamap/datamap.go"
+---
+# `ExpressionPattern`
+
+ExpressionPattern pairs a regex pattern string with a FunctionResult to execute when test\_value matches the pattern. Go equivalent of Python's Tuple\[str, FunctionResult] entry in create\_expression\_tool patterns.
+
+## Signature
+
+```go
+type ExpressionPattern struct
+```
+
+## Properties
+
+| Name      | Type                           | Required | Default | Description |
+| --------- | ------------------------------ | -------- | ------- | ----------- |
+| `Pattern` | `Pattern string`               | yes      | —       | —           |
+| `Result`  | `Result *swaig.FunctionResult` | yes      | —       | —           |
+
+## Source
+
+[`pkg/datamap/datamap.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/datamap/datamap.go)
+
+Line 431.

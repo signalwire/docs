@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/search/preprocess-query"
+title: "preprocess_query"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.search.preprocess_query"
+  parent: "signalwire.search"
+  module: "signalwire.search"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/__init__.py"
+---
+# `preprocess_query`
+
+## Signature
+
+```python
+preprocess_query(*args = (), **kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...args`   | —    | no       | `()`    | —           |
+| `...kwargs` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/search/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/__init__.py)
+
+Line 108.

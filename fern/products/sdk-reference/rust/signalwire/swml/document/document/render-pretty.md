@@ -1,0 +1,34 @@
+---
+slug: "/reference/rust/signalwire/swml/document/document/render-pretty"
+title: "render_pretty"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::swml::document::Document::render_pretty"
+  parent: "signalwire::swml::document::Document"
+  module: "swml.document"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/swml/document.rs"
+  visibility: "public"
+---
+# `render_pretty`
+
+Pretty-printed JSON string.
+
+## Signature
+
+```rust
+fn render_pretty(&self) -> ?
+```
+
+## Returns
+
+`?`
+
+## Source
+
+[`src/swml/document.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/swml/document.rs)
+
+Line 111.

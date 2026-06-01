@@ -1,0 +1,36 @@
+---
+slug: "/reference/rust/signalwire/relay/client/client/send-ack"
+title: "send_ack"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::relay::client::Client::send_ack"
+  parent: "signalwire::relay::client::Client"
+  module: "relay.client"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs"
+  visibility: "public"
+---
+# `send_ack`
+
+Send an acknowledgement for a server-initiated request.
+
+## Signature
+
+```rust
+fn send_ack(&self, id: &str)
+```
+
+## Parameters
+
+| Name | Type   | Required | Default | Description |
+| ---- | ------ | -------- | ------- | ----------- |
+| `id` | `&str` | yes      | —       | —           |
+
+## Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 485.

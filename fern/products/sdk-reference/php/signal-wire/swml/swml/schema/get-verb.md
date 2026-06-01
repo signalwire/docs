@@ -1,0 +1,40 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/schema/get-verb"
+title: "getVerb"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Schema::getVerb"
+  parent: "SignalWire\\SWML\\Schema"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php"
+  visibility: "public"
+---
+# `getVerb`
+
+Get verb metadata, or null if not found.
+
+## Signature
+
+```php
+public function getVerb(string $name): ?array
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`?array`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Schema.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php)
+
+Line 62.

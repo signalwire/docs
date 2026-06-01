@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/server/server/agent-server/get-routes"
+title: "getRoutes"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.server.AgentServer.getRoutes"
+  parent: "com.signalwire.sdk.server.AgentServer"
+  module: "com.signalwire.sdk.server.AgentServer"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/server/AgentServer.java"
+  visibility: "public"
+---
+# `getRoutes`
+
+List all registered routes.
+
+## Signature
+
+```java
+public java.util.Set<java.lang.String> getRoutes()
+```
+
+## Returns
+
+`java.util.Set<java.lang.String>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/server/AgentServer.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/server/AgentServer.java)
+
+Line 118.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/function-result/hold"
+title: "Hold"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult.Hold"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `Hold`
+
+Hold puts the call on hold with the given timeout in seconds. Timeout is clamped to the range \[0, 900].
+
+## Signature
+
+```go
+func (*FunctionResult) Hold(timeout int) *FunctionResult
+```
+
+## Parameters
+
+| Name      | Type  | Required | Default | Description |
+| --------- | ----- | -------- | ------- | ----------- |
+| `timeout` | `int` | yes      | —       | —           |
+
+## Returns
+
+`*FunctionResult`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 144.

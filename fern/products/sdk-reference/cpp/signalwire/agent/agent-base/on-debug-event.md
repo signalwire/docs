@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/agent/agent-base/on-debug-event"
+title: "on_debug_event"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::agent::AgentBase::on_debug_event"
+  parent: "signalwire::agent::AgentBase"
+  module: "signalwire.agent"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `on_debug_event`
+
+## Signature
+
+```cpp
+AgentBase & on_debug_event(DebugEventCallback cb)
+```
+
+## Parameters
+
+| Name | Type                 | Required | Default | Description |
+| ---- | -------------------- | -------- | ------- | ----------- |
+| `cb` | `DebugEventCallback` | yes      | —       | —           |
+
+## Returns
+
+`AgentBase &`
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 483.

@@ -1,0 +1,26 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/claude-skills"
+title: "claude_skills"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::claude_skills"
+  parent: "signalwire::skills::builtin"
+  module: "skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/claude_skills.rs"
+  visibility: "public"
+---
+# `claude_skills`
+
+## Classes
+
+- [`ClaudeSkills`](/reference/rust/signalwire/skills/builtin/claude-skills/claude-skills) — Load Claude SKILL.md files as agent tools (handler-based).
+
+## Source
+
+[`src/skills/builtin/claude_skills.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/claude_skills.rs)
+
+Line 1.

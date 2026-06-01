@@ -1,0 +1,46 @@
+---
+slug: "/reference/python/signalwire/prefabs"
+title: "prefabs"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.prefabs"
+  parent: "signalwire"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/__init__.py"
+---
+# `prefabs`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module prefabs
+```
+
+## Properties
+
+| Name      | Type      | Required | Default | Description |
+| --------- | --------- | -------- | ------- | ----------- |
+| `__all__` | `__all__` | yes      | —       | —           |
+
+## Modules
+
+- [`concierge`](/reference/python/signalwire/prefabs/concierge) — Copyright (c) 2025 SignalWire
+- [`faq_bot`](/reference/python/signalwire/prefabs/faq-bot) — Copyright (c) 2025 SignalWire
+- [`info_gatherer`](/reference/python/signalwire/prefabs/info-gatherer) — Copyright (c) 2025 SignalWire
+- [`receptionist`](/reference/python/signalwire/prefabs/receptionist) — Copyright (c) 2025 SignalWire
+- [`survey`](/reference/python/signalwire/prefabs/survey) — Copyright (c) 2025 SignalWire
+
+## Source
+
+[`/src/signalwire/signalwire/prefabs/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/__init__.py)

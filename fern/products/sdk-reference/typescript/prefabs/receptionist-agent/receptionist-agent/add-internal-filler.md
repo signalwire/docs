@@ -1,0 +1,48 @@
+---
+slug: "/reference/typescript/prefabs/receptionist-agent/receptionist-agent/add-internal-filler"
+title: "addInternalFiller"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.ReceptionistAgent.ReceptionistAgent.addInternalFiller"
+  parent: "prefabs.ReceptionistAgent.ReceptionistAgent"
+  module: "prefabs.ReceptionistAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts"
+---
+# `addInternalFiller`
+
+Add internal filler phrases for a single internal function and language.
+
+See [setInternalFillers](/reference/typescript/prefabs/receptionist-agent/receptionist-agent/set-internal-fillers) for the complete list of supported
+functionName values and an explanation of what fillers do.
+
+## Signature
+
+```typescript
+addInternalFiller(
+  functionName: string,
+  languageCode: string,
+  fillers: string[]
+): this
+```
+
+## Parameters
+
+| Name           | Type       | Required | Default | Description                                                                                                                                                          |
+| -------------- | ---------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `functionName` | `string`   | yes      | —       | One of the supported internal function names (see SUPPORTED\_INTERNAL\_FILLER\_NAMES). Names outside the supported set log a warning and are ignored by the runtime. |
+| `languageCode` | `string`   | yes      | —       | BCP-47 language code for the fillers (e.g. 'en-US').                                                                                                                 |
+| `fillers`      | `string[]` | yes      | —       | Array of filler phrases.                                                                                                                                             |
+
+## Returns
+
+`this` — This agent instance for chaining.
+
+## Source
+
+[`src/AgentBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts)
+
+Line 942.

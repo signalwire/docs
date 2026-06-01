@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/logs"
+title: "logs"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::logs"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `logs`
+
+Logs (messages, voice, fax, conferences).
+
+## Signature
+
+```php
+public function logs(): SignalWire\REST\Namespaces\Logs
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\Logs`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 299.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/cpp/signalwire/contexts/context/set-exit-fillers"
+title: "set_exit_fillers"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Context::set_exit_fillers"
+  parent: "signalwire::contexts::Context"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `set_exit_fillers`
+
+Set exit fillers.
+
+## Signature
+
+```cpp
+Context & set_exit_fillers(const json & fillers)
+```
+
+## Parameters
+
+| Name      | Type           | Required | Default | Description |
+| --------- | -------------- | -------- | ------- | ----------- |
+| `fillers` | `const json &` | yes      | —       | —           |
+
+## Returns
+
+`Context &`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 322.

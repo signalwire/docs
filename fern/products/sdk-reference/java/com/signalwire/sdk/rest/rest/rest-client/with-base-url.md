@@ -1,0 +1,54 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/rest/rest-client/with-base-url"
+title: "withBaseUrl"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.RestClient.withBaseUrl"
+  parent: "com.signalwire.sdk.rest.RestClient"
+  module: "com.signalwire.sdk.rest.RestClient"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/RestClient.java"
+  visibility: "public"
+---
+# `withBaseUrl`
+
+Build a `RestClient` pointed at an explicit base URL \u2014 typically
+a loopback fixture used by the porting-sdk's REST-transport audit.
+
+The
+returned client signs requests with the given `project`/`token`
+pair via Basic Auth and routes every namespace's HTTP through the
+fixture instead of the live SignalWire space.
+
+**Modifiers:** `static`
+
+## Signature
+
+```java
+public static com.signalwire.sdk.rest.RestClient withBaseUrl(
+    java.lang.String baseUrl,
+    java.lang.String project,
+    java.lang.String token
+)
+```
+
+## Parameters
+
+| Name      | Type               | Required | Default | Description                                                                                                |
+| --------- | ------------------ | -------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `baseUrl` | `java.lang.String` | yes      | —       | fully qualified base URL (e.g. `"http://127.0.0.1:NNNN/api"`); `"/api"` is appended if not already present |
+| `project` | `java.lang.String` | yes      | —       | project ID used as the Basic Auth username                                                                 |
+| `token`   | `java.lang.String` | yes      | —       | API token used as the Basic Auth password                                                                  |
+
+## Returns
+
+`com.signalwire.sdk.rest.RestClient`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/RestClient.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/RestClient.java)
+
+Line 89.

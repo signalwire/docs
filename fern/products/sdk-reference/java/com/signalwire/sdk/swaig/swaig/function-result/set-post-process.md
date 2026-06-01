@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/set-post-process"
+title: "setPostProcess"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.setPostProcess"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `setPostProcess`
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult setPostProcess(
+    boolean postProcess
+)
+```
+
+## Parameters
+
+| Name          | Type      | Required | Default | Description |
+| ------------- | --------- | -------- | ------- | ----------- |
+| `postProcess` | `boolean` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 55.

@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/compat-accounts/compat-accounts-http-client"
+title: "CompatAccounts(HttpClient)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.CompatAccounts.CompatAccounts(SignalWire.REST.HttpClient)"
+  parent: "SignalWire.REST.Namespaces.CompatAccounts"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `CompatAccounts(HttpClient)`
+
+## Signature
+
+```dotnet
+public CompatAccounts(HttpClient client)
+```
+
+## Parameters
+
+| Name     | Type                         | Required | Default | Description |
+| -------- | ---------------------------- | -------- | ------- | ----------- |
+| `client` | `SignalWire.REST.HttpClient` | yes      | —       | —           |

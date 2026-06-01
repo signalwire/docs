@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/stream-action"
+title: "StreamAction"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.StreamAction"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go"
+---
+# `StreamAction`
+
+StreamAction represents a long-running media stream operation.
+
+## Signature
+
+```go
+type StreamAction struct
+```
+
+## Properties
+
+| Name     | Type      | Required | Default | Description |
+| -------- | --------- | -------- | ------- | ----------- |
+| `Action` | `*Action` | yes      | —       | —           |
+
+## Methods
+
+- [`Stop`](/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/stream-action/stop) — Stop sends calling.stream.stop to halt the active stream operation.
+
+## Source
+
+[`pkg/relay/action.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go)
+
+Line 445.

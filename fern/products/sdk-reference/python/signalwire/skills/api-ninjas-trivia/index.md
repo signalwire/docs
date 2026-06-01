@@ -1,0 +1,42 @@
+---
+slug: "/reference/python/signalwire/skills/api-ninjas-trivia"
+title: "api_ninjas_trivia"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.skills.api_ninjas_trivia"
+  parent: "signalwire.skills"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/api_ninjas_trivia/__init__.py"
+---
+# `api_ninjas_trivia`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module api_ninjas_trivia
+```
+
+## Properties
+
+| Name      | Type      | Required | Default | Description |
+| --------- | --------- | -------- | ------- | ----------- |
+| `__all__` | `__all__` | yes      | —       | —           |
+
+## Modules
+
+- [`skill`](/reference/python/signalwire/skills/api-ninjas-trivia/skill) — Copyright (c) 2025 SignalWire
+
+## Source
+
+[`/src/signalwire/signalwire/skills/api_ninjas_trivia/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/api_ninjas_trivia/__init__.py)

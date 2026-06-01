@@ -1,0 +1,54 @@
+---
+slug: "/reference/typescript/skills/skill-manager/skill-manager/load-skill"
+title: "loadSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.SkillManager.SkillManager.loadSkill"
+  parent: "skills.SkillManager.SkillManager"
+  module: "skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts"
+---
+# `loadSkill`
+
+Load a skill by providing the class constructor directly, bypassing the registry.
+This is the TypeScript equivalent of Python's `load_skill(skill_name, skill_class, params)`
+path where a caller-provided `skill_class` is used instead of a registry lookup.
+
+**Remarks:** Equivalent to Python's `load_skill(skill_name, skill_class=MySkillClass, params)`.
+
+## Signature
+
+```typescript
+loadSkill(
+  skillClass: typeof SkillBase,
+  config?: SkillConfig
+): Promise<[boolean, string]>
+```
+
+## Parameters
+
+| Name         | Type               | Required | Default | Description                                              |
+| ------------ | ------------------ | -------- | ------- | -------------------------------------------------------- |
+| `skillClass` | `typeof SkillBase` | yes      | —       | The skill class constructor (a subclass of `SkillBase`). |
+| `config`     | `SkillConfig`      | no       | —       | Optional configuration to pass to the skill constructor. |
+
+## Returns
+
+`Promise<[boolean, string]>` — A tuple `[success, errorMessage]` matching Python's `load_skill` return contract. `errorMessage` is an empty string on success.
+
+## Examples
+
+```typescript
+const [ok, err] = await manager.loadSkill(MyCustomSkill, { api_key: 'secret' });
+if (!ok) console.error(err);
+```
+
+## Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 240.

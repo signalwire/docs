@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/verified-callers-namespace/submit-verification"
+title: "SubmitVerification"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.VerifiedCallersNamespace.SubmitVerification"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.VerifiedCallersNamespace"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/verified_callers.go"
+---
+# `SubmitVerification`
+
+SubmitVerification submits a verification code for a caller ID.
+
+## Signature
+
+```go
+func (*VerifiedCallersNamespace) SubmitVerification(callerID string, data map[string]any) (map[string]any, error)
+```
+
+## Parameters
+
+| Name       | Type             | Required | Default | Description |
+| ---------- | ---------------- | -------- | ------- | ----------- |
+| `callerID` | `string`         | yes      | —       | —           |
+| `data`     | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/verified_callers.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/verified_callers.go)
+
+Line 29.

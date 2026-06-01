@@ -1,0 +1,54 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/service/on-request"
+title: "onRequest"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Service::onRequest"
+  parent: "SignalWire\\SWML\\Service"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php"
+  visibility: "public"
+---
+# `onRequest`
+
+Customization hook called when SWML is requested. Default
+
+delegates to {@see onSwmlRequest()}; subclasses typically
+override `onSwmlRequest` rather than this method.
+
+Return null to use the default SWML rendering, or an array of
+modifications to merge into the rendered document.
+
+Python parity: WebMixin.on\_request(request\_data, callback\_path).
+The Python third `request` arg is FastAPI-specific and is not
+mirrored.
+
+## Signature
+
+```php
+public function onRequest(
+    ?array $requestData = NULL,
+    ?string $callbackPath = NULL
+): ?array
+```
+
+## Parameters
+
+| Name           | Type      | Required | Default | Description |
+| -------------- | --------- | -------- | ------- | ----------- |
+| `requestData`  | `?array`  | no       | `NULL`  | —           |
+| `callbackPath` | `?string` | no       | `NULL`  | —           |
+
+## Returns
+
+`?array`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Service.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php)
+
+Line 402.

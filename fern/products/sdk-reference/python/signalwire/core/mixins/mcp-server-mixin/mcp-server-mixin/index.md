@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/core/mixins/mcp-server-mixin/mcp-server-mixin"
+title: "MCPServerMixin"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.mcp_server_mixin.MCPServerMixin"
+  parent: "signalwire.core.mixins.mcp_server_mixin"
+  module: "signalwire.core.mixins.mcp_server_mixin"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/mcp_server_mixin.py"
+---
+# `MCPServerMixin`
+
+Mixin that adds MCP server endpoint to an agent
+
+## Signature
+
+```python
+class MCPServerMixin
+```
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/mcp_server_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/mcp_server_mixin.py)
+
+Line 18.

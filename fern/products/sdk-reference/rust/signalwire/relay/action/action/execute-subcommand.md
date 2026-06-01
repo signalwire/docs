@@ -1,0 +1,37 @@
+---
+slug: "/reference/rust/signalwire/relay/action/action/execute-subcommand"
+title: "execute_subcommand"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::relay::action::Action::execute_subcommand"
+  parent: "signalwire::relay::action::Action"
+  module: "relay.action"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/action.rs"
+  visibility: "public"
+---
+# `execute_subcommand`
+
+Send a sub-command RPC through the client.
+
+## Signature
+
+```rust
+fn execute_subcommand(&self, method: &str, extra: ?<?, ?>)
+```
+
+## Parameters
+
+| Name     | Type      | Required | Default | Description |
+| -------- | --------- | -------- | ------- | ----------- |
+| `method` | `&str`    | yes      | —       | —           |
+| `extra`  | `?<?, ?>` | yes      | —       | —           |
+
+## Source
+
+[`src/relay/action.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/action.rs)
+
+Line 199.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/cpp/signalwire/relay/action/set-event-type-filter"
+title: "set_event_type_filter"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Action::set_event_type_filter"
+  parent: "signalwire::relay::Action"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/action.hpp"
+  visibility: "public"
+---
+# `set_event_type_filter`
+
+Set the wire-event types the Action should accept state updates from. Empty (the default) means "match any component event whose
+control\_id matches this Action". Used by play\_and\_collect to listen on calling.call.collect only — a calling.call.play(finished) must NOT resolve a play\_and\_collect action.
+
+**Modifiers:** `inline`
+
+## Signature
+
+```cpp
+void set_event_type_filter(const std::vector< std::string > & types)
+```
+
+## Parameters
+
+| Name    | Type                                 | Required | Default | Description |
+| ------- | ------------------------------------ | -------- | ------- | ----------- |
+| `types` | `const std::vector< std::string > &` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/action.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/action.hpp)
+
+Line 53.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/full-validation-enabled"
+title: "FullValidationEnabled"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.FullValidationEnabled"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `FullValidationEnabled`
+
+FullValidationEnabled reports whether schema validation is active. Returns true when a schema was successfully loaded and schemaValidation is on. Mirrors Python's full\_validation\_enabled property.
+
+## Signature
+
+```go
+func (*Service) FullValidationEnabled() bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 555.

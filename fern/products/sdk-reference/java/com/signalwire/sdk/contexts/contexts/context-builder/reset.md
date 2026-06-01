@@ -1,0 +1,37 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/context-builder/reset"
+title: "reset"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.ContextBuilder.reset"
+  parent: "com.signalwire.sdk.contexts.ContextBuilder"
+  module: "com.signalwire.sdk.contexts.ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java"
+  visibility: "public"
+---
+# `reset`
+
+Remove all contexts, returning the builder to its initial state.
+
+Use this in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request.
+
+## Signature
+
+```java
+public com.signalwire.sdk.contexts.ContextBuilder reset()
+```
+
+## Returns
+
+`com.signalwire.sdk.contexts.ContextBuilder` — this builder for chaining.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java)
+
+Line 96.

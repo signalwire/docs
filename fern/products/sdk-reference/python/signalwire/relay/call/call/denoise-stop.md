@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/relay/call/call/denoise-stop"
+title: "denoise_stop"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.call.Call.denoise_stop"
+  parent: "signalwire.relay.call.Call"
+  module: "signalwire.relay.call"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py"
+---
+# `denoise_stop`
+
+Stop noise reduction on the call.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async denoise_stop() -> dict
+```
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/call.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py)
+
+Line 978.

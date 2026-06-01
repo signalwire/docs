@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/info-gatherer/global-data"
+title: "global_data"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::InfoGatherer#global_data"
+  parent: "SignalWire::Prefabs::InfoGatherer"
+  module: "SignalWire.Prefabs.InfoGatherer"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/info_gatherer.rb"
+  visibility: "public"
+---
+# `global_data`
+
+Global data for initial state.
+
+## Signature
+
+```ruby
+def global_data
+```
+
+## Source
+
+[`lib/signalwire/prefabs/info_gatherer.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/info_gatherer.rb)
+
+Line 53.

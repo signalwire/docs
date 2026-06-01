@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/new-imported-numbers-namespace"
+title: "NewImportedNumbersNamespace"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.NewImportedNumbersNamespace"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/imported_numbers.go"
+---
+# `NewImportedNumbersNamespace`
+
+NewImportedNumbersNamespace creates a new ImportedNumbersNamespace.
+
+## Signature
+
+```go
+func NewImportedNumbersNamespace(client HTTPClient) *ImportedNumbersNamespace
+```
+
+## Parameters
+
+| Name     | Type         | Required | Default | Description |
+| -------- | ------------ | -------- | ------- | ----------- |
+| `client` | `HTTPClient` | yes      | —       | —           |
+
+## Returns
+
+`*ImportedNumbersNamespace`
+
+## Source
+
+[`pkg/rest/namespaces/imported_numbers.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/imported_numbers.go)
+
+Line 16.

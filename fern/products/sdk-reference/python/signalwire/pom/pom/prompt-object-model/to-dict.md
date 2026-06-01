@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/pom/pom/prompt-object-model/to-dict"
+title: "to_dict"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.pom.pom.PromptObjectModel.to_dict"
+  parent: "signalwire.pom.pom.PromptObjectModel"
+  module: "signalwire.pom.pom"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py"
+---
+# `to_dict`
+
+Convert the entire model to a list of dictionaries.
+
+## Signature
+
+```python
+to_dict() -> List[dict]
+```
+
+## Returns
+
+`List[dict]` — A list of dictionaries representing the model
+
+## Source
+
+[`/src/signalwire/signalwire/pom/pom.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py)
+
+Line 439.

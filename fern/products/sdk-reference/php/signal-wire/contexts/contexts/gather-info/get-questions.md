@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/gather-info/get-questions"
+title: "getQuestions"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\GatherInfo::getQuestions"
+  parent: "SignalWire\\Contexts\\GatherInfo"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `getQuestions`
+
+## Signature
+
+```php
+public function getQuestions(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 133.

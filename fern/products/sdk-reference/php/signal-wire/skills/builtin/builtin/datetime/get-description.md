@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/datetime/get-description"
+title: "getDescription"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\Datetime::getDescription"
+  parent: "SignalWire\\Skills\\Builtin\\Datetime"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/Datetime.php"
+  visibility: "public"
+---
+# `getDescription`
+
+## Signature
+
+```php
+public function getDescription(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/Skills/Builtin/Datetime.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/Datetime.php)
+
+Line 17.

@@ -1,0 +1,45 @@
+---
+slug: "/reference/python/signalwire/core/mixins/tool-mixin/tool-mixin/tool"
+title: "tool"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.tool_mixin.ToolMixin.tool"
+  parent: "signalwire.core.mixins.tool_mixin.ToolMixin"
+  module: "signalwire.core.mixins.tool_mixin"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/tool_mixin.py"
+---
+# `tool`
+
+Class method decorator for defining SWAIG tools
+
+Used as:
+
+@AgentBase.tool(name="example\_function", parameters={...})
+def example\_function(self, param1):
+\# ...
+
+**Modifiers:** `classmethod`
+
+## Signature
+
+```python
+@classmethod
+tool(name = None, **kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `name`      | —    | no       | `None`  | —           |
+| `...kwargs` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/tool_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/tool_mixin.py)
+
+Line 187.

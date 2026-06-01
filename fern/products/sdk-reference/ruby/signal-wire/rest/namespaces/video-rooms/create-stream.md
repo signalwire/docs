@@ -1,0 +1,35 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/video-rooms/create-stream"
+title: "create_stream"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::VideoRooms#create_stream"
+  parent: "SignalWire::REST::Namespaces::VideoRooms"
+  module: "SignalWire.REST.Namespaces.VideoRooms"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/video.rb"
+  visibility: "public"
+---
+# `create_stream`
+
+## Signature
+
+```ruby
+def create_stream(room_id, **kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `room_id`   | —    | yes      | —       | —           |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/video.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/video.rb)
+
+Line 14.

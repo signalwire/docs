@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/fabric-addresses/get"
+title: "get"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\FabricAddresses::get"
+  parent: "SignalWire\\REST\\Namespaces\\FabricAddresses"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/FabricAddresses.php"
+  visibility: "public"
+---
+# `get`
+
+## Signature
+
+```php
+public function get(string $addressId): array
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `addressId` | `string` | yes      | —       | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/FabricAddresses.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/FabricAddresses.php)
+
+Line 35.

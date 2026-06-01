@@ -1,0 +1,50 @@
+---
+slug: "/reference/dotnet/signal-wire.skills.builtin/wikipedia-search-skill"
+title: "WikipediaSearchSkill"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.Skills.Builtin.WikipediaSearchSkill"
+  parent: "SignalWire.Skills.Builtin"
+  module: "SignalWire.Skills.Builtin"
+  visibility: "public"
+---
+# `WikipediaSearchSkill`
+
+Wikipedia search skill backed by the public Wikipedia REST API.
+
+Mirrors signalwire-python's <code>signalwire.skills.wikipedia\_search.skill</code>.
+The Python skill makes two API calls per query — first <code>action=query\&list=search</code> to find article titles, then <code>action=query\&prop=extracts</code> to fetch each article's intro
+extract. Returns the article(s) as <code>**Title**\n\nExtract</code> joined
+by separators.
+
+Upstream URL override: <code>WIKIPEDIA\_BASE\_URL</code>. Path <code>/w/api.php</code> is preserved when the env var is set so the audit
+fixture sees the documented Wikipedia API path on the wire.
+
+**Modifiers:** `sealed`
+
+## Signature
+
+```dotnet
+public sealed class WikipediaSearchSkill : SkillBase
+```
+
+## Inheritance
+
+**Extends:** [SignalWire.Skills.SkillBase](/reference/dotnet/signal-wire.skills/skill-base)
+
+## Properties
+
+| Name          | Type                                          | Required | Default | Description |
+| ------------- | --------------------------------------------- | -------- | ------- | ----------- |
+| `Description` | `public override string Description { get; }` | yes      | —       | —           |
+| `Name`        | `public override string Name { get; }`        | yes      | —       | —           |
+
+## Methods
+
+- [`GetPromptSections()`](/reference/dotnet/signal-wire.skills.builtin/wikipedia-search-skill/get-prompt-sections)
+- [`RegisterTools(AgentBase)`](/reference/dotnet/signal-wire.skills.builtin/wikipedia-search-skill/register-tools-agent-base)
+- [`Setup(AgentBase, Dictionary<string, object>)`](/reference/dotnet/signal-wire.skills.builtin/wikipedia-search-skill/setup-agent-base-dictionary-string-object)

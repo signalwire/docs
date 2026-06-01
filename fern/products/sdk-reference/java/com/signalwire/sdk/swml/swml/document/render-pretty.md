@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/document/render-pretty"
+title: "renderPretty"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Document.renderPretty"
+  parent: "com.signalwire.sdk.swml.Document"
+  module: "com.signalwire.sdk.swml.Document"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Document.java"
+  visibility: "public"
+---
+# `renderPretty`
+
+Render as pretty-printed JSON.
+
+## Signature
+
+```java
+public java.lang.String renderPretty()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Document.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Document.java)
+
+Line 109.

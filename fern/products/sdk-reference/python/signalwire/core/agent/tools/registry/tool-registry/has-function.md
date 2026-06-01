@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/agent/tools/registry/tool-registry/has-function"
+title: "has_function"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.tools.registry.ToolRegistry.has_function"
+  parent: "signalwire.core.agent.tools.registry.ToolRegistry"
+  module: "signalwire.core.agent.tools.registry"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/registry.py"
+---
+# `has_function`
+
+Check if a function is registered.
+
+## Signature
+
+```python
+has_function(name: str) -> bool
+```
+
+## Parameters
+
+| Name   | Type  | Required | Default | Description   |
+| ------ | ----- | -------- | ------- | ------------- |
+| `name` | `str` | yes      | —       | Function name |
+
+## Returns
+
+`bool` — True if function exists, False otherwise
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/tools/registry.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/registry.py)
+
+Line 213.

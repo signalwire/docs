@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/event/get-timestamp"
+title: "getTimestamp"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Event::getTimestamp"
+  parent: "SignalWire\\Relay\\Event"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Event.php"
+  visibility: "public"
+---
+# `getTimestamp`
+
+## Signature
+
+```php
+public function getTimestamp(): float
+```
+
+## Returns
+
+`float`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Event.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Event.php)
+
+Line 25.

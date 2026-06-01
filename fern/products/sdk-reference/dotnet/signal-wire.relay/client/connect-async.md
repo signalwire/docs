@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/client/connect-async"
+title: "ConnectAsync()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Client.ConnectAsync()"
+  parent: "SignalWire.Relay.Client"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `ConnectAsync()`
+
+Establish the WebSocket connection and authenticate. Opens a real
+WSS connection to the configured host, runs the JSON-RPC <code>signalwire.connect</code> handshake, and starts the reader loop
+that pumps inbound frames into <xref href="SignalWire.Relay.Client.HandleMessage(System.String)" data-throw-if-not-resolved="false"></xref>.
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual Task ConnectAsync()
+```
+
+## Returns
+
+`System.Threading.Tasks.Task`

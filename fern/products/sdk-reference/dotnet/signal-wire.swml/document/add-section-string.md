@@ -1,0 +1,33 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/document/add-section-string"
+title: "AddSection(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Document.AddSection(string)"
+  parent: "SignalWire.SWML.Document"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `AddSection(string)`
+
+Add a new named section. Returns true if created, false if it already existed.
+
+## Signature
+
+```dotnet
+public bool AddSection(string name)
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`bool`

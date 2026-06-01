@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/joke/joke/get-prompt-sections"
+title: "get_prompt_sections"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::joke::Joke::get_prompt_sections"
+  parent: "signalwire::skills::builtin::joke::Joke"
+  module: "skills.builtin.joke"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/joke.rs"
+  visibility: "public"
+---
+# `get_prompt_sections`
+
+## Signature
+
+```rust
+fn get_prompt_sections(&self) -> ?<?>
+```
+
+## Returns
+
+`?<?>`
+
+## Source
+
+[`src/skills/builtin/joke.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/joke.rs)
+
+Line 90.

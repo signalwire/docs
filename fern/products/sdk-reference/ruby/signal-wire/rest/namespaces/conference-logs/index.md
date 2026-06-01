@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/conference-logs"
+title: "ConferenceLogs"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::ConferenceLogs"
+  parent: "SignalWire::REST::Namespaces"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/logs.rb"
+  visibility: "public"
+---
+# `ConferenceLogs`
+
+Conference log queries.
+
+## Signature
+
+```ruby
+class ConferenceLogs < SignalWire::REST::BaseResource
+```
+
+## Inheritance
+
+**Extends:** [SignalWire::REST::BaseResource](/reference/ruby/signal-wire/rest/base-resource)
+
+## Methods
+
+- [`list`](/reference/ruby/signal-wire/rest/namespaces/conference-logs/list)
+
+## Source
+
+[`lib/signalwire/rest/namespaces/logs.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/logs.rb)
+
+Line 29.

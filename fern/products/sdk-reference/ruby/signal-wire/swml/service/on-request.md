@@ -1,0 +1,53 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/on-request"
+title: "on_request"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#on_request"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `on_request`
+
+Customization hook called when SWML is requested. Default
+delegates to {#on\_swml\_request} and returns its result.
+Subclasses typically override +on\_swml\_request+ rather than
+this method.
+
+Return +nil+ to use the default SWML rendering, or a Hash of
+modifications to merge into the document.
+
+Python parity: WebMixin#on\_request(request\_data, callback\_path).
+The Python third +request+ argument is FastAPI-specific and
+intentionally not mirrored.
+Python parity: `on_request(request_data, callback_path)`. The
+third Python parameter (`request`) — a FastAPI `Request` —
+is propagated through Ruby as the optional `request:` keyword
+so subclasses can read query/header info when a Rack-style
+request is available. Default: delegate to `on_swml_request`.
+
+## Signature
+
+```ruby
+def on_request(request_data = nil, callback_path = nil, request: nil)
+```
+
+## Parameters
+
+| Name            | Type | Required | Default | Description |
+| --------------- | ---- | -------- | ------- | ----------- |
+| `request_data`  | —    | no       | `nil`   | —           |
+| `callback_path` | —    | no       | `nil`   | —           |
+| `request:`      | —    | no       | `nil`   | —           |
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 323.

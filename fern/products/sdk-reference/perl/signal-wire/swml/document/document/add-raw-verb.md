@@ -1,0 +1,35 @@
+---
+slug: "/reference/perl/signal-wire/swml/document/document/add-raw-verb"
+title: "add_raw_verb"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWML::Document::add_raw_verb"
+  parent: "SignalWire::SWML::Document"
+  module: "SignalWire.SWML.Document"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Document.pm"
+  visibility: "public"
+---
+# `add_raw_verb`
+
+## Signature
+
+```perl
+sub add_raw_verb($section_name, $verb_hash)
+```
+
+## Parameters
+
+| Name           | Type | Required | Default | Description |
+| -------------- | ---- | -------- | ------- | ----------- |
+| `section_name` | —    | yes      | —       | —           |
+| `verb_hash`    | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/SWML/Document.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Document.pm)
+
+Line 30.

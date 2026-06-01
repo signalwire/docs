@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/agent/agent-base/set-webhook-url"
+title: "set_webhook_url"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::agent::AgentBase::set_webhook_url"
+  parent: "signalwire::agent::AgentBase"
+  module: "signalwire.agent"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `set_webhook_url`
+
+## Signature
+
+```cpp
+AgentBase & set_webhook_url(const std::string & url)
+```
+
+## Parameters
+
+| Name  | Type                  | Required | Default | Description |
+| ----- | --------------------- | -------- | ------- | ----------- |
+| `url` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`AgentBase &`
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 427.

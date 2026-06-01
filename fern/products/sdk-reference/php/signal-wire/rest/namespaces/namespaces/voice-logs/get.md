@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/voice-logs/get"
+title: "get"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\VoiceLogs::get"
+  parent: "SignalWire\\REST\\Namespaces\\VoiceLogs"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/VoiceLogs.php"
+  visibility: "public"
+---
+# `get`
+
+## Signature
+
+```php
+public function get(string $logId): array
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `logId` | `string` | yes      | —       | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/VoiceLogs.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/VoiceLogs.php)
+
+Line 35.

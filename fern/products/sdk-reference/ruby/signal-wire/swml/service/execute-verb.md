@@ -1,0 +1,41 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/execute-verb"
+title: "execute_verb"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#execute_verb"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `execute_verb`
+
+Execute a SWML verb, adding it to the current document.
+
+For most verbs the config is a keyword-args Hash.
+The +sleep+ verb is special: it also accepts a bare Integer.
+
+## Signature
+
+```ruby
+def execute_verb(verb_name, args = [], kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `verb_name` | —    | yes      | —       | —           |
+| `args`      | —    | no       | `[]`    | —           |
+| `kwargs`    | —    | no       | `{}`    | —           |
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 216.

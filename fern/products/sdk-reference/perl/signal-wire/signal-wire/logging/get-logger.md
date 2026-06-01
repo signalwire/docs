@@ -1,0 +1,35 @@
+---
+slug: "/reference/perl/signal-wire/signal-wire/logging/get-logger"
+title: "get_logger"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Logging::get_logger"
+  parent: "SignalWire::Logging"
+  module: "SignalWire.Logging"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Logging.pm"
+  visibility: "public"
+---
+# `get_logger`
+
+## Signature
+
+```perl
+sub get_logger($class, $name)
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description |
+| ------- | ---- | -------- | ------- | ----------- |
+| `class` | —    | yes      | —       | —           |
+| `name`  | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Logging.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Logging.pm)
+
+Line 67.

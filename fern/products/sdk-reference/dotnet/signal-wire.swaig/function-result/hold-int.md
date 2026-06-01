@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.swaig/function-result/hold-int"
+title: "Hold(int)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWAIG.FunctionResult.Hold(int)"
+  parent: "SignalWire.SWAIG.FunctionResult"
+  module: "SignalWire.SWAIG"
+  visibility: "public"
+---
+# `Hold(int)`
+
+## Signature
+
+```dotnet
+public FunctionResult Hold(int timeout = 300)
+```
+
+## Parameters
+
+| Name      | Type  | Required | Default | Description |
+| --------- | ----- | -------- | ------- | ----------- |
+| `timeout` | `int` | no       | `300`   | —           |
+
+## Returns
+
+`SignalWire.SWAIG.FunctionResult`

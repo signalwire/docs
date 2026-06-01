@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/skills/builtin/ask-claude/create-skill"
+title: "createSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "skills.builtin.ask_claude.createSkill"
+  parent: "skills.builtin.ask_claude"
+  module: "skills.builtin.ask_claude"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/ask_claude.ts"
+---
+# `createSkill`
+
+Factory function for creating AskClaudeSkill instances.
+
+## Signature
+
+```typescript
+createSkill(config?: SkillConfig): AskClaudeSkill
+```
+
+## Parameters
+
+| Name     | Type          | Required | Default | Description                   |
+| -------- | ------------- | -------- | ------- | ----------------------------- |
+| `config` | `SkillConfig` | no       | —       | Optional skill configuration. |
+
+## Returns
+
+`AskClaudeSkill` — A new AskClaudeSkill instance.
+
+## Source
+
+[`src/skills/builtin/ask_claude.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/ask_claude.ts)
+
+Line 244.

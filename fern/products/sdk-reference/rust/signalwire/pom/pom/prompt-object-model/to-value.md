@@ -1,0 +1,37 @@
+---
+slug: "/reference/rust/signalwire/pom/pom/prompt-object-model/to-value"
+title: "to_value"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::pom::pom::PromptObjectModel::to_value"
+  parent: "signalwire::pom::pom::PromptObjectModel"
+  module: "pom.pom"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/pom/pom.rs"
+  visibility: "public"
+---
+# `to_value`
+
+Convert the model to a `serde_json::Value` (a JSON array of
+section dicts). Mirrors Python's `to_dict`. The Rust name
+follows serde idiom (`to_value`) but the cross-port surface
+audit treats `to_value` ≡ `to_dict`.
+
+## Signature
+
+```rust
+fn to_value(&self) -> ?
+```
+
+## Returns
+
+`?`
+
+## Source
+
+[`src/pom/pom.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/pom/pom.rs)
+
+Line 157.

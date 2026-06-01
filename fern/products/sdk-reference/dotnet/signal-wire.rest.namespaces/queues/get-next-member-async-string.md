@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/queues/get-next-member-async-string"
+title: "GetNextMemberAsync(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.Queues.GetNextMemberAsync(string)"
+  parent: "SignalWire.REST.Namespaces.Queues"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `GetNextMemberAsync(string)`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> GetNextMemberAsync(string queueId)
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description |
+| --------- | -------- | -------- | ------- | ----------- |
+| `queueId` | `string` | yes      | —       | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

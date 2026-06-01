@@ -1,0 +1,40 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-manager/get"
+title: "get"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillManager#get"
+  parent: "SignalWire::Skills::SkillManager"
+  module: "SignalWire.Skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_manager.rb"
+  visibility: "public"
+---
+# `get`
+
+Retrieve a loaded skill.
+
+## Signature
+
+```ruby
+def get(key)
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description |
+| ----- | -------- | -------- | ------- | ----------- |
+| `key` | `String` | yes      | —       | —           |
+
+## Returns
+
+`SkillBase | nil`
+
+## Source
+
+[`lib/signalwire/skills/skill_manager.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_manager.rb)
+
+Line 69.

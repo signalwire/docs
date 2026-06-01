@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/cli/swaig-test-wrapper/main"
+title: "main"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.swaig_test_wrapper.main"
+  parent: "signalwire.cli.swaig_test_wrapper"
+  module: "signalwire.cli.swaig_test_wrapper"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/swaig_test_wrapper.py"
+---
+# `main`
+
+Main entry point for the swaig-test command
+
+## Signature
+
+```python
+main()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/cli/swaig_test_wrapper.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/swaig_test_wrapper.py)
+
+Line 21.

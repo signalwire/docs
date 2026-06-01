@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/server/server/agent-server/get-agents"
+title: "GetAgents"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/server.AgentServer.GetAgents"
+  parent: "github.com/signalwire/signalwire-go/pkg/server.AgentServer"
+  module: "github.com.signalwire.signalwire-go.pkg.server"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go"
+---
+# `GetAgents`
+
+GetAgents returns all registered agents in insertion order.
+
+## Signature
+
+```go
+func (*AgentServer) GetAgents() []AgentEntry
+```
+
+## Returns
+
+`[]AgentEntry`
+
+## Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 174.

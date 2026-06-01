@@ -1,0 +1,33 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/service/get-full-url-bool"
+title: "GetFullUrl(bool)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Service.GetFullUrl(bool)"
+  parent: "SignalWire.SWML.Service"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `GetFullUrl(bool)`
+
+Build the full URL for this service.
+
+## Signature
+
+```dotnet
+public string GetFullUrl(bool includeAuth = false)
+```
+
+## Parameters
+
+| Name          | Type   | Required | Default | Description |
+| ------------- | ------ | -------- | ------- | ----------- |
+| `includeAuth` | `bool` | no       | `false` | —           |
+
+## Returns
+
+`string`

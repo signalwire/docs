@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/skills/builtin/spider/spider/setup"
+title: "setup"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Skills::Builtin::Spider::setup"
+  parent: "SignalWire::Skills::Builtin::Spider"
+  module: "SignalWire.Skills.Builtin.Spider"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/Builtin/Spider.pm"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```perl
+sub setup()
+```
+
+## Source
+
+[`lib/SignalWire/Skills/Builtin/Spider.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/Builtin/Spider.pm)
+
+Line 48.

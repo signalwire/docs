@@ -1,0 +1,28 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/context-builder/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.ContextBuilder.<init>"
+  parent: "com.signalwire.sdk.contexts.ContextBuilder"
+  module: "com.signalwire.sdk.contexts.ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/ContextBuilder.java)
+
+Line 70.

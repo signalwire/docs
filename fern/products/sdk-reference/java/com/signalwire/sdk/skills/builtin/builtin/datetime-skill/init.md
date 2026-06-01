@@ -1,0 +1,28 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/builtin/builtin/datetime-skill/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.builtin.DatetimeSkill.<init>"
+  parent: "com.signalwire.sdk.skills.builtin.DatetimeSkill"
+  module: "com.signalwire.sdk.skills.builtin.DatetimeSkill"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/builtin/DatetimeSkill.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/builtin/DatetimeSkill.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/builtin/DatetimeSkill.java)
+
+Line 12.

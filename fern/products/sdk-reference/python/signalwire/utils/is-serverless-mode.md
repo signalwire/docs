@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/utils/is-serverless-mode"
+title: "is_serverless_mode"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.utils.is_serverless_mode"
+  parent: "signalwire.utils"
+  module: "signalwire.utils"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/utils/__init__.py"
+---
+# `is_serverless_mode`
+
+Check if running in any serverless environment.
+
+## Signature
+
+```python
+is_serverless_mode() -> bool
+```
+
+## Returns
+
+`bool` — True if in serverless mode, False if in server mode
+
+## Source
+
+[`/src/signalwire/signalwire/utils/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/utils/__init__.py)
+
+Line 14.

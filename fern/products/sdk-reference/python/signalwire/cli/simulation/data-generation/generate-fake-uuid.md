@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/cli/simulation/data-generation/generate-fake-uuid"
+title: "generate_fake_uuid"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.simulation.data_generation.generate_fake_uuid"
+  parent: "signalwire.cli.simulation.data_generation"
+  module: "signalwire.cli.simulation.data_generation"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/data_generation.py"
+---
+# `generate_fake_uuid`
+
+Generate a fake UUID for testing
+
+## Signature
+
+```python
+generate_fake_uuid() -> str
+```
+
+## Returns
+
+`str`
+
+## Source
+
+[`/src/signalwire/signalwire/cli/simulation/data_generation.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/data_generation.py)
+
+Line 22.

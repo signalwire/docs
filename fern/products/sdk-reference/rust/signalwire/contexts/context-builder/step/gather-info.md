@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/step/gather-info"
+title: "gather_info"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::Step::gather_info"
+  parent: "signalwire::contexts::context_builder::Step"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `gather_info`
+
+## Signature
+
+```rust
+fn gather_info(&self) -> ?<&?>
+```
+
+## Returns
+
+`?<&?>`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 347.

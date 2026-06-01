@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/recordings-resource"
+title: "RecordingsResource"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.RecordingsResource"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/recordings.go"
+---
+# `RecordingsResource`
+
+RecordingsResource is an alias for RecordingsNamespace, matching the Python class name for cross-SDK parity. Prefer RecordingsNamespace in new Go code.
+
+## Signature
+
+```go
+type RecordingsResource alias
+```
+
+## Source
+
+[`pkg/rest/namespaces/recordings.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/recordings.go)
+
+Line 54.

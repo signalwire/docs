@@ -1,0 +1,43 @@
+---
+slug: "/reference/python/signalwire/core/mixins/prompt-mixin/prompt-mixin/define-contexts"
+title: "define_contexts"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.prompt_mixin.PromptMixin.define_contexts"
+  parent: "signalwire.core.mixins.prompt_mixin.PromptMixin"
+  module: "signalwire.core.mixins.prompt_mixin"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/prompt_mixin.py"
+---
+# `define_contexts`
+
+Define contexts and steps for this agent (alternative to POM/prompt)
+
+> \[!NOTE]
+> Contexts can coexist with traditional prompts. The restriction is only
+> that you can't mix POM sections with raw text in the main prompt.
+
+## Signature
+
+```python
+define_contexts(contexts = None) -> Union[AgentBase, ContextBuilder]
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description                                             |
+| ---------- | ---- | -------- | ------- | ------------------------------------------------------- |
+| `contexts` | —    | no       | `None`  | Optional context configuration (dict or ContextBuilder) |
+
+## Returns
+
+`Union[AgentBase, ContextBuilder]` — ContextBuilder for method chaining if no contexts provided
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/prompt_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/prompt_mixin.py)
+
+Line 121.

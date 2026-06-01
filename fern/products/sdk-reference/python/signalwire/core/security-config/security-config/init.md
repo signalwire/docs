@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/core/security-config/security-config/init"
+title: "__init__"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.security_config.SecurityConfig.__init__"
+  parent: "signalwire.core.security_config.SecurityConfig"
+  module: "signalwire.core.security_config"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/security_config.py"
+---
+# `__init__`
+
+Initialize security configuration.
+
+## Signature
+
+```python
+__init__(config_file: Optional[str] = None, service_name: Optional[str] = None)
+```
+
+## Parameters
+
+| Name           | Type            | Required | Default | Description                                               |
+| -------------- | --------------- | -------- | ------- | --------------------------------------------------------- |
+| `config_file`  | `Optional[str]` | no       | `None`  | Optional path to config file                              |
+| `service_name` | `Optional[str]` | no       | `None`  | Optional service name for finding service-specific config |
+
+## Source
+
+[`/src/signalwire/signalwire/core/security_config.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/security_config.py)
+
+Line 60.

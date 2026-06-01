@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/with-pay-payment-method"
+title: "WithPayPaymentMethod"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.WithPayPaymentMethod"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go"
+---
+# `WithPayPaymentMethod`
+
+WithPayPaymentMethod sets the payment method (e.g. "credit-card").
+
+## Signature
+
+```go
+func WithPayPaymentMethod(method string) PayOption
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description |
+| -------- | -------- | -------- | ------- | ----------- |
+| `method` | `string` | yes      | —       | —           |
+
+## Returns
+
+`PayOption`
+
+## Source
+
+[`pkg/relay/options.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go)
+
+Line 225.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/skills/builtin/google-maps/create-skill"
+title: "createSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "skills.builtin.google_maps.createSkill"
+  parent: "skills.builtin.google_maps"
+  module: "skills.builtin.google_maps"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/google_maps.ts"
+---
+# `createSkill`
+
+Factory function for creating GoogleMapsSkill instances.
+
+## Signature
+
+```typescript
+createSkill(config?: SkillConfig): GoogleMapsSkill
+```
+
+## Parameters
+
+| Name     | Type          | Required | Default | Description                   |
+| -------- | ------------- | -------- | ------- | ----------------------------- |
+| `config` | `SkillConfig` | no       | —       | Optional skill configuration. |
+
+## Returns
+
+`GoogleMapsSkill` — A new GoogleMapsSkill instance.
+
+## Source
+
+[`src/skills/builtin/google_maps.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/builtin/google_maps.ts)
+
+Line 654.

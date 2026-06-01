@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.swaig/function-result/stop-tap-string"
+title: "StopTap(string?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWAIG.FunctionResult.StopTap(string?)"
+  parent: "SignalWire.SWAIG.FunctionResult"
+  module: "SignalWire.SWAIG"
+  visibility: "public"
+---
+# `StopTap(string?)`
+
+## Signature
+
+```dotnet
+public FunctionResult StopTap(string? controlId = null)
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `controlId` | `string` | no       | `null`  | —           |
+
+## Returns
+
+`SignalWire.SWAIG.FunctionResult`

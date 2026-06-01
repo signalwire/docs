@@ -1,0 +1,43 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-swml-webhook"
+title: "SetSwmlWebhook"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.PhoneNumbersNamespace.SetSwmlWebhook"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.PhoneNumbersNamespace"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/phone_numbers.go"
+---
+# `SetSwmlWebhook`
+
+SetSwmlWebhook routes inbound calls to an SWML webhook URL.
+
+Your backend returns an SWML document per call. The server auto-creates a swml\_webhook Fabric resource keyed off this URL.
+
+## Signature
+
+```go
+func (*PhoneNumbersNamespace) SetSwmlWebhook(sid string, url string, extra ...map[string]any) (map[string]any, error)
+```
+
+## Parameters
+
+| Name       | Type             | Required | Default | Description |
+| ---------- | ---------------- | -------- | ------- | ----------- |
+| `sid`      | `string`         | yes      | —       | —           |
+| `url`      | `string`         | yes      | —       | —           |
+| `...extra` | `map[string]any` | no       | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/phone_numbers.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/phone_numbers.go)
+
+Line 61.

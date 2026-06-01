@@ -1,0 +1,36 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/context-builder/reset"
+title: "reset"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::ContextBuilder::reset"
+  parent: "signalwire::contexts::context_builder::ContextBuilder"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `reset`
+
+Remove all contexts, returning the builder to its initial state.
+Use this in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request.
+
+## Signature
+
+```rust
+fn reset(&mut self) -> &mut Self
+```
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 644.

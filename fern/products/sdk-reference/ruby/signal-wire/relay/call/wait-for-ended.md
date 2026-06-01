@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/relay/call/wait-for-ended"
+title: "wait_for_ended"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Call#wait_for_ended"
+  parent: "SignalWire::Relay::Call"
+  module: "SignalWire.Relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/call.rb"
+  visibility: "public"
+---
+# `wait_for_ended`
+
+Wait for the call to reach the ended state.
+
+## Signature
+
+```ruby
+def wait_for_ended(timeout: nil)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `timeout:` | —    | no       | `nil`   | —           |
+
+## Source
+
+[`lib/signalwire/relay/call.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/call.rb)
+
+Line 115.

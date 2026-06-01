@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/pom-builder/pom-builder/to-json"
+title: "to_json"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.pom_builder.PomBuilder.to_json"
+  parent: "signalwire.core.pom_builder.PomBuilder"
+  module: "signalwire.core.pom_builder"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/pom_builder.py"
+---
+# `to_json`
+
+Convert the POM to a JSON string
+
+## Signature
+
+```python
+to_json() -> str
+```
+
+## Returns
+
+`str`
+
+## Source
+
+[`/src/signalwire/signalwire/core/pom_builder.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/pom_builder.py)
+
+Line 177.

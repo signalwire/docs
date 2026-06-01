@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/mcp-gateway/mcp-gateway/setup"
+title: "setup"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::mcp_gateway::McpGateway::setup"
+  parent: "signalwire::skills::builtin::mcp_gateway::McpGateway"
+  module: "skills.builtin.mcp_gateway"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/mcp_gateway.rs"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```rust
+fn setup(&mut self) -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`src/skills/builtin/mcp_gateway.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/mcp_gateway.rs)
+
+Line 33.

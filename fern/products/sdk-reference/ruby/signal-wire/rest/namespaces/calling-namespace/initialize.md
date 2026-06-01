@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/calling-namespace/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::CallingNamespace#initialize"
+  parent: "SignalWire::REST::Namespaces::CallingNamespace"
+  module: "SignalWire.REST.Namespaces.CallingNamespace"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/calling.rb"
+  visibility: "public"
+---
+# `initialize`
+
+## Signature
+
+```ruby
+def initialize(http)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `http` | —    | yes      | —       | —           |
+
+## Returns
+
+`CallingNamespace` — a new instance of CallingNamespace
+
+## Source
+
+[`lib/signalwire/rest/namespaces/calling.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/calling.rb)
+
+Line 8.

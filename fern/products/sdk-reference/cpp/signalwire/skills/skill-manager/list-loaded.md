@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-manager/list-loaded"
+title: "list_loaded"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillManager::list_loaded"
+  parent: "signalwire::skills::SkillManager"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp"
+  visibility: "public"
+---
+# `list_loaded`
+
+List loaded skills.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+std::vector< std::string > list_loaded() const
+```
+
+## Returns
+
+`std::vector< std::string >`
+
+## Source
+
+[`include/signalwire/skills/skill_manager.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp)
+
+Line 37.

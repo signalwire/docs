@@ -1,0 +1,49 @@
+---
+slug: "/reference/python/signalwire/core/contexts/step/set-gather-info"
+title: "set_gather_info"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Step.set_gather_info"
+  parent: "signalwire.core.contexts.Step"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `set_gather_info`
+
+Enable info gathering for this step. Questions are presented one at a time
+via dynamic step instruction re-injection, producing zero tool\_call/tool\_result
+entries in LLM-visible history.
+
+After calling this, use add\_gather\_question() to define questions.
+
+## Signature
+
+```python
+set_gather_info(
+    output_key: Optional[str] = None,
+    completion_action: Optional[str] = None,
+    prompt: Optional[str] = None
+) -> Step
+```
+
+## Parameters
+
+| Name                | Type            | Required | Default | Description                                                                                                                          |
+| ------------------- | --------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `output_key`        | `Optional[str]` | no       | `None`  | Key in global\_data to store answers under (default: top-level)                                                                      |
+| `completion_action` | `Optional[str]` | no       | `None`  | Where to go when all questions are answered. Can be:                                                                                 |
+| `prompt`            | `Optional[str]` | no       | `None`  | Preamble text injected once when entering the gather step, giving the model personality/context for why it is asking these questions |
+
+## Returns
+
+`Step` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 329.

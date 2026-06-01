@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/recordings/recordings-resource/list"
+title: "list"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.recordings.RecordingsResource.list"
+  parent: "signalwire.rest.namespaces.recordings.RecordingsResource"
+  module: "signalwire.rest.namespaces.recordings"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/recordings.py"
+---
+# `list`
+
+## Signature
+
+```python
+list(**params = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...params` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/recordings.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/recordings.py)
+
+Line 23.

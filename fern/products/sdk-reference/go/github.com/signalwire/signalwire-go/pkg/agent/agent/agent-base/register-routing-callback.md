@@ -1,0 +1,45 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/agent-base/register-routing-callback"
+title: "RegisterRoutingCallback"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase.RegisterRoutingCallback"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `RegisterRoutingCallback`
+
+RegisterRoutingCallback registers a callback function that is invoked for incoming requests at the given path to determine routing.
+
+Python equivalent: web\_mixin.WebMixin.register\_routing\_callback Python signature: register\_routing\_callback(callback\_fn, path="/sip")
+
+The callback receives the HTTP request and the parsed body. It should return a non-nil map to override the response, or nil to let normal processing continue. This method delegates to swml.Service.RegisterRoutingCallback.
+
+For Python-aligned redirect semantics (callback returns a route string and the framework issues an HTTP 307 redirect), use RegisterSipRoutingCallback.
+
+## Signature
+
+```go
+func (*AgentBase) RegisterRoutingCallback(
+	callbackFn func(r *http.Request, body map[string]any) map[string]any,
+	path string
+)
+```
+
+## Parameters
+
+| Name         | Type                                                        | Required | Default | Description |
+| ------------ | ----------------------------------------------------------- | -------- | ------- | ----------- |
+| `callbackFn` | `func(r *http.Request, body map[string]any) map[string]any` | yes      | —       | —           |
+| `path`       | `string`                                                    | yes      | —       | —           |
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 2128.

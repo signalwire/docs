@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/video-conferences/create-stream"
+title: "CreateStream"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.VideoConferences.CreateStream"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.VideoConferences"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/video.go"
+---
+# `CreateStream`
+
+CreateStream creates a stream for a conference.
+
+## Signature
+
+```go
+func (*VideoConferences) CreateStream(conferenceID string, data map[string]any) (map[string]any, error)
+```
+
+## Parameters
+
+| Name           | Type             | Required | Default | Description |
+| -------------- | ---------------- | -------- | ------- | ----------- |
+| `conferenceID` | `string`         | yes      | —       | —           |
+| `data`         | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/video.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/video.go)
+
+Line 117.

@@ -1,0 +1,37 @@
+---
+slug: "/reference/python/signalwire/livewire/agent/update-instructions"
+title: "update_instructions"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.livewire.Agent.update_instructions"
+  parent: "signalwire.livewire.Agent"
+  module: "signalwire.livewire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py"
+---
+# `update_instructions`
+
+Update the agent's instructions mid-session.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async update_instructions(instructions: str)
+```
+
+## Parameters
+
+| Name           | Type  | Required | Default | Description |
+| -------------- | ----- | -------- | ------- | ----------- |
+| `instructions` | `str` | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py)
+
+Line 390.

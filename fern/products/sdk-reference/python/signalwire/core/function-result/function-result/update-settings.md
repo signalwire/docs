@@ -1,0 +1,49 @@
+---
+slug: "/reference/python/signalwire/core/function-result/function-result/update-settings"
+title: "update_settings"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.function_result.FunctionResult.update_settings"
+  parent: "signalwire.core.function_result.FunctionResult"
+  module: "signalwire.core.function_result"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py"
+---
+# `update_settings`
+
+Update agent runtime settings.
+
+Supported settings:
+
+- frequency-penalty: Float (-2.0 to 2.0)
+- presence-penalty: Float (-2.0 to 2.0)
+- max-tokens: Integer (0 to 4096)
+- top-p: Float (0.0 to 1.0)
+- confidence: Float (0.0 to 1.0)
+- barge-confidence: Float (0.0 to 1.0)
+- temperature: Float (0.0 to 2.0, clamped to 1.5)
+
+## Signature
+
+```python
+update_settings(settings: Dict[str, Any]) -> FunctionResult
+```
+
+## Parameters
+
+| Name       | Type             | Required | Default | Description                      |
+| ---------- | ---------------- | -------- | ------- | -------------------------------- |
+| `settings` | `Dict[str, Any]` | yes      | —       | Dictionary of settings to update |
+
+## Returns
+
+`FunctionResult` — self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/function_result.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py)
+
+Line 678.

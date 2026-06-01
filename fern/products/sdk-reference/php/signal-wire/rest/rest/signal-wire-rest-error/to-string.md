@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/signal-wire-rest-error/to-string"
+title: "__toString"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\SignalWireRestError::__toString"
+  parent: "SignalWire\\REST\\SignalWireRestError"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/SignalWireRestError.php"
+  visibility: "public"
+---
+# `__toString`
+
+## Signature
+
+```php
+public function __toString(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/REST/SignalWireRestError.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/SignalWireRestError.php)
+
+Line 33.

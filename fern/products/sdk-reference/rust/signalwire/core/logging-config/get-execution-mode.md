@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/core/logging-config/get-execution-mode"
+title: "get_execution_mode"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "rust"
+  qualified_name: "signalwire::core::logging_config::get_execution_mode"
+  parent: "signalwire::core::logging_config"
+  module: "core.logging_config"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/core/logging_config.rs"
+  visibility: "public"
+---
+# `get_execution_mode`
+
+Detect the SDK's deployment environment based on well-known
+environment variables.
+
+Returns one of `"cgi"`, `"lambda"`, `"google_cloud_function"`,
+`"azure_function"`, or `"server"`.
+
+## Signature
+
+```rust
+fn get_execution_mode() -> ?
+```
+
+## Returns
+
+`?`
+
+## Source
+
+[`src/core/logging_config.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/core/logging_config.rs)
+
+Line 20.

@@ -1,0 +1,30 @@
+---
+slug: "/reference/python/signalwire/pom/pom"
+title: "pom"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.pom.pom"
+  parent: "signalwire.pom"
+  module: "signalwire.pom"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py"
+---
+# `pom`
+
+## Signature
+
+```python
+module pom
+```
+
+## Classes
+
+- [`PromptObjectModel`](/reference/python/signalwire/pom/pom/prompt-object-model) — A structured data format for composing, organizing, and rendering prompt instructions for large language models.
+- [`Section`](/reference/python/signalwire/pom/pom/section) — Represents a section in the Prompt Object Model.
+
+## Source
+
+[`/src/signalwire/signalwire/pom/pom.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py)

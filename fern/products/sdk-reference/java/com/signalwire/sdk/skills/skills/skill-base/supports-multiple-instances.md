@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-base/supports-multiple-instances"
+title: "supportsMultipleInstances"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillBase.supportsMultipleInstances"
+  parent: "com.signalwire.sdk.skills.SkillBase"
+  module: "com.signalwire.sdk.skills.SkillBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillBase.java"
+  visibility: "public"
+---
+# `supportsMultipleInstances`
+
+Whether multiple instances can be loaded with different configs.
+
+**Modifiers:** `default`
+
+## Signature
+
+```java
+public default boolean supportsMultipleInstances()
+```
+
+## Returns
+
+`boolean`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillBase.java)
+
+Line 23.

@@ -1,0 +1,37 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/collect-action/accepts-terminal-event-string"
+title: "AcceptsTerminalEvent(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.CollectAction.AcceptsTerminalEvent(string)"
+  parent: "SignalWire.Relay.CollectAction"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `AcceptsTerminalEvent(string)`
+
+Block <code>calling.call.play</code> events from triggering the standard
+terminal-state resolution path: only <code>calling.call.collect</code>
+may resolve a CollectAction.
+
+**Modifiers:** `override`
+
+## Signature
+
+```dotnet
+public override bool AcceptsTerminalEvent(string eventType)
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `eventType` | `string` | yes      | —       | —           |
+
+## Returns
+
+`bool`

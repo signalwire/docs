@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/context/set-initial-step"
+title: "set_initial_step"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::Context#set_initial_step"
+  parent: "SignalWire::Contexts::Context"
+  module: "SignalWire.Contexts.Context"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `set_initial_step`
+
+Set which step the context starts on when entered.
+
+By default, a context starts on its first step (index 0). Use
+this to skip a preamble step on re-entry via +change\_context+.
+
+## Signature
+
+```ruby
+def set_initial_step(step_name)
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description                   |
+| ----------- | -------- | -------- | ------- | ----------------------------- |
+| `step_name` | `String` | yes      | —       | name of the step to start on. |
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 435.

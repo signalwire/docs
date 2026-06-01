@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/set-prompt-pom"
+title: "set_prompt_pom"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#set_prompt_pom"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `set_prompt_pom`
+
+Set POM array directly.
+
+## Signature
+
+```ruby
+def set_prompt_pom(pom)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `pom` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 249.

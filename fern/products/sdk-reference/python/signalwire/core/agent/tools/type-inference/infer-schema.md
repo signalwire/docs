@@ -1,0 +1,42 @@
+---
+slug: "/reference/python/signalwire/core/agent/tools/type-inference/infer-schema"
+title: "infer_schema"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.core.agent.tools.type_inference.infer_schema"
+  parent: "signalwire.core.agent.tools.type_inference"
+  module: "signalwire.core.agent.tools.type_inference"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/type_inference.py"
+---
+# `infer_schema`
+
+Inspect a function's signature and type hints to infer a JSON Schema
+for SWAIG tool parameters.
+
+## Signature
+
+```python
+infer_schema(
+    func
+) -> Tuple[Dict[str, Dict], List[str], Optional[str], bool, bool]
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description              |
+| ------ | ---- | -------- | ------- | ------------------------ |
+| `func` | —    | yes      | —       | The function to inspect. |
+
+## Returns
+
+`Tuple[Dict[str, Dict], List[str], Optional[str], bool, bool]` — A tuple of (parameters, required, description, is\_typed, has\_raw\_data): - parameters: dict mapping parameter names to JSON Schema property dicts - required: list of required parameter names - description: tool description from docstring (or None) - is\_typed: True if the function uses typed parameters (new style) - has\_raw\_data: True if the function accepts a `raw_data` parameter
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/tools/type_inference.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/type_inference.py)
+
+Line 147.

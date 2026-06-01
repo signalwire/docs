@@ -1,0 +1,37 @@
+---
+slug: "/reference/typescript/rest/namespaces/registry/registry-namespace/constructor"
+title: "constructor"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.registry.RegistryNamespace.constructor"
+  parent: "rest.namespaces.registry.RegistryNamespace"
+  module: "rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts"
+---
+# `constructor`
+
+## Signature
+
+```typescript
+constructor(http: HttpClient): RegistryNamespace
+```
+
+## Parameters
+
+| Name   | Type         | Required | Default | Description |
+| ------ | ------------ | -------- | ------- | ----------- |
+| `http` | `HttpClient` | yes      | —       | —           |
+
+## Returns
+
+`RegistryNamespace`
+
+## Source
+
+[`src/rest/namespaces/registry.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts)
+
+Line 193.

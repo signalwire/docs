@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/skills/builtin/native-vector-search/native-vector-search/get-parameter-schema"
+title: "get_parameter_schema"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Skills::Builtin::NativeVectorSearch::get_parameter_schema"
+  parent: "SignalWire::Skills::Builtin::NativeVectorSearch"
+  module: "SignalWire.Skills.Builtin.NativeVectorSearch"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/Builtin/NativeVectorSearch.pm"
+  visibility: "public"
+---
+# `get_parameter_schema`
+
+## Signature
+
+```perl
+sub get_parameter_schema()
+```
+
+## Source
+
+[`lib/SignalWire/Skills/Builtin/NativeVectorSearch.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Skills/Builtin/NativeVectorSearch.pm)
+
+Line 57.

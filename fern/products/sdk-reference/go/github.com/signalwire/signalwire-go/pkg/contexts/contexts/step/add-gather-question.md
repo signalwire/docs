@@ -1,0 +1,50 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/step/add-gather-question"
+title: "AddGatherQuestion"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.Step.AddGatherQuestion"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts.Step"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `AddGatherQuestion`
+
+AddGatherQuestion adds a question to this step's gather\_info. SetGatherInfo should be called first (this method silently initialises the struct if not, to keep callers from having to worry about ordering). Returns the Step for chaining.
+
+IMPORTANT — gather mode locks function access: While the model is asking gather questions, the runtime forcibly deactivates ALL of the step's other functions. The only callable tools during a gather question are:
+
+- gather\_submit (the native answer-submission tool)
+- Whatever names you list with WithFunctions in this question's opts
+
+next\_step and change\_context are also filtered out — the model cannot navigate away until the gather completes. This is by design: it forces a tight ask → submit → next-question loop.
+
+If a question needs to call out to a tool (e.g. validate an email, geocode a ZIP), pass that tool name via WithFunctions on this question. Functions listed here are active ONLY for this question.
+
+## Signature
+
+```go
+func (*Step) AddGatherQuestion(key string, question string, opts ...GatherQuestionOption) *Step
+```
+
+## Parameters
+
+| Name       | Type                   | Required | Default | Description |
+| ---------- | ---------------------- | -------- | ------- | ----------- |
+| `key`      | `string`               | yes      | —       | —           |
+| `question` | `string`               | yes      | —       | —           |
+| `...opts`  | `GatherQuestionOption` | no       | —       | —           |
+
+## Returns
+
+`*Step`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 319.

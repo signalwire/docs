@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/datasphere-namespace/documents"
+title: "documents"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.DatasphereNamespace.documents"
+  parent: "com.signalwire.sdk.rest.namespaces.DatasphereNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.DatasphereNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/DatasphereNamespace.java"
+  visibility: "public"
+---
+# `documents`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.namespaces.DatasphereNamespace.DatasphereDocuments documents()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.namespaces.DatasphereNamespace.DatasphereDocuments`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/DatasphereNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/DatasphereNamespace.java)
+
+Line 31.

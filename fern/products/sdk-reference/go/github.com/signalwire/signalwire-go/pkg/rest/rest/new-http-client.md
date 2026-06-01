@@ -1,0 +1,41 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/rest/new-http-client"
+title: "NewHttpClient"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest.NewHttpClient"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest"
+  module: "github.com.signalwire.signalwire-go.pkg.rest"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/client.go"
+---
+# `NewHttpClient`
+
+NewHttpClient creates a new HttpClient configured for the given SignalWire space. The baseURL is normally constructed as "https://\<space>", but the SIGNALWIRE\_REST\_BASE\_URL environment variable overrides it when set — pointing the client at a loopback fixture for the porting-sdk audit\_rest\_transport.py harness, or at any non-default endpoint.
+
+## Signature
+
+```go
+func NewHttpClient(projectID string, token string, space string) *HttpClient
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `projectID` | `string` | yes      | —       | —           |
+| `token`     | `string` | yes      | —       | —           |
+| `space`     | `string` | yes      | —       | —           |
+
+## Returns
+
+`*HttpClient`
+
+## Source
+
+[`pkg/rest/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/client.go)
+
+Line 73.

@@ -1,0 +1,48 @@
+---
+slug: "/reference/ruby/signal-wire/pom/section/add-subsection"
+title: "add_subsection"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::POM::Section#add_subsection"
+  parent: "SignalWire::POM::Section"
+  module: "SignalWire.POM.Section"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/pom/section.rb"
+  visibility: "public"
+---
+# `add_subsection`
+
+Add a subsection to this section, returning the new Section.
+
+Raises ArgumentError when +title+ is nil (Python raises
+`ValueError("Subsections must have a title")`; Ruby idiom
+is ArgumentError for invalid arguments).
+
+## Signature
+
+```ruby
+def add_subsection(title, body: '', bullets: nil, numbered: false, numbered_bullets: false)
+```
+
+## Parameters
+
+| Name                | Type | Required | Default | Description |
+| ------------------- | ---- | -------- | ------- | ----------- |
+| `title`             | —    | yes      | —       | —           |
+| `body:`             | —    | no       | `''`    | —           |
+| `bullets:`          | —    | no       | `nil`   | —           |
+| `numbered:`         | —    | no       | `false` | —           |
+| `numbered_bullets:` | —    | no       | `false` | —           |
+
+## Throws
+
+- `ArgumentError`
+
+## Source
+
+[`lib/signalwire/pom/section.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/pom/section.rb)
+
+Line 78.

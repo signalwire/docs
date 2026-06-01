@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/rest/namespaces/verified-callers/verified-callers-resource/redial-verification"
+title: "redialVerification"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.verified-callers.VerifiedCallersResource.redialVerification"
+  parent: "rest.namespaces.verified-callers.VerifiedCallersResource"
+  module: "rest.namespaces.verified-callers"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/verified-callers.ts"
+---
+# `redialVerification`
+
+Redial the verification call, starting the handshake over from scratch.
+
+## Signature
+
+```typescript
+redialVerification(callerId: string): Promise<any>
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description                                           |
+| ---------- | -------- | -------- | ------- | ----------------------------------------------------- |
+| `callerId` | `string` | yes      | —       | Unique identifier of the verified caller ID resource. |
+
+## Returns
+
+`Promise<any>` — The platform-shaped verification response.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/verified-callers.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/verified-callers.ts)
+
+Line 31.

@@ -1,0 +1,49 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/skills/skill-registry/add-skill-directory"
+title: "addSkillDirectory"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.SkillRegistry.addSkillDirectory"
+  parent: "com.signalwire.sdk.skills.SkillRegistry"
+  module: "com.signalwire.sdk.skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillRegistry.java"
+  visibility: "public"
+---
+# `addSkillDirectory`
+
+Add a directory to search for skills.
+
+<p>Mirrors Python's
+ `signalwire.skills.registry.SkillRegistry.add_skill_directory`:
+ validate that the path exists and is a directory, then append it
+ (de-duplicated) to `externalPaths`. Throws
+ `IllegalArgumentException` (the Java analog of Python's
+ `ValueError`) for non-existent paths or non-directories.
+
+**Modifiers:** `synchronized`
+
+## Signature
+
+```java
+public synchronized void addSkillDirectory(java.lang.String path)
+```
+
+## Parameters
+
+| Name   | Type               | Required | Default | Description                                                              |
+| ------ | ------------------ | -------- | ------- | ------------------------------------------------------------------------ |
+| `path` | `java.lang.String` | yes      | —       | absolute or relative path to a directory containing skill subdirectories |
+
+## Throws
+
+- `IllegalArgumentException` — when the path doesn't exist or isn't a directory.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/SkillRegistry.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/SkillRegistry.java)
+
+Line 110.

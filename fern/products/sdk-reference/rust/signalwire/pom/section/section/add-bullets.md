@@ -1,0 +1,48 @@
+---
+slug: "/reference/rust/signalwire/pom/section/section/add-bullets"
+title: "add_bullets"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::pom::section::Section::add_bullets"
+  parent: "signalwire::pom::section::Section"
+  module: "pom.section"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/pom/section.rs"
+  visibility: "public"
+---
+# `add_bullets`
+
+Append additional bullets. Mirrors Python's
+`Section.add_bullets` (`self.bullets.extend(bullets)`).
+
+## Signature
+
+```rust
+fn add_bullets<I, S>(&mut self, bullets: I) -> &mut Self where I: ?, S: ?<?>
+```
+
+## Type Parameters
+
+| Name | Type | Required | Default | Description |
+| ---- | ---- | -------- | ------- | ----------- |
+| `I`  | —    | yes      | —       | —           |
+| `S`  | —    | yes      | —       | —           |
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `bullets` | `I`  | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/pom/section.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/pom/section.rs)
+
+Line 80.

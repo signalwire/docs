@@ -1,0 +1,46 @@
+---
+slug: "/reference/python/signalwire/pom/pom/prompt-object-model/from-yaml"
+title: "from_yaml"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.pom.pom.PromptObjectModel.from_yaml"
+  parent: "signalwire.pom.pom.PromptObjectModel"
+  module: "signalwire.pom.pom"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py"
+---
+# `from_yaml`
+
+Create a PromptObjectModel instance from YAML data.
+
+**Modifiers:** `static`
+
+## Signature
+
+```python
+@staticmethod
+from_yaml(yaml_data: Union[str, dict]) -> PromptObjectModel
+```
+
+## Parameters
+
+| Name        | Type               | Required | Default | Description                                 |
+| ----------- | ------------------ | -------- | ------- | ------------------------------------------- |
+| `yaml_data` | `Union[str, dict]` | yes      | —       | Either a YAML string or a parsed dictionary |
+
+## Returns
+
+`PromptObjectModel` — A new PromptObjectModel populated with the data from the YAML
+
+## Throws
+
+- `ValueError` — If the YAML is not properly formatted
+
+## Source
+
+[`/src/signalwire/signalwire/pom/pom.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py)
+
+Line 268.

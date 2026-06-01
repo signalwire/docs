@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/function-result/play-background-file"
+title: "PlayBackgroundFile"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult.PlayBackgroundFile"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `PlayBackgroundFile`
+
+PlayBackgroundFile plays an audio or video file in the background. If wait is true, attention-getting behavior is suppressed during playback.
+
+## Signature
+
+```go
+func (*FunctionResult) PlayBackgroundFile(filename string, wait bool) *FunctionResult
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `filename` | `string` | yes      | —       | —           |
+| `wait`     | `bool`   | yes      | —       | —           |
+
+## Returns
+
+`*FunctionResult`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 293.

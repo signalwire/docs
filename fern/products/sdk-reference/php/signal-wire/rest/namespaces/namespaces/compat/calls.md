@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat/calls"
+title: "calls"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Compat::calls"
+  parent: "SignalWire\\REST\\Namespaces\\Compat"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php"
+  visibility: "public"
+---
+# `calls`
+
+## Signature
+
+```php
+public function calls(): SignalWire\REST\Namespaces\CompatCalls
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\CompatCalls`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Compat.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php)
+
+Line 78.

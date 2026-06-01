@@ -1,0 +1,35 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/client/run"
+title: "Run"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Client.Run"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Client"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go"
+---
+# `Run`
+
+Run connects to SignalWire, authenticates, subscribes to configured contexts, and starts the read loop. It blocks until Stop is called or the context is cancelled.
+
+Important: the read loop must be running before subscribeContexts() is called. subscribeContexts() executes a JSON-RPC request whose response is delivered through the read loop's pending-id channel machinery. If the read loop isn't running, the JSON-RPC reply has no reader and the request times out (30s). Hence we start readLoop in a goroutine BEFORE the subscribe call, then block on a done channel here.
+
+## Signature
+
+```go
+func (*Client) Run() error
+```
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/relay/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go)
+
+Line 241.

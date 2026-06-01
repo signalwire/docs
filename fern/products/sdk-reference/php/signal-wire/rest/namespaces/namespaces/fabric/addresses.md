@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/fabric/addresses"
+title: "addresses"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Fabric::addresses"
+  parent: "SignalWire\\REST\\Namespaces\\Fabric"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Fabric.php"
+  visibility: "public"
+---
+# `addresses`
+
+Read-only fabric addresses (`/api/fabric/addresses`).
+
+## Signature
+
+```php
+public function addresses(): SignalWire\REST\Namespaces\FabricAddresses
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\FabricAddresses`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Fabric.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Fabric.php)
+
+Line 250.

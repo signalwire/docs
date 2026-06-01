@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/agent/agent-base/agent-base/add-function-include"
+title: "add_function_include"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Agent::AgentBase::add_function_include"
+  parent: "SignalWire::Agent::AgentBase"
+  module: "SignalWire.Agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Agent/AgentBase.pm"
+  visibility: "public"
+---
+# `add_function_include`
+
+## Signature
+
+```perl
+sub add_function_include($include)
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `include` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Agent/AgentBase.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Agent/AgentBase.pm)
+
+Line 659.

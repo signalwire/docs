@@ -1,0 +1,48 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/call/record-audio"
+title: "recordAudio"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.Call.recordAudio"
+  parent: "com.signalwire.sdk.relay.Call"
+  module: "com.signalwire.sdk.relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java"
+  visibility: "public"
+---
+# `recordAudio`
+
+Record with an explicit control\_id (test helper).
+
+The `audioConfig`
+is wrapped as {audio: <config>} on the wire to match the
+Python control\_id=...) pattern.
+
+## Signature
+
+```java
+public com.signalwire.sdk.relay.Action.RecordAction recordAudio(
+    java.util.Map<java.lang.String,java.lang.Object> audioConfig,
+    java.lang.String controlId
+)
+```
+
+## Parameters
+
+| Name          | Type                                               | Required | Default | Description |
+| ------------- | -------------------------------------------------- | -------- | ------- | ----------- |
+| `audioConfig` | `java.util.Map<java.lang.String,java.lang.Object>` | yes      | —       | —           |
+| `controlId`   | `java.lang.String`                                 | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.relay.Action.RecordAction`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/Call.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java)
+
+Line 529.

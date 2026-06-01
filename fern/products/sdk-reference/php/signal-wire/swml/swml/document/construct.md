@@ -1,0 +1,28 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/document/construct"
+title: "__construct"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Document::__construct"
+  parent: "SignalWire\\SWML\\Document"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php"
+  visibility: "public"
+---
+# `__construct`
+
+## Signature
+
+```php
+public function __construct()
+```
+
+## Source
+
+[`/src/src/SignalWire/SWML/Document.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php)
+
+Line 14.

@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/core/swaig-function/swaig-function/call"
+title: "__call__"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.swaig_function.SWAIGFunction.__call__"
+  parent: "signalwire.core.swaig_function.SWAIGFunction"
+  module: "signalwire.core.swaig_function"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/swaig_function.py"
+---
+# `__call__`
+
+Call the underlying handler function
+
+## Signature
+
+```python
+__call__(*args = (), **kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...args`   | —    | no       | `()`    | —           |
+| `...kwargs` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/core/swaig_function.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/swaig_function.py)
+
+Line 133.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/python/signalwire/skills/web-search/skill-improved/google-search-scraper/search-google"
+title: "search_google"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.web_search.skill_improved.GoogleSearchScraper.search_google"
+  parent: "signalwire.skills.web_search.skill_improved.GoogleSearchScraper"
+  module: "signalwire.skills.web_search.skill_improved"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/web_search/skill_improved.py"
+---
+# `search_google`
+
+Search Google using Custom Search JSON API
+
+## Signature
+
+```python
+search_google(query: str, num_results: int = 5) -> list
+```
+
+## Parameters
+
+| Name          | Type  | Required | Default | Description |
+| ------------- | ----- | -------- | ------- | ----------- |
+| `query`       | `str` | yes      | —       | —           |
+| `num_results` | `int` | no       | `5`     | —           |
+
+## Returns
+
+`list`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/web_search/skill_improved.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/web_search/skill_improved.py)
+
+Line 34.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/remove-global-data"
+title: "removeGlobalData"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.removeGlobalData"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `removeGlobalData`
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult removeGlobalData(
+    java.lang.Object keys
+)
+```
+
+## Parameters
+
+| Name   | Type               | Required | Default | Description |
+| ------ | ------------------ | -------- | ------- | ----------- |
+| `keys` | `java.lang.Object` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 169.

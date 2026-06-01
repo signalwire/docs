@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/survey/tools"
+title: "tools"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::Survey#tools"
+  parent: "SignalWire::Prefabs::Survey"
+  module: "SignalWire.Prefabs.Survey"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/survey.rb"
+  visibility: "public"
+---
+# `tools`
+
+## Signature
+
+```ruby
+def tools
+```
+
+## Source
+
+[`lib/signalwire/prefabs/survey.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/survey.rb)
+
+Line 36.

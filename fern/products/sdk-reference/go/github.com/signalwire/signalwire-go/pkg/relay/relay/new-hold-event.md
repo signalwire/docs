@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/new-hold-event"
+title: "NewHoldEvent"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.NewHoldEvent"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/event.go"
+---
+# `NewHoldEvent`
+
+NewHoldEvent constructs a HoldEvent from raw params.
+
+## Signature
+
+```go
+func NewHoldEvent(params map[string]any) *HoldEvent
+```
+
+## Parameters
+
+| Name     | Type             | Required | Default | Description |
+| -------- | ---------------- | -------- | ------- | ----------- |
+| `params` | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`*HoldEvent`
+
+## Source
+
+[`pkg/relay/event.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/event.go)
+
+Line 641.

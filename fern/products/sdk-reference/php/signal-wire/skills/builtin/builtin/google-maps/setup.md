@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/google-maps/setup"
+title: "setup"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\GoogleMaps::setup"
+  parent: "SignalWire\\Skills\\Builtin\\GoogleMaps"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/GoogleMaps.php"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```php
+public function setup(): bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/src/SignalWire/Skills/Builtin/GoogleMaps.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/GoogleMaps.php)
+
+Line 22.

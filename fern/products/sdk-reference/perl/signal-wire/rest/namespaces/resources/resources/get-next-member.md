@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/resources/resources/get-next-member"
+title: "get_next_member"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Resources::get_next_member"
+  parent: "SignalWire::REST::Namespaces::Resources"
+  module: "SignalWire.REST.Namespaces.Resources"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Resources.pm"
+  visibility: "public"
+---
+# `get_next_member`
+
+## Signature
+
+```perl
+sub get_next_member($queue_id)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `queue_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Resources.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Resources.pm)
+
+Line 44.

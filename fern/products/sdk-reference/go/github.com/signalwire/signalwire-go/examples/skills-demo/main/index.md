@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/skills-demo/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/skills_demo"
+  module: "github.com.signalwire.signalwire-go.examples.skills_demo"
+---
+# `main`
+
+Example: skills\_demo
+
+Skills integration using the built-in skills registry. Demonstrates listing available skills, instantiating them via factory functions, loading them through the SkillManager, and registering their tools with an agent.
+
+## Signature
+
+```go
+package main
+```

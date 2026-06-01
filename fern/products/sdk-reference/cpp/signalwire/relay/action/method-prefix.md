@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/relay/action/method-prefix"
+title: "method_prefix"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Action::method_prefix"
+  parent: "signalwire::relay::Action"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/action.hpp"
+  visibility: "public"
+---
+# `method_prefix`
+
+Method prefix used for sub-command frames (stop/pause/resume/...). Defaults to "calling.play"; set explicitly when an Action is built for a different verb (record, collect, detect, ...). The Call::execute\_action factory plumbs this through.
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+const std::string & method_prefix() const
+```
+
+## Returns
+
+`const std::string &`
+
+## Source
+
+[`include/signalwire/relay/action.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/action.hpp)
+
+Line 43.

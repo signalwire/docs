@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/config-loader/config-loader/has-config"
+title: "has_config"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.config_loader.ConfigLoader.has_config"
+  parent: "signalwire.core.config_loader.ConfigLoader"
+  module: "signalwire.core.config_loader"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py"
+---
+# `has_config`
+
+Check if a configuration was loaded.
+
+## Signature
+
+```python
+has_config() -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/signalwire/signalwire/core/config_loader.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/config_loader.py)
+
+Line 65.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/context-builder/step/set-text"
+title: "setText"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ContextBuilder.Step.setText"
+  parent: "ContextBuilder.Step"
+  module: "ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts"
+---
+# `setText`
+
+Sets raw text content for this step, mutually exclusive with POM sections.
+
+## Signature
+
+```typescript
+setText(text: string): this
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description          |
+| ------ | -------- | -------- | ------- | -------------------- |
+| `text` | `string` | yes      | —       | The raw prompt text. |
+
+## Returns
+
+`this` — This step for chaining.
+
+## Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 191.

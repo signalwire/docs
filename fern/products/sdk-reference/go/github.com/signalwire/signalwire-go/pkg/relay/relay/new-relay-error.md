@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/new-relay-error"
+title: "NewRelayError"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.NewRelayError"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/error.go"
+---
+# `NewRelayError`
+
+NewRelayError constructs a RelayError with the given code and message.
+
+## Signature
+
+```go
+func NewRelayError(code int, message string) *RelayError
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description |
+| --------- | -------- | -------- | ------- | ----------- |
+| `code`    | `int`    | yes      | —       | —           |
+| `message` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*RelayError`
+
+## Source
+
+[`pkg/relay/error.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/error.go)
+
+Line 23.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/call/transfer"
+title: "transfer"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Call::transfer"
+  parent: "SignalWire\\Relay\\Call"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php"
+  visibility: "public"
+---
+# `transfer`
+
+## Signature
+
+```php
+public function transfer(array $params): array
+```
+
+## Parameters
+
+| Name     | Type    | Required | Default | Description |
+| -------- | ------- | -------- | ------- | ----------- |
+| `params` | `array` | yes      | —       | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Call.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php)
+
+Line 238.

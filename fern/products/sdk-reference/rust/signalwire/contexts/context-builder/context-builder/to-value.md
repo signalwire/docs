@@ -1,0 +1,34 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/context-builder/to-value"
+title: "to_value"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::ContextBuilder::to_value"
+  parent: "signalwire::contexts::context_builder::ContextBuilder"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `to_value`
+
+Serialise all contexts in order. Validates before converting.
+
+## Signature
+
+```rust
+fn to_value(&self) -> ?
+```
+
+## Returns
+
+`?`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 847.

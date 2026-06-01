@@ -1,0 +1,35 @@
+---
+slug: "/reference/perl/signal-wire/signal-wire/utils/url-validator/validate-url"
+title: "validate_url"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Utils::UrlValidator::validate_url"
+  parent: "SignalWire::Utils::UrlValidator"
+  module: "SignalWire.Utils.UrlValidator"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Utils/UrlValidator.pm"
+  visibility: "public"
+---
+# `validate_url`
+
+## Signature
+
+```perl
+sub validate_url($url, $allow_private)
+```
+
+## Parameters
+
+| Name            | Type | Required | Default | Description |
+| --------------- | ---- | -------- | ------- | ----------- |
+| `url`           | —    | yes      | —       | —           |
+| `allow_private` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Utils/UrlValidator.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Utils/UrlValidator.pm)
+
+Line 47.

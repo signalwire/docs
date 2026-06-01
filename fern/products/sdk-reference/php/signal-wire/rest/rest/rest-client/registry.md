@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/registry"
+title: "registry"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::registry"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `registry`
+
+Registry (10DLC brands, campaigns, orders, numbers).
+
+## Signature
+
+```php
+public function registry(): SignalWire\REST\Namespaces\Registry
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\Registry`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 290.

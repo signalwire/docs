@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/relay/call/call/clear-digit-bindings"
+title: "clearDigitBindings"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "relay.Call.Call.clearDigitBindings"
+  parent: "relay.Call.Call"
+  module: "relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Call.ts"
+---
+# `clearDigitBindings`
+
+Clear all digit bindings, optionally filtered by realm.
+
+## Signature
+
+```typescript
+clearDigitBindings(realm?: string): Promise<Record<string, unknown>>
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description                                                     |
+| ------- | -------- | -------- | ------- | --------------------------------------------------------------- |
+| `realm` | `string` | no       | —       | When provided, only bindings with this realm label are cleared. |
+
+## Returns
+
+`Promise<Record<string, unknown>>` — The platform's clear\_digit\_bindings response.
+
+## Throws
+
+- When the clear\_digit\_bindings command is rejected.
+
+## Source
+
+[`src/relay/Call.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/Call.ts)
+
+Line 1006.

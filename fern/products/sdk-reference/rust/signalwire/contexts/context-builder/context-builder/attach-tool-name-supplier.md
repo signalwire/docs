@@ -1,0 +1,51 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/context-builder/attach-tool-name-supplier"
+title: "attach_tool_name_supplier"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::ContextBuilder::attach_tool_name_supplier"
+  parent: "signalwire::contexts::context_builder::ContextBuilder"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `attach_tool_name_supplier`
+
+Attach a closure that returns registered SWAIG tool names so
+\[`Self::validate`] can check for collisions with
+\[`RESERVED_NATIVE_TOOL_NAMES`].
+
+## Signature
+
+```rust
+fn attach_tool_name_supplier<F>(
+    &mut self,
+    supplier: F
+) -> &mut Self where F: ?() -> ?<?> + ? + ? + 'static
+```
+
+## Type Parameters
+
+| Name | Type | Required | Default | Description |
+| ---- | ---- | -------- | ------- | ----------- |
+| `F`  | —    | yes      | —       | —           |
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `supplier` | `F`  | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 633.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/signal-wire-rest-error/get-status-code"
+title: "getStatusCode"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\SignalWireRestError::getStatusCode"
+  parent: "SignalWire\\REST\\SignalWireRestError"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/SignalWireRestError.php"
+  visibility: "public"
+---
+# `getStatusCode`
+
+## Signature
+
+```php
+public function getStatusCode(): int
+```
+
+## Returns
+
+`int`
+
+## Source
+
+[`/src/src/SignalWire/REST/SignalWireRestError.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/SignalWireRestError.php)
+
+Line 23.

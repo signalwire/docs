@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/with-type"
+title: "WithType"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.WithType"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `WithType`
+
+WithType sets the JSON-schema type for the answer (default "string").
+
+## Signature
+
+```go
+func WithType(t string) GatherQuestionOption
+```
+
+## Parameters
+
+| Name | Type     | Required | Default | Description |
+| ---- | -------- | -------- | ------- | ----------- |
+| `t`  | `string` | yes      | —       | —           |
+
+## Returns
+
+`GatherQuestionOption`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 49.

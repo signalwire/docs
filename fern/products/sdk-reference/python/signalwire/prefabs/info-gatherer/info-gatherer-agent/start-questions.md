@@ -1,0 +1,41 @@
+---
+slug: "/reference/python/signalwire/prefabs/info-gatherer/info-gatherer-agent/start-questions"
+title: "start_questions"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.prefabs.info_gatherer.InfoGathererAgent.start_questions"
+  parent: "signalwire.prefabs.info_gatherer.InfoGathererAgent"
+  module: "signalwire.prefabs.info_gatherer"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/info_gatherer.py"
+---
+# `start_questions`
+
+Start the question sequence by retrieving the first question
+
+This function gets the current question index from global\_data
+and returns the corresponding question.
+
+**Decorators:** `@AgentBase.tool(Any, Any, Any)`
+
+## Signature
+
+```python
+start_questions(args, raw_data)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `args`     | —    | yes      | —       | —           |
+| `raw_data` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/prefabs/info_gatherer.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/info_gatherer.py)
+
+Line 258.

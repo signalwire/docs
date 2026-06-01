@@ -1,0 +1,27 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/sip-profile/sip-profile-resource/get"
+title: "get"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.sip_profile.SipProfileResource.get"
+  parent: "signalwire.rest.namespaces.sip_profile.SipProfileResource"
+  module: "signalwire.rest.namespaces.sip_profile"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/sip_profile.py"
+---
+# `get`
+
+## Signature
+
+```python
+get()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/sip_profile.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/sip_profile.py)
+
+Line 23.

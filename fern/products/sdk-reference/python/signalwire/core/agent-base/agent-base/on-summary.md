@@ -1,0 +1,43 @@
+---
+slug: "/reference/python/signalwire/core/agent-base/agent-base/on-summary"
+title: "on_summary"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent_base.AgentBase.on_summary"
+  parent: "signalwire.core.agent_base.AgentBase"
+  module: "signalwire.core.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent_base.py"
+---
+# `on_summary`
+
+Called when a post-prompt summary is received
+
+## Signature
+
+```python
+on_summary(
+    summary: Optional[Dict[str, Any]],
+    raw_data: Optional[Dict[str, Any]] = None
+) -> None
+```
+
+## Parameters
+
+| Name       | Type                       | Required | Default | Description                                        |
+| ---------- | -------------------------- | -------- | ------- | -------------------------------------------------- |
+| `summary`  | `Optional[Dict[str, Any]]` | yes      | —       | The summary object or None if no summary was found |
+| `raw_data` | `Optional[Dict[str, Any]]` | no       | `None`  | The complete raw POST data from the request        |
+
+## Returns
+
+`None`
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent_base.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent_base.py)
+
+Line 447.

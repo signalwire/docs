@@ -1,0 +1,37 @@
+---
+slug: "/reference/java/com/signalwire/sdk/pom/pom/prompt-object-model/to-yaml"
+title: "toYaml"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.pom.PromptObjectModel.toYaml"
+  parent: "com.signalwire.sdk.pom.PromptObjectModel"
+  module: "com.signalwire.sdk.pom.PromptObjectModel"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java"
+  visibility: "public"
+---
+# `toYaml`
+
+Convert to a YAML string.
+
+Output matches Python's
+default\_flow\_style=False, sort\_keys=False).
+
+## Signature
+
+```java
+public java.lang.String toYaml()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/pom/PromptObjectModel.java)
+
+Line 243.

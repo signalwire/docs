@@ -1,0 +1,45 @@
+---
+slug: "/reference/ruby/signal-wire/agent-server/serve-static-files"
+title: "serve_static_files"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentServer#serve_static_files"
+  parent: "SignalWire::AgentServer"
+  module: "SignalWire.AgentServer"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/server/agent_server.rb"
+  visibility: "public"
+---
+# `serve_static_files`
+
+Serve static files from a directory at a given route.
+
+## Signature
+
+```ruby
+def serve_static_files(directory, route)
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description                                |
+| ----------- | -------- | -------- | ------- | ------------------------------------------ |
+| `directory` | `String` | yes      | —       | absolute or relative path to the directory |
+| `route`     | `String` | yes      | —       | the URL prefix to serve files at           |
+
+## Returns
+
+`self`
+
+## Throws
+
+- `ArgumentError`
+
+## Source
+
+[`lib/signalwire/server/agent_server.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/server/agent_server.rb)
+
+Line 187.

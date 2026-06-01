@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/client/get-call"
+title: "getCall"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Client::getCall"
+  parent: "SignalWire\\Relay\\Client"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php"
+  visibility: "public"
+---
+# `getCall`
+
+## Signature
+
+```php
+public function getCall(string $callId): ?SignalWire\Relay\Call
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default | Description |
+| -------- | -------- | -------- | ------- | ----------- |
+| `callId` | `string` | yes      | —       | —           |
+
+## Returns
+
+`?SignalWire\Relay\Call`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php)
+
+Line 757.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/livewire/tool-error"
+title: "ToolError"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.livewire.ToolError"
+  parent: "signalwire.livewire"
+  module: "signalwire.livewire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py"
+---
+# `ToolError`
+
+Signals a tool execution error.
+
+## Signature
+
+```python
+class ToolError(Exception)
+```
+
+## Inheritance
+
+**Extends:** `Exception`
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py)
+
+Line 145.

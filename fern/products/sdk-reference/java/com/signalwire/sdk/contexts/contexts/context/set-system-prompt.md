@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/context/set-system-prompt"
+title: "setSystemPrompt"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.Context.setSystemPrompt"
+  parent: "com.signalwire.sdk.contexts.Context"
+  module: "com.signalwire.sdk.contexts.Context"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/Context.java"
+  visibility: "public"
+---
+# `setSystemPrompt`
+
+## Signature
+
+```java
+public com.signalwire.sdk.contexts.Context setSystemPrompt(
+    java.lang.String systemPrompt
+)
+```
+
+## Parameters
+
+| Name           | Type               | Required | Default | Description |
+| -------------- | ------------------ | -------- | ------- | ----------- |
+| `systemPrompt` | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.contexts.Context`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/Context.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/Context.java)
+
+Line 139.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/typescript/function-result/function-result/to-dict"
+title: "toDict"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "FunctionResult.FunctionResult.toDict"
+  parent: "FunctionResult.FunctionResult"
+  module: "FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/FunctionResult.ts"
+---
+# `toDict`
+
+Serialize this result to a plain object for the SWAIG response.
+
+## Signature
+
+```typescript
+toDict(): Record<string, unknown>
+```
+
+## Returns
+
+`Record<string, unknown>` — A dictionary with response, action, and post\_process fields; falls back to "Action completed." if empty.
+
+## Source
+
+[`src/FunctionResult.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/FunctionResult.ts)
+
+Line 887.

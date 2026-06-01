@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/recordings/recordings-resource/delete"
+title: "delete"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.recordings.RecordingsResource.delete"
+  parent: "signalwire.rest.namespaces.recordings.RecordingsResource"
+  module: "signalwire.rest.namespaces.recordings"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/recordings.py"
+---
+# `delete`
+
+## Signature
+
+```python
+delete(recording_id)
+```
+
+## Parameters
+
+| Name           | Type | Required | Default | Description |
+| -------------- | ---- | -------- | ------- | ----------- |
+| `recording_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/recordings.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/recordings.py)
+
+Line 29.

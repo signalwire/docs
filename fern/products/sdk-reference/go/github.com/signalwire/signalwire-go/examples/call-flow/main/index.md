@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/call-flow/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/call_flow"
+  module: "github.com.signalwire.signalwire-go.examples.call_flow"
+---
+# `main`
+
+Example: call\_flow
+
+Call flow verbs and SWAIG actions. Demonstrates pre-answer verbs (ringback), answer configuration, post-answer verbs (welcome audio), post-AI verbs (hangup), debug events, and tools that return call control actions like connect and send\_sms.
+
+## Signature
+
+```go
+package main
+```

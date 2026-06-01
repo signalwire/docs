@@ -1,0 +1,38 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/get-normalised-route"
+title: "getNormalisedRoute"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.getNormalisedRoute"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `getNormalisedRoute`
+
+Return the agent's route normalised to an empty string for the
+root route or `"/<path>"` otherwise.
+
+Exposed so non-HTTP
+transports can construct paths correctly.
+
+## Signature
+
+```java
+public java.lang.String getNormalisedRoute()
+```
+
+## Returns
+
+`java.lang.String` — normalised route prefix.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 1493.

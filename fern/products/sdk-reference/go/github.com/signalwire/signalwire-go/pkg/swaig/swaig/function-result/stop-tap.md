@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/function-result/stop-tap"
+title: "StopTap"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult.StopTap"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `StopTap`
+
+StopTap stops an active tap stream.
+
+## Signature
+
+```go
+func (*FunctionResult) StopTap(controlID string) *FunctionResult
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `controlID` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*FunctionResult`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 638.

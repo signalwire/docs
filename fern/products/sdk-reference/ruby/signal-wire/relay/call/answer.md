@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/relay/call/answer"
+title: "answer"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Call#answer"
+  parent: "SignalWire::Relay::Call"
+  module: "SignalWire.Relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/call.rb"
+  visibility: "public"
+---
+# `answer`
+
+***
+
+## Call lifecycle methods
+
+## Signature
+
+```ruby
+def answer(**kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/relay/call.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/call.rb)
+
+Line 172.

@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/receptionist/route"
+title: "route"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::Receptionist#route"
+  parent: "SignalWire::Prefabs::Receptionist"
+  module: "SignalWire.Prefabs.Receptionist"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/receptionist.rb"
+  visibility: "public"
+---
+# `route`
+
+Returns the value of attribute route.
+
+## Signature
+
+```ruby
+attr_reader route -> Object
+```
+
+## Source
+
+[`lib/signalwire/prefabs/receptionist.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/receptionist.rb)
+
+Line 22.

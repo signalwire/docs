@@ -1,0 +1,38 @@
+---
+slug: "/reference/python/signalwire/core/mixins/ai-config-mixin/ai-config-mixin/enable-mcp-server"
+title: "enable_mcp_server"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.ai_config_mixin.AIConfigMixin.enable_mcp_server"
+  parent: "signalwire.core.mixins.ai_config_mixin.AIConfigMixin"
+  module: "signalwire.core.mixins.ai_config_mixin"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/ai_config_mixin.py"
+---
+# `enable_mcp_server`
+
+Expose this agent's @tool functions as an MCP server endpoint.
+
+Adds a /mcp route that speaks JSON-RPC 2.0 (MCP protocol).
+Other MCP clients (Claude Desktop, other agents, etc.) can
+connect and use the same tools. The agent's SWML output also
+references this endpoint for native MCP tool discovery.
+
+## Signature
+
+```python
+enable_mcp_server() -> AgentBase
+```
+
+## Returns
+
+`AgentBase` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/ai_config_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/ai_config_mixin.py)
+
+Line 574.

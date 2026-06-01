@@ -1,0 +1,40 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/document/add-section"
+title: "addSection"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Document::addSection"
+  parent: "SignalWire\\SWML\\Document"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php"
+  visibility: "public"
+---
+# `addSection`
+
+Add a new named section. Returns true if created, false if it already existed.
+
+## Signature
+
+```php
+public function addSection(string $name): bool
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Document.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php)
+
+Line 27.

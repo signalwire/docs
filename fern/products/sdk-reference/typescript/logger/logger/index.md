@@ -1,0 +1,38 @@
+---
+slug: "/reference/typescript/logger/logger"
+title: "Logger"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "typescript"
+  qualified_name: "Logger.Logger"
+  parent: "Logger"
+  module: "Logger"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/Logger.ts"
+---
+# `Logger`
+
+Structured logger that respects global level, format, and color settings.
+
+## Signature
+
+```typescript
+class Logger
+```
+
+## Methods
+
+- [`bind`](/reference/typescript/logger/logger/bind) — Create a child logger with additional bound context fields merged into the parent's context.
+- [`constructor`](/reference/typescript/logger/logger/constructor) — Create a new Logger instance.
+- [`debug`](/reference/typescript/logger/logger/debug) — Log a message at the debug level.
+- [`error`](/reference/typescript/logger/logger/error) — Log a message at the error level.
+- [`info`](/reference/typescript/logger/logger/info) — Log a message at the info level.
+- [`warn`](/reference/typescript/logger/logger/warn) — Log a message at the warn level.
+
+## Source
+
+[`src/Logger.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/Logger.ts)
+
+Line 203.

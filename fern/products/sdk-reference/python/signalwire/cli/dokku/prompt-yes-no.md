@@ -1,0 +1,38 @@
+---
+slug: "/reference/python/signalwire/cli/dokku/prompt-yes-no"
+title: "prompt_yes_no"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.dokku.prompt_yes_no"
+  parent: "signalwire.cli.dokku"
+  module: "signalwire.cli.dokku"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/dokku.py"
+---
+# `prompt_yes_no`
+
+## Signature
+
+```python
+prompt_yes_no(question: str, default: bool = True) -> bool
+```
+
+## Parameters
+
+| Name       | Type   | Required | Default | Description |
+| ---------- | ------ | -------- | ------- | ----------- |
+| `question` | `str`  | yes      | —       | —           |
+| `default`  | `bool` | no       | `True`  | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/signalwire/signalwire/cli/dokku.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/dokku.py)
+
+Line 73.

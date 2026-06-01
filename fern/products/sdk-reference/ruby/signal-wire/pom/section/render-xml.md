@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/pom/section/render-xml"
+title: "render_xml"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::POM::Section#render_xml"
+  parent: "SignalWire::POM::Section"
+  module: "SignalWire.POM.Section"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/pom/section.rb"
+  visibility: "public"
+---
+# `render_xml`
+
+Render this section and all its subsections as XML. Output is
+byte-for-byte identical to Python's `Section.render_xml`.
+
+## Signature
+
+```ruby
+def render_xml(indent: 0, section_number: nil)
+```
+
+## Parameters
+
+| Name              | Type | Required | Default | Description |
+| ----------------- | ---- | -------- | ------- | ----------- |
+| `indent:`         | —    | no       | `0`     | —           |
+| `section_number:` | —    | no       | `nil`   | —           |
+
+## Source
+
+[`lib/signalwire/pom/section.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/pom/section.rb)
+
+Line 150.

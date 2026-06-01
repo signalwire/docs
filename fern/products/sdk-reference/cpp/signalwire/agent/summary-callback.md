@@ -1,0 +1,30 @@
+---
+slug: "/reference/cpp/signalwire/agent/summary-callback"
+title: "SummaryCallback"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::agent::SummaryCallback"
+  parent: "signalwire::agent"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `SummaryCallback`
+
+Summary callback type.
+
+## Signature
+
+```cpp
+typedef std::function< void(const json &summary, const json &raw_data)> SummaryCallback
+```
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 97.

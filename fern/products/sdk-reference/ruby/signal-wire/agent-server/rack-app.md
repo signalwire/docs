@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/agent-server/rack-app"
+title: "rack_app"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentServer#rack_app"
+  parent: "SignalWire::AgentServer"
+  module: "SignalWire.AgentServer"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/server/agent_server.rb"
+  visibility: "public"
+---
+# `rack_app`
+
+Build a Rack application that routes requests to the appropriate agent.
+
+## Signature
+
+```ruby
+def rack_app
+```
+
+## Returns
+
+`Proc` — a Rack-compatible app
+
+## Source
+
+[`lib/signalwire/server/agent_server.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/server/agent_server.rb)
+
+Line 307.

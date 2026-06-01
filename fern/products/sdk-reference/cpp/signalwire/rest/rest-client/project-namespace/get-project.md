@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/rest/rest-client/project-namespace/get-project"
+title: "get_project"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::rest::RestClient::ProjectNamespace::get_project"
+  parent: "signalwire::rest::RestClient::ProjectNamespace"
+  module: "signalwire.rest.RestClient"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/rest_client.hpp"
+  visibility: "public"
+---
+# `get_project`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+json get_project() const
+```
+
+## Returns
+
+`json`
+
+## Source
+
+[`include/signalwire/rest/rest_client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/rest_client.hpp)
+
+Line 1411.

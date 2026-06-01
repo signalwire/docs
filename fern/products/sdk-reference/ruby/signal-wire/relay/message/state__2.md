@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/relay/message/state__2"
+title: "state="
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Message#state="
+  parent: "SignalWire::Relay::Message"
+  module: "SignalWire.Relay.Message"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/message.rb"
+  visibility: "public"
+---
+# `state=`
+
+Sets the attribute state
+
+## Signature
+
+```ruby
+attr_accessor state= <-> Object
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description                              |
+| ------- | ---- | -------- | ------- | ---------------------------------------- |
+| `value` | —    | yes      | —       | the value to set the attribute state to. |
+
+## Source
+
+[`lib/signalwire/relay/message.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/message.rb)
+
+Line 12.

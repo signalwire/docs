@@ -1,0 +1,37 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/registry/registry-orders"
+title: "RegistryOrders"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.registry.RegistryOrders"
+  parent: "signalwire.rest.namespaces.registry"
+  module: "signalwire.rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/registry.py"
+---
+# `RegistryOrders`
+
+10DLC assignment order management.
+
+## Signature
+
+```python
+class RegistryOrders(BaseResource)
+```
+
+## Inheritance
+
+**Extends:** `BaseResource`
+
+## Methods
+
+- [`get`](/reference/python/signalwire/rest/namespaces/registry/registry-orders/get)
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/registry.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/registry.py)
+
+Line 55.

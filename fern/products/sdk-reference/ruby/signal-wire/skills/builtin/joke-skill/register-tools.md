@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/joke-skill/register-tools"
+title: "register_tools"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::JokeSkill#register_tools"
+  parent: "SignalWire::Skills::Builtin::JokeSkill"
+  module: "SignalWire.Skills.Builtin.JokeSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/joke.rb"
+  visibility: "public"
+---
+# `register_tools`
+
+## Signature
+
+```ruby
+def register_tools
+```
+
+## Source
+
+[`lib/signalwire/skills/builtin/joke.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/joke.rb)
+
+Line 21.

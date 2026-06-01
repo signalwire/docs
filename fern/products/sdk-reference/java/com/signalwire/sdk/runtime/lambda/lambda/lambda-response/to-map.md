@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/runtime/lambda/lambda/lambda-response/to-map"
+title: "toMap"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.runtime.lambda.LambdaResponse.toMap"
+  parent: "com.signalwire.sdk.runtime.lambda.LambdaResponse"
+  module: "com.signalwire.sdk.runtime.lambda.LambdaResponse"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/lambda/LambdaResponse.java"
+  visibility: "public"
+---
+# `toMap`
+
+Serialise this response into the AWS Lambda Function URL /
+API Gateway payload format (v1 and v2 are structurally identical
+for response shape).
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> toMap()
+```
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>` — a Map suitable for returning from a Lambda handler.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/runtime/lambda/LambdaResponse.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/lambda/LambdaResponse.java)
+
+Line 60.

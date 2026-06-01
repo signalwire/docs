@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/prefabs/faq-bot/faq-bot/build"
+title: "BUILD"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Prefabs::FAQBot::BUILD"
+  parent: "SignalWire::Prefabs::FAQBot"
+  module: "SignalWire.Prefabs.FAQBot"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/FAQBot.pm"
+  visibility: "public"
+---
+# `BUILD`
+
+## Signature
+
+```perl
+sub BUILD($args)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `args` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Prefabs/FAQBot.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/FAQBot.pm)
+
+Line 15.

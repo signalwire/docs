@@ -1,0 +1,48 @@
+---
+slug: "/reference/python/signalwire/relay/call/call/join-room"
+title: "join_room"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.call.Call.join_room"
+  parent: "signalwire.relay.call.Call"
+  module: "signalwire.relay.call"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py"
+---
+# `join_room`
+
+Join a video/audio room.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async join_room(
+    name: str,
+    *,
+    status_url: Optional[str] = None,
+    **kwargs: Any = {}
+) -> dict
+```
+
+## Parameters
+
+| Name         | Type            | Required | Default | Description |
+| ------------ | --------------- | -------- | ------- | ----------- |
+| `name`       | `str`           | yes      | —       | —           |
+| `status_url` | `Optional[str]` | no       | `None`  | —           |
+| `...kwargs`  | `Any`           | no       | `{}`    | —           |
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/call.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py)
+
+Line 1096.

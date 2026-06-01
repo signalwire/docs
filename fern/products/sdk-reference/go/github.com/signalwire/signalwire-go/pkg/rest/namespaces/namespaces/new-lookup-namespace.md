@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/new-lookup-namespace"
+title: "NewLookupNamespace"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.NewLookupNamespace"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/lookup.go"
+---
+# `NewLookupNamespace`
+
+NewLookupNamespace creates a new LookupNamespace.
+
+## Signature
+
+```go
+func NewLookupNamespace(client HTTPClient) *LookupNamespace
+```
+
+## Parameters
+
+| Name     | Type         | Required | Default | Description |
+| -------- | ------------ | -------- | ------- | ----------- |
+| `client` | `HTTPClient` | yes      | —       | —           |
+
+## Returns
+
+`*LookupNamespace`
+
+## Source
+
+[`pkg/rest/namespaces/lookup.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/lookup.go)
+
+Line 16.

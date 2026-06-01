@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/relay/action/on-completed"
+title: "on_completed"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Action::on_completed"
+  parent: "signalwire::relay::Action"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/action.hpp"
+  visibility: "public"
+---
+# `on_completed`
+
+Set a callback to fire when the action completes.
+
+## Signature
+
+```cpp
+void on_completed(CompletedCallback cb)
+```
+
+## Parameters
+
+| Name | Type                | Required | Default | Description |
+| ---- | ------------------- | -------- | ------- | ----------- |
+| `cb` | `CompletedCallback` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/action.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/action.hpp)
+
+Line 109.

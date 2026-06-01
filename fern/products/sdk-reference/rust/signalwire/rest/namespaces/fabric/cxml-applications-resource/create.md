@@ -1,0 +1,44 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/fabric/cxml-applications-resource/create"
+title: "create"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::fabric::CxmlApplicationsResource::create"
+  parent: "signalwire::rest::namespaces::fabric::CxmlApplicationsResource"
+  module: "rest.namespaces.fabric"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/fabric.rs"
+  visibility: "public"
+---
+# `create`
+
+cXML applications cannot be created via this API.
+
+Returns an `Err` with a clear "not implemented" message that
+mirrors the Python SDK's `NotImplementedError`. No HTTP request
+is sent to the server.
+
+## Signature
+
+```rust
+fn create(&self, _params: &?) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `_params` | `&?` | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/rest/namespaces/fabric.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/fabric.rs)
+
+Line 478.

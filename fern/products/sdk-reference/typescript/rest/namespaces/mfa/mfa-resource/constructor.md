@@ -1,0 +1,37 @@
+---
+slug: "/reference/typescript/rest/namespaces/mfa/mfa-resource/constructor"
+title: "constructor"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.mfa.MfaResource.constructor"
+  parent: "rest.namespaces.mfa.MfaResource"
+  module: "rest.namespaces.mfa"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/mfa.ts"
+---
+# `constructor`
+
+## Signature
+
+```typescript
+constructor(http: HttpClient): MfaResource
+```
+
+## Parameters
+
+| Name   | Type         | Required | Default | Description |
+| ------ | ------------ | -------- | ------- | ----------- |
+| `http` | `HttpClient` | yes      | —       | —           |
+
+## Returns
+
+`MfaResource`
+
+## Source
+
+[`src/rest/namespaces/mfa.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/mfa.ts)
+
+Line 23.

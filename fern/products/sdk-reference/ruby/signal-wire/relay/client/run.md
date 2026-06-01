@@ -1,0 +1,31 @@
+---
+slug: "/reference/ruby/signal-wire/relay/client/run"
+title: "run"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::Client#run"
+  parent: "SignalWire::Relay::Client"
+  module: "SignalWire.Relay.Client"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/client.rb"
+  visibility: "public"
+---
+# `run`
+
+Connect, authenticate, subscribe, and enter the read loop.
+Blocks until stop is called.
+
+## Signature
+
+```ruby
+def run
+```
+
+## Source
+
+[`lib/signalwire/relay/client.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/client.rb)
+
+Line 168.

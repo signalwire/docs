@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/number-groups/number-groups/base-path"
+title: "base_path"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::number_groups::NumberGroups::base_path"
+  parent: "signalwire::rest::namespaces::number_groups::NumberGroups"
+  module: "rest.namespaces.number_groups"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/number_groups.rs"
+  visibility: "public"
+---
+# `base_path`
+
+## Signature
+
+```rust
+fn base_path(&self) -> &str
+```
+
+## Returns
+
+`&str`
+
+## Source
+
+[`src/rest/namespaces/number_groups.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/number_groups.rs)
+
+Line 27.

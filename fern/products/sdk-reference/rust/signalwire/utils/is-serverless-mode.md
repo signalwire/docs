@@ -1,0 +1,41 @@
+---
+slug: "/reference/rust/signalwire/utils/is-serverless-mode"
+title: "is_serverless_mode"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "rust"
+  qualified_name: "signalwire::utils::is_serverless_mode"
+  parent: "signalwire::utils"
+  module: "utils"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/utils/mod.rs"
+  visibility: "public"
+---
+# `is_serverless_mode`
+
+Cross-language SDK contract: `signalwire.utils.is_serverless_mode`
+returns `true` whenever the SDK is running inside any short-lived /
+event-driven invocation environment (anything other than `"server"`).
+
+Mirrors `signalwire.utils.is_serverless_mode` in the Python
+reference. The actual detection ladder lives in
+`core::logging_config::get_execution_mode`; this helper just maps
+"anything except 'server'" -> `true`.
+
+## Signature
+
+```rust
+fn is_serverless_mode() -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`src/utils/mod.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/utils/mod.rs)
+
+Line 20.

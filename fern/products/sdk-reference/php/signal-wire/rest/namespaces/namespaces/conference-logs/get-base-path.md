@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/conference-logs/get-base-path"
+title: "getBasePath"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\ConferenceLogs::getBasePath"
+  parent: "SignalWire\\REST\\Namespaces\\ConferenceLogs"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/ConferenceLogs.php"
+  visibility: "public"
+---
+# `getBasePath`
+
+## Signature
+
+```php
+public function getBasePath(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/ConferenceLogs.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/ConferenceLogs.php)
+
+Line 23.

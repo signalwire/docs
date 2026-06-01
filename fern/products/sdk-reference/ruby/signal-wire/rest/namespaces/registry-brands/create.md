@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/registry-brands/create"
+title: "create"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::RegistryBrands#create"
+  parent: "SignalWire::REST::Namespaces::RegistryBrands"
+  module: "SignalWire.REST.Namespaces.RegistryBrands"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/registry.rb"
+  visibility: "public"
+---
+# `create`
+
+## Signature
+
+```ruby
+def create(**kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/registry.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/registry.rb)
+
+Line 9.

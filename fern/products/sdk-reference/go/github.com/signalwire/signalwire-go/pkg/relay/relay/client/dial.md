@@ -1,0 +1,44 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/client/dial"
+title: "Dial"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Client.Dial"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Client"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go"
+---
+# `Dial`
+
+Dial initiates an outbound call to the given device list. The devices parameter is a list of serial/parallel device groups (same structure as the Blade calling.dial devices field).
+
+Mirrors Python's RelayClient.dial(devices, \*, tag=None, max\_duration=None, dial\_timeout=None). The calling.dial RPC response only contains {"code": "200", "message": "Dialing"} — no call\_id. The real call\_id and node\_id arrive via subsequent calling.call.dial events keyed by tag. This method waits for that event so the returned Call always has valid identifiers.
+
+To pass a caller-supplied tag, use WithDialTag. Without it the SDK generates a UUID, matching Python's tag = tag or str(uuid.uuid4()).
+
+## Signature
+
+```go
+func (*Client) Dial(devices [][]map[string]any, opts ...DialOption) (*Call, error)
+```
+
+## Parameters
+
+| Name      | Type                 | Required | Default | Description |
+| --------- | -------------------- | -------- | ------- | ----------- |
+| `devices` | `[][]map[string]any` | yes      | —       | —           |
+| `...opts` | `DialOption`         | no       | —       | —           |
+
+## Returns
+
+`(*Call, error)`
+
+## Source
+
+[`pkg/relay/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go)
+
+Line 333.

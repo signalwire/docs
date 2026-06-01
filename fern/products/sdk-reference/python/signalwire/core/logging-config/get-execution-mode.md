@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/logging-config/get-execution-mode"
+title: "get_execution_mode"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.core.logging_config.get_execution_mode"
+  parent: "signalwire.core.logging_config"
+  module: "signalwire.core.logging_config"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/logging_config.py"
+---
+# `get_execution_mode`
+
+Determine the execution mode based on environment variables
+
+## Signature
+
+```python
+get_execution_mode()
+```
+
+## Returns
+
+'server', 'cgi', 'lambda', 'google\_cloud\_function', 'azure\_function', or 'unknown'
+
+## Source
+
+[`/src/signalwire/signalwire/core/logging_config.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/logging_config.py)
+
+Line 44.

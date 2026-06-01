@@ -1,0 +1,37 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/prefabs/prefabs/bedrock-agent/set-llm-temperature"
+title: "SetLLMTemperature"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/prefabs.BedrockAgent.SetLLMTemperature"
+  parent: "github.com/signalwire/signalwire-go/pkg/prefabs.BedrockAgent"
+  module: "github.com.signalwire.signalwire-go.pkg.prefabs"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/prefabs/bedrock.go"
+---
+# `SetLLMTemperature`
+
+SetLLMTemperature is a convenience wrapper that delegates to SetInferenceParams.
+
+Python equivalent: BedrockAgent.set\_llm\_temperature
+
+## Signature
+
+```go
+func (*BedrockAgent) SetLLMTemperature(temperature float64)
+```
+
+## Parameters
+
+| Name          | Type      | Required | Default | Description |
+| ------------- | --------- | -------- | ------- | ----------- |
+| `temperature` | `float64` | yes      | —       | —           |
+
+## Source
+
+[`pkg/prefabs/bedrock.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/prefabs/bedrock.go)
+
+Line 209.

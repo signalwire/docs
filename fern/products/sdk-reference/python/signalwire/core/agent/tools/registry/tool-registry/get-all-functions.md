@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/agent/tools/registry/tool-registry/get-all-functions"
+title: "get_all_functions"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.tools.registry.ToolRegistry.get_all_functions"
+  parent: "signalwire.core.agent.tools.registry.ToolRegistry"
+  module: "signalwire.core.agent.tools.registry"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/registry.py"
+---
+# `get_all_functions`
+
+Get all registered functions.
+
+## Signature
+
+```python
+get_all_functions() -> Dict[str, Union[SWAIGFunction, Dict[str, Any]]]
+```
+
+## Returns
+
+`Dict[str, Union[SWAIGFunction, Dict[str, Any]]]` — Dictionary of function name to function object/dict
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/tools/registry.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/registry.py)
+
+Line 204.

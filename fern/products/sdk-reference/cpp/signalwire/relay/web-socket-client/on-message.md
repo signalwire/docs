@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/relay/web-socket-client/on-message"
+title: "on_message"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::WebSocketClient::on_message"
+  parent: "signalwire::relay::WebSocketClient"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/websocket.hpp"
+  visibility: "public"
+---
+# `on_message`
+
+Set callback for received text messages.
+
+**Modifiers:** `inline`
+
+## Signature
+
+```cpp
+void on_message(MessageCallback cb)
+```
+
+## Parameters
+
+| Name | Type              | Required | Default | Description |
+| ---- | ----------------- | -------- | ------- | ----------- |
+| `cb` | `MessageCallback` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/websocket.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/websocket.hpp)
+
+Line 48.

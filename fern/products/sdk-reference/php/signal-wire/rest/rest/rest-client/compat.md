@@ -1,0 +1,37 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/compat"
+title: "compat"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::compat"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `compat`
+
+Compatibility (Twilio-compatible LaML) API.
+
+Returns a `Compat` namespace object exposing the LAML sub-resources
+(calls, messages, faxes, conferences, phoneNumbers, recordings, ...).
+
+## Signature
+
+```php
+public function compat(): SignalWire\REST\Namespaces\Compat
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\Compat`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 191.

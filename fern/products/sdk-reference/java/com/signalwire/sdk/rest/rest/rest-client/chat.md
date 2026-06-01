@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/rest/rest-client/chat"
+title: "chat"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.RestClient.chat"
+  parent: "com.signalwire.sdk.rest.RestClient"
+  module: "com.signalwire.sdk.rest.RestClient"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/RestClient.java"
+  visibility: "public"
+---
+# `chat`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.namespaces.ChatNamespace chat()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.namespaces.ChatNamespace`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/RestClient.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/RestClient.java)
+
+Line 187.

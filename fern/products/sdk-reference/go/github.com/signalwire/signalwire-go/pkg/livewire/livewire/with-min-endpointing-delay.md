@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/with-min-endpointing-delay"
+title: "WithMinEndpointingDelay"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.WithMinEndpointingDelay"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `WithMinEndpointingDelay`
+
+WithMinEndpointingDelay maps to end\_of\_speech\_timeout on SignalWire.
+
+## Signature
+
+```go
+func WithMinEndpointingDelay(d float64) SessionOption
+```
+
+## Parameters
+
+| Name | Type      | Required | Default | Description |
+| ---- | --------- | -------- | ------- | ----------- |
+| `d`  | `float64` | yes      | —       | —           |
+
+## Returns
+
+`SessionOption`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 425.

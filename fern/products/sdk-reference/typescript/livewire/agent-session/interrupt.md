@@ -1,0 +1,34 @@
+---
+slug: "/reference/typescript/livewire/agent-session/interrupt"
+title: "interrupt"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "livewire.AgentSession.interrupt"
+  parent: "livewire.AgentSession"
+  module: "livewire"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/livewire/index.ts"
+---
+# `interrupt`
+
+Interrupt current speech. **No-op** on SignalWire — barge-in is handled
+automatically by the control plane.
+
+## Signature
+
+```typescript
+interrupt(): void
+```
+
+## Returns
+
+`void`
+
+## Source
+
+[`src/livewire/index.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/livewire/index.ts)
+
+Line 629.

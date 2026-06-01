@@ -1,0 +1,40 @@
+---
+slug: "/reference/python/signalwire/core/contexts/step/add-section"
+title: "add_section"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Step.add_section"
+  parent: "signalwire.core.contexts.Step"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `add_section`
+
+Add a POM section to the step
+
+## Signature
+
+```python
+add_section(title: str, body: str) -> Step
+```
+
+## Parameters
+
+| Name    | Type  | Required | Default | Description       |
+| ------- | ----- | -------- | ------- | ----------------- |
+| `title` | `str` | yes      | —       | Section title     |
+| `body`  | `str` | yes      | —       | Section body text |
+
+## Returns
+
+`Step` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 147.

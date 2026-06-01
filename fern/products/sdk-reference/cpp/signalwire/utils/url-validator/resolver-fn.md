@@ -1,0 +1,31 @@
+---
+slug: "/reference/cpp/signalwire/utils/url-validator/resolver-fn"
+title: "ResolverFn"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::utils::url_validator::ResolverFn"
+  parent: "signalwire::utils::url_validator"
+  module: "signalwire.utils"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/utils/url_validator.hpp"
+  visibility: "public"
+---
+# `ResolverFn`
+
+Pluggable resolver. Tests inject a callable to keep the suite hermetic; production resolves via getaddrinfo. Returns nullopt on resolution failure.
+The signature: function(hostname) -> optional\<vector<string>> of IP-string addresses.
+
+## Signature
+
+```cpp
+typedef std::function< std::optional< std::vector< std::string > >(const std::string &)> ResolverFn
+```
+
+## Source
+
+[`include/signalwire/utils/url_validator.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/utils/url_validator.hpp)
+
+Line 32.

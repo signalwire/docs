@@ -1,0 +1,37 @@
+---
+slug: "/reference/typescript/rest/namespaces/number-groups/number-groups-resource/constructor"
+title: "constructor"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.number-groups.NumberGroupsResource.constructor"
+  parent: "rest.namespaces.number-groups.NumberGroupsResource"
+  module: "rest.namespaces.number-groups"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/number-groups.ts"
+---
+# `constructor`
+
+## Signature
+
+```typescript
+constructor(http: HttpClient): NumberGroupsResource
+```
+
+## Parameters
+
+| Name   | Type         | Required | Default | Description |
+| ------ | ------------ | -------- | ------- | ----------- |
+| `http` | `HttpClient` | yes      | —       | —           |
+
+## Returns
+
+`NumberGroupsResource`
+
+## Source
+
+[`src/rest/namespaces/number-groups.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/number-groups.ts)
+
+Line 19.

@@ -1,0 +1,48 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace"
+title: "PhoneNumbersNamespace"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.PhoneNumbersNamespace"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/phone_numbers.go"
+---
+# `PhoneNumbersNamespace`
+
+PhoneNumbersNamespace provides phone number management with search and typed helpers for binding an inbound call to a handler (SWML webhook, cXML webhook, AI agent, call flow, RELAY application/topic).
+
+Binding model: set “call\_handler“ + the handler-specific companion field on the phone number; the server auto-materializes the matching Fabric resource. The helpers below (Set\*) are one-line wrappers around Update with the right call\_handler + field combination baked in. See PhoneCallHandler for the enum.
+
+## Signature
+
+```go
+type PhoneNumbersNamespace struct
+```
+
+## Properties
+
+| Name           | Type            | Required | Default | Description |
+| -------------- | --------------- | -------- | ------- | ----------- |
+| `CrudResource` | `*CrudResource` | yes      | —       | —           |
+
+## Methods
+
+- [`Search`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/search) — Search searches for available phone numbers with optional filter parameters such as area\_code, contains, starts\_with, etc.
+- [`SetAiAgent`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-ai-agent) — SetAiAgent routes inbound calls to an AI Agent Fabric resource by ID.
+- [`SetCallFlow`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-call-flow) — SetCallFlow routes inbound calls to a Call Flow by ID. Pass nil opts for the minimal form; pass opts.Version to pin a specific version.
+- [`SetCxmlApplication`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-cxml-application) — SetCxmlApplication routes inbound calls to an existing cXML application by ID.
+- [`SetCxmlWebhook`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-cxml-webhook) — SetCxmlWebhook routes inbound calls to a cXML (Twilio-compat / LAML) webhook.
+- [`SetRelayApplication`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-relay-application) — SetRelayApplication routes inbound calls to a named RELAY application.
+- [`SetRelayTopic`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-relay-topic) — SetRelayTopic routes inbound calls to a RELAY topic (client subscription). Pass nil opts for the minimal form.
+- [`SetSwmlWebhook`](/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/phone-numbers-namespace/set-swml-webhook) — SetSwmlWebhook routes inbound calls to an SWML webhook URL.
+
+## Source
+
+[`pkg/rest/namespaces/phone_numbers.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/phone_numbers.go)
+
+Line 21.

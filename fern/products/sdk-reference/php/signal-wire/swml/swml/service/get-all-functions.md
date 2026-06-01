@@ -1,0 +1,36 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/service/get-all-functions"
+title: "getAllFunctions"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Service::getAllFunctions"
+  parent: "SignalWire\\SWML\\Service"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php"
+  visibility: "public"
+---
+# `getAllFunctions`
+
+Snapshot of all registered SWAIG functions keyed by name.
+
+Python parity: `ToolRegistry.get_all_functions`.
+
+## Signature
+
+```php
+public function getAllFunctions(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Service.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php)
+
+Line 306.

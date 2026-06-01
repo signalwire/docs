@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/agent-timing-safe-basic-auth/call"
+title: "call"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase::AgentTimingSafeBasicAuth#call"
+  parent: "SignalWire::AgentBase::AgentTimingSafeBasicAuth"
+  module: "SignalWire.AgentBase.AgentTimingSafeBasicAuth"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `call`
+
+## Signature
+
+```ruby
+def call(env)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `env` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 2101.

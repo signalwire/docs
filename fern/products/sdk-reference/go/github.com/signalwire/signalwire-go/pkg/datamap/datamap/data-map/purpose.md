@@ -1,0 +1,75 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/datamap/datamap/data-map/purpose"
+title: "Purpose"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/datamap.DataMap.Purpose"
+  parent: "github.com/signalwire/signalwire-go/pkg/datamap.DataMap"
+  module: "github.com.signalwire.signalwire-go.pkg.datamap"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/datamap/datamap.go"
+---
+# `Purpose`
+
+Purpose sets the LLM-facing tool description — this is an alias for Description.
+
+The description string is rendered into the OpenAI tool schema "description" field on every LLM turn. The model reads it to decide WHEN to call this tool. It is PROMPT ENGINEERING, not developer documentation.
+
+A vague Purpose is the #1 cause of "the model has the right tool but doesn't call it" failures with data-map tools.
+
+Bad vs good:
+
+```
+BAD:  dm.Purpose("weather api")
+GOOD: dm.Purpose("Get the current weather conditions and forecast " +
+          "for a specific city. Use this whenever the user asks about " +
+          "weather, temperature, rain, or similar conditions in a " +
+          "named location.")
+```
+
+## Signature
+
+```go
+func (*DataMap) Purpose(description string) *DataMap
+```
+
+## Parameters
+
+| Name          | Type     | Required | Default | Description |
+| ------------- | -------- | -------- | ------- | ----------- |
+| `description` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*DataMap`
+
+## Examples
+
+**Example 1**
+
+```go
+BAD:  dm.Purpose("weather api")
+GOOD: dm.Purpose("Get the current weather conditions and forecast " +
+          "for a specific city. Use this whenever the user asks about " +
+          "weather, temperature, rain, or similar conditions in a " +
+          "named location.")
+```
+
+**Example 2**
+
+```go
+BAD:  dm.Purpose("weather api")
+GOOD: dm.Purpose("Get the current weather conditions and forecast " +
+          "for a specific city. Use this whenever the user asks about " +
+          "weather, temperature, rain, or similar conditions in a " +
+          "named location.")
+```
+
+## Source
+
+[`pkg/datamap/datamap.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/datamap/datamap.go)
+
+Line 105.

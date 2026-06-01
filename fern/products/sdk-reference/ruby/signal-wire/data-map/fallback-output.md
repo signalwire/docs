@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/data-map/fallback-output"
+title: "fallback_output"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::DataMap#fallback_output"
+  parent: "SignalWire::DataMap"
+  module: "SignalWire.DataMap"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/datamap/data_map.rb"
+  visibility: "public"
+---
+# `fallback_output`
+
+Set a fallback output used when all webhooks fail.
+
+## Signature
+
+```ruby
+def fallback_output(result)
+```
+
+## Parameters
+
+| Name     | Type                            | Required | Default | Description |
+| -------- | ------------------------------- | -------- | ------- | ----------- |
+| `result` | `Swaig::FunctionResult \| Hash` | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/datamap/data_map.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/datamap/data_map.rb)
+
+Line 199.

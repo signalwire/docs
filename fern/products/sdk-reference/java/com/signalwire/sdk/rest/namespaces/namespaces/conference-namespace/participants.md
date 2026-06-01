@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/conference-namespace/participants"
+title: "participants"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.ConferenceNamespace.participants"
+  parent: "com.signalwire.sdk.rest.namespaces.ConferenceNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.ConferenceNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ConferenceNamespace.java"
+  visibility: "public"
+---
+# `participants`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource participants()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/ConferenceNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ConferenceNamespace.java)
+
+Line 26.

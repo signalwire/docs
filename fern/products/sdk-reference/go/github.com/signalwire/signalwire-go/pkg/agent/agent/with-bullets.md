@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/with-bullets"
+title: "WithBullets"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.WithBullets"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `WithBullets`
+
+WithBullets adds multiple bullet points to an existing section. Python equivalent: bullets= param in prompt\_add\_to\_section
+
+## Signature
+
+```go
+func WithBullets(bs []string) PromptAddToSectionOption
+```
+
+## Parameters
+
+| Name | Type       | Required | Default | Description |
+| ---- | ---------- | -------- | ------- | ----------- |
+| `bs` | `[]string` | yes      | —       | —           |
+
+## Returns
+
+`PromptAddToSectionOption`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 730.

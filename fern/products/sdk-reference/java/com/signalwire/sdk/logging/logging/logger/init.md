@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/logging/logging/logger/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.logging.Logger.<init>"
+  parent: "com.signalwire.sdk.logging.Logger"
+  module: "com.signalwire.sdk.logging.Logger"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/logging/Logger.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>(java.lang.String name)
+```
+
+## Parameters
+
+| Name   | Type               | Required | Default | Description |
+| ------ | ------------------ | -------- | ------- | ----------- |
+| `name` | `java.lang.String` | yes      | —       | —           |
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/logging/Logger.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/logging/Logger.java)
+
+Line 63.

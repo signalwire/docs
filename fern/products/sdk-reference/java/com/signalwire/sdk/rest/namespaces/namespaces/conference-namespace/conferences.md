@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/conference-namespace/conferences"
+title: "conferences"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.ConferenceNamespace.conferences"
+  parent: "com.signalwire.sdk.rest.namespaces.ConferenceNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.ConferenceNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ConferenceNamespace.java"
+  visibility: "public"
+---
+# `conferences`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource conferences()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/ConferenceNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ConferenceNamespace.java)
+
+Line 25.

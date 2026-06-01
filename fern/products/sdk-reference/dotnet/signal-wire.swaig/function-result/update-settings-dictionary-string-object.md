@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.swaig/function-result/update-settings-dictionary-string-object"
+title: "UpdateSettings(Dictionary<string, object>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWAIG.FunctionResult.UpdateSettings(System.Collections.Generic.Dictionary<string, object>)"
+  parent: "SignalWire.SWAIG.FunctionResult"
+  module: "SignalWire.SWAIG"
+  visibility: "public"
+---
+# `UpdateSettings(Dictionary<string, object>)`
+
+## Signature
+
+```dotnet
+public FunctionResult UpdateSettings(Dictionary<string, object> settings)
+```
+
+## Parameters
+
+| Name       | Type                        | Required | Default | Description |
+| ---------- | --------------------------- | -------- | ------- | ----------- |
+| `settings` | `Dictionary<string,object>` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.SWAIG.FunctionResult`

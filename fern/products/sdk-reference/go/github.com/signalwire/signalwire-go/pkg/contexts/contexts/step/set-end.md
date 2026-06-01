@@ -1,0 +1,43 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/step/set-end"
+title: "SetEnd"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.Step.SetEnd"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts.Step"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `SetEnd`
+
+SetEnd marks this step as terminal for the step flow.
+
+IMPORTANT: end=true does NOT end the conversation or hang up the call. It exits step mode entirely after this step executes — clearing the steps list, current step index, valid\_steps, and valid\_contexts. The agent keeps running, but operates only under the base system prompt and the context-level prompt; no more step instructions are injected and no more next\_step tool is offered.
+
+To actually end the call, call a hangup tool or define a hangup\_hook.
+
+## Signature
+
+```go
+func (*Step) SetEnd(end bool) *Step
+```
+
+## Parameters
+
+| Name  | Type   | Required | Default | Description |
+| ----- | ------ | -------- | ------- | ----------- |
+| `end` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`*Step`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 266.

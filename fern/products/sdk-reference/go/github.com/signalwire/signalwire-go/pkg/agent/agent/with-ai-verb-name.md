@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/with-ai-verb-name"
+title: "WithAIVerbName"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.WithAIVerbName"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `WithAIVerbName`
+
+WithAIVerbName overrides the SWML verb name used for the AI section. The default is "ai". Set to "amazon\_bedrock" for BedrockAgent.
+
+## Signature
+
+```go
+func WithAIVerbName(name string) AgentOption
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`AgentOption`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 190.

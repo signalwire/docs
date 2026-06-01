@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/queues/queues-resource/list-members"
+title: "list_members"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.queues.QueuesResource.list_members"
+  parent: "signalwire.rest.namespaces.queues.QueuesResource"
+  module: "signalwire.rest.namespaces.queues"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/queues.py"
+---
+# `list_members`
+
+## Signature
+
+```python
+list_members(queue_id, **params = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `queue_id`  | —    | yes      | —       | —           |
+| `...params` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/queues.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/queues.py)
+
+Line 25.

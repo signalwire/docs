@@ -1,0 +1,42 @@
+---
+slug: "/reference/rust/signalwire/prefabs/bedrock/bedrock-agent/set-prompt-llm-params"
+title: "set_prompt_llm_params"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::prefabs::bedrock::BedrockAgent::set_prompt_llm_params"
+  parent: "signalwire::prefabs::bedrock::BedrockAgent"
+  module: "prefabs.bedrock"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/prefabs/bedrock.rs"
+  visibility: "public"
+---
+# `set_prompt_llm_params`
+
+Set prompt LLM params — Bedrock callers should use
+`set_inference_params` instead. Logs a warning and is a no-op.
+Matches Python's documented behavior.
+
+## Signature
+
+```rust
+fn set_prompt_llm_params(&mut self, _params: ?) -> &mut Self
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `_params` | `?`  | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/prefabs/bedrock.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/prefabs/bedrock.rs)
+
+Line 192.

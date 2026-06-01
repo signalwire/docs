@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/prefabs/faq-bot"
+title: "faq_bot"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.prefabs.faq_bot"
+  parent: "signalwire.prefabs"
+  module: "signalwire.prefabs"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/faq_bot.py"
+---
+# `faq_bot`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module faq_bot
+```
+
+## Classes
+
+- [`FAQBotAgent`](/reference/python/signalwire/prefabs/faq-bot/faq-bot-agent) — A prefab agent designed to answer frequently asked questions based on a provided list of question/answer pairs.
+
+## Source
+
+[`/src/signalwire/signalwire/prefabs/faq_bot.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/faq_bot.py)

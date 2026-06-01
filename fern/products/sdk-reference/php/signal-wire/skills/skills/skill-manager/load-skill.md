@@ -1,0 +1,46 @@
+---
+slug: "/reference/php/signal-wire/skills/skills/skill-manager/load-skill"
+title: "loadSkill"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\SkillManager::loadSkill"
+  parent: "SignalWire\\Skills\\SkillManager"
+  module: "SignalWire.Skills"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/SkillManager.php"
+  visibility: "public"
+---
+# `loadSkill`
+
+## Signature
+
+```php
+public function loadSkill(
+    string $skillName,
+    array $params = array (
+),
+    ?string $skillClass = NULL
+): array
+```
+
+## Parameters
+
+| Name         | Type      | Required | Default     | Description |
+| ------------ | --------- | -------- | ----------- | ----------- |
+| `skillName`  | `string`  | yes      | —           | —           |
+| `params`     | `array`   | no       | `array (
+)` | —           |
+| `skillClass` | `?string` | no       | `NULL`      | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Skills/SkillManager.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/SkillManager.php)
+
+Line 22.

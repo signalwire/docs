@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/skills/native-vector-search"
+title: "native_vector_search"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.skills.native_vector_search"
+  parent: "signalwire.skills"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/native_vector_search/__init__.py"
+---
+# `native_vector_search`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module native_vector_search
+```
+
+## Modules
+
+- [`skill`](/reference/python/signalwire/skills/native-vector-search/skill) — Copyright (c) 2025 SignalWire
+
+## Source
+
+[`/src/signalwire/signalwire/skills/native_vector_search/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/native_vector_search/__init__.py)

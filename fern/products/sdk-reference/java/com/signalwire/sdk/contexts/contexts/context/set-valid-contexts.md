@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/context/set-valid-contexts"
+title: "setValidContexts"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.Context.setValidContexts"
+  parent: "com.signalwire.sdk.contexts.Context"
+  module: "com.signalwire.sdk.contexts.Context"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/Context.java"
+  visibility: "public"
+---
+# `setValidContexts`
+
+## Signature
+
+```java
+public com.signalwire.sdk.contexts.Context setValidContexts(
+    java.util.List<java.lang.String> contexts
+)
+```
+
+## Parameters
+
+| Name       | Type                               | Required | Default | Description |
+| ---------- | ---------------------------------- | -------- | ------- | ----------- |
+| `contexts` | `java.util.List<java.lang.String>` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.contexts.Context`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/Context.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/Context.java)
+
+Line 124.

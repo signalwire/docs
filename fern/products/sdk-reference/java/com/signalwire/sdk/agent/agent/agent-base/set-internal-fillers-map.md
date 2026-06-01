@@ -1,0 +1,59 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/set-internal-fillers-map"
+title: "setInternalFillersMap"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.setInternalFillersMap"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `setInternalFillersMap`
+
+Set internal fillers for native SWAIG functions.
+
+<p>Internal fillers are short phrases the AI agent speaks (via TTS)
+ while an internal/native function is running, so the caller doesn't
+ hear dead air during transitions or background work.
+
+ <p>Supported function names (match the SWAIGInternalFiller schema):
+ `hangup`, `check_time`, `wait_for_user`,
+ `wait_seconds`, `adjust_response_latency`,
+ `next_step`, `change_context`, `get_visual_input`,
+ `get_ideal_strategy`. See
+ `#SUPPORTED_INTERNAL_FILLER_NAMES`.
+
+ <p>Notably NOT supported: `change_step`, `gather_submit`, or
+ arbitrary user-defined SWAIG function names. The runtime only honors
+ fillers for the names listed above; everything else is silently
+ ignored at the SWML level. This method warns at registration time if
+ you pass an unknown name so you catch the typo early.
+
+## Signature
+
+```java
+public com.signalwire.sdk.agent.AgentBase setInternalFillersMap(
+    java.util.Map<java.lang.String,java.util.Map<java.lang.String,java.util.List<java.lang.String>>> fillers
+)
+```
+
+## Parameters
+
+| Name      | Type                                                                                               | Required | Default | Description                                  |
+| --------- | -------------------------------------------------------------------------------------------------- | -------- | ------- | -------------------------------------------- |
+| `fillers` | `java.util.Map<java.lang.String,java.util.Map<java.lang.String,java.util.List<java.lang.String>>>` | yes      | —       | map of \u2192 language\_code \u2192 phrases. |
+
+## Returns
+
+`com.signalwire.sdk.agent.AgentBase` — this agent for chaining.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 856.

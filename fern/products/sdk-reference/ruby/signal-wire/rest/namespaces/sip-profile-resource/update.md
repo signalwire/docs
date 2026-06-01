@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/sip-profile-resource/update"
+title: "update"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::SipProfileResource#update"
+  parent: "SignalWire::REST::Namespaces::SipProfileResource"
+  module: "SignalWire.REST.Namespaces.SipProfileResource"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/sip_profile.rb"
+  visibility: "public"
+---
+# `update`
+
+## Signature
+
+```ruby
+def update(**kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/sip_profile.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/sip_profile.rb)
+
+Line 16.

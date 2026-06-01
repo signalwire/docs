@@ -1,0 +1,46 @@
+---
+slug: "/reference/java/com/signalwire/sdk/security/security/session-manager/validate-token"
+title: "validateToken"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.security.SessionManager.validateToken"
+  parent: "com.signalwire.sdk.security.SessionManager"
+  module: "com.signalwire.sdk.security.SessionManager"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/security/SessionManager.java"
+  visibility: "public"
+---
+# `validateToken`
+
+Validate a signed token.
+
+## Signature
+
+```java
+public boolean validateToken(
+    java.lang.String token,
+    java.lang.String functionName,
+    java.lang.String callId
+)
+```
+
+## Parameters
+
+| Name           | Type               | Required | Default | Description |
+| -------------- | ------------------ | -------- | ------- | ----------- |
+| `token`        | `java.lang.String` | yes      | —       | —           |
+| `functionName` | `java.lang.String` | yes      | —       | —           |
+| `callId`       | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`boolean`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/security/SessionManager.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/security/SessionManager.java)
+
+Line 48.

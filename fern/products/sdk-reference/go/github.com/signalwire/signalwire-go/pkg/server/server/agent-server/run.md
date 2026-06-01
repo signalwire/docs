@@ -1,0 +1,41 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/server/server/agent-server/run"
+title: "Run"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/server.AgentServer.Run"
+  parent: "github.com/signalwire/signalwire-go/pkg/server.AgentServer"
+  module: "github.com.signalwire.signalwire-go.pkg.server"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go"
+---
+# `Run`
+
+Run starts the HTTP server. This is a blocking call. Optional RunOption values can override host and port at start time.
+
+Serverless dispatch: unlike Python's AgentServer.run() which auto-detects CGI and Lambda environments, Run() is HTTP-server-only. For AWS Lambda deployments use the pkg/lambda package instead. CGI mode has no Go equivalent; deploy as a standard HTTP service behind a reverse proxy.
+
+## Signature
+
+```go
+func (*AgentServer) Run(opts ...RunOption) error
+```
+
+## Parameters
+
+| Name      | Type        | Required | Default | Description |
+| --------- | ----------- | -------- | ------- | ----------- |
+| `...opts` | `RunOption` | no       | —       | —           |
+
+## Returns
+
+`error`
+
+## Source
+
+[`pkg/server/server.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/server/server.go)
+
+Line 316.

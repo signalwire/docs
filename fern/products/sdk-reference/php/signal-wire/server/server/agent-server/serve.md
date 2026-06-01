@@ -1,0 +1,30 @@
+---
+slug: "/reference/php/signal-wire/server/server/agent-server/serve"
+title: "serve"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Server\\AgentServer::serve"
+  parent: "SignalWire\\Server\\AgentServer"
+  module: "SignalWire.Server"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Server/AgentServer.php"
+  visibility: "public"
+---
+# `serve`
+
+Start the server using PHP's built-in server (blocking).
+
+## Signature
+
+```php
+public function serve(): void
+```
+
+## Source
+
+[`/src/src/SignalWire/Server/AgentServer.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Server/AgentServer.php)
+
+Line 304.

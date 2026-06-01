@@ -1,0 +1,41 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/step/add-bullets"
+title: "add_bullets"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::Step#add_bullets"
+  parent: "SignalWire::Contexts::Step"
+  module: "SignalWire.Contexts.Step"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `add_bullets`
+
+Add a POM section with bullet points. Mutually exclusive with +set\_text+.
+
+## Signature
+
+```ruby
+def add_bullets(title, bullets)
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `title`   | —    | yes      | —       | —           |
+| `bullets` | —    | yes      | —       | —           |
+
+## Throws
+
+- `ArgumentError`
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 131.

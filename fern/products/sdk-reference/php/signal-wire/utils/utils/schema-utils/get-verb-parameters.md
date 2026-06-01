@@ -1,0 +1,42 @@
+---
+slug: "/reference/php/signal-wire/utils/utils/schema-utils/get-verb-parameters"
+title: "getVerbParameters"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Utils\\SchemaUtils::getVerbParameters"
+  parent: "SignalWire\\Utils\\SchemaUtils"
+  module: "SignalWire.Utils"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Utils/SchemaUtils.php"
+  visibility: "public"
+---
+# `getVerbParameters`
+
+Parameter-definition block used by code-gen tooling.
+
+Mirrors Python's get\_verb\_parameters(verb\_name).
+
+## Signature
+
+```php
+public function getVerbParameters(string $verbName): array
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `verbName` | `string` | yes      | —       | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Utils/SchemaUtils.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Utils/SchemaUtils.php)
+
+Line 232.

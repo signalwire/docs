@@ -1,0 +1,28 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/builtin/builtin/wikipedia-search-skill/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.builtin.WikipediaSearchSkill.<init>"
+  parent: "com.signalwire.sdk.skills.builtin.WikipediaSearchSkill"
+  module: "com.signalwire.sdk.skills.builtin.WikipediaSearchSkill"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/builtin/WikipediaSearchSkill.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/builtin/WikipediaSearchSkill.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/builtin/WikipediaSearchSkill.java)
+
+Line 18.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/rust/signalwire/relay/client/client/authenticate"
+title: "authenticate"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::relay::client::Client::authenticate"
+  parent: "signalwire::relay::client::Client"
+  module: "relay.client"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs"
+  visibility: "public"
+---
+# `authenticate`
+
+Backwards-compat: enqueue the `signalwire.connect` frame without
+waiting. Used by older tests that drive `handle_message` directly.
+Production code should call \[`connect`] which runs the full
+handshake.
+
+## Signature
+
+```rust
+fn authenticate(&self)
+```
+
+## Source
+
+[`src/relay/client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/client.rs)
+
+Line 357.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/cpp/signalwire/rest/rest-client/video-conference-tokens/reset"
+title: "reset"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::rest::RestClient::VideoConferenceTokens::reset"
+  parent: "signalwire::rest::RestClient::VideoConferenceTokens"
+  module: "signalwire.rest.RestClient"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/rest_client.hpp"
+  visibility: "public"
+---
+# `reset`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+json reset(const std::string & token_id) const
+```
+
+## Parameters
+
+| Name       | Type                  | Required | Default | Description |
+| ---------- | --------------------- | -------- | ------- | ----------- |
+| `token_id` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`json`
+
+## Source
+
+[`include/signalwire/rest/rest_client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/rest_client.hpp)
+
+Line 750.

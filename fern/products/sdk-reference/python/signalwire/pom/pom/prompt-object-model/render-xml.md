@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/pom/pom/prompt-object-model/render-xml"
+title: "render_xml"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.pom.pom.PromptObjectModel.render_xml"
+  parent: "signalwire.pom.pom.PromptObjectModel"
+  module: "signalwire.pom.pom"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py"
+---
+# `render_xml`
+
+Render the entire model as XML.
+
+## Signature
+
+```python
+render_xml() -> str
+```
+
+## Returns
+
+`str` — A string containing the XML representation
+
+## Source
+
+[`/src/signalwire/signalwire/pom/pom.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/pom/pom.py)
+
+Line 488.

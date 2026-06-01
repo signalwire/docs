@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/logging/logging/new"
+title: "New"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/logging.New"
+  parent: "github.com/signalwire/signalwire-go/pkg/logging"
+  module: "github.com.signalwire.signalwire-go.pkg.logging"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/logging/logger.go"
+---
+# `New`
+
+New creates a new Logger with the given component name.
+
+## Signature
+
+```go
+func New(name string) *Logger
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*Logger`
+
+## Source
+
+[`pkg/logging/logger.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/logging/logger.go)
+
+Line 130.

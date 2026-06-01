@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/call/set-tag"
+title: "setTag"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.Call.setTag"
+  parent: "com.signalwire.sdk.relay.Call"
+  module: "com.signalwire.sdk.relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java"
+  visibility: "public"
+---
+# `setTag`
+
+## Signature
+
+```java
+public void setTag(java.lang.String tag)
+```
+
+## Parameters
+
+| Name  | Type               | Required | Default | Description |
+| ----- | ------------------ | -------- | ------- | ----------- |
+| `tag` | `java.lang.String` | yes      | —       | —           |
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/Call.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Call.java)
+
+Line 72.

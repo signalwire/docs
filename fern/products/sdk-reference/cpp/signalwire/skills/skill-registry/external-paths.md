@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-registry/external-paths"
+title: "external_paths"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillRegistry::external_paths"
+  parent: "signalwire::skills::SkillRegistry"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_registry.hpp"
+  visibility: "public"
+---
+# `external_paths`
+
+Returns the registered external skill directories. Mirrors Python's SkillRegistry.\_external\_paths (private list, exposed here as a public accessor for parity-test inspection — C++ has no convention for protected attributes that tests can poke).
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+std::vector< std::string > external_paths() const
+```
+
+## Returns
+
+`std::vector< std::string >`
+
+## Source
+
+[`include/signalwire/skills/skill_registry.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_registry.hpp)
+
+Line 84.

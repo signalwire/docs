@@ -1,0 +1,20 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/http-client/post"
+title: "Post"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.HTTPClient.Post"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.HTTPClient"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+---
+# `Post`
+
+## Signature
+
+```go
+Post(path string, body map[string]any, params map[string]string) (map[string]any, error)
+```

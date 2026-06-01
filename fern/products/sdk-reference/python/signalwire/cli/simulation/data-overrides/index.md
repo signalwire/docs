@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/cli/simulation/data-overrides"
+title: "data_overrides"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.cli.simulation.data_overrides"
+  parent: "signalwire.cli.simulation"
+  module: "signalwire.cli.simulation"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/data_overrides.py"
+---
+# `data_overrides`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module data_overrides
+```
+
+## Functions
+
+- [`apply_convenience_mappings`](/reference/python/signalwire/cli/simulation/data-overrides/apply-convenience-mappings) — Apply convenience CLI arguments to data structure
+- [`apply_overrides`](/reference/python/signalwire/cli/simulation/data-overrides/apply-overrides) — Apply override values to data using dot notation paths
+- [`parse_value`](/reference/python/signalwire/cli/simulation/data-overrides/parse-value) — Parse a string value into appropriate Python type
+- [`set_nested_value`](/reference/python/signalwire/cli/simulation/data-overrides/set-nested-value) — Set a nested value using dot notation path
+
+## Source
+
+[`/src/signalwire/signalwire/cli/simulation/data_overrides.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/data_overrides.py)

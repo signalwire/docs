@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/compat/compat-accounts/create"
+title: "create"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.compat.CompatAccounts.create"
+  parent: "signalwire.rest.namespaces.compat.CompatAccounts"
+  module: "signalwire.rest.namespaces.compat"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py"
+---
+# `create`
+
+## Signature
+
+```python
+create(**kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/compat.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py)
+
+Line 26.

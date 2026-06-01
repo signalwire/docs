@@ -1,0 +1,41 @@
+---
+slug: "/reference/typescript/swml-handler/swml-verb-handler/validate-config"
+title: "validateConfig"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SWMLHandler.SWMLVerbHandler.validateConfig"
+  parent: "SWMLHandler.SWMLVerbHandler"
+  module: "SWMLHandler"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLHandler.ts"
+---
+# `validateConfig`
+
+Validate the configuration for this verb.
+
+**Modifiers:** `abstract`
+
+## Signature
+
+```typescript
+validateConfig(config: Record<string, unknown>): [boolean, string[]]
+```
+
+## Parameters
+
+| Name     | Type                      | Required | Default | Description                                 |
+| -------- | ------------------------- | -------- | ------- | ------------------------------------------- |
+| `config` | `Record<string, unknown>` | yes      | —       | The configuration dictionary for this verb. |
+
+## Returns
+
+`[boolean, string[]]` — A `[isValid, errorMessages]` tuple where `isValid` is `true` when the config is valid and `errorMessages` lists any issues found.
+
+## Source
+
+[`src/SWMLHandler.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLHandler.ts)
+
+Line 56.

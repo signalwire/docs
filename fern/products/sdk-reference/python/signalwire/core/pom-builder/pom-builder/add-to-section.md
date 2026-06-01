@@ -1,0 +1,47 @@
+---
+slug: "/reference/python/signalwire/core/pom-builder/pom-builder/add-to-section"
+title: "add_to_section"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.pom_builder.PomBuilder.add_to_section"
+  parent: "signalwire.core.pom_builder.PomBuilder"
+  module: "signalwire.core.pom_builder"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/pom_builder.py"
+---
+# `add_to_section`
+
+Add content to an existing section
+
+## Signature
+
+```python
+add_to_section(
+    title: str,
+    body: Optional[str] = None,
+    bullet: Optional[str] = None,
+    bullets: Optional[List[str]] = None
+) -> PomBuilder
+```
+
+## Parameters
+
+| Name      | Type                  | Required | Default | Description                        |
+| --------- | --------------------- | -------- | ------- | ---------------------------------- |
+| `title`   | `str`                 | yes      | —       | Section title                      |
+| `body`    | `Optional[str]`       | no       | `None`  | Text to append to the section body |
+| `bullet`  | `Optional[str]`       | no       | `None`  | Single bullet to add               |
+| `bullets` | `Optional[List[str]]` | no       | `None`  | List of bullets to add             |
+
+## Returns
+
+`PomBuilder` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/pom_builder.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/pom_builder.py)
+
+Line 80.

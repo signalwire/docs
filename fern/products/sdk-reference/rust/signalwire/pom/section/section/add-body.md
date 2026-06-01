@@ -1,0 +1,47 @@
+---
+slug: "/reference/rust/signalwire/pom/section/section/add-body"
+title: "add_body"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::pom::section::Section::add_body"
+  parent: "signalwire::pom::section::Section"
+  module: "pom.section"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/pom/section.rs"
+  visibility: "public"
+---
+# `add_body`
+
+Replace the body text. Mirrors Python's `Section.add_body` —
+the docstring explicitly says "Add OR REPLACE the body".
+
+## Signature
+
+```rust
+fn add_body<impl Into<String>: ?<?>>(&mut self, body: impl ?<?>) -> &mut Self
+```
+
+## Type Parameters
+
+| Name                | Type   | Required | Default | Description |
+| ------------------- | ------ | -------- | ------- | ----------- |
+| `impl Into<String>` | `?<?>` | yes      | —       | —           |
+
+## Parameters
+
+| Name   | Type        | Required | Default | Description |
+| ------ | ----------- | -------- | ------- | ----------- |
+| `body` | `impl ?<?>` | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/pom/section.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/pom/section.rs)
+
+Line 73.

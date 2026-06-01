@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/datamap-demo/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/datamap_demo"
+  module: "github.com.signalwire.signalwire-go.examples.datamap_demo"
+---
+# `main`
+
+Example: datamap\_demo
+
+Server-side tools using DataMap that execute on SignalWire servers without requiring webhook endpoints. Demonstrates both webhook-based API calls (with variable expansion) and expression-based pattern matching.
+
+## Signature
+
+```go
+package main
+```

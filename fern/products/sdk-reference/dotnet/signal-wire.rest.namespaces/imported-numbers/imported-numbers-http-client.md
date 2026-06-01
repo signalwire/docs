@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/imported-numbers/imported-numbers-http-client"
+title: "ImportedNumbers(HttpClient)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.ImportedNumbers.ImportedNumbers(SignalWire.REST.HttpClient)"
+  parent: "SignalWire.REST.Namespaces.ImportedNumbers"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `ImportedNumbers(HttpClient)`
+
+## Signature
+
+```dotnet
+public ImportedNumbers(HttpClient client)
+```
+
+## Parameters
+
+| Name     | Type                         | Required | Default | Description |
+| -------- | ---------------------------- | -------- | ------- | ----------- |
+| `client` | `SignalWire.REST.HttpClient` | yes      | —       | —           |

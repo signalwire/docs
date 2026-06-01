@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/context/set-valid-steps"
+title: "SetValidSteps"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.Context.SetValidSteps"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts.Context"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `SetValidSteps`
+
+SetValidSteps sets which steps can be navigated to from any step in this context.
+
+## Signature
+
+```go
+func (*Context) SetValidSteps(steps []string) *Context
+```
+
+## Parameters
+
+| Name    | Type       | Required | Default | Description |
+| ------- | ---------- | -------- | ------- | ----------- |
+| `steps` | `[]string` | yes      | —       | —           |
+
+## Returns
+
+`*Context`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 549.

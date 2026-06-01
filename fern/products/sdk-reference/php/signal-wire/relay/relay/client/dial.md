@@ -1,0 +1,49 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/client/dial"
+title: "dial"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Client::dial"
+  parent: "SignalWire\\Relay\\Client"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php"
+  visibility: "public"
+---
+# `dial`
+
+Originate an outbound call, blocking until `calling.call.dial`
+
+resolves with a winner or fails.
+
+## Signature
+
+```php
+public function dial(array $devices, array $opts = array (
+)): SignalWire\Relay\Call
+```
+
+## Parameters
+
+| Name      | Type    | Required | Default     | Description                                                                                                                                                                                                                                                                                                                           |
+| --------- | ------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `devices` | `array` | yes      | —           | Two-dimensional array of devices: each outer entry is one parallel "leg" of the dial, each inner entry is a serial step within that leg. Mirrors the Python `[[device, device], [device]]` shape.                                                                                                                                     |
+| `opts`    | `array` | no       | `array (
+)` | - \`\`tag\`\`: explicit dial tag (UUID4 generated when omitted)&#xA;  \- \`\`dial\_timeout\`\`: seconds to wait for the dial event (default 30.0)&#xA;  \- \`\`max\_duration\`\`: max call lifetime in seconds, passed through&#xA;    to \`\`calling.dial\`\`.&#xA;  \- any other key is forwarded as a top-level param on the wire. |
+
+## Returns
+
+`SignalWire\Relay\Call`
+
+## Throws
+
+- `RelayError` — on dial failure or timeout.
+
+## Source
+
+[`/src/src/SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php)
+
+Line 599.

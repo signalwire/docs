@@ -1,0 +1,43 @@
+---
+slug: "/reference/cpp/signalwire/core/logging-config/get-execution-mode"
+title: "get_execution_mode"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "cpp"
+  qualified_name: "signalwire::core::logging_config::get_execution_mode"
+  parent: "signalwire::core::logging_config"
+  module: "signalwire.core"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/src/core/logging_config.cpp"
+  visibility: "public"
+---
+# `get_execution_mode`
+
+Cross-language SDK contract for serverless / deployment-mode detection.
+Mirrors signalwire.core.logging\_config.get\_execution\_mode in the Python reference. Order of precedence (FIRST match wins):
+
+GATEWAY\_INTERFACE -> "cgi"
+AWS\_LAMBDA\_FUNCTION\_NAME or LAMBDA\_TASK\_ROOT -> "lambda"
+FUNCTION\_TARGET, K\_SERVICE, or GOOGLE\_CLOUD\_PROJECT -> "google\_cloud\_function"
+AZURE\_FUNCTIONS\_ENVIRONMENT, FUNCTIONS\_WORKER\_RUNTIME, or AzureWebJobsStorage -> "azure\_function"
+otherwise -> "server"
+
+The detected mode as a canonical lower-case string. One of "cgi", "lambda", "google\_cloud\_function", "azure\_function", or "server".
+
+## Signature
+
+```cpp
+std::string get_execution_mode()
+```
+
+## Returns
+
+`std::string` — The detected mode as a canonical lower-case string. One of "cgi", "lambda", "google\_cloud\_function", "azure\_function", or "server".
+
+## Source
+
+[`src/core/logging_config.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/core/logging_config.cpp)
+
+Line 24.

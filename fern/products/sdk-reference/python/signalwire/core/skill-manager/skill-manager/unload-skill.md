@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/skill-manager/skill-manager/unload-skill"
+title: "unload_skill"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.skill_manager.SkillManager.unload_skill"
+  parent: "signalwire.core.skill_manager.SkillManager"
+  module: "signalwire.core.skill_manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/skill_manager.py"
+---
+# `unload_skill`
+
+Unload a skill and cleanup
+
+## Signature
+
+```python
+unload_skill(skill_identifier: str) -> bool
+```
+
+## Parameters
+
+| Name               | Type  | Required | Default | Description                            |
+| ------------------ | ----- | -------- | ------- | -------------------------------------- |
+| `skill_identifier` | `str` | yes      | —       | Either a skill name or an instance key |
+
+## Returns
+
+`bool` — True if successfully unloaded, False otherwise
+
+## Source
+
+[`/src/signalwire/signalwire/core/skill_manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/skill_manager.py)
+
+Line 176.

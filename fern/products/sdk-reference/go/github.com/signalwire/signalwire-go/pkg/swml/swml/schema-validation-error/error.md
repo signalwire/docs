@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/schema-validation-error/error"
+title: "Error"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.SchemaValidationError.Error"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.SchemaValidationError"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/schema_utils.go"
+---
+# `Error`
+
+Error renders the validation failure as a single string.
+
+## Signature
+
+```go
+func (*SchemaValidationError) Error() string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`pkg/swml/schema_utils.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/schema_utils.go)
+
+Line 41.

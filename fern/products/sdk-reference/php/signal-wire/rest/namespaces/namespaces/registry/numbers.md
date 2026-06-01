@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/registry/numbers"
+title: "numbers"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Registry::numbers"
+  parent: "SignalWire\\REST\\Namespaces\\Registry"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Registry.php"
+  visibility: "public"
+---
+# `numbers`
+
+## Signature
+
+```php
+public function numbers(): SignalWire\REST\Namespaces\RegistryNumbers
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\RegistryNumbers`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Registry.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Registry.php)
+
+Line 49.

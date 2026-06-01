@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/document/render"
+title: "render"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Document::render"
+  parent: "SignalWire\\SWML\\Document"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php"
+  visibility: "public"
+---
+# `render`
+
+Compact JSON string.
+
+## Signature
+
+```php
+public function render(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Document.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php)
+
+Line 115.

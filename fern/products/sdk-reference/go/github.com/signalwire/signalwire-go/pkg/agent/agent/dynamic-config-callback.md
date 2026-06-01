@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/dynamic-config-callback"
+title: "DynamicConfigCallback"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.DynamicConfigCallback"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `DynamicConfigCallback`
+
+DynamicConfigCallback is invoked on each request to mutate an ephemeral agent copy before rendering. Headers and body params give the callback full context about the inbound request.
+
+## Signature
+
+```go
+type DynamicConfigCallback alias
+```
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 40.

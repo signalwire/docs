@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/compat/compat-queues/list-members"
+title: "list_members"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.compat.CompatQueues.list_members"
+  parent: "signalwire.rest.namespaces.compat.CompatQueues"
+  module: "signalwire.rest.namespaces.compat"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py"
+---
+# `list_members`
+
+## Signature
+
+```python
+list_members(queue_sid, **params = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `queue_sid` | —    | yes      | —       | —           |
+| `...params` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/compat.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py)
+
+Line 204.

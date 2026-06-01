@@ -1,0 +1,40 @@
+---
+slug: "/reference/dotnet/signal-wire.security/webhook-validation-middleware/reconstruct-url-dictionary-string-string-string-string-int"
+title: "ReconstructUrl(Dictionary<string, string>, string, string?, int)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Security.WebhookValidationMiddleware.ReconstructUrl(System.Collections.Generic.Dictionary<string, string>, string, string?, int)"
+  parent: "SignalWire.Security.WebhookValidationMiddleware"
+  module: "SignalWire.Security"
+  visibility: "public"
+---
+# `ReconstructUrl(Dictionary<string, string>, string, string?, int)`
+
+Reconstruct the public URL SignalWire POSTed to. Resolution order:
+
+<ol><li><code>SWML_PROXY_URL_BASE</code> env var (joined with path + query).</li><li><code>X-Forwarded-Proto</code> / <code>X-Forwarded-Host</code> headers
+    when <code>trustProxy=true</code>.</li><li><code>http://hostFallback:portFallback{path}</code> as a last-resort
+    local construction.</li></ol>
+
+## Signature
+
+```dotnet
+public string ReconstructUrl(Dictionary<string, string> headers, string path, string? hostFallback = null, int portFallback = 0)
+```
+
+## Parameters
+
+| Name           | Type                        | Required | Default | Description |
+| -------------- | --------------------------- | -------- | ------- | ----------- |
+| `headers`      | `Dictionary<string,string>` | yes      | —       | —           |
+| `path`         | `string`                    | yes      | —       | —           |
+| `hostFallback` | `string`                    | no       | `null`  | —           |
+| `portFallback` | `int`                       | no       | `0`     | —           |
+
+## Returns
+
+`string`

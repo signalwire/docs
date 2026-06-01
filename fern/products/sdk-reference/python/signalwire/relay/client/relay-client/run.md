@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/relay/client/relay-client/run"
+title: "run"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.client.RelayClient.run"
+  parent: "signalwire.relay.client.RelayClient"
+  module: "signalwire.relay.client"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/client.py"
+---
+# `run`
+
+Blocking entry point — runs the event loop until interrupted.
+
+## Signature
+
+```python
+run() -> None
+```
+
+## Returns
+
+`None`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/client.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/client.py)
+
+Line 512.

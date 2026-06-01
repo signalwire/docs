@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/call/tag"
+title: "Tag"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Call.Tag"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Call"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go"
+---
+# `Tag`
+
+Tag returns the client-generated correlation tag.
+
+## Signature
+
+```go
+func (*Call) Tag() string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`pkg/relay/call.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/call.go)
+
+Line 61.

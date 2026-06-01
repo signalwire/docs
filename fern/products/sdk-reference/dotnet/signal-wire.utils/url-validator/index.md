@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.utils/url-validator"
+title: "UrlValidator"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.Utils.UrlValidator"
+  parent: "SignalWire.Utils"
+  module: "SignalWire.Utils"
+  visibility: "public"
+---
+# `UrlValidator`
+
+**Modifiers:** `static`
+
+## Signature
+
+```dotnet
+public static class UrlValidator
+```
+
+## Methods
+
+- [`ValidateUrl(string, bool)`](/reference/dotnet/signal-wire.utils/url-validator/validate-url-string-bool) — Validate that a URL is safe to fetch (not pointing to private/internal resources). Returns true when safe, false when rejected. (Python parity: `signalwire.utils.url_validator.validate_url(url, allow_private)`.)
+- [`ValidateUrlWithResolvedAddresses(string, IPAddress[], bool)`](/reference/dotnet/signal-wire.utils/url-validator/validate-url-with-resolved-addresses-string-ip-address-bool) — Test-friendly overload that accepts already-resolved IPs instead of doing a live DNS lookup. Cross-language audit / unit tests use this to exercise the blocked-range logic deterministically.

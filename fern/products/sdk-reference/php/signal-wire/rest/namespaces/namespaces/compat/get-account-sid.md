@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat/get-account-sid"
+title: "getAccountSid"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Compat::getAccountSid"
+  parent: "SignalWire\\REST\\Namespaces\\Compat"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php"
+  visibility: "public"
+---
+# `getAccountSid`
+
+## Signature
+
+```php
+public function getAccountSid(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Compat.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php)
+
+Line 58.

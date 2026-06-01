@@ -1,0 +1,40 @@
+---
+slug: "/reference/python/signalwire/cli/init-project/prompt"
+title: "prompt"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.init_project.prompt"
+  parent: "signalwire.cli.init_project"
+  module: "signalwire.cli.init_project"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/init_project.py"
+---
+# `prompt`
+
+Prompt user for input with optional default.
+
+## Signature
+
+```python
+prompt(question: str, default: str = '') -> str
+```
+
+## Parameters
+
+| Name       | Type  | Required | Default | Description |
+| ---------- | ----- | -------- | ------- | ----------- |
+| `question` | `str` | yes      | —       | —           |
+| `default`  | `str` | no       | `''`    | —           |
+
+## Returns
+
+`str`
+
+## Source
+
+[`/src/signalwire/signalwire/cli/init_project.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/init_project.py)
+
+Line 65.

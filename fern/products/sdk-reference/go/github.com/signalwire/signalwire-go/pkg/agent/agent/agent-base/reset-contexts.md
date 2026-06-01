@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/agent-base/reset-contexts"
+title: "ResetContexts"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase.ResetContexts"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent.AgentBase"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `ResetContexts`
+
+ResetContexts removes all contexts, returning the agent to a no-contexts state. This is a convenience wrapper around DefineContexts().Reset(). Use it in a dynamic config callback when you need to rebuild contexts from scratch for a specific request.
+
+## Signature
+
+```go
+func (*AgentBase) ResetContexts() *AgentBase
+```
+
+## Returns
+
+`*AgentBase`
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 1619.

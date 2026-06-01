@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/new-calling-namespace"
+title: "NewCallingNamespace"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.NewCallingNamespace"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/calling.go"
+---
+# `NewCallingNamespace`
+
+NewCallingNamespace creates a new CallingNamespace.
+
+## Signature
+
+```go
+func NewCallingNamespace(client HTTPClient) *CallingNamespace
+```
+
+## Parameters
+
+| Name     | Type         | Required | Default | Description |
+| -------- | ------------ | -------- | ------- | ----------- |
+| `client` | `HTTPClient` | yes      | —       | —           |
+
+## Returns
+
+`*CallingNamespace`
+
+## Source
+
+[`pkg/rest/namespaces/calling.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/calling.go)
+
+Line 17.

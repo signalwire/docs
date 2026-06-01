@@ -1,0 +1,44 @@
+---
+slug: "/reference/typescript/relay/relay-client/relay-client/unreceive"
+title: "unreceive"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "relay.RelayClient.RelayClient.unreceive"
+  parent: "relay.RelayClient.RelayClient"
+  module: "relay.RelayClient"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts"
+---
+# `unreceive`
+
+Unsubscribe from contexts previously passed to [receive](/reference/typescript/relay/relay-client/relay-client/receive) (or the
+constructor). A no-op when `contexts` is empty.
+
+## Signature
+
+```typescript
+unreceive(contexts: string[]): Promise<void>
+```
+
+## Parameters
+
+| Name       | Type       | Required | Default | Description                        |
+| ---------- | ---------- | -------- | ------- | ---------------------------------- |
+| `contexts` | `string[]` | yes      | —       | Context names to unsubscribe from. |
+
+## Returns
+
+`Promise<void>` — Resolves once the server has confirmed the unsubscribe.
+
+## Throws
+
+- When the server rejects the unsubscribe request.
+
+## Source
+
+[`src/relay/RelayClient.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/relay/RelayClient.ts)
+
+Line 728.

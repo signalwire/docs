@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/relay/event/event/control-id"
+title: "control_id"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::relay::event::Event::control_id"
+  parent: "signalwire::relay::event::Event"
+  module: "relay.event"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/relay/event.rs"
+  visibility: "public"
+---
+# `control_id`
+
+## Signature
+
+```rust
+fn control_id(&self) -> ?<&str>
+```
+
+## Returns
+
+`?<&str>`
+
+## Source
+
+[`src/relay/event.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/relay/event.rs)
+
+Line 73.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/mcp-gateway/session-manager/session-manager/close-session"
+title: "close_session"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.mcp_gateway.session_manager.SessionManager.close_session"
+  parent: "signalwire.mcp_gateway.session_manager.SessionManager"
+  module: "signalwire.mcp_gateway.session_manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/session_manager.py"
+---
+# `close_session`
+
+Close and remove a session
+
+## Signature
+
+```python
+close_session(session_id: str) -> bool
+```
+
+## Parameters
+
+| Name         | Type  | Required | Default | Description |
+| ------------ | ----- | -------- | ------- | ----------- |
+| `session_id` | `str` | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/signalwire/signalwire/mcp_gateway/session_manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/session_manager.py)
+
+Line 126.

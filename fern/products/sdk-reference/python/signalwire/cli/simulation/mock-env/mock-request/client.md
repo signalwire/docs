@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/cli/simulation/mock-env/mock-request/client"
+title: "client"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.cli.simulation.mock_env.MockRequest.client"
+  parent: "signalwire.cli.simulation.mock_env.MockRequest"
+  module: "signalwire.cli.simulation.mock_env"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/mock_env.py"
+---
+# `client`
+
+Mock client property
+
+## Signature
+
+```python
+client()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/cli/simulation/mock_env.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/mock_env.py)
+
+Line 123.

@@ -1,0 +1,42 @@
+---
+slug: "/reference/ruby/signal-wire/utils/schema-utils/validate-verb"
+title: "validate_verb"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Utils::SchemaUtils#validate_verb"
+  parent: "SignalWire::Utils::SchemaUtils"
+  module: "SignalWire.Utils.SchemaUtils"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/utils/schema_utils.rb"
+  visibility: "public"
+---
+# `validate_verb`
+
+Validate a verb config against the schema.
+Mirrors Python's validate\_verb(verb\_name, verb\_config).
+
+## Signature
+
+```ruby
+def validate_verb(verb_name, verb_config)
+```
+
+## Parameters
+
+| Name          | Type | Required | Default | Description |
+| ------------- | ---- | -------- | ------- | ----------- |
+| `verb_name`   | —    | yes      | —       | —           |
+| `verb_config` | —    | yes      | —       | —           |
+
+## Returns
+
+`Array(Boolean, Array<String>)` — (valid, errors) tuple.
+
+## Source
+
+[`lib/signalwire/utils/schema_utils.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/utils/schema_utils.rb)
+
+Line 130.

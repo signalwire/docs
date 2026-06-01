@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/rest/signal-wire-rest-error/status"
+title: "status"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::rest::SignalWireRestError::status"
+  parent: "signalwire::rest::SignalWireRestError"
+  module: "signalwire.rest"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/http_client.hpp"
+  visibility: "public"
+---
+# `status`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+int status() const
+```
+
+## Returns
+
+`int`
+
+## Source
+
+[`include/signalwire/rest/http_client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/http_client.hpp)
+
+Line 21.

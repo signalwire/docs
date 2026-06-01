@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/compat-conferences/get-recording"
+title: "GetRecording"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.CompatConferences.GetRecording"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.CompatConferences"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/compat.go"
+---
+# `GetRecording`
+
+GetRecording retrieves a recording from a conference.
+
+## Signature
+
+```go
+func (*CompatConferences) GetRecording(conferenceSID string, recordingSID string) (map[string]any, error)
+```
+
+## Parameters
+
+| Name            | Type     | Required | Default | Description |
+| --------------- | -------- | -------- | ------- | ----------- |
+| `conferenceSID` | `string` | yes      | —       | —           |
+| `recordingSID`  | `string` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/compat.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/compat.go)
+
+Line 178.

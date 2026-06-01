@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/list-tool-names"
+title: "list_tool_names"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#list_tool_names"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `list_tool_names`
+
+List registered SWAIG tool names in registration order.
+
+## Signature
+
+```ruby
+def list_tool_names
+```
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 127.

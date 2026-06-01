@@ -1,0 +1,32 @@
+---
+slug: "/reference/dotnet/signal-wire.contexts/context/add-step-string-dictionary-string-object"
+title: "AddStep(string, Dictionary<string, object>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Contexts.Context.AddStep(string, System.Collections.Generic.Dictionary<string, object>?)"
+  parent: "SignalWire.Contexts.Context"
+  module: "SignalWire.Contexts"
+  visibility: "public"
+---
+# `AddStep(string, Dictionary<string, object>?)`
+
+## Signature
+
+```dotnet
+public Step AddStep(string name, Dictionary<string, object>? opts = null)
+```
+
+## Parameters
+
+| Name   | Type                        | Required | Default | Description |
+| ------ | --------------------------- | -------- | ------- | ----------- |
+| `name` | `string`                    | yes      | —       | —           |
+| `opts` | `Dictionary<string,object>` | no       | `null`  | —           |
+
+## Returns
+
+`SignalWire.Contexts.Step`

@@ -1,0 +1,34 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/detect-action/handle-event-event"
+title: "HandleEvent(Event)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.DetectAction.HandleEvent(SignalWire.Relay.Event)"
+  parent: "SignalWire.Relay.DetectAction"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `HandleEvent(Event)`
+
+Per RELAY\_IMPLEMENTATION\_GUIDE.md "detect gotcha": detect events
+continuously stream a <code>detect</code> object — resolve on the FIRST
+meaningful detect payload (or on terminal state if it arrives first
+with no detect data).
+
+**Modifiers:** `override`
+
+## Signature
+
+```dotnet
+public override void HandleEvent(Event evt)
+```
+
+## Parameters
+
+| Name  | Type                     | Required | Default | Description |
+| ----- | ------------------------ | -------- | ------- | ----------- |
+| `evt` | `SignalWire.Relay.Event` | yes      | —       | —           |

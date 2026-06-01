@@ -1,0 +1,46 @@
+---
+slug: "/reference/ruby/signal-wire/rest/http-client/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::HttpClient#initialize"
+  parent: "SignalWire::REST::HttpClient"
+  module: "SignalWire.REST.HttpClient"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/http_client.rb"
+  visibility: "public"
+---
+# `initialize`
+
++base\_url+ overrides the derived +https://{space}+ value when set,
+which is how the audit fixture and tests point the client at a
+loopback server. Pass either +space+ ("acme") / a host
+("acme.signalwire.com") OR an explicit +base\_url+ ("http://127.0.0.1:NNNN").
+
+## Signature
+
+```ruby
+def initialize(project_id, token, space, base_url: nil)
+```
+
+## Parameters
+
+| Name         | Type | Required | Default | Description |
+| ------------ | ---- | -------- | ------- | ----------- |
+| `project_id` | —    | yes      | —       | —           |
+| `token`      | —    | yes      | —       | —           |
+| `space`      | —    | yes      | —       | —           |
+| `base_url:`  | —    | no       | `nil`   | —           |
+
+## Returns
+
+`HttpClient` — a new instance of HttpClient
+
+## Source
+
+[`lib/signalwire/rest/http_client.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/http_client.rb)
+
+Line 31.

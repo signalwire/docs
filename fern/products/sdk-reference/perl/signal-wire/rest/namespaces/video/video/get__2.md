@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/video/video/get__2"
+title: "get"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Video::get"
+  parent: "SignalWire::REST::Namespaces::Video"
+  module: "SignalWire.REST.Namespaces.Video"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Video.pm"
+  visibility: "public"
+---
+# `get`
+
+## Signature
+
+```perl
+sub get($recording_id)
+```
+
+## Parameters
+
+| Name           | Type | Required | Default | Description |
+| -------------- | ---- | -------- | ------- | ----------- |
+| `recording_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Video.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Video.pm)
+
+Line 78.

@@ -1,0 +1,40 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/service/define-tools"
+title: "defineTools"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Service::defineTools"
+  parent: "SignalWire\\SWML\\Service"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php"
+  visibility: "public"
+---
+# `defineTools`
+
+Register multiple tool definitions at once.
+
+## Signature
+
+```php
+public function defineTools(array $toolDefs): static
+```
+
+## Parameters
+
+| Name       | Type    | Required | Default | Description |
+| ---------- | ------- | -------- | ------- | ----------- |
+| `toolDefs` | `array` | yes      | —       | —           |
+
+## Returns
+
+`static`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Service.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php)
+
+Line 268.

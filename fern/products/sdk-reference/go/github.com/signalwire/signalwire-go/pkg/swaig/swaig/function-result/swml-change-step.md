@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/function-result/swml-change-step"
+title: "SwmlChangeStep"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult.SwmlChangeStep"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig.FunctionResult"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `SwmlChangeStep`
+
+SwmlChangeStep transitions to a different conversation step. Emits action key "change\_step" with the step name as a plain string value, matching the Python SDK's add\_action("change\_step", step\_name).
+
+## Signature
+
+```go
+func (*FunctionResult) SwmlChangeStep(stepName string) *FunctionResult
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `stepName` | `string` | yes      | —       | —           |
+
+## Returns
+
+`*FunctionResult`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 231.

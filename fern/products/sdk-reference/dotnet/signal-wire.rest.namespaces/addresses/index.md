@@ -1,0 +1,34 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/addresses"
+title: "Addresses"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.Addresses"
+  parent: "SignalWire.REST.Namespaces"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `Addresses`
+
+Addresses namespace (Relay top-level addresses, no update).
+
+Mirrors Python `signalwire.rest.namespaces.addresses.AddressesResource`.
+Inherits CrudResource for the standard list/create/get/delete surface.
+
+## Signature
+
+```dotnet
+public class Addresses : CrudResource
+```
+
+## Inheritance
+
+**Extends:** [SignalWire.REST.CrudResource](/reference/dotnet/signal-wire.rest/crud-resource)
+
+## Methods
+
+- [`Addresses(HttpClient)`](/reference/dotnet/signal-wire.rest.namespaces/addresses/addresses-http-client)

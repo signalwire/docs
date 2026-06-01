@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/mcp-gateway/gateway-service/mcp-gateway/init"
+title: "__init__"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.mcp_gateway.gateway_service.MCPGateway.__init__"
+  parent: "signalwire.mcp_gateway.gateway_service.MCPGateway"
+  module: "signalwire.mcp_gateway.gateway_service"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/gateway_service.py"
+---
+# `__init__`
+
+## Signature
+
+```python
+__init__(config_path: str = 'config.json')
+```
+
+## Parameters
+
+| Name          | Type  | Required | Default         | Description |
+| ------------- | ----- | -------- | --------------- | ----------- |
+| `config_path` | `str` | no       | `'config.json'` | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/mcp_gateway/gateway_service.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/mcp_gateway/gateway_service.py)
+
+Line 55.

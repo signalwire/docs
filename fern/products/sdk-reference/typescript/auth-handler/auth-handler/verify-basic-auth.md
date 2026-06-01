@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/auth-handler/auth-handler/verify-basic-auth"
+title: "verifyBasicAuth"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "AuthHandler.AuthHandler.verifyBasicAuth"
+  parent: "AuthHandler.AuthHandler"
+  module: "AuthHandler"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AuthHandler.ts"
+---
+# `verifyBasicAuth`
+
+Verify a Basic Auth username/password pair against the configured credentials.
+
+Returns false immediately if Basic Auth is not configured.
+Uses constant-time comparison to prevent timing attacks.
+
+## Signature
+
+```typescript
+verifyBasicAuth(username: string, password: string): boolean
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description             |
+| ---------- | -------- | -------- | ------- | ----------------------- |
+| `username` | `string` | yes      | —       | The username to verify. |
+| `password` | `string` | yes      | —       | The password to verify. |
+
+## Returns
+
+`boolean` — True if the credentials match the configured Basic Auth credentials.
+
+## Source
+
+[`src/AuthHandler.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AuthHandler.ts)
+
+Line 124.

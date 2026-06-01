@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/prefabs/survey/survey/build"
+title: "BUILD"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Prefabs::Survey::BUILD"
+  parent: "SignalWire::Prefabs::Survey"
+  module: "SignalWire.Prefabs.Survey"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/Survey.pm"
+  visibility: "public"
+---
+# `BUILD`
+
+## Signature
+
+```perl
+sub BUILD($args)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `args` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Prefabs/Survey.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Prefabs/Survey.pm)
+
+Line 18.

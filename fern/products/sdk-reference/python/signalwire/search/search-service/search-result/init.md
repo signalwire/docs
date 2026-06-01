@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/search/search-service/search-result/init"
+title: "__init__"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.search.search_service.SearchResult.__init__"
+  parent: "signalwire.search.search_service.SearchResult"
+  module: "signalwire.search.search_service"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/search_service.py"
+---
+# `__init__`
+
+## Signature
+
+```python
+__init__(content: str, score: float, metadata: Dict[str, Any])
+```
+
+## Parameters
+
+| Name       | Type             | Required | Default | Description |
+| ---------- | ---------------- | -------- | ------- | ----------- |
+| `content`  | `str`            | yes      | —       | —           |
+| `score`    | `float`          | yes      | —       | —           |
+| `metadata` | `Dict[str, Any]` | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/search/search_service.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/search/search_service.py)
+
+Line 79.

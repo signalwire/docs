@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/context-builder/get-context"
+title: "get_context"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::ContextBuilder::get_context"
+  parent: "signalwire::contexts::context_builder::ContextBuilder"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `get_context`
+
+## Signature
+
+```rust
+fn get_context(&self, name: &str) -> ?<&?>
+```
+
+## Parameters
+
+| Name   | Type   | Required | Default | Description |
+| ------ | ------ | -------- | ------- | ----------- |
+| `name` | `&str` | yes      | —       | —           |
+
+## Returns
+
+`?<&?>`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 669.

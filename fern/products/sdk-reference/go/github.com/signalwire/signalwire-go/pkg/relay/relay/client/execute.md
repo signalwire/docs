@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/client/execute"
+title: "Execute"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Client.Execute"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Client"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go"
+---
+# `Execute`
+
+Execute sends a JSON-RPC request over the WebSocket and waits for the response. Mirrors Python's async execute(method, params) which is the public arbitrary-RPC surface used by callers that need low-level access.
+
+## Signature
+
+```go
+func (*Client) Execute(method string, params map[string]any) (json.RawMessage, error)
+```
+
+## Parameters
+
+| Name     | Type             | Required | Default | Description |
+| -------- | ---------------- | -------- | ------- | ----------- |
+| `method` | `string`         | yes      | —       | —           |
+| `params` | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`(json.RawMessage, error)`
+
+## Source
+
+[`pkg/relay/client.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/client.go)
+
+Line 186.

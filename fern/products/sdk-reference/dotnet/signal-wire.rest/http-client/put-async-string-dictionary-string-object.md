@@ -1,0 +1,36 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/http-client/put-async-string-dictionary-string-object"
+title: "PutAsync(string, Dictionary<string, object?>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.HttpClient.PutAsync(string, System.Collections.Generic.Dictionary<string, object?>?)"
+  parent: "SignalWire.REST.HttpClient"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `PutAsync(string, Dictionary<string, object?>?)`
+
+PUT with JSON body.
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual Task<Dictionary<string, object?>> PutAsync(string path, Dictionary<string, object?>? data = null)
+```
+
+## Parameters
+
+| Name   | Type                        | Required | Default | Description |
+| ------ | --------------------------- | -------- | ------- | ----------- |
+| `path` | `string`                    | yes      | —       | —           |
+| `data` | `Dictionary<string,object>` | no       | `null`  | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

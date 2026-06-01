@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/service/get-all-functions"
+title: "GetAllFunctions()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Service.GetAllFunctions()"
+  parent: "SignalWire.SWML.Service"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `GetAllFunctions()`
+
+Get a snapshot of all registered SWAIG functions
+(Python parity: `tool_registry.get_all_functions()` — returns
+a copy so subsequent registrations don't mutate the snapshot).
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual Dictionary<string, Dictionary<string, object>> GetAllFunctions()
+```
+
+## Returns
+
+`Dictionary<string,Dictionary<string,object>>`

@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/swaig/function-result/function-result/join-room"
+title: "join_room"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWAIG::FunctionResult::join_room"
+  parent: "SignalWire::SWAIG::FunctionResult"
+  module: "SignalWire.SWAIG.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm"
+  visibility: "public"
+---
+# `join_room`
+
+## Signature
+
+```perl
+sub join_room($name)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `name` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/SWAIG/FunctionResult.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm)
+
+Line 373.

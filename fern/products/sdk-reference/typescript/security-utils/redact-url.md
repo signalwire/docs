@@ -1,0 +1,40 @@
+---
+slug: "/reference/typescript/security-utils/redact-url"
+title: "redactUrl"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "typescript"
+  qualified_name: "SecurityUtils.redactUrl"
+  parent: "SecurityUtils"
+  module: "SecurityUtils"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SecurityUtils.ts"
+---
+# `redactUrl`
+
+Redact credentials embedded in a URL (e.g. `https://user:secret@host` -> `https://user:****@host`).
+Returns the URL unchanged if no credentials are present.
+
+## Signature
+
+```typescript
+redactUrl(url: string): string
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description               |
+| ----- | -------- | -------- | ------- | ------------------------- |
+| `url` | `string` | yes      | —       | The URL string to redact. |
+
+## Returns
+
+`string` — The URL with the password portion replaced by `****`.
+
+## Source
+
+[`src/SecurityUtils.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SecurityUtils.ts)
+
+Line 63.

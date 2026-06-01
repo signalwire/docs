@@ -1,0 +1,23 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent"
+title: "agent"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent"
+  module: "com.signalwire.sdk.agent"
+---
+# `agent`
+
+## Signature
+
+```java
+package com.signalwire.sdk.agent
+```
+
+## Classes
+
+- [`AgentBase`](/reference/java/com/signalwire/sdk/agent/agent/agent-base) — Base class for all SignalWire AI agents.

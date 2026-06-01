@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/skills/skill-manager/skill-manager/has-skill"
+title: "hasSkill"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.SkillManager.SkillManager.hasSkill"
+  parent: "skills.SkillManager.SkillManager"
+  module: "skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts"
+---
+# `hasSkill`
+
+Check if any skill instance with the given name is currently loaded.
+
+## Signature
+
+```typescript
+hasSkill(skillName: string): boolean
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description                  |
+| ----------- | -------- | -------- | ------- | ---------------------------- |
+| `skillName` | `string` | yes      | —       | The skill name to check for. |
+
+## Returns
+
+`boolean` — True if at least one instance with this name is loaded.
+
+## Source
+
+[`src/skills/SkillManager.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillManager.ts)
+
+Line 196.

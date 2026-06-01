@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/subscribers-resource/update-sip-endpoint"
+title: "update_sip_endpoint"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::SubscribersResource#update_sip_endpoint"
+  parent: "SignalWire::REST::Namespaces::SubscribersResource"
+  module: "SignalWire.REST.Namespaces.SubscribersResource"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/fabric.rb"
+  visibility: "public"
+---
+# `update_sip_endpoint`
+
+## Signature
+
+```ruby
+def update_sip_endpoint(subscriber_id, endpoint_id, **kwargs)
+```
+
+## Parameters
+
+| Name            | Type | Required | Default | Description |
+| --------------- | ---- | -------- | ------- | ----------- |
+| `subscriber_id` | —    | yes      | —       | —           |
+| `endpoint_id`   | —    | yes      | —       | —           |
+| `...kwargs`     | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/fabric.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/fabric.rb)
+
+Line 98.

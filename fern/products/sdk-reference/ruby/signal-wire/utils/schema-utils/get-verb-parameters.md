@@ -1,0 +1,37 @@
+---
+slug: "/reference/ruby/signal-wire/utils/schema-utils/get-verb-parameters"
+title: "get_verb_parameters"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Utils::SchemaUtils#get_verb_parameters"
+  parent: "SignalWire::Utils::SchemaUtils"
+  module: "SignalWire.Utils.SchemaUtils"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/utils/schema_utils.rb"
+  visibility: "public"
+---
+# `get_verb_parameters`
+
+Parameter-definition block used by code-gen tooling.
+Mirrors Python's get\_verb\_parameters(verb\_name).
+
+## Signature
+
+```ruby
+def get_verb_parameters(verb_name)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `verb_name` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/utils/schema_utils.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/utils/schema_utils.rb)
+
+Line 118.

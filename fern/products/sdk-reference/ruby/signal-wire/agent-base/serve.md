@@ -1,0 +1,40 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/serve"
+title: "serve"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#serve"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `serve`
+
+Start the HTTP server (blocking).
+
+Python parity: `serve(host=None, port=None)`. `host` /
+`port` overrides default to constructor-supplied values.
+
+## Signature
+
+```ruby
+def serve(host: nil, port: nil)
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description |
+| ------- | ---- | -------- | ------- | ----------- |
+| `host:` | —    | no       | `nil`   | —           |
+| `port:` | —    | no       | `nil`   | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 1518.

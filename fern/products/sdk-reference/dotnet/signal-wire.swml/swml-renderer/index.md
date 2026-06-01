@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/swml-renderer"
+title: "SwmlRenderer"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.SwmlRenderer"
+  parent: "SignalWire.SWML"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `SwmlRenderer`
+
+**Modifiers:** `static`
+
+## Signature
+
+```dotnet
+public static class SwmlRenderer
+```
+
+## Methods
+
+- [`RenderFunctionResponseSwml(string, Service, List<Dictionary<string, object>>?, string)`](/reference/dotnet/signal-wire.swml/swml-renderer/render-function-response-swml-string-service-list-dictionary-string-object-string) — Generate a SWML document for a SWAIG function response — plays the response text and queues any follow-up actions. (Python parity: `SwmlRenderer.render_function_response_swml`.)
+- [`RenderSwml(object, Service, string?, string?, List<Dictionary<string, object>>?, string?, string?, bool, Dictionary<string, object>?, bool, bool, string, bool, string, string?)`](/reference/dotnet/signal-wire.swml/swml-renderer/render-swml-object-service-string-string-list-dictionary-string-object-string-string-bool-dictionary-string-object-bool-bool-string-bool-string-string) — Generate a complete SWML document with AI configuration. (Python parity: `SwmlRenderer.render_swml`.)

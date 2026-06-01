@@ -1,0 +1,77 @@
+---
+slug: "/reference/typescript/prefabs/receptionist-agent/receptionist-agent/set-internal-fillers"
+title: "setInternalFillers"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.ReceptionistAgent.ReceptionistAgent.setInternalFillers"
+  parent: "prefabs.ReceptionistAgent.ReceptionistAgent"
+  module: "prefabs.ReceptionistAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts"
+---
+# `setInternalFillers`
+
+Set internal fillers for native SWAIG functions.
+
+Internal fillers are short phrases the AI agent speaks (via TTS) while
+an internal/native function is running, so the caller doesn't hear
+dead air during transitions or background work.
+
+Supported function names (matches the SWAIGInternalFiller schema):
+
+hangup                  — when the agent is hanging up
+check\_time              — when checking the time
+wait\_for\_user           — when waiting for user input
+wait\_seconds            — during deliberate pauses
+adjust\_response\_latency — when adjusting response timing
+next\_step               — transitioning between steps in prompt.contexts
+change\_context          — switching between contexts in prompt.contexts
+get\_visual\_input        — processing visual input (enable\_vision=true)
+get\_ideal\_strategy      — thinking (enable\_thinking=true)
+
+Notably NOT supported: change\_step, gather\_submit, or arbitrary
+user-defined SWAIG function names. The runtime only honors fillers
+for the names listed above; everything else is silently ignored at
+the SWML level. This method warns at registration time if you pass
+an unknown name so you catch the typo early.
+
+## Signature
+
+```typescript
+setInternalFillers(
+  internalFillers: Record<string, Record<string, string[]>>
+): this
+```
+
+## Parameters
+
+| Name              | Type                                       | Required | Default | Description                                            |
+| ----------------- | ------------------------------------------ | -------- | ------- | ------------------------------------------------------ |
+| `internalFillers` | `Record<string, Record<string, string[]>>` | yes      | —       | Map of function name to language-keyed filler phrases. |
+
+## Returns
+
+`this` — This agent instance for chaining.
+
+## Examples
+
+```typescript
+agent.setInternalFillers({
+  next_step: {
+    'en-US': ['Moving to the next step...', 'Great, let us continue...'],
+    'es':    ['Pasando al siguiente paso...']
+  },
+  check_time: {
+    'en-US': ['Let me check the time...']
+  }
+});
+```
+
+## Source
+
+[`src/AgentBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts)
+
+Line 909.

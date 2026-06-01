@@ -1,0 +1,30 @@
+---
+slug: "/reference/cpp/signalwire/security/http-handler"
+title: "HttpHandler"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::security::HttpHandler"
+  parent: "signalwire::security"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_middleware.hpp"
+  visibility: "public"
+---
+# `HttpHandler`
+
+A cpp-httplib handler signature, lifted into a typedef so the adapter stays framework-agnostic at the call site (the only deps needed by this header are a forward declaration of httplib::Request/Response).
+
+## Signature
+
+```cpp
+typedef std::function< void(const httplib::Request &, httplib::Response &)> HttpHandler
+```
+
+## Source
+
+[`include/signalwire/security/webhook_middleware.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/security/webhook_middleware.hpp)
+
+Line 19.

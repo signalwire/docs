@@ -1,0 +1,37 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/rest/phone-call-handler/to-string"
+title: "toString"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.PhoneCallHandler.toString"
+  parent: "com.signalwire.sdk.rest.PhoneCallHandler"
+  module: "com.signalwire.sdk.rest.PhoneCallHandler"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/PhoneCallHandler.java"
+  visibility: "public"
+---
+# `toString`
+
+Returns the wire value so this enum serializes transparently into
+request bodies without an explicit `.wireValue()` indirection.
+
+**Decorators:** `@Override`
+
+## Signature
+
+```java
+public java.lang.String toString()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/PhoneCallHandler.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/PhoneCallHandler.java)
+
+Line 74.

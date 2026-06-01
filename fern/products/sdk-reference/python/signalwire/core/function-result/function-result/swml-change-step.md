@@ -1,0 +1,111 @@
+---
+slug: "/reference/python/signalwire/core/function-result/function-result/swml-change-step"
+title: "swml_change_step"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.function_result.FunctionResult.swml_change_step"
+  parent: "signalwire.core.function_result.FunctionResult"
+  module: "signalwire.core.function_result"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py"
+---
+# `swml_change_step`
+
+Force the conversation into a specific step in the current context.
+
+This is a workflow-level transition driven by your webhook, not by the
+model. Webhook-triggered step changes bypass any `valid_steps` clamp
+on the current step (the model's `next_step` tool is the constrained
+path; this is the unconstrained one). Use it when something the user
+said unambiguously requires moving the flow forward.
+
+## Communicating intent to the destination step
+
+When the model arrives at the new step, the next thing it sees in
+history is the tool result that contained this action — i.e., your
+FunctionResult's `response` text. Put your "why" there. The model
+reads it before the new step's injected instructions:
+
+```
+FunctionResult(
+    "Premium plan confirmed. Now collecting payment details."
+).swml_change_step("collect_payment")
+```
+
+For structured data the destination step needs (account number,
+plan tier, etc.), pair this with `update_global_data()` and reference
+the values from the destination step's `text` via ${var} expansion:
+
+```
+(FunctionResult("Premium plan confirmed.")
+    .update_global_data({"plan": "premium", "billing_cycle": "annual"})
+    .swml_change_step("collect_payment"))
+```
+
+And in the destination step's text:
+
+```
+step.set_text(
+    "Collect payment for the ${plan} plan, billed ${billing_cycle}. "
+    "Confirm the amount with the user before proceeding."
+)
+```
+
+> \[!NOTE]
+> result = (
+> FunctionResult("Starting a new hand")
+> .update\_global\_data({"chips": 1000})
+> .swml\_change\_step("betting")
+> )
+
+## Signature
+
+```python
+swml_change_step(step_name: str) -> FunctionResult
+```
+
+## Parameters
+
+| Name        | Type  | Required | Default | Description                                                                    |
+| ----------- | ----- | -------- | ------- | ------------------------------------------------------------------------------ |
+| `step_name` | `str` | yes      | —       | Name of the step to transition to. The step must exist in the current context. |
+
+## Returns
+
+`FunctionResult` — Self for method chaining.
+
+## Examples
+
+**Example 1**
+
+```python
+FunctionResult(
+    "Premium plan confirmed. Now collecting payment details."
+).swml_change_step("collect_payment")
+```
+
+**Example 2**
+
+```python
+(FunctionResult("Premium plan confirmed.")
+    .update_global_data({"plan": "premium", "billing_cycle": "annual"})
+    .swml_change_step("collect_payment"))
+```
+
+**Example 3**
+
+```python
+step.set_text(
+    "Collect payment for the ${plan} plan, billed ${billing_cycle}. "
+    "Confirm the amount with the user before proceeding."
+)
+```
+
+## Source
+
+[`/src/signalwire/signalwire/core/function_result.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py)
+
+Line 301.

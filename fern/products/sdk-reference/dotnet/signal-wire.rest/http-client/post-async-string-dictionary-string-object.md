@@ -1,0 +1,36 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/http-client/post-async-string-dictionary-string-object"
+title: "PostAsync(string, Dictionary<string, object?>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.HttpClient.PostAsync(string, System.Collections.Generic.Dictionary<string, object?>?)"
+  parent: "SignalWire.REST.HttpClient"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `PostAsync(string, Dictionary<string, object?>?)`
+
+POST with JSON body.
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual Task<Dictionary<string, object?>> PostAsync(string path, Dictionary<string, object?>? data = null)
+```
+
+## Parameters
+
+| Name   | Type                        | Required | Default | Description |
+| ------ | --------------------------- | -------- | ------- | ----------- |
+| `path` | `string`                    | yes      | —       | —           |
+| `data` | `Dictionary<string,object>` | no       | `null`  | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

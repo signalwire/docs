@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/message/get-body"
+title: "getBody"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.Message.getBody"
+  parent: "com.signalwire.sdk.relay.Message"
+  module: "com.signalwire.sdk.relay.Message"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Message.java"
+  visibility: "public"
+---
+# `getBody`
+
+## Signature
+
+```java
+public java.lang.String getBody()
+```
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/Message.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/Message.java)
+
+Line 66.

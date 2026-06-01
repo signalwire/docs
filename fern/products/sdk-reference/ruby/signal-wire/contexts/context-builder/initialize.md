@@ -1,0 +1,44 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/context-builder/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::ContextBuilder#initialize"
+  parent: "SignalWire::Contexts::ContextBuilder"
+  module: "SignalWire.Contexts.ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `initialize`
+
+Python parity: `ContextBuilder.__init__(self, agent)` accepts
+an owning agent so `validate!` can introspect registered
+SWAIG tools when checking for reserved-name collisions.
+Ruby allows nil for standalone use (tests, idiom of building
+a builder before attaching).
+
+## Signature
+
+```ruby
+def initialize(agent = nil)
+```
+
+## Parameters
+
+| Name    | Type | Required | Default | Description |
+| ------- | ---- | -------- | ------- | ----------- |
+| `agent` | —    | no       | `nil`   | —           |
+
+## Returns
+
+`ContextBuilder` — a new instance of ContextBuilder
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 672.

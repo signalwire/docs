@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/service/get-basic-auth-credentials"
+title: "GetBasicAuthCredentials"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.Service.GetBasicAuthCredentials"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.Service"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `GetBasicAuthCredentials`
+
+GetBasicAuthCredentials returns the (username, password) for basic auth.
+
+## Signature
+
+```go
+func (*Service) GetBasicAuthCredentials() (string, string)
+```
+
+## Returns
+
+`(string, string)`
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 428.

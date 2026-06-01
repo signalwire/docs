@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/relay/message/message/on"
+title: "on"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.message.Message.on"
+  parent: "signalwire.relay.message.Message"
+  module: "signalwire.relay.message"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/message.py"
+---
+# `on`
+
+Register an event listener for state changes on this message.
+
+## Signature
+
+```python
+on(handler: Callable) -> None
+```
+
+## Parameters
+
+| Name      | Type       | Required | Default | Description |
+| --------- | ---------- | -------- | ------- | ----------- |
+| `handler` | `Callable` | yes      | —       | —           |
+
+## Returns
+
+`None`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/message.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/message.py)
+
+Line 72.

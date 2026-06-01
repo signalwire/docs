@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/date-time-skill/get-prompt-sections"
+title: "get_prompt_sections"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::DateTimeSkill#get_prompt_sections"
+  parent: "SignalWire::Skills::Builtin::DateTimeSkill"
+  module: "SignalWire.Skills.Builtin.DateTimeSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/datetime.rb"
+  visibility: "public"
+---
+# `get_prompt_sections`
+
+## Signature
+
+```ruby
+def get_prompt_sections
+```
+
+## Source
+
+[`lib/signalwire/skills/builtin/datetime.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/datetime.rb)
+
+Line 34.

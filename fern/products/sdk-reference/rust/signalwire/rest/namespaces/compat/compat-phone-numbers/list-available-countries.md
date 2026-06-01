@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/compat/compat-phone-numbers/list-available-countries"
+title: "list_available_countries"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::compat::CompatPhoneNumbers::list_available_countries"
+  parent: "signalwire::rest::namespaces::compat::CompatPhoneNumbers"
+  module: "rest.namespaces.compat"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/compat.rs"
+  visibility: "public"
+---
+# `list_available_countries`
+
+## Signature
+
+```rust
+fn list_available_countries(&self, params: &?) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name     | Type | Required | Default | Description |
+| -------- | ---- | -------- | ------- | ----------- |
+| `params` | `&?` | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/rest/namespaces/compat.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/compat.rs)
+
+Line 551.

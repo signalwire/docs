@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/server/server/agent-server/get-agents"
+title: "getAgents"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Server\\AgentServer::getAgents"
+  parent: "SignalWire\\Server\\AgentServer"
+  module: "SignalWire.Server"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Server/AgentServer.php"
+  visibility: "public"
+---
+# `getAgents`
+
+Get all registered routes (sorted).
+
+## Signature
+
+```php
+public function getAgents(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Server/AgentServer.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Server/AgentServer.php)
+
+Line 109.

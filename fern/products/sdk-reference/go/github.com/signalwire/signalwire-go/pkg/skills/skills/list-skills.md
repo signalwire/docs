@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/skills/list-skills"
+title: "ListSkills"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills.ListSkills"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills"
+  module: "github.com.signalwire.signalwire-go.pkg.skills"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/registry.go"
+---
+# `ListSkills`
+
+ListSkills returns sorted names of all registered skills.
+
+## Signature
+
+```go
+func ListSkills() []string
+```
+
+## Returns
+
+`[]string`
+
+## Source
+
+[`pkg/skills/registry.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/registry.go)
+
+Line 98.

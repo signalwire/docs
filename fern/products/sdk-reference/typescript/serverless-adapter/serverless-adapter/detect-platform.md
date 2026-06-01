@@ -1,0 +1,33 @@
+---
+slug: "/reference/typescript/serverless-adapter/serverless-adapter/detect-platform"
+title: "detectPlatform"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ServerlessAdapter.ServerlessAdapter.detectPlatform"
+  parent: "ServerlessAdapter.ServerlessAdapter"
+  module: "ServerlessAdapter"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ServerlessAdapter.ts"
+---
+# `detectPlatform`
+
+Detect the serverless platform by inspecting well-known environment variables.
+
+## Signature
+
+```typescript
+detectPlatform(): ServerlessPlatform
+```
+
+## Returns
+
+`ServerlessPlatform` — The detected platform identifier; defaults to 'lambda' if no match is found.
+
+## Source
+
+[`src/ServerlessAdapter.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ServerlessAdapter.ts)
+
+Line 80.

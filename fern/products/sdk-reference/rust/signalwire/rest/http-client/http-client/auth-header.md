@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/rest/http-client/http-client/auth-header"
+title: "auth_header"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::http_client::HttpClient::auth_header"
+  parent: "signalwire::rest::http_client::HttpClient"
+  module: "rest.http_client"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/http_client.rs"
+  visibility: "public"
+---
+# `auth_header`
+
+## Signature
+
+```rust
+fn auth_header(&self) -> &str
+```
+
+## Returns
+
+`&str`
+
+## Source
+
+[`src/rest/http_client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/http_client.rs)
+
+Line 220.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/client/receive"
+title: "receive"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Client::receive"
+  parent: "SignalWire\\Relay\\Client"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php"
+  visibility: "public"
+---
+# `receive`
+
+Subscribe to one or more inbound contexts so that events for those
+
+contexts are delivered to this client.
+
+## Signature
+
+```php
+public function receive(array $contexts): void
+```
+
+## Parameters
+
+| Name       | Type    | Required | Default | Description |
+| ---------- | ------- | -------- | ------- | ----------- |
+| `contexts` | `array` | yes      | —       | —           |
+
+## Source
+
+[`/src/src/SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php)
+
+Line 705.

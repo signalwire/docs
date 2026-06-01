@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/rest/namespaces/registry/registry-numbers/delete"
+title: "delete"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.registry.RegistryNumbers.delete"
+  parent: "rest.namespaces.registry.RegistryNumbers"
+  module: "rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts"
+---
+# `delete`
+
+Remove a number from a 10DLC campaign assignment.
+
+## Signature
+
+```typescript
+delete(numberId: string): Promise<any>
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description                               |
+| ---------- | -------- | -------- | ------- | ----------------------------------------- |
+| `numberId` | `string` | yes      | —       | Unique identifier of the assigned number. |
+
+## Returns
+
+`Promise<any>` — The platform's delete response.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/registry.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts)
+
+Line 172.

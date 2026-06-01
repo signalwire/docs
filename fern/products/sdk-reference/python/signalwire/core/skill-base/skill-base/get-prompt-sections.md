@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/core/skill-base/skill-base/get-prompt-sections"
+title: "get_prompt_sections"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.skill_base.SkillBase.get_prompt_sections"
+  parent: "signalwire.core.skill_base.SkillBase"
+  module: "signalwire.core.skill_base"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/skill_base.py"
+---
+# `get_prompt_sections`
+
+Return prompt sections to add to agent.
+Returns empty list if skip\_prompt is set to True in params.
+
+## Signature
+
+```python
+get_prompt_sections() -> List[Dict[str, Any]]
+```
+
+## Returns
+
+`List[Dict[str, Any]]`
+
+## Source
+
+[`/src/signalwire/signalwire/core/skill_base.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/skill_base.py)
+
+Line 88.

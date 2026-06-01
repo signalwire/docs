@@ -1,0 +1,35 @@
+---
+slug: "/reference/dotnet/signal-wire.swaig/function-result/create-payment-parameter-string-string-dictionary-string-object"
+title: "CreatePaymentParameter(string, string, Dictionary<string, object>?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWAIG.FunctionResult.CreatePaymentParameter(string, string, System.Collections.Generic.Dictionary<string, object>?)"
+  parent: "SignalWire.SWAIG.FunctionResult"
+  module: "SignalWire.SWAIG"
+  visibility: "public"
+---
+# `CreatePaymentParameter(string, string, Dictionary<string, object>?)`
+
+**Modifiers:** `static`
+
+## Signature
+
+```dotnet
+public static Dictionary<string, object> CreatePaymentParameter(string name, string type, Dictionary<string, object>? config = null)
+```
+
+## Parameters
+
+| Name     | Type                        | Required | Default | Description |
+| -------- | --------------------------- | -------- | ------- | ----------- |
+| `name`   | `string`                    | yes      | —       | —           |
+| `type`   | `string`                    | yes      | —       | —           |
+| `config` | `Dictionary<string,object>` | no       | `null`  | —           |
+
+## Returns
+
+`Dictionary<string,object>`

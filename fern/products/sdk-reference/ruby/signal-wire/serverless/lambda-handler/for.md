@@ -1,0 +1,42 @@
+---
+slug: "/reference/ruby/signal-wire/serverless/lambda-handler/for"
+title: "for"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Serverless::LambdaHandler.for"
+  parent: "SignalWire::Serverless::LambdaHandler"
+  module: "SignalWire.Serverless.LambdaHandler"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/serverless/lambda_handler.rb"
+  visibility: "public"
+---
+# `for`
+
+Class-level convenience so consumers can use
++SignalWire::Serverless::LambdaHandler.for(agent)+ without
+duplicating +.rack\_app+ at the call site.
+
+## Signature
+
+```ruby
+def for(agent_or_app)
+```
+
+## Parameters
+
+| Name           | Type     | Required | Default | Description                                                                      |
+| -------------- | -------- | -------- | ------- | -------------------------------------------------------------------------------- |
+| `agent_or_app` | `Object` | yes      | —       | either an AgentBase (responds to +rack\_app+) or any Rack-compatible application |
+
+## Returns
+
+`LambdaHandler`
+
+## Source
+
+[`lib/signalwire/serverless/lambda_handler.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/serverless/lambda_handler.rb)
+
+Line 71.

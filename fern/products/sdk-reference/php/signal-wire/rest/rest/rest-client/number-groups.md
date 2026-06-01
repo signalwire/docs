@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/number-groups"
+title: "numberGroups"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::numberGroups"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `numberGroups`
+
+Number groups (CRUD + membership operations).
+
+## Signature
+
+```php
+public function numberGroups(): SignalWire\REST\Namespaces\NumberGroups
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\NumberGroups`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 227.

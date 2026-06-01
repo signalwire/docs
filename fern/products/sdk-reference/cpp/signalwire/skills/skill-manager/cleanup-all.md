@@ -1,0 +1,30 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-manager/cleanup-all"
+title: "cleanup_all"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillManager::cleanup_all"
+  parent: "signalwire::skills::SkillManager"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp"
+  visibility: "public"
+---
+# `cleanup_all`
+
+Cleanup all skills.
+
+## Signature
+
+```cpp
+void cleanup_all()
+```
+
+## Source
+
+[`include/signalwire/skills/skill_manager.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp)
+
+Line 40.

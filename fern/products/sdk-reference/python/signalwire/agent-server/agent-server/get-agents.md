@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/agent-server/agent-server/get-agents"
+title: "get_agents"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.agent_server.AgentServer.get_agents"
+  parent: "signalwire.agent_server.AgentServer"
+  module: "signalwire.agent_server"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/agent_server.py"
+---
+# `get_agents`
+
+Get all registered agents
+
+## Signature
+
+```python
+get_agents() -> List[Tuple[str, AgentBase]]
+```
+
+## Returns
+
+`List[Tuple[str, AgentBase]]` — List of (route, agent) tuples
+
+## Source
+
+[`/src/signalwire/signalwire/agent_server.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/agent_server.py)
+
+Line 301.

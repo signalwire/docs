@@ -1,0 +1,44 @@
+---
+slug: "/reference/rust/signalwire/prefabs/bedrock/bedrock-agent/new"
+title: "new"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::prefabs::bedrock::BedrockAgent::new"
+  parent: "signalwire::prefabs::bedrock::BedrockAgent"
+  module: "prefabs.bedrock"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/prefabs/bedrock.rs"
+  visibility: "public"
+---
+# `new`
+
+Construct a new BedrockAgent.
+
+Mirrors Python's
+`BedrockAgent(name=..., route=..., system_prompt=..., voice_id=...,
+temperature=..., top_p=..., max_tokens=..., **kwargs)`.
+
+## Signature
+
+```rust
+fn new(options: ?) -> Self
+```
+
+## Parameters
+
+| Name      | Type | Required | Default | Description |
+| --------- | ---- | -------- | ------- | ----------- |
+| `options` | `?`  | yes      | —       | —           |
+
+## Returns
+
+`Self`
+
+## Source
+
+[`src/prefabs/bedrock.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/prefabs/bedrock.rs)
+
+Line 98.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/claude-skills/skill/claude-skills-skill/get-instance-key"
+title: "get_instance_key"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.claude_skills.skill.ClaudeSkillsSkill.get_instance_key"
+  parent: "signalwire.skills.claude_skills.skill.ClaudeSkillsSkill"
+  module: "signalwire.skills.claude_skills.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/claude_skills/skill.py"
+---
+# `get_instance_key`
+
+Return unique key for this skill instance.
+
+## Signature
+
+```python
+get_instance_key() -> str
+```
+
+## Returns
+
+`str`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/claude_skills/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/claude_skills/skill.py)
+
+Line 667.

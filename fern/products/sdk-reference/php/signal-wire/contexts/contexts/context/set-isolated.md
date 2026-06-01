@@ -1,0 +1,58 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context/set-isolated"
+title: "setIsolated"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\Context::setIsolated"
+  parent: "SignalWire\\Contexts\\Context"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `setIsolated`
+
+Mark this context as isolated — entering it wipes conversation
+
+history.
+
+When $isolated = true and the context is entered via
+change\_context, the runtime wipes the conversation array. The
+model starts fresh with only the new context's system\_prompt +
+step instructions, with no memory of prior turns.
+
+EXCEPTION — reset overrides the wipe:
+If the context also has a reset configuration (via
+setConsolidate or setFullReset), the wipe is skipped in
+favor of the reset behavior. Use reset with consolidate=true
+to summarize prior history into a single message instead of
+dropping it entirely.
+
+Use cases: switching to a sensitive billing flow that should
+not see prior small-talk; handing off to a different agent
+persona; resetting after a long off-topic detour.
+
+## Signature
+
+```php
+public function setIsolated(bool $isolated): SignalWire\Contexts\Context
+```
+
+## Parameters
+
+| Name       | Type   | Required | Default | Description |
+| ---------- | ------ | -------- | ------- | ----------- |
+| `isolated` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire\Contexts\Context`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 838.

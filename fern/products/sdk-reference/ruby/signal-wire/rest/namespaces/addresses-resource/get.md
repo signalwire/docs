@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/addresses-resource/get"
+title: "get"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::AddressesResource#get"
+  parent: "SignalWire::REST::Namespaces::AddressesResource"
+  module: "SignalWire.REST.Namespaces.AddressesResource"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/addresses.rb"
+  visibility: "public"
+---
+# `get`
+
+## Signature
+
+```ruby
+def get(address_id)
+```
+
+## Parameters
+
+| Name         | Type | Required | Default | Description |
+| ------------ | ---- | -------- | ------- | ----------- |
+| `address_id` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/addresses.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/addresses.rb)
+
+Line 14.

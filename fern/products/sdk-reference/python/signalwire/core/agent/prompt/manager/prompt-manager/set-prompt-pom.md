@@ -1,0 +1,43 @@
+---
+slug: "/reference/python/signalwire/core/agent/prompt/manager/prompt-manager/set-prompt-pom"
+title: "set_prompt_pom"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.prompt.manager.PromptManager.set_prompt_pom"
+  parent: "signalwire.core.agent.prompt.manager.PromptManager"
+  module: "signalwire.core.agent.prompt.manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py"
+---
+# `set_prompt_pom`
+
+Set the prompt as a POM dictionary.
+
+## Signature
+
+```python
+set_prompt_pom(pom: List[Dict[str, Any]]) -> None
+```
+
+## Parameters
+
+| Name  | Type                   | Required | Default | Description              |
+| ----- | ---------------------- | -------- | ------- | ------------------------ |
+| `pom` | `List[Dict[str, Any]]` | yes      | —       | POM dictionary structure |
+
+## Returns
+
+`None`
+
+## Throws
+
+- `ValueError` — If use\_pom is False
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/prompt/manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py)
+
+Line 112.

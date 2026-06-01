@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/relay/relay-client/unsubscribe"
+title: "unsubscribe"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::RelayClient::unsubscribe"
+  parent: "signalwire::relay::RelayClient"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/client.hpp"
+  visibility: "public"
+---
+# `unsubscribe`
+
+## Signature
+
+```cpp
+void unsubscribe(const std::vector< std::string > & contexts)
+```
+
+## Parameters
+
+| Name       | Type                                 | Required | Default | Description |
+| ---------- | ------------------------------------ | -------- | ------- | ----------- |
+| `contexts` | `const std::vector< std::string > &` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/client.hpp)
+
+Line 129.

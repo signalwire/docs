@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/joke/skill/joke-skill/get-hints"
+title: "get_hints"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.joke.skill.JokeSkill.get_hints"
+  parent: "signalwire.skills.joke.skill.JokeSkill"
+  module: "signalwire.skills.joke.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/joke/skill.py"
+---
+# `get_hints`
+
+Return speech recognition hints
+
+## Signature
+
+```python
+get_hints() -> List[str]
+```
+
+## Returns
+
+`List[str]`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/joke/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/joke/skill.py)
+
+Line 82.

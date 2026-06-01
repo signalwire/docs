@@ -1,0 +1,34 @@
+---
+slug: "/reference/rust/signalwire/skills/skill-base/skill-base/name"
+title: "name"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::skill_base::SkillBase::name"
+  parent: "signalwire::skills::skill_base::SkillBase"
+  module: "skills.skill_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs"
+  visibility: "public"
+---
+# `name`
+
+Unique snake\_case name of this skill (e.g. `"datetime"`).
+
+## Signature
+
+```rust
+fn name(&self) -> &str
+```
+
+## Returns
+
+`&str`
+
+## Source
+
+[`src/skills/skill_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs)
+
+Line 11.

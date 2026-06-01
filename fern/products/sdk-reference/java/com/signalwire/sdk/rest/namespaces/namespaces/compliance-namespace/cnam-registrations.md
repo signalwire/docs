@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/compliance-namespace/cnam-registrations"
+title: "cnamRegistrations"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.ComplianceNamespace.cnamRegistrations"
+  parent: "com.signalwire.sdk.rest.namespaces.ComplianceNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.ComplianceNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ComplianceNamespace.java"
+  visibility: "public"
+---
+# `cnamRegistrations`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource cnamRegistrations()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/ComplianceNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ComplianceNamespace.java)
+
+Line 25.

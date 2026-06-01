@@ -1,0 +1,39 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/logs/voice-logs/list-events"
+title: "list_events"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::logs::VoiceLogs::list_events"
+  parent: "signalwire::rest::namespaces::logs::VoiceLogs"
+  module: "rest.namespaces.logs"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/logs.rs"
+  visibility: "public"
+---
+# `list_events`
+
+## Signature
+
+```rust
+fn list_events(&self, log_id: &str, params: &?) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name     | Type   | Required | Default | Description |
+| -------- | ------ | -------- | ------- | ----------- |
+| `log_id` | `&str` | yes      | —       | —           |
+| `params` | `&?`   | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/rest/namespaces/logs.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/logs.rs)
+
+Line 136.

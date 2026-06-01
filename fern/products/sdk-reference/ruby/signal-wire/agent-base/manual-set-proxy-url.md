@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/manual-set-proxy-url"
+title: "manual_set_proxy_url"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase#manual_set_proxy_url"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `manual_set_proxy_url`
+
+## Signature
+
+```ruby
+def manual_set_proxy_url(url)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `url` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 1173.

@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/set-web-hook-url-string"
+title: "SetWebHookUrl(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.SetWebHookUrl(string)"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `SetWebHookUrl(string)`
+
+## Signature
+
+```dotnet
+public AgentBase SetWebHookUrl(string url)
+```
+
+## Parameters
+
+| Name  | Type     | Required | Default | Description |
+| ----- | -------- | -------- | ------- | ----------- |
+| `url` | `string` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.Agent.AgentBase`

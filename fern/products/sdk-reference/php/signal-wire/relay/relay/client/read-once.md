@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/client/read-once"
+title: "readOnce"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Client::readOnce"
+  parent: "SignalWire\\Relay\\Client"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php"
+  visibility: "public"
+---
+# `readOnce`
+
+Read a single inbound frame from the WebSocket and dispatch it.
+
+Returns silently on a read timeout (no frame within $this->readTimeout
+seconds — the run loop will call again). Throws on socket errors so
+the run loop can trigger reconnect.
+
+## Signature
+
+```php
+public function readOnce(): void
+```
+
+## Source
+
+[`/src/src/SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php)
+
+Line 396.

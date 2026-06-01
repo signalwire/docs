@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-registry/last-registered"
+title: "last_registered"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillRegistry#last_registered"
+  parent: "SignalWire::Skills::SkillRegistry"
+  module: "SignalWire.Skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_registry.rb"
+  visibility: "public"
+---
+# `last_registered`
+
+The most recently registered skill name (instance form).
+
+## Signature
+
+```ruby
+attr_reader last_registered -> Object
+```
+
+## Source
+
+[`lib/signalwire/skills/skill_registry.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_registry.rb)
+
+Line 141.

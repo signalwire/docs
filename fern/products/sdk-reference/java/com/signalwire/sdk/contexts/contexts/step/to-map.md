@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/step/to-map"
+title: "toMap"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.Step.toMap"
+  parent: "com.signalwire.sdk.contexts.Step"
+  module: "com.signalwire.sdk.contexts.Step"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/Step.java"
+  visibility: "public"
+---
+# `toMap`
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> toMap()
+```
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/Step.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/Step.java)
+
+Line 289.

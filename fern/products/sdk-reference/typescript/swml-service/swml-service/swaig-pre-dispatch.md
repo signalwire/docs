@@ -1,0 +1,47 @@
+---
+slug: "/reference/typescript/swml-service/swml-service/swaig-pre-dispatch"
+title: "swaigPreDispatch"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SWMLService.SWMLService.swaigPreDispatch"
+  parent: "SWMLService.SWMLService"
+  module: "SWMLService"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLService.ts"
+  visibility: "protected"
+---
+# `swaigPreDispatch`
+
+Extension point: invoked between argument parsing and function dispatch
+on POST /swaig. Returns \[target, shortCircuit]: when shortCircuit is
+non-null, it's returned directly without dispatching. AgentBase may
+override to add session-token validation or ephemeral dynamic-config.
+
+## Signature
+
+```typescript
+swaigPreDispatch(
+  _requestData: Record<string, unknown>,
+  _funcName: string
+): [SWMLService, unknown]
+```
+
+## Parameters
+
+| Name           | Type                      | Required | Default | Description |
+| -------------- | ------------------------- | -------- | ------- | ----------- |
+| `_requestData` | `Record<string, unknown>` | yes      | —       | —           |
+| `_funcName`    | `string`                  | yes      | —       | —           |
+
+## Returns
+
+`[SWMLService, unknown]`
+
+## Source
+
+[`src/SWMLService.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SWMLService.ts)
+
+Line 592.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/hangup"
+title: "hangup"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.hangup"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `hangup`
+
+Hangup the call.
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult hangup()
+```
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 124.

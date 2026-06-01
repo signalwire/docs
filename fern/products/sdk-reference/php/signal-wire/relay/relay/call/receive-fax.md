@@ -1,0 +1,40 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/call/receive-fax"
+title: "receiveFax"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Call::receiveFax"
+  parent: "SignalWire\\Relay\\Call"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php"
+  visibility: "public"
+---
+# `receiveFax`
+
+## Signature
+
+```php
+public function receiveFax(array $opts = array (
+)): SignalWire\Relay\FaxAction
+```
+
+## Parameters
+
+| Name   | Type    | Required | Default     | Description |
+| ------ | ------- | -------- | ----------- | ----------- |
+| `opts` | `array` | no       | `array (
+)` | —           |
+
+## Returns
+
+`SignalWire\Relay\FaxAction`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Call.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php)
+
+Line 491.

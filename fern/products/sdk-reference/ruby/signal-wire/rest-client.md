@@ -1,0 +1,47 @@
+---
+slug: "/reference/ruby/signal-wire/rest-client"
+title: "RestClient"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire.RestClient"
+  parent: "SignalWire"
+  module: "SignalWire"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire.rb"
+  visibility: "public"
+---
+# `RestClient`
+
+Construct a {SignalWire::REST::RestClient} instance.
+
+Mirrors Python's top-level `signalwire.RestClient(*args, **kwargs)`
+factory — a thin wrapper that lazy-imports
+`signalwire.rest.RestClient` and instantiates it. Supports both
+positional credentials (matching Go-style `RestClient(project,
+token, host)`) and keyword credentials (Ruby-idiomatic).
+
+## Signature
+
+```ruby
+def RestClient(*args, **kwargs)
+```
+
+## Parameters
+
+| Name        | Type            | Required | Default | Description                                       |
+| ----------- | --------------- | -------- | ------- | ------------------------------------------------- |
+| `...args`   | `Array<String>` | no       | —       | Positional credentials (compat shim).             |
+| `...kwargs` | `Hash`          | no       | —       | Keyword credentials forwarded to the constructor. |
+
+## Returns
+
+`SignalWire::REST::RestClient`
+
+## Source
+
+[`lib/signalwire.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire.rb)
+
+Line 40.

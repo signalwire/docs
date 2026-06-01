@@ -1,0 +1,30 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/reset-contexts"
+title: "ResetContexts()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.ResetContexts()"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `ResetContexts()`
+
+Remove all contexts, returning the agent to a no-contexts state.
+This is a convenience wrapper around <code>DefineContexts().Reset()</code>.
+Use it in a dynamic config callback when you need to rebuild
+contexts from scratch for a specific request.
+
+## Signature
+
+```dotnet
+public AgentBase ResetContexts()
+```
+
+## Returns
+
+`SignalWire.Agent.AgentBase`

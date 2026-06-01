@@ -1,0 +1,44 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/service/extract-sip-username"
+title: "extractSipUsername"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Service::extractSipUsername"
+  parent: "SignalWire\\SWML\\Service"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php"
+  visibility: "public"
+---
+# `extractSipUsername`
+
+Extract SIP username from a request body.
+
+Validates format: only \[a-zA-Z0-9.\_-], max 64 chars.
+
+**Modifiers:** `static`
+
+## Signature
+
+```php
+public static function extractSipUsername(?array $requestBody): ?string
+```
+
+## Parameters
+
+| Name          | Type     | Required | Default | Description |
+| ------------- | -------- | -------- | ------- | ----------- |
+| `requestBody` | `?array` | yes      | —       | —           |
+
+## Returns
+
+`?string`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Service.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php)
+
+Line 648.

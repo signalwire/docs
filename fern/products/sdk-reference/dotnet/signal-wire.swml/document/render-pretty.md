@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/document/render-pretty"
+title: "RenderPretty()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Document.RenderPretty()"
+  parent: "SignalWire.SWML.Document"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `RenderPretty()`
+
+Pretty-printed JSON string.
+
+## Signature
+
+```dotnet
+public string RenderPretty()
+```
+
+## Returns
+
+`string`

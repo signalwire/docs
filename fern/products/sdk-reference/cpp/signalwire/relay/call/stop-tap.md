@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/relay/call/stop-tap"
+title: "stop_tap"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Call::stop_tap"
+  parent: "signalwire::relay::Call"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp"
+  visibility: "public"
+---
+# `stop_tap`
+
+## Signature
+
+```cpp
+Action stop_tap(const std::string & control_id)
+```
+
+## Parameters
+
+| Name         | Type                  | Required | Default | Description |
+| ------------ | --------------------- | -------- | ------- | ----------- |
+| `control_id` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`Action`
+
+## Source
+
+[`include/signalwire/relay/call.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp)
+
+Line 71.

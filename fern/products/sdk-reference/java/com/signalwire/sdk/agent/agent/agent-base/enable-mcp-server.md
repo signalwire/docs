@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/enable-mcp-server"
+title: "enableMcpServer"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.enableMcpServer"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `enableMcpServer`
+
+Expose this agent's tools as an MCP server endpoint at /mcp.
+
+Adds a JSON-RPC 2.0 endpoint that MCP clients can connect to.
+
+## Signature
+
+```java
+public com.signalwire.sdk.agent.AgentBase enableMcpServer()
+```
+
+## Returns
+
+`com.signalwire.sdk.agent.AgentBase` — this for chaining
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 1139.

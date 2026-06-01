@@ -1,0 +1,40 @@
+---
+slug: "/reference/dotnet/signal-wire.contexts/reserved-tool-names"
+title: "ReservedToolNames"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.Contexts.ReservedToolNames"
+  parent: "SignalWire.Contexts"
+  module: "SignalWire.Contexts"
+  visibility: "public"
+---
+# `ReservedToolNames`
+
+Reserved tool names auto-injected by the runtime when contexts/steps are
+present. User-defined SWAIG tools must not collide with these names.
+
+<ul><li><code>next_step</code> / <code>change_context</code> are injected when
+valid_steps or valid_contexts is set so the model can navigate the flow.</li><li><code>gather_submit</code> is injected while a step's gather_info is
+collecting answers.</li></ul>
+
+<xref href="SignalWire.Contexts.ContextBuilder.Validate" data-throw-if-not-resolved="false"></xref> rejects any agent that registers a
+user tool sharing one of these names — the runtime would never call the
+user tool because the native one wins.
+
+**Modifiers:** `static`
+
+## Signature
+
+```dotnet
+public static class ReservedToolNames
+```
+
+## Properties
+
+| Name       | Type                                                   | Required | Default | Description |
+| ---------- | ------------------------------------------------------ | -------- | ------- | ----------- |
+| `Reserved` | `public static readonly IReadOnlySet<string> Reserved` | yes      | —       | —           |

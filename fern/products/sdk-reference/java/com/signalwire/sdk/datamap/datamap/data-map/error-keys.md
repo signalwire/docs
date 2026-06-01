@@ -1,0 +1,42 @@
+---
+slug: "/reference/java/com/signalwire/sdk/datamap/datamap/data-map/error-keys"
+title: "errorKeys"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.datamap.DataMap.errorKeys"
+  parent: "com.signalwire.sdk.datamap.DataMap"
+  module: "com.signalwire.sdk.datamap.DataMap"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/datamap/DataMap.java"
+  visibility: "public"
+---
+# `errorKeys`
+
+Set error keys for the most recent webhook (if webhooks exist) or top-level.
+
+## Signature
+
+```java
+public com.signalwire.sdk.datamap.DataMap errorKeys(
+    java.util.List<java.lang.String> keys
+)
+```
+
+## Parameters
+
+| Name   | Type                               | Required | Default | Description |
+| ------ | ---------------------------------- | -------- | ------- | ----------- |
+| `keys` | `java.util.List<java.lang.String>` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.datamap.DataMap`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/datamap/DataMap.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/datamap/DataMap.java)
+
+Line 218.

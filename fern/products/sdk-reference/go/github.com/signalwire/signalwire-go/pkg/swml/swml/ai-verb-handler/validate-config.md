@@ -1,0 +1,48 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/ai-verb-handler/validate-config"
+title: "ValidateConfig"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.AIVerbHandler.ValidateConfig"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml.AIVerbHandler"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/ai_verb_handler.go"
+---
+# `ValidateConfig`
+
+ValidateConfig validates the configuration map for the AI verb.
+
+Validation rules (ported from Python AIVerbHandler.validate\_config):
+
+- "prompt" key must be present and must be a map\[string]any.
+- "prompt" must contain exactly one of "text" or "pom" (mutually exclusive).
+- If "prompt.contexts" is present it must be a map\[string]any.
+- If "SWAIG" is present it must be a map\[string]any.
+
+Returns (true, nil) when the config is valid; (false, errors) when it is not.
+
+## Signature
+
+```go
+func (*AIVerbHandler) ValidateConfig(config map[string]any) (bool, []string)
+```
+
+## Parameters
+
+| Name     | Type             | Required | Default | Description |
+| -------- | ---------------- | -------- | ------- | ----------- |
+| `config` | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`(bool, []string)`
+
+## Source
+
+[`pkg/swml/ai_verb_handler.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/ai_verb_handler.go)
+
+Line 45.

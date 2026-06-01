@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/call/unhold"
+title: "unhold"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Call::unhold"
+  parent: "SignalWire\\Relay\\Call"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php"
+  visibility: "public"
+---
+# `unhold`
+
+## Signature
+
+```php
+public function unhold(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Call.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php)
+
+Line 223.

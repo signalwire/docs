@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/crud-resource/update-method__2"
+title: "update_method="
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::CrudResource.update_method="
+  parent: "SignalWire::REST::CrudResource"
+  module: "SignalWire.REST.CrudResource"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/http_client.rb"
+  visibility: "public"
+---
+# `update_method=`
+
+## Signature
+
+```ruby
+def update_method=(m)
+```
+
+## Parameters
+
+| Name | Type | Required | Default | Description |
+| ---- | ---- | -------- | ------- | ----------- |
+| `m`  | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/http_client.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/http_client.rb)
+
+Line 133.

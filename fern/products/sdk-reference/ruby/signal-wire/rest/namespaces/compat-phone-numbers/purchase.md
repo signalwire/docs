@@ -1,0 +1,34 @@
+---
+slug: "/reference/ruby/signal-wire/rest/namespaces/compat-phone-numbers/purchase"
+title: "purchase"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::REST::Namespaces::CompatPhoneNumbers#purchase"
+  parent: "SignalWire::REST::Namespaces::CompatPhoneNumbers"
+  module: "SignalWire.REST.Namespaces.CompatPhoneNumbers"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/compat.rb"
+  visibility: "public"
+---
+# `purchase`
+
+## Signature
+
+```ruby
+def purchase(**kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/signalwire/rest/namespaces/compat.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/rest/namespaces/compat.rb)
+
+Line 133.

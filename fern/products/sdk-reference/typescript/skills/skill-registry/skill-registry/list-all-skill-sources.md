@@ -1,0 +1,38 @@
+---
+slug: "/reference/typescript/skills/skill-registry/skill-registry/list-all-skill-sources"
+title: "listAllSkillSources"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.SkillRegistry.SkillRegistry.listAllSkillSources"
+  parent: "skills.SkillRegistry.SkillRegistry"
+  module: "skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillRegistry.ts"
+---
+# `listAllSkillSources`
+
+Group registered skill names by source category. Matches Python's
+`list_all_skill_sources` (`skills/registry.py:436-478`).
+
+Current TS implementation treats every registered skill as "registered"
+(the only category that fits — filesystem-based discovery is optional
+and entry-points don't apply to Node the way they do to Python).
+
+## Signature
+
+```typescript
+listAllSkillSources(): Record<string, string[]>
+```
+
+## Returns
+
+`Record<string, string[]>` — Record mapping source categories to arrays of skill names.
+
+## Source
+
+[`src/skills/SkillRegistry.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillRegistry.ts)
+
+Line 391.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/swaig/function-result/function-result/remove-global-data"
+title: "remove_global_data"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWAIG::FunctionResult::remove_global_data"
+  parent: "SignalWire::SWAIG::FunctionResult"
+  module: "SignalWire.SWAIG.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm"
+  visibility: "public"
+---
+# `remove_global_data`
+
+## Signature
+
+```perl
+sub remove_global_data($keys)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `keys` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/SWAIG/FunctionResult.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWAIG/FunctionResult.pm)
+
+Line 150.

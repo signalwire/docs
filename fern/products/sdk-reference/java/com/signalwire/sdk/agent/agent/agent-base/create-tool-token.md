@@ -1,0 +1,48 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/create-tool-token"
+title: "createToolToken"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.createToolToken"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `createToolToken`
+
+Mint a per-call SWAIG-function token via the agent's SessionManager.
+
+<p>Python parity: `state_mixin.StateMixin._create_tool_token`.
+ Returns an empty string when the underlying SessionManager throws
+ (Python catches all exceptions and returns "" on error).
+
+## Signature
+
+```java
+public java.lang.String createToolToken(
+    java.lang.String toolName,
+    java.lang.String callId
+)
+```
+
+## Parameters
+
+| Name       | Type               | Required | Default | Description |
+| ---------- | ------------------ | -------- | ------- | ----------- |
+| `toolName` | `java.lang.String` | yes      | —       | —           |
+| `callId`   | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`java.lang.String`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 631.

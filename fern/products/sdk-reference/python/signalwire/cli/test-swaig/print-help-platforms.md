@@ -1,0 +1,29 @@
+---
+slug: "/reference/python/signalwire/cli/test-swaig/print-help-platforms"
+title: "print_help_platforms"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.test_swaig.print_help_platforms"
+  parent: "signalwire.cli.test_swaig"
+  module: "signalwire.cli.test_swaig"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/test_swaig.py"
+---
+# `print_help_platforms`
+
+Print detailed help for serverless platform options
+
+## Signature
+
+```python
+print_help_platforms()
+```
+
+## Source
+
+[`/src/signalwire/signalwire/cli/test_swaig.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/test_swaig.py)
+
+Line 51.

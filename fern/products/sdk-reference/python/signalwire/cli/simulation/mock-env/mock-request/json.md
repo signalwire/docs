@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/cli/simulation/mock-env/mock-request/json"
+title: "json"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.cli.simulation.mock_env.MockRequest.json"
+  parent: "signalwire.cli.simulation.mock_env.MockRequest"
+  module: "signalwire.cli.simulation.mock_env"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/mock_env.py"
+---
+# `json`
+
+Return the JSON body
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async json() -> Dict[str, Any]
+```
+
+## Returns
+
+`Dict[str, Any]`
+
+## Source
+
+[`/src/signalwire/signalwire/cli/simulation/mock_env.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/simulation/mock_env.py)
+
+Line 115.

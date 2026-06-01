@@ -1,0 +1,38 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-manager/loaded"
+title: "loaded?"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillManager#loaded?"
+  parent: "SignalWire::Skills::SkillManager"
+  module: "SignalWire.Skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_manager.rb"
+  visibility: "public"
+---
+# `loaded?`
+
+## Signature
+
+```ruby
+def loaded?(key)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `key` | —    | yes      | —       | —           |
+
+## Returns
+
+`Boolean`
+
+## Source
+
+[`lib/signalwire/skills/skill_manager.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_manager.rb)
+
+Line 74.

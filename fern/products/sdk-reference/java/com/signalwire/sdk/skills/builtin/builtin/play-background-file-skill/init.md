@@ -1,0 +1,28 @@
+---
+slug: "/reference/java/com/signalwire/sdk/skills/builtin/builtin/play-background-file-skill/init"
+title: "<init>"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.skills.builtin.PlayBackgroundFileSkill.<init>"
+  parent: "com.signalwire.sdk.skills.builtin.PlayBackgroundFileSkill"
+  module: "com.signalwire.sdk.skills.builtin.PlayBackgroundFileSkill"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/builtin/PlayBackgroundFileSkill.java"
+  visibility: "public"
+---
+# `<init>`
+
+## Signature
+
+```java
+public void <init>()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/skills/builtin/PlayBackgroundFileSkill.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/skills/builtin/PlayBackgroundFileSkill.java)
+
+Line 10.

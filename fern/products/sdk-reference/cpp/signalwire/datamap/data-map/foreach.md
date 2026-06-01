@@ -1,0 +1,40 @@
+---
+slug: "/reference/cpp/signalwire/datamap/data-map/foreach"
+title: "foreach"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::datamap::DataMap::foreach"
+  parent: "signalwire::datamap::DataMap"
+  module: "signalwire.datamap"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/datamap/datamap.hpp"
+  visibility: "public"
+---
+# `foreach`
+
+Set foreach configuration for the last webhook.
+
+## Signature
+
+```cpp
+DataMap & foreach(const json & foreach_config)
+```
+
+## Parameters
+
+| Name             | Type           | Required | Default | Description |
+| ---------------- | -------------- | -------- | ------- | ----------- |
+| `foreach_config` | `const json &` | yes      | —       | —           |
+
+## Returns
+
+`DataMap &`
+
+## Source
+
+[`include/signalwire/datamap/datamap.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/datamap/datamap.hpp)
+
+Line 87.

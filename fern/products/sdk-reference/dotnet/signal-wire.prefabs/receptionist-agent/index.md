@@ -1,0 +1,34 @@
+---
+slug: "/reference/dotnet/signal-wire.prefabs/receptionist-agent"
+title: "ReceptionistAgent"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.Prefabs.ReceptionistAgent"
+  parent: "SignalWire.Prefabs"
+  module: "SignalWire.Prefabs"
+  visibility: "public"
+---
+# `ReceptionistAgent`
+
+Prefab agent that greets callers and transfers them to departments.
+Registers <code>collect\_caller\_info</code> and <code>transfer\_call</code> tools.
+
+## Signature
+
+```dotnet
+public class ReceptionistAgent : AgentBase
+```
+
+## Inheritance
+
+**Extends:** [SignalWire.SWML.Service](/reference/dotnet/signal-wire.swml/service)
+
+## Methods
+
+- [`GetDepartments()`](/reference/dotnet/signal-wire.prefabs/receptionist-agent/get-departments)
+- [`GetGreeting()`](/reference/dotnet/signal-wire.prefabs/receptionist-agent/get-greeting)
+- [`ReceptionistAgent(string, List<Dictionary<string, object>>, Dictionary<string, object>?)`](/reference/dotnet/signal-wire.prefabs/receptionist-agent/receptionist-agent-string-list-dictionary-string-object-dictionary-string-object)

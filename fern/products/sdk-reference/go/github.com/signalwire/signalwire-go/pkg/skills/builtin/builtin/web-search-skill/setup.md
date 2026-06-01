@@ -1,0 +1,31 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin/web-search-skill/setup"
+title: "Setup"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills/builtin.WebSearchSkill.Setup"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills/builtin.WebSearchSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/web_search.go"
+---
+# `Setup`
+
+## Signature
+
+```go
+func (*WebSearchSkill) Setup() bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`pkg/skills/builtin/web_search.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/web_search.go)
+
+Line 73.

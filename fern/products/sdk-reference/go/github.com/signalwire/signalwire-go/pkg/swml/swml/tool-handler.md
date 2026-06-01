@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/tool-handler"
+title: "ToolHandler"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.ToolHandler"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `ToolHandler`
+
+ToolHandler is the function signature for a registered SWAIG tool. Returns a result that will be JSON-encoded as the SWAIG response.
+
+## Signature
+
+```go
+type ToolHandler alias
+```
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 23.

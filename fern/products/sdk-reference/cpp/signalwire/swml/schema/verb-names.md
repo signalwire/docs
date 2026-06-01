@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/swml/schema/verb-names"
+title: "verb_names"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swml::Schema::verb_names"
+  parent: "signalwire::swml::Schema"
+  module: "signalwire.swml"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/schema.hpp"
+  visibility: "public"
+---
+# `verb_names`
+
+Get all verb names.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+std::vector< std::string > verb_names() const
+```
+
+## Returns
+
+`std::vector< std::string >`
+
+## Source
+
+[`include/signalwire/swml/schema.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/schema.hpp)
+
+Line 42.

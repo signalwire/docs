@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/with-record-control-id"
+title: "WithRecordControlID"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.WithRecordControlID"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go"
+---
+# `WithRecordControlID`
+
+WithRecordControlID sets an explicit control\_id for the record action. Mirrors Python's record(control\_id=...).
+
+## Signature
+
+```go
+func WithRecordControlID(id string) RecordOption
+```
+
+## Parameters
+
+| Name | Type     | Required | Default | Description |
+| ---- | -------- | -------- | ------- | ----------- |
+| `id` | `string` | yes      | —       | —           |
+
+## Returns
+
+`RecordOption`
+
+## Source
+
+[`pkg/relay/options.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/options.go)
+
+Line 107.

@@ -1,0 +1,43 @@
+---
+slug: "/reference/ruby/signal-wire/agent-base/extract-sip-username"
+title: "extract_sip_username"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::AgentBase.extract_sip_username"
+  parent: "SignalWire::AgentBase"
+  module: "SignalWire.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb"
+  visibility: "public"
+---
+# `extract_sip_username`
+
+Extract a SIP username from a SIP URI string.
+
+Parses URIs of the form "sip:user@domain" and returns the user part.
+Handles optional "sip:" or "sips:" scheme prefixes.
+
+## Signature
+
+```ruby
+def extract_sip_username(sip_uri)
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description                             |
+| --------- | -------- | -------- | ------- | --------------------------------------- |
+| `sip_uri` | `String` | yes      | —       | a SIP URI, e.g. "sip:alice@example.com" |
+
+## Returns
+
+`String | nil` — the username, or nil if the URI cannot be parsed
+
+## Source
+
+[`lib/signalwire/agent/agent_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/agent/agent_base.rb)
+
+Line 1226.

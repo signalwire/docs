@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/runtime/lambda/lambda/lambda-response/get-status-code"
+title: "getStatusCode"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.runtime.lambda.LambdaResponse.getStatusCode"
+  parent: "com.signalwire.sdk.runtime.lambda.LambdaResponse"
+  module: "com.signalwire.sdk.runtime.lambda.LambdaResponse"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/lambda/LambdaResponse.java"
+  visibility: "public"
+---
+# `getStatusCode`
+
+## Signature
+
+```java
+public int getStatusCode()
+```
+
+## Returns
+
+`int` — HTTP status code.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/runtime/lambda/LambdaResponse.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/lambda/LambdaResponse.java)
+
+Line 42.

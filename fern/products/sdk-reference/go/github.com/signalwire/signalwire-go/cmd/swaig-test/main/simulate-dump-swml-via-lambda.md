@@ -1,0 +1,51 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/cmd/swaig-test/main/simulate-dump-swml-via-lambda"
+title: "SimulateDumpSWMLViaLambda"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/cmd/swaig-test.SimulateDumpSWMLViaLambda"
+  parent: "github.com/signalwire/signalwire-go/cmd/swaig-test"
+  module: "github.com.signalwire.signalwire-go.cmd.swaig-test"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/cmd/swaig-test/simulate.go"
+---
+# `SimulateDumpSWMLViaLambda`
+
+SimulateDumpSWMLViaLambda activates the Lambda environment, calls the factory to construct the agent (so any env-captured state reflects the simulated Lambda environment), issues a POST to the agent's route through the Lambda adapter, and returns the response body (the SWML document JSON). It's the library-side equivalent of `swaig-test --simulate-serverless lambda --dump-swml`, usable from in-process tests.
+
+The factory-based API is load-bearing: constructing the agent BEFORE activation would let SWML\_PROXY\_URL\_BASE from the outer shell leak into the agent's own proxyURLBase field, and the rendered webhook URLs would point at the outer proxy instead of the simulated Lambda function. Use SimulateDumpSWMLViaLambdaHandler only when you've already verified the handler doesn't capture env state — it skips the activation-ordering guarantee.
+
+basicAuth, if non-empty in both fields, adds a basic-auth header to the synthetic event so authed agents don't 401.
+
+## Signature
+
+```go
+func SimulateDumpSWMLViaLambda(
+	factory HandlerFactory,
+	agentRoute string,
+	opts SimulateLambdaOptions,
+	basicAuth BasicAuth
+) ([]byte, error)
+```
+
+## Parameters
+
+| Name         | Type                    | Required | Default | Description |
+| ------------ | ----------------------- | -------- | ------- | ----------- |
+| `factory`    | `HandlerFactory`        | yes      | —       | —           |
+| `agentRoute` | `string`                | yes      | —       | —           |
+| `opts`       | `SimulateLambdaOptions` | yes      | —       | —           |
+| `basicAuth`  | `BasicAuth`             | yes      | —       | —           |
+
+## Returns
+
+`([]byte, error)`
+
+## Source
+
+[`cmd/swaig-test/simulate.go`](https://github.com/signalwire/signalwire-go/blob/main/cmd/swaig-test/simulate.go)
+
+Line 396.

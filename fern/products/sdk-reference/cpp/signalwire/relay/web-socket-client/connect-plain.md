@@ -1,0 +1,41 @@
+---
+slug: "/reference/cpp/signalwire/relay/web-socket-client/connect-plain"
+title: "connect_plain"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::WebSocketClient::connect_plain"
+  parent: "signalwire::relay::WebSocketClient"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/websocket.hpp"
+  visibility: "public"
+---
+# `connect_plain`
+
+Connect to ws://host:port/ without TLS (plain TCP). Used by audit fixtures and local dev servers that don't speak TLS. Production always uses TLS via the connect() overload above.
+
+## Signature
+
+```cpp
+bool connect_plain(const std::string & host, int port)
+```
+
+## Parameters
+
+| Name   | Type                  | Required | Default | Description |
+| ------ | --------------------- | -------- | ------- | ----------- |
+| `host` | `const std::string &` | yes      | —       | —           |
+| `port` | `int`                 | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`include/signalwire/relay/websocket.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/websocket.hpp)
+
+Line 36.

@@ -1,0 +1,41 @@
+---
+slug: "/reference/typescript/skills/builtin/custom-skills/custom-skills-skill/get-instance-key"
+title: "getInstanceKey"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "skills.builtin.custom_skills.CustomSkillsSkill.getInstanceKey"
+  parent: "skills.builtin.custom_skills.CustomSkillsSkill"
+  module: "skills.builtin.custom_skills"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts"
+---
+# `getInstanceKey`
+
+Get the instance key used for deduplication in the SkillManager.
+
+For single-instance skills (`SUPPORTS_MULTIPLE_INSTANCES = false`), returns
+the skill name. For multi-instance skills, returns `${skillName}_${toolName}`
+using the `tool_name` config (falls back to the skill name).
+
+Matches Python's `SkillBase.get_instance_key()` default (`skill_base.py:141-146`).
+Multi-instance subclasses only need to override when their key derivation
+depends on config beyond `tool_name`.
+
+## Signature
+
+```typescript
+getInstanceKey(): string
+```
+
+## Returns
+
+`string` — A unique key identifying this skill instance.
+
+## Source
+
+[`src/skills/SkillBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/skills/SkillBase.ts)
+
+Line 427.

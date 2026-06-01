@@ -1,0 +1,34 @@
+---
+slug: "/reference/rust/signalwire/skills/skill-base/skill-base/required-env-vars"
+title: "required_env_vars"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::skill_base::SkillBase::required_env_vars"
+  parent: "signalwire::skills::skill_base::SkillBase"
+  module: "skills.skill_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs"
+  visibility: "public"
+---
+# `required_env_vars`
+
+Environment variables that must be set before `setup` is called.
+
+## Signature
+
+```rust
+fn required_env_vars(&self) -> ?<?>
+```
+
+## Returns
+
+`?<?>`
+
+## Source
+
+[`src/skills/skill_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs)
+
+Line 22.

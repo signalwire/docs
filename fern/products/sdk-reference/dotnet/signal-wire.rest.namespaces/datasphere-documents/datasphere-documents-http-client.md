@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/datasphere-documents/datasphere-documents-http-client"
+title: "DatasphereDocuments(HttpClient)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.DatasphereDocuments.DatasphereDocuments(SignalWire.REST.HttpClient)"
+  parent: "SignalWire.REST.Namespaces.DatasphereDocuments"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `DatasphereDocuments(HttpClient)`
+
+## Signature
+
+```dotnet
+public DatasphereDocuments(HttpClient client)
+```
+
+## Parameters
+
+| Name     | Type                         | Required | Default | Description |
+| -------- | ---------------------------- | -------- | ------- | ----------- |
+| `client` | `SignalWire.REST.HttpClient` | yes      | —       | —           |

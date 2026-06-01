@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/relay/call/on-event"
+title: "on_event"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Call::on_event"
+  parent: "signalwire::relay::Call"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp"
+  visibility: "public"
+---
+# `on_event`
+
+## Signature
+
+```cpp
+void on_event(CallEventHandler handler)
+```
+
+## Parameters
+
+| Name      | Type               | Required | Default | Description |
+| --------- | ------------------ | -------- | ------- | ----------- |
+| `handler` | `CallEventHandler` | yes      | —       | —           |
+
+## Source
+
+[`include/signalwire/relay/call.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp)
+
+Line 96.

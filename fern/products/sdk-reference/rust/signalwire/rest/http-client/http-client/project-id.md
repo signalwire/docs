@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/rest/http-client/http-client/project-id"
+title: "project_id"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::http_client::HttpClient::project_id"
+  parent: "signalwire::rest::http_client::HttpClient"
+  module: "rest.http_client"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/http_client.rs"
+  visibility: "public"
+---
+# `project_id`
+
+## Signature
+
+```rust
+fn project_id(&self) -> &str
+```
+
+## Returns
+
+`&str`
+
+## Source
+
+[`src/rest/http_client.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/http_client.rs)
+
+Line 208.

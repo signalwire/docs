@@ -1,0 +1,44 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/call/pay"
+title: "pay"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Call::pay"
+  parent: "SignalWire\\Relay\\Call"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php"
+  visibility: "public"
+---
+# `pay`
+
+## Signature
+
+```php
+public function pay(
+    string $paymentConnectorUrl,
+    array $opts = array (
+)
+): SignalWire\Relay\PayAction
+```
+
+## Parameters
+
+| Name                  | Type     | Required | Default     | Description |
+| --------------------- | -------- | -------- | ----------- | ----------- |
+| `paymentConnectorUrl` | `string` | yes      | —           | —           |
+| `opts`                | `array`  | no       | `array (
+)` | —           |
+
+## Returns
+
+`SignalWire\Relay\PayAction`
+
+## Source
+
+[`/src/src/SignalWire/Relay/Call.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Call.php)
+
+Line 521.

@@ -1,0 +1,42 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/relay-error"
+title: "RelayError"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.RelayError"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/error.go"
+---
+# `RelayError`
+
+RelayError is a typed error returned by the RELAY protocol client. It carries the numeric code and message from the server so callers can programmatically inspect failures via errors.As.
+
+The error format matches Python's RelayError.**str**: "RELAY error {code}: {message}".
+
+## Signature
+
+```go
+type RelayError struct
+```
+
+## Properties
+
+| Name      | Type             | Required | Default | Description |
+| --------- | ---------------- | -------- | ------- | ----------- |
+| `Code`    | `Code int`       | yes      | —       | —           |
+| `Message` | `Message string` | yes      | —       | —           |
+
+## Methods
+
+- [`Error`](/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/relay-error/error) — Error implements the built-in error interface. Format matches Python's RelayError.**str**: "RELAY error {code}: {message}".
+
+## Source
+
+[`pkg/relay/error.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/error.go)
+
+Line 11.

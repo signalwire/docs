@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/swml-transfer-skill/register-tools"
+title: "register_tools"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::SwmlTransferSkill#register_tools"
+  parent: "SignalWire::Skills::Builtin::SwmlTransferSkill"
+  module: "SignalWire.Skills.Builtin.SwmlTransferSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/swml_transfer.rb"
+  visibility: "public"
+---
+# `register_tools`
+
+## Signature
+
+```ruby
+def register_tools
+```
+
+## Source
+
+[`lib/signalwire/skills/builtin/swml_transfer.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/swml_transfer.rb)
+
+Line 40.

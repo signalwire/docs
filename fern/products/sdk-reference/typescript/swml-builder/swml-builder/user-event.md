@@ -1,0 +1,40 @@
+---
+slug: "/reference/typescript/swml-builder/swml-builder/user-event"
+title: "user_event"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SwmlBuilder.SwmlBuilder.user_event"
+  parent: "SwmlBuilder.SwmlBuilder"
+  module: "SwmlBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SwmlVerbMethods.generated.ts"
+---
+# `user_event`
+
+Allows the user to set and send events to the connected client on the call. This is useful for triggering actions on the client side. Commonly used with the [browser-sdk](https://developer.signalwire.com/sdks/reference/browser-sdk/SignalWire%20Client/). The event object can be any valid JSON object. Any key-value pair in the object is sent to the client as an event type called `user_event`.
+
+## Signature
+
+```typescript
+user_event(config: { ...1 fields }): this
+```
+
+## Parameters
+
+| Name           | Type                                 | Required | Default | Description |
+| -------------- | ------------------------------------ | -------- | ------- | ----------- |
+| `config`       | `{ event: Record<string, unknown> }` | yes      | —       | —           |
+| `config.event` | `Record<string, unknown>`            | yes      | —       | —           |
+
+## Returns
+
+`this`
+
+## Source
+
+[`src/SwmlVerbMethods.generated.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SwmlVerbMethods.generated.ts)
+
+Line 230.

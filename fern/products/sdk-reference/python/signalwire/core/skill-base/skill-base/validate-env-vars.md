@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/skill-base/skill-base/validate-env-vars"
+title: "validate_env_vars"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.skill_base.SkillBase.validate_env_vars"
+  parent: "signalwire.core.skill_base.SkillBase"
+  module: "signalwire.core.skill_base"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/skill_base.py"
+---
+# `validate_env_vars`
+
+Check if all required environment variables are set
+
+## Signature
+
+```python
+validate_env_vars() -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/signalwire/signalwire/core/skill_base.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/skill_base.py)
+
+Line 103.

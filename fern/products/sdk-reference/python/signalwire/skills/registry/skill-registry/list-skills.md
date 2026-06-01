@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/registry/skill-registry/list-skills"
+title: "list_skills"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.registry.SkillRegistry.list_skills"
+  parent: "signalwire.skills.registry.SkillRegistry"
+  module: "signalwire.skills.registry"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/registry.py"
+---
+# `list_skills`
+
+List all available skills by scanning directories (only when explicitly requested)
+
+## Signature
+
+```python
+list_skills() -> List[Dict[str, str]]
+```
+
+## Returns
+
+`List[Dict[str, str]]`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/registry.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/registry.py)
+
+Line 205.

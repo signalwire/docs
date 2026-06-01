@@ -1,0 +1,42 @@
+---
+slug: "/reference/ruby/signal-wire/swaig/function-result/wait-for-user"
+title: "wait_for_user"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Swaig::FunctionResult#wait_for_user"
+  parent: "SignalWire::Swaig::FunctionResult"
+  module: "SignalWire.Swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/function_result.rb"
+  visibility: "public"
+---
+# `wait_for_user`
+
+Control how the agent waits for user input.
+
+## Signature
+
+```ruby
+def wait_for_user(enabled: nil, timeout: nil, answer_first: false)
+```
+
+## Parameters
+
+| Name            | Type | Required | Default | Description |
+| --------------- | ---- | -------- | ------- | ----------- |
+| `enabled:`      | —    | no       | `nil`   | —           |
+| `timeout:`      | —    | no       | `nil`   | —           |
+| `answer_first:` | —    | no       | `false` | —           |
+
+## Returns
+
+`self`
+
+## Source
+
+[`lib/signalwire/swaig/function_result.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swaig/function_result.rb)
+
+Line 142.

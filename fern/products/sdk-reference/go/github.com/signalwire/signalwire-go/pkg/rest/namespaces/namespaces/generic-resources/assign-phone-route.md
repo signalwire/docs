@@ -1,0 +1,45 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/generic-resources/assign-phone-route"
+title: "AssignPhoneRoute"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.GenericResources.AssignPhoneRoute"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.GenericResources"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/fabric.go"
+  deprecated: true
+---
+# `AssignPhoneRoute`
+
+> **Warning:**
+>
+> **Deprecated.** This endpoint (POST /api/fabric/resources/{id}/phone\_routes) accepts only a narrow set of legacy resource types as the attach target. It does NOT work for swml\_webhook / cxml\_webhook / ai\_agent bindings — those are configured on the phone number and the Fabric resource is auto-materialized. Use phone\_numbers.SetSwmlWebhook, SetCxmlWebhook, SetAiAgent, etc. instead. See porting-sdk's phone-binding.md.
+
+AssignPhoneRoute assigns a phone route to a resource.
+
+## Signature
+
+```go
+func (*GenericResources) AssignPhoneRoute(id string, data map[string]any) (map[string]any, error)
+```
+
+## Parameters
+
+| Name   | Type             | Required | Default | Description |
+| ------ | ---------------- | -------- | ------- | ----------- |
+| `id`   | `string`         | yes      | —       | —           |
+| `data` | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/fabric.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/fabric.go)
+
+Line 245.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/http-client/get-auth-header"
+title: "getAuthHeader"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\HttpClient::getAuthHeader"
+  parent: "SignalWire\\REST\\HttpClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/HttpClient.php"
+  visibility: "public"
+---
+# `getAuthHeader`
+
+## Signature
+
+```php
+public function getAuthHeader(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/REST/HttpClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/HttpClient.php)
+
+Line 49.

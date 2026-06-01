@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/rest/paginated-iterator/http"
+title: "http"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::rest::PaginatedIterator::http"
+  parent: "signalwire::rest::PaginatedIterator"
+  module: "signalwire.rest"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/http_client.hpp"
+  visibility: "public"
+---
+# `http`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+const HttpClient & http() const
+```
+
+## Returns
+
+`const HttpClient &`
+
+## Source
+
+[`include/signalwire/rest/http_client.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/rest/http_client.hpp)
+
+Line 115.

@@ -1,0 +1,44 @@
+---
+slug: "/reference/typescript/rest/namespaces/registry/registry-brands/create-campaign"
+title: "createCampaign"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.registry.RegistryBrands.createCampaign"
+  parent: "rest.namespaces.registry.RegistryBrands"
+  module: "rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts"
+---
+# `createCampaign`
+
+Register a new campaign under a brand.
+
+## Signature
+
+```typescript
+createCampaign(brandId: string, body: any): Promise<any>
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description                                                      |
+| --------- | -------- | -------- | ------- | ---------------------------------------------------------------- |
+| `brandId` | `string` | yes      | —       | Unique identifier of the brand.                                  |
+| `body`    | `any`    | yes      | —       | Campaign registration payload (use case, sample messages, etc.). |
+
+## Returns
+
+`Promise<any>` — The newly-registered campaign record.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/registry.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/registry.ts)
+
+Line 70.

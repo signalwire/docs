@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/schema-utils/schema-utils/get-verb-required-properties"
+title: "getVerbRequiredProperties"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "SchemaUtils.SchemaUtils.getVerbRequiredProperties"
+  parent: "SchemaUtils.SchemaUtils"
+  module: "SchemaUtils"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/SchemaUtils.ts"
+---
+# `getVerbRequiredProperties`
+
+Get the required properties for a verb's inner config.
+
+## Signature
+
+```typescript
+getVerbRequiredProperties(verbName: string): string[]
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description    |
+| ---------- | -------- | -------- | ------- | -------------- |
+| `verbName` | `string` | yes      | —       | The verb name. |
+
+## Returns
+
+`string[]` — Array of required property names.
+
+## Source
+
+[`src/SchemaUtils.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/SchemaUtils.ts)
+
+Line 147.

@@ -1,0 +1,49 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom"
+title: "pom"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/pom"
+  module: "github.com.signalwire.signalwire-go.pkg.pom"
+---
+# `pom`
+
+Package pom provides a typed Prompt Object Model — a structured tree of sections that can be rendered to Markdown, XML, JSON, or YAML. The rendered output matches the Python reference at signalwire/signalwire/pom/pom.py byte-for-byte for the canonical scenarios covered by the cross-port parity tests in tests/unit/pom/test\_pom\_render\_parity.py.
+
+Two types make up the API:
+
+- Section: one node in the tree (title, body, bullets, subsections, numbered, numberedBullets).
+- PromptObjectModel: the root container that holds the top-level sections and provides JSON / YAML round-trip helpers plus the Markdown / XML renderers.
+
+Both types are exported so callers can build a POM imperatively (NewPromptObjectModel + AddSection + AddSubsection) or by parsing a JSON/YAML document (FromJSON / FromYAML). The rendered output is the canonical wire format; user-facing helpers like AgentBase.Pom() return a \*PromptObjectModel value to keep mutations off the agent's internal state.
+
+## Signature
+
+```go
+package pom
+```
+
+## Functions
+
+- [`FromJSON`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/from-json) — FromJSON parses a JSON string (an array of section maps) and returns a populated \*PromptObjectModel. Subsections are validated to require a title; any section without body/bullets/subsections is rejected.
+- [`FromList`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/from-list) — FromList builds a POM from a pre-parsed \[]map\[string]any (callers can use this when they already have the dict form, e.g. from a database row or another config source).
+- [`FromYAML`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/from-yaml) — FromYAML parses a YAML string (an array of section maps) and returns a populated \*PromptObjectModel.
+- [`NewPromptObjectModel`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/new-prompt-object-model) — NewPromptObjectModel returns an empty POM ready for AddSection calls.
+- [`NewSection`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/new-section) — NewSection returns a new Section with the supplied title (which may be empty to indicate untitled). Body, bullets, and subsections start empty; populate them via AddBody / AddBullets / AddSubsection.
+- [`WithBody`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/with-body) — WithBody sets the section body.
+- [`WithBullets`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/with-bullets) — WithBullets sets the section bullets (replaces, not appends).
+- [`WithNumbered`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/with-numbered) — WithNumbered marks the section as numbered (or explicitly un-numbered).
+- [`WithNumberedBullets`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/with-numbered-bullets) — WithNumberedBullets switches bullet rendering to numbered form.
+
+## Type Aliases
+
+- [`SectionOption`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/section-option) — SectionOption configures a Section at construction (used by AddSubsection and PromptObjectModel.AddSection).
+
+## Classes
+
+- [`PromptObjectModel`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/prompt-object-model) — PromptObjectModel is the root container — a list of top-level Sections plus serialization / rendering helpers. Use NewPromptObjectModel() to construct one, or FromJSON / FromYAML to parse one.
+- [`Section`](/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/section) — Section is one node in the POM tree.

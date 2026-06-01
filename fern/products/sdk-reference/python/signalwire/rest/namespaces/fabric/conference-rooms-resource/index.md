@@ -1,0 +1,37 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/fabric/conference-rooms-resource"
+title: "ConferenceRoomsResource"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.fabric.ConferenceRoomsResource"
+  parent: "signalwire.rest.namespaces.fabric"
+  module: "signalwire.rest.namespaces.fabric"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/fabric.py"
+---
+# `ConferenceRoomsResource`
+
+Conference rooms — uses singular 'conference\_room' for sub-resource paths.
+
+## Signature
+
+```python
+class ConferenceRoomsResource(FabricResourcePUT)
+```
+
+## Inheritance
+
+**Extends:** [FabricResourcePUT](/reference/python/signalwire/rest/namespaces/fabric/fabric-resource-put)
+
+## Methods
+
+- [`list_addresses`](/reference/python/signalwire/rest/namespaces/fabric/conference-rooms-resource/list-addresses)
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/fabric.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/fabric.py)
+
+Line 81.

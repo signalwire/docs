@@ -1,0 +1,42 @@
+---
+slug: "/reference/cpp/signalwire/swml/service/extract-introspect-payload"
+title: "extract_introspect_payload"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swml::Service::extract_introspect_payload"
+  parent: "signalwire::swml::Service"
+  module: "signalwire.swml"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp"
+  visibility: "public"
+---
+# `extract_introspect_payload`
+
+Pure-string extractor: slice the JSON payload between **SWAIG\_TOOLS\_BEGIN** and **SWAIG\_TOOLS\_END** sentinels in a captured stdout. Returns empty string if either marker is missing or the order is wrong. Static so the swaig-test CLI / tests can reuse it.
+
+**Modifiers:** `static`
+
+## Signature
+
+```cpp
+std::string extract_introspect_payload(const std::string & stdout_capture)
+```
+
+## Parameters
+
+| Name             | Type                  | Required | Default | Description |
+| ---------------- | --------------------- | -------- | ------- | ----------- |
+| `stdout_capture` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`std::string`
+
+## Source
+
+[`include/signalwire/swml/service.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp)
+
+Line 209.

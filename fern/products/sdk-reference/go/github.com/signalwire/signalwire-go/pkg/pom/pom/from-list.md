@@ -1,0 +1,41 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/pom/pom/from-list"
+title: "FromList"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/pom.FromList"
+  parent: "github.com/signalwire/signalwire-go/pkg/pom"
+  module: "github.com.signalwire.signalwire-go.pkg.pom"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/pom/pom.go"
+---
+# `FromList`
+
+FromList builds a POM from a pre-parsed \[]map\[string]any (callers can use this when they already have the dict form, e.g. from a database row or another config source).
+
+Python equivalent: PromptObjectModel.\_from\_dict (the internal helper shared by from\_json / from\_yaml).
+
+## Signature
+
+```go
+func FromList(data []map[string]any) (*PromptObjectModel, error)
+```
+
+## Parameters
+
+| Name   | Type               | Required | Default | Description |
+| ------ | ------------------ | -------- | ------- | ----------- |
+| `data` | `[]map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`(*PromptObjectModel, error)`
+
+## Source
+
+[`pkg/pom/pom.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/pom/pom.go)
+
+Line 603.

@@ -1,0 +1,41 @@
+---
+slug: "/reference/python/signalwire/prefabs/survey/survey-agent/validate-response"
+title: "validate_response"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.prefabs.survey.SurveyAgent.validate_response"
+  parent: "signalwire.prefabs.survey.SurveyAgent"
+  module: "signalwire.prefabs.survey"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/survey.py"
+---
+# `validate_response`
+
+Validate if a response meets the requirements for a specific question
+
+This function checks if a user's response is valid for the specified question
+based on the question type and constraints.
+
+**Decorators:** `@AgentBase.tool(Any, Any, Any)`
+
+## Signature
+
+```python
+validate_response(args, raw_data)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `args`     | —    | yes      | —       | —           |
+| `raw_data` | —    | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/prefabs/survey.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/prefabs/survey.py)
+
+Line 246.

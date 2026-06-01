@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/agent/prompt/manager/prompt-manager/define-contexts"
+title: "define_contexts"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.prompt.manager.PromptManager.define_contexts"
+  parent: "signalwire.core.agent.prompt.manager.PromptManager"
+  module: "signalwire.core.agent.prompt.manager"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py"
+---
+# `define_contexts`
+
+Define contexts for the agent.
+
+## Signature
+
+```python
+define_contexts(contexts: Union[Dict[str, Any], Any]) -> None
+```
+
+## Parameters
+
+| Name       | Type                         | Required | Default | Description                                    |
+| ---------- | ---------------------------- | -------- | ------- | ---------------------------------------------- |
+| `contexts` | `Union[Dict[str, Any], Any]` | yes      | —       | Context configuration (dict or ContextBuilder) |
+
+## Returns
+
+`None`
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/prompt/manager.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/prompt/manager.py)
+
+Line 73.

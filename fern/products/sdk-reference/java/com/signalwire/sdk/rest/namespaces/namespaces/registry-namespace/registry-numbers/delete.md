@@ -1,0 +1,40 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/registry-namespace/registry-numbers/delete"
+title: "delete"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.RegistryNamespace.RegistryNumbers.delete"
+  parent: "com.signalwire.sdk.rest.namespaces.RegistryNamespace.RegistryNumbers"
+  module: "com.signalwire.sdk.rest.namespaces.RegistryNamespace.RegistryNumbers"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/RegistryNamespace.java"
+  visibility: "public"
+---
+# `delete`
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> delete(
+    java.lang.String numberId
+)
+```
+
+## Parameters
+
+| Name       | Type               | Required | Default | Description |
+| ---------- | ------------------ | -------- | ------- | ----------- |
+| `numberId` | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/RegistryNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/RegistryNamespace.java)
+
+Line 169.

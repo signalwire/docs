@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/core/auth-handler/auth-handler/get-auth-info"
+title: "get_auth_info"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.auth_handler.AuthHandler.get_auth_info"
+  parent: "signalwire.core.auth_handler.AuthHandler"
+  module: "signalwire.core.auth_handler"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/auth_handler.py"
+---
+# `get_auth_info`
+
+Get information about configured auth methods
+
+## Signature
+
+```python
+get_auth_info() -> Dict[str, Any]
+```
+
+## Returns
+
+`Dict[str, Any]`
+
+## Source
+
+[`/src/signalwire/signalwire/core/auth_handler.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/auth_handler.py)
+
+Line 209.

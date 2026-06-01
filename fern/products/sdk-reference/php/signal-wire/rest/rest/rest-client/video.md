@@ -1,0 +1,36 @@
+---
+slug: "/reference/php/signal-wire/rest/rest/rest-client/video"
+title: "video"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\RestClient::video"
+  parent: "SignalWire\\REST\\RestClient"
+  module: "SignalWire.REST"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php"
+  visibility: "public"
+---
+# `video`
+
+Video API namespace (rooms, room\_sessions, room\_recordings,
+
+conferences, conference\_tokens, streams).
+
+## Signature
+
+```php
+public function video(): SignalWire\REST\Namespaces\Video
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\Video`
+
+## Source
+
+[`/src/src/SignalWire/REST/RestClient.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/RestClient.php)
+
+Line 177.

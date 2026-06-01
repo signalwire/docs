@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/agent/session"
+title: "Session"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.Agent.Session"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.Agent"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `Session`
+
+Session returns the AgentSession currently bound to this agent, or nil if the agent has not been started. Mirrors Python Agent.session property (lines 334–340).
+
+## Signature
+
+```go
+func (*Agent) Session() *AgentSession
+```
+
+## Returns
+
+`*AgentSession`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 249.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context-builder/get-context"
+title: "get_context"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.ContextBuilder.get_context"
+  parent: "signalwire.core.contexts.ContextBuilder"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `get_context`
+
+Get an existing context by name for inspection or modification.
+
+## Signature
+
+```python
+get_context(name: str) -> Optional[Context]
+```
+
+## Parameters
+
+| Name   | Type  | Required | Default | Description  |
+| ------ | ----- | -------- | ------- | ------------ |
+| `name` | `str` | yes      | —       | Context name |
+
+## Returns
+
+`Optional[Context]` — Context object if found, None otherwise
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 1203.

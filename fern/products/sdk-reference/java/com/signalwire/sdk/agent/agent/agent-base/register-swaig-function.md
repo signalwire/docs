@@ -1,0 +1,42 @@
+---
+slug: "/reference/java/com/signalwire/sdk/agent/agent/agent-base/register-swaig-function"
+title: "registerSwaigFunction"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.agent.AgentBase.registerSwaigFunction"
+  parent: "com.signalwire.sdk.agent.AgentBase"
+  module: "com.signalwire.sdk.agent.AgentBase"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java"
+  visibility: "public"
+---
+# `registerSwaigFunction`
+
+**Decorators:** `@Override`
+
+## Signature
+
+```java
+public com.signalwire.sdk.agent.AgentBase registerSwaigFunction(
+    java.util.Map<java.lang.String,java.lang.Object> swaigFunc
+)
+```
+
+## Parameters
+
+| Name        | Type                                               | Required | Default | Description |
+| ----------- | -------------------------------------------------- | -------- | ------- | ----------- |
+| `swaigFunc` | `java.util.Map<java.lang.String,java.lang.Object>` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.agent.AgentBase`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/agent/AgentBase.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/agent/AgentBase.java)
+
+Line 579.

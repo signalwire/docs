@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat-phone-numbers/get-available-base"
+title: "getAvailableBase"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\CompatPhoneNumbers::getAvailableBase"
+  parent: "SignalWire\\REST\\Namespaces\\CompatPhoneNumbers"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/CompatPhoneNumbers.php"
+  visibility: "public"
+---
+# `getAvailableBase`
+
+## Signature
+
+```php
+public function getAvailableBase(): string
+```
+
+## Returns
+
+`string`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/CompatPhoneNumbers.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/CompatPhoneNumbers.php)
+
+Line 44.

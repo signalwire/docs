@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/contexts/contexts/context-builder/has-contexts"
+title: "hasContexts"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Contexts\\ContextBuilder::hasContexts"
+  parent: "SignalWire\\Contexts\\ContextBuilder"
+  module: "SignalWire.Contexts"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php"
+  visibility: "public"
+---
+# `hasContexts`
+
+## Signature
+
+```php
+public function hasContexts(): bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/src/SignalWire/Contexts/ContextBuilder.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Contexts/ContextBuilder.php)
+
+Line 1154.

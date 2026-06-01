@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/agent/on-exit"
+title: "OnExit"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.Agent.OnExit"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.Agent"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `OnExit`
+
+OnExit registers a callback to be invoked when the agent exits a session. Mirrors Python Agent.on\_exit lifecycle hook (line 350). Returns the Agent for method chaining.
+
+## Signature
+
+```go
+func (*Agent) OnExit(fn func()) *Agent
+```
+
+## Parameters
+
+| Name | Type     | Required | Default | Description |
+| ---- | -------- | -------- | ------- | ----------- |
+| `fn` | `func()` | yes      | —       | —           |
+
+## Returns
+
+`*Agent`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 264.

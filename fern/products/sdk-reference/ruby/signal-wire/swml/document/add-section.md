@@ -1,0 +1,36 @@
+---
+slug: "/reference/ruby/signal-wire/swml/document/add-section"
+title: "add_section"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Document#add_section"
+  parent: "SignalWire::SWML::Document"
+  module: "SignalWire.SWML.Document"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/document.rb"
+  visibility: "public"
+---
+# `add_section`
+
+Add a new named section. Returns true if created, false if it already exists.
+
+## Signature
+
+```ruby
+def add_section(name)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `name` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/swml/document.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/document.rb)
+
+Line 24.

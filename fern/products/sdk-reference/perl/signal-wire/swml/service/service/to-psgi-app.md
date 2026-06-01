@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/swml/service/service/to-psgi-app"
+title: "to_psgi_app"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWML::Service::to_psgi_app"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Service.pm"
+  visibility: "public"
+---
+# `to_psgi_app`
+
+## Signature
+
+```perl
+sub to_psgi_app()
+```
+
+## Source
+
+[`lib/SignalWire/SWML/Service.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Service.pm)
+
+Line 299.

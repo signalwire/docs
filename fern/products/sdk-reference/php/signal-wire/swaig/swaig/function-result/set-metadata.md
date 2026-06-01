@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/swaig/swaig/function-result/set-metadata"
+title: "setMetadata"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWAIG\\FunctionResult::setMetadata"
+  parent: "SignalWire\\SWAIG\\FunctionResult"
+  module: "SignalWire.SWAIG"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWAIG/FunctionResult.php"
+  visibility: "public"
+---
+# `setMetadata`
+
+## Signature
+
+```php
+public function setMetadata(array $data): SignalWire\SWAIG\FunctionResult
+```
+
+## Parameters
+
+| Name   | Type    | Required | Default | Description |
+| ------ | ------- | -------- | ------- | ----------- |
+| `data` | `array` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire\SWAIG\FunctionResult`
+
+## Source
+
+[`/src/src/SignalWire/SWAIG/FunctionResult.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWAIG/FunctionResult.php)
+
+Line 155.

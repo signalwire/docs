@@ -1,0 +1,46 @@
+---
+slug: "/reference/cpp/signalwire/swaig/function-result/rpc-dial"
+title: "rpc_dial"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swaig::FunctionResult::rpc_dial"
+  parent: "signalwire::swaig::FunctionResult"
+  module: "signalwire.swaig"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swaig/function_result.hpp"
+  visibility: "public"
+---
+# `rpc_dial`
+
+## Signature
+
+```cpp
+FunctionResult & rpc_dial(
+    const std::string & to_number,
+    const std::string & from_number,
+    const std::string & dest_swml,
+    const std::string & device_type = "phone"
+)
+```
+
+## Parameters
+
+| Name          | Type                  | Required | Default   | Description |
+| ------------- | --------------------- | -------- | --------- | ----------- |
+| `to_number`   | `const std::string &` | yes      | —         | —           |
+| `from_number` | `const std::string &` | yes      | —         | —           |
+| `dest_swml`   | `const std::string &` | yes      | —         | —           |
+| `device_type` | `const std::string &` | no       | `"phone"` | —           |
+
+## Returns
+
+`FunctionResult &`
+
+## Source
+
+[`include/signalwire/swaig/function_result.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swaig/function_result.hpp)
+
+Line 142.

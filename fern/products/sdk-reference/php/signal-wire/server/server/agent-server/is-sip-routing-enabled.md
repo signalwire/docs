@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/server/server/agent-server/is-sip-routing-enabled"
+title: "isSipRoutingEnabled"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Server\\AgentServer::isSipRoutingEnabled"
+  parent: "SignalWire\\Server\\AgentServer"
+  module: "SignalWire.Server"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Server/AgentServer.php"
+  visibility: "public"
+---
+# `isSipRoutingEnabled`
+
+Check if SIP routing is enabled.
+
+## Signature
+
+```php
+public function isSipRoutingEnabled(): bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/src/SignalWire/Server/AgentServer.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Server/AgentServer.php)
+
+Line 196.

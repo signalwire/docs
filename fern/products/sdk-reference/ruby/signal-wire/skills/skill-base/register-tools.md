@@ -1,0 +1,31 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-base/register-tools"
+title: "register_tools"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillBase#register_tools"
+  parent: "SignalWire::Skills::SkillBase"
+  module: "SignalWire.Skills.SkillBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_base.rb"
+  visibility: "public"
+---
+# `register_tools`
+
+Return an Array of tool definition hashes. Each hash should have:
+:name, :description, :parameters, :handler (lambda/proc)
+
+## Signature
+
+```ruby
+def register_tools
+```
+
+## Source
+
+[`lib/signalwire/skills/skill_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_base.rb)
+
+Line 56.

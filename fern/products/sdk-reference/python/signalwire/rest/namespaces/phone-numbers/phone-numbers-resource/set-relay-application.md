@@ -1,0 +1,41 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/phone-numbers/phone-numbers-resource/set-relay-application"
+title: "set_relay_application"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource.set_relay_application"
+  parent: "signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource"
+  module: "signalwire.rest.namespaces.phone_numbers"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/phone_numbers.py"
+---
+# `set_relay_application`
+
+Route inbound calls to a named RELAY application.
+
+## Signature
+
+```python
+set_relay_application(resource_id: str, name: str, **extra = {}) -> dict
+```
+
+## Parameters
+
+| Name          | Type  | Required | Default | Description |
+| ------------- | ----- | -------- | ------- | ----------- |
+| `resource_id` | `str` | yes      | —       | —           |
+| `name`        | `str` | yes      | —       | —           |
+| `...extra`    | —     | no       | `{}`    | —           |
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/phone_numbers.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/phone_numbers.py)
+
+Line 125.

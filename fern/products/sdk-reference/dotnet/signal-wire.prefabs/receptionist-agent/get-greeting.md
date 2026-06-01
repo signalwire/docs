@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.prefabs/receptionist-agent/get-greeting"
+title: "GetGreeting()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Prefabs.ReceptionistAgent.GetGreeting()"
+  parent: "SignalWire.Prefabs.ReceptionistAgent"
+  module: "SignalWire.Prefabs"
+  visibility: "public"
+---
+# `GetGreeting()`
+
+## Signature
+
+```dotnet
+public string GetGreeting()
+```
+
+## Returns
+
+`string`

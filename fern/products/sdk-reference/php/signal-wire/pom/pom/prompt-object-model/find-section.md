@@ -1,0 +1,40 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/prompt-object-model/find-section"
+title: "findSection"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\PromptObjectModel::findSection"
+  parent: "SignalWire\\POM\\PromptObjectModel"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php"
+  visibility: "public"
+---
+# `findSection`
+
+Recursively search for a section by title.
+
+## Signature
+
+```php
+public function findSection(string $title): ?SignalWire\POM\Section
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `title` | `string` | yes      | —       | —           |
+
+## Returns
+
+`?SignalWire\POM\Section`
+
+## Source
+
+[`/src/src/SignalWire/POM/PromptObjectModel.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php)
+
+Line 201.

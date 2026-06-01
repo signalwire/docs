@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/skills/datetime/skill"
+title: "skill"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.skills.datetime.skill"
+  parent: "signalwire.skills.datetime"
+  module: "signalwire.skills.datetime"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/datetime/skill.py"
+---
+# `skill`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module skill
+```
+
+## Classes
+
+- [`DateTimeSkill`](/reference/python/signalwire/skills/datetime/skill/date-time-skill) — Provides current date, time, and timezone information
+
+## Source
+
+[`/src/signalwire/signalwire/skills/datetime/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/datetime/skill.py)

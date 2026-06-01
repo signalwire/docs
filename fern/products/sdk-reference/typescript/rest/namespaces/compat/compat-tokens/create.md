@@ -1,0 +1,43 @@
+---
+slug: "/reference/typescript/rest/namespaces/compat/compat-tokens/create"
+title: "create"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.compat.CompatTokens.create"
+  parent: "rest.namespaces.compat.CompatTokens"
+  module: "rest.namespaces.compat"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/compat.ts"
+---
+# `create`
+
+Create a new Compat API token.
+
+## Signature
+
+```typescript
+create(body: any): Promise<any>
+```
+
+## Parameters
+
+| Name   | Type  | Required | Default | Description                                  |
+| ------ | ----- | -------- | ------- | -------------------------------------------- |
+| `body` | `any` | yes      | —       | Token payload (friendly name, scopes, etc.). |
+
+## Returns
+
+`Promise<any>` — The newly-created token record, including the secret value.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/compat.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/compat.ts)
+
+Line 725.

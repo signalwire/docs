@@ -1,0 +1,48 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/serve"
+title: "serve"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#serve"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `serve`
+
+Start serving (blocking).
+
+Python parity:
+`serve(host=None, port=None, ssl_cert=None, ssl_key=None,
+ssl_enabled=None, domain=None)`. When SSL parameters are
+supplied the server is started with HTTPS bindings; otherwise
+plain HTTP. `host`/`port` overrides default to the
+constructor-provided values.
+
+## Signature
+
+```ruby
+def serve(host: nil, port: nil, ssl_cert: nil, ssl_key: nil, ssl_enabled: nil, domain: nil)
+```
+
+## Parameters
+
+| Name           | Type | Required | Default | Description |
+| -------------- | ---- | -------- | ------- | ----------- |
+| `host:`        | —    | no       | `nil`   | —           |
+| `port:`        | —    | no       | `nil`   | —           |
+| `ssl_cert:`    | —    | no       | `nil`   | —           |
+| `ssl_key:`     | —    | no       | `nil`   | —           |
+| `ssl_enabled:` | —    | no       | `nil`   | —           |
+| `domain:`      | —    | no       | `nil`   | —           |
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 390.

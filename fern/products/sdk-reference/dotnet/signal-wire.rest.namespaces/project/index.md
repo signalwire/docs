@@ -1,0 +1,40 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/project"
+title: "Project"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.Project"
+  parent: "SignalWire.REST.Namespaces"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `Project`
+
+Project namespace — exposes ProjectTokens (PATCH update).
+
+Mirrors Python `signalwire.rest.namespaces.project.ProjectNamespace`.
+Extends CrudResource for the legacy `client.Project.BasePath` test.
+
+## Signature
+
+```dotnet
+public class Project : CrudResource
+```
+
+## Inheritance
+
+**Extends:** [SignalWire.REST.CrudResource](/reference/dotnet/signal-wire.rest/crud-resource)
+
+## Properties
+
+| Name     | Type                                   | Required | Default | Description |
+| -------- | -------------------------------------- | -------- | ------- | ----------- |
+| `Tokens` | `public ProjectTokens Tokens { get; }` | yes      | —       | —           |
+
+## Methods
+
+- [`Project(HttpClient)`](/reference/dotnet/signal-wire.rest.namespaces/project/project-http-client)

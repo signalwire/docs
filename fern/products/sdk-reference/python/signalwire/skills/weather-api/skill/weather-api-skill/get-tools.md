@@ -1,0 +1,33 @@
+---
+slug: "/reference/python/signalwire/skills/weather-api/skill/weather-api-skill/get-tools"
+title: "get_tools"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.weather_api.skill.WeatherApiSkill.get_tools"
+  parent: "signalwire.skills.weather_api.skill.WeatherApiSkill"
+  module: "signalwire.skills.weather_api.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/weather_api/skill.py"
+---
+# `get_tools`
+
+Generate the SWAIG tool with DataMap webhook.
+
+## Signature
+
+```python
+get_tools() -> List[Dict[str, Any]]
+```
+
+## Returns
+
+`List[Dict[str, Any]]` — List containing the generated tool configuration
+
+## Source
+
+[`/src/signalwire/signalwire/skills/weather_api/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/weather_api/skill.py)
+
+Line 125.

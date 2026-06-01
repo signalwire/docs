@@ -1,0 +1,29 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/security/security/option"
+title: "Option"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/security.Option"
+  parent: "github.com/signalwire/signalwire-go/pkg/security"
+  module: "github.com.signalwire.signalwire-go.pkg.security"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go"
+---
+# `Option`
+
+Option is a functional option for NewSessionManager.
+
+## Signature
+
+```go
+type Option alias
+```
+
+## Source
+
+[`pkg/security/session_manager.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/security/session_manager.go)
+
+Line 31.

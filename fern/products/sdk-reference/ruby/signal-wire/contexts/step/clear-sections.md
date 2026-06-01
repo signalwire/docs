@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/step/clear-sections"
+title: "clear_sections"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::Step#clear_sections"
+  parent: "SignalWire::Contexts::Step"
+  module: "SignalWire.Contexts.Step"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `clear_sections`
+
+Remove all POM sections and direct text.
+
+## Signature
+
+```ruby
+def clear_sections
+```
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 267.

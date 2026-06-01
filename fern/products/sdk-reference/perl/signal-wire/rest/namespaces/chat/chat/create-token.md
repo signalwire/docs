@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/chat/chat/create-token"
+title: "create_token"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Chat::create_token"
+  parent: "SignalWire::REST::Namespaces::Chat"
+  module: "SignalWire.REST.Namespaces.Chat"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Chat.pm"
+  visibility: "public"
+---
+# `create_token`
+
+## Signature
+
+```perl
+sub create_token(%kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Chat.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Chat.pm)
+
+Line 7.

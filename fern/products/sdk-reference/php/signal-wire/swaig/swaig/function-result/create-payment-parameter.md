@@ -1,0 +1,48 @@
+---
+slug: "/reference/php/signal-wire/swaig/swaig/function-result/create-payment-parameter"
+title: "createPaymentParameter"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWAIG\\FunctionResult::createPaymentParameter"
+  parent: "SignalWire\\SWAIG\\FunctionResult"
+  module: "SignalWire.SWAIG"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWAIG/FunctionResult.php"
+  visibility: "public"
+---
+# `createPaymentParameter`
+
+**Modifiers:** `static`
+
+## Signature
+
+```php
+public static function createPaymentParameter(
+    string $name,
+    string $type,
+    array $config = array (
+)
+): array
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default     | Description |
+| -------- | -------- | -------- | ----------- | ----------- |
+| `name`   | `string` | yes      | —           | —           |
+| `type`   | `string` | yes      | —           | —           |
+| `config` | `array`  | no       | `array (
+)` | —           |
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/SWAIG/FunctionResult.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWAIG/FunctionResult.php)
+
+Line 557.

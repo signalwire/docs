@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-manager/clear"
+title: "clear"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillManager#clear"
+  parent: "SignalWire::Skills::SkillManager"
+  module: "SignalWire.Skills.SkillManager"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_manager.rb"
+  visibility: "public"
+---
+# `clear`
+
+Unload all skills.
+
+## Signature
+
+```ruby
+def clear
+```
+
+## Source
+
+[`lib/signalwire/skills/skill_manager.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_manager.rb)
+
+Line 89.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/cli/core/argparse-helpers/custom-argument-parser/init"
+title: "__init__"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.cli.core.argparse_helpers.CustomArgumentParser.__init__"
+  parent: "signalwire.cli.core.argparse_helpers.CustomArgumentParser"
+  module: "signalwire.cli.core.argparse_helpers"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/core/argparse_helpers.py"
+---
+# `__init__`
+
+## Signature
+
+```python
+__init__(*args = (), **kwargs = {})
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `...args`   | —    | no       | `()`    | —           |
+| `...kwargs` | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/cli/core/argparse_helpers.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/core/argparse_helpers.py)
+
+Line 23.

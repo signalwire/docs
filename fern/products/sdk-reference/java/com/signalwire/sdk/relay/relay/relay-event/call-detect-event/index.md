@@ -1,0 +1,44 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event"
+title: "CallDetectEvent"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.RelayEvent.CallDetectEvent"
+  parent: "com.signalwire.sdk.relay.RelayEvent"
+  module: "com.signalwire.sdk.relay"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayEvent.java"
+  visibility: "public"
+---
+# `CallDetectEvent`
+
+Detect event (`calling.call.detect`).
+
+**Modifiers:** `static`
+
+## Signature
+
+```java
+public static class CallDetectEvent extends com.signalwire.sdk.relay.RelayEvent
+```
+
+## Inheritance
+
+**Extends:** [com.signalwire.sdk.relay.RelayEvent](/reference/java/com/signalwire/sdk/relay/relay/relay-event)
+
+## Methods
+
+- [`<init>`](/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event/init)
+- [`getCallId`](/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event/get-call-id)
+- [`getControlId`](/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event/get-control-id)
+- [`getDetect`](/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event/get-detect) — Results are in detect.params.event, not a simple state field.
+- [`getDetectEvent`](/reference/java/com/signalwire/sdk/relay/relay/relay-event/call-detect-event/get-detect-event)
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/RelayEvent.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayEvent.java)
+
+Line 275.

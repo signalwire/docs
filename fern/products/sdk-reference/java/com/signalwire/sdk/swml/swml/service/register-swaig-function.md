@@ -1,0 +1,44 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/service/register-swaig-function"
+title: "registerSwaigFunction"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Service.registerSwaigFunction"
+  parent: "com.signalwire.sdk.swml.Service"
+  module: "com.signalwire.sdk.swml.Service"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java"
+  visibility: "public"
+---
+# `registerSwaigFunction`
+
+Register a raw SWAIG function definition (e.g.
+
+DataMap tools).
+
+## Signature
+
+```java
+public com.signalwire.sdk.swml.Service registerSwaigFunction(
+    java.util.Map<java.lang.String,java.lang.Object> swaigFunc
+)
+```
+
+## Parameters
+
+| Name        | Type                                               | Required | Default | Description |
+| ----------- | -------------------------------------------------- | -------- | ------- | ----------- |
+| `swaigFunc` | `java.util.Map<java.lang.String,java.lang.Object>` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swml.Service`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Service.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java)
+
+Line 233.

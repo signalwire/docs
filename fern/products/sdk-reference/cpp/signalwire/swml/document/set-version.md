@@ -1,0 +1,42 @@
+---
+slug: "/reference/cpp/signalwire/swml/document/set-version"
+title: "set_version"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swml::Document::set_version"
+  parent: "signalwire::swml::Document"
+  module: "signalwire.swml"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/document.hpp"
+  visibility: "public"
+---
+# `set_version`
+
+Set the document version.
+
+**Modifiers:** `inline`
+
+## Signature
+
+```cpp
+Document & set_version(const std::string & version)
+```
+
+## Parameters
+
+| Name      | Type                  | Required | Default | Description |
+| --------- | --------------------- | -------- | ------- | ----------- |
+| `version` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`Document &`
+
+## Source
+
+[`include/signalwire/swml/document.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/document.hpp)
+
+Line 60.

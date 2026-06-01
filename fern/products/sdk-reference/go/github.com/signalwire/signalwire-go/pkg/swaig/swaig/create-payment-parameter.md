@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swaig/swaig/create-payment-parameter"
+title: "CreatePaymentParameter"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swaig.CreatePaymentParameter"
+  parent: "github.com/signalwire/signalwire-go/pkg/swaig"
+  module: "github.com.signalwire.signalwire-go.pkg.swaig"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go"
+---
+# `CreatePaymentParameter`
+
+CreatePaymentParameter creates a payment parameter entry.
+
+## Signature
+
+```go
+func CreatePaymentParameter(name string, value string) map[string]string
+```
+
+## Parameters
+
+| Name    | Type     | Required | Default | Description |
+| ------- | -------- | -------- | ------- | ----------- |
+| `name`  | `string` | yes      | —       | —           |
+| `value` | `string` | yes      | —       | —           |
+
+## Returns
+
+`map[string]string`
+
+## Source
+
+[`pkg/swaig/function_result.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swaig/function_result.go)
+
+Line 965.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/rust/signalwire/skills/skill-base/skill-base/get-swaig-fields"
+title: "get_swaig_fields"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::skill_base::SkillBase::get_swaig_fields"
+  parent: "signalwire::skills::skill_base::SkillBase"
+  module: "skills.skill_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs"
+  visibility: "public"
+---
+# `get_swaig_fields`
+
+Get the SWAIG fields to merge into tool definitions.
+
+## Signature
+
+```rust
+fn get_swaig_fields(&self) -> ?<?, ?>
+```
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/skills/skill_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs)
+
+Line 115.

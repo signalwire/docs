@@ -1,0 +1,39 @@
+---
+slug: "/reference/rust/signalwire/rest/namespaces/registry/registry-campaigns/update"
+title: "update"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::rest::namespaces::registry::RegistryCampaigns::update"
+  parent: "signalwire::rest::namespaces::registry::RegistryCampaigns"
+  module: "rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/registry.rs"
+  visibility: "public"
+---
+# `update`
+
+## Signature
+
+```rust
+fn update(&self, campaign_id: &str, params: &?) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name          | Type   | Required | Default | Description |
+| ------------- | ------ | -------- | ------- | ----------- |
+| `campaign_id` | `&str` | yes      | —       | —           |
+| `params`      | `&?`   | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/rest/namespaces/registry.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/rest/namespaces/registry.rs)
+
+Line 155.

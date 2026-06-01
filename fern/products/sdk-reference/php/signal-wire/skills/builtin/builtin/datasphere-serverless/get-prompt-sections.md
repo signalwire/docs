@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/skills/builtin/builtin/datasphere-serverless/get-prompt-sections"
+title: "getPromptSections"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Skills\\Builtin\\DatasphereServerless::getPromptSections"
+  parent: "SignalWire\\Skills\\Builtin\\DatasphereServerless"
+  module: "SignalWire.Skills.Builtin"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/DatasphereServerless.php"
+  visibility: "public"
+---
+# `getPromptSections`
+
+## Signature
+
+```php
+public function getPromptSections(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/Skills/Builtin/DatasphereServerless.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Skills/Builtin/DatasphereServerless.php)
+
+Line 125.

@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/contexts/context/set-enter-fillers"
+title: "set_enter_fillers"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Context.set_enter_fillers"
+  parent: "signalwire.core.contexts.Context"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `set_enter_fillers`
+
+Set fillers that the AI says when entering this context
+
+## Signature
+
+```python
+set_enter_fillers(enter_fillers: Dict[str, List[str]]) -> Context
+```
+
+## Parameters
+
+| Name            | Type                   | Required | Default | Description                                                                                                                                              |
+| --------------- | ---------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enter_fillers` | `Dict[str, List[str]]` | yes      | —       | Dictionary mapping language codes (or "default") to lists of filler phrases Example: {"en-US": \["Welcome...", "Hello..."], "default": \["Entering..."]} |
+
+## Returns
+
+`Context` — Self for method chaining
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 932.

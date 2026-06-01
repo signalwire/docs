@@ -1,0 +1,30 @@
+---
+slug: "/reference/php/signal-wire/relay/relay/client/reconnect"
+title: "reconnect"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\Relay\\Client::reconnect"
+  parent: "SignalWire\\Relay\\Client"
+  module: "SignalWire.Relay"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php"
+  visibility: "public"
+---
+# `reconnect`
+
+Reconnect with exponential back-off (1 s -> 30 s cap).
+
+## Signature
+
+```php
+public function reconnect(): void
+```
+
+## Source
+
+[`/src/src/SignalWire/Relay/Client.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/Relay/Client.php)
+
+Line 259.

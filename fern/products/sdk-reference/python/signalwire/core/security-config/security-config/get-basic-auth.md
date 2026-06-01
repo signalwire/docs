@@ -1,0 +1,45 @@
+---
+slug: "/reference/python/signalwire/core/security-config/security-config/get-basic-auth"
+title: "get_basic_auth"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.security_config.SecurityConfig.get_basic_auth"
+  parent: "signalwire.core.security_config.SecurityConfig"
+  module: "signalwire.core.security_config"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/security_config.py"
+---
+# `get_basic_auth`
+
+Get basic auth credentials, generating if not set.
+
+If no basic auth password is configured (e.g. SWML\_BASIC\_AUTH\_PASSWORD
+env var is unset and the SDK caller didn't pass one explicitly), the
+SDK falls back to a random password generated via secrets.token\_urlsafe.
+That password lives only in memory and is regenerated on every process
+start, so any external caller (tests, RPC clients, MCP) that doesn't
+share the auto-generated value will get HTTP 401.
+
+We log a warning the first time the auto-generated fallback fires so
+the failure mode is visible in logs instead of silently breaking
+external callers. Set SWML\_BASIC\_AUTH\_USER / SWML\_BASIC\_AUTH\_PASSWORD
+(or load .env before constructing the agent) to suppress the warning.
+
+## Signature
+
+```python
+get_basic_auth() -> Tuple[str, str]
+```
+
+## Returns
+
+`Tuple[str, str]` — Tuple of (username, password)
+
+## Source
+
+[`/src/signalwire/signalwire/core/security_config.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/security_config.py)
+
+Line 247.

@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/livewire/chat-context/append"
+title: "append"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.livewire.ChatContext.append"
+  parent: "signalwire.livewire.ChatContext"
+  module: "signalwire.livewire"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py"
+---
+# `append`
+
+## Signature
+
+```python
+append(*, role: str = 'user', text: str = '')
+```
+
+## Parameters
+
+| Name   | Type  | Required | Default  | Description |
+| ------ | ----- | -------- | -------- | ----------- |
+| `role` | `str` | no       | `'user'` | —           |
+| `text` | `str` | no       | `''`     | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/livewire/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/livewire/__init__.py)
+
+Line 168.

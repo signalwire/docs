@@ -1,0 +1,55 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-base/get-param"
+title: "get_param"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillBase::get_param"
+  parent: "signalwire::skills::SkillBase"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_base.hpp"
+  visibility: "public"
+---
+# `get_param`
+
+Get a parameter value with a default.
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+template<typename T>
+T get_param(
+    const json & params,
+    const std::string & key,
+    const T & default_val
+) const
+```
+
+## Type Parameters
+
+| Name         | Type | Required | Default | Description |
+| ------------ | ---- | -------- | ------- | ----------- |
+| `typename T` | —    | yes      | —       | —           |
+
+## Parameters
+
+| Name          | Type                  | Required | Default | Description |
+| ------------- | --------------------- | -------- | ------- | ----------- |
+| `params`      | `const json &`        | yes      | —       | —           |
+| `key`         | `const std::string &` | yes      | —       | —           |
+| `default_val` | `const T &`           | yes      | —       | —           |
+
+## Returns
+
+`T`
+
+## Source
+
+[`include/signalwire/skills/skill_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_base.hpp)
+
+Line 94.

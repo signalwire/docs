@@ -1,0 +1,34 @@
+---
+slug: "/reference/dotnet/signal-wire.server/agent-server/register-agent-base-string"
+title: "Register(AgentBase, string?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Server.AgentServer.Register(SignalWire.Agent.AgentBase, string?)"
+  parent: "SignalWire.Server.AgentServer"
+  module: "SignalWire.Server"
+  visibility: "public"
+---
+# `Register(AgentBase, string?)`
+
+Register an agent at a route. Throws if the route is already taken.
+
+## Signature
+
+```dotnet
+public AgentServer Register(AgentBase agent, string? route = null)
+```
+
+## Parameters
+
+| Name    | Type                         | Required | Default | Description |
+| ------- | ---------------------------- | -------- | ------- | ----------- |
+| `agent` | `SignalWire.Agent.AgentBase` | yes      | —       | —           |
+| `route` | `string`                     | no       | `null`  | —           |
+
+## Returns
+
+`SignalWire.Server.AgentServer`

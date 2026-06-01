@@ -1,0 +1,66 @@
+---
+slug: "/reference/rust/signalwire/rest-client"
+title: "RestClient"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "rust"
+  qualified_name: "signalwire::RestClient"
+  parent: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/lib.rs"
+  visibility: "public"
+---
+# `RestClient`
+
+Construct a \[`RestClient`] from positional or keyword credentials.
+
+Mirrors Python's top-level `signalwire.RestClient(*args, **kwargs)`
+factory — in Python that's a thin wrapper that lazy-imports
+`signalwire.rest.RestClient` and instantiates it. The Rust struct
+is exposed at `signalwire::rest::RestClient`; this free function
+provides the same one-line entry point under `signalwire::`.
+
+The struct re-export at `signalwire::RestClient` (a type) and this
+function at `signalwire::RestClient` (a value) coexist because
+they live in distinct namespaces — types and values, respectively.
+
+The signature mirrors Python's `(*args, **kwargs)` shape so the
+cross-language signature audit recognises them as compatible. In
+practice callers pass either:
+
+- `args = ["proj", "tok", "space"]` (three positional strings), or
+- `args = []` and `kwargs = {"project": ..., "token": ..., "host": ...}`
+
+Either form maps onto \[`rest::RestClient::new`].
+
+**Errors:**
+
+Returns an error string if credentials cannot be derived from either
+`args` or `kwargs` (or fall back to the standard environment
+variables `SIGNALWIRE_PROJECT_ID` / `SIGNALWIRE_API_TOKEN` /
+`SIGNALWIRE_SPACE`).
+
+## Signature
+
+```rust
+fn RestClient(args: ?<?>, kwargs: ?<?, ?>) -> ?<?, ?>
+```
+
+## Parameters
+
+| Name     | Type      | Required | Default | Description |
+| -------- | --------- | -------- | ------- | ----------- |
+| `args`   | `?<?>`    | yes      | —       | —           |
+| `kwargs` | `?<?, ?>` | yes      | —       | —           |
+
+## Returns
+
+`?<?, ?>`
+
+## Source
+
+[`src/lib.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/lib.rs)
+
+Line 172.

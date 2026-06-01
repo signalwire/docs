@@ -1,0 +1,42 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/add-actions"
+title: "addActions"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.addActions"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `addActions`
+
+Add multiple actions.
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult addActions(
+    java.util.List<java.util.Map<java.lang.String,java.lang.Object>> actionList
+)
+```
+
+## Parameters
+
+| Name         | Type                                                               | Required | Default | Description |
+| ------------ | ------------------------------------------------------------------ | -------- | ------- | ----------- |
+| `actionList` | `java.util.List<java.util.Map<java.lang.String,java.lang.Object>>` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 73.

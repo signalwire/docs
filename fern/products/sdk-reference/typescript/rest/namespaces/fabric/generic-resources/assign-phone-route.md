@@ -1,0 +1,49 @@
+---
+slug: "/reference/typescript/rest/namespaces/fabric/generic-resources/assign-phone-route"
+title: "assignPhoneRoute"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "rest.namespaces.fabric.GenericResources.assignPhoneRoute"
+  parent: "rest.namespaces.fabric.GenericResources"
+  module: "rest.namespaces.fabric"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/fabric.ts"
+  deprecated: true
+---
+# `assignPhoneRoute`
+
+> **Warning:**
+>
+> **Deprecated.** For the common cases — SWML webhooks, cXML webhooks, AI agents — this endpoint **does not work**. Bindings for those are configured on the phone number via [PhoneNumbersResource.setSwmlWebhook](/reference/typescript/rest/namespaces/phone-numbers/phone-numbers-resource/set-swml-webhook) / `setCxmlWebhook` / `setAiAgent`, and the Fabric resource is auto-materialized by the server. Calling this method against `swml_webhook`, `cxml_webhook`, or `ai_agent` resource IDs returns `404` or `422`. The endpoint (`POST /api/fabric/resources/{id}/phone_routes`) applies only to a narrow set of legacy resource types listed in `rest-apis/relay-rest/openapi.yaml`. Emits a one-time deprecation warning on first call; kept for backwards compatibility.
+
+Assign a phone route to a fabric resource.
+
+## Signature
+
+```typescript
+assignPhoneRoute(resourceId: string, body: any): Promise<any>
+```
+
+## Parameters
+
+| Name         | Type     | Required | Default | Description                        |
+| ------------ | -------- | -------- | ------- | ---------------------------------- |
+| `resourceId` | `string` | yes      | —       | Unique identifier of the resource. |
+| `body`       | `any`    | yes      | —       | Phone route payload.               |
+
+## Returns
+
+`Promise<any>` — The phone-route assignment record.
+
+## Throws
+
+- On any non-2xx HTTP response.
+
+## Source
+
+[`src/rest/namespaces/fabric.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/rest/namespaces/fabric.ts)
+
+Line 297.

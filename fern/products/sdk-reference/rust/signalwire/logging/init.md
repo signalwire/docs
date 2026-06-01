@@ -1,0 +1,30 @@
+---
+slug: "/reference/rust/signalwire/logging/init"
+title: "init"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "rust"
+  qualified_name: "signalwire::logging::init"
+  parent: "signalwire::logging"
+  module: "logging"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/logging.rs"
+  visibility: "public"
+---
+# `init`
+
+Initialize the global logger (call once at startup).
+
+## Signature
+
+```rust
+fn init()
+```
+
+## Source
+
+[`src/logging.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/logging.rs)
+
+Line 95.

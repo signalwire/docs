@@ -1,0 +1,38 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/document/has-section"
+title: "hasSection"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Document::hasSection"
+  parent: "SignalWire\\SWML\\Document"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php"
+  visibility: "public"
+---
+# `hasSection`
+
+## Signature
+
+```php
+public function hasSection(string $name): bool
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Document.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Document.php)
+
+Line 36.

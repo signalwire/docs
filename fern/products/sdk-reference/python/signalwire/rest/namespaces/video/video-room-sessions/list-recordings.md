@@ -1,0 +1,34 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/video/video-room-sessions/list-recordings"
+title: "list_recordings"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.video.VideoRoomSessions.list_recordings"
+  parent: "signalwire.rest.namespaces.video.VideoRoomSessions"
+  module: "signalwire.rest.namespaces.video"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/video.py"
+---
+# `list_recordings`
+
+## Signature
+
+```python
+list_recordings(session_id, **params = {})
+```
+
+## Parameters
+
+| Name         | Type | Required | Default | Description |
+| ------------ | ---- | -------- | ------- | ----------- |
+| `session_id` | —    | yes      | —       | —           |
+| `...params`  | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/video.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/video.py)
+
+Line 51.

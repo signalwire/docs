@@ -1,0 +1,29 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/signal-wire-rest-error/to-string"
+title: "ToString()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.SignalWireRestError.ToString()"
+  parent: "SignalWire.REST.SignalWireRestError"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `ToString()`
+
+Creates and returns a string representation of the current exception.
+
+**Modifiers:** `override`
+
+## Signature
+
+```dotnet
+public override string ToString()
+```
+
+## Returns
+
+`string` — A string representation of the current exception.

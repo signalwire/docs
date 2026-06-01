@@ -1,0 +1,53 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/context/set-isolated"
+title: "set_isolated"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::Context#set_isolated"
+  parent: "SignalWire::Contexts::Context"
+  module: "SignalWire.Contexts.Context"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `set_isolated`
+
+Mark this context as isolated — entering it wipes conversation
+history.
+
+When +val+ = true and the context is entered via change\_context,
+the runtime wipes the conversation array. The model starts
+fresh with only the new context's system\_prompt + step
+instructions, with no memory of prior turns.
+
+EXCEPTION — reset overrides the wipe:
+If the context also has a reset configuration (via
++set\_consolidate+ or +set\_full\_reset+), the wipe is skipped in
+favor of the reset behavior. Use reset with consolidate=true
+to summarize prior history into a single message instead of
+dropping it entirely.
+
+Use cases: switching to a sensitive billing flow that should
+not see prior small-talk; handing off to a different agent
+persona; resetting after a long off-topic detour.
+
+## Signature
+
+```ruby
+def set_isolated(val)
+```
+
+## Parameters
+
+| Name  | Type | Required | Default | Description |
+| ----- | ---- | -------- | ------- | ----------- |
+| `val` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 502.

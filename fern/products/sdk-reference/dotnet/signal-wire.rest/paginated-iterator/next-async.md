@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/paginated-iterator/next-async"
+title: "NextAsync()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.PaginatedIterator.NextAsync()"
+  parent: "SignalWire.REST.PaginatedIterator"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `NextAsync()`
+
+Returns the next item, or throws InvalidOperationException
+when exhausted (mirroring Python's StopIteration).
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> NextAsync()
+```
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

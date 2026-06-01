@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/relay/message-state-event/direction"
+title: "direction"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Relay::MessageStateEvent#direction"
+  parent: "SignalWire::Relay::MessageStateEvent"
+  module: "SignalWire.Relay.MessageStateEvent"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb"
+  visibility: "public"
+---
+# `direction`
+
+Returns the value of attribute direction.
+
+## Signature
+
+```ruby
+attr_reader direction -> Object
+```
+
+## Source
+
+[`lib/signalwire/relay/relay_event.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/relay/relay_event.rb)
+
+Line 595.

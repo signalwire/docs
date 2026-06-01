@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/relay/call/call/pass"
+title: "pass_"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.relay.call.Call.pass_"
+  parent: "signalwire.relay.call.Call"
+  module: "signalwire.relay.call"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py"
+---
+# `pass_`
+
+Decline control of an inbound call, returning it to routing.
+
+**Modifiers:** `async`
+
+## Signature
+
+```python
+async pass_() -> dict
+```
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/relay/call.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/relay/call.py)
+
+Line 486.

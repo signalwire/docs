@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/compat/compat-calls/update-recording"
+title: "update_recording"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.compat.CompatCalls.update_recording"
+  parent: "signalwire.rest.namespaces.compat.CompatCalls"
+  module: "signalwire.rest.namespaces.compat"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py"
+---
+# `update_recording`
+
+## Signature
+
+```python
+update_recording(call_sid, recording_sid, **kwargs = {})
+```
+
+## Parameters
+
+| Name            | Type | Required | Default | Description |
+| --------------- | ---- | -------- | ------- | ----------- |
+| `call_sid`      | —    | yes      | —       | —           |
+| `recording_sid` | —    | yes      | —       | —           |
+| `...kwargs`     | —    | no       | `{}`    | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/compat.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/compat.py)
+
+Line 45.

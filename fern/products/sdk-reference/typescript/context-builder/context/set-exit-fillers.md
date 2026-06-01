@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/context-builder/context/set-exit-fillers"
+title: "setExitFillers"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ContextBuilder.Context.setExitFillers"
+  parent: "ContextBuilder.Context"
+  module: "ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts"
+---
+# `setExitFillers`
+
+Sets filler phrases spoken when exiting this context, keyed by language code.
+
+## Signature
+
+```typescript
+setExitFillers(fillers: Record<string, string[]>): this
+```
+
+## Parameters
+
+| Name      | Type                       | Required | Default | Description                                        |
+| --------- | -------------------------- | -------- | ------- | -------------------------------------------------- |
+| `fillers` | `Record<string, string[]>` | yes      | —       | Map of language codes to arrays of filler phrases. |
+
+## Returns
+
+`this` — This context for chaining.
+
+## Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 778.

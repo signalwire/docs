@@ -1,0 +1,44 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swaig/swaig/function-result/add-action"
+title: "addAction"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swaig.FunctionResult.addAction"
+  parent: "com.signalwire.sdk.swaig.FunctionResult"
+  module: "com.signalwire.sdk.swaig.FunctionResult"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
+  visibility: "public"
+---
+# `addAction`
+
+Add a single action to the response.
+
+## Signature
+
+```java
+public com.signalwire.sdk.swaig.FunctionResult addAction(
+    java.lang.String name,
+    java.lang.Object data
+)
+```
+
+## Parameters
+
+| Name   | Type               | Required | Default | Description |
+| ------ | ------------------ | -------- | ------- | ----------- |
+| `name` | `java.lang.String` | yes      | —       | —           |
+| `data` | `java.lang.Object` | yes      | —       | —           |
+
+## Returns
+
+`com.signalwire.sdk.swaig.FunctionResult`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swaig/FunctionResult.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java)
+
+Line 63.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/spider/spider/name"
+title: "name"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::spider::Spider::name"
+  parent: "signalwire::skills::builtin::spider::Spider"
+  module: "skills.builtin.spider"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/spider.rs"
+  visibility: "public"
+---
+# `name`
+
+## Signature
+
+```rust
+fn name(&self) -> &str
+```
+
+## Returns
+
+`&str`
+
+## Source
+
+[`src/skills/builtin/spider.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/spider.rs)
+
+Line 21.

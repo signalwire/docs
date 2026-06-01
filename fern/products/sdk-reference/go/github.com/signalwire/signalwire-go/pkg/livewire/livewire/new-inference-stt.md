@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/new-inference-stt"
+title: "NewInferenceSTT"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.NewInferenceSTT"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/plugins.go"
+---
+# `NewInferenceSTT`
+
+NewInferenceSTT creates an InferenceSTT stub with the given options.
+
+## Signature
+
+```go
+func NewInferenceSTT(opts ...func(*InferenceSTT)) *InferenceSTT
+```
+
+## Parameters
+
+| Name      | Type                  | Required | Default | Description |
+| --------- | --------------------- | -------- | ------- | ----------- |
+| `...opts` | `func(*InferenceSTT)` | no       | —       | —           |
+
+## Returns
+
+`*InferenceSTT`
+
+## Source
+
+[`pkg/livewire/plugins.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/plugins.go)
+
+Line 46.

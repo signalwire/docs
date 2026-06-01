@@ -1,0 +1,37 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-registry/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillRegistry#initialize"
+  parent: "SignalWire::Skills::SkillRegistry"
+  module: "SignalWire.Skills.SkillRegistry"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_registry.rb"
+  visibility: "public"
+---
+# `initialize`
+
+Per-instance state for the skill-directory parity surface; the
+class-method API above is preserved for backwards compatibility,
+but `add_skill_directory` mirrors Python's instance-method shape
+exactly (Python's `signalwire.skills.registry.SkillRegistry`).
+
+## Signature
+
+```ruby
+def initialize
+```
+
+## Returns
+
+`SkillRegistry` — a new instance of SkillRegistry
+
+## Source
+
+[`lib/signalwire/skills/skill_registry.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_registry.rb)
+
+Line 27.

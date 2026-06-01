@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/schema-utils/load-schema"
+title: "loadSchema"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.SchemaUtils.loadSchema"
+  parent: "com.signalwire.sdk.swml.SchemaUtils"
+  module: "com.signalwire.sdk.swml.SchemaUtils"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/SchemaUtils.java"
+  visibility: "public"
+---
+# `loadSchema`
+
+Read and parse the JSON Schema.
+
+Mirrors Python's `load_schema()`.
+
+## Signature
+
+```java
+public com.google.gson.JsonObject loadSchema()
+```
+
+## Returns
+
+`com.google.gson.JsonObject`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/SchemaUtils.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/SchemaUtils.java)
+
+Line 105.

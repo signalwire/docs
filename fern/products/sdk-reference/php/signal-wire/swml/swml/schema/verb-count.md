@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/schema/verb-count"
+title: "verbCount"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Schema::verbCount"
+  parent: "SignalWire\\SWML\\Schema"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php"
+  visibility: "public"
+---
+# `verbCount`
+
+Number of verbs defined in the schema.
+
+## Signature
+
+```php
+public function verbCount(): int
+```
+
+## Returns
+
+`int`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Schema.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php)
+
+Line 70.

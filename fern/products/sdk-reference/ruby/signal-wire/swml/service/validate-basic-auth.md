@@ -1,0 +1,39 @@
+---
+slug: "/reference/ruby/signal-wire/swml/service/validate-basic-auth"
+title: "validate_basic_auth"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::SWML::Service#validate_basic_auth"
+  parent: "SignalWire::SWML::Service"
+  module: "SignalWire.SWML.Service"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb"
+  visibility: "public"
+---
+# `validate_basic_auth`
+
+Validate provided basic-auth credentials against the configured ones
+using a constant-time comparison.
+Python parity: AuthMixin#validate\_basic\_auth(username, password).
+
+## Signature
+
+```ruby
+def validate_basic_auth(username, password)
+```
+
+## Parameters
+
+| Name       | Type | Required | Default | Description |
+| ---------- | ---- | -------- | ------- | ----------- |
+| `username` | —    | yes      | —       | —           |
+| `password` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/signalwire/swml/service.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/swml/service.rb)
+
+Line 271.

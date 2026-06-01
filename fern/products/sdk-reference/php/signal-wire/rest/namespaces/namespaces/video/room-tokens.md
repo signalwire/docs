@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/video/room-tokens"
+title: "roomTokens"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Video::roomTokens"
+  parent: "SignalWire\\REST\\Namespaces\\Video"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Video.php"
+  visibility: "public"
+---
+# `roomTokens`
+
+## Signature
+
+```php
+public function roomTokens(): SignalWire\REST\Namespaces\VideoRoomTokens
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\VideoRoomTokens`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Video.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Video.php)
+
+Line 52.

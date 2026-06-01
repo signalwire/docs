@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/action/wait"
+title: "Wait"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Action.Wait"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Action"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go"
+---
+# `Wait`
+
+Wait blocks until the action completes or the context is cancelled.
+
+## Signature
+
+```go
+func (*Action) Wait(ctx context.Context) (*RelayEvent, error)
+```
+
+## Parameters
+
+| Name  | Type              | Required | Default | Description |
+| ----- | ----------------- | -------- | ------- | ----------- |
+| `ctx` | `context.Context` | yes      | —       | —           |
+
+## Returns
+
+`(*RelayEvent, error)`
+
+## Source
+
+[`pkg/relay/action.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/action.go)
+
+Line 67.

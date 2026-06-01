@@ -1,0 +1,37 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/registry/registry-numbers"
+title: "RegistryNumbers"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.registry.RegistryNumbers"
+  parent: "signalwire.rest.namespaces.registry"
+  module: "signalwire.rest.namespaces.registry"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/registry.py"
+---
+# `RegistryNumbers`
+
+10DLC number assignment management.
+
+## Signature
+
+```python
+class RegistryNumbers(BaseResource)
+```
+
+## Inheritance
+
+**Extends:** `BaseResource`
+
+## Methods
+
+- [`delete`](/reference/python/signalwire/rest/namespaces/registry/registry-numbers/delete)
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/registry.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/registry.py)
+
+Line 62.

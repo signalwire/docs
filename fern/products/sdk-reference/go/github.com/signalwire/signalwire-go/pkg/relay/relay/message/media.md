@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/message/media"
+title: "Media"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.Message.Media"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay.Message"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/message.go"
+---
+# `Media`
+
+Media returns the list of media URLs attached to the message.
+
+## Signature
+
+```go
+func (*Message) Media() []string
+```
+
+## Returns
+
+`[]string`
+
+## Source
+
+[`pkg/relay/message.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/message.go)
+
+Line 63.

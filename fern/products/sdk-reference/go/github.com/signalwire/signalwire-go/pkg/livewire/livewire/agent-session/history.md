@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/livewire/livewire/agent-session/history"
+title: "History"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/livewire.AgentSession.History"
+  parent: "github.com/signalwire/signalwire-go/pkg/livewire.AgentSession"
+  module: "github.com.signalwire.signalwire-go.pkg.livewire"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go"
+---
+# `History`
+
+History returns the conversation turn history (read-only). Mirrors Python AgentSession.history property (line 497).
+
+## Signature
+
+```go
+func (*AgentSession) History() []map[string]string
+```
+
+## Returns
+
+`[]map[string]string`
+
+## Source
+
+[`pkg/livewire/livewire.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/livewire/livewire.go)
+
+Line 532.

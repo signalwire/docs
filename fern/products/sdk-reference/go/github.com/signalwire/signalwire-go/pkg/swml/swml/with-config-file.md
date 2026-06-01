@@ -1,0 +1,89 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/with-config-file"
+title: "WithConfigFile"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.WithConfigFile"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go"
+---
+# `WithConfigFile`
+
+WithConfigFile loads a YAML configuration file and applies its `security` section to the Service. Mirrors Python's SecurityConfig(config\_file=...) loader (signalwire/core/security\_config.py \_load\_config\_file). The expected schema is:
+
+```
+security:
+  ssl_cert_path: /path/to/cert.pem
+  ssl_key_path: /path/to/key.pem
+  domain: example.com
+  auth:
+    basic:
+      user: alice
+      password: secret
+    bearer_token: <token>
+    api_key: <key>
+    api_key_header: X-API-Key
+```
+
+Settings from the file are applied AFTER the explicit WithBasicAuth / WithBearerToken / WithAPIKey / WithTLS / WithDomain options, so config-file values take precedence (matching Python's documented load order). If the file cannot be read or parsed, NewService logs a warning and keeps running with the previously-set values; this matches Python's "best-effort" load behaviour and avoids crashing services whose config is missing.
+
+## Signature
+
+```go
+func WithConfigFile(path string) ServiceOption
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `path` | `string` | yes      | —       | —           |
+
+## Returns
+
+`ServiceOption`
+
+## Examples
+
+**Example 1**
+
+```go
+security:
+  ssl_cert_path: /path/to/cert.pem
+  ssl_key_path: /path/to/key.pem
+  domain: example.com
+  auth:
+    basic:
+      user: alice
+      password: secret
+    bearer_token: <token>
+    api_key: <key>
+    api_key_header: X-API-Key
+```
+
+**Example 2**
+
+```go
+security:
+  ssl_cert_path: /path/to/cert.pem
+  ssl_key_path: /path/to/key.pem
+  domain: example.com
+  auth:
+    basic:
+      user: alice
+      password: secret
+    bearer_token: <token>
+    api_key: <key>
+    api_key_header: X-API-Key
+```
+
+## Source
+
+[`pkg/swml/service.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/service.go)
+
+Line 267.

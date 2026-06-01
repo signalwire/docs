@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.swaig/function-result/join-room-string"
+title: "JoinRoom(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWAIG.FunctionResult.JoinRoom(string)"
+  parent: "SignalWire.SWAIG.FunctionResult"
+  module: "SignalWire.SWAIG"
+  visibility: "public"
+---
+# `JoinRoom(string)`
+
+## Signature
+
+```dotnet
+public FunctionResult JoinRoom(string name)
+```
+
+## Parameters
+
+| Name   | Type     | Required | Default | Description |
+| ------ | -------- | -------- | ------- | ----------- |
+| `name` | `string` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.SWAIG.FunctionResult`

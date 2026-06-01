@@ -1,0 +1,42 @@
+---
+slug: "/reference/python/signalwire/skills/spider"
+title: "spider"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.skills.spider"
+  parent: "signalwire.skills"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/spider/__init__.py"
+---
+# `spider`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module spider
+```
+
+## Properties
+
+| Name      | Type      | Required | Default | Description |
+| --------- | --------- | -------- | ------- | ----------- |
+| `__all__` | `__all__` | yes      | —       | —           |
+
+## Modules
+
+- [`skill`](/reference/python/signalwire/skills/spider/skill) — Copyright (c) 2025 SignalWire
+
+## Source
+
+[`/src/signalwire/signalwire/skills/spider/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/spider/__init__.py)

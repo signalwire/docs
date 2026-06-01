@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/rest/namespaces/namespaces/queues-namespace/get-next-member"
+title: "GetNextMember"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.QueuesNamespace.GetNextMember"
+  parent: "github.com/signalwire/signalwire-go/pkg/rest/namespaces.QueuesNamespace"
+  module: "github.com.signalwire.signalwire-go.pkg.rest.namespaces"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/queues.go"
+---
+# `GetNextMember`
+
+GetNextMember retrieves the next member in the queue.
+
+## Signature
+
+```go
+func (*QueuesNamespace) GetNextMember(queueID string) (map[string]any, error)
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description |
+| --------- | -------- | -------- | ------- | ----------- |
+| `queueID` | `string` | yes      | —       | —           |
+
+## Returns
+
+`(map[string]any, error)`
+
+## Source
+
+[`pkg/rest/namespaces/queues.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/rest/namespaces/queues.go)
+
+Line 28.

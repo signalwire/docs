@@ -1,0 +1,35 @@
+---
+slug: "/reference/dotnet/signal-wire.rest/crud-resource/delete-async-string"
+title: "DeleteAsync(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.CrudResource.DeleteAsync(string)"
+  parent: "SignalWire.REST.CrudResource"
+  module: "SignalWire.REST"
+  visibility: "public"
+---
+# `DeleteAsync(string)`
+
+Delete a resource by ID (DELETE basePath/{id}).
+
+**Modifiers:** `virtual`
+
+## Signature
+
+```dotnet
+public virtual Task<Dictionary<string, object?>> DeleteAsync(string id)
+```
+
+## Parameters
+
+| Name | Type     | Required | Default | Description |
+| ---- | -------- | -------- | ------- | ----------- |
+| `id` | `string` | yes      | —       | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

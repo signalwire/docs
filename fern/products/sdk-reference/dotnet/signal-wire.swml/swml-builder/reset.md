@@ -1,0 +1,28 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/swml-builder/reset"
+title: "Reset()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.SWMLBuilder.Reset()"
+  parent: "SignalWire.SWML.SWMLBuilder"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `Reset()`
+
+Reset the underlying document.
+(Python parity: `SWMLBuilder.reset`.)
+
+## Signature
+
+```dotnet
+public SWMLBuilder Reset()
+```
+
+## Returns
+
+`SignalWire.SWML.SWMLBuilder`

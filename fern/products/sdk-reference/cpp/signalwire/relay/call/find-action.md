@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/relay/call/find-action"
+title: "find_action"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Call::find_action"
+  parent: "signalwire::relay::Call"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp"
+  visibility: "public"
+---
+# `find_action`
+
+## Signature
+
+```cpp
+Action * find_action(const std::string & control_id)
+```
+
+## Parameters
+
+| Name         | Type                  | Required | Default | Description |
+| ------------ | --------------------- | -------- | ------- | ----------- |
+| `control_id` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`Action *`
+
+## Source
+
+[`include/signalwire/relay/call.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/call.hpp)
+
+Line 112.

@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/video-room-sessions/get-async-string"
+title: "GetAsync(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.VideoRoomSessions.GetAsync(string)"
+  parent: "SignalWire.REST.Namespaces.VideoRoomSessions"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `GetAsync(string)`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> GetAsync(string sessionId)
+```
+
+## Parameters
+
+| Name        | Type     | Required | Default | Description |
+| ----------- | -------- | -------- | ------- | ----------- |
+| `sessionId` | `string` | yes      | —       | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

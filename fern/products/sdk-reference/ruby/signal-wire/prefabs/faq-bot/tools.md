@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/faq-bot/tools"
+title: "tools"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::FaqBot#tools"
+  parent: "SignalWire::Prefabs::FaqBot"
+  module: "SignalWire.Prefabs.FaqBot"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/faq_bot.rb"
+  visibility: "public"
+---
+# `tools`
+
+## Signature
+
+```ruby
+def tools
+```
+
+## Source
+
+[`lib/signalwire/prefabs/faq_bot.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/faq_bot.rb)
+
+Line 34.

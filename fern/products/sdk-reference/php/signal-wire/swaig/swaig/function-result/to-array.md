@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/swaig/swaig/function-result/to-array"
+title: "toArray"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWAIG\\FunctionResult::toArray"
+  parent: "SignalWire\\SWAIG\\FunctionResult"
+  module: "SignalWire.SWAIG"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWAIG/FunctionResult.php"
+  visibility: "public"
+---
+# `toArray`
+
+## Signature
+
+```php
+public function toArray(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/SWAIG/FunctionResult.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWAIG/FunctionResult.php)
+
+Line 47.

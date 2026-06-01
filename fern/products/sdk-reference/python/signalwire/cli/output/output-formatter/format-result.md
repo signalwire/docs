@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/cli/output/output-formatter/format-result"
+title: "format_result"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "python"
+  qualified_name: "signalwire.cli.output.output_formatter.format_result"
+  parent: "signalwire.cli.output.output_formatter"
+  module: "signalwire.cli.output.output_formatter"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/output/output_formatter.py"
+---
+# `format_result`
+
+Format the result of a SWAIG function call for display
+
+## Signature
+
+```python
+format_result(result: Any) -> str
+```
+
+## Parameters
+
+| Name     | Type  | Required | Default | Description                        |
+| -------- | ----- | -------- | ------- | ---------------------------------- |
+| `result` | `Any` | yes      | —       | The result from the SWAIG function |
+
+## Returns
+
+`str` — Formatted string representation
+
+## Source
+
+[`/src/signalwire/signalwire/cli/output/output_formatter.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/output/output_formatter.py)
+
+Line 220.

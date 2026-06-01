@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.rest.namespaces/compat-tokens/delete-async-string"
+title: "DeleteAsync(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.REST.Namespaces.CompatTokens.DeleteAsync(string)"
+  parent: "SignalWire.REST.Namespaces.CompatTokens"
+  module: "SignalWire.REST.Namespaces"
+  visibility: "public"
+---
+# `DeleteAsync(string)`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> DeleteAsync(string tokenId)
+```
+
+## Parameters
+
+| Name      | Type     | Required | Default | Description |
+| --------- | -------- | -------- | ------- | ----------- |
+| `tokenId` | `string` | yes      | —       | —           |
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

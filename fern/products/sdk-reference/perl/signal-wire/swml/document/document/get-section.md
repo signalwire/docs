@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/swml/document/document/get-section"
+title: "get_section"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWML::Document::get_section"
+  parent: "SignalWire::SWML::Document"
+  module: "SignalWire.SWML.Document"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Document.pm"
+  visibility: "public"
+---
+# `get_section`
+
+## Signature
+
+```perl
+sub get_section($name)
+```
+
+## Parameters
+
+| Name   | Type | Required | Default | Description |
+| ------ | ---- | -------- | ------- | ----------- |
+| `name` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/SWML/Document.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Document.pm)
+
+Line 37.

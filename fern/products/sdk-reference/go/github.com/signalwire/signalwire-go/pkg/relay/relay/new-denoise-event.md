@@ -1,0 +1,39 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/relay/relay/new-denoise-event"
+title: "NewDenoiseEvent"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/relay.NewDenoiseEvent"
+  parent: "github.com/signalwire/signalwire-go/pkg/relay"
+  module: "github.com.signalwire.signalwire-go.pkg.relay"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/event.go"
+---
+# `NewDenoiseEvent`
+
+NewDenoiseEvent constructs a DenoiseEvent from raw params.
+
+## Signature
+
+```go
+func NewDenoiseEvent(params map[string]any) *DenoiseEvent
+```
+
+## Parameters
+
+| Name     | Type             | Required | Default | Description |
+| -------- | ---------------- | -------- | ------- | ----------- |
+| `params` | `map[string]any` | yes      | —       | —           |
+
+## Returns
+
+`*DenoiseEvent`
+
+## Source
+
+[`pkg/relay/event.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/relay/event.go)
+
+Line 526.

@@ -1,0 +1,42 @@
+---
+slug: "/reference/python/signalwire/core/function-result"
+title: "function_result"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.core.function_result"
+  parent: "signalwire.core"
+  module: "signalwire.core"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py"
+---
+# `function_result`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module function_result
+```
+
+## Properties
+
+| Name                  | Type                  | Required | Default | Description |
+| --------------------- | --------------------- | -------- | ------- | ----------- |
+| `SwaigFunctionResult` | `SwaigFunctionResult` | yes      | —       | —           |
+
+## Classes
+
+- [`FunctionResult`](/reference/python/signalwire/core/function-result/function-result) — Wrapper around SWAIG function responses that handles proper formatting of response text and actions.
+
+## Source
+
+[`/src/signalwire/signalwire/core/function_result.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/function_result.py)

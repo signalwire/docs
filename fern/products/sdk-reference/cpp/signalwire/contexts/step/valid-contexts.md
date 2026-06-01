@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/contexts/step/valid-contexts"
+title: "valid_contexts"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::contexts::Step::valid_contexts"
+  parent: "signalwire::contexts::Step"
+  module: "signalwire.contexts"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp"
+  visibility: "public"
+---
+# `valid_contexts`
+
+**Modifiers:** `const` `inline`
+
+## Signature
+
+```cpp
+const std::optional< std::vector< std::string > > & valid_contexts() const
+```
+
+## Returns
+
+`const std::optional< std::vector< std::string > > &`
+
+## Source
+
+[`include/signalwire/contexts/contexts.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/contexts/contexts.hpp)
+
+Line 205.

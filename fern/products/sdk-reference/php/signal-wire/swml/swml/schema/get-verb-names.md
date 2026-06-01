@@ -1,0 +1,34 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/schema/get-verb-names"
+title: "getVerbNames"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Schema::getVerbNames"
+  parent: "SignalWire\\SWML\\Schema"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php"
+  visibility: "public"
+---
+# `getVerbNames`
+
+Get sorted list of all verb names.
+
+## Signature
+
+```php
+public function getVerbNames(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Schema.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Schema.php)
+
+Line 50.

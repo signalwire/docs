@@ -1,0 +1,40 @@
+---
+slug: "/reference/ruby/signal-wire/contexts/gather-info/initialize"
+title: "initialize"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Contexts::GatherInfo#initialize"
+  parent: "SignalWire::Contexts::GatherInfo"
+  module: "SignalWire.Contexts.GatherInfo"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb"
+  visibility: "public"
+---
+# `initialize`
+
+## Signature
+
+```ruby
+def initialize(output_key: nil, completion_action: nil, prompt: nil)
+```
+
+## Parameters
+
+| Name                 | Type | Required | Default | Description |
+| -------------------- | ---- | -------- | ------- | ----------- |
+| `output_key:`        | —    | no       | `nil`   | —           |
+| `completion_action:` | —    | no       | `nil`   | —           |
+| `prompt:`            | —    | no       | `nil`   | —           |
+
+## Returns
+
+`GatherInfo` — a new instance of GatherInfo
+
+## Source
+
+[`lib/signalwire/contexts/context_builder.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/contexts/context_builder.rb)
+
+Line 55.

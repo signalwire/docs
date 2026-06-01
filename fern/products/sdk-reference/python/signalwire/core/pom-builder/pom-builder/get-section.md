@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/core/pom-builder/pom-builder/get-section"
+title: "get_section"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.pom_builder.PomBuilder.get_section"
+  parent: "signalwire.core.pom_builder.PomBuilder"
+  module: "signalwire.core.pom_builder"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/pom_builder.py"
+---
+# `get_section`
+
+Get a section by title
+
+## Signature
+
+```python
+get_section(title: str) -> Optional[Section]
+```
+
+## Parameters
+
+| Name    | Type  | Required | Default | Description   |
+| ------- | ----- | -------- | ------- | ------------- |
+| `title` | `str` | yes      | —       | Section title |
+
+## Returns
+
+`Optional[Section]` — Section object or None if not found
+
+## Source
+
+[`/src/signalwire/signalwire/core/pom_builder.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/pom_builder.py)
+
+Line 153.

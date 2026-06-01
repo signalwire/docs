@@ -1,0 +1,26 @@
+---
+slug: "/reference/rust/signalwire/skills/builtin/custom-skills"
+title: "custom_skills"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "rust"
+  qualified_name: "signalwire::skills::builtin::custom_skills"
+  parent: "signalwire::skills::builtin"
+  module: "skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/custom_skills.rs"
+  visibility: "public"
+---
+# `custom_skills`
+
+## Classes
+
+- [`CustomSkills`](/reference/rust/signalwire/skills/builtin/custom-skills/custom-skills) — Register user-defined custom tools.
+
+## Source
+
+[`src/skills/builtin/custom_skills.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/builtin/custom_skills.rs)
+
+Line 1.

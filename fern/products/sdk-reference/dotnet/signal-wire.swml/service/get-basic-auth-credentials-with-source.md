@@ -1,0 +1,30 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/service/get-basic-auth-credentials-with-source"
+title: "GetBasicAuthCredentialsWithSource()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Service.GetBasicAuthCredentialsWithSource()"
+  parent: "SignalWire.SWML.Service"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `GetBasicAuthCredentialsWithSource()`
+
+Get the Basic Auth credentials plus the SOURCE of the
+credentials (Python parity:
+`get_basic_auth_credentials(include_source=True)`).
+Source is one of "provided", "environment", or "generated".
+
+## Signature
+
+```dotnet
+public (string User, string Password, string Source) GetBasicAuthCredentialsWithSource()
+```
+
+## Returns
+
+`System.ValueTuple<string,string,string>`

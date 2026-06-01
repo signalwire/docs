@@ -1,0 +1,40 @@
+---
+slug: "/reference/rust/signalwire/skills/skill-base/skill-base/get-tool-name"
+title: "get_tool_name"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::skills::skill_base::SkillBase::get_tool_name"
+  parent: "signalwire::skills::skill_base::SkillBase"
+  module: "skills.skill_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs"
+  visibility: "public"
+---
+# `get_tool_name`
+
+Get the tool name, falling back to `default` if no override is set.
+
+## Signature
+
+```rust
+fn get_tool_name(&self, default: &str) -> ?
+```
+
+## Parameters
+
+| Name      | Type   | Required | Default | Description |
+| --------- | ------ | -------- | ------- | ----------- |
+| `default` | `&str` | yes      | —       | —           |
+
+## Returns
+
+`?`
+
+## Source
+
+[`src/skills/skill_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/skills/skill_base.rs)
+
+Line 106.

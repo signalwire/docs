@@ -1,0 +1,27 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/record-action/pause-string"
+title: "Pause(string?)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.RecordAction.Pause(string?)"
+  parent: "SignalWire.Relay.RecordAction"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `Pause(string?)`
+
+## Signature
+
+```dotnet
+public void Pause(string? behavior = null)
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `behavior` | `string` | no       | `null`  | —           |

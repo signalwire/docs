@@ -1,0 +1,31 @@
+---
+slug: "/reference/python/signalwire/skills/info-gatherer/skill/info-gatherer-skill/setup"
+title: "setup"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.skills.info_gatherer.skill.InfoGathererSkill.setup"
+  parent: "signalwire.skills.info_gatherer.skill.InfoGathererSkill"
+  module: "signalwire.skills.info_gatherer.skill"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/info_gatherer/skill.py"
+---
+# `setup`
+
+## Signature
+
+```python
+setup() -> bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`/src/signalwire/signalwire/skills/info_gatherer/skill.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/skills/info_gatherer/skill.py)
+
+Line 91.

@@ -1,0 +1,31 @@
+---
+slug: "/reference/dotnet/signal-wire.agent/agent-base/set-function-includes-list-dictionary-string-object"
+title: "SetFunctionIncludes(List<Dictionary<string, object>>)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Agent.AgentBase.SetFunctionIncludes(System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>>)"
+  parent: "SignalWire.Agent.AgentBase"
+  module: "SignalWire.Agent"
+  visibility: "public"
+---
+# `SetFunctionIncludes(List<Dictionary<string, object>>)`
+
+## Signature
+
+```dotnet
+public AgentBase SetFunctionIncludes(List<Dictionary<string, object>> includes)
+```
+
+## Parameters
+
+| Name       | Type                              | Required | Default | Description |
+| ---------- | --------------------------------- | -------- | ------- | ----------- |
+| `includes` | `List<Dictionary<string,object>>` | yes      | —       | —           |
+
+## Returns
+
+`SignalWire.Agent.AgentBase`

@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/chat-namespace/members"
+title: "members"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.ChatNamespace.members"
+  parent: "com.signalwire.sdk.rest.namespaces.ChatNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.ChatNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ChatNamespace.java"
+  visibility: "public"
+---
+# `members`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.CrudResource members()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.CrudResource`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/ChatNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/ChatNamespace.java)
+
+Line 29.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/get-contexts"
+title: "get_contexts"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::get_contexts"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `get_contexts`
+
+Returns the contexts dictionary as a serialised `Value::Object`,
+or `None` when no contexts have been defined yet.
+
+Mirrors Python's `PromptManager.get_contexts` which returns the
+contexts dict or `None`.
+
+## Signature
+
+```rust
+fn get_contexts(&self) -> ?<?>
+```
+
+## Returns
+
+`?<?>`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 540.

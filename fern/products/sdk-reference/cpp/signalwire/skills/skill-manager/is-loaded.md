@@ -1,0 +1,42 @@
+---
+slug: "/reference/cpp/signalwire/skills/skill-manager/is-loaded"
+title: "is_loaded"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::skills::SkillManager::is_loaded"
+  parent: "signalwire::skills::SkillManager"
+  module: "signalwire.skills"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp"
+  visibility: "public"
+---
+# `is_loaded`
+
+Check if a skill is loaded.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+bool is_loaded(const std::string & skill_name) const
+```
+
+## Parameters
+
+| Name         | Type                  | Required | Default | Description |
+| ------------ | --------------------- | -------- | ------- | ----------- |
+| `skill_name` | `const std::string &` | yes      | —       | —           |
+
+## Returns
+
+`bool`
+
+## Source
+
+[`include/signalwire/skills/skill_manager.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/skills/skill_manager.hpp)
+
+Line 34.

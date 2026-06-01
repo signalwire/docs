@@ -1,0 +1,36 @@
+---
+slug: "/reference/cpp/signalwire/swml/service/get-all-functions"
+title: "get_all_functions"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swml::Service::get_all_functions"
+  parent: "signalwire::swml::Service"
+  module: "signalwire.swml"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp"
+  visibility: "public"
+---
+# `get_all_functions`
+
+Snapshot of all registered SWAIG functions keyed by name. Returned by value so subsequent registrations don't mutate the snapshot. Python parity: ToolRegistry.get\_all\_functions.
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+std::map< std::string, swaig::ToolDefinition > get_all_functions() const
+```
+
+## Returns
+
+`std::map< std::string, swaig::ToolDefinition >`
+
+## Source
+
+[`include/signalwire/swml/service.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp)
+
+Line 190.

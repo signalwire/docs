@@ -1,0 +1,30 @@
+---
+slug: "/reference/dotnet/signal-wire.pom/section/to-dict"
+title: "ToDict()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.POM.Section.ToDict()"
+  parent: "SignalWire.POM.Section"
+  module: "SignalWire.POM"
+  visibility: "public"
+---
+# `ToDict()`
+
+Serialize to a Dictionary suitable for JSON. Emits
+keys in this exact order: title, body, bullets, subsections,
+numbered, numberedBullets — and only when non-empty / non-null /
+non-default. Mirrors Python's `Section.to_dict`.
+
+## Signature
+
+```dotnet
+public Dictionary<string, object> ToDict()
+```
+
+## Returns
+
+`Dictionary<string,object>`

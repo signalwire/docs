@@ -1,0 +1,36 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/service/get-basic-auth-credentials"
+title: "getBasicAuthCredentials"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.Service.getBasicAuthCredentials"
+  parent: "com.signalwire.sdk.swml.Service"
+  module: "com.signalwire.sdk.swml.Service"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java"
+  visibility: "public"
+---
+# `getBasicAuthCredentials`
+
+Get the configured (user, password) pair as a String\[2] tuple.
+
+(Python parity: `AuthMixin.get_basic_auth_credentials`.)
+
+## Signature
+
+```java
+public java.lang.String[] getBasicAuthCredentials()
+```
+
+## Returns
+
+`java.lang.String[]`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/Service.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/Service.java)
+
+Line 148.

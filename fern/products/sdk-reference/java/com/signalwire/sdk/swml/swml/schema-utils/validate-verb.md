@@ -1,0 +1,46 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/schema-utils/validate-verb"
+title: "validateVerb"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.SchemaUtils.validateVerb"
+  parent: "com.signalwire.sdk.swml.SchemaUtils"
+  module: "com.signalwire.sdk.swml.SchemaUtils"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/SchemaUtils.java"
+  visibility: "public"
+---
+# `validateVerb`
+
+Validate a verb config against the schema.
+
+Mirrors Python's verb\_config).
+
+## Signature
+
+```java
+public java.util.Map.Entry<java.lang.Boolean,java.util.List<java.lang.String>> validateVerb(
+    java.lang.String verbName,
+    java.util.Map<java.lang.String,java.lang.Object> verbConfig
+)
+```
+
+## Parameters
+
+| Name         | Type                                               | Required | Default | Description |
+| ------------ | -------------------------------------------------- | -------- | ------- | ----------- |
+| `verbName`   | `java.lang.String`                                 | yes      | —       | —           |
+| `verbConfig` | `java.util.Map<java.lang.String,java.lang.Object>` | yes      | —       | —           |
+
+## Returns
+
+`java.util.Map.Entry<java.lang.Boolean,java.util.List<java.lang.String>>` — (`valid`, `errors`) entry; mirrors Python's List\[str]] return.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/SchemaUtils.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/SchemaUtils.java)
+
+Line 244.

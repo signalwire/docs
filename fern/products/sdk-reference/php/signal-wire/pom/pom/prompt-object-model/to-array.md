@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/prompt-object-model/to-array"
+title: "toArray"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\PromptObjectModel::toArray"
+  parent: "SignalWire\\POM\\PromptObjectModel"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php"
+  visibility: "public"
+---
+# `toArray`
+
+## Signature
+
+```php
+public function toArray(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/POM/PromptObjectModel.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/PromptObjectModel.php)
+
+Line 230.

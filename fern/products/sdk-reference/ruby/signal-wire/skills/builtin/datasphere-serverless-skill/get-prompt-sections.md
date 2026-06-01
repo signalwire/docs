@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/datasphere-serverless-skill/get-prompt-sections"
+title: "get_prompt_sections"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::DatasphereServerlessSkill#get_prompt_sections"
+  parent: "SignalWire::Skills::Builtin::DatasphereServerlessSkill"
+  module: "SignalWire.Skills.Builtin.DatasphereServerlessSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/datasphere_serverless.rb"
+  visibility: "public"
+---
+# `get_prompt_sections`
+
+## Signature
+
+```ruby
+def get_prompt_sections
+```
+
+## Source
+
+[`lib/signalwire/skills/builtin/datasphere_serverless.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/datasphere_serverless.rb)
+
+Line 75.

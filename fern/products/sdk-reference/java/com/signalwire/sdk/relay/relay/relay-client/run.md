@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/relay/relay/relay-client/run"
+title: "run"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.relay.RelayClient.run"
+  parent: "com.signalwire.sdk.relay.RelayClient"
+  module: "com.signalwire.sdk.relay.RelayClient"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayClient.java"
+  visibility: "public"
+---
+# `run`
+
+Connect and run the client.
+
+Blocks until `#disconnect()` is called.
+
+## Signature
+
+```java
+public void run()
+```
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/relay/RelayClient.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/relay/RelayClient.java)
+
+Line 212.

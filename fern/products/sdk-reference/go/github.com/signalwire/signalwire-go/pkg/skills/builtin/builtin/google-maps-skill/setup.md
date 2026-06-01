@@ -1,0 +1,31 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/builtin/builtin/google-maps-skill/setup"
+title: "Setup"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills/builtin.GoogleMapsSkill.Setup"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills/builtin.GoogleMapsSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills.builtin"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/google_maps.go"
+---
+# `Setup`
+
+## Signature
+
+```go
+func (*GoogleMapsSkill) Setup() bool
+```
+
+## Returns
+
+`bool`
+
+## Source
+
+[`pkg/skills/builtin/google_maps.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/builtin/google_maps.go)
+
+Line 46.

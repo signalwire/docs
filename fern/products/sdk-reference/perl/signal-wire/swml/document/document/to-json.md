@@ -1,0 +1,28 @@
+---
+slug: "/reference/perl/signal-wire/swml/document/document/to-json"
+title: "to_json"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::SWML::Document::to_json"
+  parent: "SignalWire::SWML::Document"
+  module: "SignalWire.SWML.Document"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Document.pm"
+  visibility: "public"
+---
+# `to_json`
+
+## Signature
+
+```perl
+sub to_json()
+```
+
+## Source
+
+[`lib/SignalWire/SWML/Document.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/SWML/Document.pm)
+
+Line 61.

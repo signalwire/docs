@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/swml/service/live-translate"
+title: "live_translate"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::swml::Service::live_translate"
+  parent: "signalwire::swml::Service"
+  module: "signalwire.swml"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp"
+  visibility: "public"
+---
+# `live_translate`
+
+## Signature
+
+```cpp
+Service & live_translate(const json & params = json::object())
+```
+
+## Parameters
+
+| Name     | Type           | Required | Default          | Description |
+| -------- | -------------- | -------- | ---------------- | ----------- |
+| `params` | `const json &` | no       | `json::object()` | —           |
+
+## Returns
+
+`Service &`
+
+## Source
+
+[`include/signalwire/swml/service.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/swml/service.hpp)
+
+Line 103.

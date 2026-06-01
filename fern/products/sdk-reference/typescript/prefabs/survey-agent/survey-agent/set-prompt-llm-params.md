@@ -1,0 +1,39 @@
+---
+slug: "/reference/typescript/prefabs/survey-agent/survey-agent/set-prompt-llm-params"
+title: "setPromptLlmParams"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "prefabs.SurveyAgent.SurveyAgent.setPromptLlmParams"
+  parent: "prefabs.SurveyAgent.SurveyAgent"
+  module: "prefabs.SurveyAgent"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts"
+---
+# `setPromptLlmParams`
+
+Merge LLM-specific parameters into the main prompt configuration (e.g. model, temperature).
+
+## Signature
+
+```typescript
+setPromptLlmParams(params: Record<string, unknown>): this
+```
+
+## Parameters
+
+| Name     | Type                      | Required | Default | Description                        |
+| -------- | ------------------------- | -------- | ------- | ---------------------------------- |
+| `params` | `Record<string, unknown>` | yes      | —       | Key-value LLM parameters to merge. |
+
+## Returns
+
+`this` — This agent instance for chaining.
+
+## Source
+
+[`src/AgentBase.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/AgentBase.ts)
+
+Line 990.

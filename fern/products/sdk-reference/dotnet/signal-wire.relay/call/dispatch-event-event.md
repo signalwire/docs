@@ -1,0 +1,30 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/call/dispatch-event-event"
+title: "DispatchEvent(Event)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Call.DispatchEvent(SignalWire.Relay.Event)"
+  parent: "SignalWire.Relay.Call"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `DispatchEvent(Event)`
+
+Central event router invoked by the Client whenever a server event
+targets this call.
+
+## Signature
+
+```dotnet
+public void DispatchEvent(Event evt)
+```
+
+## Parameters
+
+| Name  | Type                     | Required | Default | Description |
+| ----- | ------------------------ | -------- | ------- | ----------- |
+| `evt` | `SignalWire.Relay.Event` | yes      | —       | —           |

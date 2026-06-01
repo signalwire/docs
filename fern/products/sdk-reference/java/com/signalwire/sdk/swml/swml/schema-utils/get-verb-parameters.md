@@ -1,0 +1,44 @@
+---
+slug: "/reference/java/com/signalwire/sdk/swml/swml/schema-utils/get-verb-parameters"
+title: "getVerbParameters"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.swml.SchemaUtils.getVerbParameters"
+  parent: "com.signalwire.sdk.swml.SchemaUtils"
+  module: "com.signalwire.sdk.swml.SchemaUtils"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/SchemaUtils.java"
+  visibility: "public"
+---
+# `getVerbParameters`
+
+Parameter-definition block used by code-gen tooling.
+
+Mirrors Python's `get_verb_parameters(verb_name)`.
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> getVerbParameters(
+    java.lang.String verbName
+)
+```
+
+## Parameters
+
+| Name       | Type               | Required | Default | Description |
+| ---------- | ------------------ | -------- | ------- | ----------- |
+| `verbName` | `java.lang.String` | yes      | —       | —           |
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/swml/SchemaUtils.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/swml/SchemaUtils.java)
+
+Line 226.

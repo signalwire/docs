@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/skills/skills/base-skill/get-param-int"
+title: "GetParamInt"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/skills.BaseSkill.GetParamInt"
+  parent: "github.com/signalwire/signalwire-go/pkg/skills.BaseSkill"
+  module: "github.com.signalwire.signalwire-go.pkg.skills"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/skill_base.go"
+---
+# `GetParamInt`
+
+GetParamInt retrieves an integer parameter, returning the default if not found.
+
+## Signature
+
+```go
+func (*BaseSkill) GetParamInt(key string, defaultVal int) int
+```
+
+## Parameters
+
+| Name         | Type     | Required | Default | Description |
+| ------------ | -------- | -------- | ------- | ----------- |
+| `key`        | `string` | yes      | —       | —           |
+| `defaultVal` | `int`    | yes      | —       | —           |
+
+## Returns
+
+`int`
+
+## Source
+
+[`pkg/skills/skill_base.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/skills/skill_base.go)
+
+Line 220.

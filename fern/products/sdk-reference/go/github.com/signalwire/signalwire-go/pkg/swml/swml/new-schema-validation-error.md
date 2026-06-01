@@ -1,0 +1,40 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/swml/swml/new-schema-validation-error"
+title: "NewSchemaValidationError"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/swml.NewSchemaValidationError"
+  parent: "github.com/signalwire/signalwire-go/pkg/swml"
+  module: "github.com.signalwire.signalwire-go.pkg.swml"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/schema_utils.go"
+---
+# `NewSchemaValidationError`
+
+NewSchemaValidationError constructs a SchemaValidationError. Mirrors Python's SchemaValidationError.**init**(verb\_name, errors).
+
+## Signature
+
+```go
+func NewSchemaValidationError(verbName string, errors []string) *SchemaValidationError
+```
+
+## Parameters
+
+| Name       | Type       | Required | Default | Description |
+| ---------- | ---------- | -------- | ------- | ----------- |
+| `verbName` | `string`   | yes      | —       | —           |
+| `errors`   | `[]string` | yes      | —       | —           |
+
+## Returns
+
+`*SchemaValidationError`
+
+## Source
+
+[`pkg/swml/schema_utils.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/swml/schema_utils.go)
+
+Line 36.

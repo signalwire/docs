@@ -1,0 +1,49 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/context/set-isolated"
+title: "SetIsolated"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.Context.SetIsolated"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts.Context"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `SetIsolated`
+
+SetIsolated marks this context as isolated — entering it wipes conversation history.
+
+When isolated=true and the context is entered via change\_context, the runtime wipes the conversation array. The model starts fresh with only the new context's system\_prompt + step instructions, with no memory of prior turns.
+
+EXCEPTION — reset overrides the wipe: If the context also has a reset configuration (via SetConsolidate or SetFullReset), the wipe is skipped in favor of the reset behavior. Use reset with consolidate=true to summarize prior history into a single message instead of dropping it entirely.
+
+Use cases:
+
+- Switching to a sensitive billing flow that should not see prior small-talk
+- Handing off to a different agent persona
+- Resetting after a long off-topic detour
+
+## Signature
+
+```go
+func (*Context) SetIsolated(isolated bool) *Context
+```
+
+## Parameters
+
+| Name       | Type   | Required | Default | Description |
+| ---------- | ------ | -------- | ------- | ----------- |
+| `isolated` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`*Context`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 610.

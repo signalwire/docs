@@ -1,0 +1,39 @@
+---
+slug: "/reference/python/signalwire/cli/core"
+title: "core"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "python"
+  qualified_name: "signalwire.cli.core"
+  parent: "signalwire.cli"
+  module: "signalwire.cli"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/core/__init__.py"
+---
+# `core`
+
+Copyright (c) 2025 SignalWire
+
+This file is part of the SignalWire SDK.
+
+Licensed under the MIT License.
+See LICENSE file in the project root for full license information.
+
+## Signature
+
+```python
+module core
+```
+
+## Modules
+
+- [`agent_loader`](/reference/python/signalwire/cli/core/agent-loader) — Copyright (c) 2025 SignalWire
+- [`argparse_helpers`](/reference/python/signalwire/cli/core/argparse-helpers) — Copyright (c) 2025 SignalWire
+- [`dynamic_config`](/reference/python/signalwire/cli/core/dynamic-config) — Copyright (c) 2025 SignalWire
+- [`service_loader`](/reference/python/signalwire/cli/core/service-loader) — Copyright (c) 2025 SignalWire
+
+## Source
+
+[`/src/signalwire/signalwire/cli/core/__init__.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/cli/core/__init__.py)

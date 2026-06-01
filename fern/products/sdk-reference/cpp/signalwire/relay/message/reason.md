@@ -1,0 +1,34 @@
+---
+slug: "/reference/cpp/signalwire/relay/message/reason"
+title: "reason"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::Message::reason"
+  parent: "signalwire::relay::Message"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp"
+  visibility: "public"
+---
+# `reason`
+
+**Modifiers:** `const`
+
+## Signature
+
+```cpp
+const std::string & reason() const
+```
+
+## Returns
+
+`const std::string &`
+
+## Source
+
+[`include/signalwire/relay/message.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/message.hpp)
+
+Line 49.

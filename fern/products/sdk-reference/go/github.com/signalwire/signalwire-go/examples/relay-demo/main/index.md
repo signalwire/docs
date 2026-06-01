@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/relay-demo/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/relay_demo"
+  module: "github.com.signalwire.signalwire-go.examples.relay_demo"
+---
+# `main`
+
+Example: relay\_demo
+
+RELAY WebSocket call control. Demonstrates creating a RELAY client, setting an OnCall handler that answers inbound calls, plays TTS audio, and then hangs up. Requires SIGNALWIRE\_PROJECT\_ID, SIGNALWIRE\_API\_TOKEN, and SIGNALWIRE\_SPACE environment variables.
+
+## Signature
+
+```go
+package main
+```

@@ -1,0 +1,50 @@
+---
+slug: "/reference/php/signal-wire/pom/pom/section/add-subsection"
+title: "addSubsection"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\POM\\Section::addSubsection"
+  parent: "SignalWire\\POM\\Section"
+  module: "SignalWire.POM"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/Section.php"
+  visibility: "public"
+---
+# `addSubsection`
+
+Add a subsection to this section.
+
+## Signature
+
+```php
+public function addSubsection(
+    string $title,
+    array $params = array (
+)
+): SignalWire\POM\Section
+```
+
+## Parameters
+
+| Name     | Type     | Required | Default     | Description |
+| -------- | -------- | -------- | ----------- | ----------- |
+| `title`  | `string` | yes      | —           | —           |
+| `params` | `array`  | no       | `array (
+)` | —           |
+
+## Returns
+
+`SignalWire\POM\Section`
+
+## Throws
+
+- `\InvalidArgumentException` — If $title is null
+
+## Source
+
+[`/src/src/SignalWire/POM/Section.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/POM/Section.php)
+
+Line 104.

@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/compat/tokens"
+title: "tokens"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Compat::tokens"
+  parent: "SignalWire\\REST\\Namespaces\\Compat"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php"
+  visibility: "public"
+---
+# `tokens`
+
+## Signature
+
+```php
+public function tokens(): SignalWire\REST\Namespaces\CompatTokens
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\CompatTokens`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Compat.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Compat.php)
+
+Line 128.

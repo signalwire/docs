@@ -1,0 +1,38 @@
+---
+slug: "/reference/cpp/signalwire/relay/web-socket-client/operator"
+title: "operator="
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "cpp"
+  qualified_name: "signalwire::relay::WebSocketClient::operator="
+  parent: "signalwire::relay::WebSocketClient"
+  module: "signalwire.relay"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/websocket.hpp"
+  visibility: "public"
+---
+# `operator=`
+
+## Signature
+
+```cpp
+WebSocketClient & operator=(const WebSocketClient &)
+```
+
+## Parameters
+
+| Name | Type                      | Required | Default | Description |
+| ---- | ------------------------- | -------- | ------- | ----------- |
+| `_`  | `const WebSocketClient &` | yes      | —       | —           |
+
+## Returns
+
+`WebSocketClient &`
+
+## Source
+
+[`include/signalwire/relay/websocket.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/relay/websocket.hpp)
+
+Line 28.

@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.skills/skill-registry/discover-skills"
+title: "DiscoverSkills()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Skills.SkillRegistry.DiscoverSkills()"
+  parent: "SignalWire.Skills.SkillRegistry"
+  module: "SignalWire.Skills"
+  visibility: "public"
+---
+# `DiscoverSkills()`
+
+Deprecated no-op: skills are loaded on-demand.
+(Python parity: `SkillRegistry.discover_skills` — kept for
+backwards compatibility; the Python doc says exactly this.)
+
+## Signature
+
+```dotnet
+public void DiscoverSkills()
+```

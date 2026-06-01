@@ -1,0 +1,53 @@
+---
+slug: "/reference/ruby/signal-wire/prefabs/receptionist"
+title: "Receptionist"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "ruby"
+  qualified_name: "SignalWire::Prefabs::Receptionist"
+  parent: "SignalWire::Prefabs"
+  module: "SignalWire.Prefabs"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/receptionist.rb"
+  visibility: "public"
+---
+# `Receptionist`
+
+Prefab agent for greeting callers and transferring them to departments.
+
+agent = Receptionist.new(
+departments: \[
+{ 'name' => 'sales',   'description' => 'Product inquiries', 'number' => '+15551235555' },
+{ 'name' => 'support', 'description' => 'Technical help',    'number' => '+15551236666' }
+]
+)
+
+## Signature
+
+```ruby
+class Receptionist < Object
+```
+
+## Inheritance
+
+**Extends:** `Object`
+
+## Methods
+
+- [`departments`](/reference/ruby/signal-wire/prefabs/receptionist/departments) — Returns the value of attribute departments.
+- [`global_data`](/reference/ruby/signal-wire/prefabs/receptionist/global-data)
+- [`greeting`](/reference/ruby/signal-wire/prefabs/receptionist/greeting) — Returns the value of attribute greeting.
+- [`handle_transfer`](/reference/ruby/signal-wire/prefabs/receptionist/handle-transfer)
+- [`initialize`](/reference/ruby/signal-wire/prefabs/receptionist/initialize)
+- [`name`](/reference/ruby/signal-wire/prefabs/receptionist/name) — Returns the value of attribute name.
+- [`prompt_sections`](/reference/ruby/signal-wire/prefabs/receptionist/prompt-sections)
+- [`route`](/reference/ruby/signal-wire/prefabs/receptionist/route) — Returns the value of attribute route.
+- [`tools`](/reference/ruby/signal-wire/prefabs/receptionist/tools)
+
+## Source
+
+[`lib/signalwire/prefabs/receptionist.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/prefabs/receptionist.rb)
+
+Line 21.

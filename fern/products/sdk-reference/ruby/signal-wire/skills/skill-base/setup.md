@@ -1,0 +1,30 @@
+---
+slug: "/reference/ruby/signal-wire/skills/skill-base/setup"
+title: "setup"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::SkillBase#setup"
+  parent: "SignalWire::Skills::SkillBase"
+  module: "SignalWire.Skills.SkillBase"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_base.rb"
+  visibility: "public"
+---
+# `setup`
+
+Called once after construction. Return +true+ if the skill is ready.
+
+## Signature
+
+```ruby
+def setup
+```
+
+## Source
+
+[`lib/signalwire/skills/skill_base.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/skill_base.rb)
+
+Line 52.

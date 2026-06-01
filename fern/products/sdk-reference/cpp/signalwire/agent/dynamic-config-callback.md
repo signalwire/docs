@@ -1,0 +1,30 @@
+---
+slug: "/reference/cpp/signalwire/agent/dynamic-config-callback"
+title: "DynamicConfigCallback"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "type_alias"
+  language: "cpp"
+  qualified_name: "signalwire::agent::DynamicConfigCallback"
+  parent: "signalwire::agent"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp"
+  visibility: "public"
+---
+# `DynamicConfigCallback`
+
+Dynamic config callback type.
+
+## Signature
+
+```cpp
+typedef std::function< void( const std::map< std::string, std::string > &query_params, const json &body_params, const std::map< std::string, std::string > &headers, class AgentBase &agent_copy)> DynamicConfigCallback
+```
+
+## Source
+
+[`include/signalwire/agent/agent_base.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/agent/agent_base.hpp)
+
+Line 89.

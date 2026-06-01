@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/datasphere/documents"
+title: "documents"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Datasphere::documents"
+  parent: "SignalWire\\REST\\Namespaces\\Datasphere"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Datasphere.php"
+  visibility: "public"
+---
+# `documents`
+
+## Signature
+
+```php
+public function documents(): SignalWire\REST\Namespaces\DatasphereDocuments
+```
+
+## Returns
+
+`SignalWire\REST\Namespaces\DatasphereDocuments`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Datasphere.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Datasphere.php)
+
+Line 23.

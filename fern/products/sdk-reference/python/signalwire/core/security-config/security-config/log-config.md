@@ -1,0 +1,35 @@
+---
+slug: "/reference/python/signalwire/core/security-config/security-config/log-config"
+title: "log_config"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.security_config.SecurityConfig.log_config"
+  parent: "signalwire.core.security_config.SecurityConfig"
+  module: "signalwire.core.security_config"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/security_config.py"
+---
+# `log_config`
+
+Log the current security configuration
+
+## Signature
+
+```python
+log_config(service_name: str)
+```
+
+## Parameters
+
+| Name           | Type  | Required | Default | Description |
+| -------------- | ----- | -------- | ------- | ----------- |
+| `service_name` | `str` | yes      | —       | —           |
+
+## Source
+
+[`/src/signalwire/signalwire/core/security_config.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/security_config.py)
+
+Line 346.

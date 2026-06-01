@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/contexts/contexts/gather-info/get-questions"
+title: "getQuestions"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.contexts.GatherInfo.getQuestions"
+  parent: "com.signalwire.sdk.contexts.GatherInfo"
+  module: "com.signalwire.sdk.contexts.GatherInfo"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/GatherInfo.java"
+  visibility: "public"
+---
+# `getQuestions`
+
+## Signature
+
+```java
+public java.util.List<com.signalwire.sdk.contexts.GatherQuestion> getQuestions()
+```
+
+## Returns
+
+`java.util.List<com.signalwire.sdk.contexts.GatherQuestion>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/contexts/GatherInfo.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/contexts/GatherInfo.java)
+
+Line 48.

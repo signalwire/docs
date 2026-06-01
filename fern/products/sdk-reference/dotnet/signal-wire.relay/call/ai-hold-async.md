@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.relay/call/ai-hold-async"
+title: "AiHoldAsync()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Relay.Call.AiHoldAsync()"
+  parent: "SignalWire.Relay.Call"
+  module: "SignalWire.Relay"
+  visibility: "public"
+---
+# `AiHoldAsync()`
+
+## Signature
+
+```dotnet
+public Task<Dictionary<string, object?>> AiHoldAsync()
+```
+
+## Returns
+
+`System.Threading.Tasks.Task<Dictionary<string,object>>`

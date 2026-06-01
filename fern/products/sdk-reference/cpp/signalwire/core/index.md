@@ -1,0 +1,31 @@
+---
+slug: "/reference/cpp/signalwire/core"
+title: "core"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "cpp"
+  qualified_name: "signalwire::core"
+  parent: "signalwire"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/core/logging_config.hpp"
+---
+# `core`
+
+## Signature
+
+```cpp
+namespace signalwire::core
+```
+
+## Modules
+
+- [`logging_config`](/reference/cpp/signalwire/core/logging-config)
+
+## Source
+
+[`include/signalwire/core/logging_config.hpp`](https://github.com/signalwire/signalwire-cpp/blob/main/include/signalwire/core/logging_config.hpp)
+
+Line 11.

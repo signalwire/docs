@@ -1,0 +1,25 @@
+---
+slug: "/reference/dotnet/signal-wire.prefabs/concierge-agent/get-venue-name"
+title: "GetVenueName()"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.Prefabs.ConciergeAgent.GetVenueName()"
+  parent: "SignalWire.Prefabs.ConciergeAgent"
+  module: "SignalWire.Prefabs"
+  visibility: "public"
+---
+# `GetVenueName()`
+
+## Signature
+
+```dotnet
+public string GetVenueName()
+```
+
+## Returns
+
+`string`

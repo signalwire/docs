@@ -1,0 +1,61 @@
+---
+slug: "/reference/java/com/signalwire/sdk/runtime/runtime/execution-mode/is-serverless-mode"
+title: "isServerlessMode"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.runtime.ExecutionMode.isServerlessMode"
+  parent: "com.signalwire.sdk.runtime.ExecutionMode"
+  module: "com.signalwire.sdk.runtime.ExecutionMode"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/ExecutionMode.java"
+  visibility: "public"
+---
+# `isServerlessMode`
+
+Cross-language SDK contract: true when the process is running
+inside any serverless / short-lived environment (i.e.
+
+anything
+other than `"server"`). Mirrors
+`signalwire.utils.is_serverless_mode` in Python.
+
+**Modifiers:** `static`
+
+## Signature
+
+**Overload 1**
+
+```java
+public static boolean isServerlessMode()
+```
+
+**Overload 2**
+
+```java
+public static boolean isServerlessMode(
+    com.signalwire.sdk.runtime.EnvProvider env
+)
+```
+
+## Parameters (Overload 2)
+
+| Name  | Type                                     | Required | Default | Description                                         |
+| ----- | ---------------------------------------- | -------- | ------- | --------------------------------------------------- |
+| `env` | `com.signalwire.sdk.runtime.EnvProvider` | yes      | —       | environment variable source (injectable for tests). |
+
+## Returns (Overload 1)
+
+`boolean` — `true` unless the detected mode is `"server"`.
+
+## Returns (Overload 2)
+
+`boolean` — true unless the detected mode is `"server"`.
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/runtime/ExecutionMode.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/runtime/ExecutionMode.java)
+
+Line 112.

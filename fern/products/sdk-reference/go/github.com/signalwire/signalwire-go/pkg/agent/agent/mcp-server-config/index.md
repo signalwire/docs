@@ -1,0 +1,38 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/agent/agent/mcp-server-config"
+title: "MCPServerConfig"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "class"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/agent.MCPServerConfig"
+  parent: "github.com/signalwire/signalwire-go/pkg/agent"
+  module: "github.com.signalwire.signalwire-go.pkg.agent"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go"
+---
+# `MCPServerConfig`
+
+MCPServerConfig holds configuration for an external MCP server connection.
+
+## Signature
+
+```go
+type MCPServerConfig struct
+```
+
+## Properties
+
+| Name           | Type                             | Required | Default | Description |
+| -------------- | -------------------------------- | -------- | ------- | ----------- |
+| `Headers`      | `Headers map[string]string`      | yes      | —       | —           |
+| `Resources`    | `Resources bool`                 | yes      | —       | —           |
+| `ResourceVars` | `ResourceVars map[string]string` | yes      | —       | —           |
+| `URL`          | `URL string`                     | yes      | —       | —           |
+
+## Source
+
+[`pkg/agent/agent.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/agent/agent.go)
+
+Line 1853.

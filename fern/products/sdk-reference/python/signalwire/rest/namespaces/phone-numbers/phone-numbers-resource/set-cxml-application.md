@@ -1,0 +1,45 @@
+---
+slug: "/reference/python/signalwire/rest/namespaces/phone-numbers/phone-numbers-resource/set-cxml-application"
+title: "set_cxml_application"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource.set_cxml_application"
+  parent: "signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource"
+  module: "signalwire.rest.namespaces.phone_numbers"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/phone_numbers.py"
+---
+# `set_cxml_application`
+
+Route inbound calls to an existing cXML application by ID.
+
+## Signature
+
+```python
+set_cxml_application(
+    resource_id: str,
+    application_id: str,
+    **extra = {}
+) -> dict
+```
+
+## Parameters
+
+| Name             | Type  | Required | Default | Description |
+| ---------------- | ----- | -------- | ------- | ----------- |
+| `resource_id`    | `str` | yes      | —       | —           |
+| `application_id` | `str` | yes      | —       | —           |
+| `...extra`       | —     | no       | `{}`    | —           |
+
+## Returns
+
+`dict`
+
+## Source
+
+[`/src/signalwire/signalwire/rest/namespaces/phone_numbers.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/rest/namespaces/phone_numbers.py)
+
+Line 86.

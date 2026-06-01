@@ -1,0 +1,44 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/rest/http-client/post"
+title: "post"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.HttpClient.post"
+  parent: "com.signalwire.sdk.rest.HttpClient"
+  module: "com.signalwire.sdk.rest.HttpClient"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/HttpClient.java"
+  visibility: "public"
+---
+# `post`
+
+POST request with JSON body.
+
+## Signature
+
+```java
+public java.util.Map<java.lang.String,java.lang.Object> post(
+    java.lang.String path,
+    java.util.Map<java.lang.String,java.lang.Object> body
+)
+```
+
+## Parameters
+
+| Name   | Type                                               | Required | Default | Description |
+| ------ | -------------------------------------------------- | -------- | ------- | ----------- |
+| `path` | `java.lang.String`                                 | yes      | —       | —           |
+| `body` | `java.util.Map<java.lang.String,java.lang.Object>` | yes      | —       | —           |
+
+## Returns
+
+`java.util.Map<java.lang.String,java.lang.Object>`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/HttpClient.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/HttpClient.java)
+
+Line 104.

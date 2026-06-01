@@ -1,0 +1,28 @@
+---
+slug: "/reference/ruby/signal-wire/skills/builtin/joke-skill/setup"
+title: "setup"
+sdk_label: "Ruby SDK"
+icon: "ruby"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "ruby"
+  qualified_name: "SignalWire::Skills::Builtin::JokeSkill#setup"
+  parent: "SignalWire::Skills::Builtin::JokeSkill"
+  module: "SignalWire.Skills.Builtin.JokeSkill"
+  source_url: "https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/joke.rb"
+  visibility: "public"
+---
+# `setup`
+
+## Signature
+
+```ruby
+def setup
+```
+
+## Source
+
+[`lib/signalwire/skills/builtin/joke.rb`](https://github.com/signalwire/signalwire-ruby/blob/main/lib/signalwire/skills/builtin/joke.rb)
+
+Line 14.

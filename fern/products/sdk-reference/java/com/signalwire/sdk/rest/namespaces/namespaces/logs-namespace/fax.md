@@ -1,0 +1,32 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/logs-namespace/fax"
+title: "fax"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.LogsNamespace.fax"
+  parent: "com.signalwire.sdk.rest.namespaces.LogsNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.LogsNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/LogsNamespace.java"
+  visibility: "public"
+---
+# `fax`
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.namespaces.LogsNamespace.FaxLogs fax()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.namespaces.LogsNamespace.FaxLogs`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/LogsNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/LogsNamespace.java)
+
+Line 36.

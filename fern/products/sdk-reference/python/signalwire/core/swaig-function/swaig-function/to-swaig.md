@@ -1,0 +1,47 @@
+---
+slug: "/reference/python/signalwire/core/swaig-function/swaig-function/to-swaig"
+title: "to_swaig"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.swaig_function.SWAIGFunction.to_swaig"
+  parent: "signalwire.core.swaig_function.SWAIGFunction"
+  module: "signalwire.core.swaig_function"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/swaig_function.py"
+---
+# `to_swaig`
+
+Convert this function to a SWAIG-compatible JSON object for SWML
+
+## Signature
+
+```python
+to_swaig(
+    base_url: str,
+    token: Optional[str] = None,
+    call_id: Optional[str] = None,
+    include_auth: bool = True
+) -> Dict[str, Any]
+```
+
+## Parameters
+
+| Name           | Type            | Required | Default | Description                                |
+| -------------- | --------------- | -------- | ------- | ------------------------------------------ |
+| `base_url`     | `str`           | yes      | —       | Base URL for the webhook                   |
+| `token`        | `Optional[str]` | no       | `None`  | Optional auth token to include             |
+| `call_id`      | `Optional[str]` | no       | `None`  | Optional call ID for session tracking      |
+| `include_auth` | `bool`          | no       | `True`  | Whether to include auth credentials in URL |
+
+## Returns
+
+`Dict[str, Any]` — Dictionary representation for the SWAIG array in SWML
+
+## Source
+
+[`/src/signalwire/signalwire/core/swaig_function.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/swaig_function.py)
+
+Line 234.

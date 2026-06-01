@@ -1,0 +1,23 @@
+---
+slug: "/reference/java/com/signalwire/sdk/server/server"
+title: "server"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.server"
+  module: "com.signalwire.sdk.server"
+---
+# `server`
+
+## Signature
+
+```java
+package com.signalwire.sdk.server
+```
+
+## Classes
+
+- [`AgentServer`](/reference/java/com/signalwire/sdk/server/server/agent-server) — Multi-agent hosting server.

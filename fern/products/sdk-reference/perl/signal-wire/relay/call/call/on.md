@@ -1,0 +1,34 @@
+---
+slug: "/reference/perl/signal-wire/relay/call/call/on"
+title: "on"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::Relay::Call::on"
+  parent: "SignalWire::Relay::Call"
+  module: "SignalWire.Relay.Call"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Relay/Call.pm"
+  visibility: "public"
+---
+# `on`
+
+## Signature
+
+```perl
+sub on($cb)
+```
+
+## Parameters
+
+| Name | Type | Required | Default | Description |
+| ---- | ---- | -------- | ------- | ----------- |
+| `cb` | —    | yes      | —       | —           |
+
+## Source
+
+[`lib/SignalWire/Relay/Call.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/Relay/Call.pm)
+
+Line 140.

@@ -1,0 +1,35 @@
+---
+slug: "/reference/perl/signal-wire/rest/namespaces/compat/compat/update__6"
+title: "update"
+sdk_label: "Perl SDK"
+icon: "perl"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "perl"
+  qualified_name: "SignalWire::REST::Namespaces::Compat::update"
+  parent: "SignalWire::REST::Namespaces::Compat"
+  module: "SignalWire.REST.Namespaces.Compat"
+  source_url: "https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Compat.pm"
+  visibility: "public"
+---
+# `update`
+
+## Signature
+
+```perl
+sub update($sid, %kwargs)
+```
+
+## Parameters
+
+| Name        | Type | Required | Default | Description |
+| ----------- | ---- | -------- | ------- | ----------- |
+| `sid`       | —    | yes      | —       | —           |
+| `...kwargs` | —    | no       | —       | —           |
+
+## Source
+
+[`lib/SignalWire/REST/Namespaces/Compat.pm`](https://github.com/signalwire/signalwire-perl/blob/main/lib/SignalWire/REST/Namespaces/Compat.pm)
+
+Line 216.

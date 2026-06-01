@@ -1,0 +1,42 @@
+---
+slug: "/reference/typescript/context-builder/context/set-initial-step"
+title: "setInitialStep"
+sdk_label: "TypeScript SDK"
+icon: "typescript"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "typescript"
+  qualified_name: "ContextBuilder.Context.setInitialStep"
+  parent: "ContextBuilder.Context"
+  module: "ContextBuilder"
+  source_url: "https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts"
+---
+# `setInitialStep`
+
+Set which step the context starts on when entered.
+
+By default, a context starts on its first step (index 0). Use this to
+skip a preamble step on re-entry via `change_context`.
+
+## Signature
+
+```typescript
+setInitialStep(stepName: string): this
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description                                                                                        |
+| ---------- | -------- | -------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `stepName` | `string` | yes      | —       | Name of the step to start on. Must exist in this context (validated by ContextBuilder.validate()). |
+
+## Returns
+
+`this` — This context for chaining.
+
+## Source
+
+[`src/ContextBuilder.ts`](https://github.com/signalwire/signalwire-typescript/blob/main/src/ContextBuilder.ts)
+
+Line 670.

@@ -1,0 +1,33 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/pkg/contexts/contexts/gather-info/to-map"
+title: "ToMap"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/pkg/contexts.GatherInfo.ToMap"
+  parent: "github.com/signalwire/signalwire-go/pkg/contexts.GatherInfo"
+  module: "github.com.signalwire.signalwire-go.pkg.contexts"
+  source_url: "https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go"
+---
+# `ToMap`
+
+ToMap serialises to the SWML map format. Callers that construct GatherInfo directly should call Validate() first to ensure the result is valid SWML. Step.ToMap() enforces this automatically by only calling ToMap() when len(Questions) > 0.
+
+## Signature
+
+```go
+func (*GatherInfo) ToMap() map[string]any
+```
+
+## Returns
+
+`map[string]any`
+
+## Source
+
+[`pkg/contexts/contexts.go`](https://github.com/signalwire/signalwire-go/blob/main/pkg/contexts/contexts.go)
+
+Line 140.

@@ -1,0 +1,37 @@
+---
+slug: "/reference/php/signal-wire/swml/swml/service/get-tool-names"
+title: "getToolNames"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\SWML\\Service::getToolNames"
+  parent: "SignalWire\\SWML\\Service"
+  module: "SignalWire.SWML"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php"
+  visibility: "public"
+---
+# `getToolNames`
+
+Return the names of registered tools in the order they were
+
+registered. Stable ordering matters for CLI output and for
+tests that rely on deterministic enumeration.
+
+## Signature
+
+```php
+public function getToolNames(): array
+```
+
+## Returns
+
+`array`
+
+## Source
+
+[`/src/src/SignalWire/SWML/Service.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/SWML/Service.php)
+
+Line 327.

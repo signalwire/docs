@@ -1,0 +1,36 @@
+---
+slug: "/reference/python/signalwire/core/agent/tools/decorator/tool-decorator/create-class-decorator"
+title: "create_class_decorator"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.agent.tools.decorator.ToolDecorator.create_class_decorator"
+  parent: "signalwire.core.agent.tools.decorator.ToolDecorator"
+  module: "signalwire.core.agent.tools.decorator"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/decorator.py"
+---
+# `create_class_decorator`
+
+Create class tool decorator.
+
+**Modifiers:** `classmethod`
+
+## Signature
+
+```python
+@classmethod
+create_class_decorator()
+```
+
+## Returns
+
+Decorator function
+
+## Source
+
+[`/src/signalwire/signalwire/core/agent/tools/decorator.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/agent/tools/decorator.py)
+
+Line 132.

@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/contexts/context-builder/step/set-skip-user-turn"
+title: "set_skip_user_turn"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::contexts::context_builder::Step::set_skip_user_turn"
+  parent: "signalwire::contexts::context_builder::Step"
+  module: "contexts.context_builder"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs"
+  visibility: "public"
+---
+# `set_skip_user_turn`
+
+## Signature
+
+```rust
+fn set_skip_user_turn(&mut self, skip: bool) -> &mut Self
+```
+
+## Parameters
+
+| Name   | Type   | Required | Default | Description |
+| ------ | ------ | -------- | ------- | ----------- |
+| `skip` | `bool` | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/contexts/context_builder.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/contexts/context_builder.rs)
+
+Line 281.

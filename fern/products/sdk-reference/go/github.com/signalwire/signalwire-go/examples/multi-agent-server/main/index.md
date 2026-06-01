@@ -1,0 +1,23 @@
+---
+slug: "/reference/go/github.com/signalwire/signalwire-go/examples/multi-agent-server/main"
+title: "main"
+sdk_label: "Go SDK"
+icon: "golang"
+lustri:
+  auto_generated: true
+  kind: "module"
+  language: "go"
+  qualified_name: "github.com/signalwire/signalwire-go/examples/multi_agent_server"
+  module: "github.com.signalwire.signalwire-go.examples.multi_agent_server"
+---
+# `main`
+
+Example: multi\_agent\_server
+
+Hosts multiple AI agents on a single HTTP server using AgentServer. Each agent gets its own route and has unique prompts and tools.
+
+## Signature
+
+```go
+package main
+```

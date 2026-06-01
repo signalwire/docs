@@ -1,0 +1,46 @@
+---
+slug: "/reference/python/signalwire/core/mixins/web-mixin/web-mixin/on-request"
+title: "on_request"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.mixins.web_mixin.WebMixin.on_request"
+  parent: "signalwire.core.mixins.web_mixin.WebMixin"
+  module: "signalwire.core.mixins.web_mixin"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/web_mixin.py"
+---
+# `on_request`
+
+Called when SWML is requested, with request data when available
+
+This method overrides SWMLService's on\_request to properly handle SWML generation
+for AI Agents.
+
+## Signature
+
+```python
+on_request(
+    request_data: Optional[dict] = None,
+    callback_path: Optional[str] = None
+) -> Optional[dict]
+```
+
+## Parameters
+
+| Name            | Type             | Required | Default | Description                                         |
+| --------------- | ---------------- | -------- | ------- | --------------------------------------------------- |
+| `request_data`  | `Optional[dict]` | no       | `None`  | Optional dictionary containing the parsed POST body |
+| `callback_path` | `Optional[str]`  | no       | `None`  | Optional callback path                              |
+
+## Returns
+
+`Optional[dict]` — None to use the default SWML rendering (which will call \_render\_swml)
+
+## Source
+
+[`/src/signalwire/signalwire/core/mixins/web_mixin.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/mixins/web_mixin.py)
+
+Line 1079.

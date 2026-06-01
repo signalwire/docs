@@ -1,0 +1,44 @@
+---
+slug: "/reference/cpp/signalwire/add-skill-directory"
+title: "add_skill_directory"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "cpp"
+  qualified_name: "signalwire::add_skill_directory"
+  parent: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/src/signalwire.cpp"
+  visibility: "public"
+---
+# `add_skill_directory`
+
+Add a directory to search for skills.
+Mirrors Python's signalwire.add\_skill\_directory(path) — delegates to the singleton skills::SkillRegistry instance so third-party skill collections can be registered by path.
+
+std::invalid\_argument
+
+when the path doesn't exist or isn't a directory.
+
+## Signature
+
+```cpp
+void add_skill_directory(const std::string & path)
+```
+
+## Parameters
+
+| Name   | Type                  | Required | Default | Description |
+| ------ | --------------------- | -------- | ------- | ----------- |
+| `path` | `const std::string &` | yes      | —       | —           |
+
+## Throws
+
+- `std::invalid_argument` — when the path doesn't exist or isn't a directory.
+
+## Source
+
+[`src/signalwire.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/signalwire.cpp)
+
+Line 94.

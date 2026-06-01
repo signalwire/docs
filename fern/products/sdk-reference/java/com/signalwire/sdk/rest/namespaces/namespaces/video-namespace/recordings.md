@@ -1,0 +1,37 @@
+---
+slug: "/reference/java/com/signalwire/sdk/rest/namespaces/namespaces/video-namespace/recordings"
+title: "recordings"
+sdk_label: "Java SDK"
+icon: "java"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "java"
+  qualified_name: "com.signalwire.sdk.rest.namespaces.VideoNamespace.recordings"
+  parent: "com.signalwire.sdk.rest.namespaces.VideoNamespace"
+  module: "com.signalwire.sdk.rest.namespaces.VideoNamespace"
+  source_url: "https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/VideoNamespace.java"
+  visibility: "public"
+---
+# `recordings`
+
+Legacy alias for `#roomRecordings()`; previous releases of the
+Java port exposed video.recordings().
+
+Kept for backwards compatibility.
+
+## Signature
+
+```java
+public com.signalwire.sdk.rest.namespaces.VideoNamespace.VideoRoomRecordings recordings()
+```
+
+## Returns
+
+`com.signalwire.sdk.rest.namespaces.VideoNamespace.VideoRoomRecordings`
+
+## Source
+
+[`src/main/java/com/signalwire/sdk/rest/namespaces/VideoNamespace.java`](https://github.com/signalwire/signalwire-java/blob/main/src/main/java/com/signalwire/sdk/rest/namespaces/VideoNamespace.java)
+
+Line 56.

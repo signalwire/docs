@@ -1,0 +1,38 @@
+---
+slug: "/reference/rust/signalwire/agent/agent-base/agent-base/set-languages"
+title: "set_languages"
+sdk_label: "Rust SDK"
+icon: "rust"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "rust"
+  qualified_name: "signalwire::agent::agent_base::AgentBase::set_languages"
+  parent: "signalwire::agent::agent_base::AgentBase"
+  module: "agent.agent_base"
+  source_url: "https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs"
+  visibility: "public"
+---
+# `set_languages`
+
+## Signature
+
+```rust
+fn set_languages(&mut self, languages: ?<?>) -> &mut Self
+```
+
+## Parameters
+
+| Name        | Type   | Required | Default | Description |
+| ----------- | ------ | -------- | ------- | ----------- |
+| `languages` | `?<?>` | yes      | —       | —           |
+
+## Returns
+
+`&mut Self`
+
+## Source
+
+[`src/agent/agent_base.rs`](https://github.com/signalwire/signalwire-rust/blob/main/src/agent/agent_base.rs)
+
+Line 695.

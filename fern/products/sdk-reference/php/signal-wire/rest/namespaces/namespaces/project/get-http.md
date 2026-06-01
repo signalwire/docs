@@ -1,0 +1,32 @@
+---
+slug: "/reference/php/signal-wire/rest/namespaces/namespaces/project/get-http"
+title: "getHttp"
+sdk_label: "PHP SDK"
+icon: "php"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "php"
+  qualified_name: "SignalWire\\REST\\Namespaces\\Project::getHttp"
+  parent: "SignalWire\\REST\\Namespaces\\Project"
+  module: "SignalWire.REST.Namespaces"
+  source_url: "https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Project.php"
+  visibility: "public"
+---
+# `getHttp`
+
+## Signature
+
+```php
+public function getHttp(): SignalWire\REST\HttpClient
+```
+
+## Returns
+
+`SignalWire\REST\HttpClient`
+
+## Source
+
+[`/src/src/SignalWire/REST/Namespaces/Project.php`](https://github.com/signalwire/signalwire-php/blob/main//src/src/SignalWire/REST/Namespaces/Project.php)
+
+Line 28.

@@ -1,0 +1,36 @@
+---
+slug: "/reference/dotnet/signal-wire.swml/schema/get-verb-parameters-string"
+title: "GetVerbParameters(string)"
+sdk_label: ".NET SDK"
+icon: "dotnet"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "dotnet"
+  qualified_name: "SignalWire.SWML.Schema.GetVerbParameters(string)"
+  parent: "SignalWire.SWML.Schema"
+  module: "SignalWire.SWML"
+  visibility: "public"
+---
+# `GetVerbParameters(string)`
+
+Get the parameter (property) definitions for a verb.
+Returns an empty dict when the verb is unknown or has no
+`properties`. (Python parity:
+`SchemaUtils.get_verb_parameters(verb_name)`.)
+
+## Signature
+
+```dotnet
+public Dictionary<string, JsonElement> GetVerbParameters(string verbName)
+```
+
+## Parameters
+
+| Name       | Type     | Required | Default | Description |
+| ---------- | -------- | -------- | ------- | ----------- |
+| `verbName` | `string` | yes      | —       | —           |
+
+## Returns
+
+`Dictionary<string,System.Text.Json.JsonElement>`
