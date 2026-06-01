@@ -1,0 +1,82 @@
+---
+slug: "/reference/cpp/signalwire/security/wrap-with-signature-validation"
+title: "WrapWithSignatureValidation"
+sdk_label: "C++ SDK"
+icon: "cpp"
+lustri:
+  auto_generated: true
+  kind: "function"
+  language: "cpp"
+  qualified_name: "signalwire::security::WrapWithSignatureValidation"
+  parent: "signalwire::security"
+  module: "signalwire"
+  source_url: "https://github.com/signalwire/signalwire-cpp/blob/main/src/security/webhook_middleware.cpp"
+  visibility: "public"
+---
+# `WrapWithSignatureValidation`
+
+Wrap a downstream cpp-httplib POST handler with SignalWire webhook signature validation.
+Behavior:
+
+Read req.body (cpp-httplib has already buffered it).
+Pull X-SignalWire-Signature (or the X-Twilio-Signature legacy alias) from headers.
+Reconstruct the public URL the platform POSTed to (proxy-aware).
+Call ValidateWebhookSignature.
+On invalid / missing signature: respond 403 Forbidden with no body detail. The downstream handler is NOT called. Per the porting-sdk spec, the validator MUST NOT log which branch failed or the expected signature.
+On valid: call downstream(req, res). The handler can read req.body directly — cpp-httplib buffers it for repeat reads.
+
+signing\_key
+
+Customer's Signing Key (SignalWire Dashboard → API Credentials). MUST NOT be empty — empty throws std::invalid\_argument at wrap time, that's a programming error not a runtime failure.
+
+downstream
+
+Handler to invoke on a valid signature.
+
+opts
+
+Optional URL reconstruction knobs.
+
+A handler suitable for server.Post(path, handler).
+
+std::invalid\_argument
+
+if signing\_key is empty.
+
+## Signature
+
+```cpp
+HttpHandler WrapWithSignatureValidation(
+    std::string_view signing_key,
+    HttpHandler downstream,
+    WebhookValidatorOptions opts = {}
+)
+```
+
+## Parameters
+
+<ParamField path="signing_key" type="std::string_view" required>
+  Customer's Signing Key (SignalWire Dashboard → API Credentials). MUST NOT be empty — empty throws std::invalid\_argument at wrap time, that's a programming error not a runtime failure.
+</ParamField>
+
+<ParamField path="downstream" type="HttpHandler" required>
+  Handler to invoke on a valid signature.
+</ParamField>
+
+<ParamField path="opts" type="WebhookValidatorOptions" default="{}">
+  Optional URL reconstruction knobs.
+</ParamField>
+
+## Returns
+
+`HttpHandler` — A handler suitable for server.Post(path, handler).
+
+## Throws
+
+- `std::invalid_argument` — if signing\_key is empty.
+
+## Source
+
+[`src/security/webhook_middleware.cpp`](https://github.com/signalwire/signalwire-cpp/blob/main/src/security/webhook_middleware.cpp)
+
+Line 107.

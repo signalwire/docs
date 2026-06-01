@@ -1,0 +1,110 @@
+---
+slug: "/reference/python/signalwire/core/contexts/step/set-functions"
+title: "set_functions"
+sdk_label: "Python SDK"
+icon: "python"
+lustri:
+  auto_generated: true
+  kind: "method"
+  language: "python"
+  qualified_name: "signalwire.core.contexts.Step.set_functions"
+  parent: "signalwire.core.contexts.Step"
+  module: "signalwire.core.contexts"
+  source_url: "https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py"
+---
+# `set_functions`
+
+Set which non-internal functions are callable while this step is active.
+
+IMPORTANT — keep the per-step active set small:
+LLM tool selection accuracy degrades noticeably once the
+per-call tool list grows past ~7-8 entries. Symptoms: the model
+has the right tool available, the user's request clearly matches
+it, but the model doesn't call it (or calls a near-neighbor
+instead). Same prompt may pass on rerun. This is the LLM's
+native tool-selection behavior — not something the SDK can fix.
+
+```
+Mitigations:
+  - Whitelist only the tools the current step actually needs.
+    A 4-tool step is more reliable than a 12-tool step.
+  - Split a busy step into two narrower steps so the relevant
+    tools are partitioned by phase of the conversation.
+  - Remember that `next_step` and `change_context` are
+    auto-injected when valid_steps / valid_contexts are set —
+    they count against the budget too. Don't list them in
+    `functions`; the runtime adds them separately.
+```
+
+IMPORTANT — inheritance behavior:
+If you do NOT call this method, the step inherits whichever function
+set was active on the previous step (or the previous context's last
+step). The server-side runtime only resets the active set when a
+step explicitly declares its `functions` field. This is by design,
+but it is the most common source of bugs in multi-step agents:
+forgetting set\_functions() on a later step lets the previous step's
+tools leak through.
+
+```
+Best practice: call set_functions() explicitly on every step that
+should have a different toolset than the previous one.
+```
+
+Internal functions (`startup_hook`, `hangup_hook`, `check_for_input`,
+`summarize_conversation`, `gather_submit`, `get_ideal_strategy`) are
+ALWAYS protected and cannot be deactivated by this whitelist.
+
+The native navigation tools `next_step` and `change_context` are
+injected automatically when valid\_steps / valid\_contexts is set; they
+are not affected by this list and do not need to appear in it.
+
+step.set\_functions(\["lookup\_account", "check\_balance"])  # whitelist
+step.set\_functions(\[])                                   # disable all
+step.set\_functions("none")                               # disable all (alt)
+
+## Signature
+
+```python
+set_functions(functions: Union[str, List[str]]) -> Step
+```
+
+## Parameters
+
+<ParamField path="functions" type="Union[str, List[str]]" required>
+  One of:
+</ParamField>
+
+## Returns
+
+`Step` — Self for method chaining.
+
+## Examples
+
+<CodeBlocks>
+  <CodeBlock title="Example 1">
+    ```python
+    Mitigations:
+      - Whitelist only the tools the current step actually needs.
+        A 4-tool step is more reliable than a 12-tool step.
+      - Split a busy step into two narrower steps so the relevant
+        tools are partitioned by phase of the conversation.
+      - Remember that `next_step` and `change_context` are
+        auto-injected when valid_steps / valid_contexts are set —
+        they count against the budget too. Don't list them in
+        `functions`; the runtime adds them separately.
+    ```
+  </CodeBlock>
+
+  <CodeBlock title="Example 2">
+    ```python
+    Best practice: call set_functions() explicitly on every step that
+    should have a different toolset than the previous one.
+    ```
+  </CodeBlock>
+</CodeBlocks>
+
+## Source
+
+[`/src/signalwire/signalwire/core/contexts.py`](https://github.com/signalwire/signalwire-python/blob/main//src/signalwire/signalwire/core/contexts.py)
+
+Line 192.
