@@ -7,8 +7,8 @@ namespace SignalWireAPI.Calling;
 @doc("""
   Posted to the `transcribe` `status_url` when the call's transcription finishes.
   On success the `event_type` is `calling.transcript.completed` and `params.text` carries
-  the transcribed text. If transcription fails the `event_type` is `calling.transcript.failed`
-  and `text` is omitted. SWML transcription is centered on the transcript, not on a recording —
+  the transcribed text. If transcription fails the `event_type` is `calling.transcript.failed`.
+  SWML transcription is centered on the transcript, not on a recording —
   the recording is only the underlying mechanism.
   """)
 model TranscribeStatusCallbackPayload {
@@ -42,11 +42,8 @@ model TranscribeStatusCallbackPayload {
     @example("2e1e66e5-5d07-413d-9668-55542992eec0")
     segment_id: uuid;
 
-    @doc("""
-      The transcribed text of the call. Present on `calling.transcript.completed`;
-      omitted when transcription failed or produced no text.
-      """)
+    @doc("The transcribed text of the call.")
     @example("A long time ago in a galaxy far, far away, Luke, I am your father. Do or do not, there is no try. May the force be with you. These aren't the droids you're looking for. I find your lack of faith disturbing. The force will be with you always.")
-    text?: string;
+    text: string;
   };
 }
