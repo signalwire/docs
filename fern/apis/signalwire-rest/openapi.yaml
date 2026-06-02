@@ -18807,6 +18807,102 @@ components:
       unevaluatedProperties:
         not: {}
       description: WebSocket tap target parameters.
+    Calling.TranscribeStatusCallbackPayload:
+      type: object
+      required:
+        - event_type
+        - params
+      properties:
+        event_type:
+          type: string
+          description: The event type. Always `calling.call.transcribe`.
+          examples:
+            - calling.call.transcribe
+        event_channel:
+          type: string
+          description: The event channel, including the session ID.
+          examples:
+            - swml:00000000-0000-0000-0000-000000000000
+        timestamp:
+          type: number
+          description: Unix timestamp (seconds) when the event was generated.
+          examples:
+            - 1640000000.123
+        project_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The project ID associated with the call.
+        space_id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The Space ID associated with the call.
+        params:
+          type: object
+          properties:
+            call_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: The call ID.
+            node_id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: The node handling the call.
+            control_id:
+              type: string
+              description: Identifier of this transcription.
+              examples:
+                - transcribe-control-1
+            state:
+              type: string
+              enum:
+                - transcribing
+                - finished
+              description: 'Transcription state: `transcribing` when it starts, `finished` when it ends.'
+              examples:
+                - finished
+            url:
+              type: string
+              format: uri
+              description: URL where the call recording is hosted. Retrieve the transcription from here.
+            recording_id:
+              type: string
+              description: Identifier of the call recording.
+            status_url:
+              type: string
+              format: uri
+              description: The callback URL the event was delivered to.
+            duration:
+              type: number
+              description: Length of the recording in seconds. Present when `state` is `finished`.
+              examples:
+                - 42.5
+            size:
+              type: integer
+              format: int64
+              description: Size of the recording in bytes. Present when `state` is `finished`.
+              examples:
+                - 680000
+            start_time:
+              type: number
+              description: Unix timestamp when the recording started. Present when `state` is `finished`.
+            end_time:
+              type: number
+              description: Unix timestamp when the recording ended. Present when `state` is `finished`.
+          required:
+            - state
+          unevaluatedProperties:
+            not: {}
+          description: Transcription details.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Payload sent to the `status_url` each time a background transcription changes state:
+        once when transcription starts (`transcribing`) and once when it ends (`finished`).
+        The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
+        method's `status_url` and the REST `calling.transcribe` command.
+
+        The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
+      title: Transcribe status callback
     Calling.TtsGender:
       type: string
       enum:
@@ -45909,6 +46005,114 @@ servers:
         default: '{Your_Space_Name}'
         description: Your SignalWire Space name
 webhooks:
+  transcribeStatusCallback:
+    post:
+      operationId: transcribe_status_callback
+      summary: Transcribe status callback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_type:
+                  type: string
+                  description: The event type. Always `calling.call.transcribe`.
+                  example: calling.call.transcribe
+                event_channel:
+                  type: string
+                  description: The event channel, including the session ID.
+                  example: swml:00000000-0000-0000-0000-000000000000
+                timestamp:
+                  type: number
+                  description: Unix timestamp (seconds) when the event was generated.
+                  example: 1640000000.123
+                project_id:
+                  type: string
+                  format: uuid
+                  description: The project ID associated with the call.
+                space_id:
+                  type: string
+                  format: uuid
+                  description: The Space ID associated with the call.
+                params:
+                  type: object
+                  properties:
+                    call_id:
+                      type: string
+                      format: uuid
+                      description: The call ID.
+                    node_id:
+                      type: string
+                      format: uuid
+                      description: The node handling the call.
+                    control_id:
+                      type: string
+                      description: Identifier of this transcription.
+                      example: transcribe-control-1
+                    state:
+                      type: string
+                      enum:
+                        - transcribing
+                        - finished
+                      description: 'Transcription state: `transcribing` when it starts, `finished` when it ends.'
+                      example: finished
+                    url:
+                      type: string
+                      format: uri
+                      description: URL where the call recording is hosted. Retrieve the transcription from here.
+                    recording_id:
+                      type: string
+                      description: Identifier of the call recording.
+                    status_url:
+                      type: string
+                      format: uri
+                      description: The callback URL the event was delivered to.
+                    duration:
+                      type: number
+                      description: Length of the recording in seconds. Present when `state` is `finished`.
+                      example: 42.5
+                    size:
+                      type: integer
+                      format: int64
+                      description: Size of the recording in bytes. Present when `state` is `finished`.
+                      example: 680000
+                    start_time:
+                      type: number
+                      description: Unix timestamp when the recording started. Present when `state` is `finished`.
+                    end_time:
+                      type: number
+                      description: Unix timestamp when the recording ended. Present when `state` is `finished`.
+                  required:
+                    - state
+                  unevaluatedProperties:
+                    not: {}
+                  description: Transcription details.
+              required:
+                - event_type
+                - params
+              unevaluatedProperties:
+                not: {}
+              description: |-
+                Payload sent to the `status_url` each time a background transcription changes state:
+                once when transcription starts (`transcribing`) and once when it ends (`finished`).
+                The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
+                method's `status_url` and the REST `calling.transcribe` command.
+
+                The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
+      responses:
+        '200':
+          description: Webhook received
+      description: |-
+        Payload sent to the `status_url` each time a background transcription changes state:
+        once when transcription starts (`transcribing`) and once when it ends (`finished`).
+        The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
+        method's `status_url` and the REST `calling.transcribe` command.
+
+        The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
+      tags:
+        - Calls
   messageStatusCallback:
     post:
       operationId: message_status_callback

@@ -5,13 +5,16 @@ import "../../../_shared/alias/token-permissions.tsp";
 import "./models/requests.tsp";
 import "./models/responses.tsp";
 import "./models/examples.tsp";
+import "./models/webhooks.tsp";
 import "../tags.tsp";
+import "../../../_shared/webhook/decorator.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 using Types.StatusCodes;
 
 @route("/calls")
+@webhook("transcribeStatusCallback", TranscribeStatusCallbackPayload, CALLS_TAG)
 namespace SignalWireAPI.Calling.Calls {
   @tag(CALLS_TAG)
   @friendlyName("Calls")
