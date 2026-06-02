@@ -1464,11 +1464,11 @@ model CallTapStopRequest {
 // ============================================
 
 /**
- * Start background transcription of an active call.
+ * Start transcribing an active call in the background.
  *
- * A shadow recording (WAV, stereo, both directions) is created with transcription enabled.
- * Only one active transcription per call is allowed at a time; starting a second while one is
- * active returns a conflict. Stop the transcription with `calling.transcribe.stop` using the
+ * A recording of the call is produced, and its location is returned so you can retrieve the
+ * transcription. Only one transcription can be active on a call at a time; starting another
+ * while one is running returns a conflict. Stop it with `calling.transcribe.stop` using the
  * same `control_id`.
  */
 @summary("calling.transcribe")
@@ -1477,7 +1477,7 @@ model CallTranscribeRequest {
   @example(CallIdExample)
   id: uuid;
 
-  @doc("The `calling.transcribe` command starts background transcription on an active call.")
+  @doc("The `calling.transcribe` command starts transcribing an active call in the background.")
   @example("calling.transcribe")
   command: "calling.transcribe";
 

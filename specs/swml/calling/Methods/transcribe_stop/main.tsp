@@ -4,8 +4,8 @@ namespace SWML.Calling;
 model TranscribeStop {
   @summary("transcribe_stop")
   @doc("""
-    Stop an active background transcription that was started with `transcribe`.
-    Stops the transcription tracked for the current call; no parameters are required.
+    Stop the transcription currently running on the call, started with `transcribe`.
+    No parameters are required.
     """)
   @example(#{})
   transcribe_stop: {};
