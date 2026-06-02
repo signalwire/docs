@@ -50,6 +50,8 @@ namespace SignalWireAPI.Calling.Calls {
       | `calling.detect.stop` | Stop active detector |
       | `calling.tap` | Tap call audio to an RTP or WebSocket endpoint |
       | `calling.tap.stop` | Stop active tap |
+      | `calling.transcribe` | Start background transcription of a call |
+      | `calling.transcribe.stop` | Stop active transcription |
       | `calling.stream` | Stream call audio to a WebSocket endpoint |
       | `calling.stream.stop` | Stop active stream |
       | `calling.denoise` | Start noise reduction on a call |
@@ -128,6 +130,20 @@ namespace SignalWireAPI.Calling.Calls {
       #{
         title: "calling.stream",
         description: "Start streaming call audio to a WebSocket endpoint",
+      }
+    )
+    @opExample(
+      #{ parameters: transcribeStopCallExample },
+      #{
+        title: "calling.transcribe.stop",
+        description: "Stop an active transcription operation",
+      }
+    )
+    @opExample(
+      #{ parameters: transcribeCallExample },
+      #{
+        title: "calling.transcribe",
+        description: "Start background transcription on an active call",
       }
     )
     @opExample(

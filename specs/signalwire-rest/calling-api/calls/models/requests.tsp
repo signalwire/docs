@@ -1460,6 +1460,58 @@ model CallTapStopRequest {
 }
 
 // ============================================
+// Transcribe Commands
+// ============================================
+
+/**
+ * Start background transcription of an active call.
+ *
+ * A shadow recording (WAV, stereo, both directions) is created with transcription enabled.
+ * Only one active transcription per call is allowed at a time; starting a second while one is
+ * active returns a conflict. Stop the transcription with `calling.transcribe.stop` using the
+ * same `control_id`.
+ */
+@summary("calling.transcribe")
+model CallTranscribeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe` command starts background transcription on an active call.")
+  @example("calling.transcribe")
+  command: "calling.transcribe";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this transcription operation, used to control it later.")
+    @example("transcribe-control-1")
+    control_id: string;
+
+    @doc("HTTP or HTTPS URL that receives transcription lifecycle webhooks.")
+    @example("https://example.com/transcribe_callback")
+    status_url?: url;
+  };
+}
+
+@summary("calling.transcribe.stop")
+model CallTranscribeStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe.stop` command stops an active transcription operation.")
+  @example("calling.transcribe.stop")
+  command: "calling.transcribe.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the transcription operation to stop.")
+    @example("transcribe-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
 // Stream Commands
 // ============================================
 
@@ -1783,6 +1835,8 @@ union CallRequest {
   `calling.detect.stop`: CallDetectStopRequest,
   `calling.tap`: CallTapRequest,
   `calling.tap.stop`: CallTapStopRequest,
+  `calling.transcribe`: CallTranscribeRequest,
+  `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.stream`: CallStreamRequest,
   `calling.stream.stop`: CallStreamStopRequest,
   `calling.denoise`: CallDenoiseRequest,

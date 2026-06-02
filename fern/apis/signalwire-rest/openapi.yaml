@@ -344,6 +344,8 @@ paths:
         | `calling.detect.stop` | Stop active detector |
         | `calling.tap` | Tap call audio to an RTP or WebSocket endpoint |
         | `calling.tap.stop` | Stop active tap |
+        | `calling.transcribe` | Start background transcription of a call |
+        | `calling.transcribe.stop` | Stop active transcription |
         | `calling.stream` | Stream call audio to a WebSocket endpoint |
         | `calling.stream.stop` | Stop active stream |
         | `calling.denoise` | Start noise reduction on a call |
@@ -690,6 +692,23 @@ paths:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   params:
                     control_id: tap-control-1
+              calling.transcribe:
+                summary: calling.transcribe
+                description: Start background transcription on an active call
+                value:
+                  command: calling.transcribe
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params:
+                    control_id: transcribe-control-1
+                    status_url: https://example.com/transcribe_callback
+              calling.transcribe.stop:
+                summary: calling.transcribe.stop
+                description: Stop an active transcription operation
+                value:
+                  command: calling.transcribe.stop
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  params:
+                    control_id: transcribe-control-1
               calling.stream:
                 summary: calling.stream
                 description: Start streaming call audio to a WebSocket endpoint
@@ -16862,6 +16881,8 @@ components:
         - $ref: '#/components/schemas/Calling.CallDetectStopRequest'
         - $ref: '#/components/schemas/Calling.CallTapRequest'
         - $ref: '#/components/schemas/Calling.CallTapStopRequest'
+        - $ref: '#/components/schemas/Calling.CallTranscribeRequest'
+        - $ref: '#/components/schemas/Calling.CallTranscribeStopRequest'
         - $ref: '#/components/schemas/Calling.CallStreamRequest'
         - $ref: '#/components/schemas/Calling.CallStreamStopRequest'
         - $ref: '#/components/schemas/Calling.CallDenoiseRequest'
@@ -16900,6 +16921,8 @@ components:
           calling.detect.stop: '#/components/schemas/Calling.CallDetectStopRequest'
           calling.tap: '#/components/schemas/Calling.CallTapRequest'
           calling.tap.stop: '#/components/schemas/Calling.CallTapStopRequest'
+          calling.transcribe: '#/components/schemas/Calling.CallTranscribeRequest'
+          calling.transcribe.stop: '#/components/schemas/Calling.CallTranscribeStopRequest'
           calling.stream: '#/components/schemas/Calling.CallStreamRequest'
           calling.stream.stop: '#/components/schemas/Calling.CallStreamStopRequest'
           calling.denoise: '#/components/schemas/Calling.CallDenoiseRequest'
@@ -17200,6 +17223,91 @@ components:
       unevaluatedProperties:
         not: {}
       title: calling.tap.stop
+    Calling.CallTranscribeRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.transcribe
+          description: The `calling.transcribe` command starts background transcription on an active call.
+          examples:
+            - calling.transcribe
+        params:
+          type: object
+          properties:
+            control_id:
+              type: string
+              description: Unique identifier for this transcription operation, used to control it later.
+              examples:
+                - transcribe-control-1
+            status_url:
+              type: string
+              format: uri
+              description: HTTP or HTTPS URL that receives transcription lifecycle webhooks.
+              examples:
+                - https://example.com/transcribe_callback
+          required:
+            - control_id
+          unevaluatedProperties:
+            not: {}
+          description: An object of parameters that will be utilized by the active command.
+      unevaluatedProperties:
+        not: {}
+      description: |-
+        Start background transcription of an active call.
+
+        A shadow recording (WAV, stereo, both directions) is created with transcription enabled.
+        Only one active transcription per call is allowed at a time; starting a second while one is
+        active returns a conflict. Stop the transcription with `calling.transcribe.stop` using the
+        same `control_id`.
+      title: calling.transcribe
+    Calling.CallTranscribeStopRequest:
+      type: object
+      required:
+        - id
+        - command
+        - params
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: The unique identifying ID of a existing call.
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        command:
+          type: string
+          enum:
+            - calling.transcribe.stop
+          description: The `calling.transcribe.stop` command stops an active transcription operation.
+          examples:
+            - calling.transcribe.stop
+        params:
+          type: object
+          properties:
+            control_id:
+              type: string
+              description: The control ID of the transcription operation to stop.
+              examples:
+                - transcribe-control-1
+          required:
+            - control_id
+          unevaluatedProperties:
+            not: {}
+          description: An object of parameters that will be utilized by the active command.
+      unevaluatedProperties:
+        not: {}
+      title: calling.transcribe.stop
     Calling.CallTransferRequest:
       type: object
       required:
@@ -36504,6 +36612,8 @@ components:
         - $ref: '#/components/schemas/SWML.Calling.StopTap'
         - $ref: '#/components/schemas/SWML.Calling.Switch'
         - $ref: '#/components/schemas/SWML.Calling.Tap'
+        - $ref: '#/components/schemas/SWML.Calling.Transcribe'
+        - $ref: '#/components/schemas/SWML.Calling.TranscribeStop'
         - $ref: '#/components/schemas/SWML.Calling.Transfer'
         - $ref: '#/components/schemas/SWML.Calling.Unset'
         - $ref: '#/components/schemas/SWML.Calling.Pay'
@@ -37411,6 +37521,31 @@ components:
       unevaluatedProperties:
         not: {}
       title: toggle_functions Action
+    SWML.Calling.Transcribe:
+      type: object
+      required:
+        - transcribe
+      properties:
+        transcribe:
+          type: object
+          properties:
+            status_url:
+              type: string
+              format: uri
+              description: http or https URL to deliver transcription status events
+              examples:
+                - https://example.com/transcribe-status
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Start background call transcription.
+            A shadow recording (WAV, stereo, both directions) is created with transcription enabled.
+            Only one active transcription per call is allowed at a time.
+            To stop a transcription started with `transcribe`, use the `transcribe_stop` method.
+          title: transcribe
+      unevaluatedProperties:
+        not: {}
+      title: transcribe Method
     SWML.Calling.TranscribeAction:
       anyOf:
         - $ref: '#/components/schemas/SWML.Calling.TranscribeStartAction'
@@ -37515,6 +37650,24 @@ components:
       unevaluatedProperties:
         not: {}
       title: TranscribeStartAction object
+    SWML.Calling.TranscribeStop:
+      type: object
+      required:
+        - transcribe_stop
+      properties:
+        transcribe_stop:
+          type: object
+          unevaluatedProperties:
+            not: {}
+          description: |-
+            Stop an active background transcription that was started with `transcribe`.
+            Stops the transcription tracked for the current call; no parameters are required.
+          title: transcribe_stop
+          examples:
+            - {}
+      unevaluatedProperties:
+        not: {}
+      title: transcribe_stop Method
     SWML.Calling.TranscribeSummarizeAction:
       type: object
       required:
