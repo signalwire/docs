@@ -19,41 +19,41 @@ model TranscribeStatusCallbackPayload {
 
   @doc("The event channel, including the session ID.")
   @example("swml:00000000-0000-0000-0000-000000000000")
-  event_channel?: string;
+  event_channel: string;
 
   @doc("Unix timestamp (seconds) when the event was generated.")
   @example(1640000000.123)
-  timestamp?: float;
+  timestamp: float;
 
   @doc("The project ID associated with the call.")
-  project_id?: uuid;
+  project_id: uuid;
 
   @doc("The Space ID associated with the call.")
-  space_id?: uuid;
+  space_id: uuid;
 
   @doc("Transcription details.")
   params: {
     @doc("The call ID.")
-    call_id?: uuid;
+    call_id: uuid;
 
     @doc("The node handling the call.")
-    node_id?: uuid;
+    node_id: uuid;
 
     @doc("Identifier of this transcription.")
     @example("transcribe-control-1")
-    control_id?: string;
+    control_id: string;
 
     @doc("Transcription state: `transcribing` when it starts, `finished` when it ends.")
     @example("finished")
     state: "transcribing" | "finished";
 
-    @doc("URL where the recording is hosted.")
+    @doc("URL where the recording is hosted. Present once available.")
     url?: url;
 
-    @doc("ID of the recording.")
+    @doc("ID of the recording. Present once available.")
     recording_id?: string;
 
-    @doc("The callback URL the event was delivered to.")
+    @doc("The callback URL the event was delivered to. Present when a `status_url` was set.")
     status_url?: url;
 
     @doc("Length of the recording in seconds. Present when `state` is `finished`.")
