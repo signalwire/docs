@@ -1487,7 +1487,7 @@ model CallTranscribeRequest {
     @example("transcribe-control-1")
     control_id: string;
 
-    @doc("HTTP or HTTPS URL that receives transcription lifecycle webhooks.")
+    @doc("HTTP or HTTPS URL where the completed transcript is delivered.")
     @example("https://example.com/transcribe_callback")
     status_url?: url;
   };

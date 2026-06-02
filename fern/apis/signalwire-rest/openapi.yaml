@@ -17254,7 +17254,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: HTTP or HTTPS URL that receives transcription lifecycle webhooks.
+              description: HTTP or HTTPS URL where the completed transcript is delivered.
               examples:
                 - https://example.com/transcribe_callback
           required:
@@ -18811,7 +18811,6 @@ components:
       type: object
       required:
         - event_type
-        - event_channel
         - timestamp
         - project_id
         - space_id
@@ -18819,115 +18818,67 @@ components:
       properties:
         event_type:
           type: string
-          description: The event type. Always `calling.call.transcribe`.
+          description: The event type. Always `calling.transcript.completed`.
           examples:
-            - calling.call.transcribe
-        event_channel:
-          type: string
-          description: The event channel, including the session ID.
-          examples:
-            - swml:00000000-0000-0000-0000-000000000000
+            - calling.transcript.completed
         timestamp:
           type: number
           description: Unix timestamp (seconds) when the event was generated.
           examples:
-            - 1640000000.123
+            - 1777565701.5623918
         project_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
           description: The project ID associated with the call.
           examples:
-            - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            - 4d0d6f16-5881-4fcc-92a4-02c51a91954d
         space_id:
           allOf:
             - $ref: '#/components/schemas/uuid'
           description: The Space ID associated with the call.
           examples:
-            - b2c3d4e5-f6a7-8901-bcde-f12345678901
+            - 451ed9ff-e568-4222-8af9-4f9ab7428d09
         params:
           type: object
           properties:
+            id:
+              allOf:
+                - $ref: '#/components/schemas/uuid'
+              description: ID of the transcript.
+              examples:
+                - 0ec5a4da-46b9-4d2c-b724-151add8d4d08
             call_id:
               allOf:
                 - $ref: '#/components/schemas/uuid'
               description: The call ID.
               examples:
-                - c3d4e5f6-a7b8-9012-cdef-234567890123
-            node_id:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            segment_id:
               allOf:
                 - $ref: '#/components/schemas/uuid'
-              description: The node handling the call.
+              description: The segment ID for the call leg.
               examples:
-                - d4e5f6a7-b8c9-0123-def4-34567890abcd
-            control_id:
+                - 2e1e66e5-5d07-413d-9668-55542992eec0
+            text:
               type: string
-              description: Identifier of this transcription.
+              description: The transcribed text of the call.
               examples:
-                - transcribe-control-1
-            state:
-              type: string
-              enum:
-                - transcribing
-                - finished
-              description: 'Transcription state: `transcribing` when it starts, `finished` when it ends.'
-              examples:
-                - finished
-            url:
-              type: string
-              format: uri
-              description: URL where the recording is hosted. Present once available.
-              examples:
-                - https://example.com/recordings/c3d4e5f6-a7b8-9012-cdef-234567890123.wav
-            recording_id:
-              type: string
-              description: ID of the recording. Present once available.
-              examples:
-                - e5f6a7b8-c9d0-1234-ef56-4567890abcde
-            status_url:
-              type: string
-              format: uri
-              description: The callback URL the event was delivered to. Present when a `status_url` was set.
-              examples:
-                - https://example.com/transcribe-status
-            duration:
-              type: number
-              description: Length of the recording in seconds. Present when `state` is `finished`.
-              examples:
-                - 42.5
-            size:
-              type: integer
-              format: int64
-              description: Size of the recording in bytes. Present when `state` is `finished`.
-              examples:
-                - 680000
-            start_time:
-              type: number
-              description: Unix timestamp when the recording started. Present when `state` is `finished`.
-              examples:
-                - 1640000000.123
-            end_time:
-              type: number
-              description: Unix timestamp when the recording ended. Present when `state` is `finished`.
-              examples:
-                - 1640000042.623
+                - A long time ago in a galaxy far, far away, Luke, I am your father. Do or do not, there is no try. May the force be with you. These aren't the droids you're looking for. I find your lack of faith disturbing. The force will be with you always.
           required:
+            - id
             - call_id
-            - node_id
-            - control_id
-            - state
+            - segment_id
+            - text
           unevaluatedProperties:
             not: {}
-          description: Transcription details.
+          description: Transcript details.
       unevaluatedProperties:
         not: {}
       description: |-
-        Payload sent to the `status_url` each time a background transcription changes state:
-        once when transcription starts (`transcribing`) and once when it ends (`finished`).
-        The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
-        method's `status_url` and the REST `calling.transcribe` command.
-
-        The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
-      title: Transcribe status callback
+        Posted to the `transcribe` `status_url` when the call's transcription is ready.
+        Carries the transcribed `text`. SWML transcription is centered on the transcript,
+        not on a recording — the recording is only the underlying mechanism.
+      title: Transcript completed callback
     Calling.TtsGender:
       type: string
       enum:
@@ -37653,7 +37604,7 @@ components:
             status_url:
               type: string
               format: uri
-              description: http or https URL to deliver transcription status events
+              description: http or https URL where the completed transcript is delivered
               examples:
                 - https://example.com/transcribe-status
           unevaluatedProperties:
@@ -46033,7 +45984,7 @@ webhooks:
   transcribeStatusCallback:
     post:
       operationId: transcribe_status_callback
-      summary: Transcribe status callback
+      summary: Transcript completed callback
       requestBody:
         required: true
         content:
@@ -46043,92 +45994,54 @@ webhooks:
               properties:
                 event_type:
                   type: string
-                  description: The event type. Always `calling.call.transcribe`.
-                  example: calling.call.transcribe
-                event_channel:
-                  type: string
-                  description: The event channel, including the session ID.
-                  example: swml:00000000-0000-0000-0000-000000000000
+                  description: The event type. Always `calling.transcript.completed`.
+                  example: calling.transcript.completed
                 timestamp:
                   type: number
                   description: Unix timestamp (seconds) when the event was generated.
-                  example: 1640000000.123
+                  example: 1777565701.5623918
                 project_id:
                   type: string
                   format: uuid
                   description: The project ID associated with the call.
-                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  example: 4d0d6f16-5881-4fcc-92a4-02c51a91954d
                 space_id:
                   type: string
                   format: uuid
                   description: The Space ID associated with the call.
-                  example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  example: 451ed9ff-e568-4222-8af9-4f9ab7428d09
                 params:
                   type: object
                   properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: ID of the transcript.
+                      example: 0ec5a4da-46b9-4d2c-b724-151add8d4d08
                     call_id:
                       type: string
                       format: uuid
                       description: The call ID.
-                      example: c3d4e5f6-a7b8-9012-cdef-234567890123
-                    node_id:
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    segment_id:
                       type: string
                       format: uuid
-                      description: The node handling the call.
-                      example: d4e5f6a7-b8c9-0123-def4-34567890abcd
-                    control_id:
+                      description: The segment ID for the call leg.
+                      example: 2e1e66e5-5d07-413d-9668-55542992eec0
+                    text:
                       type: string
-                      description: Identifier of this transcription.
-                      example: transcribe-control-1
-                    state:
-                      type: string
-                      enum:
-                        - transcribing
-                        - finished
-                      description: 'Transcription state: `transcribing` when it starts, `finished` when it ends.'
-                      example: finished
-                    url:
-                      type: string
-                      format: uri
-                      description: URL where the recording is hosted. Present once available.
-                      example: https://example.com/recordings/c3d4e5f6-a7b8-9012-cdef-234567890123.wav
-                    recording_id:
-                      type: string
-                      description: ID of the recording. Present once available.
-                      example: e5f6a7b8-c9d0-1234-ef56-4567890abcde
-                    status_url:
-                      type: string
-                      format: uri
-                      description: The callback URL the event was delivered to. Present when a `status_url` was set.
-                      example: https://example.com/transcribe-status
-                    duration:
-                      type: number
-                      description: Length of the recording in seconds. Present when `state` is `finished`.
-                      example: 42.5
-                    size:
-                      type: integer
-                      format: int64
-                      description: Size of the recording in bytes. Present when `state` is `finished`.
-                      example: 680000
-                    start_time:
-                      type: number
-                      description: Unix timestamp when the recording started. Present when `state` is `finished`.
-                      example: 1640000000.123
-                    end_time:
-                      type: number
-                      description: Unix timestamp when the recording ended. Present when `state` is `finished`.
-                      example: 1640000042.623
+                      description: The transcribed text of the call.
+                      example: A long time ago in a galaxy far, far away, Luke, I am your father. Do or do not, there is no try. May the force be with you. These aren't the droids you're looking for. I find your lack of faith disturbing. The force will be with you always.
                   required:
+                    - id
                     - call_id
-                    - node_id
-                    - control_id
-                    - state
+                    - segment_id
+                    - text
                   unevaluatedProperties:
                     not: {}
-                  description: Transcription details.
+                  description: Transcript details.
               required:
                 - event_type
-                - event_channel
                 - timestamp
                 - project_id
                 - space_id
@@ -46136,22 +46049,16 @@ webhooks:
               unevaluatedProperties:
                 not: {}
               description: |-
-                Payload sent to the `status_url` each time a background transcription changes state:
-                once when transcription starts (`transcribing`) and once when it ends (`finished`).
-                The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
-                method's `status_url` and the REST `calling.transcribe` command.
-
-                The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
+                Posted to the `transcribe` `status_url` when the call's transcription is ready.
+                Carries the transcribed `text`. SWML transcription is centered on the transcript,
+                not on a recording — the recording is only the underlying mechanism.
       responses:
         '200':
           description: Webhook received
       description: |-
-        Payload sent to the `status_url` each time a background transcription changes state:
-        once when transcription starts (`transcribing`) and once when it ends (`finished`).
-        The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
-        method's `status_url` and the REST `calling.transcribe` command.
-
-        The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
+        Posted to the `transcribe` `status_url` when the call's transcription is ready.
+        Carries the transcribed `text`. SWML transcription is centered on the transcript,
+        not on a recording — the recording is only the underlying mechanism.
       tags:
         - Calls
   messageStatusCallback:

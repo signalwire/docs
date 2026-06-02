@@ -3,80 +3,45 @@ import "../../../types";
 
 namespace SignalWireAPI.Calling;
 
-@summary("Transcribe status callback")
+@summary("Transcript completed callback")
 @doc("""
-  Payload sent to the `status_url` each time a background transcription changes state:
-  once when transcription starts (`transcribing`) and once when it ends (`finished`).
-  The same payload shape is used for the SWML [`transcribe`](/docs/swml/reference/calling/transcribe)
-  method's `status_url` and the REST `calling.transcribe` command.
-
-  The `finished` event additionally carries `duration`, `size`, `start_time`, and `end_time`.
+  Posted to the `transcribe` `status_url` when the call's transcription is ready.
+  Carries the transcribed `text`. SWML transcription is centered on the transcript,
+  not on a recording — the recording is only the underlying mechanism.
   """)
 model TranscribeStatusCallbackPayload {
-  @doc("The event type. Always `calling.call.transcribe`.")
-  @example("calling.call.transcribe")
+  @doc("The event type. Always `calling.transcript.completed`.")
+  @example("calling.transcript.completed")
   event_type: string;
 
-  @doc("The event channel, including the session ID.")
-  @example("swml:00000000-0000-0000-0000-000000000000")
-  event_channel: string;
-
   @doc("Unix timestamp (seconds) when the event was generated.")
-  @example(1640000000.123)
+  @example(1777565701.5623918)
   timestamp: float;
 
   @doc("The project ID associated with the call.")
-  @example("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+  @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
   project_id: uuid;
 
   @doc("The Space ID associated with the call.")
-  @example("b2c3d4e5-f6a7-8901-bcde-f12345678901")
+  @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
   space_id: uuid;
 
-  @doc("Transcription details.")
+  @doc("Transcript details.")
   params: {
+    @doc("ID of the transcript.")
+    @example("0ec5a4da-46b9-4d2c-b724-151add8d4d08")
+    id: uuid;
+
     @doc("The call ID.")
-    @example("c3d4e5f6-a7b8-9012-cdef-234567890123")
+    @example("2e1e66e5-5d07-413d-9668-55542992eec0")
     call_id: uuid;
 
-    @doc("The node handling the call.")
-    @example("d4e5f6a7-b8c9-0123-def4-34567890abcd")
-    node_id: uuid;
+    @doc("The segment ID for the call leg.")
+    @example("2e1e66e5-5d07-413d-9668-55542992eec0")
+    segment_id: uuid;
 
-    @doc("Identifier of this transcription.")
-    @example("transcribe-control-1")
-    control_id: string;
-
-    @doc("Transcription state: `transcribing` when it starts, `finished` when it ends.")
-    @example("finished")
-    state: "transcribing" | "finished";
-
-    @doc("URL where the recording is hosted. Present once available.")
-    @example("https://example.com/recordings/c3d4e5f6-a7b8-9012-cdef-234567890123.wav")
-    url?: url;
-
-    @doc("ID of the recording. Present once available.")
-    @example("e5f6a7b8-c9d0-1234-ef56-4567890abcde")
-    recording_id?: string;
-
-    @doc("The callback URL the event was delivered to. Present when a `status_url` was set.")
-    @example("https://example.com/transcribe-status")
-    status_url?: url;
-
-    @doc("Length of the recording in seconds. Present when `state` is `finished`.")
-    @example(42.5)
-    duration?: float;
-
-    @doc("Size of the recording in bytes. Present when `state` is `finished`.")
-    @example(680000)
-    size?: int64;
-
-    @doc("Unix timestamp when the recording started. Present when `state` is `finished`.")
-    @example(1640000000.123)
-    start_time?: float;
-
-    @doc("Unix timestamp when the recording ended. Present when `state` is `finished`.")
-    @example(1640000042.623)
-    end_time?: float;
+    @doc("The transcribed text of the call.")
+    @example("A long time ago in a galaxy far, far away, Luke, I am your father. Do or do not, there is no try. May the force be with you. These aren't the droids you're looking for. I find your lack of faith disturbing. The force will be with you always.")
+    text: string;
   };
 }
