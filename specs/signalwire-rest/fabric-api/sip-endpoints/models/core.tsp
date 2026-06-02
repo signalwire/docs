@@ -15,7 +15,6 @@ const callHandlerDescription = """
 model FabricSipEndpointPathID {
   @doc("Unique ID of a SIP Endpoint.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -23,7 +22,6 @@ model FabricSipEndpointPathID {
 model FabricSipEndpoint {
   @doc("The id of the Sip Endpoint")
   @example("993ed018-9e79-4e50-b97b-984bd5534095")
-  @format("uuid")
   id: uuid;
 
   @doc("The username of the Sip Endpoint")

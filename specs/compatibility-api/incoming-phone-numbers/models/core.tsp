@@ -3,17 +3,15 @@ using TypeSpec.Http;
 model IncomingPhoneNumbersAccountSidPath {
   @doc("The unique identifier for the account that is associated with this phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model IncomingPhoneNumberSidPath {
   @doc("The unique identifier of the phone number.")
   @example("b3877c40-da60-4998-90ad-b792e98472pn")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("Address requirements.")
@@ -58,14 +56,12 @@ model IncomingPhoneNumberCapabilities {
 @doc("Incoming phone number model.")
 model IncomingPhoneNumber {
   @doc("The unique identifier for the account that is associated with this phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
-  account_id: string;
+  account_id: uuid;
 
   @doc("The unique identifier for the account that is associated with this phone number.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472ac")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("Whether or not a registered address with SignalWire is required. Always 'none'.")
   address_requirements: AddressRequirements;

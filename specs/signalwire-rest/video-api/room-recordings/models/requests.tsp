@@ -10,7 +10,7 @@ model ListRoomRecordingsRequest {
   @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
   @example(900)
   @query
-  @minValueExclusive(0)
+  @minValue(0)
   media_ttl?: int32;
 
   @doc("Page number to return. Requires `page_token` for values greater than 0.")

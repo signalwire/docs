@@ -3,25 +3,22 @@ using TypeSpec.Http;
 model QueuesAccountSidPath {
   @doc("The unique identifier for the account this Queue is associated with.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model QueueSidPath {
   @doc("The unique identifier for the queue.")
   @example("b3877c40-da60-4998-90ad-b792e98472qu")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 model QueueSidPathForMembers {
   @doc("The unique identifier for the queue.")
   @example("b3877c40-da60-4998-90ad-b792e98472qu")
-  @format("uuid")
   @path
-  QueueSid: string;
+  QueueSid: uuid;
 }
 
 model QueueMemberCallSidPath {
@@ -35,13 +32,11 @@ model QueueMemberCallSidPath {
 model Queue {
   @doc("The unique identifier for the queue.")
   @example("b3877c40-da60-4998-90ad-b792e98472qu")
-  @format("uuid")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the account this Queue is associated with.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("A description that distinguishes a queue.")
   @example("Queue1")
@@ -82,18 +77,15 @@ model Queue {
 model QueueMember {
   @doc("The unique identifier for the call.")
   @example("b3877c40-da60-4998-90ad-b792e98472ca")
-  @format("uuid")
-  call_sid: string;
+  call_sid: uuid;
 
   @doc("The unique identifier for the account.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The unique identifier for the queue.")
   @example("b3877c40-da60-4998-90ad-b792e98472qu")
-  @format("uuid")
-  queue_sid: string;
+  queue_sid: uuid;
 
   @doc("The date and time, in RFC 2822 format, when the member was enqueued.")
   @example("Wed, 26 Sep 2018 18:00:00 +0000")
