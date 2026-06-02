@@ -40,8 +40,8 @@ model TranscribeStatusCallbackPayload {
     @example("2e1e66e5-5d07-413d-9668-55542992eec0")
     segment_id: uuid;
 
-    @doc("The transcribed text of the call.")
+    @doc("The transcribed text of the call. Omitted when there is no transcribed text.")
     @example("A long time ago in a galaxy far, far away, Luke, I am your father. Do or do not, there is no try. May the force be with you. These aren't the droids you're looking for. I find your lack of faith disturbing. The force will be with you always.")
-    text: string;
+    text?: string;
   };
 }
