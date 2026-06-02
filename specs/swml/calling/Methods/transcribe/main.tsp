@@ -6,9 +6,9 @@ namespace SWML.Calling;
 model Transcribe {
   @summary("transcribe")
   @doc("""
-    Start transcribing the call in the background.
-    Execution continues to the next instruction while transcription runs.
-    The call is recorded and the recording is transcribed; the status events report the recording's URL and ID.
+    Transcribe the entire call in the background.
+    Execution continues to the next instruction while the call proceeds; the transcription covers the whole call and completes when the call ends.
+    For real-time transcription delivered as the call happens, use `live_transcribe` instead.
     Only one transcription can be active on a call at a time.
     To stop it, use the `transcribe_stop` method.
     """)
