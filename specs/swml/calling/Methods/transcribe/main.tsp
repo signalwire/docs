@@ -8,7 +8,7 @@ model Transcribe {
   @doc("""
     Start transcribing the call in the background.
     Execution continues to the next instruction while transcription runs.
-    A recording of the call is produced, and its location is returned so you can retrieve the transcription.
+    The call is recorded and the recording is transcribed; the status events report the recording's URL and ID.
     Only one transcription can be active on a call at a time.
     To stop it, use the `transcribe_stop` method.
     """)

@@ -47,7 +47,7 @@ model TranscribeStatusCallbackPayload {
     @example("finished")
     state: "transcribing" | "finished";
 
-    @doc("URL where the call recording is hosted. Retrieve the transcription from here.")
+    @doc("URL where the call recording is hosted.")
     url?: url;
 
     @doc("Identifier of the call recording.")

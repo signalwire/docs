@@ -1466,8 +1466,8 @@ model CallTapStopRequest {
 /**
  * Start transcribing an active call in the background.
  *
- * A recording of the call is produced, and its location is returned so you can retrieve the
- * transcription. Only one transcription can be active on a call at a time; starting another
+ * The call is recorded and the recording is transcribed; the response returns the recording's
+ * location (`url`). Only one transcription can be active on a call at a time; starting another
  * while one is running returns a conflict. Stop it with `calling.transcribe.stop` using the
  * same `control_id`.
  */
