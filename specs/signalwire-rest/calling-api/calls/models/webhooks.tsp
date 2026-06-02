@@ -5,40 +5,38 @@ namespace SignalWireAPI.Calling;
 
 @summary("Transcript status callback")
 @doc("""
-  Posted to the `transcribe` `status_url` when the call's transcription finishes.
-  On success the `event_type` is `calling.transcript.completed` and `params.text` carries
-  the transcribed text. If transcription fails the `event_type` is `calling.transcript.failed`.
-  SWML transcription is centered on the transcript, not on a recording —
-  the recording is only the underlying mechanism.
+  Sent to your `status_url` when the call's transcription is ready.
+  `calling.transcript.completed` includes the transcribed text;
+  `calling.transcript.failed` means the call could not be transcribed.
   """)
 model TranscribeStatusCallbackPayload {
-  @doc("The event type. `calling.transcript.completed` on success, `calling.transcript.failed` on failure.")
+  @doc("Whether the transcription completed or failed.")
   @example("calling.transcript.completed")
   event_type: "calling.transcript.completed" | "calling.transcript.failed";
 
-  @doc("Unix timestamp (seconds) when the event was generated.")
+  @doc("When the event was sent, as a Unix timestamp in seconds.")
   @example(1777565701.5623918)
   timestamp: float;
 
-  @doc("The project ID associated with the call.")
+  @doc("Your project ID.")
   @example("4d0d6f16-5881-4fcc-92a4-02c51a91954d")
   project_id: uuid;
 
-  @doc("The Space ID associated with the call.")
+  @doc("Your Space ID.")
   @example("451ed9ff-e568-4222-8af9-4f9ab7428d09")
   space_id: uuid;
 
-  @doc("Transcript details.")
+  @doc("The transcript.")
   params: {
-    @doc("ID of the transcript.")
+    @doc("Unique ID for this transcript.")
     @example("0ec5a4da-46b9-4d2c-b724-151add8d4d08")
     id: uuid;
 
-    @doc("The call ID.")
+    @doc("ID of the call that was transcribed.")
     @example("2e1e66e5-5d07-413d-9668-55542992eec0")
     call_id: uuid;
 
-    @doc("The segment ID for the call leg.")
+    @doc("ID of the call leg that was transcribed.")
     @example("2e1e66e5-5d07-413d-9668-55542992eec0")
     segment_id: uuid;
 
