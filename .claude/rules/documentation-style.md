@@ -11,6 +11,20 @@ This rule defines **how every documentation page under `fern/` is structured, st
 
 The rules here are **product-agnostic** — they apply to SWML, the server SDKs, and any other product. Examples use **FreeSWITCH** (modules, dialplan applications, CLI commands, channel variables, events) as a concrete running example, but the patterns are universal.
 
+## Contents
+
+1. **How to use this rule** — the contract and per-page workflow
+2. **Core principles**
+3. **File and folder structure** — sections, landing pages (`overview.mdx`/`index.mdx`), folder→nav mapping
+4. **Front matter** — required fields and slug standards
+5. **Page types and skeletons** — reference, overview, guide, landing (+ the `<ParamField>` interface-shape pattern)
+6. **Component catalog** — every allowed component and when to use it
+7. **Strict MDX v3 rules** — build-breaking errors to avoid
+8. **Linking, code, and snippets**
+9. **Pre-output self-check** — the definition of done
+10. **Anti-patterns**
+11. **Worked examples** — complete, emit-ready pages
+
 ## 1. How to use this rule
 
 You are authoring documentation pages in **MDX v3** for the SignalWire docs site, built on the **Fern** platform. Your input is some **source of truth to document** — source code, an SDK interface, a markup or config spec, an API definition, or an event/callback contract — and your job is to turn it into pages that match the SignalWire house style exactly.
