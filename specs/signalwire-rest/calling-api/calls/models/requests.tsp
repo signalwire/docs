@@ -1473,6 +1473,58 @@ model CallTapStopRequest {
 }
 
 // ============================================
+// Transcribe Commands
+// ============================================
+
+/**
+ * Transcribe the entire call in the background.
+ *
+ * The transcription covers the whole call and completes when the call ends. For real-time
+ * transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
+ * at a time; starting another while one is running returns a `409` conflict. Stop it with
+ * `calling.transcribe.stop` using the same `control_id`.
+ */
+@summary("calling.transcribe")
+model CallTranscribeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe` command starts transcribing an active call in the background.")
+  @example("calling.transcribe")
+  command: "calling.transcribe";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this transcription operation, used to control it later.")
+    @example("transcribe-control-1")
+    control_id: string;
+
+    @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes.")
+    @example("https://example.com/transcribe-status")
+    status_url?: url;
+  };
+}
+
+@summary("calling.transcribe.stop")
+model CallTranscribeStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe.stop` command stops an active transcription operation.")
+  @example("calling.transcribe.stop")
+  command: "calling.transcribe.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the transcription operation to stop.")
+    @example("transcribe-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
 // Stream Commands
 // ============================================
 
@@ -1796,6 +1848,8 @@ union CallRequest {
   `calling.detect.stop`: CallDetectStopRequest,
   `calling.tap`: CallTapRequest,
   `calling.tap.stop`: CallTapStopRequest,
+  `calling.transcribe`: CallTranscribeRequest,
+  `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.stream`: CallStreamRequest,
   `calling.stream.stop`: CallStreamStopRequest,
   `calling.denoise`: CallDenoiseRequest,
