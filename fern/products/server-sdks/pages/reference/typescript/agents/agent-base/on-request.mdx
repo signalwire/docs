@@ -1,0 +1,60 @@
+---
+title: "onRequest"
+slug: /reference/typescript/agents/agent-base/on-request
+description: Public hook called on every inbound request before SWML rendering.
+max-toc-depth: 3
+---
+
+[on-swml-request]: /docs/server-sdks/reference/typescript/agents/agent-base/on-swml-request
+[set-on-request-callback]: /docs/server-sdks/reference/typescript/agents/swml-service/set-on-request-callback
+
+Public hook called on every inbound request before the SWML document is
+rendered. The default implementation delegates to
+[`onSwmlRequest()`][on-swml-request]. Override it to return a dictionary of SWML
+modifications, or `void` to render with the default behavior.
+
+<Note>
+Most subclasses override [`onSwmlRequest()`][on-swml-request] instead, which is
+the conventional per-request customization hook. `onRequest` is the lower-level
+[`WebMixin`](https://github.com/signalwire) parity entry point.
+</Note>
+
+<Note>
+This hook returns a dictionary of SWML *modifications* to merge into the
+rendered document. To replace the entire SWML document for a request instead,
+use [`setOnRequestCallback()`][set-on-request-callback] on `SWMLService`.
+</Note>
+
+## **Parameters**
+
+<ParamField path="requestData" type={"Record<string, unknown> | null"} toc={true}>
+  The parsed request body. Contains call metadata such as `call_id` and
+  `caller_id_number`.
+</ParamField>
+
+<ParamField path="callbackPath" type="string | null" toc={true}>
+  Optional callback path from the request.
+</ParamField>
+
+## **Returns**
+
+`Record<string, unknown> | void` (or a `Promise` of these) -- A dict of SWML
+modifications to merge before rendering, or `void` for default rendering.
+
+## **Example**
+
+```typescript {6}
+import { AgentBase } from '@signalwire/sdk';
+
+class PersonalizedAgent extends AgentBase {
+  override async onRequest(
+    requestData?: Record<string, unknown> | null,
+  ): Promise<Record<string, unknown> | void> {
+    const caller = (requestData?.caller_id_number as string) ?? 'unknown';
+    return { global_data: { caller_number: caller } };
+  }
+}
+
+const agent = new PersonalizedAgent({ name: 'personalized', route: '/' });
+await agent.serve();
+```

@@ -8,6 +8,7 @@ max-toc-depth: 3
 [ai]: /docs/swml/reference/ai
 [swml-reference]: /docs/swml/reference/ai
 [agentserver]: /docs/server-sdks/reference/typescript/agents/agent-server
+[swmlservice]: /docs/server-sdks/reference/typescript/agents/swml-service
 [setnativefunctions]: /docs/server-sdks/reference/typescript/agents/agent-base/native-functions
 [ref-datamap]: /docs/server-sdks/reference/typescript/agents/data-map
 
@@ -16,9 +17,12 @@ complete framework for building AI-powered voice agents, combining prompt manage
 tool definitions, skill loading, speech configuration, and web serving into a single
 composable interface.
 
-`AgentBase` uses **composition** internally, assembling functionality from
-`PromptManager`, `SwmlBuilder`, `SessionManager`, `ContextBuilder`, and `SkillManager`.
-All setter methods return `this` for fluent method chaining.
+`AgentBase` extends [`SWMLService`][swmlservice], inheriting its SWML document
+serving and SWAIG tool registry (the `/swaig` endpoint and tool registration/
+dispatch live on `SWMLService`). On top of that, `AgentBase` uses
+**composition** internally, assembling functionality from `PromptManager`,
+`SwmlBuilder`, `SessionManager`, `ContextBuilder`, and `SkillManager`. All setter
+methods return `this` for fluent method chaining.
 
 <Info>
 AgentBase generates a SWML document with the [`ai`][ai] verb.
@@ -133,6 +137,22 @@ const agent = new AgentBase({
 <ParamField path="schemaValidation" type="boolean" default="true" toc={true}>
   Enable SWML schema validation on rendered documents. Can also be disabled via
   `SWML_SKIP_SCHEMA_VALIDATION` env var.
+</ParamField>
+
+<ParamField path="signingKey" type="string" toc={true}>
+  SignalWire Signing Key used to verify inbound webhook signatures. When set,
+  the agent auto-mounts webhook signature validation middleware on `POST /`,
+  `/swaig`, and `/post_prompt` — unsigned or mis-signed requests receive a `403`.
+  Falls back to the `SIGNALWIRE_SIGNING_KEY` environment variable. When both are
+  unset, validation is disabled and a one-time startup warning is emitted. Treat
+  this value as a secret.
+</ParamField>
+
+<ParamField path="webhookTrustProxy" type="boolean" default="false" toc={true}>
+  When `true`, the webhook validation middleware honors `X-Forwarded-Proto` and
+  `X-Forwarded-Host` when reconstructing the public URL for signature
+  verification. Defaults to `false` because those proxy headers are spoofable.
+  `SWML_PROXY_URL_BASE` always takes precedence.
 </ParamField>
 
 ## **Properties**
@@ -474,5 +494,26 @@ await agent.run();
   </Card>
   <Card title="validateBasicAuth" href="/docs/server-sdks/reference/typescript/agents/agent-base/validate-basic-auth">
     Custom basic-auth validation hook.
+  </Card>
+  <Card title="onRequest" href="/docs/server-sdks/reference/typescript/agents/agent-base/on-request">
+    Public hook called on every inbound request before rendering.
+  </Card>
+  <Card title="pom" href="/docs/server-sdks/reference/typescript/agents/agent-base/pom">
+    Get the agent's prompt as a PromptObjectModel snapshot.
+  </Card>
+  <Card title="getRawPrompt" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-raw-prompt">
+    Retrieve the raw stored prompt text, unrendered.
+  </Card>
+  <Card title="getContexts" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-contexts">
+    Retrieve the agent's contexts as a serialized dictionary.
+  </Card>
+  <Card title="createToolToken" href="/docs/server-sdks/reference/typescript/agents/agent-base/create-tool-token">
+    Create a per-call SWAIG token for a tool.
+  </Card>
+  <Card title="setLanguageParams" href="/docs/server-sdks/reference/typescript/agents/agent-base/set-language-params">
+    Set engine-specific params on an added language.
+  </Card>
+  <Card title="getLanguageParams" href="/docs/server-sdks/reference/typescript/agents/agent-base/get-language-params">
+    Read engine-specific params on an added language.
   </Card>
 </CardGroup>
