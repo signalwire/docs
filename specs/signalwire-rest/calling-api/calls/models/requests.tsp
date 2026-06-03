@@ -1,10 +1,12 @@
 import "@typespec/http";
 import "@typespec/openapi3";
+import "@typespec/json-schema";
 import "../../../../swml/calling";
 import "./core.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using TypeSpec.JsonSchema;
 
 namespace SignalWireAPI.Calling;
 
@@ -462,6 +464,17 @@ model CallCreateParamsBase {
   @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
   @example(#["us-east-1", "us-west-2"])
   region?: string | string[];
+
+  @maxProperties(20)
+  @doc("""
+    Your own key/value string pairs to attach to the call. They become environment variables on the call's SWML document, where you can reference them as `\${envs.<key>}` — for example, to carry an order or case number through to your call logic. When SignalWire fetches your SWML document from a URL, the same pairs are also included in the `envs` object of that request.
+
+    If a key here matches a variable you've already set at the account or project level, the value you pass on the request takes precedence — but only when the keys match exactly, including case. Keys are case-sensitive, so two keys that differ only in case are kept as separate variables.
+
+    Each value must be a non-empty string of at most 1024 bytes. You can send at most 20 pairs. Each key must start with a letter or underscore and contain only letters, numbers, and underscores, and cannot begin with the reserved prefixes `signalwire_`, `sw_`, `rtc_`, or `internal_` (case-insensitive).
+    """)
+  @example(#{ id: "12345", case_number: "54321" })
+  custom_variables?: TypeSpec.Record<string>;
 }
 
 @summary("dial (URL)")
