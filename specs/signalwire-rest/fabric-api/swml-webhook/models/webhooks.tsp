@@ -167,6 +167,34 @@ model InboundCallSipData {
   };
 }
 
+@summary("Parent call")
+@doc("The call that created this call. Present only when this call has a parent — for example, a leg created by a `connect` or transfer.")
+model InboundCallParent {
+  @doc("The device type of the parent call.")
+  @example("phone")
+  device_type: "sip" | "phone" | "webrtc";
+
+  @doc("A unique identifier for the parent call.")
+  @example("a1b2c3d4-1111-2222-3333-444455556666")
+  call_id: string;
+
+  @doc("A unique identifier for the node handling the parent call.")
+  @example("a1b2c3d4-1111-2222-3333-444455556666")
+  node_id: string;
+}
+
+@summary("Peer call")
+@doc("The call this call is bridged to. Present only when this call has a peer.")
+model InboundCallPeer {
+  @doc("A unique identifier for the peer call.")
+  @example("a1b2c3d4-1111-2222-3333-444455556666")
+  call_id: string;
+
+  @doc("A unique identifier for the node handling the peer call.")
+  @example("a1b2c3d4-1111-2222-3333-444455556666")
+  node_id: string;
+}
+
 @summary("Inbound call")
 @doc("Information about the call that triggered the SWML document fetch.")
 model InboundCallContext {
@@ -181,6 +209,10 @@ model InboundCallContext {
   @doc("A unique identifier for the current call segment.")
   @example("d3e4f5a6-b7c8-9012-defa-345678901bcd")
   segment_id: string;
+
+  @doc("The tag you assigned to this call when it was created, if any.")
+  @example("support-queue")
+  tag?: string;
 
   @doc("The current state of the call.")
   @example("created")
@@ -202,9 +234,27 @@ model InboundCallContext {
   @example("sip:destination@yourdomain.com")
   to: string;
 
+  @doc("The phone number that initiated this call. Present for phone calls (`type` is `phone`); SIP and WebRTC calls expose the originator through `from` instead.")
+  @example("+12223334444")
+  from_number?: string;
+
+  @doc("The destination phone number of this call. Present for phone calls (`type` is `phone`); SIP and WebRTC calls expose the destination through `to` instead.")
+  @example("+12223334445")
+  to_number?: string;
+
+  @doc("Set to `\"true\"` when this call won a parallel dial. Omitted otherwise.")
+  @example("true")
+  dial_winner?: "true";
+
   @doc("The headers associated with this call.")
   @example(#[])
   headers: InboundCallHeader[];
+
+  @doc("The call that created this call. Present only when this call has a parent.")
+  parent?: InboundCallParent;
+
+  @doc("The call this call is bridged to. Present only when this call has a peer.")
+  peer?: InboundCallPeer;
 
   @doc("SIP-specific data. Present only when `type` is `sip`.")
   sip_data?: InboundCallSipData;
@@ -234,10 +284,16 @@ model InboundCallWebhookPayload {
     ...TypeSpec.Record<unknown>;
   };
 
-  @doc("Environment variables configured at the account or project level.")
+  @doc("""
+    Environment variables available to this call's SWML document, which you can reference as `\${envs.<key>}`. Combines the variables you've configured at the account or project level with any `custom_variables` you passed on the outbound [Call commands](/docs/apis/rest/calls/call-commands) request.
+
+    Keys are case-sensitive. When a `custom_variables` key exactly matches an account- or project-level variable, including case, the value from the request wins; if they differ only in case, both are kept as separate variables.
+    """)
   @example(#{
     api_key: "<YOUR_API_KEY>",
     webhook_url: "https://example.com/webhook",
+    id: "12345",
+    case_number: "54321",
   })
   envs: {
     ...TypeSpec.Record<unknown>;

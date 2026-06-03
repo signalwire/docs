@@ -366,6 +366,26 @@ const tapStopCallExample = #{
   },
 };
 
+// Transcribe examples
+const transcribeCallExample = #{
+  request: #{
+    command: "calling.transcribe",
+    id: callId,
+    params: #{
+      control_id: "transcribe-control-1",
+      status_url: "https://example.com/transcribe-status",
+    },
+  },
+};
+
+const transcribeStopCallExample = #{
+  request: #{
+    command: "calling.transcribe.stop",
+    id: callId,
+    params: #{ control_id: "transcribe-control-1" },
+  },
+};
+
 // Stream examples
 const streamCallExample = #{
   request: #{
