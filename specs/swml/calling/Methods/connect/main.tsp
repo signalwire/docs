@@ -52,6 +52,16 @@ model ConnectDeviceBase {
   @example("+15551234567")
   from?: string;
 
+  @doc("""
+    The caller ID name shown to the person you're calling, displayed alongside the `from` number
+    (sometimes called CNAM).
+    Applies to SIP calls only — it has no effect on calls to phone numbers.
+    When set at the top level, every destination in a `serial`, `parallel`, or `serial_parallel`
+    group uses this name, unless that destination sets its own `from_name`.
+    """)
+  @example("Support Team")
+  from_name?: string;
+
   @doc("Custom SIP headers to add to INVITE. It Has no effect on calls to phone numbers.")
   headers?: ConnectHeaders[];
 
