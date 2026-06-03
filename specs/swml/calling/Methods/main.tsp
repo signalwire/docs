@@ -26,6 +26,8 @@ import "./stop_denoise";
 import "./stop_record_call";
 import "./stop_tap";
 import "./tap";
+import "./transcribe";
+import "./transcribe_stop";
 import "./transfer";
 import "./unset";
 import "./sleep";
@@ -76,6 +78,8 @@ union SWMLMethod {
   StopTap,
   Switch,
   Tap,
+  Transcribe,
+  TranscribeStop,
   Transfer,
   Unset,
   Pay,

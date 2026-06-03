@@ -21,6 +21,10 @@ model SMSBase {
   @doc("Array of tags to associate with the message to facilitate log searches.")
   @example(#["notification", "order-confirmation"])
   tags?: string[];
+
+  @doc("URL to receive delivery status callbacks for the outbound message (e.g., `queued`, `sent`, `delivered`, `failed`). Not set if not specified. The callback uses the [message status callback payload](/docs/apis/rest/messages/webhooks/message-status-callback).")
+  @example("https://example.com/message_status")
+  status_callback?: string;
 }
 
 @summary("SMS")
