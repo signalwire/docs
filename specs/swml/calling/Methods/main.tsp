@@ -24,7 +24,9 @@ import "./set";
 import "./sip_refer";
 import "./stop_denoise";
 import "./stop_record_call";
+import "./stop_stream";
 import "./stop_tap";
+import "./stream";
 import "./tap";
 import "./transcribe";
 import "./transcribe_stop";
@@ -73,7 +75,9 @@ union SWMLMethod {
   SIPRefer,
   StopDenoise,
   StopRecordCall,
+  StopStream,
   StopTap,
+  Stream,
   Switch,
   Tap,
   Transcribe,
