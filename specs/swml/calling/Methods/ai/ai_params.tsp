@@ -239,6 +239,26 @@ model AIParams {
   enable_thinking?: boolean | SWMLVar = false;
 
   @doc("""
+    Controls NeMo-based text normalization between written and spoken forms during the conversation.
+    `heard` applies Inverse Text Normalization (ITN) to ASR output before it reaches the LLM (e.g. "twenty three dollars" becomes "$23").
+    `spoken` applies Text Normalization (TN) to LLM output before TTS (e.g. "$23" becomes "twenty three dollars").
+    `both` applies both directions. Set to `false`, `off`, or `none` to disable; `true` and `on` are aliases for `both`.
+    Normalization grammars load lazily per active language and reload when the conversation language changes; if grammars are unavailable for a language, that direction is skipped and the session continues.
+    **Default:** `both`.
+    """)
+  @example("both")
+  enable_text_normalization?:
+    | "heard"
+    | "spoken"
+    | "both"
+    | "true"
+    | "on"
+    | "false"
+    | "off"
+    | "none"
+    | SWMLVar = "both";
+
+  @doc("""
     Enables visual input processing for the AI Agent.
     When set to `true`, the AI Agent will be able to utilize visual processing capabilities, while leveraging the `get_visual_input` function.
     """)
