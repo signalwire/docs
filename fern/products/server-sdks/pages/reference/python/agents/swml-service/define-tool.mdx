@@ -1,0 +1,129 @@
+---
+title: "define_tool"
+slug: /reference/python/agents/swml-service/define-tool
+description: Host a SWAIG tool directly on a SWMLService so any SWML document — including ai_sidecar — can invoke it.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/python/agents/function-result
+[ref-swmlservice]: /docs/server-sdks/reference/python/agents/swml-service
+[register-routing-callback]: /docs/server-sdks/reference/python/agents/swml-service/register-routing-callback
+[ai_sidecar]: /docs/swml/reference/calling/ai_sidecar
+[ai_sidecar-swaig]: /docs/swml/reference/calling/ai_sidecar/swaig
+
+Define a SWAIG function (tool) hosted directly on the `SWMLService`, without subclassing
+`AgentBase`. The service exposes a `POST /<route>/swaig` endpoint that dispatches tool calls
+to your handler, so any SWML document the service emits — including the
+[`ai_sidecar`][ai_sidecar] verb — can reference and invoke the tool.
+
+<Info>
+SWAIG hosting is available on `SWMLService` itself, so you can build an AI Sidecar (or any
+non-agent SWML service) with plain `SWMLService` — no `AgentBase` required. Tool definitions
+map to SWML [`ai_sidecar.SWAIG.functions`][ai_sidecar-swaig] entries (and to the `ai` verb's
+SWAIG functions when used with an agent).
+</Info>
+
+## **Parameters**
+
+<ParamField path="name" type="str" required={true} toc={true}>
+  Function name. Must be unique within the service. The model uses this name to invoke the
+  function.
+</ParamField>
+
+<ParamField path="description" type="str" required={true} toc={true}>
+  Human-readable description of what the function does. The model reads this to decide when
+  to call the function.
+</ParamField>
+
+<ParamField path="parameters" type="dict[str, Any]" required={true} toc={true}>
+  JSON Schema describing the function's parameters. The model generates arguments conforming
+  to this schema.
+</ParamField>
+
+<ParamField path="handler" type="Callable" required={true} toc={true}>
+  Python function to call when the model invokes this tool. Receives `(args: dict, raw_data: dict)`
+  and should return a [`FunctionResult`][functionresult].
+</ParamField>
+
+<ParamField path="secure" type="bool" default="True" toc={true}>
+  Whether to require token validation on tool calls. Recommended for production.
+</ParamField>
+
+<ParamField path="fillers" type="Optional[dict[str, list[str]]]" toc={true}>
+  Language-specific filler phrases spoken while the function executes.
+  Format: `{"en-US": ["Looking that up...", "One moment..."]}`.
+</ParamField>
+
+<ParamField path="webhook_url" type="Optional[str]" toc={true}>
+  External URL to forward the tool call to instead of executing locally.
+</ParamField>
+
+<ParamField path="required" type="Optional[list[str]]" toc={true}>
+  List of required parameter names from the JSON Schema.
+</ParamField>
+
+<ParamField path="is_typed_handler" type="bool" default="False" toc={true}>
+  Set to `True` if the handler uses type-hinted parameters instead of the standard
+  `(args, raw_data)` signature.
+</ParamField>
+
+<ParamField path="**swaig_fields" type="Any" toc={true}>
+  Additional SWAIG fields to include in the function definition.
+</ParamField>
+
+## **Returns**
+
+[`SWMLService`][ref-swmlservice] -- Returns self for method chaining.
+
+## **Example**
+
+Host a tool on a sidecar service. The `ai_sidecar` verb references the tool through
+`SWAIG.defaults.web_hook_url`, and the model calls it during the live call. Sidecar events
+are delivered to the `/events` endpoint registered with
+[`register_routing_callback`][register-routing-callback].
+
+```python {21}
+from signalwire.core.swml_service import SWMLService
+from signalwire.core.function_result import FunctionResult
+
+
+class SalesSidecar(SWMLService):
+    def __init__(self):
+        super().__init__(name="sales-sidecar", route="/sales-sidecar")
+
+        public_url = "https://your-app.example.com/sales-sidecar"
+
+        self.add_verb_to_section("main", "ai_sidecar", {
+            "prompt": "You are a real-time sales copilot. Give the agent one concise piece of advice per customer turn, or call sidecar_skip.",
+            "lang": "en-US",
+            "url": f"{public_url}/events",
+            "SWAIG": {"defaults": {"web_hook_url": f"{public_url}/swaig"}},
+        })
+
+        def lookup_competitor(args, raw_data=None):
+            name = args.get("competitor", "unknown")
+            return FunctionResult(f"{name} charges $99/seat. We're $79.")
+
+        self.define_tool(
+            name="lookup_competitor",
+            description="Look up a competitor by name.",
+            parameters={
+                "type": "object",
+                "properties": {"competitor": {"type": "string", "description": "Competitor name."}},
+            },
+            handler=lookup_competitor,
+            required=["competitor"],
+        )
+
+        self.register_routing_callback(self.on_event, path="/events")
+
+    def on_event(self, request, body):
+        event = body.get("sidecar_event", body)
+        if event.get("type") == "insight":
+            print(f"[insight] {event.get('raw')}")
+        return None
+
+
+if __name__ == "__main__":
+    SalesSidecar().serve()
+```

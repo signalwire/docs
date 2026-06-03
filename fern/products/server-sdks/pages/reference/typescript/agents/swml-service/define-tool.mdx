@@ -1,0 +1,132 @@
+---
+title: "defineTool"
+slug: /reference/typescript/agents/swml-service/define-tool
+description: Host a SWAIG tool directly on a SWMLService so any SWML document — including ai_sidecar — can invoke it.
+max-toc-depth: 3
+---
+
+[functionresult]: /docs/server-sdks/reference/typescript/agents/function-result
+[ref-swmlservice]: /docs/server-sdks/reference/typescript/agents/swml-service
+[register-routing-callback]: /docs/server-sdks/reference/typescript/agents/swml-service/register-routing-callback
+[ai_sidecar]: /docs/swml/reference/calling/ai_sidecar
+[ai_sidecar-swaig]: /docs/swml/reference/calling/ai_sidecar/swaig
+
+Define a SWAIG function (tool) hosted directly on the `SWMLService`, without subclassing
+`AgentBase`. The service exposes a `POST /<route>/swaig` endpoint that dispatches tool calls
+to your handler, so any SWML document the service emits — including the
+[`ai_sidecar`][ai_sidecar] verb — can reference and invoke the tool.
+
+<Info>
+SWAIG hosting is available on `SWMLService` itself, so you can build an AI Sidecar (or any
+non-agent SWML service) with plain `SWMLService` — no `AgentBase` required. Tool definitions
+map to SWML [`ai_sidecar.SWAIG.functions`][ai_sidecar-swaig] entries (and to the `ai` verb's
+SWAIG functions when used with an agent).
+</Info>
+
+## **Parameters**
+
+<ParamField path="opts" type="object" required={true} toc={true}>
+  Tool definition object.
+</ParamField>
+
+<Indent>
+<ParamField path="opts.name" type="string" required={true} toc={true}>
+  Tool name. Must be unique within the service. The model uses this name to invoke the
+  function.
+</ParamField>
+
+<ParamField path="opts.description" type="string" required={true} toc={true}>
+  Human-readable description of what the tool does. The model reads this to decide when to
+  call the tool.
+</ParamField>
+
+<ParamField path="opts.parameters" type={"Record<string, unknown>"} toc={true}>
+  JSON Schema describing the tool's parameters. The model generates arguments conforming to
+  this schema.
+</ParamField>
+
+<ParamField path="opts.handler" type="SwaigHandler" required={true} toc={true}>
+  Callback invoked when the model calls this tool. Receives
+  `(args: Record<string, unknown>, rawData: Record<string, unknown>)` and should return a
+  [`FunctionResult`][functionresult].
+</ParamField>
+
+<ParamField path="opts.secure" type="boolean" default="false" toc={true}>
+  Whether to require token validation on tool calls. Recommended for production.
+</ParamField>
+
+<ParamField path="opts.fillers" type={"Record<string, string[]>"} toc={true}>
+  Language-specific filler phrases spoken while the tool executes.
+  Format: `{ "en-US": ["Looking that up...", "One moment..."] }`.
+</ParamField>
+
+<ParamField path="opts.webhookUrl" type="string" toc={true}>
+  External URL to forward the tool call to instead of executing locally.
+</ParamField>
+
+<ParamField path="opts.required" type={"string[]"} toc={true}>
+  List of required parameter names from the JSON Schema.
+</ParamField>
+
+<ParamField path="opts.isTypedHandler" type="boolean" default="false" toc={true}>
+  Set to `true` if the handler uses named, typed parameters instead of the standard
+  `(args, rawData)` signature.
+</ParamField>
+
+<ParamField path="opts.extraFields" type={"Record<string, unknown>"} toc={true}>
+  Additional SWAIG fields to include in the function definition.
+</ParamField>
+</Indent>
+
+## **Returns**
+
+[`SWMLService`][ref-swmlservice] -- Returns `this` for method chaining.
+
+## **Example**
+
+Host a tool on a sidecar service. The `ai_sidecar` verb references the tool through
+`SWAIG.defaults.web_hook_url`, and the model calls it during the live call. Sidecar events
+are delivered to the `/events` endpoint registered with
+[`registerRoutingCallback`][register-routing-callback].
+
+```typescript {20}
+import { SWMLService } from '@signalwire/agents';
+
+class SalesSidecar extends SWMLService {
+  constructor() {
+    super({ name: 'sales-sidecar', route: '/sales-sidecar' });
+
+    const publicUrl = 'https://your-app.example.com/sales-sidecar';
+
+    this.addVerbToSection('main', 'ai_sidecar', {
+      prompt:
+        'You are a real-time sales copilot. Give the agent one concise piece of advice per customer turn, or call sidecar_skip.',
+      lang: 'en-US',
+      url: `${publicUrl}/events`,
+      SWAIG: { defaults: { web_hook_url: `${publicUrl}/swaig` } },
+    });
+
+    this.defineTool({
+      name: 'lookup_competitor',
+      description: 'Look up a competitor by name.',
+      parameters: {
+        type: 'object',
+        properties: { competitor: { type: 'string', description: 'Competitor name.' } },
+      },
+      required: ['competitor'],
+      handler: (args) => ({ response: `${args.competitor} charges $99/seat. We're $79.` }),
+    });
+
+    this.registerRoutingCallback((body) => {
+      const event = (body['sidecar_event'] as Record<string, unknown>) ?? body;
+      if (event['type'] === 'insight') {
+        this.log.info(`[insight] ${event['raw']}`);
+      }
+      return null;
+    }, '/events');
+  }
+}
+
+const agent = new SalesSidecar();
+agent.run();
+```
