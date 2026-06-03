@@ -1468,7 +1468,7 @@ model CallTapStopRequest {
  *
  * The transcription covers the whole call and completes when the call ends. For real-time
  * transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
- * at a time; starting another while one is running returns a conflict. Stop it with
+ * at a time; starting another while one is running returns a `409` conflict. Stop it with
  * `calling.transcribe.stop` using the same `control_id`.
  */
 @summary("calling.transcribe")
@@ -1488,7 +1488,7 @@ model CallTranscribeRequest {
     control_id: string;
 
     @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes.")
-    @example("https://example.com/transcribe_callback")
+    @example("https://example.com/transcribe-status")
     status_url?: url;
   };
 }
