@@ -12,7 +12,7 @@ To receive calls in a web app, bring a signed-in user online, show a ringing UI 
 import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
 import { filter, take } from "rxjs";
 
-// Constructing the client authenticates and registers the subscriber
+// Constructing the client authenticates and registers the user
 // automatically. `await register()` here gives a sync point before we
 // subscribe — see the Authentication guide for the credential lifecycle.
 const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
@@ -51,7 +51,7 @@ client.session.incomingCalls$.subscribe((calls) => {
 ```
 
 <Info>
-**Before you start.** Inbound calls require a [Subscriber Access Token (SAT)](/docs/browser-sdk/v4/guides/authentication) issued for a specific [subscriber](/docs/platform/subscribers). Embed tokens and guest tokens are outbound-only and can't receive calls.
+**Before you start.** Inbound calls require a [Subscriber Access Token (SAT)](/docs/browser-sdk/v4/guides/authentication) issued for a specific [user](/docs/platform/subscribers). Embed tokens and guest tokens are outbound-only and can't receive calls.
 </Info>
 
 ## Listen for incoming calls
@@ -71,7 +71,7 @@ Each entry is a [`Call`](/docs/browser-sdk/v4/reference/interfaces/call) with `d
 | ----------- | ------------------------------------------------------------------- |
 | `from`      | The caller's address (e.g. `/private/alice`)                        |
 | `fromName`  | Display name, if the caller supplied one                            |
-| `to`        | The address that was dialed (useful when one subscriber has aliases)|
+| `to`        | The address that was dialed (useful when one user has aliases)|
 | `direction` | Always `"inbound"` here                                             |
 
 The SDK hands you the raw list — it doesn't queue, dedupe, or pick a call for you. Two simultaneous callers land in the same emission, and calls stay in the array through every status transition (only dropping out when destroyed), so the `status === "ringing"` filter is what tells you which entries still need a decision.
@@ -196,13 +196,13 @@ To leave the page but keep the call alive on the platform — a transfer-and-dis
 
 ## Try it: receive a call
 
-The fastest way to verify inbound calls end-to-end is to issue a SAT, load the demo as your subscriber, then place the call yourself with a server-side dial that runs inline SWML. The demo surfaces a ringing UI you can accept with **Answer**, then the SWML script plays a public test MP4 into the call — you see real audio and video on the receiving side without needing a second browser or a phone.
+The fastest way to verify inbound calls end-to-end is to issue a SAT, load the demo as your user, then place the call yourself with a server-side dial that runs inline SWML. The demo surfaces a ringing UI you can accept with **Answer**, then the SWML script plays a public test MP4 into the call — you see real audio and video on the receiving side without needing a second browser or a phone.
 
 <Steps>
 
 ### Issue a Subscriber Access Token
 
-Pick a `reference` for the user the call will arrive on — usually an email, but any stable ID works. If a subscriber with that `reference` doesn't exist yet, this endpoint creates one (set `first_name`, `last_name`, or `password` in the same body if you want); otherwise it returns a fresh token for the existing subscriber.
+Pick a `reference` for the user the call will arrive on — usually an email, but any stable ID works. If a user (Subscriber) with that `reference` doesn't exist yet, this endpoint creates one (set `first_name`, `last_name`, or `password` in the same body if you want); otherwise it returns a fresh token for the existing user.
 
 The response `token` is the SAT you'll plug into the demo. For the production version of this flow — where your backend issues SATs to clients — see the [Authentication guide](/docs/browser-sdk/v4/guides/authentication).
 
@@ -212,7 +212,7 @@ The response `token` is the SAT you'll plug into the demo. For the production ve
 
 Save the page below as `inbound-demo.html` and open it over HTTPS (or `localhost`). Paste the SAT and click **Come online**.
 
-Once registered, the log prints the subscriber's dialable `/private/<name>` address(es) — copy one for the next step. (You can also grab it from the [Dashboard Resources page](https://my.signalwire.com/?page=resources) if you prefer the UI.)
+Once registered, the log prints the user's dialable `/private/<name>` address(es) — copy one for the next step. (You can also grab it from the [Dashboard Resources page](https://my.signalwire.com/?page=resources) if you prefer the UI.)
 
 Leave the page open — when the call arrives, the **Caller** line populates and the **Answer** / **Decline** buttons enable. After you accept, **Hang up** enables so you can end the call.
 
@@ -283,18 +283,16 @@ Leave the page open — when the call arrives, the **Caller** line populates and
           return;
         }
 
-        // The shipping SDK exposes the authenticated subscriber on
-        // `client.user$` (the v4 reference page calls this `subscriber$` —
-        // a planned rename that hasn't landed in the beta yet). Either name
-        // emits the same Subscriber object, which carries `.addresses`.
+        // The SDK exposes the authenticated user on `client.user$`.
+        // The User object carries `.addresses`.
         //
         // Each `address.channels` value is the full dialable URI for that
-        // channel (e.g. "/private/john-doe?channel=video" for a subscriber,
+        // channel (e.g. "/private/john-doe?channel=video" for a user,
         // "/user/<name>?channel=audio" for an app). Don't hand-roll the
         // prefix from `address.name` — the prefix varies by `address.type`.
         client.user$.subscribe((sub) => {
           if (!sub || !sub.addresses?.length) return;
-          log("Dialable address(es) for this subscriber:");
+          log("Dialable address(es) for this user:");
           for (const a of sub.addresses) {
             const uris = Object.entries(a.channels || {});
             if (!uris.length) continue;
@@ -382,7 +380,7 @@ Leave the page open — when the call arrives, the **Caller** line populates and
 
 ### Place a test call
 
-There are several ways to dial the subscriber — another browser tab signed in as a different user, a SIP softphone configured against the subscriber's SIP endpoint, a PSTN call from a phone, or a server-side dial via the [Calling REST API](/docs/apis/rest). This guide uses the **Calling API** so you can verify the flow from a single terminal. The body below carries inline SWML that plays a public test MP4 — click **Answer** in the demo when the call rings and the platform plays that file into the call so the remote `<video>` tile shows real audio and video.
+There are several ways to dial the user — another browser tab signed in as a different user, a SIP softphone configured against the user's SIP endpoint, a PSTN call from a phone, or a server-side dial via the [Calling REST API](/docs/apis/rest). This guide uses the **Calling API** so you can verify the flow from a single terminal. The body below carries inline SWML that plays a public test MP4 — click **Answer** in the demo when the call rings and the platform plays that file into the call so the remote `<video>` tile shows real audio and video.
 
 <EndpointRequestSnippet endpoint="POST /api/calling/calls" />
 
@@ -414,7 +412,7 @@ The demo logs the ringing call and enables the **Answer** / **Decline** buttons.
 
 <CardGroup cols={2}>
   <Card title="Outbound Calls" href="/docs/browser-sdk/v4/guides/outbound-calls" icon="fa-regular fa-phone-arrow-up-right">
-    Dial subscribers, rooms, or PSTN destinations with `client.dial()`.
+    Dial users, rooms, or PSTN destinations with `client.dial()`.
   </Card>
   <Card title="Device Management" href="/docs/browser-sdk/v4/guides/device-management" icon="fa-regular fa-microphone">
     Choose the mic, camera, and speaker.
