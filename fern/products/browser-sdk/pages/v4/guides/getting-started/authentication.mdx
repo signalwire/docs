@@ -267,6 +267,32 @@ app.post("/api/signalwire-token", requireUserAuth, async (req, res) => {
 
 For the rotation endpoints, refresh events you can subscribe to, and failure modes, see [`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider).
 
+### When both paths are configured
+
+You can provide a `refresh()` method *and* request `sat:refresh` scope. The SDK
+picks one mechanism per session: if the SAT carries `sat:refresh` scope, the
+client-side (Client Bound SAT) path wins and your `refresh()` is never called;
+otherwise it falls back to your `refresh()`. This makes `refresh()` a safe
+backstop — if the backend ever drops the scope, the session keeps rotating
+instead of dying at expiry.
+
+That fallback is silent by default. To observe it — for example, to alert when
+a deployment expected to use bound tokens has downgraded to a developer-managed
+refresh — subscribe to [`client.warnings$`](/docs/browser-sdk/v4/reference/signalwire/warnings$):
+
+```ts Browser
+client.warnings$.subscribe((warning) => {
+  if (warning.code === "credential_refresh_fallback") {
+    // e.g. reason: "no-scope" — the SAT was minted without sat:refresh
+    console.warn("Refresh fell back to developer refresh():", warning.reason);
+  }
+  if (warning.code === "credential_no_refresh_handler") {
+    // Token has an expiry but no refresh path — session ends at expiry.
+    console.warn("Session will end at", new Date(warning.expiresAt));
+  }
+});
+```
+
 ## Connection lifecycle
 
 Constructing [`SignalWire`](/docs/browser-sdk/v4/reference/signalwire) runs three steps in sequence: authenticate the SAT, open the WebSocket, and register the subscriber as online. Each step runs by default, and each can be deferred with a constructor option in [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options) so your UI can drive it later.
