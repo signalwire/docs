@@ -9,18 +9,26 @@ namespace SWML.Calling;
 model AISidecarParams {
   @doc("How long the customer can be silent, in milliseconds, after they finish speaking before the sidecar evaluates the conversation. Lower values make the sidecar react faster. Range: 50-5000. **Default:** `200`.")
   @example(200)
+  @minValue(50)
+  @maxValue(5000)
   idle_timeout_ms?: integer | SWMLVar = 200;
 
   @doc("The minimum time, in milliseconds, between evaluations — a throttle that limits how often the sidecar runs on a busy call. Range: 0-60000. **Default:** `0`.")
   @example(1000)
+  @minValue(0)
+  @maxValue(60000)
   min_interval_ms?: integer | SWMLVar = 0;
 
   @doc("The maximum number of tool calls the sidecar will chain within a single evaluation before it must produce its advice. Range: 1-20. **Default:** `5`.")
   @example(5)
+  @minValue(1)
+  @maxValue(20)
   max_iters_per_tick?: integer | SWMLVar = 5;
 
   @doc("The token budget for the sidecar's running conversation history. When the history grows past this, the oldest messages are dropped. Range: 1000-200000. **Default:** `8000`.")
   @example(8000)
+  @minValue(1000)
+  @maxValue(200000)
   max_history_tokens?: integer | SWMLVar = 8000;
 
   @doc("Whether actions returned by your tools (such as transferring or hanging up the call) take effect on the call, or are only reported as callbacks. **Default:** `true`.")
@@ -69,6 +77,8 @@ model AISidecarParams {
 
   @doc("Speech-engine debug verbosity. Range: 0-100. **Default:** `0`.")
   @example(0)
+  @minValue(0)
+  @maxValue(100)
   debug_level?: integer | SWMLVar = 0;
 
   @doc("Whether to enable verbose logging for the sidecar. **Default:** `false`.")

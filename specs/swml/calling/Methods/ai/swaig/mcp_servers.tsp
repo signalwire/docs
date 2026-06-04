@@ -18,7 +18,7 @@ model MCPServer {
 
   @doc("Whether to fetch the server's resources into `global_data`, when the server advertises resource support. **Default:** `false`.")
   @example(true)
-  resources?: boolean | SWMLVar;
+  resources?: boolean | SWMLVar = false;
 
   @doc("Template variables passed to the MCP server when fetching resources, typically using variable expansion such as `\${global_data.customer_id}`. Used only when `resources` is enabled.")
   @example(#{ customer_id: "cust_12345" })

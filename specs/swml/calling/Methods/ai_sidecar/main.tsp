@@ -21,15 +21,19 @@ model AISidecarObject {
 
   @doc("The conversation language as a single BCP-47 tag. Sets the speech recognition language and is shared with the model as a hint.")
   @example(string("en-US"))
+  @minLength(1)
   lang: string | SWMLVar;
 
   @doc("The model used for the sidecar's advice and its end-of-call summaries. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`.")
   @example("gpt-4.1-mini")
   `model`?: SupportedAIModels = "gpt-4o-mini";
 
-  @doc("The call legs to observe. Both legs are required. Defaults to both legs.")
+  @doc("The call legs to observe. Both legs are required — a single-leg value is rejected. When omitted, both legs are observed. **Default:** both legs (`remote-caller` and `local-caller`).")
   @example(#[TranscribeDirection.`remote-caller`, TranscribeDirection.`local-caller`])
-  direction?: TranscribeDirection[];
+  direction?: TranscribeDirection[] = #[
+    TranscribeDirection.`remote-caller`,
+    TranscribeDirection.`local-caller`
+  ];
 
   @doc("Which leg is the customer, used as the turn-end trigger source. **Default:** `remote-caller`.")
   @example(TranscribeDirection.`remote-caller`)
@@ -58,6 +62,7 @@ model AISidecarObject {
 
   @doc("Hints that improve speech recognition of specific terms, such as product names, competitor names, jargon, or customer names. Strongly recommended.")
   @example(#["ACME", "Globex", "FedRAMP", "SOC 2"])
+  @minItems(1)
   hints?: string[];
 
   @doc("Tuning options for the sidecar.")
