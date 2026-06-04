@@ -1,0 +1,71 @@
+---
+title: "validateWebhookSignature"
+slug: /reference/typescript/core/security/validate-webhook-signature
+description: "Verify a SignalWire webhook signature against a raw request body."
+max-toc-depth: 3
+---
+
+[validate-request]: /docs/server-sdks/reference/typescript/core/security/validate-request
+
+Verify that an inbound request was genuinely signed by SignalWire. This is the
+primary entry point for webhook signature validation. Compute it over the raw
+request body **before** any JSON or form parsing.
+
+```typescript {1}
+validateWebhookSignature(signingKey: string, signature: string, url: string, rawBody: string): boolean
+```
+
+<Warning>
+`rawBody` must be the raw request body as a UTF-8 string. Passing a parsed
+object throws a `TypeError`. For pre-parsed form params, use
+[`validateRequest()`][validate-request] instead.
+</Warning>
+
+## **Parameters**
+
+<ParamField path="signingKey" type="string" required={true} toc={true}>
+  Your SignalWire Signing Key. An empty or non-string value throws an `Error`.
+</ParamField>
+
+<ParamField path="signature" type="string" required={true} toc={true}>
+  The signature header value (`X-SignalWire-Signature` or `X-Twilio-Signature`).
+  A missing or empty value returns `false`.
+</ParamField>
+
+<ParamField path="url" type="string" required={true} toc={true}>
+  The full URL SignalWire POSTed to.
+</ParamField>
+
+<ParamField path="rawBody" type="string" required={true} toc={true}>
+  The raw request body as a UTF-8 string, before JSON or form parsing.
+</ParamField>
+
+## **Returns**
+
+`boolean` -- `true` when the signature matches; `false` otherwise. The
+comparison is constant-time.
+
+## **Example**
+
+```typescript {7}
+import { validateWebhookSignature } from '@signalwire/sdk';
+import { Hono } from 'hono';
+
+const app = new Hono();
+
+app.post('/webhook', async (c) => {
+  const rawBody = await c.req.text();
+  const signature = c.req.header('x-signalwire-signature') ?? '';
+  const url = c.req.url;
+
+  const ok = validateWebhookSignature(
+    process.env.SIGNALWIRE_SIGNING_KEY!,
+    signature,
+    url,
+    rawBody,
+  );
+  if (!ok) return c.text('Forbidden', 403);
+
+  return c.json({ received: JSON.parse(rawBody) });
+});
+```
