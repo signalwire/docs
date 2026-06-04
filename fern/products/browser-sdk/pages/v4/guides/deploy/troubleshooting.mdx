@@ -1,0 +1,331 @@
+---
+title: "Troubleshooting & FAQ"
+slug: /guides/troubleshooting
+sidebar-title: "Troubleshooting"
+position: 4
+max-toc-depth: 3
+---
+
+Common failure modes and how to diagnose them. For end-to-end
+patterns, see the guides; for full API contracts, see the
+[reference](/docs/browser-sdk/v4/reference).
+
+## Connection issues
+
+### `InvalidCredentialsError` on connect
+
+**Cause:** Token is expired, malformed, or minted for a different SignalWire space.
+
+**Fix:**
+
+1. Mint a fresh SAT from your backend — see [Authentication](/docs/browser-sdk/v4/guides/authentication).
+2. Confirm the token was issued by the space you're connecting to.
+3. Check that the full token string was copied (SATs are long; truncation is common).
+
+```js
+import { jwtDecode } from "jwt-decode";
+
+const decoded = jwtDecode(token);
+const expiresAt = new Date(decoded.exp * 1000);
+console.log("Expired?", expiresAt < new Date());
+```
+
+### Connection fails without an obvious error
+
+Errors that happen outside of an `await` flow surface on
+[`errors$`](/docs/browser-sdk/v4/reference/signalwire/errors$). If you
+never subscribe to it, those errors are silently dropped — subscribe
+during client construction so they always reach your logs.
+
+```js
+client.errors$.subscribe((error) => console.error("Client error:", error));
+```
+
+### `NotConnectedError` when calling `dial()`
+
+**Cause:** Calling [`dial()`](/docs/browser-sdk/v4/reference/signalwire/dial) before the client finished connecting.
+
+Wait for [`ready$`](/docs/browser-sdk/v4/reference/signalwire/ready$) to emit `true`:
+
+```js
+import { filter, take } from "rxjs";
+
+client.ready$.pipe(filter(Boolean), take(1)).subscribe(async () => {
+  const call = await client.dial(destination);
+});
+```
+
+### WebSocket disconnects frequently
+
+**Causes:** Unstable network, corporate firewall/proxy blocking WebSocket, idle timeout.
+
+The SDK reconnects automatically. Drive a "reconnecting" banner off
+[`isConnected$`](/docs/browser-sdk/v4/reference/signalwire/is-connected$):
+
+```js
+client.isConnected$.subscribe((connected) => {
+  connected ? hideReconnectingBanner() : showReconnectingBanner();
+});
+```
+
+## Video / Audio issues
+
+### Video is black
+
+**Causes:** Camera permissions denied, camera in use by another app, wrong camera selected, hardware issue.
+
+```js
+const permission = await navigator.permissions.query({ name: "camera" });
+console.log("Camera permission:", permission.state);
+
+client.videoInputDevices$.subscribe((devices) => {
+  console.log("Available cameras:", devices);
+});
+```
+
+### No remote audio
+
+**Causes:** Output device not selected, remote participant muted, browser blocking unmuted autoplay, or the `muted` attribute left on the `<video>` element.
+
+```html
+<!-- Wrong — the `muted` attribute mutes playback regardless of the track -->
+<video id="remote" autoplay muted></video>
+
+<!-- Right -->
+<video id="remote" autoplay playsinline></video>
+```
+
+Browsers block autoplay with audio until the page has been interacted
+with — `play()` will reject. Catch that promise and surface a
+play-to-start button if it fails.
+
+### Remote can't hear me
+
+```js
+call.self$.subscribe((self) => console.log("Audio muted:", self?.audioMuted));
+
+client.selectedAudioInputDevice$.subscribe((device) => {
+  console.log("Microphone:", device?.label);
+});
+```
+
+### Echo or feedback
+
+Use headphones, or enable echo cancellation:
+
+```js
+call.self$.subscribe(async (self) => {
+  if (self && !self.echoCancellation) await self.toggleEchoCancellation();
+});
+```
+
+### `Permission denied` for camera/microphone
+
+**HTTPS is required.** `getUserMedia` only works on secure contexts (HTTPS or localhost).
+
+```js
+try {
+  await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+} catch (e) {
+  if (e.name === "NotAllowedError") {
+    alert("Click the lock icon in your address bar to reset permissions.");
+  }
+}
+```
+
+## Call issues
+
+### Call stays in `trying` state
+
+**Causes:** Invalid destination, destination not reachable, network/firewall blocking.
+
+```js
+call.errors$.subscribe((error) => console.error("Call error:", error));
+```
+
+### Call connects but no media flows
+
+**Cause:** ICE connection failed (firewall blocking UDP) or TURN server unreachable.
+
+```js
+const pc = call.rtcPeerConnection;
+console.log("ICE state:", pc?.iceConnectionState);
+pc?.addEventListener("iceconnectionstatechange", () => {
+  console.log("ICE state changed:", pc.iceConnectionState);
+});
+```
+
+### Can't receive inbound calls
+
+**Causes:** [`register()`](/docs/browser-sdk/v4/reference/signalwire/register)
+was never called, or the token can't register. Only full Subscriber
+Access Tokens can register; Guest SATs, Invite SATs, and embed tokens
+are outbound-only.
+
+```js
+client.ready$.subscribe(async (ready) => {
+  if (ready) await client.register();
+});
+```
+
+Inbound calls then surface on [`session.incomingCalls$`](/docs/browser-sdk/v4/reference/interfaces/session-state#incomingcalls-1).
+
+### DTMF tones not working
+
+Send digits only after the call is connected:
+
+```js
+import { filter, take } from "rxjs";
+
+call.status$
+  .pipe(filter((s) => s === "connected"), take(1))
+  .subscribe(async () => await call.sendDigits("123#"));
+```
+
+## UI issues
+
+### Video element shows nothing
+
+```js
+call.remoteStream$.subscribe((stream) => {
+  const video = document.getElementById("remoteVideo");
+  if (stream && video) {
+    video.srcObject = stream;
+    video.play().catch((e) => console.error("Play failed:", e));
+  }
+});
+```
+
+### UI doesn't update when state changes
+
+Subscribe immediately after getting the object — BehaviorSubjects emit current state on subscribe.
+
+### Memory leak / page slows down
+
+Almost always a missing unsubscribe on a long-lived subscription. See
+[RxJS Primer → Cleanup](/docs/browser-sdk/v4/guides/rxjs-primer#cleanup)
+and the framework patterns in
+[Framework Integration](/docs/browser-sdk/v4/guides/framework-integration).
+
+## Browser-specific issues
+
+### Safari: video doesn't play
+
+Safari has strict autoplay policies. Add `playsinline` and handle the play promise:
+
+```html
+<video id="remote" autoplay playsinline></video>
+```
+
+```js
+call.remoteStream$.subscribe(async (stream) => {
+  const video = document.getElementById("remote");
+  video.srcObject = stream;
+  try {
+    await video.play();
+  } catch {
+    showPlayButton(() => video.play());
+  }
+});
+```
+
+### Firefox: no audio output selection
+
+Firefox doesn't fully support `setSinkId`. Audio plays through default output.
+
+### Mobile: camera switches unexpectedly
+
+Device rotation or app switching can reset the camera.
+
+```js
+client.videoInputDevices$.subscribe((devices) => {
+  const preferred = devices.find((d) => d.label.includes("front"));
+  if (preferred) call.self?.selectVideoInputDevice(preferred);
+});
+```
+
+## Debugging
+
+### Verbose logging
+
+The SDK emits debug-level logs to the browser console. Filter by
+`signalwire` in DevTools to isolate them.
+
+### Inspect WebSocket traffic
+
+DevTools → Network → "WS" filter → click the connection → Messages tab.
+
+### Get call statistics
+
+[`call.rtcPeerConnection`](/docs/browser-sdk/v4/reference/webrtc-call/rtc-peer-connection)
+is the underlying `RTCPeerConnection` — it's `undefined` until media
+negotiation starts, so guard before reading it.
+
+```js
+const stats = await call.rtcPeerConnection?.getStats();
+stats?.forEach((report) => {
+  if (report.type === "inbound-rtp" && report.kind === "video") {
+    console.log("Packets received:", report.packetsReceived);
+    console.log("Packets lost:", report.packetsLost);
+  }
+});
+```
+
+### Test without real media
+
+Chrome flag: `--use-fake-device-for-media-stream`. Or generate a canvas stream:
+
+```js
+const canvas = document.createElement("canvas");
+canvas.getContext("2d").fillRect(0, 0, 640, 480);
+const fakeStream = canvas.captureStream(30);
+```
+
+## FAQ
+
+### Do I need HTTPS?
+
+Yes for production. WebRTC's `getUserMedia` requires a secure context. Localhost is exempt for development.
+
+### What browsers are supported?
+
+Modern Chrome, Firefox, Safari, and Edge. No IE11.
+
+### Can I use this in Node.js?
+
+No — the SDK is browser-only. Use the SignalWire REST APIs or server-side SDKs.
+
+### How do I implement a mute button?
+
+```js
+muteButton.onclick = () => call.self?.toggleMute();
+```
+
+`call.self` is `null` until the local participant joins — always check.
+
+### How do I get call duration?
+
+```js
+let startTime;
+call.status$.subscribe((status) => {
+  if (status === "connected") startTime = Date.now();
+  if (status === "disconnected" && startTime) {
+    console.log("Lasted:", Math.round((Date.now() - startTime) / 1000), "s");
+  }
+});
+```
+
+### Can I record calls?
+
+Recording is controlled by the SignalWire platform, not the browser.
+[`startRecording()`](/docs/browser-sdk/v4/reference/webrtc-call/start-recording)
+is on the API surface but **not yet implemented in v4** and will throw
+when called. Recording state configured server-side still surfaces
+through [`recording$`](/docs/browser-sdk/v4/reference/webrtc-call/recording$).
+
+### Why "Unimplemented" errors?
+
+Some methods are on the API surface but pending implementation, and
+others depend on capabilities the server hasn't granted to this call.
+Check [`capabilities$`](/docs/browser-sdk/v4/reference/webrtc-call/capabilities$)
+to gate the UI on what's actually available.

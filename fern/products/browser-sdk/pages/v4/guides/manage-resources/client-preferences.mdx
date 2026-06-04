@@ -1,0 +1,111 @@
+---
+title: "Client Preferences"
+slug: /guides/client-preferences
+sidebar-title: "Client Preferences"
+position: 4
+max-toc-depth: 3
+---
+
+`client.preferences` holds **per-client defaults** the SDK reads when
+no per-call options override them: which mic / camera to use, whether
+to receive video by default, ICE / recovery tuning, codec ordering,
+and custom `userVariables` attached to every call. Preferences live
+in the browser, optionally persist to `localStorage`, and are
+distinct from per-User configuration (which lives on the
+platform — see [Users](/docs/browser-sdk/v4/guides/subscribers)).
+
+This page covers how preferences fit into the SDK lifecycle. For the
+full property list, see [`ClientPreferences`].
+
+## Defaults vs. per-call overrides
+
+```
+client.preferences  ←  defaults
+        ↓
+client.dial(dest, options)  ←  per-call overrides win
+```
+
+Anything set on `preferences` applies to every subsequent
+[`dial()`][`SignalWire.dial()`] that doesn't pass a competing field.
+Per-call options always win:
+
+```js
+client.preferences.receiveVideo = false;     // audio-first default
+
+// This one call gets video regardless:
+await client.dial("/private/team", { video: true });
+```
+
+Use `preferences` for app-wide defaults (codec ordering, a tier-wide
+`userVariables` payload). Use per-call options for situational values.
+
+## Persistence
+
+By default, preferences live in memory only. Set
+`savePreferences: true` to hydrate from `localStorage` on startup and
+write back on every setter:
+
+```js
+const client = new SignalWire(provider, { savePreferences: true });
+```
+
+Persisted: timeouts, ICE settings, codec preferences, device-management
+flags, and `userVariables` — anything cleanly JSON-serializable.
+
+Not persisted: `MediaDeviceInfo` references. Device IDs aren't stable
+across sessions in every browser, so device picks happen at runtime
+via the device controller.
+
+For a different storage backend (IndexedDB, server-side per user),
+leave `savePreferences` off and mirror manually:
+
+```ts
+function setReceiveVideo(value: boolean) {
+  client.preferences.receiveVideo = value;
+  myStore.set("receiveVideo", value);
+}
+```
+
+`ClientPreferences` is a synchronous object — there is no `update$`
+observable. Preferences are read at dial time.
+
+## `userVariables`
+
+`userVariables` is a free-form payload attached to every outbound
+Verto invite. The receiving side (an AI agent, a SWML script, a
+backend) reads it via `signalwire-address:event` events.
+
+```js
+client.preferences.userVariables = {
+  plan:   user.plan,
+  locale: navigator.language,
+};
+```
+
+Set on preferences for app-wide values; pass to `dial()` for per-call
+attribution.
+
+## Time units
+
+Timeouts on the preferences surface are exposed in **seconds** (stored
+as milliseconds internally):
+
+```js
+client.preferences.connectionTimeout = 30;   // 30 seconds
+client.preferences.iceRestartTimeout = 10;   // 10 seconds
+```
+
+Other fields use the unit of the underlying API (kbps, integer
+levels, etc.).
+
+## Reference
+
+- [`ClientPreferences`] — the property surface
+- [`SignalWire.preferences`] — the instance
+- [`SignalWireOptions`] — `savePreferences`, `skipDeviceMonitoring`, `reconnectAttachedCalls`, `persistSession`
+- [`SignalWire.dial()`] — per-call overrides
+
+[`ClientPreferences`]: /docs/browser-sdk/v4/reference/client-preferences
+[`SignalWire.preferences`]: /docs/browser-sdk/v4/reference/signalwire
+[`SignalWireOptions`]: /docs/browser-sdk/v4/reference/interfaces/signal-wire-options
+[`SignalWire.dial()`]: /docs/browser-sdk/v4/reference/signalwire/dial

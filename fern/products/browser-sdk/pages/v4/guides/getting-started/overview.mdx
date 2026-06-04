@@ -1,0 +1,210 @@
+---
+title: "Overview"
+slug: /guides/overview
+sidebar-title: "Overview"
+position: 1
+max-toc-depth: 3
+---
+
+The SignalWire Browser SDK puts voice, video, and chat in a browser
+without plugins, downloads, or a media server you have to run. It also integrates with
+powerful AI agents, [SWML](/docs/swml), and all telephony and communication services SignalWire provides.
+
+How would you like to get started?
+
+<CardGroup cols={2}>
+  <Card title="Make a video call with JS" icon="brands js" href="#your-first-call">
+    Drive everything yourself with `@signalwire/js` — `client.dial()`,
+    observables, your own UI. Best when you want full control over how
+    the call looks and behaves.
+  </Card>
+  <Card title="Drop in a web component" icon="code" href="/docs/browser-sdk/v4/guides/web-components">
+    Add `<sw-call-widget>` or `<sw-click-to-call>` to a page and you're
+    done — a styled, working call UI with one element. Best for
+    marketing sites, click-to-call buttons, and quick integrations.
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+If you have Node + npm (or you can drop a `<script>` tag in an HTML
+file), you're set. You'll also need a
+[**Subscriber Access Token (SAT)**](/docs/browser-sdk/v4/guides/authentication) —
+mint one from the SignalWire Dashboard's *Subscribers* section.
+
+For a quick experiment, or if you're building a public widget like a
+chatbot or click-to-call button, you can use an **embed token**
+instead. Embed tokens are built primarily for embedded widget
+applications but work for many other use cases. See
+[Trying it without a backend](#trying-it-without-a-backend) below.
+
+## Install
+
+<CardGroup cols={2}>
+  <Card title="npm" icon="brands npm" href="https://www.npmjs.com/package/@signalwire/js">
+    @signalwire/js
+  </Card>
+  <Card title="GitHub" icon="brands github" href="https://github.com/signalwire/signalwire-js">
+    signalwire-js
+  </Card>
+</CardGroup>
+
+```bash
+npm install @signalwire/js@4.0.0-rc.0 rxjs
+```
+
+RxJS is a peer dependency — the SDK uses observables for all reactive
+state. See the [RxJS Primer](/docs/browser-sdk/v4/guides/rxjs-primer) when you're
+ready to dig in.
+
+For a quick script-tag setup, pin a version rather than `@latest`:
+
+For a no-build setup, load the SDK as an ES module from a CDN that rewrites Node built-ins for the browser (`esm.sh`, `jspm.io`, `skypack`):
+
+```html
+<script type="module">
+  import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+  // ... use SignalWire and StaticCredentialProvider as below
+</script>
+```
+
+## Your first call
+
+```html
+<video id="localVideo"  autoplay playsinline muted></video>
+<video id="remoteVideo" autoplay playsinline></video>
+<button id="hangup">Hang Up</button>
+```
+
+```js
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(
+  new StaticCredentialProvider({ token: "YOUR_SUBSCRIBER_ACCESS_TOKEN" })
+);
+
+let activeCall;
+
+client.ready$.subscribe(async (ready) => {
+  if (!ready) return;
+
+  activeCall = await client.dial("/public/test-room", {
+    audio: true,
+    video: true,
+    receiveAudio: true,
+    receiveVideo: true,
+  });
+
+  activeCall.localStream$.subscribe((s) => {
+    document.getElementById("localVideo").srcObject = s;
+  });
+  activeCall.remoteStream$.subscribe((s) => {
+    document.getElementById("remoteVideo").srcObject = s;
+  });
+  activeCall.status$.subscribe((status) => console.log("status:", status));
+});
+
+document.getElementById("hangup").onclick = () => activeCall?.hangup();
+```
+
+**If it worked**, you'll see your own camera in `localVideo` and a
+black frame in `remoteVideo` — `/public/test-room` is empty until
+someone else joins. Open the same page in a second tab to see the
+remote stream light up. The browser console should log
+`status: connected` once media is flowing.
+
+If your camera light isn't on, check the [Troubleshooting](/docs/browser-sdk/v4/guides/troubleshooting)
+guide — usually permissions, HTTPS, or a denied microphone prompt.
+
+## Trying it without a backend
+
+Embed tokens (`c2c_…` / `c2t_…`) are public tokens designed for
+embedded widgets — chatbots, click-to-call buttons, in-page call
+UIs — but they're also the fastest way to prototype from a static
+HTML file without standing up a backend to mint SATs.
+
+Create one by setting up a [**Click to Call**](/docs/browser-sdk/click-to-call)
+resource in the dashboard (sidebar → *Tools* → *Click to Call*). From
+the resource you create, copy three values:
+
+- the **resource address** (e.g. `/public/support`) — what you'll dial
+- the **C2C token** (`c2c_…`) — the embed token
+- your **space name** (e.g. `yourspace.signalwire.com`) — from the
+  [API Credentials section of the dashboard](https://my.signalwire.com/?page=api)
+
+Pass them to the one-call helper:
+
+```js
+import { embeddableCall } from "@signalwire/js";
+
+const call = await embeddableCall({
+  host: "yourspace.signalwire.com",
+  embedToken: "YOUR_C2C_TOKEN",
+  to: "/public/support",
+});
+```
+
+`embeddableCall` builds the client, connects, and dials in a single
+call. Embed tokens are safe to expose in client code — see
+[Authentication](/docs/browser-sdk/v4/guides/authentication) for the full token
+model.
+
+## Receiving inbound calls
+
+To accept incoming calls, register the client and watch the inbound
+list:
+
+```js
+await client.register();
+
+client.session.incomingCalls$.subscribe((calls) => {
+  const ringing = calls.find((c) => c.status === "ringing");
+  if (!ringing) return;
+
+  document.getElementById("accept").onclick = () => {
+    ringing.answer({ audio: true, video: true });
+    // Then bind `ringing.localStream$` / `ringing.remoteStream$` to your
+    // <video> elements and subscribe to `ringing.status$` for UI updates.
+  };
+  document.getElementById("decline").onclick = () => ringing.reject();
+});
+```
+
+Inbound calls require a Subscriber Access Token (SAT) issued for a
+specific user — embed tokens and guest tokens are outbound-only.
+The full accept-and-wire pattern, including caller name handling and
+ringing-UI teardown, lives in
+[Inbound Calls](/docs/browser-sdk/v4/guides/inbound-calls).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Build Voice & Video apps" href="/docs/browser-sdk/v4/guides/build-voice-video" icon="fa-regular fa-video">
+    Mute, layouts, screen share — flesh out the call UI.
+  </Card>
+  <Card title="Web Components" href="/docs/browser-sdk/v4/guides/web-components" icon="fa-regular fa-code">
+    Drop in `<sw-call-widget>` or `<sw-click-to-call>` instead.
+  </Card>
+  <Card title="Authentication" href="/docs/browser-sdk/v4/guides/authentication" icon="fa-regular fa-key">
+    Mint SATs from your backend and pick a refresh strategy.
+  </Card>
+  <Card title="RxJS Primer" href="/docs/browser-sdk/v4/guides/rxjs-primer" icon="fa-regular fa-book">
+    Understand the observable patterns the SDK uses.
+  </Card>
+</CardGroup>
+
+## Reference
+
+- [`SignalWire`] — top-level client
+- [`StaticCredentialProvider`], [`EmbedTokenCredentialProvider`] — credential providers
+- [`SignalWire.dial()`] — place an outbound call
+- [`SignalWire.register()`] / [`session.incomingCalls$`][`SessionState`] — receive calls
+- [`embeddableCall()`] — one-call helper for embed tokens
+
+[`SignalWire`]: /docs/browser-sdk/v4/reference/signalwire
+[`StaticCredentialProvider`]: /docs/browser-sdk/v4/reference/credential-providers/static-credential-provider
+[`EmbedTokenCredentialProvider`]: /docs/browser-sdk/v4/reference/credential-providers/embed-token-credential-provider
+[`SignalWire.dial()`]: /docs/browser-sdk/v4/reference/signalwire/dial
+[`SignalWire.register()`]: /docs/browser-sdk/v4/reference/signalwire/register
+[`SessionState`]: /docs/browser-sdk/v4/reference/interfaces/session-state
+[`embeddableCall()`]: /docs/browser-sdk/v4/reference/functions/embeddable-call

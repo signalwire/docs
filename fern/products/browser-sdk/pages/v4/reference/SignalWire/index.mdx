@@ -1,0 +1,225 @@
+---
+title: "SignalWire"
+slug: /reference/signalwire
+description: "Main entry point for the SignalWire Browser SDK."
+max-toc-depth: 3
+---
+`SignalWire` is the top-level client for the Browser SDK and the only class
+applications instantiate directly. A single instance owns the WebSocket
+transport, the authenticated session, the local media-device controller, and
+the call factory used by [`dial`](#dial). Every other entity in the SDK —
+[`WebRTCCall`](/docs/browser-sdk/v4/reference/webrtc-call),
+[`User`](/docs/browser-sdk/v4/reference/user),
+[`Address`](/docs/browser-sdk/v4/reference/address) — is produced or fetched
+through it.
+
+Lifecycle: construct with a [`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider),
+then await connection-readiness via [`ready$`](#ready-1) or [`connect`](#connect)
+before placing or receiving calls. Calls to [`register`](#register) opt the
+user into inbound calls; [`unregister`](#unregister) reverses it.
+[`destroy`](#destroy) tears down all transports, timers, and subscriptions —
+hold a reference to the client for the lifetime of your app and call
+`destroy()` exactly once on tear-down.
+
+Device management methods (`enable*`, `disable*`, `select*`, `applySelected*`)
+operate on a shared device pool surfaced through observable accessors
+(`audioInputDevices$`, `selectedVideoInputDevice$`, etc.). Selections are
+persisted via the configured `StorageManager` when
+[`ClientPreferences.enableSavePreferences`](/docs/browser-sdk/v4/reference/client-preferences/enable-save-preferences)
+is set. Most state is exposed in two forms — a snapshot getter and an
+observable (`$`) for reactive UI binding.
+
+## **Examples**
+
+```ts
+const client = new SignalWire(new StaticCredentialProvider({ token: 'YOUR_TOKEN' }));
+await client.connect();
+await client.register();
+client.errors$.subscribe(err => console.error(err));
+const call = await client.dial('/public/my-room', { audio: true, video: true });
+```
+
+## **Extends**
+
+- `Destroyable`
+
+## **Implements**
+
+- [`DeviceController`](/docs/browser-sdk/v4/reference/interfaces/device-controller)
+
+## **Constructors**
+
+### Constructor
+
+```ts
+new SignalWire(credentialProvider, options?): SignalWire
+```
+
+Creates a new SignalWire client and begins connecting.
+
+#### Parameters
+
+<ParamField path="credentialProvider" type="CredentialProvider | undefined" required toc={true}>
+  Provider that supplies authentication credentials. See [`CredentialProvider`](/docs/browser-sdk/v4/reference/interfaces/credential-provider).
+</ParamField>
+
+<ParamField path="options" type="SignalWireOptions" toc={true}>
+  Configuration options (connection, device monitoring, preferences). See [`SignalWireOptions`](/docs/browser-sdk/v4/reference/interfaces/signalwire-options).
+</ParamField>
+
+## **Properties**
+
+<ParamField path="preferences" type="ClientPreferences" required toc={true}>
+  Global SDK preferences (timeouts, ICE config, media defaults).
+</ParamField>
+
+## **Accessors**
+
+<CardGroup cols={2}>
+  <Card title="audioInputDevices$" href="/docs/browser-sdk/v4/reference/signalwire/audio-input-devices$">
+    Observable list of available audio input (microphone) devices.
+  </Card>
+  <Card title="audioInputDisabled$" href="/docs/browser-sdk/v4/reference/signalwire/audio-input-disabled$">
+    Observable that emits `true` when audio input is disabled (receive-only).
+  </Card>
+  <Card title="audioOutputDevices$" href="/docs/browser-sdk/v4/reference/signalwire/audio-output-devices$">
+    Observable list of available audio output (speaker) devices.
+  </Card>
+  <Card title="destroyed$" href="/docs/browser-sdk/v4/reference/signalwire/destroyed$">
+    Observable that emits when the instance is destroyed
+  </Card>
+  <Card title="deviceRecovered$" href="/docs/browser-sdk/v4/reference/signalwire/device-recovered$">
+    Observable that emits when the SDK auto-switches a device.
+  </Card>
+  <Card title="directory$" href="/docs/browser-sdk/v4/reference/signalwire/directory$">
+    Observable that emits the `Directory` instance once the client is connected, or `undefined` while disconnected.
+  </Card>
+  <Card title="errors$" href="/docs/browser-sdk/v4/reference/signalwire/errors$">
+    Observable stream of errors from transport, authentication, and devices.
+  </Card>
+  <Card title="isConnected$" href="/docs/browser-sdk/v4/reference/signalwire/is-connected$">
+    Observable that emits when the connection state changes.
+  </Card>
+  <Card title="isRegistered$" href="/docs/browser-sdk/v4/reference/signalwire/is-registered$">
+    Observable that emits when the user registration state changes.
+  </Card>
+  <Card title="platformCapabilities" href="/docs/browser-sdk/v4/reference/signalwire/platform-capabilities">
+    Platform WebRTC capabilities detected at construction time.
+  </Card>
+  <Card title="ready$" href="/docs/browser-sdk/v4/reference/signalwire/ready$">
+    Observable that emits `true` when the client is both connected and authenticated.
+  </Card>
+  <Card title="selectedAudioInputDevice$" href="/docs/browser-sdk/v4/reference/signalwire/selected-audio-input-device$">
+    Observable of the currently selected audio input device.
+  </Card>
+  <Card title="selectedAudioInputDeviceConstraints" href="/docs/browser-sdk/v4/reference/signalwire/selected-audio-input-device-constraints">
+    Media track constraints for the selected audio input device. Returns `false` when disabled.
+  </Card>
+  <Card title="selectedAudioOutputDevice$" href="/docs/browser-sdk/v4/reference/signalwire/selected-audio-output-device$">
+    Observable of the currently selected audio output device.
+  </Card>
+  <Card title="selectedVideoInputDevice$" href="/docs/browser-sdk/v4/reference/signalwire/selected-video-input-device$">
+    Observable of the currently selected video input device.
+  </Card>
+  <Card title="selectedVideoInputDeviceConstraints" href="/docs/browser-sdk/v4/reference/signalwire/selected-video-input-device-constraints">
+    Media track constraints for the selected video input device. Returns `false` when disabled.
+  </Card>
+  <Card title="session" href="/docs/browser-sdk/v4/reference/signalwire/session">
+    The underlying client session for advanced RPC operations.
+  </Card>
+  <Card title="user$" href="/docs/browser-sdk/v4/reference/signalwire/user$">
+    Observable that emits the `User` profile once fetched, or `undefined` before authentication completes.
+  </Card>
+  <Card title="videoInputDevices$" href="/docs/browser-sdk/v4/reference/signalwire/video-input-devices$">
+    Observable list of available video input (camera) devices.
+  </Card>
+  <Card title="videoInputDisabled$" href="/docs/browser-sdk/v4/reference/signalwire/video-input-disabled$">
+    Observable that emits `true` when video input is disabled (receive-only).
+  </Card>
+  <Card title="warnings$" href="/docs/browser-sdk/v4/reference/signalwire/warnings$">
+    Observable stream of non-fatal SDK warnings (e.g. credential refresh fallback).
+  </Card>
+</CardGroup>
+
+## **Methods**
+
+<CardGroup cols={2}>
+  <Card title="applySelectedAudioOutputDevice" href="/docs/browser-sdk/v4/reference/signalwire/apply-selected-audio-output-device">
+    Apply the currently selected audio output device to an HTMLMediaElement (e.g.
+  </Card>
+  <Card title="clearDeviceState" href="/docs/browser-sdk/v4/reference/signalwire/clear-device-state">
+    Clears all device state and re-enumerates.
+  </Card>
+  <Card title="connect" href="/docs/browser-sdk/v4/reference/signalwire/connect">
+    Establishes the WebSocket connection and authenticates the session.
+  </Card>
+  <Card title="destroy" href="/docs/browser-sdk/v4/reference/signalwire/destroy">
+    Destroys the client, clearing timers and releasing all resources.
+  </Card>
+  <Card title="deviceInfoToConstraints" href="/docs/browser-sdk/v4/reference/signalwire/device-info-to-constraints">
+    Converts a `MediaDeviceInfo` to track constraints suitable for `getUserMedia`.
+  </Card>
+  <Card title="dial" href="/docs/browser-sdk/v4/reference/signalwire/dial">
+    Places an outbound call to the given destination.
+  </Card>
+  <Card title="disableAudioInput" href="/docs/browser-sdk/v4/reference/signalwire/disable-audio-input">
+    Disables audio input (receive-only mode). No audio track will be acquired.
+  </Card>
+  <Card title="disableDeviceMonitoring" href="/docs/browser-sdk/v4/reference/signalwire/disable-device-monitoring">
+    Stops monitoring for media device changes.
+  </Card>
+  <Card title="disableVideoInput" href="/docs/browser-sdk/v4/reference/signalwire/disable-video-input">
+    Disables video input (receive-only mode). No video track will be acquired.
+  </Card>
+  <Card title="disconnect" href="/docs/browser-sdk/v4/reference/signalwire/disconnect">
+    Disconnects the WebSocket and tears down the current session.
+  </Card>
+  <Card title="enableAudioInput" href="/docs/browser-sdk/v4/reference/signalwire/enable-audio-input">
+    Re-enables audio input, restoring the last selection or auto-selecting.
+  </Card>
+  <Card title="enableDeviceMonitoring" href="/docs/browser-sdk/v4/reference/signalwire/enable-device-monitoring">
+    Starts monitoring for media device changes (connect/disconnect).
+  </Card>
+  <Card title="enableVideoInput" href="/docs/browser-sdk/v4/reference/signalwire/enable-video-input">
+    Re-enables video input, restoring the last selection or auto-selecting.
+  </Card>
+  <Card title="enumerateDevices" href="/docs/browser-sdk/v4/reference/signalwire/enumerate-devices">
+    Forces a device re-enumeration.
+  </Card>
+  <Card title="exportDiagnostics" href="/docs/browser-sdk/v4/reference/signalwire/export-diagnostics">
+    Export a structured diagnostic bundle for support/debugging. Includes connection events, call summaries, and device changes.
+  </Card>
+  <Card title="getDeviceCapabilities" href="/docs/browser-sdk/v4/reference/signalwire/get-device-capabilities">
+    Returns the capabilities of a media device.
+  </Card>
+  <Card title="isValidDevice" href="/docs/browser-sdk/v4/reference/signalwire/is-valid-device">
+    Checks whether a device is still available and usable.
+  </Card>
+  <Card title="preflight" href="/docs/browser-sdk/v4/reference/signalwire/preflight">
+    Runs a multi-phase connectivity test against the given destination.
+  </Card>
+  <Card title="register" href="/docs/browser-sdk/v4/reference/signalwire/register">
+    Registers the user as online to receive inbound calls and events.
+  </Card>
+  <Card title="requestMediaPermissions" href="/docs/browser-sdk/v4/reference/signalwire/request-media-permissions">
+    Triggers the browser's media permission dialog and captures the user's device selections.
+  </Card>
+  <Card title="resetToDefaults" href="/docs/browser-sdk/v4/reference/signalwire/reset-to-defaults">
+    Clears all SDK-persisted state and resets to defaults.
+  </Card>
+  <Card title="selectAudioInputDevice" href="/docs/browser-sdk/v4/reference/signalwire/select-audio-input-device">
+    Sets the preferred audio input device.
+  </Card>
+  <Card title="selectAudioOutputDevice" href="/docs/browser-sdk/v4/reference/signalwire/select-audio-output-device">
+    Sets the preferred audio output device.
+  </Card>
+  <Card title="selectVideoInputDevice" href="/docs/browser-sdk/v4/reference/signalwire/select-video-input-device">
+    Sets the preferred video input device.
+  </Card>
+  <Card title="setStorageManager" href="/docs/browser-sdk/v4/reference/signalwire/set-storage-manager">
+    Injects a storage manager into the device controller for persistence.
+  </Card>
+  <Card title="unregister" href="/docs/browser-sdk/v4/reference/signalwire/unregister">
+    Unregisters the user, going offline for inbound calls.
+  </Card>
+</CardGroup>
