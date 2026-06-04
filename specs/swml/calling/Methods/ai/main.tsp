@@ -5,6 +5,7 @@ import "./ai_pronounce.tsp";
 import "./ai_params.tsp";
 import "./swaig";
 import "./ai_hints.tsp";
+import "./_shared/global_data.tsp";
 using TypeSpec.JsonSchema;
 
 namespace SWML.Calling;
@@ -18,9 +19,7 @@ model AIObject {
     and SWML returned from SWAIG functions. Access properties using template strings (e.g. \${global_data.property_name}).
     """)
   @example(#{ company_name: "Acme Corp", support_hours: "9am-5pm EST" })
-  global_data?: {
-    ...TypeSpec.Record<unknown>;
-  };
+  global_data?: GlobalData;
 
   @doc("Hints help the AI agent understand certain words or phrases better. Words that can commonly be misinterpreted can be added to the hints to help the AI speak more accurately.")
   @example(#["pizza", "pepperoni"])
