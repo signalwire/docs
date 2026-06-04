@@ -134,11 +134,11 @@ namespace SignalWireAPI.RelayRest.PhoneNumbers {
       max_results?: int32,
 
       @query
-      @doc("A region or state to search within. Must be an ISO 3166-2 alpha-2 code, i.e. TX for Texas. Only supported for local searches; not supported when number_type is toll-free.")
+      @doc("A region or state to search within. Must be an ISO 3166-2 alpha-2 code, i.e. TX for Texas. Only supported for local searches; not supported when `number_type` is toll-free.")
       region?: string,
 
       @query
-      @doc("A specific City to search within. Must be used in combination with region. Only supported for local searches; not supported when number_type is toll-free.")
+      @doc("A specific City to search within. Must be used in combination with region. Only supported for local searches; not supported when `number_type` is toll-free.")
       city?: string,
     ): AvailablePhoneNumbersResponse | StatusCode401 | StatusCode500;
   }
