@@ -50,4 +50,8 @@ model MessageStatusCallbackPayload {
   @doc("Human-readable error message if delivery failed. Null when no error occurred.")
   @example(null)
   error_message: string | null;
+
+  @doc("The same `custom_variables` key/value pairs you supplied when [sending the message](/docs/apis/rest/messages/create-message), echoed back so you can match this callback to a record in your own system. Included only when the message was sent with custom variables.")
+  @example(#{ id: "12345", case_number: "54321" })
+  custom_variables?: TypeSpec.Record<string>;
 }

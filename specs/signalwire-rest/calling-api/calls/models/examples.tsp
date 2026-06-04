@@ -373,7 +373,7 @@ const transcribeCallExample = #{
     id: callId,
     params: #{
       control_id: "transcribe-control-1",
-      status_url: "https://example.com/transcribe_callback",
+      status_url: "https://example.com/transcribe-status",
     },
   },
 };
