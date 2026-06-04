@@ -1,16 +1,16 @@
 ---
 id: 9ec34f04-2181-42a4-aa59-78d9448bac4e
 hide_title: false
-slug: /reference/calling/ai_sidecar
+slug: /reference/calling/ai-sidecar
 title: ai_sidecar
 description: Attach a real-time AI observer that streams agent-facing advice events during a live call.
 max-toc-depth: 3
 ---
 
-[params]: /docs/swml/reference/calling/ai_sidecar/params
-[prompt]: /docs/swml/reference/calling/ai_sidecar/prompt
-[SWAIG]: /docs/swml/reference/calling/ai_sidecar/swaig
-[act_on_channel]: /docs/swml/reference/calling/ai_sidecar/params#paramsact_on_channel
+[params]: /docs/swml/reference/calling/ai-sidecar/params
+[prompt]: /docs/swml/reference/calling/ai-sidecar/prompt
+[SWAIG]: /docs/swml/reference/calling/ai-sidecar/swaig
+[act_on_channel]: /docs/swml/reference/calling/ai-sidecar/params#paramsact_on_channel
 
 Attaches a real-time AI observer to a live call. The sidecar listens as a third party and never speaks on the call — after
 each customer turn, it sends agent-facing advice to your application as webhook callbacks that an agent's UI (or any
@@ -78,7 +78,7 @@ every callback the sidecar produces carries a `tick_id`. On each tick:
 
 <ParamField path="ai_sidecar.url" type="string" toc={true}>
   The webhook URL the sidecar POSTs its callbacks to — both transcription events and sidecar callbacks.
-  When unset, no webhook callbacks are sent.
+  When unset, callbacks are published only on the relay topic (`calling.ai.sidecar`) and no webhook POST is made — the relay event always fires, the webhook is opt-in.
   Basic auth can be embedded in the URL in the format `username:password@url`.
 
   See [Webhook callbacks](#webhook-callbacks) below for the callback payload shape.
@@ -143,7 +143,12 @@ every callback the sidecar produces carries a `tick_id`. On each tick:
 
 ## Webhook callbacks
 
-As it observes the call, the sidecar reports each step of its activity as a **webhook callback** — an HTTP `POST` to the `url` you set on the verb, with the callback body wrapped under `sidecar_event`. Callbacks are sent only when `url` is set.
+As it observes the call, the sidecar reports each step of its activity as a structured callback on two paths:
+
+- **Relay topic** `calling.ai.sidecar` — always fires. Subscribe with the SignalWire RELAY or browser SDK to consume callbacks in real time.
+- **Webhook** — fires only when `url` is set, as an HTTP `POST` to that URL with the callback body wrapped under `sidecar_event`.
+
+Both paths carry the same payload, and each callback fires exactly once on the relay topic regardless of whether a webhook is configured — the relay always fires, the webhook is opt-in.
 
 ### Callback body shape
 
