@@ -1,11 +1,16 @@
 import "@typespec/http";
 import "@typespec/openapi3";
-import "../../../../swml";
+import "@typespec/json-schema";
+import "../../../../swml/calling";
+import "./core.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
+using TypeSpec.JsonSchema;
 
 namespace SignalWireAPI.Calling;
+
+using SWML.Calling;
 
 
 const CallSWMLExample = "{'version': '1.0.0', 'sections': { 'main': [{ 'answer': { 'max_duration': 60 }},{ 'play': { 'urls': ['silence:2', 'say:Hello from SignalWire!']}}]}}";
@@ -437,9 +442,9 @@ model CallCreateParamsBase {
   @example("POST")
   url_method?: "GET" | "POST" = "POST";
 
-  @doc("Codecs to offer on the outbound call. May be provided as an array or a comma-separated string. Allowed values: `OPUS`, `OPUS@48000H@20I`, `OPUS@24000H@20I`, `OPUS@16000H@20I`, `OPUS@8000H@20I`, `G722`, `PCMU`, `PCMA`, `G729`, `VP8`, `H264`. For PSTN, `PCMU`/`PCMA` are widely supported. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
-  @example(#["OPUS", "G729", "VP8", "PCMA"])
-  codecs?: string[] | string;
+  @doc("Codecs to offer on the outbound call. May be provided as an array of enum values or a comma-separated string of the same values. If the `to` value is a SIP URI containing `codecs=...`, those take precedence.")
+  @example(#[OutboundCallCodec.OPUS, OutboundCallCodec.G729, OutboundCallCodec.VP8, OutboundCallCodec.PCMA])
+  codecs?: OutboundCallCodec[] | string;
 
   @doc("Ring timeout in seconds. Must be between 1 and 600.")
   @example(30)
@@ -459,6 +464,17 @@ model CallCreateParamsBase {
   @doc("Preferred FreeSWITCH region(s) for call routing. Must be drawn from the project's available regions. Accepts a single region or a priority-ordered array.")
   @example(#["us-east-1", "us-west-2"])
   region?: string | string[];
+
+  @maxProperties(20)
+  @doc("""
+    Your own key/value string pairs to attach to the call. They become environment variables on the call's SWML document, where you can reference them as `\${envs.<key>}` — for example, to carry an order or case number through to your call logic. When SignalWire fetches your SWML document from a URL, the same pairs are also included in the `envs` object of that request.
+
+    If a key here matches a variable you've already set at the account or project level, the value you pass on the request takes precedence — but only when the keys match exactly, including case. Keys are case-sensitive, so two keys that differ only in case are kept as separate variables.
+
+    Each value must be a non-empty string of at most 1024 bytes. You can send at most 20 pairs. Each key must start with a letter or underscore and contain only letters, numbers, and underscores, and cannot begin with the reserved prefixes `signalwire_`, `sw_`, `rtc_`, or `internal_` (case-insensitive).
+    """)
+  @example(#{ id: "12345", case_number: "54321" })
+  custom_variables?: TypeSpec.Record<string>;
 }
 
 @summary("dial (URL)")
@@ -1329,41 +1345,6 @@ model CallDetectStopRequest {
 // Tap Commands
 // ============================================
 
-@doc("The type of tap device to stream audio to.")
-enum TapDeviceType {
-  @doc("Stream audio via RTP protocol.")
-  rtp,
-
-  @doc("Stream audio via WebSocket.")
-  ws,
-}
-
-@doc("RTP/WebSocket audio codec. Case-sensitive; accepted in both upper and lower case.")
-enum TapCodec {
-  PCMA: "PCMA",
-  PCMU: "PCMU",
-  pcma: "pcma",
-  pcmu: "pcmu",
-  OPUS: "OPUS",
-  opus: "opus",
-}
-
-@doc("RTP packetization time in milliseconds. Must be a multiple of 10 between 10 and 120.")
-enum TapPtime {
-  `10`: 10,
-  `20`: 20,
-  `30`: 30,
-  `40`: 40,
-  `50`: 50,
-  `60`: 60,
-  `70`: 70,
-  `80`: 80,
-  `90`: 90,
-  `100`: 100,
-  `110`: 110,
-  `120`: 120,
-}
-
 @doc("Tap configuration — specifies what audio to capture.")
 model TapConfig {
   @doc("Currently only `audio` is supported.")
@@ -1487,6 +1468,58 @@ model CallTapStopRequest {
   params: {
     @doc("The control ID of the tap operation to stop.")
     @example("tap-control-1")
+    control_id: string;
+  };
+}
+
+// ============================================
+// Transcribe Commands
+// ============================================
+
+/**
+ * Transcribe the entire call in the background.
+ *
+ * The transcription covers the whole call and completes when the call ends. For real-time
+ * transcription, use `calling.live_transcribe`. Only one transcription can be active on a call
+ * at a time; starting another while one is running returns a `409` conflict. Stop it with
+ * `calling.transcribe.stop` using the same `control_id`.
+ */
+@summary("calling.transcribe")
+model CallTranscribeRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe` command starts transcribing an active call in the background.")
+  @example("calling.transcribe")
+  command: "calling.transcribe";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("Unique identifier for this transcription operation, used to control it later.")
+    @example("transcribe-control-1")
+    control_id: string;
+
+    @doc("An HTTP or HTTPS URL that receives the status callback when the transcription finishes.")
+    @example("https://example.com/transcribe-status")
+    status_url?: url;
+  };
+}
+
+@summary("calling.transcribe.stop")
+model CallTranscribeStopRequest {
+  @doc(uuidDescription)
+  @example(CallIdExample)
+  id: uuid;
+
+  @doc("The `calling.transcribe.stop` command stops an active transcription operation.")
+  @example("calling.transcribe.stop")
+  command: "calling.transcribe.stop";
+
+  @doc(paramsDescription)
+  params: {
+    @doc("The control ID of the transcription operation to stop.")
+    @example("transcribe-control-1")
     control_id: string;
   };
 }
@@ -1815,6 +1848,8 @@ union CallRequest {
   `calling.detect.stop`: CallDetectStopRequest,
   `calling.tap`: CallTapRequest,
   `calling.tap.stop`: CallTapStopRequest,
+  `calling.transcribe`: CallTranscribeRequest,
+  `calling.transcribe.stop`: CallTranscribeStopRequest,
   `calling.stream`: CallStreamRequest,
   `calling.stream.stop`: CallStreamStopRequest,
   `calling.denoise`: CallDenoiseRequest,

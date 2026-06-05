@@ -5,7 +5,6 @@ using TypeSpec.Http;
 model DialogflowAgentPathID {
   @doc("Unique ID of a Dialogflow Agent.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   id: uuid;
 }
@@ -13,7 +12,6 @@ model DialogflowAgentPathID {
 model DialogflowAgent {
   @doc("Unique ID of a Dialogflow Agent.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("Whether to enable the 'say' feature")
@@ -34,7 +32,6 @@ model DialogflowAgent {
 
   @doc("Dialogflow reference ID")
   @example("12345678-1234-1234-1234-1234567890ab")
-  @format("uuid")
   dialogflow_reference_id?: uuid;
 
   @doc("Dialogflow reference name")

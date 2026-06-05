@@ -3,17 +3,15 @@ using TypeSpec.Http;
 model AccountSidPath {
   @doc("The Account ID that has the Application.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  AccountSid: string;
+  AccountSid: uuid;
 }
 
 model ApplicationPathSid {
   @doc("The Application ID that uniquely identifies the Application.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
   @path
-  Sid: string;
+  Sid: uuid;
 }
 
 @doc("HTTP method for webhooks.")
@@ -26,13 +24,11 @@ enum HttpMethod {
 model Application {
   @doc("The unique identifier for the Application.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
-  sid: string;
+  sid: uuid;
 
   @doc("The unique identifier for the Account that created this Application.")
   @example("b3877c40-da60-4998-90ad-b792e98472af")
-  @format("uuid")
-  account_sid: string;
+  account_sid: uuid;
 
   @doc("The version of the SignalWire API.")
   @example("2010-04-01")

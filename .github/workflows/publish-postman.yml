@@ -1,0 +1,113 @@
+name: publish-postman
+
+# Pushes generated OpenAPI specs to their Postman public collections via
+# the Postman API (PUT /collections/:id). One matrix entry per collection.
+#
+# Triggered only when a watched openapi.yaml actually changes on main.
+# Each matrix job double-checks via `git diff` so unrelated specs are skipped.
+#
+# Required repo configuration:
+#   secrets.POSTMAN_API_KEY                            - Postman API key
+#   vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID         - public collection UID
+#   vars.POSTMAN_COMPATIBILITY_COLLECTION_ID           - public collection UID
+#
+# The public collections must already exist in Postman; PUT replaces contents
+# but cannot create a new collection.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'fern/apis/signalwire-rest/openapi.yaml'
+      - 'fern/apis/compatibility/openapi.yaml'
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Push every collection regardless of change detection'
+        type: boolean
+        default: false
+
+# Restrict the default GITHUB_TOKEN: this workflow only reads source files
+# (for git diff) and never writes back to the repo. Lock it down so a
+# compromised dependency cannot use the token to push commits.
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # collection_id values are looked up from repo Variables at matrix
+        # expansion time (static `vars.X` references, not dynamic indexing).
+        # UIDs are not sensitive — they appear in public Postman URLs — so
+        # they live in Variables, not Secrets.
+        include:
+          - name: signalwire-rest
+            spec: fern/apis/signalwire-rest/openapi.yaml
+            collection_id: ${{ vars.POSTMAN_SIGNALWIRE_REST_COLLECTION_ID }}
+          - name: compatibility
+            spec: fern/apis/compatibility/openapi.yaml
+            collection_id: ${{ vars.POSTMAN_COMPATIBILITY_COLLECTION_ID }}
+    steps:
+      - name: Checkout
+        # Pinned to commit SHA (v4.2.2) — tags are mutable and a tag
+        # repoint by a compromised upstream would run with our secrets.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          fetch-depth: 2  # need HEAD^ for the per-spec diff
+
+      - name: Detect whether ${{ matrix.spec }} changed
+        id: changed
+        env:
+          SPEC: ${{ matrix.spec }}
+          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' && inputs.force_all || 'false' }}
+        run: |
+          if [[ "$FORCE_ALL" == "true" ]]; then
+            echo "Manual dispatch with force_all=true; running."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only HEAD^ HEAD | grep -qx "$SPEC"; then
+            echo "$SPEC changed in this push."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$SPEC did not change; skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.changed.outputs.changed == 'true'
+        # Pinned to commit SHA for the same reason as actions/checkout above.
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        if: steps.changed.outputs.changed == 'true'
+        # Pulls in openapi-to-postmanv2 (pinned in package.json) so the same
+        # version runs locally and in CI.
+        run: yarn install --frozen-lockfile
+
+      - name: Build Postman payload
+        if: steps.changed.outputs.changed == 'true'
+        # All transform logic — link rewriting, OpenAPI→Postman conversion,
+        # folder reshape, ID stripping, PUT envelope — lives in
+        # scripts/postman/build-collection.mjs. Running it locally with the
+        # same arguments produces a byte-identical payload (modulo the
+        # converter's non-deterministic example fakes).
+        run: yarn postman:build "${{ matrix.spec }}" payload.json
+
+      - name: Publish payload to Postman
+        if: steps.changed.outputs.changed == 'true'
+        # Wraps the Postman PUT /collections/:id call with status-code
+        # branching and structured logging. The publish script reads
+        # POSTMAN_API_KEY from the env and expects the collection ID as
+        # a flag.
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+          COLLECTION_ID: ${{ matrix.collection_id }}
+        run: |
+          : "${POSTMAN_API_KEY:?missing repo secret POSTMAN_API_KEY}"
+          : "${COLLECTION_ID:?missing repo variable for ${{ matrix.name }} collection ID — check Settings → Variables}"
+          yarn postman:publish payload.json --collection-id "$COLLECTION_ID"

@@ -1,7 +1,9 @@
 import "@typespec/http";
+import "@typespec/json-schema";
 import "./core.tsp";
 
 using TypeSpec.Http;
+using TypeSpec.JsonSchema;
 
 namespace SignalWireAPI.Message;
 
@@ -30,6 +32,15 @@ model CreateMessageRequest {
   @doc("A valid URL to receive message status callback events at each state change. See the [Message status callback](/docs/apis/rest/messages/webhooks/message-status-callback) webhook for the payload your URL will receive.")
   @example("https://example.com/webhooks/message-status")
   status_callback?: url;
+
+  @doc("""
+    Your own key/value string pairs to attach to the message — for example, an order or case number you want to recognize later. When you also set `status_callback`, SignalWire includes these pairs as a `custom_variables` object in every status callback it sends to that URL, so you can match each callback to a record in your own system. If you don't set `status_callback`, there is nowhere for the variables to be delivered.
+
+    Each value must be a non-empty string of at most 1024 bytes. You can send at most 20 pairs. Each key must start with a letter or underscore and contain only letters, numbers, and underscores, and cannot begin with the reserved prefixes `signalwire_`, `sw_`, `rtc_`, or `internal_` (case-insensitive). Keys are case-sensitive.
+    """)
+  @maxProperties(20)
+  @example(#{ id: "12345", case_number: "54321" })
+  custom_variables?: TypeSpec.Record<string>;
 }
 
 @doc("Request body for redacting the body of a previously sent message. Only `body` may be updated, and it must be an empty string.")

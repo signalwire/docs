@@ -5,7 +5,61 @@ slug: /error-codes
 max-toc-depth: 3
 ---
 
-When using SignalWire REST APIs, some errors will include error codes. Below, you will find a list of our unique error codes and a short explanation of each to help with error handling and troubleshooting.
+When a SignalWire REST request fails, the response combines a standard HTTP status code with a structured error body. This page covers the status codes you'll encounter, the shape of the error body, and a reference of the specific error codes returned in the body.
+
+## HTTP status codes
+
+SignalWire uses conventional HTTP status codes to signal the outcome of every request.
+
+| Code range | Meaning                                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| `2xx`      | Success — the request was accepted and processed.                                                                    |
+| `4xx`      | Client error — the request was malformed, unauthorized, forbidden, missing, or rejected by validation. Don't retry without fixing the cause. |
+| `5xx`      | Server error — something went wrong on SignalWire's side. Safe to retry with backoff.                                |
+
+The most common codes you'll see:
+
+- `400 Bad Request` — the request was malformed (bad JSON, missing required fields).
+- `401 Unauthorized` — credentials missing or invalid. See [Authorization](/docs/apis/authorization).
+- `403 Forbidden` — your token lacks the required scope.
+- `404 Not Found` — the resource doesn't exist, or doesn't belong to your project.
+- `422 Unprocessable Entity` — the request was well-formed but failed validation. The body contains an [`errors` array](#error-response-body) with specifics.
+- `429 Too Many Requests` — you've exceeded a rate limit. Back off and retry.
+- `500 Internal Server Error` — an unexpected server-side failure. Retry with backoff; contact support if it persists.
+
+## Error response body
+
+Most endpoints under `/api/*` (including `/api/messaging`, `/api/calling`, `/api/fabric`, and others) return validation errors using this shape:
+
+```json
+{
+  "errors": [
+    {
+      "type": "validation_error",
+      "code": "invalid_parameter",
+      "message": "Name must be present",
+      "attribute": "name",
+      "url": "https://signalwire.com/docs/apis/error-codes"
+    }
+  ]
+}
+```
+
+| Field       | Description                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| `type`      | The category of the error (e.g., `validation_error`).                                    |
+| `code`      | A specific, machine-readable code — match this against the [reference below](#account_limit_exceeded) to map error codes to causes. |
+| `message`   | A human-readable description of what went wrong.                                         |
+| `attribute` | The request parameter that triggered the error, when applicable.                         |
+| `url`       | A link back to this documentation.                                                       |
+
+A single response may contain multiple entries in `errors` if several fields failed validation at once. Always iterate the array rather than reading only the first entry.
+
+Endpoints under `/api/relay/rest` use a slightly different shape: `{ errors: [{ detail, status, title, code }] }`. The `code` field still maps to the reference below.
+
+## Error code reference
+
+The `code` field above maps to one of the values below. Each entry describes the specific condition that produced the error.
 
 <ParamField path="account_limit_exceeded" type="Error" toc={true}>
 
@@ -177,6 +231,11 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 - The resource could not be purchased.
 </ParamField>
 
+<ParamField path="custom_variable_value_too_long" type="Error" toc={true}>
+
+- A `custom_variables` value exceeds the maximum size. Each value must be at most 1024 bytes.
+</ParamField>
+
 <ParamField path="destination_number_not_supported" type="Error" toc={true}>
 
 - The destination phone number is not supported.
@@ -242,6 +301,11 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 - The provided from_fabric_address_id does not match an address for the provided subscriber.
 </ParamField>
 
+<ParamField path="header_value_too_long" type="Error" toc={true}>
+
+- The header value exceeds the maximum allowed byte length.
+</ParamField>
+
 <ParamField path="inactive_campaign" type="Error" toc={true}>
 
 - The `from` number must belong to an active campaign.
@@ -275,6 +339,11 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 <ParamField path="insufficient_balance" type="Error" toc={true}>
 
 - This account has an insufficient balance.
+</ParamField>
+
+<ParamField path="insufficient_balance_to_receive_message" type="Error" toc={true}>
+
+- The account has an insufficient balance to receive the message.
 </ParamField>
 
 <ParamField path="integration_test_verified_caller_required" type="Error" toc={true}>
@@ -332,6 +401,16 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 - Invalid content type.
 </ParamField>
 
+<ParamField path="invalid_custom_variable_name" type="Error" toc={true}>
+
+- A `custom_variables` key is invalid. Keys must start with a letter or underscore and contain only letters, numbers, and underscores.
+</ParamField>
+
+<ParamField path="invalid_custom_variable_value" type="Error" toc={true}>
+
+- A `custom_variables` value is invalid. Values must be non-empty strings.
+</ParamField>
+
 <ParamField path="invalid_destination_number" type="Error" toc={true}>
 
 - The destination phone number is invalid.
@@ -375,6 +454,16 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 <ParamField path="invalid_handler_use" type="Error" toc={true}>
 
 - Handler must be calling or messaging.
+</ParamField>
+
+<ParamField path="invalid_header_name" type="Error" toc={true}>
+
+- Header name must be a non-empty RFC 7230 token (no CR/LF or whitespace).
+</ParamField>
+
+<ParamField path="invalid_header_value" type="Error" toc={true}>
+
+- Header value must be a non-empty string with no CR/LF characters.
 </ParamField>
 
 <ParamField path="invalid_http_method" type="Error" toc={true}>
@@ -560,6 +649,16 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 <ParamField path="missing_sip_configuration" type="Error" toc={true}>
 
 - The SIP configuration requires at least one selection.
+</ParamField>
+
+<ParamField path="must_be_array_of_objects" type="Error" toc={true}>
+
+- Value must be an array of `{name, value}` objects.
+</ParamField>
+
+<ParamField path="must_be_object" type="Error" toc={true}>
+
+- The `custom_variables` parameter must be an object of string key/value pairs.
 </ParamField>
 
 <ParamField path="must_belong_to_project" type="Error" toc={true}>
@@ -797,6 +896,16 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 - The rate limit has been exceeded.
 </ParamField>
 
+<ParamField path="reserved_custom_variable_name" type="Error" toc={true}>
+
+- A `custom_variables` key uses a reserved prefix. The prefixes `signalwire_`, `sw_`, `rtc_`, and `internal_` are reserved for internal use and cannot be used in your own keys.
+</ParamField>
+
+<ParamField path="reserved_header_name" type="Error" toc={true}>
+
+- The provided header name is reserved and cannot be set by the caller.
+</ParamField>
+
 <ParamField path="resource_assigned_as_handler" type="Error" toc={true}>
 
 - You cannot delete a resource if it is currently assigned as a call or message handler
@@ -910,6 +1019,16 @@ When using SignalWire REST APIs, some errors will include error codes. Below, yo
 <ParamField path="token_not_associated_with_video_room" type="Error" toc={true}>
 
 - The provided token is not associated with a valid video room.
+</ParamField>
+
+<ParamField path="too_many_custom_variables" type="Error" toc={true}>
+
+- The request contains too many custom variables. A maximum of 20 keys is allowed.
+</ParamField>
+
+<ParamField path="too_many_headers" type="Error" toc={true}>
+
+- The number of headers exceeds the maximum allowed.
 </ParamField>
 
 <ParamField path="too_many_verification_attempts" type="Error" toc={true}>

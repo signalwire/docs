@@ -31,7 +31,7 @@ enum UsedForType {
 }
 
 @doc("The method type to use for the URL")
-enum UrlMethodType {
+enum RequestUrlMethodType {
   Get: "GET",
   Post: "POST",
 }

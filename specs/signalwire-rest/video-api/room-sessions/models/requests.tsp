@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "./core.tsp";
+import "../../../../_shared/types";
 
 using TypeSpec.Http;
 
@@ -11,8 +12,7 @@ model ListRoomSessionsRequest {
   @doc("Return Sessions started from this Room.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
   @query
-  @format("uuid")
-  room_id?: string;
+  room_id?: uuid;
 
   @doc("Return Sessions with a matching room name.")
   @example("my_example_room")
@@ -53,7 +53,7 @@ model ListRoomSessionRecordingsRequest {
   @doc("Generated media links will be valid for this many seconds. Default is 900 (15 minutes).")
   @example(900)
   @query
-  @minValueExclusive(0)
+  @minValue(0)
   media_ttl?: int32;
 
   @doc("Page number to return. Requires `page_token` for values greater than 0.")

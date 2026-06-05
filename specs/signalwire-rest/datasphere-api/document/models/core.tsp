@@ -5,23 +5,18 @@ using TypeSpec.Http;
 
 namespace SignalWireAPI.Datasphere;
 
-
-@format("uuid")
-@doc("Unique ID of a Document.")
-scalar docid extends string;
-
 model PathID {
   @doc("Unique ID of a Document.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
   @path
-  id: docid;
+  id: uuid;
 }
 
 model ChunkPathID {
   @doc("Unique ID of the parent Document.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
   @path
-  documentId: docid;
+  documentId: uuid;
 
   @doc("Unique ID of a Chunk.")
   @example("d369a402-7b43-4512-8735-9d5e1f387814")
@@ -33,13 +28,13 @@ model DocumentPathID {
   @doc("Unique ID of the Document.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
   @path
-  documentId: docid;
+  documentId: uuid;
 }
 
 model Document {
   @doc("Unique ID of the Document.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
-  id: docid;
+  id: uuid;
 
   @doc("Name of the Document.")
   @example("player_list.pdf")
@@ -97,5 +92,5 @@ model Chunk {
 
   @doc("Unique ID of the Document.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
-  document_id: docid;
+  document_id: uuid;
 }

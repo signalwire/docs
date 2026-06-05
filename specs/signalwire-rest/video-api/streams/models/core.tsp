@@ -7,26 +7,23 @@ namespace SignalWireAPI.Video;
 
 model StreamPathID {
   @path
-  @format("uuid")
   @doc("Unique ID of the stream.")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 }
 
 model RoomPathID {
   @path
-  @format("uuid")
   @doc("Unique ID of the video room.")
   @example("fe4093d9-58c2-4931-b4b9-5679f82652c6")
-  id: string;
+  id: uuid;
 }
 
 @doc("A video stream object.")
 model Stream {
   @doc("Unique identifier for the stream.")
-  @format("uuid")
   @example("c22d24f6-5a47-4597-9a23-c7d01e696b92")
-  id: string;
+  id: uuid;
 
   @doc("RTMP or RTMPS URL. This must be the address of a server accepting incoming RTMP/RTMPS streams.")
   @example("rtmp://broadcaster")

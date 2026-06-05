@@ -1,0 +1,67 @@
+---
+title: "webhookValidationMiddleware"
+slug: /reference/typescript/core/security/webhook-validation-middleware
+description: "Hono middleware that validates SignalWire webhook signatures and rejects unsigned requests."
+max-toc-depth: 3
+---
+
+[validate-webhook-signature]: /docs/server-sdks/reference/typescript/core/security/validate-webhook-signature
+[agentbase]: /docs/server-sdks/reference/typescript/agents/agent-base
+
+Create a [Hono](https://hono.dev) middleware that captures the raw request body,
+validates the SignalWire signature via
+[`validateWebhookSignature()`][validate-webhook-signature], and rejects requests
+that fail. On failure it responds `403 Forbidden` with no body detail (to avoid
+leaking which check failed); on success it calls `next()`.
+
+```typescript {1}
+webhookValidationMiddleware(opts: WebhookValidationOptions): MiddlewareHandler
+```
+
+<Tip>
+[`AgentBase`][agentbase] auto-mounts this middleware on `POST /`, `/swaig`, and
+`/post_prompt` when you set its `signingKey` constructor option. Use this factory
+directly only when wiring validation into your own Hono app.
+</Tip>
+
+## **Parameters**
+
+<ParamField path="opts" type="WebhookValidationOptions" required={true} toc={true}>
+  Middleware options.
+</ParamField>
+
+<Indent>
+<ParamField path="opts.signingKey" type="string" required={true} toc={true}>
+  Your SignalWire Signing Key. An empty string throws at construction time.
+</ParamField>
+
+<ParamField path="opts.trustProxy" type="boolean" default="false" toc={true}>
+  When `true`, honor `X-Forwarded-Proto` and `X-Forwarded-Host` when
+  reconstructing the public URL. Defaults to `false` because those headers are
+  spoofable. `SWML_PROXY_URL_BASE` always takes precedence.
+</ParamField>
+</Indent>
+
+## **Returns**
+
+`MiddlewareHandler` -- A Hono middleware that validates the signature, responds
+`403` on failure, and calls `next()` on success.
+
+## **Example**
+
+```typescript {7}
+import { webhookValidationMiddleware } from '@signalwire/sdk';
+import { Hono } from 'hono';
+
+const app = new Hono();
+
+app.use(
+  '/webhook',
+  webhookValidationMiddleware({ signingKey: process.env.SIGNALWIRE_SIGNING_KEY! }),
+);
+
+app.post('/webhook', async (c) => {
+  // Only signed requests reach here
+  return c.json({ ok: true });
+});
+```

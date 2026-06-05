@@ -1,5 +1,7 @@
 namespace SignalWireAPI.Calling;
 
+using SWML.Calling;
+
 /**
  * Operation examples for the Calling API
  *
@@ -18,7 +20,7 @@ const dialCallExample = #{
       caller_id: "+15551234567",
       status_url: "https://example.com/status_callback",
       status_events: #["answered", "ended"],
-      codecs: #["PCMU", "PCMA"],
+      codecs: #[OutboundCallCodec.PCMU, OutboundCallCodec.PCMA],
       timeout: 30,
       max_price_per_minute: 0.05,
     },
@@ -361,6 +363,26 @@ const tapStopCallExample = #{
     command: "calling.tap.stop",
     id: callId,
     params: #{ control_id: "tap-control-1" },
+  },
+};
+
+// Transcribe examples
+const transcribeCallExample = #{
+  request: #{
+    command: "calling.transcribe",
+    id: callId,
+    params: #{
+      control_id: "transcribe-control-1",
+      status_url: "https://example.com/transcribe-status",
+    },
+  },
+};
+
+const transcribeStopCallExample = #{
+  request: #{
+    command: "calling.transcribe.stop",
+    id: callId,
+    params: #{ control_id: "transcribe-control-1" },
   },
 };
 

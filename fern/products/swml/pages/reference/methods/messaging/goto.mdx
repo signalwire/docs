@@ -1,0 +1,119 @@
+---
+id: ee492ba1-97b1-4942-9c7c-e7d42603ebbc
+title: goto
+slug: /reference/messaging/goto
+description: Jump to a labeled position in the current section.
+max-toc-depth: 3
+---
+
+Jump to a [`label`](/docs/swml/reference/messaging/label) within the current section. Used for retry
+loops and conditional repetition.
+
+`goto` does **not** cross subroutine boundaries — it can only jump within the section that contains
+the matching `label`.
+
+## **Properties**
+
+<ParamField path="goto" type="object" required={true} toc={true}>
+  An object that accepts the following properties.
+</ParamField>
+
+<Indent>
+
+<ParamField path="goto.label" type="string" required={true} toc={true}>
+  Label to jump to. Must reference a `label` step earlier or later in the current section.
+</ParamField>
+
+
+<ParamField path="goto.max" type="integer" default="100" toc={true}>
+  Maximum number of times this `goto` can jump to its label. Once the limit is reached, the
+  section ends without running any further steps.
+</ParamField>
+
+</Indent>
+
+## **Examples**
+
+### Retry a request up to three times
+
+<CodeBlocks>
+<CodeBlock title="YAML">
+```yaml
+version: 1.0.0
+sections:
+  main:
+    - label: try_lookup
+    - request:
+        url: "https://api.example.com/lookup"
+        body:
+          phone: "%{message.from}"
+        save_variables: true
+    - switch:
+        variable: request_result
+        case:
+          success:
+            - reply:
+                body: "Hi %{request_response.name}!"
+          timeout:
+            - goto:
+                label: try_lookup
+                max: 3
+        default:
+          - reply:
+              body: "Sorry, we couldn't look up your account."
+```
+</CodeBlock>
+<CodeBlock title="JSON">
+```json
+{
+  "version": "1.0.0",
+  "sections": {
+    "main": [
+      {
+        "label": "try_lookup"
+      },
+      {
+        "request": {
+          "url": "https://api.example.com/lookup",
+          "body": {
+            "phone": "%{message.from}"
+          },
+          "save_variables": true
+        }
+      },
+      {
+        "switch": {
+          "variable": "request_result",
+          "case": {
+            "success": [
+              {
+                "reply": {
+                  "body": "Hi %{request_response.name}!"
+                }
+              }
+            ],
+            "timeout": [
+              {
+                "goto": {
+                  "label": "try_lookup",
+                  "max": 3
+                }
+              }
+            ]
+          },
+          "default": [
+            {
+              "reply": {
+                "body": "Sorry, we couldn't look up your account."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+</CodeBlock>
+</CodeBlocks>
+

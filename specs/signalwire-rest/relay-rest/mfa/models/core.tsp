@@ -6,7 +6,6 @@ using Types;
 model MfaRequestIdPath {
   @doc("The MFA request ID.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   @path
   mfa_request_id: uuid;
 }
@@ -46,7 +45,6 @@ model MfaRequest {
 model MfaResponse {
   @doc("The MFA request ID. Save this for verification.")
   @example("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-  @format("uuid")
   id: uuid;
 
   @doc("Whether the request was successfully queued.")

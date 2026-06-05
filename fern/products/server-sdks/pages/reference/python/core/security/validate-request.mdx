@@ -1,0 +1,70 @@
+---
+title: "validate_request"
+slug: /reference/python/core/security/validate-request
+description: Legacy-compatible webhook validator accepting a raw body or parsed form params.
+max-toc-depth: 3
+---
+
+[validate-webhook-signature]: /docs/server-sdks/reference/python/core/security/validate-webhook-signature
+
+A legacy-compatible signature validator with a drop-in shape for callers migrating from
+the Compatibility SDK. It accepts either a raw request body or pre-parsed form
+parameters. When given a raw body string it delegates to
+[`validate_webhook_signature`][validate-webhook-signature]; when given parsed form params
+it validates them directly.
+
+<Note>
+For new custom servers, prefer [`validate_webhook_signature`][validate-webhook-signature]
+and pass the raw request body. Use `validate_request` when you only have access to
+pre-parsed form parameters.
+</Note>
+
+## **Parameters**
+
+<ParamField path="signing_key" type="str" required={true} toc={true}>
+  Your Signing Key from the Dashboard. A missing or empty value raises `ValueError`.
+</ParamField>
+
+<ParamField path="signature" type="str" required={true} toc={true}>
+  The signature header value. A missing or empty value returns `False`.
+</ParamField>
+
+<ParamField path="url" type="str" required={true} toc={true}>
+  The full URL SignalWire POSTed to.
+</ParamField>
+
+<ParamField path="params_or_raw_body" type="Union[str, Mapping[str, Any], List[Tuple[str, Any]], None]" required={true} toc={true}>
+  Either a raw body `str` (delegates to
+  [`validate_webhook_signature`][validate-webhook-signature]) or pre-parsed form params
+  as a dict or list of `(key, value)` tuples. `None` is treated as empty params. Any
+  other type raises `TypeError`.
+</ParamField>
+
+## **Returns**
+
+`bool` — `True` on a signature match, `False` otherwise.
+
+## **Example**
+
+```python {11-16}
+from fastapi import FastAPI, Request, Response, status
+from signalwire.core.security import validate_request
+
+app = FastAPI()
+SIGNING_KEY = "PSK_your_signing_key"
+
+@app.post("/compat-webhook")
+async def compat_webhook(request: Request):
+    form = await request.form()
+    signature = request.headers.get("x-signalwire-signature", "")
+
+    if not validate_request(
+        signing_key=SIGNING_KEY,
+        signature=signature,
+        url=str(request.url),
+        params_or_raw_body=dict(form),
+    ):
+        return Response(status_code=status.HTTP_403_FORBIDDEN)
+
+    return {"ok": True}
+```

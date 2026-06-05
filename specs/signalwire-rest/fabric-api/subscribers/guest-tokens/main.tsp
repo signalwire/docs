@@ -19,7 +19,7 @@ namespace SignalWireAPI.Fabric.SubscriberGuestTokens {
     @operationId("create_subscriber_guest_token")
     @summary("Create Subscriber guest token")
     @doc("""
-      Creates a [Subscriber](/docs/platform/subscribers) Guest Token. The token is authorized using an existing API token.
+      Creates a [Subscriber](/docs/platform/subscribers) Guest Token. Authenticate this request with your project's API token.
 
       ${tokenPermissions<"_Voice_, _Messaging_, _Fax_, or _Video_">}
       """)

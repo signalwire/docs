@@ -14,7 +14,7 @@ model DocumentSearchRequest {
 
   @doc("Unique ID of a Document.")
   @example("acaa5c49-be5e-4477-bce0-48f4b23b7720")
-  document_id?: docid;
+  document_id?: uuid;
 
   @doc("Search term.")
   @example("Most paid athlete")

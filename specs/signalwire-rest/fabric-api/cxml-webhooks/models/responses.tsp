@@ -4,12 +4,10 @@ import "../../_shared/const.tsp";
 model CXMLWebhookResponse {
   @doc("Unique ID of the CXMLWebhook.")
   @example("a87db7ed-8ebe-42e4-829f-8ba5a4152f54")
-  @format("uuid")
   id: uuid;
 
   @doc("Unique ID of the Project.")
   @example("99151cf8-9548-4860-ba70-a8de824f3312")
-  @format("uuid")
   project_id: uuid;
 
   @doc("Display name of the CXMLWebhook Fabric Resource")

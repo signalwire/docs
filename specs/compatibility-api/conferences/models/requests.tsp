@@ -32,9 +32,8 @@ model UpdateConferenceParticipantRequest {
   Coaching?: boolean;
 
   @doc("The unique identifier of the participant who is being coached. Required when `Coaching` is true.")
-  @format("uuid")
   @example("b3877c40-da60-4998-90ad-b792e98472co")
-  CallSidToCoach?: string;
+  CallSidToCoach?: uuid;
 
   @doc("Whether or not a participant is on hold.")
   @example(false)

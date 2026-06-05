@@ -109,18 +109,29 @@ Whether you're fixing a typo, reporting missing information, or submitting new c
 3. Make your changes and [submit a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request).
 
 > [!IMPORTANT]
-> Contributions to the API docs require additional workflows.
-> TypeSpec source files live in `specs/` and compile to OpenAPI specs in `fern/apis/`.
+> Contributions to the API reference or SWML schema require additional workflows.
+> Spec source lives in `specs/` as [TypeSpec](https://typespec.io/docs) (`.tsp`) and compiles to OpenAPI / JSON Schema in `fern/apis/` and `specs/swml/**/tsp-output/`.
 > See the [TypeSpec documentation](https://typespec.io/docs) for guidance on editing spec files.
 
-### REST API documentation
+### API specifications
 
-API reference pages are generated from [TypeSpec](https://typespec.io/docs) definitions in [`specs/`](specs/), which compile into [OpenAPI](https://swagger.io/specification/) spec files consumed by Fern.
+The [`specs/`](specs/) workspace holds three sibling TypeSpec projects. Each one declares its own `tspconfig.yaml` and emits a different downstream artifact:
+
+| Project | Source | Emits | Powers |
+|---|---|---|---|
+| **SignalWire REST API** | [`specs/signalwire-rest/`](specs/signalwire-rest/) | `fern/apis/signalwire-rest/openapi.yaml` (OpenAPI 3.1) | The [`/docs/apis`](https://signalwire.com/docs/apis) reference |
+| **Compatibility API** | [`specs/compatibility-api/`](specs/compatibility-api/) | `fern/apis/compatibility/openapi.yaml` (OpenAPI 3.1) | The [`/docs/compatibility-api`](https://signalwire.com/docs/compatibility-api) reference |
+| **SWML** | [`specs/swml/`](specs/swml/) | `specs/swml/**/tsp-output/.../SWMLObject.json` (JSON Schema) | SWML editor + runtime validator tooling |
+
+Shared building blocks live in [`specs/_shared/`](specs/_shared/): repo-wide scalars (`uuid`, `jwt`), status-code aliases, and a custom `@webhook(...)` decorator that emits OpenAPI 3.1 `webhooks:` entries for outbound payloads SignalWire sends to your servers.
 
 ```bash
-yarn build:specs       # Compile TypeSpec → OpenAPI
-yarn format:specs      # Format spec files
+yarn build:specs       # Compile every TypeSpec project → OpenAPI + JSON Schema
+yarn format:specs      # tsp format every .tsp file in the workspace
 ```
+
+> [!NOTE]
+> Generated files (`fern/apis/*/openapi.yaml` and `specs/swml/**/tsp-output/`) are committed but **not** hand-edited. Always change the TypeSpec source, then rebuild — Fern and the SWML tooling read the generated artifacts directly.
 
 ---
 
