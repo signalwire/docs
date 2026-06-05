@@ -1,0 +1,260 @@
+---
+title: "Outbound Calls"
+slug: /guides/outbound-calls
+sidebar-title: "Outbound Calls"
+position: 2
+max-toc-depth: 3
+---
+
+To place a call from a web app, hand the SDK a destination, choose whether to send audio, video, or both, and attach the resulting media streams to the page. The same [`client.dial()`](/docs/browser-sdk/v4/reference/signalwire/dial) call works for joining a room, calling another [user](/docs/platform/subscribers), or reaching a phone number — only the destination string changes.
+
+Here's the shape of an outbound call end-to-end:
+
+```ts Browser
+import { SignalWire, StaticCredentialProvider } from "@signalwire/js";
+
+const client = new SignalWire(new StaticCredentialProvider({ token: SAT }));
+const call = await client.dial("/public/test-room", { audio: true, video: true });
+
+// Attach the media to the page.
+call.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+call.remoteStream$.subscribe((stream) => (remoteVideo.srcObject = stream));
+
+// End the call when the user clicks hang up.
+hangupButton.onclick = () => call.hangup();
+```
+
+<Info>
+**Before you start.** You'll need a [Subscriber Access Token](/docs/browser-sdk/v4/guides/authentication) your backend issued for the user, a destination the token is allowed to reach, and an HTTPS page (browsers only grant mic and camera access over a secure origin — `localhost` is the development exception).
+</Info>
+
+## Pick a destination
+
+The first argument to `dial()` is a URI string identifying what the call should reach. Four shapes cover the common cases:
+
+<CardGroup cols={2}>
+  <Card title="Shared resource" icon="fa-regular fa-door-open">
+    `/public/<resource>` — a [resource](/docs/platform/resources) like a room, IVR, or app anyone in the project can dial.
+  </Card>
+  <Card title="Specific user" icon="fa-regular fa-user">
+    `/private/<user>` — a registered user (Subscriber) in your project that you can call directly.
+  </Card>
+  <Card title="Phone number" icon="fa-regular fa-phone">
+    `+15551234567` — a PSTN number. The token must be allowed to dial PSTN.
+  </Card>
+  <Card title="SIP endpoint" icon="fa-regular fa-server">
+    `sip:alice@example.com` — a SIP destination reachable from your space.
+  </Card>
+</CardGroup>
+
+```ts Browser
+const call = await client.dial("/public/test-room");
+```
+
+If you're iterating addresses from the directory, an [`Address`](/docs/browser-sdk/v4/reference/address) object exposes [`defaultChannel`](/docs/browser-sdk/v4/reference/address/default-channel) — a ready-to-dial URI for that address — so you don't have to assemble the string yourself.
+
+## Choose audio, video, or both
+
+`dial()` takes a [`DialOptions`](/docs/browser-sdk/v4/reference/interfaces/dial-options) object, which extends [`MediaOptions`](/docs/browser-sdk/v4/reference/interfaces/media-options). The four common shapes:
+
+<Tabs>
+  <Tab title="Audio + video">
+  ```ts
+  const call = await client.dial(destination, { audio: true, video: true });
+  ```
+  Standard video call. Both tracks captured from the selected mic and camera.
+  </Tab>
+  <Tab title="Audio only">
+  ```ts
+  const call = await client.dial(destination);
+  // equivalent: { audio: true, video: false }
+  ```
+  Phone-style call. No camera permission prompt.
+  </Tab>
+  <Tab title="Video, mic muted">
+  ```ts
+  const call = await client.dial(destination, { audio: false, video: true });
+  ```
+  Useful for a kiosk that joins on camera with the mic off, or for receive-only viewers.
+  </Tab>
+  <Tab title="Receive only">
+  ```ts
+  const call = await client.dial(destination, {
+    audio: false,
+    video: false,
+    receiveAudio: true,
+    receiveVideo: true,
+  });
+  ```
+  Joins without sending any media. The remote tracks still arrive on `remoteStream$`.
+  </Tab>
+</Tabs>
+
+The destination URI can also carry a `?channel=audio` or `?channel=video` hint that sets the matching media defaults — useful when the destination URI is what determines the call shape. Explicit options passed to `dial()` always win.
+
+For pinned device constraints, codec preference, your own `MediaStream`, or custom invite metadata, see `DialOptions`. For mic, camera, or speaker selection that persists across every call, use the device management APIs instead of constraining each `dial()` individually.
+
+## Attach the streams
+
+A [`Call`](/docs/browser-sdk/v4/reference/interfaces/call) exposes two media observables: [`localStream$`](/docs/browser-sdk/v4/reference/webrtc-call/local-stream$) (what the user is sending) and [`remoteStream$`](/docs/browser-sdk/v4/reference/webrtc-call/remote-stream$) (what the user receives). Both emit a `MediaStream` once the track is ready — bind each one to a `<video>` element's `srcObject`:
+
+```ts Browser
+// These subscriptions complete on their own when the call ends.
+call.localStream$.subscribe((stream) => (localVideo.srcObject = stream));
+call.remoteStream$.subscribe((stream) => (remoteVideo.srcObject = stream));
+```
+
+```html
+<video id="localVideo" autoplay muted playsinline></video>
+<video id="remoteVideo" autoplay playsinline></video>
+```
+
+The local element needs `muted` so the user doesn't echo their own voice; the remote element must not be `muted` or no one is heard. Both need `playsinline` for mobile Safari. Audio-only calls use the same `remoteStream$` — keep the `<video>` element and the browser plays the audio track through it.
+
+## End the call
+
+Call [`hangup()`](/docs/browser-sdk/v4/reference/webrtc-call/hangup) when the user clicks the hang-up button or navigates away. The call transitions through `disconnecting` → `disconnected` → `destroyed`; any subscriptions on the call complete naturally.
+
+```ts Browser
+hangupButton.onclick = () => call.hangup();
+```
+
+If the user closes the tab without calling `hangup()`, the SDK still tears the call down when the page unloads. Calling `hangup()` explicitly gives you a clean point to dismiss the in-call UI before the connection drops.
+
+To leave the page but keep the call alive on the platform — a transfer-and-disappear flow — use [`transfer()`](/docs/browser-sdk/v4/reference/webrtc-call/transfer) instead.
+
+## Try it: dial a destination
+
+Create a SAT against your project — the [Authentication guide](/docs/browser-sdk/v4/guides/authentication) covers it end-to-end; the [Create Subscriber Token](/docs/apis/rest/subscribers/tokens/create-subscriber-token) reference sends the request for you.
+
+<EndpointRequestSnippet endpoint="POST /api/fabric/subscribers/tokens" />
+
+Copy the returned `token`, save the page below as `outbound-demo.html`, and open it over HTTPS (or `localhost`). Paste the SAT and a destination, toggle the **Send audio** / **Send video** checkboxes to match the call shape you want, click **Dial**, and watch the log — it records every status the call moves through. The checkboxes map directly onto the `audio` and `video` keys of `dial()`'s [`DialOptions`](/docs/browser-sdk/v4/reference/interfaces/dial-options).
+
+<Accordion title="outbound-demo.html — full source">
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SignalWire SDK outbound call demo</title>
+    <style>
+      /* Shared demo shell — identical across the inbound, outbound, and
+         device-management guides. Per-demo extras go below this block. */
+      body { font: 14px/1.5 system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      label { display: block; margin: 0.75rem 0 0.25rem; font-weight: 600; }
+      input, select { width: 100%; padding: 0.5rem; font: 13px ui-monospace, monospace; box-sizing: border-box; }
+      button { margin: 0.5rem 0.5rem 0 0; padding: 0.5rem 1rem; font: 14px system-ui; cursor: pointer; }
+      button[disabled] { opacity: 0.5; cursor: not-allowed; }
+      .videos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem; }
+      video { width: 100%; background: #000; border-radius: 4px; aspect-ratio: 4/3; }
+      #log { margin-top: 1rem; padding: 1rem; background: #111; color: #0f0; font: 13px ui-monospace, monospace; min-height: 6rem; white-space: pre-wrap; border-radius: 4px; }
+      /* Outbound-specific */
+      .media-options { margin: 0.75rem 0 0; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; }
+      .media-options legend { padding: 0 0.25rem; font-weight: 600; }
+      .media-options label { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0 1rem 0 0; font-weight: 400; }
+      .media-options input[type="checkbox"] { width: auto; padding: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>SignalWire SDK outbound call demo</h1>
+
+    <label for="token">Subscriber Access Token</label>
+    <input id="token" type="password" placeholder="Paste your SAT here" />
+
+    <label for="destination">Destination</label>
+    <input id="destination" type="text" placeholder="/public/test-room" />
+
+    <fieldset class="media-options">
+      <legend>Media</legend>
+      <label><input type="checkbox" id="audio" checked /> Send audio</label>
+      <label><input type="checkbox" id="video" checked /> Send video</label>
+    </fieldset>
+
+    <button id="dial">Dial</button>
+    <button id="hangup" disabled>Hang up</button>
+
+    <div class="videos">
+      <video id="local" autoplay muted playsinline></video>
+      <video id="remote" autoplay playsinline></video>
+    </div>
+
+    <pre id="log"></pre>
+
+    <script type="module">
+      import { SignalWire, StaticCredentialProvider } from "https://esm.sh/@signalwire/js@dev";
+
+      const log = (msg) =>
+        (document.getElementById("log").textContent += msg + "\n");
+
+      let activeCall = null;
+
+      document.getElementById("dial").addEventListener("click", async () => {
+        const token = document.getElementById("token").value.trim();
+        const destination = document.getElementById("destination").value.trim();
+        if (!token || !destination) return log("Need a token and a destination.");
+
+        const audio = document.getElementById("audio").checked;
+        const video = document.getElementById("video").checked;
+
+        const dialBtn = document.getElementById("dial");
+        const hangupBtn = document.getElementById("hangup");
+        dialBtn.disabled = true;
+        log("Dialing " + destination + "...");
+        log("Options: audio=" + audio + ", video=" + video);
+
+        const provider = new StaticCredentialProvider({ token });
+        const client = new SignalWire(provider);
+
+        try {
+          const call = await client.dial(destination, { audio, video });
+          activeCall = call;
+          hangupBtn.disabled = false;
+
+          call.localStream$.subscribe((stream) => {
+            document.getElementById("local").srcObject = stream;
+          });
+          call.remoteStream$.subscribe((stream) => {
+            document.getElementById("remote").srcObject = stream;
+          });
+          call.status$.subscribe((status) => {
+            log("Status: " + status);
+            if (status === "destroyed") {
+              dialBtn.disabled = false;
+              hangupBtn.disabled = true;
+              activeCall = null;
+            }
+          });
+          call.errors$.subscribe((err) => {
+            log("Error: " + (err.name || "Error") + " — " + err.message);
+          });
+        } catch (err) {
+          log("dial() rejected: " + (err.name || "Error") + " — " + err.message);
+          dialBtn.disabled = false;
+        }
+      });
+
+      document.getElementById("hangup").addEventListener("click", () => {
+        if (activeCall) activeCall.hangup();
+      });
+    </script>
+  </body>
+</html>
+```
+</Accordion>
+
+You should see `Status: connected` once the destination picks up. If `dial()` rejects with `CallCreateError`, the token's scope doesn't reach the destination — re-check `allowed_addresses` or the token's project.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Inbound Calls" href="/docs/browser-sdk/v4/guides/inbound-calls" icon="fa-regular fa-phone-arrow-down-left">
+    Receive calls in a signed-in user session.
+  </Card>
+  <Card title="Device Management" href="/docs/browser-sdk/v4/guides/device-management" icon="fa-regular fa-microphone">
+    Choose the mic, camera, and speaker the call should use.
+  </Card>
+  <Card title="DialOptions reference" href="/docs/browser-sdk/v4/reference/interfaces/dial-options" icon="fa-regular fa-book">
+    Every option you can pass to `client.dial()`.
+  </Card>
+</CardGroup>
