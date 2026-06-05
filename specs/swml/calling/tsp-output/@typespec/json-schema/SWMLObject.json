@@ -50,6 +50,9 @@
                     "$ref": "#/$defs/AI"
                 },
                 {
+                    "$ref": "#/$defs/AISidecar"
+                },
+                {
                     "$ref": "#/$defs/AmazonBedrock"
                 },
                 {
@@ -240,6 +243,23 @@
                 "not": {}
             },
             "title": "ai Method"
+        },
+        "AISidecar": {
+            "type": "object",
+            "properties": {
+                "ai_sidecar": {
+                    "$ref": "#/$defs/AISidecarObject",
+                    "description": "Attach a real-time AI observer that listens to a live call and streams agent-facing advice to your application as webhook callbacks.\nThe sidecar does not participate in the call; it watches the conversation and produces structured callbacks your application can consume.",
+                    "title": "ai_sidecar"
+                }
+            },
+            "required": [
+                "ai_sidecar"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "ai_sidecar Method"
         },
         "AmazonBedrock": {
             "type": "object",
@@ -2456,9 +2476,7 @@
             "type": "object",
             "properties": {
                 "global_data": {
-                    "type": "object",
-                    "properties": {},
-                    "unevaluatedProperties": {},
+                    "$ref": "#/$defs/GlobalData",
                     "examples": [
                         {
                             "company_name": "Acme Corp",
@@ -2533,6 +2551,131 @@
                 "not": {}
             },
             "title": "AI Object"
+        },
+        "AISidecarObject": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "$ref": "#/$defs/AISidecarPrompt",
+                    "description": "The operator prompt that instructs the sidecar how to coach the agent. May be a plain string, a Prompt Object Model (POM), or a server-side file reference.\nSignalWire automatically adds built-in instructions for the sidecar's role, so your prompt only needs to describe the coaching behavior. When omitted, the sidecar uses a minimal default prompt, so setting one is strongly recommended."
+                },
+                "lang": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        "en-US"
+                    ],
+                    "minLength": 1,
+                    "description": "The conversation language as a single BCP-47 tag. Sets the speech recognition language and is shared with the model as a hint."
+                },
+                "model": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "gpt-4o-mini"
+                        },
+                        {
+                            "type": "string",
+                            "const": "gpt-4.1-mini"
+                        },
+                        {
+                            "type": "string",
+                            "const": "gpt-4.1-nano"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "default": "gpt-4o-mini",
+                    "examples": [
+                        "gpt-4.1-mini"
+                    ],
+                    "description": "The model used for the sidecar's advice and its end-of-call summaries. Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`."
+                },
+                "direction": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/TranscribeDirection"
+                    },
+                    "default": [
+                        "remote-caller",
+                        "local-caller"
+                    ],
+                    "examples": [
+                        [
+                            "remote-caller",
+                            "local-caller"
+                        ]
+                    ],
+                    "description": "The call legs to observe. Both legs are required — a single-leg value is rejected. When omitted, both legs are observed. **Default:** both legs (`remote-caller` and `local-caller`)."
+                },
+                "customer_role": {
+                    "$ref": "#/$defs/TranscribeDirection",
+                    "default": "remote-caller",
+                    "examples": [
+                        "remote-caller"
+                    ],
+                    "description": "Which leg is the customer, used as the turn-end trigger source. **Default:** `remote-caller`."
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "examples": [
+                        "https://example.com/sidecar/events"
+                    ],
+                    "description": "The webhook URL the sidecar POSTs its callbacks to. Receives both transcription events and sidecar callbacks.\nWhen unset, callbacks are published only on the relay topic and no webhook POST is made.\nBasic auth can be embedded in the URL in the format `username:password@url`."
+                },
+                "SWAIG": {
+                    "$ref": "#/$defs/AISidecarSWAIG",
+                    "description": "SWAIG functions and MCP servers available to the sidecar."
+                },
+                "permissions": {
+                    "$ref": "#/$defs/AISidecarPermissions",
+                    "description": "SWAIG permission overrides. Defaults to all permissions enabled."
+                },
+                "global_data": {
+                    "$ref": "#/$defs/GlobalData",
+                    "examples": [
+                        {
+                            "company_name": "Acme Corp"
+                        }
+                    ],
+                    "description": "A key-value object of data that is available throughout the sidecar session. You can reference it in the prompt with variable expansion, and it is included in the requests sent to your tools.\nIt also persists across sessions on the same call leg."
+                },
+                "hints": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "ACME",
+                            "Globex",
+                            "FedRAMP",
+                            "SOC 2"
+                        ]
+                    ],
+                    "minItems": 1,
+                    "description": "Hints that improve speech recognition of specific terms, such as product names, competitor names, jargon, or customer names. Strongly recommended."
+                },
+                "params": {
+                    "$ref": "#/$defs/AISidecarParams",
+                    "description": "Tuning options for the sidecar."
+                }
+            },
+            "required": [
+                "lang"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarObject object"
         },
         "AmazonBedrockObject": {
             "type": "object",
@@ -4535,6 +4678,13 @@
                 "not": {}
             }
         },
+        "GlobalData": {
+            "type": "object",
+            "properties": {},
+            "unevaluatedProperties": {},
+            "description": "A key-value object for data that persists throughout an AI or sidecar session.",
+            "title": "global_data object"
+        },
         "Hint": {
             "type": "object",
             "properties": {
@@ -5976,6 +6126,13 @@
                     "$ref": "#/$defs/SWAIGDefaults",
                     "description": "Default settings for all SWAIG functions. If `defaults` is not set, settings may be set in each function object. Default is not set."
                 },
+                "mcp_servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/MCPServer"
+                    },
+                    "description": "An array of MCP (Model Context Protocol) servers whose tools and resources are made available to the AI agent. Each server's tools are discovered when the agent starts and registered as callable functions."
+                },
                 "native_functions": {
                     "type": "array",
                     "items": {
@@ -6006,6 +6163,385 @@
                 "not": {}
             },
             "title": "swaig"
+        },
+        "AISidecarPrompt": {
+            "oneOf": [
+                {
+                    "type": "string",
+                    "description": "The operator prompt as a single block of text."
+                },
+                {
+                    "$ref": "#/$defs/AISidecarPromptText"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarPromptPom"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarPromptFile"
+                }
+            ],
+            "title": "AISidecarPrompt"
+        },
+        "TranscribeDirection": {
+            "type": "string",
+            "enum": [
+                "remote-caller",
+                "local-caller"
+            ],
+            "title": "TranscribeDirection enum"
+        },
+        "AISidecarSWAIG": {
+            "type": "object",
+            "properties": {
+                "defaults": {
+                    "$ref": "#/$defs/AISidecarSWAIGDefaults",
+                    "description": "Default settings applied to all functions that do not override them."
+                },
+                "functions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/AISidecarSWAIGFunction"
+                    },
+                    "description": "An array of functions the model can call during the conversation."
+                },
+                "mcp_servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/MCPServer"
+                    },
+                    "description": "An array of MCP (Model Context Protocol) servers whose tools and resources are made available to the model."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarSWAIG object"
+        },
+        "AISidecarPermissions": {
+            "type": "object",
+            "properties": {
+                "swaig_allow_swml": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether SWAIG tools may run SWML on the call. **Default:** `true`."
+                },
+                "swaig_allow_settings": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether SWAIG tools may change the sidecar's settings, such as the model. **Default:** `true`."
+                },
+                "swaig_set_global_data": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether SWAIG tools may set the sidecar's global data. **Default:** `true`."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarPermissions object"
+        },
+        "AISidecarParams": {
+            "type": "object",
+            "properties": {
+                "idle_timeout_ms": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 200,
+                    "examples": [
+                        200
+                    ],
+                    "minimum": 50,
+                    "maximum": 5000,
+                    "description": "How long the customer can be silent, in milliseconds, after they finish speaking before the sidecar evaluates the conversation. Lower values make the sidecar react faster. Range: 50-5000. **Default:** `200`."
+                },
+                "min_interval_ms": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        1000
+                    ],
+                    "minimum": 0,
+                    "maximum": 60000,
+                    "description": "The minimum time, in milliseconds, between evaluations — a throttle that limits how often the sidecar runs on a busy call. Range: 0-60000. **Default:** `0`."
+                },
+                "max_iters_per_tick": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 5,
+                    "examples": [
+                        5
+                    ],
+                    "minimum": 1,
+                    "maximum": 20,
+                    "description": "The maximum number of tool calls the sidecar will chain within a single evaluation before it must produce its advice. Range: 1-20. **Default:** `5`."
+                },
+                "max_history_tokens": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 8000,
+                    "examples": [
+                        8000
+                    ],
+                    "minimum": 1000,
+                    "maximum": 200000,
+                    "description": "The token budget for the sidecar's running conversation history. When the history grows past this, the oldest messages are dropped. Range: 1000-200000. **Default:** `8000`."
+                },
+                "act_on_channel": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": true,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether actions returned by your tools (such as transferring or hanging up the call) take effect on the call, or are only reported as callbacks. **Default:** `true`."
+                },
+                "final_summary": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether to generate a closing summary of the sidecar's session when the call ends. The result is included in the final callback. **Default:** `false`."
+                },
+                "ai_summary": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether to generate an end-of-call summary of the conversation itself, distinct from `final_summary` (which summarizes the sidecar's session). **Default:** `false`."
+                },
+                "ai_summary_prompt": {
+                    "type": "string",
+                    "examples": [
+                        "Summarize the key points of this conversation."
+                    ],
+                    "description": "A custom prompt for the end-of-call conversation summary."
+                },
+                "summary_model": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "const": "gpt-4o-mini"
+                        },
+                        {
+                            "type": "string",
+                            "const": "gpt-4.1-mini"
+                        },
+                        {
+                            "type": "string",
+                            "const": "gpt-4.1-nano"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "default": "gpt-4o-mini",
+                    "examples": [
+                        "gpt-4.1-mini"
+                    ],
+                    "description": "The model used for the end-of-call conversation summary, distinct from `model` (the sidecar's own model). Suggested values: `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-4.1-nano`. **Default:** `gpt-4o-mini`."
+                },
+                "live_events": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether to emit a callback for each utterance the speech recognizer produces. **Default:** `false`."
+                },
+                "verbose_utterances": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether each utterance callback includes full speech-recognition detail, such as word timings and alternatives. This increases the callback size, so leave it off unless you need it. **Default:** `false`."
+                },
+                "speech_engine": {
+                    "$ref": "#/$defs/SpeechEngine",
+                    "default": "deepgram",
+                    "examples": [
+                        "google"
+                    ],
+                    "description": "The speech recognition engine to use. **Default:** `deepgram`."
+                },
+                "speech_timeout": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        30000
+                    ],
+                    "description": "How long, in milliseconds, the recognizer waits before finalizing speech. Defaults to the speech engine's own default."
+                },
+                "vad_silence_ms": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        500
+                    ],
+                    "description": "The amount of silence, in milliseconds, used to detect the end of speech. Defaults to the speech engine's own default."
+                },
+                "vad_thresh": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "examples": [
+                        400
+                    ],
+                    "description": "How sensitively the recognizer detects speech. Defaults to the speech engine's own default."
+                },
+                "debug_level": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": 0,
+                    "examples": [
+                        0
+                    ],
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Speech-engine debug verbosity. Range: 0-100. **Default:** `0`."
+                },
+                "debug": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        false
+                    ],
+                    "description": "Whether to enable verbose logging for the sidecar. **Default:** `false`."
+                },
+                "transcribe_prompt": {
+                    "type": "string",
+                    "examples": [
+                        "The call is about enterprise software pricing. Expect terms like ACME, FedRAMP, and SOC 2."
+                    ],
+                    "description": "A bias prompt passed to the speech recognizer to improve accuracy on expected terms, such as product or company names. This is distinct from the operator `prompt`."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarParams object"
         },
         "BedrockParams": {
             "type": "object",
@@ -7456,6 +7992,66 @@
             },
             "title": "defaults"
         },
+        "MCPServer": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "examples": [
+                        "https://mcp.example.com/mcp"
+                    ],
+                    "description": "The MCP (Model Context Protocol) server URL. Required."
+                },
+                "headers": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        {
+                            "Authorization": "Bearer abc123"
+                        }
+                    ],
+                    "description": "HTTP headers sent to the MCP server. Authorization tokens go here — there is no separate auth field. Header values support variable expansion (for example, `Bearer ${global_data.token}`)."
+                },
+                "resources": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "$ref": "#/$defs/SWMLVar"
+                        }
+                    ],
+                    "default": false,
+                    "examples": [
+                        true
+                    ],
+                    "description": "Whether to fetch the server's resources into `global_data`, when the server advertises resource support. **Default:** `false`."
+                },
+                "resource_vars": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        {
+                            "customer_id": "cust_12345"
+                        }
+                    ],
+                    "description": "Template variables passed to the MCP server when fetching resources, typically using variable expansion such as `${global_data.customer_id}`. Used only when `resources` is enabled."
+                }
+            },
+            "required": [
+                "url"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "MCP server object"
+        },
         "SWAIGNativeFunction": {
             "type": "string",
             "enum": [
@@ -7570,6 +8166,160 @@
             "unevaluatedProperties": {
                 "not": {}
             }
+        },
+        "AISidecarPromptText": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "examples": [
+                        "You are a real-time sales copilot. After each customer turn, give the agent one concise piece of advice."
+                    ],
+                    "description": "The operator prompt as a single block of text."
+                }
+            },
+            "required": [
+                "text"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarPromptText object"
+        },
+        "AISidecarPromptPom": {
+            "type": "object",
+            "properties": {
+                "pom": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/POM"
+                    },
+                    "minItems": 1,
+                    "description": "The operator prompt as a Prompt Object Model (POM) — a structured array of sections that SignalWire renders into a markdown document before sending it to the model."
+                }
+            },
+            "required": [
+                "pom"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarPromptPom object"
+        },
+        "AISidecarPromptFile": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string",
+                    "examples": [
+                        "/etc/swml/sidecar_prompts/sales.md"
+                    ],
+                    "description": "Path to a server-side file whose contents are used as the operator prompt."
+                }
+            },
+            "required": [
+                "file"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarPromptFile object"
+        },
+        "AISidecarSWAIGDefaults": {
+            "type": "object",
+            "properties": {
+                "web_hook_url": {
+                    "type": "string",
+                    "examples": [
+                        "https://example.com/sidecar/swaig"
+                    ],
+                    "description": "Default webhook URL for functions that do not set their own `web_hook_url`. Basic auth can be embedded as `username:password@url`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "user"
+                    ],
+                    "description": "Default basic-auth username for the function webhook."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "pass"
+                    ],
+                    "description": "Default basic-auth password for the function webhook."
+                }
+            },
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarSWAIGDefaults object"
+        },
+        "AISidecarSWAIGFunction": {
+            "type": "object",
+            "properties": {
+                "function": {
+                    "type": "string",
+                    "examples": [
+                        "lookup_competitor"
+                    ],
+                    "description": "The name of the function. This is the only required field; the model calls the function by this name."
+                },
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "Look up a competitor by name."
+                    ],
+                    "description": "A description of what the function does, sent to the model so it knows when to call it."
+                },
+                "purpose": {
+                    "type": "string",
+                    "examples": [
+                        "Look up a competitor by name."
+                    ],
+                    "description": "Fallback for `description` — used only when `description` is not set."
+                },
+                "parameters": {
+                    "$ref": "#/$defs/AISidecarFunctionParameters",
+                    "description": "The JSON-Schema object describing the function's arguments. When omitted, the function takes no arguments."
+                },
+                "web_hook_url": {
+                    "type": "string",
+                    "examples": [
+                        "https://example.com/sidecar/swaig"
+                    ],
+                    "description": "Webhook URL for this function. Falls back to `defaults.web_hook_url`. Basic auth can be embedded as `username:password@url`."
+                },
+                "web_hook_auth_user": {
+                    "type": "string",
+                    "examples": [
+                        "user"
+                    ],
+                    "description": "Basic-auth username for this function's webhook. Falls back to `defaults.web_hook_auth_user`."
+                },
+                "web_hook_auth_password": {
+                    "type": "string",
+                    "examples": [
+                        "pass"
+                    ],
+                    "description": "Basic-auth password for this function's webhook. Falls back to `defaults.web_hook_auth_password`."
+                }
+            },
+            "required": [
+                "function"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarSWAIGFunction object"
+        },
+        "SpeechEngine": {
+            "type": "string",
+            "enum": [
+                "deepgram",
+                "google"
+            ],
+            "description": "Speech recognition engine options."
         },
         "OmitPropertiesBedrockPostPomptTextOmittedPromptProps": {
             "type": "object",
@@ -8100,22 +8850,6 @@
                     "$ref": "#/$defs/PickPropertiesSummarizeConversationSWAIGFunctionPickedSWAIGFunctionProps"
                 }
             ]
-        },
-        "TranscribeDirection": {
-            "type": "string",
-            "enum": [
-                "remote-caller",
-                "local-caller"
-            ],
-            "title": "TranscribeDirection enum"
-        },
-        "SpeechEngine": {
-            "type": "string",
-            "enum": [
-                "deepgram",
-                "google"
-            ],
-            "description": "Speech recognition engine options."
         },
         "TranscribeSummarizeAction": {
             "type": "object",
@@ -10240,6 +10974,47 @@
             ],
             "description": "Supported language codes"
         },
+        "AISidecarFunctionParameters": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "const": "object",
+                    "examples": [
+                        "object"
+                    ],
+                    "description": "The container type for the function's arguments. Always `object`."
+                },
+                "properties": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "$ref": "#/$defs/AISidecarParamProperty"
+                    },
+                    "description": "The properties the function accepts, keyed by property name. Each property allows only `type`, `description`,\n`enum`, and `default` — additional validation keywords such as `pattern`, `format`, `minimum`, and `maximum`\nare not accepted; express those constraints in the property `description` and validate them server-side."
+                },
+                "required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "competitor"
+                        ]
+                    ],
+                    "description": "The names of the required properties."
+                }
+            },
+            "required": [
+                "type",
+                "properties"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarFunctionParameters object"
+        },
         "PickPropertiesUserSWAIGFunctionPickedSWAIGFunctionProps": {
             "type": "object",
             "properties": {
@@ -10775,6 +11550,29 @@
             },
             "title": "DataMap object"
         },
+        "AISidecarParamProperty": {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/AISidecarStringParam"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarIntegerParam"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarNumberParam"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarBooleanParam"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarArrayParam"
+                },
+                {
+                    "$ref": "#/$defs/AISidecarObjectParam"
+                }
+            ],
+            "title": "AISidecarParamProperty"
+        },
         "ContextsPOMObject": {
             "type": "object",
             "properties": {
@@ -11146,6 +11944,245 @@
                 "not": {}
             },
             "title": "Webhook object"
+        },
+        "AISidecarStringParam": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "The competitor's company name."
+                    ],
+                    "description": "A human-readable description of the property, sent to the model so it knows what to pass."
+                },
+                "type": {
+                    "type": "string",
+                    "const": "string",
+                    "description": "The property type."
+                },
+                "enum": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "timeline",
+                            "budget",
+                            "authority",
+                            "urgency"
+                        ]
+                    ],
+                    "description": "The allowed values for the property."
+                },
+                "default": {
+                    "type": "string",
+                    "examples": [
+                        "timeline"
+                    ],
+                    "description": "The default value used when the model omits the property."
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarStringParam object"
+        },
+        "AISidecarIntegerParam": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "The competitor's company name."
+                    ],
+                    "description": "A human-readable description of the property, sent to the model so it knows what to pass."
+                },
+                "type": {
+                    "type": "string",
+                    "const": "integer",
+                    "description": "The property type."
+                },
+                "enum": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "examples": [
+                        [
+                            1,
+                            2,
+                            3
+                        ]
+                    ],
+                    "description": "The allowed values for the property."
+                },
+                "default": {
+                    "type": "integer",
+                    "examples": [
+                        1
+                    ],
+                    "description": "The default value used when the model omits the property."
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarIntegerParam object"
+        },
+        "AISidecarNumberParam": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "The competitor's company name."
+                    ],
+                    "description": "A human-readable description of the property, sent to the model so it knows what to pass."
+                },
+                "type": {
+                    "type": "string",
+                    "const": "number",
+                    "description": "The property type."
+                },
+                "enum": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "examples": [
+                        [
+                            0.5,
+                            1
+                        ]
+                    ],
+                    "description": "The allowed values for the property."
+                },
+                "default": {
+                    "type": "number",
+                    "examples": [
+                        1
+                    ],
+                    "description": "The default value used when the model omits the property."
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarNumberParam object"
+        },
+        "AISidecarBooleanParam": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "The competitor's company name."
+                    ],
+                    "description": "A human-readable description of the property, sent to the model so it knows what to pass."
+                },
+                "type": {
+                    "type": "string",
+                    "const": "boolean",
+                    "description": "The property type."
+                },
+                "default": {
+                    "type": "boolean",
+                    "examples": [
+                        false
+                    ],
+                    "description": "The default value used when the model omits the property."
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarBooleanParam object"
+        },
+        "AISidecarArrayParam": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "The competitor's company name."
+                    ],
+                    "description": "A human-readable description of the property, sent to the model so it knows what to pass."
+                },
+                "type": {
+                    "type": "string",
+                    "const": "array",
+                    "description": "The property type."
+                },
+                "items": {
+                    "description": "The schema for each item in the array.",
+                    "$ref": "#/$defs/AISidecarParamProperty"
+                }
+            },
+            "required": [
+                "type",
+                "items"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarArrayParam object"
+        },
+        "AISidecarObjectParam": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "examples": [
+                        "The competitor's company name."
+                    ],
+                    "description": "A human-readable description of the property, sent to the model so it knows what to pass."
+                },
+                "type": {
+                    "type": "string",
+                    "const": "object",
+                    "description": "The property type."
+                },
+                "properties": {
+                    "type": "object",
+                    "properties": {},
+                    "unevaluatedProperties": {
+                        "$ref": "#/$defs/AISidecarParamProperty"
+                    },
+                    "description": "The nested properties of the object, keyed by property name."
+                },
+                "required": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "examples": [
+                        [
+                            "id"
+                        ]
+                    ],
+                    "description": "The names of the required nested properties."
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "unevaluatedProperties": {
+                "not": {}
+            },
+            "title": "AISidecarObjectParam object"
         },
         "ContextSteps": {
             "anyOf": [
